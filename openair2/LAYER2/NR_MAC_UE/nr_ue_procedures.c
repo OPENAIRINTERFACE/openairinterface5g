@@ -3028,6 +3028,16 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         (char) (taus() & 0xff);
     }
   }
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+  LOG_D(MAC, "Printing UL MAC payload without the header UE side: \n");
+  for (int i = payload_offset; i < sdu_length_total ; i++) {
+	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
+	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+	  printf("%02x ",(unsigned char)ulsch_buffer[i]);
+  }
+  printf("\n");
+#endif
+
   return 1;
 
 }

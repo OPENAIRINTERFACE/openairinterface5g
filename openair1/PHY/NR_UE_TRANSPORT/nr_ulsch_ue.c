@@ -45,6 +45,7 @@
 
 //#define DEBUG_SCFDMA
 //#define DEBUG_PUSCH_MAPPING
+#define DEBUG_MAC_PDU
 
 //extern int32_t uplink_counter;
 
@@ -160,13 +161,25 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     		if(data_existing){
     			//harq_process_ul_ue->a = (unsigned char*)calloc(harq_process_ul_ue->TBS/8, sizeof(unsigned char));
     			memcpy(harq_process_ul_ue->a, ulsch_input_buffer, harq_process_ul_ue->TBS/8);
-    			LOG_I(PHY, "input encoder: \n");
+
+    			#ifdef DEBUG_MAC_PDU
+    				LOG_I(PHY, "Printing MAC PDU to be encoded: \n");
+    				for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
+    					printf("0x%02x",harq_process_ul_ue->a[i]);
+    				}
+    				printf("\n");
+				#endif
+    		}
+    		else{
+    			//Use different rnti for the random (non-IP traffic) in noS1 mode, in order to use it as a filter
+    			//to block this traffic from being forwarded to the MAC layer of the gNB
+    			ulsch_ue->rnti        = 0x1111;
+    			LOG_E(PHY, "Random data to be tranmsitted: \n");
     			for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
-    				//harq_process_ul_ue->a[i] = (unsigned char) rand();
-    				//printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-    				//printf("0x%02x",harq_process_ul_ue->a[i]);
-    				printf("0x%02x",harq_process_ul_ue->b[i]);
-    			}
+    				harq_process_ul_ue->a[i] = (unsigned char) rand();
+    				//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+    				}
+    			data_existing = 1;
     		}
     	}
         //else if(uplink_counter == 0){ //if(!IS_SOFTMODEM_NOS1){

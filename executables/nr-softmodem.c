@@ -910,6 +910,7 @@ init_opt();
 
 
 #ifdef PDCP_USE_NETLINK
+if(!IS_SOFTMODEM_NOS1)
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();

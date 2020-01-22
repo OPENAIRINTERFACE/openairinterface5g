@@ -38,6 +38,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "T.h"
+#include "executables/nr-softmodem.h"
 
 #include "assertions.h"
 #include "msc.h"
@@ -261,10 +262,12 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   if (ret > gNB->ulsch[UE_id][0]->max_ldpc_iterations)
     LOG_I(PHY, "ULSCH in error\n");
   //gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b
-  else if(gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b!=NULL){
-    LOG_I(PHY, "ULSCH received ok, number of iterations: %d \n", ret);
-    nr_fill_crc_indication (gNB, UE_id, frame_rx, slot_rx, 0);
-    nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);
+  else if(gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->b!=NULL){
+	  LOG_D(PHY, "ULSCH received ok \n");
+	  if(IS_SOFTMODEM_NOS1 && gNB->ulsch[UE_id][0]->rnti == 0x1234){
+		  nr_fill_crc_indication (gNB, UE_id, frame_rx, slot_rx, 0);
+		  nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);
+	  }
   }
 
 }
@@ -295,7 +298,6 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
  pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
  pdu->rx_ue_information.rnti            = gNB->ulsch[UE_id][0]->rnti;
  pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
- pdu->rx_indication_rel8.length         = gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->TBS>>3;
  pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
  pdu->data                              = harq_process->b;//gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b;
   // estimate timing advance for MAC

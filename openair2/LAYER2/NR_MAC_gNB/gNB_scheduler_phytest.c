@@ -634,7 +634,7 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
   } // end for loop on control element
 
   for (int i = 0; i < num_sdu; i++) {
-    LOG_I(MAC, "SDU Number %d MAC Subheader SDU_LCID %d, length %d\n",
+    LOG_D(MAC, "SDU Number %d MAC Subheader SDU_LCID %d, length %d\n",
           i,
           rx_lcids[i],
           rx_lengths[i]);
@@ -701,9 +701,16 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
 
 
             if ((rx_lengths[i] < SCH_PAYLOAD_SIZE_MAX) && (rx_lengths[i] > 0)) {  // MAX SIZE OF transport block
-              mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+            	LOG_I(MAC, "Printing UL MAC payload after removing the header: \n");
+            	    for (int j = 0; j < rx_lengths[i] ; j++) {
+            	  	  printf("%02x ",(unsigned char) *(payload_ptr+j));
+            	    }
+            	    pritnf("\n");
+#endif
+              mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr+1, rx_lengths[i], 1, NULL);
             } else {  /* rx_length[i] Max size */
-              UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+              //UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
               LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
                     enb_mod_idP,
                     CC_idP,
