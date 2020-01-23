@@ -234,7 +234,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   start_rb = dlsch0_harq->start_rb;
   nb_rb_pdsch =  dlsch0_harq->nb_rb;
-  int lbar;
 
   DevAssert(dlsch0_harq);
   round = dlsch0_harq->round;

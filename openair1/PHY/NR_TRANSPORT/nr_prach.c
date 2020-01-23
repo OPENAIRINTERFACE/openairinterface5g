@@ -32,6 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
 
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
@@ -381,7 +382,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   int16_t **rxsigF            = gNB->prach_vars.rxsigF;
 
   uint8_t preamble_index;
-  uint16_t NCS,NCS2;
+  uint16_t NCS=99,NCS2;
   uint16_t preamble_offset=0,preamble_offset_old;
   int16_t preamble_shift=0;
   uint32_t preamble_shift2;
@@ -393,7 +394,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint16_t u;
   int16_t *Xu=0;
   uint16_t offset;
-  int16_t Ncp;
   uint16_t first_nonzero_root_idx=0;
   uint8_t new_dft=0;
   uint8_t aa;
@@ -453,6 +453,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   if (prach_fmt>3){
     NCS = NCS_unrestricted_delta_f_RA_15[Ncs_config];
   }
+
+  AssertFatal(NCS!=99,"NCS has not been set\n");
 
   if (gNB) start_meas(&gNB->rx_prach);
 

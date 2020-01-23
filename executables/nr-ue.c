@@ -410,6 +410,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
+  uint8_t  ssb_period = UE->nrUE_config.ssb_table.ssb_period; 
 
   //program DCI for slot 1
   //TODO: all of this has to be moved to the MAC!!!
@@ -427,6 +428,13 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.tx_request = NULL;
     scheduled_response.module_id = UE->Mod_id;
     scheduled_response.CC_id     = 0;
+    if (!((proc->frame_rx)%(1<<(ssb_period-1)))) {
+      if(proc->frame_rx > dcireq.dl_config_req.sfn)
+        UE->frame_gap = proc->frame_rx - dcireq.dl_config_req.sfn;
+      if(proc->frame_rx < dcireq.dl_config_req.sfn)
+        UE->frame_gap = dcireq.dl_config_req.sfn - proc->frame_rx;
+      proc->frame_rx = dcireq.dl_config_req.sfn;
+    }
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
 
@@ -618,7 +626,7 @@ void *UE_thread(void *arg) {
                                   newNotifiedFIFO_elt(sizeof(processingData_t), 0,&nf,UE_processing));
 
   bool syncRunning=false;
-  const int nb_slot_frame = 10*UE->frame_parms.slots_per_subframe;
+  const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
   while (!oai_exit) {
@@ -691,8 +699,8 @@ void *UE_thread(void *arg) {
     curMsg->proc.subframe_rx=table_sf_slot[slot_nr];
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
-    curMsg->proc.frame_rx = ( absolute_slot/nb_slot_frame ) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx = ( (absolute_slot + DURATION_RX_TO_TX) /nb_slot_frame ) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_rx = ((absolute_slot/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx = (((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 

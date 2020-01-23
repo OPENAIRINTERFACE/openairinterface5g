@@ -46,7 +46,7 @@
 //#define DEBUG_DLSCH_DECODING 1
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
-#define OAI_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX
+//#define OAI_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX
 
 static uint64_t nb_total_decod =0;
 static uint64_t nb_error_decod =0;
@@ -85,13 +85,13 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
 
         for (r=0; r<a_segments; r++)
           if (dlsch->harq_processes[i]->d[r]) {
-            free16(dlsch->harq_processes[i]->d[r],(3*8448)*sizeof(short));
+            free16(dlsch->harq_processes[i]->d[r],(5*8448)*sizeof(short));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
         
         for (r=0; r<a_segments; r++)
           if (dlsch->harq_processes[i]->w[r]) {
-            free16(dlsch->harq_processes[i]->w[r],(3*8448)*sizeof(short));
+            free16(dlsch->harq_processes[i]->w[r],(5*8448)*sizeof(short));
             dlsch->harq_processes[i]->w[r] = NULL;
           }
 
@@ -122,7 +122,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
   if (N_RB_DL != 273) {
     a_segments = a_segments*N_RB_DL;
-    a_segments = a_segments/273;
+    a_segments = (a_segments/273)+1;
   }  
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
@@ -161,17 +161,17 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
             else
               exit_flag=2;
 
-            dlsch->harq_processes[i]->d[r] = (short*)malloc16((3*8448)*sizeof(short));
+            dlsch->harq_processes[i]->d[r] = (short*)malloc16((5*8448)*sizeof(short));
 
             if (dlsch->harq_processes[i]->d[r])
-              memset(dlsch->harq_processes[i]->d[r],0,(3*8448)*sizeof(short));
+              memset(dlsch->harq_processes[i]->d[r],0,(5*8448)*sizeof(short));
             else
               exit_flag=2;
 
-            dlsch->harq_processes[i]->w[r] = (short*)malloc16((3*8448)*sizeof(short));
+            dlsch->harq_processes[i]->w[r] = (short*)malloc16((5*8448)*sizeof(short));
 
             if (dlsch->harq_processes[i]->w[r])
-              memset(dlsch->harq_processes[i]->w[r],0,(3*8448)*sizeof(short));
+              memset(dlsch->harq_processes[i]->w[r],0,(5*8448)*sizeof(short));
             else
               exit_flag=2;
           }
@@ -238,7 +238,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   int32_t no_iteration_ldpc, length_dec;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
-  int8_t llrProcBuf[OAI_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+  int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
@@ -782,7 +782,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
-  int8_t llrProcBuf[OAI_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+  int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
     if (!harq_process) {
     printf("dlsch_decoding.c: NULL harq_process pointer\n");
     return(dlsch->max_ldpc_iterations);
@@ -1349,7 +1349,7 @@ void *nr_dlsch_decoding_process(void *arg)
     t_nrLDPC_dec_params* p_decParams = &decParams;
     t_nrLDPC_time_stats procTime;
     t_nrLDPC_time_stats* p_procTime =&procTime ;
-    int8_t llrProcBuf[OAI_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+    int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
     t_nrLDPC_procBuf* p_nrLDPC_procBuf; 
     int16_t z [68*384];
     int8_t l [68*384];

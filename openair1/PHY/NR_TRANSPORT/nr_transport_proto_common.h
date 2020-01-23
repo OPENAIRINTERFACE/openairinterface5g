@@ -1648,6 +1648,8 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
 */
 uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
 
+uint16_t get_nr_prach_fmt(int prach_ConfigIndex,lte_frame_type_t frame_type, nr_frequency_range_e fr);
+
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
   @param frame_parms Pointer to NR_DL_FRAME_PARMS structure

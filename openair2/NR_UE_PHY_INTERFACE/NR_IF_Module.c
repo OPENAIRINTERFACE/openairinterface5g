@@ -44,17 +44,16 @@
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 //  L2 Abstraction Layer
-int handle_bcch_bch(UE_nr_rxtx_proc_t *proc, module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
 
-  return nr_ue_decode_mib( proc,
-		           module_id,
-			   cc_id,
-			   gNB_index,
-			   additional_bits,
-			   ssb_length,  //  Lssb = 64 is not support    
-			   ssb_index,
-			   pduP, 
-			   cell_id);
+  return nr_ue_decode_mib(module_id,
+			  cc_id,
+			  gNB_index,
+			  additional_bits,
+			  ssb_length,  //  Lssb = 64 is not support    
+			  ssb_index,
+			  pduP, 
+			  cell_id);
 
 }
 
@@ -218,16 +217,14 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
       switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
       case FAPI_NR_RX_PDU_TYPE_MIB:
-	ret_mask |= (handle_bcch_bch(dl_info->proc,
-				     dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+	ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
 				     (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;
     	  LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], MIB case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
-	/*ret_mask |= (handle_bcch_bch( dl_info->proc,
-					     dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+	/*ret_mask |= (handle_bcch_bch(      dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
 					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.pdu,
 					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.additional_bits,
 					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.ssb_index,
@@ -306,11 +303,10 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 
+  dl_config->sfn=UE_mac->dl_config_request.sfn;
+  dl_config->slot=UE_mac->dl_config_request.slot;
   dl_config->number_pdus=0;
-
-  ue_dci_configuration(UE_mac,dl_config,dcireq->frame,dcireq->slot);
-
-
-  
+ 
+  ue_dci_configuration(UE_mac,dl_config,dcireq->frame,dcireq->slot); 
   return 0;
 }

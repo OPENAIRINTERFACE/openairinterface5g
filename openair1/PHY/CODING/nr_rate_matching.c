@@ -334,7 +334,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
                           uint8_t rvidx,
                           uint32_t E)
 {
-  uint32_t Ncb,ind,k,Nref,N;
+  uint32_t Ncb,ind,k=0,Nref,N;
 
   if (C==0) {
     printf("nr_rate_matching: invalid parameters (C %d\n",C);

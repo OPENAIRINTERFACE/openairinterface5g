@@ -223,8 +223,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
-                        module_id_t module_id,
+int8_t nr_ue_decode_mib(module_id_t module_id,
                         int cc_id,
                         uint8_t gNB_index,
                         uint8_t extra_bits,	//	8bits 38.212 c7.1.1
@@ -247,7 +246,6 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
     frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
   uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
   uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
-	    
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
   //uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
@@ -609,7 +607,9 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_id;
 
-  proc->decoded_frame_rx=frame;
+  mac->dl_config_request.sfn = frame;
+  mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS 
+
   //}
   return 0;
 

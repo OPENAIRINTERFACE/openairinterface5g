@@ -58,31 +58,31 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(NR_RLC_BearerConfig_t));
+  NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
 
   RLC_BearerConfig->logicalChannelIdentity = 4;
-  RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(struct NR_RLC_BearerConfig__servedRadioBearer));
+  RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
   RLC_BearerConfig->servedRadioBearer->present = 	NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
 
   RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=5;
-  RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(long));
+  RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
   *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
-  RLC_BearerConfig->rlc_Config=calloc(1,sizeof(struct NR_RLC_Config));
+  RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
   RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
-  RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(struct NR_RLC_Config__am));
-  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(NR_SN_FieldLengthAM_t));
+  RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
   *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =	NR_SN_FieldLengthAM_size18;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
 
-  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(NR_SN_FieldLengthAM_t));
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
   *RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
   RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
   RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
 
-  RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(struct NR_LogicalChannelConfig));
+  RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
@@ -91,32 +91,32 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
-  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(long));
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
   *RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
 
-  secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+  secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
 
-  secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(NR_MAC_CellGroupConfig_t));
+  secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig = NULL;
-  secondaryCellGroup->mac_CellGroupConfig->bsr_Config=calloc(1,sizeof(NR_BSR_Config_t));
+  secondaryCellGroup->mac_CellGroupConfig->bsr_Config=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->bsr_Config));
   secondaryCellGroup->mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf80;
   secondaryCellGroup->mac_CellGroupConfig->bsr_Config->retxBSR_Timer     = NR_BSR_Config__periodicBSR_Timer_sf320;
-  secondaryCellGroup->mac_CellGroupConfig->tag_Config=calloc(1,sizeof(NR_TAG_Config_t));
+  secondaryCellGroup->mac_CellGroupConfig->tag_Config=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->tag_Config));
   secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
-  secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(struct NR_TAG_Config__tag_ToAddModList));
-  struct NR_TAG *tag=calloc(1,sizeof(struct NR_TAG));
+  secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList));
+  struct NR_TAG *tag=calloc(1,sizeof(*tag));
   tag->tag_Id             = 0;
   tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
   ASN_SEQUENCE_ADD(&secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config  = calloc(1,sizeof(struct NR_SetupRelease_PHR_Config));
+  secondaryCellGroup->mac_CellGroupConfig->phr_Config  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->phr_Config));
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->present = NR_SetupRelease_PHR_Config_PR_setup;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup  = calloc(1,sizeof(NR_PHR_Config_t));
+  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup));
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_PeriodicTimer = NR_PHR_Config__phr_PeriodicTimer_sf20;
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer = NR_PHR_Config__phr_ProhibitTimer_sf0;
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB3;
@@ -129,11 +129,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->mac_CellGroupConfig->ext1 = NULL;
 
 
-  secondaryCellGroup->physicalCellGroupConfig = calloc(1,sizeof(struct NR_PhysicalCellGroupConfig));
+  secondaryCellGroup->physicalCellGroupConfig = calloc(1,sizeof(*secondaryCellGroup->physicalCellGroupConfig));
 
   secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH=NULL;
   secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH=NULL;
-  secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1=calloc(1,sizeof(NR_P_Max_t));
+  secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1=calloc(1,sizeof(*secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1));
   *secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1=20;
   secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook=NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;  
   secondaryCellGroup->physicalCellGroupConfig->tpc_SRS_RNTI=NULL;
@@ -143,10 +143,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->physicalCellGroupConfig->cs_RNTI=NULL;
   secondaryCellGroup->physicalCellGroupConfig->ext1=NULL;
 
-  secondaryCellGroup->spCellConfig = calloc(1,sizeof(struct NR_SpCellConfig));
-  secondaryCellGroup->spCellConfig->servCellIndex = calloc(1,sizeof(NR_ServCellIndex_t));
+  secondaryCellGroup->spCellConfig = calloc(1,sizeof(*secondaryCellGroup->spCellConfig));
+  secondaryCellGroup->spCellConfig->servCellIndex = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->servCellIndex));
   *secondaryCellGroup->spCellConfig->servCellIndex = servCellIndex;
-  secondaryCellGroup->spCellConfig->reconfigurationWithSync=calloc(1,sizeof(struct NR_ReconfigurationWithSync));
+  secondaryCellGroup->spCellConfig->reconfigurationWithSync=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->reconfigurationWithSync));
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon=servingcellconfigcommon;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity=(phy_test==1) ? 0x1234 : (taus()&0xffff);
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->t304=NR_ReconfigurationWithSync__t304_ms2000;
@@ -155,29 +155,29 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants));
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->present = NR_SetupRelease_RLF_TimersAndConstants_PR_setup;
-  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup=calloc(1,sizeof(struct NR_RLF_TimersAndConstants));
+  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup));
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->t310 = NR_RLF_TimersAndConstants__t310_ms2000;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n310 = NR_RLF_TimersAndConstants__n310_n10;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n311 = NR_RLF_TimersAndConstants__n311_n1;
-  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1 = calloc(1,sizeof(struct NR_RLF_TimersAndConstants__ext1));
+  secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1 = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1));
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1->t311_v1530 = NR_RLF_TimersAndConstants__ext1__t311_v1530_ms30000;
 
   secondaryCellGroup->spCellConfig->rlmInSyncOutOfSyncThreshold                   = NULL;
  
 
 
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated = calloc(1,sizeof(NR_ServingCellConfig_t));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->tdd_UL_DL_ConfigurationDedicated = NULL;
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(struct NR_BWP_DownlinkDedicated));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP));
 
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdcch_Config=NULL;
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config=calloc(1,sizeof(struct NR_SetupRelease_PDSCH_Config));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup = calloc(1,sizeof(struct NR_PDSCH_Config));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(struct NR_SetupRelease_DMRS_DownlinkConfig));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(struct NR_DMRS_DownlinkConfig));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
@@ -185,165 +185,165 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=NULL;
 
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(long));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
- NR_TCI_State_t*tci0=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci0=calloc(1,sizeof(*tci0));
  tci0->tci_StateId=0;
  tci0->qcl_Type1.cell=NULL;
- tci0->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci0->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci0->qcl_Type1.bwp_Id));
  *tci0->qcl_Type1.bwp_Id=1;
  tci0->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci0->qcl_Type1.referenceSignal.choice.csi_rs = 2;
  tci0->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci0);
 
- NR_TCI_State_t*tci1=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci1=calloc(1,sizeof(*tci1));
  tci1->tci_StateId=1;
  tci1->qcl_Type1.cell=NULL;
- tci1->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci1->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci1->qcl_Type1.bwp_Id));
  *tci1->qcl_Type1.bwp_Id=1;
  tci1->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci1->qcl_Type1.referenceSignal.choice.csi_rs = 6;
  tci1->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci1);
 
- NR_TCI_State_t*tci2=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci2=calloc(1,sizeof(*tci2));
  tci2->tci_StateId=2;
  tci2->qcl_Type1.cell=NULL;
- tci2->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci2->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci2->qcl_Type1.bwp_Id));
  *tci2->qcl_Type1.bwp_Id=1;
  tci2->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci2->qcl_Type1.referenceSignal.choice.csi_rs = 10;
  tci2->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci2);
 
- NR_TCI_State_t *tci3=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t *tci3=calloc(1,sizeof(*tci3));
  tci3->tci_StateId=3;
  tci3->qcl_Type1.cell=NULL;
- tci3->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci3->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci3->qcl_Type1.bwp_Id));
  *tci3->qcl_Type1.bwp_Id=1;
  tci3->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci3->qcl_Type1.referenceSignal.choice.csi_rs = 14;
  tci3->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci3);
 
- NR_TCI_State_t*tci4=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci4=calloc(1,sizeof(*tci4));
  tci4->tci_StateId=4;
  tci4->qcl_Type1.cell=NULL;
- tci4->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci4->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci4->qcl_Type1.bwp_Id));
  *tci4->qcl_Type1.bwp_Id=1;
  tci4->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci4->qcl_Type1.referenceSignal.choice.csi_rs = 18;
  tci4->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci4);
 
- NR_TCI_State_t*tci5=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci5=calloc(1,sizeof(*tci5));
  tci5->tci_StateId=5;
  tci5->qcl_Type1.cell=NULL;
- tci5->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci5->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci5->qcl_Type1.bwp_Id));
  *tci5->qcl_Type1.bwp_Id=1;
  tci5->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci5->qcl_Type1.referenceSignal.choice.csi_rs = 22;
  tci5->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci5);
 
- NR_TCI_State_t*tci6=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci6=calloc(1,sizeof(*tci6));
  tci6->tci_StateId=6;
  tci6->qcl_Type1.cell=NULL;
- tci6->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci6->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci6->qcl_Type1.bwp_Id));
  *tci6->qcl_Type1.bwp_Id=1;
  tci6->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci6->qcl_Type1.referenceSignal.choice.csi_rs = 26;
  tci6->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci6);
 
- NR_TCI_State_t*tci7=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci7=calloc(1,sizeof(*tci7));
  tci7->tci_StateId=7;
  tci7->qcl_Type1.cell=NULL;
- tci7->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci7->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci7->qcl_Type1.bwp_Id));
  *tci7->qcl_Type1.bwp_Id=1;
  tci7->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tci7->qcl_Type1.referenceSignal.choice.csi_rs = 30;
  tci7->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci7);
 
- NR_TCI_State_t*tci8=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci8=calloc(1,sizeof(*tci8));
  tci8->tci_StateId=8;
  tci8->qcl_Type1.cell=NULL;
- tci8->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci8->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci8->qcl_Type1.bwp_Id));
  *tci8->qcl_Type1.bwp_Id=1;
  tci8->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci8->qcl_Type1.referenceSignal.choice.ssb = 0;
  tci8->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci8);
 
- NR_TCI_State_t*tci9=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci9=calloc(1,sizeof(*tci9));
  tci9->tci_StateId=9;
  tci9->qcl_Type1.cell=NULL;
- tci9->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci9->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci9->qcl_Type1.bwp_Id));
  *tci9->qcl_Type1.bwp_Id=1;
  tci9->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci9->qcl_Type1.referenceSignal.choice.ssb = 1;
  tci9->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci9);
 
- NR_TCI_State_t*tci10=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci10=calloc(1,sizeof(*tci10));
  tci10->tci_StateId=10;
  tci10->qcl_Type1.cell=NULL;
- tci10->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci10->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci10->qcl_Type1.bwp_Id));
  *tci10->qcl_Type1.bwp_Id=1;
  tci10->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci10->qcl_Type1.referenceSignal.choice.ssb = 2;
  tci10->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci10);
 
- NR_TCI_State_t*tci11=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci11=calloc(1,sizeof(*tci11));
  tci11->tci_StateId=11;
  tci11->qcl_Type1.cell=NULL;
- tci11->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci11->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci11->qcl_Type1.bwp_Id));
  *tci11->qcl_Type1.bwp_Id=1;
  tci11->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci11->qcl_Type1.referenceSignal.choice.ssb = 3;
  tci11->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci11);
 
- NR_TCI_State_t*tci12=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci12=calloc(1,sizeof(*tci12));
  tci12->tci_StateId=12;
  tci12->qcl_Type1.cell=NULL;
- tci12->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci12->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci12->qcl_Type1.bwp_Id));
  *tci12->qcl_Type1.bwp_Id=1;
  tci12->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci12->qcl_Type1.referenceSignal.choice.ssb = 4;
  tci12->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci12);
 
- NR_TCI_State_t*tci13=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci13=calloc(1,sizeof(*tci13));
  tci13->tci_StateId=13;
  tci13->qcl_Type1.cell=NULL;
- tci13->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci13->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci13->qcl_Type1.bwp_Id));
  *tci13->qcl_Type1.bwp_Id=1;
  tci13->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci13->qcl_Type1.referenceSignal.choice.ssb = 5;
  tci13->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci13);
 
- NR_TCI_State_t*tci14=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci14=calloc(1,sizeof(*tci14));
  tci14->tci_StateId=14;
  tci14->qcl_Type1.cell=NULL;
- tci14->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci14->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci14->qcl_Type1.bwp_Id));
  *tci14->qcl_Type1.bwp_Id=1;
  tci14->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci14->qcl_Type1.referenceSignal.choice.ssb = 6;
  tci14->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci14);
 
- NR_TCI_State_t*tci15=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tci15=calloc(1,sizeof(*tci15));
  tci15->tci_StateId=15;
  tci15->qcl_Type1.cell=NULL;
- tci15->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tci15->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci15->qcl_Type1.bwp_Id));
  *tci15->qcl_Type1.bwp_Id=1;
  tci15->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tci15->qcl_Type1.referenceSignal.choice.ssb = 7;
@@ -361,12 +361,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table=NULL;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(long));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(struct NR_PDSCH_Config__prb_BundlingType__staticBundling));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
-   calloc(1,sizeof(long));
+   calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->zp_CSI_RS_ResourceToAddModList=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->zp_CSI_RS_ResourceToReleaseList=NULL;
@@ -377,23 +377,23 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->p_ZP_CSI_RS_ResourceSet=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->sps_Config = NULL;
 
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig = calloc(1,sizeof(struct NR_SetupRelease_RadioLinkMonitoringConfig));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->present = NR_SetupRelease_RadioLinkMonitoringConfig_PR_setup;
 
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup = calloc(1,sizeof(struct NR_RadioLinkMonitoringConfig));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->failureDetectionResourcesToAddModList=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->failureDetectionResourcesToReleaseList=NULL;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount = calloc(1,sizeof(long));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount = NR_RadioLinkMonitoringConfig__beamFailureInstanceMaxCount_n3;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer = calloc(1,sizeof(long));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer = NR_RadioLinkMonitoringConfig__beamFailureDetectionTimer_pbfd2;
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList= NULL;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList = calloc(1,sizeof(struct NR_ServingCellConfig__downlinkBWP_ToAddModList));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList));
 
- NR_BWP_Downlink_t *bwp=calloc(1,sizeof(NR_BWP_Downlink_t));
+ NR_BWP_Downlink_t *bwp=calloc(1,sizeof(*bwp));
  bwp->bwp_Id=1;
- bwp->bwp_Common=calloc(1,sizeof(NR_BWP_DownlinkCommon_t));
+ bwp->bwp_Common=calloc(1,sizeof(*bwp->bwp_Common));
  // copy common BWP size from initial BWP except for bandwdith
  memcpy((void*)&bwp->bwp_Common->genericParameters,
 	&servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters,
@@ -401,41 +401,41 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
 
  
- bwp->bwp_Common->pdcch_ConfigCommon=calloc(1,sizeof(NR_SetupRelease_PDCCH_ConfigCommon_t));
+ bwp->bwp_Common->pdcch_ConfigCommon=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon));
  bwp->bwp_Common->pdcch_ConfigCommon->present = NR_SetupRelease_PDCCH_ConfigCommon_PR_setup;
- bwp->bwp_Common->pdcch_ConfigCommon->choice.setup = calloc(1,sizeof(NR_PDCCH_ConfigCommon_t));
+ bwp->bwp_Common->pdcch_ConfigCommon->choice.setup = calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup));
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;
 
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList=NULL;
  
- bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList=calloc(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
+ bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList));
 
- NR_SearchSpace_t *ss=calloc(1,sizeof(NR_SearchSpace_t));
+ NR_SearchSpace_t *ss=calloc(1,sizeof(*ss));
  ss->searchSpaceId = 1;
- ss->controlResourceSetId=calloc(1,sizeof(NR_ControlResourceSetId_t));
+ ss->controlResourceSetId=calloc(1,sizeof(*ss->controlResourceSetId));
  *ss->controlResourceSetId=0;
- ss->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(struct NR_SearchSpace__monitoringSlotPeriodicityAndOffset));
+ ss->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss->monitoringSlotPeriodicityAndOffset));
  ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
  ss->duration=NULL; 
- ss->monitoringSymbolsWithinSlot = calloc(1,sizeof(BIT_STRING_t));
+ ss->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss->monitoringSymbolsWithinSlot));
  ss->monitoringSymbolsWithinSlot->buf = calloc(1,2);
  // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
  ss->monitoringSymbolsWithinSlot->buf[1] = 0;
  ss->monitoringSymbolsWithinSlot->buf[0] = (1<<7) | (1<<6);
  ss->monitoringSymbolsWithinSlot->size = 2;
  ss->monitoringSymbolsWithinSlot->bits_unused = 2;
- ss->nrofCandidates = calloc(1,sizeof(struct NR_SearchSpace__nrofCandidates));
+ ss->nrofCandidates = calloc(1,sizeof(*ss->nrofCandidates));
  ss->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
  ss->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
  ss->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
  ss->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
  ss->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
- ss->searchSpaceType = calloc(1,sizeof(struct NR_SearchSpace__searchSpaceType));
+ ss->searchSpaceType = calloc(1,sizeof(*ss->searchSpaceType));
  ss->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
- ss->searchSpaceType->choice.common=calloc(1,sizeof(struct NR_SearchSpace__searchSpaceType__common));
- ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(struct NR_SearchSpace__searchSpaceType__common__dci_Format0_0_AndFormat1_0));
+ ss->searchSpaceType->choice.common=calloc(1,sizeof(*ss->searchSpaceType->choice.common));
+ ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
 
  ASN_SEQUENCE_ADD(&bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,ss);
  
@@ -443,14 +443,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation=NULL;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->pagingSearchSpace=NULL;
- bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=calloc(1,sizeof(NR_SearchSpaceId_t));
+ bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace));
  *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=1;
  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ext1=NULL;
 
- bwp->bwp_Common->pdsch_ConfigCommon=calloc(1,sizeof(NR_SetupRelease_PDSCH_ConfigCommon_t));
+ bwp->bwp_Common->pdsch_ConfigCommon=calloc(1,sizeof(*bwp->bwp_Common->pdsch_ConfigCommon));
  bwp->bwp_Common->pdsch_ConfigCommon->present = NR_SetupRelease_PDSCH_ConfigCommon_PR_setup;
- bwp->bwp_Common->pdsch_ConfigCommon->choice.setup = calloc(1,sizeof(NR_PDSCH_ConfigCommon_t));
- bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList = calloc(1,sizeof(NR_PDSCH_TimeDomainResourceAllocationList_t));
+ bwp->bwp_Common->pdsch_ConfigCommon->choice.setup = calloc(1,sizeof(*bwp->bwp_Common->pdsch_ConfigCommon->choice.setup));
+ bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList = calloc(1,sizeof(*bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList));
 
  // copy PDSCH TimeDomainResourceAllocation from InitialBWP
  
@@ -466,12 +466,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    ASN_SEQUENCE_ADD(&bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,pdschi);
  }
 
- bwp->bwp_Dedicated=calloc(1,sizeof(NR_BWP_DownlinkDedicated_t));
+ bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
 
- bwp->bwp_Dedicated->pdcch_Config=calloc(1,sizeof(NR_SetupRelease_PDCCH_Config_t));
+ bwp->bwp_Dedicated->pdcch_Config=calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config));
  bwp->bwp_Dedicated->pdcch_Config->present = NR_SetupRelease_PDCCH_Config_PR_setup;
- bwp->bwp_Dedicated->pdcch_Config->choice.setup = calloc(1,sizeof(NR_PDCCH_Config_t));
- bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(struct NR_PDCCH_Config__controlResourceSetToAddModList));
+ bwp->bwp_Dedicated->pdcch_Config->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup));
+ bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
  NR_ControlResourceSet_t *coreset0 = calloc(1,sizeof(*coreset0));
  coreset0->controlResourceSetId=1; 
  // frequencyDomainResources '11111111 11111111 00000000 00000000 00000000 00000'B,
@@ -488,10 +488,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  coreset0->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
  coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
- coreset0->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(struct NR_ControlResourceSet__tci_StatesPDCCH_ToAddList));
+ coreset0->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
  NR_TCI_StateId_t *tci[8];
  for (int i=0;i<8;i++) {
-   tci[i]=calloc(1,sizeof(NR_TCI_StateId_t));
+   tci[i]=calloc(1,sizeof(*tci[i]));
    *tci[i] = i;
    ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
  }
@@ -501,17 +501,17 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
 		  coreset0);
 
- bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(struct NR_PDCCH_Config__searchSpacesToAddModList));
- NR_SearchSpace_t *ss3 = calloc(1,sizeof(NR_SearchSpace_t));
- NR_SearchSpace_t *ss2 = calloc(1,sizeof(NR_SearchSpace_t));
+ bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
+ NR_SearchSpace_t *ss3 = calloc(1,sizeof(*ss3));
+ NR_SearchSpace_t *ss2 = calloc(1,sizeof(*ss2));
  ss3->searchSpaceId=3;
- ss3->controlResourceSetId=calloc(1,sizeof(NR_ControlResourceSetId_t));
+ ss3->controlResourceSetId=calloc(1,sizeof(*ss3->controlResourceSetId));
  *ss3->controlResourceSetId=1;
  ss3->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss3->monitoringSlotPeriodicityAndOffset));
  ss3->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
  ss3->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
  ss3->duration=NULL;
- ss3->monitoringSymbolsWithinSlot = calloc(1,sizeof(BIT_STRING_t));
+ ss3->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss3->monitoringSymbolsWithinSlot));
  ss3->monitoringSymbolsWithinSlot->buf = calloc(1,2);
  ss3->monitoringSymbolsWithinSlot->size = 2;
  ss3->monitoringSymbolsWithinSlot->bits_unused = 2;
@@ -532,13 +532,13 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ss3->searchSpaceType->choice.common->dci_Format2_3=NULL;
 
  ss2->searchSpaceId=2;
- ss2->controlResourceSetId=calloc(1,sizeof(NR_ControlResourceSetId_t));
+ ss2->controlResourceSetId=calloc(1,sizeof(*ss2->controlResourceSetId));
  *ss2->controlResourceSetId=1;
  ss2->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss2->monitoringSlotPeriodicityAndOffset));
  ss2->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
  ss2->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
  ss2->duration=NULL;
- ss2->monitoringSymbolsWithinSlot = calloc(1,sizeof(BIT_STRING_t));
+ ss2->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss2->monitoringSymbolsWithinSlot));
  ss2->monitoringSymbolsWithinSlot->buf = calloc(1,2);
  ss2->monitoringSymbolsWithinSlot->size = 2;
  ss2->monitoringSymbolsWithinSlot->bits_unused = 2;
@@ -566,11 +566,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
 
   bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(struct NR_PDSCH_Config));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(struct NR_SetupRelease_DMRS_DownlinkConfig));
+  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(struct NR_DMRS_DownlinkConfig));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
 
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
@@ -578,165 +578,165 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=NULL;
 
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(long));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(struct NR_PDSCH_Config__tci_StatesToAddModList));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
- NR_TCI_State_t*tcid0=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid0=calloc(1,sizeof(*tcid0));
  tcid0->tci_StateId=0;
  tcid0->qcl_Type1.cell=NULL;
- tcid0->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid0->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid0->qcl_Type1.bwp_Id));
  *tcid0->qcl_Type1.bwp_Id=1;
  tcid0->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid0->qcl_Type1.referenceSignal.choice.csi_rs = 2;
  tcid0->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid0);
 
- NR_TCI_State_t*tcid1=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid1=calloc(1,sizeof(*tcid1));
  tcid1->tci_StateId=0;
  tcid1->qcl_Type1.cell=NULL;
- tcid1->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid1->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid1->qcl_Type1.bwp_Id));
  *tcid1->qcl_Type1.bwp_Id=1;
  tcid1->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid1->qcl_Type1.referenceSignal.choice.csi_rs = 6;
  tcid1->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid1);
 
- NR_TCI_State_t*tcid2=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid2=calloc(1,sizeof(*tcid2));
  tcid2->tci_StateId=2;
  tcid2->qcl_Type1.cell=NULL;
- tcid2->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid2->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid2->qcl_Type1.bwp_Id));
  *tcid2->qcl_Type1.bwp_Id=1;
  tcid2->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid2->qcl_Type1.referenceSignal.choice.csi_rs = 10;
  tcid2->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid2);
 
- NR_TCI_State_t*tcid3=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid3=calloc(1,sizeof(*tcid3));
  tcid3->tci_StateId=3;
  tcid3->qcl_Type1.cell=NULL;
- tcid3->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid3->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid3->qcl_Type1.bwp_Id));
  *tcid3->qcl_Type1.bwp_Id=1;
  tcid3->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid3->qcl_Type1.referenceSignal.choice.csi_rs = 14;
  tcid3->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid3);
 
- NR_TCI_State_t*tcid4=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid4=calloc(1,sizeof(*tcid4));
  tcid4->tci_StateId=4;
  tcid4->qcl_Type1.cell=NULL;
- tcid4->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid4->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid4->qcl_Type1.bwp_Id));
  *tcid4->qcl_Type1.bwp_Id=1;
  tcid4->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid4->qcl_Type1.referenceSignal.choice.csi_rs = 18;
  tcid4->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid4);
 
- NR_TCI_State_t*tcid5=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid5=calloc(1,sizeof(*tcid5));
  tcid5->tci_StateId=5;
  tcid5->qcl_Type1.cell=NULL;
- tcid5->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid5->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid5->qcl_Type1.bwp_Id));
  *tcid5->qcl_Type1.bwp_Id=1;
  tcid5->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid5->qcl_Type1.referenceSignal.choice.csi_rs = 22;
  tcid5->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid5);
 
- NR_TCI_State_t*tcid6=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid6=calloc(1,sizeof(*tcid6));
  tcid6->tci_StateId=6;
  tcid6->qcl_Type1.cell=NULL;
- tcid6->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid6->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid6->qcl_Type1.bwp_Id));
  *tcid6->qcl_Type1.bwp_Id=1;
  tcid6->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid6->qcl_Type1.referenceSignal.choice.csi_rs = 26;
  tcid6->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid6);
 
- NR_TCI_State_t*tcid7=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid7=calloc(1,sizeof(*tcid7));
  tcid7->tci_StateId=7;
  tcid7->qcl_Type1.cell=NULL;
- tcid7->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid7->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid7->qcl_Type1.bwp_Id));
  *tcid7->qcl_Type1.bwp_Id=1;
  tcid7->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_csi_rs;
  tcid7->qcl_Type1.referenceSignal.choice.csi_rs = 30;
  tcid7->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid7);
 
- NR_TCI_State_t*tcid8=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid8=calloc(1,sizeof(*tcid8));
  tcid8->tci_StateId=8;
  tcid8->qcl_Type1.cell=NULL;
- tcid8->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid8->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid8->qcl_Type1.bwp_Id));
  *tcid8->qcl_Type1.bwp_Id=1;
  tcid8->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid8->qcl_Type1.referenceSignal.choice.ssb = 0;
  tcid8->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid8);
 
- NR_TCI_State_t*tcid9=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid9=calloc(1,sizeof(*tcid9));
  tcid9->tci_StateId=9;
  tcid9->qcl_Type1.cell=NULL;
- tcid9->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid9->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid9->qcl_Type1.bwp_Id));
  *tcid9->qcl_Type1.bwp_Id=1;
  tcid9->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid9->qcl_Type1.referenceSignal.choice.ssb = 1;
  tcid9->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid9);
 
- NR_TCI_State_t*tcid10=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid10=calloc(1,sizeof(*tcid10));
  tcid10->tci_StateId=10;
  tcid10->qcl_Type1.cell=NULL;
- tcid10->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid10->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid10->qcl_Type1.bwp_Id));
  *tcid10->qcl_Type1.bwp_Id=1;
  tcid10->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid10->qcl_Type1.referenceSignal.choice.ssb = 2;
  tcid10->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid10);
 
- NR_TCI_State_t*tcid11=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid11=calloc(1,sizeof(*tcid11));
  tcid11->tci_StateId=11;
  tcid11->qcl_Type1.cell=NULL;
- tcid11->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid11->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid11->qcl_Type1.bwp_Id));
  *tcid11->qcl_Type1.bwp_Id=1;
  tcid11->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid11->qcl_Type1.referenceSignal.choice.ssb = 3;
  tcid11->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid11);
 
- NR_TCI_State_t*tcid12=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid12=calloc(1,sizeof(*tcid12));
  tcid12->tci_StateId=12;
  tcid12->qcl_Type1.cell=NULL;
- tcid12->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid12->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid12->qcl_Type1.bwp_Id));
  *tcid12->qcl_Type1.bwp_Id=1;
  tcid12->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid12->qcl_Type1.referenceSignal.choice.ssb = 4;
  tcid12->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid12);
 
- NR_TCI_State_t*tcid13=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid13=calloc(1,sizeof(*tcid13));
  tcid13->tci_StateId=13;
  tcid13->qcl_Type1.cell=NULL;
- tcid13->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid13->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid13->qcl_Type1.bwp_Id));
  *tcid13->qcl_Type1.bwp_Id=1;
  tcid13->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid13->qcl_Type1.referenceSignal.choice.ssb = 5;
  tcid13->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid13);
 
- NR_TCI_State_t*tcid14=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid14=calloc(1,sizeof(*tcid14));
  tcid14->tci_StateId=14;
  tcid14->qcl_Type1.cell=NULL;
- tcid14->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid14->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid14->qcl_Type1.bwp_Id));
  *tcid14->qcl_Type1.bwp_Id=1;
  tcid14->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid14->qcl_Type1.referenceSignal.choice.ssb = 6;
  tcid14->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid14);
 
- NR_TCI_State_t*tcid15=calloc(1,sizeof(NR_TCI_State_t));
+ NR_TCI_State_t*tcid15=calloc(1,sizeof(*tcid15));
  tcid15->tci_StateId=15;
  tcid15->qcl_Type1.cell=NULL;
- tcid15->qcl_Type1.bwp_Id=calloc(1,sizeof(NR_BWP_Id_t));
+ tcid15->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid15->qcl_Type1.bwp_Id));
  *tcid15->qcl_Type1.bwp_Id=1;
  tcid15->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
  tcid15->qcl_Type1.referenceSignal.choice.ssb = 7;
@@ -754,12 +754,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table=NULL;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(long));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(struct NR_PDSCH_Config__prb_BundlingType__staticBundling));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
-   calloc(1,sizeof(long));
+   calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->zp_CSI_RS_ResourceToAddModList=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->zp_CSI_RS_ResourceToReleaseList=NULL;
@@ -780,12 +780,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table=NULL;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(long));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(struct NR_PDSCH_Config__prb_BundlingType__staticBundling));
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
-   calloc(1,sizeof(long));
+   calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->zp_CSI_RS_ResourceToAddModList=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->zp_CSI_RS_ResourceToReleaseList=NULL;
@@ -796,15 +796,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->p_ZP_CSI_RS_ResourceSet=NULL;
  bwp->bwp_Dedicated->sps_Config = NULL;
 
- bwp->bwp_Dedicated->radioLinkMonitoringConfig = calloc(1,sizeof(struct NR_SetupRelease_RadioLinkMonitoringConfig));
+ bwp->bwp_Dedicated->radioLinkMonitoringConfig = calloc(1,sizeof(*bwp->bwp_Dedicated->radioLinkMonitoringConfig));
  bwp->bwp_Dedicated->radioLinkMonitoringConfig->present = NR_SetupRelease_RadioLinkMonitoringConfig_PR_setup;
 
- bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup = calloc(1,sizeof(struct NR_RadioLinkMonitoringConfig));
+ bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup));
  bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->failureDetectionResourcesToAddModList=NULL;
  bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->failureDetectionResourcesToReleaseList=NULL;
- bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount = calloc(1,sizeof(long));
+ bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount = calloc(1,sizeof(*bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount));
  *bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureInstanceMaxCount = NR_RadioLinkMonitoringConfig__beamFailureInstanceMaxCount_n3;
- bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer = calloc(1,sizeof(long));
+ bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer = calloc(1,sizeof(*bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer));
  *bwp->bwp_Dedicated->radioLinkMonitoringConfig->choice.setup->beamFailureDetectionTimer = NR_RadioLinkMonitoringConfig__beamFailureDetectionTimer_pbfd2;
  
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list,bwp);
@@ -816,12 +816,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig));
 
- NR_BWP_UplinkDedicated_t *initialUplinkBWP = calloc(1,sizeof(NR_BWP_UplinkDedicated_t));
+ NR_BWP_UplinkDedicated_t *initialUplinkBWP = calloc(1,sizeof(*initialUplinkBWP));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP = initialUplinkBWP;
  initialUplinkBWP->pucch_Config = NULL;
  initialUplinkBWP->pusch_Config = calloc(1,sizeof(*initialUplinkBWP->pusch_Config));
  initialUplinkBWP->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
- NR_PUSCH_Config_t *pusch_Config = calloc(1,sizeof(NR_PUSCH_Config_t));
+ NR_PUSCH_Config_t *pusch_Config = calloc(1,sizeof(*pusch_Config));
  initialUplinkBWP->pusch_Config->choice.setup = pusch_Config;
  pusch_Config->txConfig=calloc(1,sizeof(*pusch_Config->txConfig));
  *pusch_Config->txConfig= NR_PUSCH_Config__txConfig_codebook;
@@ -843,16 +843,16 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pusch_Config->pusch_PowerControl->msg3_Alpha = calloc(1,sizeof(*pusch_Config->pusch_PowerControl->msg3_Alpha));
  *pusch_Config->pusch_PowerControl->msg3_Alpha = NR_Alpha_alpha1;
  pusch_Config->pusch_PowerControl->p0_NominalWithoutGrant = NULL;
- pusch_Config->pusch_PowerControl->p0_AlphaSets = calloc(1,sizeof(pusch_Config->pusch_PowerControl->p0_AlphaSets));
- NR_P0_PUSCH_AlphaSet_t *aset = calloc(1,sizeof(NR_P0_PUSCH_AlphaSet_t));
+ pusch_Config->pusch_PowerControl->p0_AlphaSets = calloc(1,sizeof(*pusch_Config->pusch_PowerControl->p0_AlphaSets));
+ NR_P0_PUSCH_AlphaSet_t *aset = calloc(1,sizeof(*aset));
  aset->p0_PUSCH_AlphaSetId=0;
  aset->p0=calloc(1,sizeof(*aset->p0));
  *aset->p0 = 0;
  aset->alpha=calloc(1,sizeof(*aset->alpha));
  *aset->alpha=NR_Alpha_alpha1;
  ASN_SEQUENCE_ADD(&pusch_Config->pusch_PowerControl->p0_AlphaSets->list,aset);
- pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList = calloc(1,sizeof(pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList));
- NR_PUSCH_PathlossReferenceRS_t *pl = calloc(1,sizeof(NR_PUSCH_PathlossReferenceRS_t));
+ pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList = calloc(1,sizeof(*pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList));
+ NR_PUSCH_PathlossReferenceRS_t *pl = calloc(1,sizeof(*pl));
  pl->pusch_PathlossReferenceRS_Id=0;
  pl->referenceSignal.present = NR_PUSCH_PathlossReferenceRS__referenceSignal_PR_csi_RS_Index;
  pl->referenceSignal.choice.csi_RS_Index=0;
@@ -881,7 +881,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
  initialUplinkBWP->srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
- NR_SRS_Config_t *srs_Config = calloc(1,sizeof(NR_SRS_Config_t));
+ NR_SRS_Config_t *srs_Config = calloc(1,sizeof(*srs_Config));
  initialUplinkBWP->srs_Config->choice.setup=srs_Config;
  srs_Config->srs_ResourceSetToReleaseList=NULL;
  srs_Config->srs_ResourceSetToAddModList=calloc(1,sizeof(*srs_Config->srs_ResourceSetToAddModList));
@@ -937,7 +937,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToReleaseList = NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList));
- NR_BWP_Uplink_t *ubwp = calloc(1,sizeof(NR_BWP_Uplink_t));
+ NR_BWP_Uplink_t *ubwp = calloc(1,sizeof(*ubwp));
  ubwp->bwp_Id=1;
  ubwp->bwp_Common = calloc(1,sizeof(*ubwp->bwp_Common));
  // copy bwp_Common from Initial UL BWP except for bandwidth
@@ -953,15 +953,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ubwp->bwp_Dedicated = calloc(1,sizeof(*ubwp->bwp_Dedicated));
  ubwp->bwp_Dedicated->pucch_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->pucch_Config));
  ubwp->bwp_Dedicated->pucch_Config->present = NR_SetupRelease_PUCCH_Config_PR_setup;
- NR_PUCCH_Config_t *pucch_Config = calloc(1,sizeof(NR_PUCCH_Config_t));
+ NR_PUCCH_Config_t *pucch_Config = calloc(1,sizeof(*pucch_Config));
  ubwp->bwp_Dedicated->pucch_Config->choice.setup=pucch_Config;
  pucch_Config->resourceSetToAddModList = calloc(1,sizeof(*pucch_Config->resourceSetToAddModList));
  pucch_Config->resourceSetToReleaseList = NULL;
- NR_PUCCH_ResourceSet_t *pucchresset0=calloc(1,sizeof(NR_PUCCH_ResourceSet_t));
- NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(NR_PUCCH_ResourceSet_t));
+ NR_PUCCH_ResourceSet_t *pucchresset0=calloc(1,sizeof(*pucchresset0));
+ NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(*pucchresset1));
  pucchresset0->pucch_ResourceSetId = 0;
- NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(NR_PUCCH_ResourceId_t));
- NR_PUCCH_ResourceId_t *pucchresset0id1=calloc(1,sizeof(NR_PUCCH_ResourceId_t));
+ NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(*pucchresset0id0));
+ NR_PUCCH_ResourceId_t *pucchresset0id1=calloc(1,sizeof(*pucchresset0id1));
  *pucchresset0id0=1;
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
  *pucchresset0id1=2;
@@ -971,8 +971,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
 
  pucchresset1->pucch_ResourceSetId = 1;
- NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(NR_PUCCH_ResourceId_t));
- NR_PUCCH_ResourceId_t *pucchresset1id1=calloc(1,sizeof(NR_PUCCH_ResourceId_t));
+ NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(*pucchresset1id0));
+ NR_PUCCH_ResourceId_t *pucchresset1id1=calloc(1,sizeof(*pucchresset1id1));
  *pucchresset1id0=3;
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
  *pucchresset1id1=4;
@@ -1032,7 +1032,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
  pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
- NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucch_Config->format2->choice.setup));
+ NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucchfmt2));
  pucch_Config->format2->choice.setup = pucchfmt2;
  pucchfmt2->interslotFrequencyHopping=NULL;
  pucchfmt2->additionalDMRS=NULL;
@@ -1047,7 +1047,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
  long *delay[8];
  for (int i=0;i<8;i++) {
-   delay[i] = calloc(1,sizeof(long));
+   delay[i] = calloc(1,sizeof(*delay[i]));
    *delay[i] = (i<6) ? (i+2) : 0;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
@@ -1063,17 +1063,17 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
  pucch_Config->spatialRelationInfoToReleaseList=NULL;
  pucch_Config->pucch_PowerControl=calloc(1,sizeof(*pucch_Config->pucch_PowerControl));
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = calloc(1,sizeof(long));
+ pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0));
  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1 = calloc(1,sizeof(long));
+ pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1));
  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = calloc(1,sizeof(long));
+ pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2));
  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3 = calloc(1,sizeof(long));
+ pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3));
  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4 = calloc(1,sizeof(long));
+ pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4));
  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4 = 0;
- pucch_Config->pucch_PowerControl->p0_Set = calloc(1,sizeof(*pucch_Config->pucch_PowerControl));
+ pucch_Config->pucch_PowerControl->p0_Set = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->p0_Set));
  NR_P0_PUCCH_t *p00 = calloc(1,sizeof(*p00));
  p00->p0_PUCCH_Id=1;
  p00->p0_PUCCH_Value = 0;
@@ -1099,7 +1099,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
 
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(NR_BWP_Id_t));
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = 1;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig = NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->carrierSwitching = NULL;
@@ -1109,7 +1109,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdcch_ServingCellConfig=NULL;
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig));
- NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = calloc(1,sizeof(NR_PDSCH_ServingCellConfig_t));
+ NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = calloc(1,sizeof(*pdsch_servingcellconfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->present = NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
  pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
@@ -1125,7 +1125,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
 
 
- NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(NR_CSI_MeasConfig_t));
+ NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
  csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
 
@@ -1575,9 +1575,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  
  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
- NR_NZP_CSI_RS_ResourceSet_t *nzpresset0=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSet_t));
+ NR_NZP_CSI_RS_ResourceSet_t *nzpresset0=calloc(1,sizeof(*nzpresset0));
  nzpresset0->nzp_CSI_ResourceSetId=0;
- NR_NZP_CSI_RS_ResourceSetId_t *nzpresset00=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+ NR_NZP_CSI_RS_ResourceSetId_t *nzpresset00=calloc(1,sizeof(*nzpresset00));
  *nzpresset00=0;
  ASN_SEQUENCE_ADD(&nzpresset0->nzp_CSI_RS_Resources.list,nzpresset00);
  nzpresset0->repetition=NULL;
@@ -1585,19 +1585,19 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  nzpresset0->trs_Info=NULL;
  ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpresset0);
  if (n_physical_antenna_ports > 1) {
-   NR_NZP_CSI_RS_ResourceSet_t *nzpresset3=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSet_t));
+   NR_NZP_CSI_RS_ResourceSet_t *nzpresset3=calloc(1,sizeof(*nzpresset3));
    nzpresset3->nzp_CSI_ResourceSetId=3;
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset30=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset30=calloc(1,sizeof(*nzpresset30));
    *nzpresset30=2;
    ASN_SEQUENCE_ADD(&nzpresset3->nzp_CSI_RS_Resources.list,nzpresset30);
    if (n_physical_antenna_ports > 3) {
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset31=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset31=calloc(1,sizeof(*nzpresset31));
    *nzpresset31=3;
    ASN_SEQUENCE_ADD(&nzpresset3->nzp_CSI_RS_Resources.list,nzpresset31);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset32=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset32=calloc(1,sizeof(*nzpresset32));
    *nzpresset32=4;
    ASN_SEQUENCE_ADD(&nzpresset3->nzp_CSI_RS_Resources.list,nzpresset32);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset33=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset33=calloc(1,sizeof(*nzpresset33));
    *nzpresset33=5;
    ASN_SEQUENCE_ADD(&nzpresset3->nzp_CSI_RS_Resources.list,nzpresset33);
    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpresset3);
@@ -1611,18 +1611,18 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  }
 
  if (n_physical_antenna_ports > 7) {
-   NR_NZP_CSI_RS_ResourceSet_t *nzpresset4=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSet_t));
+   NR_NZP_CSI_RS_ResourceSet_t *nzpresset4=calloc(1,sizeof(*nzpresset4));
    nzpresset4->nzp_CSI_ResourceSetId=4;
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset40=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset40=calloc(1,sizeof(*nzpresset40));
    *nzpresset40=6;
    ASN_SEQUENCE_ADD(&nzpresset4->nzp_CSI_RS_Resources.list,nzpresset40);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset41=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset41=calloc(1,sizeof(*nzpresset41));
    *nzpresset41=7;
    ASN_SEQUENCE_ADD(&nzpresset4->nzp_CSI_RS_Resources.list,nzpresset41);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset42=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset42=calloc(1,sizeof(*nzpresset42));
    *nzpresset42=8;
    ASN_SEQUENCE_ADD(&nzpresset4->nzp_CSI_RS_Resources.list,nzpresset42);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset43=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset43=calloc(1,sizeof(*nzpresset43));
    *nzpresset43=9;
    ASN_SEQUENCE_ADD(&nzpresset4->nzp_CSI_RS_Resources.list,nzpresset43);
    nzpresset4->repetition=calloc(1,sizeof(*nzpresset4->repetition));
@@ -1633,18 +1633,18 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpresset4);
  }
  if (n_physical_antenna_ports > 15) {
-   NR_NZP_CSI_RS_ResourceSet_t *nzpresset5=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSet_t));
+   NR_NZP_CSI_RS_ResourceSet_t *nzpresset5=calloc(1,sizeof(*nzpresset5));
    nzpresset5->nzp_CSI_ResourceSetId=5;
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset50=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset50=calloc(1,sizeof(*nzpresset50));
    *nzpresset50=10;
    ASN_SEQUENCE_ADD(&nzpresset5->nzp_CSI_RS_Resources.list,nzpresset50);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset51=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset51=calloc(1,sizeof(*nzpresset51));
    *nzpresset51=11;
    ASN_SEQUENCE_ADD(&nzpresset5->nzp_CSI_RS_Resources.list,nzpresset51);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset52=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset52=calloc(1,sizeof(*nzpresset52));
    *nzpresset52=12;
    ASN_SEQUENCE_ADD(&nzpresset5->nzp_CSI_RS_Resources.list,nzpresset52);
-   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset53=calloc(1,sizeof(NR_NZP_CSI_RS_ResourceSetId_t));
+   NR_NZP_CSI_RS_ResourceSetId_t *nzpresset53=calloc(1,sizeof(*nzpresset53));
    *nzpresset53=13;
    ASN_SEQUENCE_ADD(&nzpresset5->nzp_CSI_RS_Resources.list,nzpresset53);
    nzpresset5->repetition=calloc(1,sizeof(*nzpresset5->repetition));
@@ -1846,7 +1846,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csires8->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires8);
 
- NR_CSI_ResourceConfig_t *csires9 = calloc(1,sizeof(*csires10));
+ NR_CSI_ResourceConfig_t *csires9 = calloc(1,sizeof(*csires9));
  csires9->csi_ResourceConfigId=9;
  csires9->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
  csires9->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires9->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
@@ -2023,7 +2023,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   
  
-  reconfig->secondaryCellGroup = calloc(1,sizeof(OCTET_STRING_t));
+  reconfig->secondaryCellGroup = calloc(1,sizeof(*reconfig->secondaryCellGroup));
   OCTET_STRING_fromBuf(reconfig->secondaryCellGroup,
 		       (const char*)scg_buffer,
 		       (enc_rval.encoded+7)>>3);

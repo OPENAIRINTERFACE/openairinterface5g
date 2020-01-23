@@ -23,6 +23,7 @@
 #define __NR_TRANSPORT__H__
 
 #include "PHY/defs_gNB.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #define NR_PBCH_PDU_BITS 24
 
