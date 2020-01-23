@@ -48,6 +48,8 @@
   #include "intertask_interface.h"
 #endif
 
+uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
+
 extern uint8_t nfapi_mode;
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
@@ -80,41 +82,37 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
-  if (rel_slot==0)
-    gNB->skipped_slots = 0;
+  if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
 
-  if ((rel_slot==8) || (rel_slot==9) || (rel_slot==18) || (rel_slot==19) || (rel_slot==28) || (rel_slot==29))
-    gNB->skipped_slots = gNB->skipped_slots + 1;
-  else {
-    if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
-      for (int i=0; i<2; i++)  {  // max two SSB per frame
+    for (int i=0; i<2; i++)  {  // max two SSB per frame
       
-        ssb_index = i + ((rel_slot - gNB->skipped_slots)<<1); // computing the ssb_index
-        if ((fp->L_ssb >> ssb_index) & 0x01)  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
-	
-          fp->ssb_index = ssb_index;
-	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
-	  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
+      ssb_index = i + SSB_Table[rel_slot]; // computing the ssb_index
 
-	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
+      if ((ssb_index<64) && ((fp->L_ssb >> ssb_index) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
+
+        fp->ssb_index = ssb_index;
+        int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
+	ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
+
+	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	
-	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-	  nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	  nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
+	nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
-          if (cfg->carrier_config.num_tx_ant.value <= 4)
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-          else
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+        if (cfg->carrier_config.num_tx_ant.value <= 4)
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+        else
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
-	  nr_generate_pbch(&gNB->pbch,
-	                   &gNB->ssb_pdu,
-			   gNB->nr_pbch_interleaver,
-			   &txdataF[0][txdataF_offset],
-			   AMP,
-			   ssb_start_symbol,
-			   n_hf, frame, cfg, fp);
-        }
+	nr_generate_pbch(&gNB->pbch,
+	                 &gNB->ssb_pdu,
+	                 gNB->nr_pbch_interleaver,
+			 &txdataF[0][txdataF_offset],
+			 AMP,
+			 ssb_start_symbol,
+			 n_hf, frame, cfg, fp);
+
       }
     }
   }
