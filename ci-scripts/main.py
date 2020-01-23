@@ -486,7 +486,7 @@ class OaiCiTest():
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
-
+	"""
 	def InitializeHSS(self):
 		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '' or EPC.EPCType == '':
 			Usage()
@@ -581,7 +581,7 @@ class OaiCiTest():
 			logging.error('This option should not occur!')
 		SSH.close()
 		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
-
+	"""
 	def CheckFlexranCtrlInstallation(self):
 		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '':
 			return
@@ -2934,7 +2934,7 @@ class OaiCiTest():
 			SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
-
+	"""
 	def CheckHSSProcess(self, status_queue):
 		try:
 			SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
@@ -2999,7 +2999,7 @@ class OaiCiTest():
 			SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
-
+	"""
 	def AnalyzeLogFile_eNB(self, eNBlogFile):
 		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
@@ -3603,7 +3603,7 @@ class OaiCiTest():
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
-
+	"""
 	def TerminateHSS(self):
 		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
 		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
@@ -3679,7 +3679,7 @@ class OaiCiTest():
 			logging.error('This should not happen!')
 		SSH.close()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-
+	"""
 	def TerminateFlexranCtrl(self):
 		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
 			return
@@ -3975,7 +3975,7 @@ class OaiCiTest():
 		SSH.command('zip iperf.log.zip iperf*.log', '\$', 60)
 		SSH.command('rm iperf*.log', '\$', 5)
 		SSH.close()
-
+	"""
 	def LogCollectHSS(self):
 		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
 		SSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
@@ -4020,7 +4020,7 @@ class OaiCiTest():
 		else:
 			logging.error('This option should not occur!')
 		SSH.close()
-
+	"""
 	def LogCollectOAIUE(self):
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)

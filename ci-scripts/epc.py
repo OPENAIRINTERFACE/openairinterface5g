@@ -30,7 +30,7 @@ class EPCManagement():
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
-			HELP.GenericHelp()
+			HELP.GenericHelp(Version)
 			HELP.EPCSrvHelp(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath, self.EPCType)
 			sys.exit('Insufficient EPC Parameters')
 		#mySSH = SSH() 
@@ -68,7 +68,7 @@ class EPCManagement():
 
 	def InitializeMME(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
-			HELP.GenericHelp()
+			HELP.GenericHelp(Version)
 			HELP.EPCSrvHelp(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath, self.EPCType)
 			sys.exit('Insufficient EPC Parameters')
 		mySSH = SSH.SSHConnection() 
@@ -101,7 +101,7 @@ class EPCManagement():
 
 	def InitializeSPGW(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
-			HELP.GenericHelp()
+			HELP.GenericHelp(Version)
 			HELP.EPCSrvHelp(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath, self.EPCType)
 			sys.exit('Insufficient EPC Parameters')
 		mySSH = SSH.SSHConnection() 
