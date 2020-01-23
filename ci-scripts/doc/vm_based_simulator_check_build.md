@@ -34,6 +34,7 @@ Source file concerned: `ci-scripts/waitBuildOnVM.sh`
 *  and copy them locally in the workspace at $ARCHIVES_LOC
 *  List all log files that match the pattern. Each should have
    *  the `Built target` pattern (the library/executable SHALL link)
+*  Evaluate the remaining space on VM disk
 *  The number of patterned log files SHALL match $NB_PATTERN_FILES defined in `ci-scripts/oai-ci-vm-tool` script for the variant
 
 ---

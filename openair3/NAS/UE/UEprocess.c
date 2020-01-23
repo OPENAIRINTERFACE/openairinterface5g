@@ -188,17 +188,16 @@ int main(int argc, const char *argv[])
 
 /****************************************************************************
  **                                                                        **
- ** Name:    _nas_user_mngr()                                          **
+ ** Name:    _nas_user_mngr()                                              **
  **                                                                        **
  ** Description: Manages the connection endpoint use to communicate with   **
- **      the user application layer                                **
+ **      the user application layer                                        **
  **                                                                        **
- ** Inputs:  fd:        The descriptor of the user connection end- **
- **             point                                      **
- **          Others:    None                                       **
+ ** Inputs:  fd:        The descriptor of the user connection end-point    **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 static void *_nas_user_mngr(void *args)
@@ -227,17 +226,16 @@ static void *_nas_user_mngr(void *args)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    _nas_network_mngr()                                       **
+ ** Name:    _nas_network_mngr()                                           **
  **                                                                        **
  ** Description: Manages the connection endpoint use to communicate with   **
- **      the network sublayer                                      **
+ **      the network sublayer                                              **
  **                                                                        **
- ** Inputs:  fd:        The descriptor of the network connection   **
- **             endpoint                                   **
- **          Others:    None                                       **
+ ** Inputs:  fd:        The descriptor of the network connection endpoint  **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 static void *_nas_network_mngr(void *args)
@@ -302,16 +300,16 @@ static void *_nas_network_mngr(void *args)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    _nas_set_signal_handler()                                 **
+ ** Name:    _nas_set_signal_handler()                                     **
  **                                                                        **
  ** Description: Set up a signal handler                                   **
  **                                                                        **
- ** Inputs:  signal:    Signal number                              **
- **          handler:   Signal handler                             **
- **          Others:    None                                       **
+ ** Inputs:  signal:    Signal number                                      **
+ **          handler:   Signal handler                                     **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     Return:    RETURNerror, RETURNok                      **
- **          Others:    None                                       **
+ ** Outputs: Return:    RETURNerror, RETURNok                              **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 static int _nas_set_signal_handler(int signal, void (handler)(int))
@@ -351,15 +349,15 @@ static int _nas_set_signal_handler(int signal, void (handler)(int))
 
 /****************************************************************************
  **                                                                        **
- ** Name:    _nas_signal_handler()                                     **
+ ** Name:    _nas_signal_handler()                                         **
  **                                                                        **
  ** Description: Signal handler                                            **
  **                                                                        **
- ** Inputs:  signal:    Signal number                              **
- **          Others:    None                                       **
+ ** Inputs:  signal:    Signal number                                      **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 static void _nas_signal_handler(int signal)
@@ -377,16 +375,16 @@ static void _nas_signal_handler(int signal)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    _nas_clean()                                              **
+ ** Name:    _nas_clean()                                                  **
  **                                                                        **
  ** Description: Performs termination cleanup                              **
  **                                                                        **
- ** Inputs:  usr_fd:    User's connection file descriptor          **
- **      net_fd:    Network's connection file descriptor       **
- **          Others:    None                                       **
+ ** Inputs:  usr_fd:    User's connection file descriptor                  **
+ **          net_fd:    Network's connection file descriptor               **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 static void _nas_clean(user_api_id_t *user_api_id, int net_fd)

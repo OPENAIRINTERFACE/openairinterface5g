@@ -375,11 +375,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // Phytest scheduling
  
-  if (slot_rxP==2){
+  if (slot_rxP==NR_UPLINK_SLOT){
     nr_schedule_uss_ulsch_phytest(&RC.nrmac[module_idP]->UL_tti_req[0], frame_rxP, slot_rxP);
   }
   
-  if (slot_txP==1){
+  if (slot_txP==NR_DOWNLINK_SLOT){
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
   }
 

@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
+void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch);
 
 NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
@@ -43,6 +43,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
   @param ulsch_llr, Pointer to received llr in ulsch
   @param frame_parms, Pointer to frame descriptor structure
   @param nb_symb_sch, number of symbols used in the uplink shared channel
+  @param nb_re_dmrs, number of DMRS resource elements in one RB
   @param nr_tti_rx, current received TTI
   @param harq_pid, harq process id
   @param is_crnti
@@ -54,6 +55,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            NR_DL_FRAME_PARMS *frame_parms,
                            uint32_t frame,
                            uint16_t nb_symb_sch,
+                           uint16_t nb_re_dmrs,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
                            uint8_t is_crnti);

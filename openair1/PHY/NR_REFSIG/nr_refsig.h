@@ -47,5 +47,6 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      int32_t *output,
                      unsigned short p,
                      unsigned char lp,
-                     unsigned short nb_pusch_rb);
+                     unsigned short nb_pusch_rb,
+                     uint8_t dmrs_type);
 #endif

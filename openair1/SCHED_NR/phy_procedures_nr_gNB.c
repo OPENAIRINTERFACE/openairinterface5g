@@ -22,6 +22,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
@@ -225,15 +226,38 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
   
   uint8_t ret;
+  uint8_t l, number_dmrs_symbols = 0;
+  uint8_t mapping_type;
   uint32_t G;
   int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
+  uint16_t start_symbol, number_symbols, nb_re_dmrs;
+
+  mapping_type = gNB->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
+
+  start_symbol = nfapi_ulsch_pdu_rel15->start_symbol;
+  number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
+
+  for (l = start_symbol; l < start_symbol + number_symbols; l++)
+      number_dmrs_symbols += is_dmrs_symbol(l,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            number_symbols,
+                                            &gNB->dmrs_UplinkConfig,
+                                            mapping_type,
+                                            frame_parms->ofdm_symbol_size);
+
+  nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
-               nfapi_ulsch_pdu_rel15->number_symbols,
-               nfapi_ulsch_pdu_rel15->nb_re_dmrs,
+               number_symbols,
+               nb_re_dmrs,
                nfapi_ulsch_pdu_rel15->length_dmrs,
                nfapi_ulsch_pdu_rel15->Qm,
                nfapi_ulsch_pdu_rel15->n_layers);
+
 
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
@@ -254,7 +278,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
                     gNB->pusch_vars[UE_id]->llr,
                     frame_parms,
                     frame_rx,
-                    nfapi_ulsch_pdu_rel15->number_symbols,
+                    number_symbols,
+                    nb_re_dmrs,
                     slot_rx,
                     harq_pid,
                     0);
@@ -395,7 +420,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
 
 	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
-	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);      
+	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);
 	
 	uint8_t UE_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
 	uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;

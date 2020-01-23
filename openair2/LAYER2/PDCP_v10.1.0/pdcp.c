@@ -959,15 +959,15 @@ pdcp_data_ind(
 #ifdef MBMS_MULTICAST_OUT
 
   if ((MBMS_flagP != 0) && (mbms_socket != -1)) {
-    struct iphdr   *ip_header = (struct iphdr *)&sdu_buffer_pP->data[payload_offset];
-    struct udphdr *udp_header = (struct udphdr *)&sdu_buffer_pP->data[payload_offset + sizeof(struct iphdr)];
-    struct sockaddr_in dest_addr;
-    dest_addr.sin_family      = AF_INET;
-    dest_addr.sin_port        = udp_header->dest;
-    dest_addr.sin_addr.s_addr = ip_header->daddr;
+   // struct iphdr   *ip_header = (struct iphdr *)&sdu_buffer_pP->data[payload_offset];
+   // struct udphdr *udp_header = (struct udphdr *)&sdu_buffer_pP->data[payload_offset + sizeof(struct iphdr)];
+   // struct sockaddr_in dest_addr;
+   // dest_addr.sin_family      = AF_INET;
+   // dest_addr.sin_port        = udp_header->dest;
+   // dest_addr.sin_addr.s_addr = ip_header->daddr;
 
-    sendto(mbms_socket, &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset, MSG_DONTWAIT, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
-    //packet_forwarded = TRUE;
+   // sendto(mbms_socket, &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset, MSG_DONTWAIT, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
+   // //packet_forwarded = TRUE;
 
   }
 
@@ -1250,6 +1250,132 @@ pdcp_run (
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_OUT);
 }
+
+//-----------------------------------------------------------------------------
+void
+pdcp_mbms_run (
+  const protocol_ctxt_t *const  ctxt_pP
+)
+//-----------------------------------------------------------------------------
+{
+ // if (ctxt_pP->enb_flag) {
+ //   start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
+ // } else {
+ //   start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_run);
+ // }
+
+ // pdcp_enb[ctxt_pP->module_id].sfn++; // range: 0 to 18,446,744,073,709,551,615
+ // pdcp_enb[ctxt_pP->module_id].frame=ctxt_pP->frame; // 1023
+ // pdcp_enb[ctxt_pP->module_id].subframe= ctxt_pP->subframe;
+ // pdcp_update_stats(ctxt_pP);
+ // VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
+ // MessageDef   *msg_p;
+  //int           result;
+  //protocol_ctxt_t  ctxt;
+
+//  do {
+//    // Checks if a message has been sent to PDCP sub-task
+//    itti_poll_msg (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
+//
+//    if (msg_p != NULL) {
+//      switch (ITTI_MSG_ID(msg_p)) {
+//        case RRC_DCCH_DATA_REQ:
+//          PROTOCOL_CTXT_SET_BY_MODULE_ID(
+//            &ctxt,
+//            RRC_DCCH_DATA_REQ (msg_p).module_id,
+//            RRC_DCCH_DATA_REQ (msg_p).enb_flag,
+//            RRC_DCCH_DATA_REQ (msg_p).rnti,
+//            RRC_DCCH_DATA_REQ (msg_p).frame,
+//            0,
+//            RRC_DCCH_DATA_REQ (msg_p).eNB_index);
+//          LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+//                PROTOCOL_CTXT_ARGS(&ctxt),
+//                ITTI_MSG_NAME (msg_p),
+//                ITTI_MSG_ORIGIN_NAME(msg_p),
+//                ITTI_MSG_INSTANCE (msg_p),
+//                RRC_DCCH_DATA_REQ (msg_p).rb_id,
+//                RRC_DCCH_DATA_REQ (msg_p).muip,
+//                RRC_DCCH_DATA_REQ (msg_p).confirmp,
+//                RRC_DCCH_DATA_REQ (msg_p).mode);
+//          LOG_D(PDCP, "Before calling pdcp_data_req from pdcp_run! RRC_DCCH_DATA_REQ (msg_p).rb_id: %d \n", RRC_DCCH_DATA_REQ (msg_p).rb_id);
+//          result = pdcp_data_req (&ctxt,
+//                                  SRB_FLAG_YES,
+//                                  RRC_DCCH_DATA_REQ (msg_p).rb_id,
+//                                  RRC_DCCH_DATA_REQ (msg_p).muip,
+//                                  RRC_DCCH_DATA_REQ (msg_p).confirmp,
+//                                  RRC_DCCH_DATA_REQ (msg_p).sdu_size,
+//                                  RRC_DCCH_DATA_REQ (msg_p).sdu_p,
+//                                  RRC_DCCH_DATA_REQ (msg_p).mode,
+//                                  NULL, NULL
+//                                 );
+//
+//          if (result != TRUE)
+//            LOG_E(PDCP, "PDCP data request failed!\n");
+//
+//          // Message buffer has been processed, free it now.
+//          result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_REQ (msg_p).sdu_p);
+//          AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+//          break;
+//
+//        case RRC_PCCH_DATA_REQ: {
+//          sdu_size_t     sdu_buffer_sizeP;
+//          sdu_buffer_sizeP = RRC_PCCH_DATA_REQ(msg_p).sdu_size;
+//          uint8_t CC_id = RRC_PCCH_DATA_REQ(msg_p).CC_id;
+//          uint8_t ue_index = RRC_PCCH_DATA_REQ(msg_p).ue_index;
+//          RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_paging[ue_index] = sdu_buffer_sizeP;
+//
+//          if (sdu_buffer_sizeP > 0) {
+//            memcpy(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].paging[ue_index], RRC_PCCH_DATA_REQ(msg_p).sdu_p, sdu_buffer_sizeP);
+//          }
+//
+//          //paging pdcp log
+//          LOG_D(PDCP, "PDCP Received RRC_PCCH_DATA_REQ CC_id %d length %d \n", CC_id, sdu_buffer_sizeP);
+//        }
+//        break;
+//
+//        default:
+//          LOG_E(PDCP, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
+//          break;
+//      }
+//
+//      result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+//      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+//    }
+//  } while(msg_p != NULL);
+//
+  // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
+  //  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
+  //if (EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
+
+    pdcp_fifo_read_input_mbms_sdus_fromtun(ctxt_pP);
+  //}
+
+  // PDCP -> NAS/IP traffic: RX
+//  if (ctxt_pP->enb_flag) {
+//    start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
+//  } else {
+//    start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
+//  }
+//
+
+    //pdcp_fifo_flush_mbms_sdus(ctxt_pP);
+
+//  if (ctxt_pP->enb_flag) {
+//    stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
+//  } else {
+//    stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
+//  }
+//
+//  if (ctxt_pP->enb_flag) {
+//    stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
+//  } else {
+//    stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_run);
+//  }
+//
+//  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_OUT);
+}
+
+
 
 void pdcp_init_stats_UE(module_id_t mod, uint16_t uid) {
   Pdcp_stats_tx_window_ms[mod][uid] = 100;
@@ -1695,7 +1821,7 @@ rrc_pdcp_config_asn1_req (
       for (j=0; j<mbms_SessionInfoList_r9_p->list.count; j++) {
         MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
 
-        if (MBMS_SessionInfo_p->sessionId_r9)
+        if (0/*MBMS_SessionInfo_p->sessionId_r9*/)
           lc_id = MBMS_SessionInfo_p->sessionId_r9->buf[0];
         else
           lc_id = MBMS_SessionInfo_p->logicalChannelIdentity_r9;
@@ -1722,7 +1848,7 @@ rrc_pdcp_config_asn1_req (
           }
         }
 
-        LOG_D(PDCP, "lc_id (%02ld) mch_id(%02x,%02x,%02x) drb_id(%ld) action(%d)\n",
+        LOG_I(PDCP, "lc_id (%02ld) mch_id(%02x,%02x,%02x) drb_id(%ld) action(%d)\n",
               lc_id,
               MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[0],
               MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[1],
@@ -2173,16 +2299,31 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
       netlink_init_tun("ue",num_if);
       if (IS_SOFTMODEM_NOS1)
     	  nas_config(1, 1, 2, "ue");
+      netlink_init_mbms_tun("uem",num_if);
+      nas_config_mbms(1, 2, 2, "uem");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
     } else if(ENB_NAS_USE_TUN) {
       netlink_init_tun("enb",1);
       nas_config(1, 1, 1, "enb");
+      if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
+      	netlink_init_mbms_tun("enm",1);
+      	nas_config_mbms(1, 2, 1, "enm"); 
+      	LOG_I(PDCP, "ENB pdcp will use mbms tun interface\n");
+      }
       LOG_I(PDCP, "ENB pdcp will use tun interface\n");
     } else {
       LOG_I(PDCP, "pdcp will use kernel modules\n");
       netlink_init();
     }
-  }
+  }else{
+         if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
+             LOG_W(PDCP, "ENB pdcp will use tun interface for MBMS\n");
+            netlink_init_mbms_tun("enm",1);
+             nas_config_mbms_s1(1, 2, 1, "enm"); 
+         }else
+             LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
+   }
+
   return pdcp_params.optmask ;
 }
 

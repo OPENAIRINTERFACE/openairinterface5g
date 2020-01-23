@@ -34,6 +34,7 @@
 //#define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
 
+#if 0
 int16_t cond_num_threshold = 0;
 
 void print_shorts(char *s,short *x)
@@ -54,8 +55,9 @@ void print_ints(char *s,int *x)
         );
 
 }
+#endif
 
-int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+int16_t nr_get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -69,7 +71,7 @@ int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
     RSoffset = 3;
   */
 
- /* LOG_D(PHY,"get_PL : rsrp %f dBm/RE (%f), eNB power %d dBm/RE\n", 
+ /* LOG_D(PHY,"nr_get_PL : rsrp %f dBm/RE (%f), eNB power %d dBm/RE\n", 
         (1.0*dB_fixed_times10(ue->measurements.rsrp[eNB_index])-(10.0*ue->rx_total_gain_dB))/10.0,
         10*log10((double)ue->measurements.rsrp[eNB_index]),
         ue->frame_parms.pdsch_config_common.referenceSignalPower);*/
@@ -79,9 +81,9 @@ int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
                     //        dB_fixed_times10(RSoffset*12*ue_g[Mod_id][CC_id]->frame_parms.N_RB_DL) +
                     //(ue->frame_parms.pdsch_config_common.referenceSignalPower*10))/10));
 }
+
+
 #if 0
-
-
 uint8_t get_n_adj_cells (module_id_t Mod_id,uint8_t CC_id)
 {
 
@@ -456,6 +458,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 }
 #endif
 
+#if 0
 void conjch0_mult_ch1(int *ch0,
                       int *ch1,
                       int32_t *ch0conj_ch1,
@@ -696,6 +699,7 @@ void numer(int32_t *Hh_h_00_sq,
   _m_empty();
 }
 
+#endif
 
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                          unsigned int subframe_offset,

@@ -438,6 +438,7 @@ void cic_decimator(int16_t *input_buffer, int16_t *output_buffer, int length, in
     fir_filter_basic(input, output, new_length,  FIR_TAPS_NUMBER, filter_taps, SHARPENED_FIR_SCALING_ACC);
 
 #endif
+    free(filter_taps_fixed_point);
   }
   else
   {

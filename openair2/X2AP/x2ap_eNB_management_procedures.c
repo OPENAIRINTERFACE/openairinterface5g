@@ -129,8 +129,8 @@ struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
   struct x2ap_eNB_data_s  temp;
   struct x2ap_eNB_data_s *found;
 
-printf("x2ap_get_eNB at 1 (looking for assoc_id %d cnx_id %d)\n", assoc_id, cnx_id);
-dump_trees();
+//printf("x2ap_get_eNB at 1 (looking for assoc_id %d cnx_id %d)\n", assoc_id, cnx_id);
+//dump_trees();
 
   memset(&temp, 0, sizeof(struct x2ap_eNB_data_s));
 

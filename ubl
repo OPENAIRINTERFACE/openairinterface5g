@@ -1,0 +1,575 @@
+[1mdiff --git a/cmake_targets/build_oai b/cmake_targets/build_oai[m
+[1mindex 227e8d8..6cd7151 100755[m
+[1m--- a/cmake_targets/build_oai[m
+[1m+++ b/cmake_targets/build_oai[m
+[36m@@ -661,7 +661,8 @@[m [mfunction main() {[m
+   if [ "$SIMUS_PHY" = "1" ] ; then[m
+     echo_info "Compiling physical unitary tests simulators"[m
+     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim[m
+[31m-    simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim"[m
+[32m+[m[32m    #simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim"[m
+[32m+[m[32m    simlist="nr_ulsim nr_dlsim"[m
+     for f in $simlist ; do[m
+       compilations \[m
+         phy_simulators $f \[m
+[1mdiff --git a/executables/nr-ru.c b/executables/nr-ru.c[m
+[1mindex b96fc9e..4ab9fce 100644[m
+[1m--- a/executables/nr-ru.c[m
+[1m+++ b/executables/nr-ru.c[m
+[36m@@ -2330,7 +2330,7 @@[m [mvoid RCconfig_RU(void)[m
+       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);[m
+       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);[m
+       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);[m
+[31m-      RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);[m
+[32m+[m[32m      RC.ru[j]->att_rx                            = 4;//*(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);[m
+     }// j=0..num_rus[m
+   } else {[m
+     RC.nb_RU = 0;[m
+[1mdiff --git a/openair1/PHY/INIT/nr_init.c b/openair1/PHY/INIT/nr_init.c[m
+[1mindex fff1245..66d6e09 100644[m
+[1m--- a/openair1/PHY/INIT/nr_init.c[m
+[1m+++ b/openair1/PHY/INIT/nr_init.c[m
+[36m@@ -403,12 +403,47 @@[m [mvoid nr_phy_config_request_sim(PHY_VARS_gNB *gNB,[m
+   gNB->mac_enabled   = 1;[m
+   fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);[m
+   fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);[m
+[31m-  fp->threequarter_fs= 0;[m
+[32m+[m[32m  fp->threequarter_fs= 1;[m
+   nr_init_frame_parms(gNB_config, fp);[m
+   gNB->configured    = 1;[m
+   LOG_I(PHY,"gNB configured\n");[m
+ }[m
+ [m
+[32m+[m[32mvoid nr_phy_config_request_sim_ulsim(PHY_VARS_gNB *gNB,[m
+[32m+[m[32m                               int N_RB_DL,[m
+[32m+[m[32m                               int N_RB_UL,[m
+[32m+[m[32m                               int mu,[m
+[32m+[m[32m                               int Nid_cell,[m
+[32m+[m[32m                               uint64_t position_in_burst,[m
+[32m+[m[32m                               uint8_t threequarter_fs)[m
+[32m+[m[32m{[m
+[32m+[m[32m  NR_DL_FRAME_PARMS *fp                                   = &gNB->frame_parms;[m
+[32m+[m[32m  nfapi_nr_config_request_t *gNB_config                   = &gNB->gNB_config;[m
+[32m+[m[32m  //overwrite for new NR parameters[m
+[32m+[m[32m  gNB_config->nfapi_config.rf_bands.rf_band[0]            = 78;[m
+[32m+[m[32m  gNB_config->nfapi_config.nrarfcn.value                  = 620000;[m
+[32m+[m[32m  gNB_config->subframe_config.numerology_index_mu.value   = mu;[m
+[32m+[m[32m  gNB_config->subframe_config.duplex_mode.value           = TDD;[m
+[32m+[m[32m  gNB_config->rf_config.dl_carrier_bandwidth.value        = N_RB_DL;[m
+[32m+[m[32m  gNB_config->rf_config.ul_carrier_bandwidth.value        = N_RB_UL;[m
+[32m+[m[32m  gNB_config->sch_config.half_frame_index.value           = 0;[m
+[32m+[m[32m  gNB_config->sch_config.ssb_subcarrier_offset.value      = 0;[m
+[32m+[m[32m  gNB_config->sch_config.n_ssb_crb.value                  = (N_RB_DL-20);[m
+[32m+[m[32m  gNB_config->sch_config.ssb_subcarrier_offset.value      = 0;[m
+[32m+[m[32m  gNB_config->sch_config.physical_cell_id.value           = Nid_cell;[m
+[32m+[m[32m  gNB_config->sch_config.ssb_scg_position_in_burst.value  = position_in_burst;[m
+[32m+[m[32m  gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;[m
+[32m+[m
+[32m+[m[32m  gNB->mac_enabled   = 1;[m
+[32m+[m[32m  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);[m
+[32m+[m[32m  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);[m
+[32m+[m[32m  fp->threequarter_fs= threequarter_fs;[m
+[32m+[m[32m  nr_init_frame_parms(gNB_config, fp);[m
+[32m+[m[32m  nr_dump_frame_parms(fp);[m
+[32m+[m[32m  gNB->configured    = 1;[m
+[32m+[m[32m  LOG_I(PHY,"gNB configured\n");[m
+[32m+[m[32m}[m
+[32m+[m
+ [m
+ void nr_phy_config_request(NR_PHY_Config_t *phy_config)[m
+ {[m
+[1mdiff --git a/openair1/PHY/INIT/phy_init.h b/openair1/PHY/INIT/phy_init.h[m
+[1mindex 7e0500b..4209413 100644[m
+[1m--- a/openair1/PHY/INIT/phy_init.h[m
+[1m+++ b/openair1/PHY/INIT/phy_init.h[m
+[36m@@ -387,6 +387,7 @@[m [mvoid nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms);[m
+ int phy_init_nr_gNB(PHY_VARS_gNB *gNB, unsigned char is_secondary_gNB, unsigned char abstraction_flag);[m
+ void nr_phy_config_request(NR_PHY_Config_t *gNB);[m
+ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst);[m
+[32m+[m[32mvoid nr_phy_config_request_sim_ulsim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst, uint8_t threequarter_fs);[m
+ void phy_free_nr_gNB(PHY_VARS_gNB *gNB);[m
+ int l1_north_init_gNB(void);[m
+ void init_nr_transport(PHY_VARS_gNB *gNB);[m
+[1mdiff --git a/openair1/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c b/openair1/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c[m
+[1mindex 0656091..9e5fcb1 100644[m
+[1m--- a/openair1/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c[m
+[1m+++ b/openair1/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c[m
+[36m@@ -140,7 +140,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+                                          ul_ch,[m
+                                          8);[m
+       pil+=2;[m
+[31m-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m      re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+       //for (int i= 0; i<8; i++)[m
+       //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));[m
+[36m@@ -156,7 +156,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+                                          ul_ch,[m
+                                          8);[m
+       pil+=2;[m
+[31m-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m      re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+       //printf("ul_ch addr %p\n",ul_ch);[m
+       [m
+[36m@@ -175,7 +175,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+       //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));[m
+       [m
+       pil+=2;[m
+[31m-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m      re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+       ul_ch+=8;[m
+ [m
+[36m@@ -193,7 +193,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+                                            8);[m
+ [m
+         pil+=2;[m
+[31m-        re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m        re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+       [m
+         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);[m
+[36m@@ -206,7 +206,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+                                            ul_ch,[m
+                                            8);[m
+         pil+=2;[m
+[31m-        re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m        re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+         ul_ch+=8;[m
+ [m
+[36m@@ -227,7 +227,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+       //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));[m
+ [m
+       pil+=2;[m
+[31m-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m      re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+              [m
+       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);[m
+[36m@@ -242,7 +242,7 @@[m [mint nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,[m
+                                          8);[m
+                                          [m
+       pil+=2;[m
+[31m-      re_offset = (re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+[32m+[m[32m      re_offset = (re_offset+2)%gNB->frame_parms.ofdm_symbol_size;//(re_offset+2)&(gNB->frame_parms.ofdm_symbol_size-1);[m
+       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];[m
+       ul_ch+=8;[m
+       [m
+[1mdiff --git a/openair1/PHY/NR_TRANSPORT/nr_ulsch.c b/openair1/PHY/NR_TRANSPORT/nr_ulsch.c[m
+[1mindex 2bc623a..e78842d 100644[m
+[1m--- a/openair1/PHY/NR_TRANSPORT/nr_ulsch.c[m
+[1m+++ b/openair1/PHY/NR_TRANSPORT/nr_ulsch.c[m
+[36m@@ -54,5 +54,8 @@[m [mvoid nr_ulsch_unscrambling(int16_t* llr,[m
+     }[m
+     if (((s>>(i&0x1f))&1)==1)[m
+       llr[i] = -llr[i];[m
+[32m+[m
+[32m+[m[32m    //if (i<10)[m
+[32m+[m[32m      //printf("llr[%d] = %d\n", i, llr[i]);[m
+   }[m
+ }[m
+[1mdiff --git a/openair1/PHY/NR_TRANSPORT/nr_ulsch_decoding.c b/openair1/PHY/NR_TRANSPORT/nr_ulsch_decoding.c[m
+[1mindex 19ca123..68a54b3 100644[m
+[1m--- a/openair1/PHY/NR_TRANSPORT/nr_ulsch_decoding.c[m
+[1m+++ b/openair1/PHY/NR_TRANSPORT/nr_ulsch_decoding.c[m
+[36m@@ -346,7 +346,7 @@[m [muint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,[m
+ [m
+   G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);[m
+ [m
+[31m-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);[m
+[32m+[m[32m  LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb);[m
+ [m
+   if (harq_process->round == 0) {[m
+ [m
+[1mdiff --git a/openair1/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c b/openair1/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c[m
+[1mindex e1b3c5c..0369e73 100644[m
+[1m--- a/openair1/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c[m
+[1m+++ b/openair1/PHY/NR_TRANSPORT/nr_ulsch_demodulation.c[m
+[36m@@ -365,9 +365,9 @@[m [mvoid nr_ulsch_channel_level(int **ul_ch_estimates_ext,[m
+       ul_ch128=(__m128i *)&ul_ch_estimates_ext[(aatx<<1)+aarx][symbol*nb_rb*12];[m
+ [m
+       for (rb = 0; rb < nb_rb; rb++) {[m
+[31m-        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));[m
+[31m-        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[1], ul_ch128[1]), x));[m
+[31m-        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[2], ul_ch128[2]), x));[m
+[32m+[m[32m        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi16(_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));[m
+[32m+[m[32m        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi16(_mm_madd_epi16(ul_ch128[1], ul_ch128[1]), x));[m
+[32m+[m[32m        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi16(_mm_madd_epi16(ul_ch128[2], ul_ch128[2]), x));[m
+         ul_ch128+=3;[m
+       }[m
+ [m
+[36m@@ -977,6 +977,7 @@[m [mvoid nr_rx_pusch(PHY_VARS_gNB *gNB,[m
+   uint32_t nb_re_pusch, bwp_start_subcarrier;[m
+   int avgs;[m
+   int avg[4];[m
+[32m+[m[32m  char filename[40];[m
+ [m
+   pilots = 0;[m
+   first_symbol_flag = 0;[m
+[36m@@ -1062,6 +1063,16 @@[m [mvoid nr_rx_pusch(PHY_VARS_gNB *gNB,[m
+                                 rel15_ul->number_rbs,[m
+                                 gNB->pusch_vars[UE_id]->log2_maxh);[m
+ [m
+[32m+[m[32m  if (symbol == 3){[m
+[32m+[m[32m    printf("log2_maxh = %d\n", gNB->pusch_vars[UE_id]->log2_maxh);[m
+[32m+[m[32m    sprintf(filename,"rxdataF_gnb_ext.m");[m
+[32m+[m[32m    LOG_M(filename,"rxdataF_gnb_v",&gNB->pusch_vars[UE_id]->rxdataF_ext[0][symbol*NR_NB_SC_PER_RB*rel15_ul->number_rbs],NR_NB_SC_PER_RB*rel15_ul->number_rbs, 1, 1);[m
+[32m+[m[32m    sprintf(filename,"rxdataF_comp_gnb.m");[m
+[32m+[m[32m    LOG_M(filename,"rxdataF_comp_gnb_v",&gNB->pusch_vars[UE_id]->rxdataF_comp[0][symbol*NR_NB_SC_PER_RB*rel15_ul->number_rbs],NR_NB_SC_PER_RB*rel15_ul->number_rbs, 1, 1);[m
+[32m+[m[32m    sprintf(filename,"ul_ch_est_ext_gnb.m");[m
+[32m+[m[32m    LOG_M(filename,"ul_ch_est_ext_gnb_v",&gNB->pusch_vars[UE_id]->ul_ch_estimates_ext[0][symbol*NR_NB_SC_PER_RB*rel15_ul->number_rbs], NR_NB_SC_PER_RB*rel15_ul->number_rbs, 1, 1);[m
+[32m+[m[32m  }[m
+[32m+[m
+ #ifdef NR_SC_FDMA[m
+   nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[symbol * rel15_ul->number_rbs * NR_NB_SC_PER_RB], nb_re_pusch);[m
+ #endif[m
+[1mdiff --git a/openair1/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c b/openair1/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c[m
+[1mindex 79b5c8d..c96a9a6 100644[m
+[1m--- a/openair1/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c[m
+[1m+++ b/openair1/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c[m
+[36m@@ -155,6 +155,7 @@[m [mint nr_rx_pdsch(PHY_VARS_NR_UE *ue,[m
+   uint16_t n_tx=1, n_rx=1;[m
+   int32_t median[16];[m
+   uint32_t len;[m
+[32m+[m[32m  char filename[40];[m
+   [m
+   switch (type) {[m
+   case SI_PDSCH:[m
+[36m@@ -592,6 +593,17 @@[m [mint nr_rx_pdsch(PHY_VARS_NR_UE *ue,[m
+ [m
+     }[m
+ [m
+[32m+[m[32m  if (symbol == 3){[m
+[32m+[m[32m    printf("log2_maxh = %d\n", pdsch_vars[eNB_id]->log2_maxh);[m
+[32m+[m[32m    sprintf(filename,"rxdataF_ue_ext.m");[m
+[32m+[m[32m    LOG_M(filename,"rxdataF_ue_ext_v",&pdsch_vars[eNB_id]->rxdataF_ext[0][symbol*NR_NB_SC_PER_RB*nb_rb],NR_NB_SC_PER_RB*nb_rb, 1, 1);[m
+[32m+[m[32m    sprintf(filename,"rxdataF_comp_ue.m");[m
+[32m+[m[32m    LOG_M(filename,"rxdataF_comp_ue_v",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*NR_NB_SC_PER_RB*nb_rb],NR_NB_SC_PER_RB*nb_rb, 1, 1);[m
+[32m+[m[32m    sprintf(filename,"dl_ch_est_ext_ue.m");[m
+[32m+[m[32m    LOG_M(filename,"dl_ch_est_ext_ue",&pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*NR_NB_SC_PER_RB*nb_rb], NR_NB_SC_PER_RB*nb_rb, 1, 1);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m
+ #if UE_TIMING_TRACE[m
+     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);[m
+ #if DISABLE_LOG_X[m
+[36m@@ -636,6 +648,15 @@[m [mint nr_rx_pdsch(PHY_VARS_NR_UE *ue,[m
+     dl_ch_mag_ptr = pdsch_vars[eNB_id_i]->dl_ch_mag0;[m
+     //i_mod should have been passed as a parameter[m
+   }[m
+[32m+[m
+[32m+[m
+[32m+[m[32m  if (symbol == 3){[m
+[32m+[m[32m    printf("log2_maxh = %d\n", pdsch_vars[eNB_id]->log2_maxh);[m
+[32m+[m[32m    sprintf(filename,"rxdataF_comp_ue.m");[m
+[32m+[m[32m    LOG_M(filename,"rxdataF_comp_ue_v",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*NR_NB_SC_PER_RB*nb_rb],NR_NB_SC_PER_RB*nb_rb, 1, 1);[m
+[32m+[m[32m    sprintf(filename,"dl_ch_est_ext_ue.m");[m
+[32m+[m[32m    LOG_M(filename,"dl_ch_est_ext_ue",&pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][symbol*NR_NB_SC_PER_RB*nb_rb], NR_NB_SC_PER_RB*nb_rb, 1, 1);[m
+[32m+[m[32m  }[m
+   [m
+ #if UE_TIMING_TRACE[m
+     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);[m
+[1mdiff --git a/openair1/SCHED_NR/nr_ru_procedures.c b/openair1/SCHED_NR/nr_ru_procedures.c[m
+[1mindex 3ac808f..9ab539a 100644[m
+[1m--- a/openair1/SCHED_NR/nr_ru_procedures.c[m
+[1m+++ b/openair1/SCHED_NR/nr_ru_procedures.c[m
+[36m@@ -395,6 +395,7 @@[m [mvoid nr_fep_full(RU_t *ru, int slot) {[m
+   RU_proc_t *proc = &ru->proc;[m
+   int l, aa;[m
+   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;[m
+[32m+[m[32m  char filename[40];[m
+ [m
+   // if ((fp->frame_type == TDD) && [m
+      // (subframe_select(fp,proc->tti_rx) != SF_UL)) return;[m
+[36m@@ -405,6 +406,9 @@[m [mvoid nr_fep_full(RU_t *ru, int slot) {[m
+   // remove_7_5_kHz(ru,proc->tti_rx<<1);[m
+   // remove_7_5_kHz(ru,1+(proc->tti_rx<<1));[m
+ [m
+[32m+[m[32m  //sprintf(filename,"rxdata_gnb.m");[m
+[32m+[m[32m  //LOG_M(filename,"rxdata_gnb_v",&ru->common.rxdata[0][proc->tti_rx*fp->samples_per_slot], 2*fp->samples_per_slot, 1, 0);[m
+[32m+[m
+   for (l = 0; l < fp->symbols_per_slot; l++) {[m
+     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {[m
+       nr_slot_fep_ul(fp,[m
+[1mdiff --git a/openair1/SCHED_NR_UE/phy_procedures_nr_ue.c b/openair1/SCHED_NR_UE/phy_procedures_nr_ue.c[m
+[1mindex ccf5343..bbd0c65 100644[m
+[1m--- a/openair1/SCHED_NR_UE/phy_procedures_nr_ue.c[m
+[1m+++ b/openair1/SCHED_NR_UE/phy_procedures_nr_ue.c[m
+[36m@@ -4143,6 +4143,8 @@[m [mint phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,[m
+   uint8_t ssb_periodicity = 10;// ue->ssb_periodicity; // initialized to 5ms in nr_init_ue for scenarios where UE is not configured (otherwise acquired by cell configuration from gNB or LTE)[m
+   uint8_t dci_cnt = 0;[m
+   fapi_nr_pbch_config_t *pbch_config = &ue->nrUE_config.pbch_config;[m
+[32m+[m
+[32m+[m[32m  char filename[40];[m
+   [m
+   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);[m
+ [m
+[36m@@ -4200,6 +4202,7 @@[m [mint phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,[m
+   }[m
+ [m
+   dci_cnt = nr_ue_pdcch_procedures(eNB_id, ue, proc);[m
+[32m+[m[32m  dci_cnt = 1;[m
+ [m
+   if (dci_cnt > 0) {[m
+ [m
+[36m@@ -4215,17 +4218,32 @@[m [mint phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,[m
+ 						 16384);[m
+     }[m
+   } else {[m
+[31m-    LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);[m
+[32m+[m[32m    LOG_I(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);[m
+   }[m
+ #endif //NR_PDCCH_SCHED[m
+ [m
+   [m
+   if (dci_cnt > 0){[m
+[31m-    LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);[m
+[32m+[m
+[32m+[m[32m    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;[m
+[32m+[m[32m    dlsch0_harq->nb_rb = 50;[m
+[32m+[m[32m    dlsch0_harq->start_rb = 0;[m
+[32m+[m[32m    dlsch0_harq->nb_symbols = 12;//dlsch_config_pdu->number_symbols;[m
+[32m+[m[32m    dlsch0_harq->start_symbol = 2;//dlsch_config_pdu->start_symbol;[m
+[32m+[m[32m    dlsch0_harq->mcs = 9;[m
+[32m+[m[32m    dlsch0_harq->DCINdi = 1;[m
+[32m+[m[32m    dlsch0_harq->rvidx = 0;[m
+[32m+[m[32m    dlsch0_harq->Nl=1;[m
+[32m+[m[32m    dlsch0_harq->status = ACTIVE;[m
+[32m+[m
+[32m+[m[32m    LOG_I(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);[m
+     //to update from pdsch config[m
+     nr_gold_pdsch(ue,nb_symb_pdcch,0, 1);[m
+ [m
+     nb_symb_sch = dlsch0_harq->nb_symbols;[m
+[32m+[m
+[32m+[m[32m    sprintf(filename,"rxdata_ue_test.m");[m
+[32m+[m[32m    LOG_M(filename,"rxdata_ue_test_v",&ue->common_vars.rxdata[0][nr_tti_rx*ue->frame_parms.samples_per_slot],ue->frame_parms.samples_per_slot, 1, 1);[m
+     [m
+     for (uint16_t m=nb_symb_pdcch;m<=(nb_symb_sch+nb_symb_pdcch-1) ; m++){[m
+       nr_slot_fep(ue,[m
+[36m@@ -4237,7 +4255,7 @@[m [mint phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,[m
+       [m
+     }[m
+     //set active for testing, to be removed[m
+[31m-    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;[m
+[32m+[m[41m    [m
+   }[m
+   else[m
+     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;[m
+[1mdiff --git a/openair1/SIMULATION/NR_PHY/dlsim.c b/openair1/SIMULATION/NR_PHY/dlsim.c[m
+[1mindex a471062..cd64e53 100644[m
+[1m--- a/openair1/SIMULATION/NR_PHY/dlsim.c[m
+[1m+++ b/openair1/SIMULATION/NR_PHY/dlsim.c[m
+[36m@@ -173,7 +173,7 @@[m [mint main(int argc, char **argv)[m
+   //unsigned char frame_type = 0;[m
+   unsigned char pbch_phase = 0;[m
+ [m
+[31m-  int frame=0,slot=1;[m
+[32m+[m[32m  int frame=0,slot=2;[m
+   int frame_length_complex_samples;[m
+   int frame_length_complex_samples_no_prefix;[m
+   int slot_length_complex_samples_no_prefix;[m
+[36m@@ -188,7 +188,7 @@[m [mint main(int argc, char **argv)[m
+   int run_initial_sync=0;[m
+   int do_pdcch_flag=1;[m
+ [m
+[31m-  int loglvl=OAILOG_WARNING;[m
+[32m+[m[32m  int loglvl=OAILOG_INFO;[m
+ [m
+   float target_error_rate = 0.01;[m
+ [m
+[36m@@ -398,6 +398,7 @@[m [mint main(int argc, char **argv)[m
+   logInit();[m
+   set_glog(loglvl);[m
+   T_stdout = 1;[m
+[32m+[m[32m  FILE *in_file;[m
+ [m
+   if (snr1set==0)[m
+     snr1 = snr0+10;[m
+[36m@@ -695,8 +696,13 @@[m [mint main(int argc, char **argv)[m
+ [m
+   nr_ue_phy_config_request(&UE_mac->phy_config);[m
+ [m
+[32m+[m[32m  int16_t *rxdata_ue;[m
+[32m+[m[32m  rxdata_ue = &((short*) UE->common_vars.rxdata[0])[2*slot*frame_parms->samples_per_slot];[m
+[32m+[m
+   for (SNR = snr0; SNR < snr1; SNR += .2) {[m
+ [m
+[32m+[m[32m    in_file = fopen("rxdata_gnb.m", "r");[m
+[32m+[m
+     n_errors = 0;[m
+     //n_errors2 = 0;[m
+     //n_alamouti = 0;[m
+[36m@@ -710,14 +716,22 @@[m [mint main(int argc, char **argv)[m
+       sigma2_dB = 10 * log10((double)txlev) - SNR;[m
+       sigma2    = pow(10, sigma2_dB/10);[m
+       // printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);[m
+[31m-[m
+[32m+[m[32m/*[m
+       for (i=0; i<frame_length_complex_samples; i++) {[m
+ 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {[m
+ 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));[m
+ 	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));[m
+ 	}[m
+       }[m
+[31m-[m
+[32m+[m[32m*/[m
+[32m+[m[32m      for (i = 0; i < 2*frame_parms->samples_per_slot; i++){[m
+[32m+[m[32m        fscanf(in_file, "%d", &rxdata_ue[i]);[m
+[32m+[m[32m      }[m
+[32m+[m[32m/*[m
+[32m+[m[32m      char filename[40];[m
+[32m+[m[32m      sprintf(filename,"rxdata_ue_test.m");[m
+[32m+[m[32m      LOG_M(filename,"rxdata_ue_test_v",&UE->common_vars.rxdata[0][slot*frame_parms->samples_per_slot],frame_parms->samples_per_slot, 1, 1);[m
+[32m+[m[32m*/[m
+       if (n_trials == 1) {[m
+ [m
+         LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0], frame_length_complex_samples, 1, 1);[m
+[1mdiff --git a/openair1/SIMULATION/NR_PHY/ulsim.c b/openair1/SIMULATION/NR_PHY/ulsim.c[m
+[1mindex 00ba0bb..3e31fa0 100644[m
+[1m--- a/openair1/SIMULATION/NR_PHY/ulsim.c[m
+[1m+++ b/openair1/SIMULATION/NR_PHY/ulsim.c[m
+[36m@@ -99,7 +99,7 @@[m [mint main(int argc, char **argv)[m
+   double sigma, sigma_dB;[m
+   double snr_step = 0.1;[m
+   uint8_t snr1set = 0;[m
+[31m-  int slot = 0;[m
+[32m+[m[32m  int slot = 1;[m
+   FILE *output_fd = NULL;[m
+   //uint8_t write_output_file = 0;[m
+   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;[m
+[36m@@ -116,10 +116,10 @@[m [mint main(int argc, char **argv)[m
+   int number_of_frames = 1;[m
+   int frame_length_complex_samples;[m
+   NR_DL_FRAME_PARMS *frame_parms;[m
+[31m-  int loglvl = OAILOG_WARNING;[m
+[32m+[m[32m  int loglvl = OAILOG_INFO;[m
+   uint64_t SSB_positions=0x01;[m
+[31m-  uint16_t nb_symb_sch = 12;[m
+[31m-  int start_symbol = NR_SYMBOLS_PER_SLOT - nb_symb_sch;[m
+[32m+[m[32m  uint16_t nb_symb_sch = 9;[m
+[32m+[m[32m  int start_symbol = 2;[m
+   uint16_t nb_rb = 50;[m
+   uint8_t Imcs = 9;[m
+   uint8_t precod_nbr_layers = 1;[m
+[36m@@ -130,6 +130,7 @@[m [mint main(int argc, char **argv)[m
+   int32_t txlev;[m
+   int start_rb = 0;[m
+   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)[m
+[32m+[m[32m  uint8_t threequarter_fs = 0;[m
+ [m
+   cpuf = get_cpu_freq_GHz();[m
+ [m
+[36m@@ -144,7 +145,7 @@[m [mint main(int argc, char **argv)[m
+   //logInit();[m
+   randominit(0);[m
+ [m
+[31m-  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:")) != -1) {[m
+[32m+[m[32m  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:pr:s:y:z:F:M:N:P:R:S:E")) != -1) {[m
+     switch (c) {[m
+ [m
+       /*case 'd':[m
+[36m@@ -303,6 +304,10 @@[m [mint main(int argc, char **argv)[m
+         printf("Setting SNR1 to %f\n", snr1);[m
+         break;[m
+ [m
+[32m+[m[32m      case 'E':[m
+[32m+[m[32m        threequarter_fs = 1;[m
+[32m+[m[32m        break;[m
+[32m+[m
+       default:[m
+         case 'h':[m
+           printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);[m
+[36m@@ -330,6 +335,7 @@[m [mint main(int argc, char **argv)[m
+           printf("-O oversampling factor (1,2,4,8,16)\n");[m
+           printf("-R N_RB_DL\n");[m
+           printf("-S Ending SNR, runs from SNR0 to SNR1\n");[m
+[32m+[m[32m          printf("-E enable threequarter sampling\n");[m
+           exit(-1);[m
+           break;[m
+     }[m
+[36m@@ -338,6 +344,7 @@[m [mint main(int argc, char **argv)[m
+   logInit();[m
+   set_glog(loglvl);[m
+   T_stdout = 1;[m
+[32m+[m[32m  FILE *in_file;[m
+ [m
+   if (snr1set == 0)[m
+     snr1 = snr0 + 10;[m
+[36m@@ -367,7 +374,7 @@[m [mint main(int argc, char **argv)[m
+ [m
+   crcTableInit();[m
+ [m
+[31m-  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_UL, mu, Nid_cell, SSB_positions);[m
+[32m+[m[32m  nr_phy_config_request_sim_ulsim(gNB, N_RB_DL, N_RB_UL, mu, Nid_cell, SSB_positions, threequarter_fs);[m
+ [m
+   phy_init_nr_gNB(gNB, 0, 0);[m
+   //init_eNB_afterRU();[m
+[36m@@ -511,20 +518,42 @@[m [mint main(int argc, char **argv)[m
+       sigma_dB = 10*log10(txlev_float)-SNR;[m
+       sigma    = pow(10,sigma_dB/10);[m
+ [m
+[32m+[m[32m      int16_t *rxdata_gnb;[m
+[32m+[m[32m      rxdata_gnb = &((short*) gNB->common_vars.rxdata[0])[2*slot*frame_parms->samples_per_slot];[m
+[32m+[m
+       for (trial = 0; trial < n_trials; trial++) {[m
+ [m
+         errors_scrambling  = 0;[m
+         errors_decoding    = 0;[m
+ [m
+[32m+[m[32m        in_file = fopen("rxdata_ue.m", "r");[m
+[32m+[m
+[32m+[m[32m        if (in_file == NULL)[m
+[32m+[m[32m        {[m
+[32m+[m[32m            printf("Can't open file for reading.\n");[m
+[32m+[m[32m            return -1;[m
+[32m+[m[32m        }[m
+[32m+[m
+         //----------------------------------------------------------[m
+         //------------------------ add noise -----------------------[m
+         //----------------------------------------------------------[m
+[32m+[m[32m        /*[m
+         for (i=0; i<frame_length_complex_samples; i++) {[m
+           for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {[m
+[31m-            ((short*) gNB->common_vars.rxdata[ap])[(2*i) + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])   + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point[m
+[31m-            ((short*) gNB->common_vars.rxdata[ap])[2*i+1 + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);[m
+[32m+[m[32m            ((short*) gNB->common_vars.rxdata[ap])[(2*i) + (delay*2)]   = 0.5*((((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])   + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP)); // convert to fixed point[m
+[32m+[m[32m            ((short*) gNB->common_vars.rxdata[ap])[2*i+1 + (delay*2)]   = 0.5*((((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP));[m
+           }[m
+         }[m
+[32m+[m[32m        */[m
+[32m+[m
+[32m+[m[32m        for (i = 0; i < 2*frame_parms->samples_per_slot; i++){[m
+[32m+[m[32m          fscanf(in_file, "%d", &rxdata_gnb[i]);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        char filename[40];[m
+[32m+[m[32m        sprintf(filename,"rxdata_ue_ulsim.m");[m
+[32m+[m[32m        LOG_M(filename,"rxdata_ue_v",&gNB->common_vars.rxdata[0][slot*frame_parms->samples_per_slot], frame_parms->samples_per_slot, 1, 1);[m
+[32m+[m[41m        [m
+         ////////////////////////////////////////////////////////////[m
+ [m
+         //----------------------------------------------------------[m
+[36m@@ -628,5 +657,8 @@[m [mint main(int argc, char **argv)[m
+   if (input_fd)[m
+     fclose(input_fd);[m
+ [m
+[32m+[m[32m  if (in_file)[m
+[32m+[m[32m    fclose(in_file);[m
+[32m+[m
+   return (n_errors);[m
+ }[m
+[1mdiff --git a/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpx300.conf b/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpx300.conf[m
+[1mindex a11bf9d..86dc080 100644[m
+[1m--- a/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpx300.conf[m
+[1m+++ b/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpx300.conf[m
+[36m@@ -255,7 +255,6 @@[m [mRUs = ([m
+          max_rxgain                    = 114;[m
+          eNB_instances  = [0];[m
+          sdr_addrs = "type=x300";[m
+[31m-[m
+     }[m
+ );  [m
+ [m

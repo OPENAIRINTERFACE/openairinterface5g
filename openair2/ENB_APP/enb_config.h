@@ -116,6 +116,7 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 
 void read_config_and_init(void);
 int RCconfig_X2(MessageDef *msg_p, uint32_t i);
+int RCconfig_M2(MessageDef *msg_p, uint32_t i);
 
 void fill_SL_configuration(MessageDef *msg_p,  ccparams_sidelink_t *SLconfig,int cell_idx,int cc_idx,char *config_fname);
 void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, int cell_idx,int cc_idx,char *config_fname,char *brparamspath);

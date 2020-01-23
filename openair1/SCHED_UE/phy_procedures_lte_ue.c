@@ -25,8 +25,7 @@
  * \date 2011
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr, javier.morgad
-e@ieee.org
+ * \email: {knopp, florian.kaltenberger, navid.nikaein}@eurecom.fr, javier.morgade@ieee.org
  * \note
  * \warning
  */
@@ -184,13 +183,16 @@ unsigned int get_tx_amp(int power_dBm,
   int gain_dB;
   double gain_lin;
 
-  if (power_dBm<=power_max_dBm)
+  if ( (power_dBm<=power_max_dBm) && ! IS_SOFTMODEM_RFSIM)
     gain_dB = power_dBm - power_max_dBm;
   else
     gain_dB = 0;
 
   gain_lin = pow(10,.1*gain_dB);
   AssertFatal((nb_rb >0) && (nb_rb <= N_RB_UL),"Illegal nb_rb/N_RB_UL combination (%d/%d)\n",nb_rb,N_RB_UL);
+  LOG_D(PHY," tx gain: %d = %d * sqrt ( pow(10, 0.1*max(0,%d-%d)) * %d/%d ) (gain lin=%f (dB=%d))\n",
+        (int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)),
+        AMP, power_dBm, power_max_dBm,  N_RB_UL, nb_rb, gain_lin, gain_dB);
   return((int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)));
 }
 
@@ -1152,7 +1154,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
 
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-  if (!(IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ) {
+  if (!IS_SOFTMODEM_BASICSIM) {
     ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
                    ue->hw_timing_advance-
                    ue->timing_advance-
@@ -1183,7 +1185,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
   }
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    int *Buff = (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ? &ue->common_vars.txdata[aa][ulsch_start] :dummy_tx_buffer;
+    int *Buff = IS_SOFTMODEM_BASICSIM ? &ue->common_vars.txdata[aa][ulsch_start] :dummy_tx_buffer;
 
     if (frame_parms->Ncp == 1) {
       PHY_ofdm_mod(&ue->common_vars.txdataF[aa][subframe_tx*nsymb*frame_parms->ofdm_symbol_size],
@@ -1204,7 +1206,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
                         &ue->frame_parms);
     }
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_BASICSIM) {
       apply_7_5_kHz(ue,&ue->common_vars.txdata[aa][ulsch_start],0);
       apply_7_5_kHz(ue,&ue->common_vars.txdata[aa][ulsch_start],1);
     } else {
@@ -1212,7 +1214,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
       apply_7_5_kHz(ue,dummy_tx_buffer,1);
     }
 
-    if (!(IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ) {
+    if (!(IS_SOFTMODEM_BASICSIM) ) {
       overflow = ulsch_start - 9*frame_parms->samples_per_tti;
 
       for (k=ulsch_start,l=0; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++) {
@@ -1316,7 +1318,7 @@ void ue_prach_procedures(PHY_VARS_UE *ue,
           ue->prach_resources[eNB_id]->ra_RNTI);
     ue->tx_total_RE[subframe_tx] = 96;
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_BASICSIM) {
       ue->prach_vars[eNB_id]->amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
                                     ue->tx_power_max_dBm,
                                     ue->frame_parms.N_RB_UL,
@@ -1690,7 +1692,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,
 
       ue->tx_total_RE[subframe_tx] = nb_rb*12;
 
-      if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+      if (IS_SOFTMODEM_BASICSIM) {
         tx_amp = AMP;
       } else {
         tx_amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
@@ -1767,7 +1769,7 @@ void ue_srs_procedures(PHY_VARS_UE *ue,
       Po_SRS = ue->tx_power_max_dBm;
     }
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_BASICSIM) {
       tx_amp = AMP;
     } else {
       if (ue->mac_enabled==1) {
@@ -2010,7 +2012,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
 
-      if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+      if (IS_SOFTMODEM_BASICSIM) {
         tx_amp = AMP;
       } else {
         tx_amp = get_tx_amp(Po_PUCCH,
@@ -2091,7 +2093,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
 
-      if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+      if (IS_SOFTMODEM_BASICSIM) {
         tx_amp = AMP;
       } else {
         tx_amp =  get_tx_amp(Po_PUCCH,
@@ -2346,7 +2348,7 @@ void ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0..6
     // AGC
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
 
-    if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM )
+    if (IS_SOFTMODEM_BASICSIM)
       phy_adjust_gain (ue,dB_fixed(ue->measurements.rssi),0);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
@@ -2423,8 +2425,6 @@ void ue_pbch_procedures(uint8_t eNB_id,
       dummy[2] = ue->pbch_vars[eNB_id]->decoded_output[0];
       trace_pdu( DIRECTION_DOWNLINK, dummy, WS_C_RNTI, ue->Mod_id, 0, 0,
                  frame_rx, subframe_rx, 0, 0);
-      LOG_D(OPT,"[UE %d][PBCH] Frame %d trace pdu for PBCH\n",
-            ue->Mod_id, subframe_rx);
     }
 
     if (pbch_tx_ant>2) {
@@ -2871,8 +2871,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
                         UE_rxtx_proc_t *proc,
                         int eNB_id,
                         int abstraction_flag,
-                        uint8_t fembms_flag
-                       ) {
+                        uint8_t fembms_flag) {
   int subframe_rx = proc->subframe_rx;
   int frame_rx = proc->frame_rx;
   int pmch_mcs=-1;
@@ -2958,7 +2957,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
 
       dlsch_unscrambling(&ue->frame_parms,1,ue->dlsch_MCH[0],
                          ue->dlsch_MCH[0]->harq_processes[0]->G,
-                         ue->pdsch_vars_MCH[0]->llr[0],0,subframe_rx<<1);
+                         ue->pdsch_vars_MCH[ue->current_thread_id[subframe_rx]][0]->llr[0],0,subframe_rx<<1);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> nb_rb %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->nb_rb);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> rb_alloc_even %x \n", frame_rx, subframe_rx, (unsigned int)((intptr_t)ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even));
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> Qm %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->Qm);
@@ -2966,7 +2965,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> G  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->G);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> Kmimo  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->Kmimo);
       ret = dlsch_decoding(ue,
-                           ue->pdsch_vars_MCH[0]->llr[0],
+                           ue->pdsch_vars_MCH[ue->current_thread_id[subframe_rx]][0]->llr[0],
                            &ue->frame_parms,
                            ue->dlsch_MCH[0],
                            ue->dlsch_MCH[0]->harq_processes[0],
@@ -3532,7 +3531,6 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
                            ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
                            ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);
             }
-
             break;
 
           case P_PDSCH:
@@ -4401,6 +4399,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
 void phy_procedures_UE_SL_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc) {
 }
 
+
 int phy_procedures_UE_RX(PHY_VARS_UE *ue,
                          UE_rxtx_proc_t *proc,
                          uint8_t eNB_id,
@@ -4878,7 +4877,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
   return (0);
 }
-
 
 
 void phy_procedures_UE_lte(PHY_VARS_UE *ue,

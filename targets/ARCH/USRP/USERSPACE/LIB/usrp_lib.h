@@ -26,14 +26,35 @@
  * \author: bruno.mongazon-cazavet@nokia-bell-labs.com
  */
 
-#if defined (USRP_REC_PLAY)
-
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "common/config/config_paramdesc.h"
 #include "common/config/config_userapi.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+#define CONFIG_OPT_RECPLAY "enable_recplay"
+
+#define  CONFIG_HLP_RECPLAY  "Allow record player"
+#define USRP_SECTION "device.usrp"
+/* inclusion for device configuration */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for USRP record/playback                                                                               */
+/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define USRP_DEVICE_PARAMS_DESC {  \
+    {CONFIG_OPT_RECPLAY,      CONFIG_HLP_RECPLAY, PARAMFLAG_BOOL,   uptr:&enable_recplay,                 defuintval:0,                    TYPE_UINT,     0} \
+  }
+
+
+/* inclusions for record player */
+#define RECPLAY_DISABLED     0
+#define RECPLAY_RECORDMODE   1
+#define RECPLAY_REPLAYMODE   2
 
 #define BELL_LABS_IQ_HEADER       0xabababababababab
 #define BELL_LABS_IQ_PER_SF       7680 // Up to 5MHz bw for now
@@ -46,13 +67,13 @@ typedef struct {
   unsigned char samples[BELL_LABS_IQ_BYTES_PER_SF]; // iq's for one subframe
 } iqrec_t;
 #define DEF_NB_SF           120000               // default nb of sf or ms to capture (2 minutes at 5MHz)
-#define DEF_SF_FILE         "/home/nokia/iqfile" // default subframes file name
+#define DEF_SF_FILE         "/tmp/iqfile"        // default subframes file name
 #define DEF_SF_DELAY_READ   700                  // default read delay  µs (860=real)
 #define DEF_SF_DELAY_WRITE  15                   // default write delay µs (15=real)
 #define DEF_SF_NB_LOOP      5                    // default nb loops
 
 
-/* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
+/* help strings definition for config options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_SF_FILE      "Path of the file used for subframes record or replay"
 #define CONFIG_HLP_SF_REC       "Record subframes from USRP driver into a file for later replay"
 #define CONFIG_HLP_SF_REP       "Replay subframes into USRP driver from a file"
@@ -61,7 +82,7 @@ typedef struct {
 #define CONFIG_HLP_SF_RDELAY    "Delay in microseconds to read a subframe in replay mode"
 #define CONFIG_HLP_SF_WDELAY    "Delay in microseconds to write a subframe in replay mode"
 
-/* keyword strings for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
+/* keyword strings for config options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_OPT_SF_FILE      "subframes-file"
 #define CONFIG_OPT_SF_REC       "subframes-record"
 #define CONFIG_OPT_SF_REP       "subframes-replay"
@@ -70,20 +91,41 @@ typedef struct {
 #define CONFIG_OPT_SF_RDELAY    "subframes-read-delay"
 #define CONFIG_OPT_SF_WDELAY    "subframes-write-delay"
 
+#define USRP_RECPLAY_SECTION "device.recplay"
 /* For information only - the macro is not usable in C++ */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for USRP record/playback                                                                               */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define USRP_RECPLAY_PARAMS_DESC {  \
-{"subframes-file",        	 CONFIG_HLP_SF_FILE,	0,		  strptr:(char **)&u_sf_filename,       defstrval:DEF_SF_FILE, 		   TYPE_STRING,   sizeof(u_sf_filename)}, \
-{"subframes-record",      	 CONFIG_HLP_SF_REC,	PARAMFLAG_BOOL,	  uptr:&u_sf_record,	                defuintval:0,			   TYPE_UINT,	  0}, \
-{"subframes-replay",      	 CONFIG_HLP_SF_REP,	PARAMFLAG_BOOL,	  uptr:&u_sf_replay,	                defuintval:0,			   TYPE_UINT,	  0}, \
-{"subframes-max",              	 CONFIG_HLP_SF_MAX,    	0,                uptr:&u_sf_max,			defintval:DEF_NB_SF,	       	   TYPE_UINT,	  0}, \
-{"subframes-loops",           	 CONFIG_HLP_SF_LOOPS,   0,                uptr:&u_sf_loops,			defintval:DEF_SF_NB_LOOP,	   TYPE_UINT,	  0}, \
-{"subframes-read-delay",         CONFIG_HLP_SF_RDELAY,  0,                uptr:&u_sf_read_delay,	      	defintval:DEF_SF_DELAY_READ,	   TYPE_UINT,	  0}, \
-{"subframes-write-delay",        CONFIG_HLP_SF_WDELAY,  0,                uptr:&u_sf_write_delay,		defintval:DEF_SF_DELAY_WRITE,	   TYPE_UINT,	  0}, \
+    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE, 0,              strptr:(char **)((*recplay_state)->u_sf_filename),       defstrval:DEF_SF_FILE,            TYPE_STRING,   1024}, \
+    {CONFIG_OPT_SF_REC,       CONFIG_HLP_SF_REC,  PARAMFLAG_BOOL,   uptr:&(u_sf_record),                  defuintval:0,                TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_REP,       CONFIG_HLP_SF_REP,  PARAMFLAG_BOOL,   uptr:&(u_sf_replay),                  defuintval:0,                TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_MAX,       CONFIG_HLP_SF_MAX,    0,                uptr:&((*recplay_state)->u_sf_max),                 defintval:DEF_NB_SF,             TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_LOOPS,     CONFIG_HLP_SF_LOOPS,  0,                uptr:&((*recplay_state)->u_sf_loops),                 defintval:DEF_SF_NB_LOOP,        TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_RDELAY,    CONFIG_HLP_SF_RDELAY, 0,                uptr:&((*recplay_state)->u_sf_read_delay),              defintval:DEF_SF_DELAY_READ,     TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_WDELAY,    CONFIG_HLP_SF_WDELAY, 0,                uptr:&((*recplay_state)->u_sf_write_delay),           defintval:DEF_SF_DELAY_WRITE,    TYPE_UINT,   0}, \
+  }/*! \brief USRP Configuration and state */
+
+typedef struct {
+  FILE            *pFile;
+  int             mmapfd;
+  int             iqfd;
+  int             use_mmap; // default is to use mmap
+  size_t          mapsize;
+  iqrec_t        *ms_sample;                      // memory for all subframes
+  unsigned int    nb_samples;
+  char            u_sf_filename[1024];              // subframes file path
+  unsigned int    u_sf_max ;                  // max number of recorded subframes
+  unsigned int    u_sf_loops ;           // number of loops in replay mode
+  unsigned int    u_sf_read_delay;   // read delay in replay mode
+  unsigned int    u_sf_write_delay ; // write delay in replay mode
+} recplay_state_t;
+
+
+extern int read_usrpconfig(uint32_t *recplay_mode, recplay_state_t **recplay_state);
+#ifdef __cplusplus
 }
-#endif // BELL_LABS_MUST
+#endif
 #endif // __USRP_LIB_H
 

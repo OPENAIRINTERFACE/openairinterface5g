@@ -65,7 +65,7 @@
   {"ulsch-max-errors",      CONFIG_HLP_ULMAXE,      0,              uptr:&ULSCH_max_consecutive_errors,    defuintval:0,          TYPE_UINT,   0}, \
   {"phy-test",              CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL, iptr:&phy_test,                        defintval:0,           TYPE_INT,    0}, \
   {"usim-test",             CONFIG_HLP_USIM,        PARAMFLAG_BOOL, u8ptr:&usim_test,                      defintval:0,           TYPE_UINT8,  0}, \
-  {"external-clock",        CONFIG_HLP_EXCCLK,      PARAMFLAG_BOOL, uptr:&clock_source,                    defintval:0,           TYPE_INT,    0}, \
+  {"clock-source",          CONFIG_HLP_EXCCLK,      0,              iptr:&clock_source,                    defintval:0,           TYPE_INT,    0}, \
   {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,              defintval:1,           TYPE_INT,    0}, \
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
   {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \
@@ -103,4 +103,5 @@ extern void print_opp_meas(void);
 void *UE_thread(void *arg);
 PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern tpool_t *Tpool;
+extern tpool_t *Tpool_dl;
 #endif

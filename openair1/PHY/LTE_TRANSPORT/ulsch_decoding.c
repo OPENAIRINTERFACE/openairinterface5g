@@ -561,8 +561,8 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   else
     tc = *decoder8;
 
-  if(ulsch_harq->repetition_number == 1){
-	  memset(pusch_rep_buffer,0,(sizeof(int32_t)*3*(6144+64))) ;  // reset the buffer every new repetitions
+  if(ulsch_harq->repetition_number == 1) {
+    memset(pusch_rep_buffer,0,(sizeof(int32_t)*3*(6144+64))) ;  // reset the buffer every new repetitions
   }
 
   for (r=0; r<ulsch_harq->C; r++) {
@@ -579,11 +579,10 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                           (uint8_t *)&dummy_w[r][0],
                                           (r==0) ? ulsch_harq->F : 0);
 #ifdef DEBUG_ULSCH_DECODING
-    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, nb_rb %d, Nl %d)...\n",
+    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, Nl %d)...\n",
            r, G,
            Kr*3,
-           Q_m,
-           nb_rb,
+           ulsch_harq->Qm,
            ulsch_harq->Nl);
 #endif
     start_meas(&eNB->ulsch_rate_unmatching_stats);
@@ -608,26 +607,22 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     }
 
     stop_meas(&eNB->ulsch_rate_unmatching_stats);
-
     max_Ncb = 3*ulsch_harq->RTC[r]*32 ;
 
-    if(ulsch_harq->total_number_of_repetitions > 1)
-    {
-    	if (ulsch_harq->rvidx==1)
-    	{ 					// Store the result of HARQ combining in the last emtc repetitions of sequence 0,2,3,1
-    		for (int nn=0;nn<max_Ncb;nn++)
-    		{
-    			pusch_rep_buffer[nn] += ulsch_harq->w[r][nn] ;
-    		}
+    if(ulsch_harq->total_number_of_repetitions > 1) {
+      if (ulsch_harq->rvidx==1) {
+        // Store the result of HARQ combining in the last emtc repetitions of sequence 0,2,3,1
+        for (int nn=0; nn<max_Ncb; nn++) {
+          pusch_rep_buffer[nn] += ulsch_harq->w[r][nn] ;
         }
-    	if (ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions)
-    	{
-    		for (int nn=0;nn<max_Ncb;nn++)
-    		{
-    			ulsch_harq->w[r][nn] =  pusch_rep_buffer[nn] ;
-      		}
-      	}
       }
+
+      if (ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions) {
+        for (int nn=0; nn<max_Ncb; nn++) {
+          ulsch_harq->w[r][nn] =  pusch_rep_buffer[nn] ;
+        }
+      }
+    }
 
     r_offset += E;
     start_meas(&eNB->ulsch_deinterleaving_stats);
@@ -727,11 +722,13 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
   //  printf("n=%d : c %x\n",n,x1^x2);
 }
 
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
+                             L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
-                             uint8_t llr8_flag) {
+                             uint8_t llr8_flag)
+{
   int16_t *ulsch_llr = eNB->pusch_vars[UE_id]->llr;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
@@ -762,12 +759,13 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   int frame = proc->frame_rx;
   int subframe = proc->subframe_rx;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
+
   LOG_D(PHY,"ue_type %d\n",ulsch->ue_type);
 
-  if (ulsch->ue_type>0)     harq_pid = 0;
-  else {
+  if (ulsch->ue_type>0)
+    harq_pid = 0;
+  else
     harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
-  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,1);
   // x1 is set in lte_gold_generic
