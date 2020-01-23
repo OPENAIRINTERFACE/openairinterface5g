@@ -1482,9 +1482,7 @@ x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
-  return x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data,0); // Not the right place to call the X2 function. Used only initially for testing.
-
+  return x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
 int
@@ -1804,6 +1802,9 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 	  x2ap_eNB_data_t                    *x2ap_eNB_data;
 	  MessageDef                         *msg;
 	  int                                ue_id;
+          int                                id_source;
+          int                                id_target;
+          int                                rnti;
 
 	  DevAssert (pdu != NULL);
 	  x2SgNBAdditionRequest_ack = &pdu->choice.successfulOutcome.value.choice.SgNBAdditionRequestAcknowledge;
@@ -1835,6 +1836,8 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 	    return -1;
 	  }
 
+	  id_source = ie->value.choice.UE_X2AP_ID;
+
 	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).MeNB_ue_x2_id = ie->value.choice.UE_X2AP_ID;
 
 
@@ -1845,6 +1848,24 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
 		  return -1;
 	  }
+
+	  id_target = ie->value.choice.SgNB_UE_X2AP_ID;
+
+          ue_id = id_source;
+
+          if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
+            X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring sGNB addition response\n",
+                      id_source, id_target);
+            itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
+            return 0;
+          }
+
+          rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
+
+          /* id_target is a new information, store it */
+          x2ap_set_ids(&instance_p->id_manager, ue_id, rnti, id_source, id_target);
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rnti = rnti;
 
 	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).SgNB_ue_x2_id = ie->value.choice.SgNB_UE_X2AP_ID;
 
@@ -1907,10 +1928,7 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 
 	  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
-	  x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(instance_p, x2ap_eNB_data,0,0); // Not the right place to call the X2 function. Used only initially for testing.
-
 	  return 0;
-
 }
 
 static

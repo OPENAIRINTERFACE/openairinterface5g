@@ -4297,6 +4297,10 @@ rrc_eNB_process_MeasurementReport(
               ctxt_pP->subframe);
         break;
 
+      case 7:
+        LOG_D(RRC, "NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
       default:
         LOG_D(RRC,"Other event report frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
         break;
@@ -4308,6 +4312,22 @@ rrc_eNB_process_MeasurementReport(
           ue_context_pP->ue_context.measResults->measResultPCell.rsrpResult-140);
     LOG_D(RRC, "[eNB %d]Frame %d: UE %x (Measurement Id %d): RSRQ of Source %ld\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId,
           ue_context_pP->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
+  }
+
+  /* TODO: improve NR triggering */
+  if (measResults2->measId == 7) {
+    if (ue_context_pP->ue_context.Status != RRC_NR_NSA) {
+      MessageDef      *msg;
+      ue_context_pP->ue_context.Status = RRC_NR_NSA;
+
+      msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+      LOG_I(RRC,
+            "[eNB %d] frame %d subframe %d: UE rnti %x switching to NSA mode\n",
+            ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->subframe, ctxt_pP->rnti);
+      itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+      return;
+    }
   }
 
   if (measResults2->measResultNeighCells == NULL)
@@ -8399,7 +8419,7 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                     0,
                                     ENB_FLAG_YES,
-                                    4660,//ue_context->ue_context.rnti,
+                                    m->rnti,
                                     0, 0);
 
     size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, scg_CellGroupConfig, nr1_conf);

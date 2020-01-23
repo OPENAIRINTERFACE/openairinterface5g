@@ -357,7 +357,7 @@ typedef struct x2ap_ENDC_sgnb_addition_req_ACK_s {
 
   int SgNB_ue_x2_id;
 
-  /* used for RRC->X2AP in source eNB */
+  /* used for X2AP->RRC in source eNB */
   int rnti;
 
   uint8_t nb_e_rabs_admitted_tobeadded;

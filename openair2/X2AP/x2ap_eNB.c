@@ -447,6 +447,37 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
 }
 
 static
+void x2ap_eNB_handle_sgNB_add_req(instance_t instance,
+                                  x2ap_ENDC_sgnb_addition_req_t *x2ap_ENDC_sgnb_addition_req)
+{
+  x2ap_id_manager     *id_manager;
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *x2ap_eNB_data;
+  int                 ue_id;
+
+  /* TODO: remove hardcoded value */
+  x2ap_eNB_data = x2ap_is_eNB_id_in_list(3584);
+  DevAssert(x2ap_eNB_data != NULL);
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  /* allocate x2ap ID */
+  id_manager = &instance_p->id_manager;
+  ue_id = x2ap_allocate_new_id(id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    /* TODO: cancel NSA: send (to be defined) message to RRC */
+    exit(1);
+  }
+  /* id_source is ue_id, id_target is unknown yet */
+  x2ap_set_ids(id_manager, ue_id, x2ap_ENDC_sgnb_addition_req->rnti, ue_id, -1);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_NSA_PREPARE);
+
+  x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_eNB_data, ue_id);
+}
+
+static
 void x2ap_gNB_trigger_sgNB_add_req_ack(instance_t instance,
 		x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_ENDC_sgnb_addition_req_ACK)
 {
@@ -552,11 +583,15 @@ void *x2ap_task(void *arg) {
                                                 &X2AP_UE_CONTEXT_RELEASE(received_msg));
         break;
 
+      case X2AP_ENDC_SGNB_ADDITION_REQ:
+        x2ap_eNB_handle_sgNB_add_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                     &X2AP_ENDC_SGNB_ADDITION_REQ(received_msg));
+        break;
+
       case X2AP_ENDC_SGNB_ADDITION_REQ_ACK:
     	  x2ap_gNB_trigger_sgNB_add_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
     			  &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(received_msg));
     	LOG_I(X2AP, "Received elements for X2AP_ENDC_SGNB_ADDITION_REQ_ACK \n");
-
     	break;
 
       case SCTP_INIT_MSG_MULTI_CNF:

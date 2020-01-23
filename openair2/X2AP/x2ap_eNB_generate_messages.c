@@ -1569,7 +1569,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	ie->id = X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID; //Not sure about that
 	ie->criticality= X2AP_Criticality_reject;
 	ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_UE_X2AP_ID;
-	ie->value.choice.UE_X2AP_ID = ue_id; //x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+	ie->value.choice.UE_X2AP_ID = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
 	ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 	ie = (X2AP_SgNBAdditionRequest_IEs_t *)calloc(1, sizeof(X2AP_SgNBAdditionRequest_IEs_t));
