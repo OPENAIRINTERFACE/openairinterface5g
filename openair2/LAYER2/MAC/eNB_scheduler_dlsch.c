@@ -921,6 +921,9 @@ schedule_ue_spec(module_id_t module_idP,
 
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
+      if (ue_sched_ctrl->ta_timer)
+        ue_sched_ctrl->ta_timer--;
+
       if (ue_sched_ctrl->ta_timer == 0) {
         ta_update = ue_sched_ctrl->ta_update;
 
