@@ -512,16 +512,15 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,
       continue;//hacking only works when all RU_tx works on the same subframe #TODO: adding mask stuff
     }
 
-    AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_eNBs))==0,"ERROR pthread_mutex_lock failed on mutex_eNBs L1_thread_tx with ret=%d\n",ret);
-
     if (ru_proc->instance_cnt_eNBs == 0) {
       LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->subframe_rx);
       AssertFatal((ret=pthread_mutex_lock(&eNB->proc.mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
       eNB->proc.RU_mask_tx = 0;
       AssertFatal((ret=pthread_mutex_unlock(&eNB->proc.mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
-      AssertFatal((ret=pthread_mutex_unlock( &ru_proc->mutex_eNBs ))==0,"mutex_unlock return %d\n",ret);
       return(-1);
     }
+
+    AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_eNBs))==0,"ERROR pthread_mutex_lock failed on mutex_eNBs L1_thread_tx with ret=%d\n",ret);
 
     ru_proc->instance_cnt_eNBs = 0;
     ru_proc->timestamp_tx = timestamp_tx;
