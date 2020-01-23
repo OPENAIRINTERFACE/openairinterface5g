@@ -65,9 +65,6 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
   uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
 
-  if (slot==0)
-    gNB->skipped_slots = 0;
-
   n_hf = fp->half_frame_bit;
 
   // if SSB periodicity is 5ms, they are transmitted in both half frames
@@ -83,7 +80,10 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
-  if ((slot==8) || (slot==9) || (slot==18) || (slot==19) || (slot==28) || (slot==29))
+  if (rel_slot==0)
+    gNB->skipped_slots = 0;
+
+  if ((rel_slot==8) || (rel_slot==9) || (rel_slot==18) || (rel_slot==19) || (rel_slot==28) || (rel_slot==29))
     gNB->skipped_slots = gNB->skipped_slots + 1;
   else {
     if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
