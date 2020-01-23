@@ -283,7 +283,6 @@ void RCconfig_nr_flexran()
   /* this will possibly truncate the cell id (RRC assumes int32_t).
    * Both Nid_cell and gnb_id are signed in RRC case, but we use unsigned for
    * the bitshifting to work properly */
-  int32_t   Nid_cell = 0;
   uint16_t  Nid_cell_tr = 0;
   uint32_t  gnb_id = 0;
 
@@ -362,7 +361,7 @@ void RCconfig_nr_flexran()
 }
 
 void RCconfig_NR_L1(void) {
-  int               i,j;
+  int j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
@@ -955,8 +954,6 @@ void NRRCConfig(void) {
   
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];  
   
-
-
 /* get global parameters, defined outside any section in the config file */
  
   printf("Getting GNBSParams\n");

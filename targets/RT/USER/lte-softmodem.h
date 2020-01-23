@@ -189,7 +189,7 @@
     {"clock",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
     {"wait-for-sync",        NULL,                    PARAMFLAG_BOOL, iptr:&WAIT_FOR_SYNC,                defintval:0,           TYPE_INT,    0},                     \
     {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
-    {"C" ,                   CONFIG_HLP_DLF,          0,              uptr:&(downlink_frequency[0][0]),   defuintval:2680000000, TYPE_UINT,   0},                     \
+    {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]), defuintval:2680000000, TYPE_UINT64, 0},                     \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
