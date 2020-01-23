@@ -128,7 +128,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 */
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
 
@@ -3273,7 +3273,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
     uint16_t BWPStart       = dlsch0->harq_processes[harq_pid]->BWPStart;
-    uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
+    //    uint16_t BWPSize        = dlsch0->harq_processes[harq_pid]->BWPSize;
     uint16_t pdsch_start_rb = dlsch0->harq_processes[harq_pid]->start_rb;
     uint16_t pdsch_nb_rb =  dlsch0->harq_processes[harq_pid]->nb_rb;
     uint16_t s0 =  dlsch0->harq_processes[harq_pid]->start_symbol;
@@ -4027,9 +4027,9 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 #endif
 
 
-int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp, int mib_sfn)  {
+int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp)  {
 
-  int ssb_slot_decoded = (fp->ssb_index)/2;
+  int ssb_slot_decoded = (fp->ssb_index>>1) + ((fp->ssb_index>>4)<<1); //slot in which the decoded SSB can be found
 
   if (config->ssb_table.ssb_period == 0) {  
     // check for pbch in corresponding slot each half frame
@@ -4040,7 +4040,7 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
   }
   else {
     // if the current frame is supposed to contain ssb
-    if (!((frame-(mib_sfn))%(1<<config->ssb_table.ssb_period)))
+    if (!(frame%(1<<(config->ssb_table.ssb_period-1))))
       return(slot == ssb_slot_decoded);
     else
       return 0;
@@ -4081,7 +4081,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
   
-  slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp, proc->decoded_frame_rx);
+  slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_tti_rx, fp);
 
   // looking for pbch only in slot where it is supposed to be
   if ((ue->decode_MIB == 1) && slot_pbch)

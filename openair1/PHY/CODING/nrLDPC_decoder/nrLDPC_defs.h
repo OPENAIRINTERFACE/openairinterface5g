@@ -97,7 +97,7 @@
 #define NR_LDPC_SIZE_BN_PROC_BUF NR_LDPC_NUM_EDGE_BG1*NR_LDPC_ZMAX
 
 /** Maximum number of possible input LLR = NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX */
-#define NR_LDPC_MAX_NUM_LLR 26112
+#define NR_LDPC_MAX_NUM_LLR 27000
 
 // ==============================================================================
 // GLOBAL CONSTANT VARIABLES

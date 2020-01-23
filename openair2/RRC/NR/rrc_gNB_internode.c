@@ -53,7 +53,7 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo) {
 						cg_ConfigInfo->ue_CapabilityInfo->buf,
 						cg_ConfigInfo->ue_CapabilityInfo->size, 0, 0);
           if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-	    AssertFatal(1==0,"[InterNode] Failed to decode NR_UE_CapabilityRAT_ContainerList (%zu bits), size of OCTET_STRING %d\n",
+	    AssertFatal(1==0,"[InterNode] Failed to decode NR_UE_CapabilityRAT_ContainerList (%zu bits), size of OCTET_STRING %lu\n",
 			dec_rval.consumed, cg_ConfigInfo->ue_CapabilityInfo->size);
 	  }
 	  rrc_parse_ue_capabilities(rrc,UE_CapabilityRAT_ContainerList);

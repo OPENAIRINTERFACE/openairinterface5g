@@ -25,7 +25,9 @@
 
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
-uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
+uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
+
+
 
 int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
 {
@@ -192,6 +194,22 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
       fp->ssb_type = nr_ssb_type_D;
+      switch(fp->N_RB_DL){
+        case 66:
+          fp->ofdm_symbol_size = 1024;
+          fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
+          fp->nb_prefix_samples0 = 88;
+          fp->nb_prefix_samples = 72;
+          break;
+        case 32:
+          fp->ofdm_symbol_size = 512;
+          fp->first_carrier_offset = 320; //1024 - ( (66*12) / 2 )
+          fp->nb_prefix_samples0 = 44;
+          fp->nb_prefix_samples = 36;
+          break;
+      default:
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
+      }
       break;
 
     case NR_MU_4:

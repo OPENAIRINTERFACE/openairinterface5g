@@ -588,6 +588,12 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
 
+  uint8_t frame_number_4lsb = 0;
+  for (int i=0; i<4; i++)
+    frame_number_4lsb |= ((nr_ue_pbch_vars->xtra_byte>>i)&1)<<(3-i);
+
+  proc->decoded_frame_rx = frame_number_4lsb;
+
 #ifdef DEBUG_PBCH
   printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);
 
@@ -602,7 +608,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     
   dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
   dl_indication.dci_ind = NULL; 
-  dl_indication.proc=proc;        // needed to signal back the frame number -> FIXME
+  dl_indication.proc=proc;
   dl_indication.module_id=0;
   dl_indication.cc_id=proc->CC_id;
 

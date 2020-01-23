@@ -259,7 +259,6 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
 
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration) {
   protocol_ctxt_t      ctxt;
-  int                  CC_id;
 
   gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
 
@@ -284,7 +283,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   
   rrc->carrier.Srb0.Active = 0;
 
-  uid_linear_allocator_init(&rrc->uid_allocator);
+  nr_uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
   rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);

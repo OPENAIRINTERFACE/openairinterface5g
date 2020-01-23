@@ -223,8 +223,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
-                        module_id_t module_id,
+int8_t nr_ue_decode_mib(module_id_t module_id,
                         int cc_id,
                         uint8_t gNB_index,
                         uint8_t extra_bits,	//	8bits 38.212 c7.1.1
@@ -247,7 +246,6 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
     frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
   uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
   uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
-	    
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
   //uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
@@ -609,7 +607,9 @@ int8_t nr_ue_decode_mib(UE_nr_rxtx_proc_t *proc,
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_id;
 
-  proc->decoded_frame_rx=frame;
+  mac->dl_config_request.sfn = frame;
+  mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS 
+
   //}
   return 0;
 
@@ -1651,16 +1651,12 @@ uint8_t table_7_3_2_3_3_4_twoCodeword[6][10] = {
   {2,0,1,2,3,6,7,8,0,2},
   {2,0,1,2,3,6,7,8,9,2}
 };
-int8_t nr_ue_process_dci_freq_dom_resource_assignment(
-						      fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
+int8_t nr_ue_process_dci_freq_dom_resource_assignment(fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
 						      uint16_t n_RB_ULBWP,
 						      uint16_t n_RB_DLBWP,
 						      uint16_t riv
 						      ){
-  uint16_t l_RB;
-  uint16_t start_RB;
-  uint16_t tmp_RIV;
 
   /*
    * TS 38.214 subclause 5.1.2.2 Resource allocation in frequency domain (downlink)
@@ -3039,12 +3035,12 @@ nr_ue_send_sdu(module_id_t module_idP,
 }
 
 
-int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-			int dci_format,
-			uint8_t dci_size,
-			uint16_t rnti,
-			uint64_t *dci_pdu,
-			nr_dci_pdu_rel15_t *dci_pdu_rel15) {
+void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+			 int dci_format,
+			 uint8_t dci_size,
+			 uint16_t rnti,
+			 uint64_t *dci_pdu,
+			 nr_dci_pdu_rel15_t *dci_pdu_rel15) {
   int rnti_type=-1;
 
   if       (rnti == mac->ra_rnti) rnti_type = NR_RNTI_RA;

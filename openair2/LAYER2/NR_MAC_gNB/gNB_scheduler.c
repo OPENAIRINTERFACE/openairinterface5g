@@ -323,12 +323,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
   //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
 
-  start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
-
-
   // Check if there are downlink symbols in the slot, if not return, no scheduling opportunities
   if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)==0) return;
+
+  start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;

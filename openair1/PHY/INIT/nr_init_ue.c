@@ -979,14 +979,14 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config,
   config->subframe_config.numerology_index_mu.value =1;
   config->subframe_config.duplex_mode.value = 1; //FDD
   config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-  config->rf_config.dl_carrier_bandwidth.value = 106;
-  config->rf_config.ul_carrier_bandwidth.value = 106;
+  config->rf_config.dl_carrier_bandwidth.value = 100;
+  config->rf_config.ul_carrier_bandwidth.value = 100;
   config->sch_config.physical_cell_id.value = 0;
   
   frame_parms->frame_type          = FDD;
   //frame_parms[CC_id]->tdd_config_S        = 0;
-  frame_parms->N_RB_DL             = 100;
-  frame_parms->N_RB_UL             = 100;
+  frame_parms->N_RB_DL             = 106;
+  frame_parms->N_RB_UL             = 106;
   frame_parms->Ncp                 = NORMAL;
   //frame_parms[CC_id]->Ncp_UL              = NORMAL;
   frame_parms->Nid_cell            = 0;

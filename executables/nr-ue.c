@@ -170,7 +170,6 @@ static void UE_synch(void *arg) {
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
-
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu64", UL %"PRIu64" (oai_exit %d, rx_num_channels %d)\n",
            UE->frame_parms.dl_CarrierFreq, UE->frame_parms.ul_CarrierFreq,
            oai_exit, openair0_cfg[0].rx_num_channels);
@@ -292,6 +291,12 @@ static void UE_synch(void *arg) {
             openair0_cfg[UE->rf_map.card].tx_bw=10.0e6;
             //            openair0_cfg[0].rx_gain[0] -= 0;
             break;
+
+          case 66:
+            openair0_cfg[UE->rf_map.card].sample_rate=122.88e6;
+            openair0_cfg[UE->rf_map.card].rx_bw=100.e6;
+            openair0_cfg[UE->rf_map.card].tx_bw=100.e6;
+            break;
         }
 
         if (UE->mode != loop_through_memory) {
@@ -383,7 +388,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     rvidx = 0;
     //------------------------------------------------------------------------------//
 
-    scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
+    //scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
     scheduled_response.ul_config->number_pdus = 1;
     scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
@@ -410,6 +415,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
+  uint8_t  ssb_period = UE->nrUE_config.ssb_table.ssb_period; 
 
   //program DCI for slot 1
   //TODO: all of this has to be moved to the MAC!!!
@@ -427,6 +433,13 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.tx_request = NULL;
     scheduled_response.module_id = UE->Mod_id;
     scheduled_response.CC_id     = 0;
+    if (!((proc->frame_rx)%(1<<(ssb_period-1)))) {
+      if(proc->frame_rx > dcireq.dl_config_req.sfn)
+        UE->frame_gap = proc->frame_rx - dcireq.dl_config_req.sfn;
+      if(proc->frame_rx < dcireq.dl_config_req.sfn)
+        UE->frame_gap = dcireq.dl_config_req.sfn - proc->frame_rx;
+      proc->frame_rx = dcireq.dl_config_req.sfn;
+    }
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
 
@@ -602,7 +615,6 @@ void *UE_thread(void *arg) {
   openair0_timestamp timestamp;
   void *rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
   int start_rx_stream = 0;
-  const uint16_t table_sf_slot[20] = {0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9};
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
   UE->rfdevice.host_type = RAU_HOST;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -618,7 +630,7 @@ void *UE_thread(void *arg) {
                                   newNotifiedFIFO_elt(sizeof(processingData_t), 0,&nf,UE_processing));
 
   bool syncRunning=false;
-  const int nb_slot_frame = 10*UE->frame_parms.slots_per_subframe;
+  const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
   while (!oai_exit) {
@@ -688,11 +700,11 @@ void *UE_thread(void *arg) {
     curMsg->UE->current_thread_id[slot_nr] = thread_idx;
     curMsg->proc.CC_id = 0;
     curMsg->proc.nr_tti_rx= slot_nr;
-    curMsg->proc.subframe_rx=table_sf_slot[slot_nr];
+    curMsg->proc.subframe_rx=slot_nr/(nb_slot_frame/10);
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
-    curMsg->proc.frame_rx = ( absolute_slot/nb_slot_frame ) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx = ( (absolute_slot + DURATION_RX_TO_TX) /nb_slot_frame ) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_rx = ((absolute_slot/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx = (((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 
@@ -735,9 +747,9 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
-if (slot_nr==18)
-    AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
+    if (slot_nr==18)
+      AssertFatal(writeBlockSize ==
+                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
                      (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
                      UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -

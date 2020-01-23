@@ -202,7 +202,6 @@ int main(int argc, char **argv)
   int N_RB_DL=106,mu=1;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t dlsch_config;
 
-
   //unsigned char frame_type = 0;
 
   int frame=0,slot=1;
@@ -233,7 +232,7 @@ int main(int argc, char **argv)
   int mcsIndex_set=0,rbStart_set=0,rbSize_set=0;
   int print_perf             = 0;
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -381,6 +380,7 @@ int main(int argc, char **argv)
     case 'I':
       run_initial_sync=1;
       target_error_rate=0.1;
+      slot = 0;
       break;
 
     case 'L':
@@ -408,6 +408,9 @@ int main(int argc, char **argv)
       mcsIndex_set=1;
       break;
 
+    case 'm':
+      mu = atoi(optarg);
+      break;
 
     default:
     case 'h':
@@ -546,6 +549,14 @@ int main(int argc, char **argv)
     fs = 61.44e6;
     bw = 40e6;
   }
+  else if (mu == 3 && N_RB_DL == 66) {
+    fs = 122.88e6;
+    bw = 100e6;
+  }
+  else if (mu == 3 && N_RB_DL == 32) {
+    fs = 61.44e6;
+    bw = 50e6;
+  }
   else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
 
   gNB2UE = new_channel_desc_scm(n_tx,
@@ -619,9 +630,8 @@ int main(int argc, char **argv)
   nr_gold_pbch(UE);
   nr_gold_pdcch(UE,0,2);
 
-
    
-  nr_l2_init_ue();
+  nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
   
   UE->if_inst = nr_ue_if_module_init(0);
@@ -651,14 +661,13 @@ int main(int argc, char **argv)
   if (mcsIndex_set==0) dlsch_config.mcsIndex[0]=9;
   if (rbSize_set==0) dlsch_config.rbSize=N_RB_DL;
   if (rbStart_set==0) dlsch_config.rbStart=0;
-  
 
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,scc,secondaryCellGroup->spCellConfig);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,secondaryCellGroup->spCellConfig);
 
 
   nr_dcireq_t dcireq;

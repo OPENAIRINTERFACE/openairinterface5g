@@ -132,7 +132,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   PHY_VARS_gNB *gNB;
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
-  uint8_t                       CC_id        = Sched_INFO->CC_id;
   nfapi_nr_dl_tti_request_t     *DL_req      = Sched_INFO->DL_req;
   nfapi_nr_tx_data_request_t    *TX_req      = Sched_INFO->TX_req;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = Sched_INFO->UL_tti_req;
@@ -146,18 +145,16 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB         = RC.gNB[Mod_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_tti_request_body.nPDUs;
-  uint8_t number_ul_pdu             = 0;
+  //  uint8_t number_ul_pdu             = 0;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
 
-  if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
+  //  if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
 
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
         frame,slot,
         DL_req->SFN,DL_req->Slot,number_dl_pdu,
         TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs);
 
-  int do_oai =0;
-  int dont_send =0;
   int pdcch_received=0;
   gNB->num_pdsch_rnti=0;
   gNB->pdcch_pdu = NULL;
@@ -169,7 +166,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
 	gNB->pbch_configured=1;
-        do_oai=1;
 
         handle_nr_nfapi_ssb_pdu(gNB,frame,slot,
                                 dl_tti_pdu);
@@ -183,19 +179,17 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 				  &dl_tti_pdu->pdcch_pdu);
  
 	pdcch_received = 1;
-        do_oai=1;
+
       break;
       case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
 
       {
         nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdu->pdsch_pdu.pdsch_pdu_rel15;
         uint16_t pduIndex = pdsch_pdu_rel15->pduIndex;
-        uint16_t tx_pdus = TX_req->Number_of_PDUs;
 	AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
 		    pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
-        uint8_t *sdu = TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
+        uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
         handle_nr_nfapi_pdsch_pdu(gNB,frame,slot,&dl_tti_pdu->pdsch_pdu, sdu);
-        do_oai=1;
       }
     }
   }

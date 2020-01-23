@@ -127,7 +127,7 @@ extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
 
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern int rx_input_level_dBm;

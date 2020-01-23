@@ -49,7 +49,6 @@
    \param pdu_length     length of pdu
    \param cell_id        cell id */
 int8_t nr_ue_decode_mib(
-    UE_nr_rxtx_proc_t *proc,
     module_id_t module_id, 
     int cc_id, 
     uint8_t gNB_index, 
@@ -139,12 +138,12 @@ void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_f
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot);
 
-int nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-			int dci_format,
-			uint8_t dci_length,
-			uint16_t rnti,
-			uint64_t *dci_pdu,
-			nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
+void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+	 		 int dci_format,
+		 	 uint8_t dci_length,
+			 uint16_t rnti,
+			 uint64_t *dci_pdu,
+			 nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
 
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,

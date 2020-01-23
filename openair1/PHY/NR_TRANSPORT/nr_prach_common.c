@@ -40,6 +40,8 @@
 
 #include "T.h"
 
+void init_nr_prach_tables(int N_ZC);
+
 void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
   FILE *fd;

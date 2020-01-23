@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 	//char input_val_str[50],input_val_str2[50];
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-	uint16_t N_RB_DL = 106, mu = 1;
+	uint16_t N_RB_DL = 106, mu = 1; 
 	//unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
 	int frame = 0, slot = 0;
@@ -628,7 +628,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 2; i++) {
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(gNB->dlsch[0][i]));
+		free_gNB_dlsch(&(gNB->dlsch[0][i]),N_RB_DL);
 		printf("UE %d\n", i);
 		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
 	}
