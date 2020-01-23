@@ -92,7 +92,6 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
                      uint8_t n_hf,
-                     uint8_t Lmax,
                      int sfn,
                      nfapi_nr_config_request_scf_t *config,
                      NR_DL_FRAME_PARMS *frame_parms);

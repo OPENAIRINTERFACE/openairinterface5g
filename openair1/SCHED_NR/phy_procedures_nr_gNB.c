@@ -103,9 +103,9 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
           if (cfg->carrier_config.num_tx_ant.value <= 4)
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
           else
-	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 	
 	  nr_generate_pbch(&gNB->pbch,
 	                   &gNB->ssb_pdu,
@@ -113,8 +113,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 			   &txdataF[0][txdataF_offset],
 			   AMP,
 			   ssb_start_symbol,
-			   n_hf,cfg->carrier_config.num_tx_ant.value,
-			   frame, cfg, fp);
+			   n_hf, frame, cfg, fp);
         }
       }
     }
