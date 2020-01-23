@@ -932,7 +932,6 @@ typedef struct {
   ///Contention resolution timer used during random access
   uint8_t mac_ContentionResolutionTimer;
 
-  uint16_t max_rbs_allowed_slice[NFAPI_CC_MAX][MAX_NUM_SLICES];
   uint16_t max_rbs_allowed_slice_uplink[NFAPI_CC_MAX][MAX_NUM_SLICES];
 
   uint8_t max_mcs[MAX_NUM_LCID];
@@ -1163,8 +1162,6 @@ typedef struct {
   /// Sorting criteria for the UE list in the MAC preprocessor
   uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
   uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
-
-  int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
   int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
 } UE_list_t;
 

@@ -59,7 +59,6 @@ void init_UE_list(UE_list_t *UE_list)
   memset(UE_list->eNB_UE_stats, 0, sizeof(UE_list->eNB_UE_stats));
   memset(UE_list->UE_sched_ctrl, 0, sizeof(UE_list->UE_sched_ctrl));
   memset(UE_list->active, 0, sizeof(UE_list->active));
-  memset(UE_list->assoc_dl_slice_idx, 0, sizeof(UE_list->assoc_dl_slice_idx));
   memset(UE_list->assoc_ul_slice_idx, 0, sizeof(UE_list->assoc_ul_slice_idx));
 }
 
