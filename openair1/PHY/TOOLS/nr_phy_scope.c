@@ -152,6 +152,7 @@ FD_phy_scope_gnb *create_phy_scope_gnb( void )
 
 void phy_scope_gNB(FD_phy_scope_gnb *form,
                    PHY_VARS_gNB *phy_vars_gnb,
+		   RU_t *phy_vars_ru,
                    int UE_id)
 {
   int i,i2,arx,atx,ind,k;
@@ -159,7 +160,7 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
-  int16_t **rxsig_t;
+  int16_t **rxsig_t, **rxsig_f;
   int16_t **chest_t=NULL;
   int16_t **chest_f=NULL;
   int16_t *pusch_llr=NULL;
@@ -171,17 +172,16 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
   float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240],C_pucch[10240];
-  float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
-  float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
-  float *chest_f_abs;
-  float time[FRAME_LENGTH_COMPLEX_SAMPLES];
-  float time2[2048];
+  float *rxsig_t_dB[nb_antennas_rx];
+  float *rxsig_f_dB[nb_antennas_rx];
+  float time[frame_parms->samples_per_frame];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
 //  uint32_t total_dlsch_bitrate = phy_vars_gnb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
   uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
   int Qm = 2;
 
+  /*
   if (!RC.nrmac[0]->UE_list.active[UE_id])
     return;
   
@@ -191,14 +191,18 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
       //Qm = cmax(phy_vars_gnb->ulsch[UE_id][0]->harq_processes->Qm,Qm);
     }
   }
-
+  */
   coded_bits_per_codeword = frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
 
-  chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
+  for (arx=0; arx<nb_antennas_rx; arx++) {
+    rxsig_t_dB[arx] = (float*) calloc(frame_parms->samples_per_frame,sizeof(float));
+    rxsig_f_dB[arx] = (float*) calloc(frame_parms->samples_per_slot_wCP,sizeof(float));
+  }
   llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
   bit = malloc(coded_bits_per_codeword*sizeof(float));
 
-  rxsig_t = (int16_t**) phy_vars_gnb->common_vars.rxdata;
+  rxsig_t = (int16_t**) phy_vars_ru->common.rxdata;
+  rxsig_f = (int16_t**) phy_vars_ru->common.rxdataF;
   //chest_t = (int16_t**) phy_vars_gnb->pusch_vars[UE_id]->drs_ch_estimates_time[eNB_id];
   /*  chest_t = (int16_t**) phy_vars_gnb->srs_vars[UE_id].srs_ch_estimates;
   chest_f = (int16_t**) phy_vars_gnb->pusch_vars[UE_id]->drs_ch_estimates;
@@ -212,25 +216,26 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
     if (rxsig_t[0] != NULL) {
-      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+      for (i=0; i<frame_parms->samples_per_frame; i++) {
         rxsig_t_dB[0][i] = 10*log10(1.0+(float) ((rxsig_t[0][2*i])*(rxsig_t[0][2*i])+(rxsig_t[0][2*i+1])*(rxsig_t[0][2*i+1])));
         time[i] = (float) i;
       }
 
-      fl_set_xyplot_data(form->rxsig_t,time,rxsig_t_dB[0],FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+      fl_set_xyplot_data(form->rxsig_t,time,rxsig_t_dB[0],frame_parms->samples_per_frame,"","","");
     }
 
     for (arx=1; arx<nb_antennas_rx; arx++) {
       if (rxsig_t[arx] != NULL) {
-        for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+        for (i=0; i<frame_parms->samples_per_frame; i++) {
           rxsig_t_dB[arx][i] = 10*log10(1.0+(float) ((rxsig_t[arx][2*i])*(rxsig_t[arx][2*i])+(rxsig_t[arx][2*i+1])*(rxsig_t[arx][2*i+1])));
         }
 
-        fl_add_xyplot_overlay(form->rxsig_t,arx,time,rxsig_t_dB[arx],FRAME_LENGTH_COMPLEX_SAMPLES,rx_antenna_colors[arx]);
+        fl_add_xyplot_overlay(form->rxsig_t,arx,time,rxsig_t_dB[arx],frame_parms->samples_per_frame,rx_antenna_colors[arx]);
       }
     }
   }
 
+  /*
   // Channel Impulse Response
   if (chest_t != NULL) {
     ymax = 0;
@@ -268,12 +273,22 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
     //        fl_get_xyplot_ybounds(form->chest_t,&ymin,&ymax);
     fl_set_xyplot_ybounds(form->chest_t,0,ymax);
   }
-
+  */
+  
   // Channel Frequency Response
-  if (chest_f != NULL) {
-    ind = 0;
+  if (rxsig_f != NULL) {
+    if (rxsig_f[0] != NULL) {
+      for (i=0; i<frame_parms->samples_per_slot_wCP; i++) {
+        rxsig_f_dB[0][i] = 10*log10(1.0+(float) ((rxsig_f[0][2*i])*(rxsig_f[0][2*i])+(rxsig_f[0][2*i+1])*(rxsig_f[0][2*i+1])));
+        time[i] = (float) i;
+      }
 
-    for (atx=0; atx<nb_antennas_tx; atx++) {
+      fl_set_xyplot_data(form->chest_t,time,rxsig_f_dB[0],frame_parms->samples_per_slot_wCP,"","","");
+    }
+  }
+  
+  /*
+
       for (arx=0; arx<nb_antennas_rx; arx++) {
         if (chest_f[(atx<<1)+arx] != NULL) {
           for (k=0; k<nsymb_ce; k++) {
@@ -371,11 +386,12 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   //    fl_get_xyplot_ybounds(form->pusch_tput,&ymin,&ymax);
   //    fl_set_xyplot_ybounds(form->pusch_tput,0,ymax);
 
+  */
+  
   fl_check_forms();
 
   free(llr);
   free(bit);
-  free(chest_f_abs);
 }
 
 FD_phy_scope_nrue *create_phy_scope_nrue( void )
@@ -863,11 +879,10 @@ typedef struct {
 
 // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
 // at eNB 0, an UL scope for every UE
-//FD_phy_scope_gnb             *form_gnb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-static FD_phy_scope_gnb        *form_gnb[NUMBER_OF_UE_MAX];
+FD_phy_scope_gnb             *form_gnb[NUMBER_OF_UE_MAX];
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 //char                            title[255];
-unsigned char                   scope_enb_num_ue = 2;
+unsigned char                   scope_enb_num_ue = 1;
 //static pthread_t                forms_thread; //xforms
 
 
@@ -908,7 +923,7 @@ static void *scope_thread_gNB(void *arg) {
     for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
         if ((ue_cnt<scope_enb_num_ue)) {
           //this function needs to be written
-          phy_scope_gNB(form_gnb[ue_cnt], RC.gNB[0], UE_id);
+          phy_scope_gNB(form_gnb[ue_cnt], RC.gNB[0], RC.ru[0], UE_id);
           ue_cnt++;
         }
     }
@@ -954,11 +969,13 @@ void startScope(scopeParms_t * p) {
   FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
   char title[255];
   fl_initialize (p->argc, p->argv, NULL, 0, 0);
+  /*
   form_stats_l2 = create_form_stats_form();
   fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
   form_stats = create_form_stats_form();
   fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-
+  */
+  
   for(int UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
     form_gnb[UE_id] = create_phy_scope_gnb();
     sprintf (title, "LTE UL SCOPE eNB for UE %d",UE_id);

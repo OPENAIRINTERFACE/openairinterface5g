@@ -78,6 +78,7 @@ FD_phy_scope_nrue * create_phy_scope_nrue( void );
 
 void phy_scope_gNB(FD_phy_scope_gnb *form,
                    PHY_VARS_gNB *phy_vars_gnb,
+		   RU_t *phy_vars_ru,
                    int UE_id);
 
 

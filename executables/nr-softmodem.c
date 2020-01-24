@@ -852,6 +852,7 @@ void init_pdcp(void) {
   }*/
 }
 
+
 int main( int argc, char **argv )
 {
   int i, ru_id, CC_id = 0;
@@ -948,38 +949,8 @@ init_opt();
   mlockall(MCL_CURRENT | MCL_FUTURE);
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-/*#ifdef XFORMS
-  int UE_id;
 
-  if (do_forms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_stats_l2 = create_form_stats_form();
-    fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
-    form_stats = create_form_stats_form();
-    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-
-    for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        form_gnb[CC_id][UE_id] = create_phy_scope_gnb();
-        sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
-        fl_show_form (form_gnb[CC_id][UE_id]->phy_scope_gnb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-        if (otg_enabled) {
-          fl_set_button(form_gnb[CC_id][UE_id]->button_0,1);
-          fl_set_object_label(form_gnb[CC_id][UE_id]->button_0,"DL Traffic ON");
-        } else {
-          fl_set_button(form_gnb[CC_id][UE_id]->button_0,0);
-          fl_set_object_label(form_gnb[CC_id][UE_id]->button_0,"DL Traffic OFF");
-        }
-      } // CC_id
-    } // UE_id
-
-    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
-    printf("Scope thread created, ret=%d\n",ret);
-  }
-
-#endif*/
-  usleep(10*1000);
+  usleep(1000);
 
   if (nfapi_mode) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
@@ -1049,6 +1020,13 @@ init_opt();
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
 
+  if (do_forms==1) {
+    scopeParms_t p;
+    p.argc=&argc;
+    p.argv=argv;
+    startScope(&p);
+  }
+
   if (nfapi_mode != 1 && nfapi_mode != 2) {
     printf("Not NFAPI mode - call init_eNB_afterRU()\n");
     init_eNB_afterRU();
@@ -1082,28 +1060,7 @@ init_opt();
 
   printf("Terminating application - oai_exit=%d\n",oai_exit);
 #endif
-  // stop threads
-/*#ifdef XFORMS
-
-    printf("waiting for XFORMS thread\n");
-
-    if (do_forms==1) {
-      pthread_join(forms_thread,&status);
-      fl_hide_form(form_stats->stats_form);
-      fl_free_form(form_stats->stats_form);
-
-        fl_hide_form(form_stats_l2->stats_form);
-        fl_free_form(form_stats_l2->stats_form);
-
-        for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      fl_hide_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
-      fl_free_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
-    }
-        }
-    }
-
-#endif*/
+  // stop threads  
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);

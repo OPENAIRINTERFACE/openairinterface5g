@@ -1488,6 +1488,7 @@ void *ru_thread( void *param ) {
 
     int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
+    //if (proc->tti_rx==8) {
 
       if (ru->feprx) ru->feprx(ru,proc->tti_rx);
       //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
