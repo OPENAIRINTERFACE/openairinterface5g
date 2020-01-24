@@ -342,7 +342,11 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nrue_usrp red_hat"
+                            if (fileExists('red_hat')) {
+                                sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nr_ue_usrp red_hat"
+                            } else {
+                                sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nr_ue_usrp"
+                            }
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'
