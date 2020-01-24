@@ -1757,7 +1757,7 @@ function run_test_on_vm {
         #BW_CASES=(05 10 20)
         EPC_CONFIGS=("wS1" "noS1")
         TRANS_MODES=("fdd")
-        BW_CASES=(05)
+        BW_CASES=(05 10)
         for CN_CONFIG in ${EPC_CONFIGS[@]}
         do
           if [[ $CN_CONFIG =~ .*wS1.* ]]
@@ -1949,6 +1949,7 @@ function run_test_on_vm {
         TMODE="fdd"
         FREQUENCY=2680
         BW_CASES=(05)
+        MBMS_STATUS=0
 
         for BW in ${BW_CASES[@]}
         do
@@ -1997,6 +1998,8 @@ function run_test_on_vm {
             terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
             scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            NB_UE_MBMS_MESSAGES=`egrep -c "TRIED TO PUSH MBMS DATA TO" $ARCHIVES_LOC/$CURRENT_UE_LOG_FILE`
+            if [ $NB_UE_MBMS_MESSAGES -eq 0 ]; then MBMS_STATUS=-1; fi
 
         done
 
@@ -2008,6 +2011,13 @@ function run_test_on_vm {
 
         if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
+        if [ $MBMS_STATUS -eq 0 ]
+        then
+            echo "LTE MBMS RFSIM seems OK"
+        else
+            echo "LTE MBMS RFSIM seems to FAIL"
+            STATUS=-1
+        fi
         if [ $STATUS -eq 0 ]
         then
             echo "LTE RFSIM seems OK"
