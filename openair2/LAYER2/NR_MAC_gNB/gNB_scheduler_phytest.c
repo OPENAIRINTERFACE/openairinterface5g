@@ -288,8 +288,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
 
-  int padding = 0, post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
-  int CC_id, lcid, offset, i, j=0, k=0, header_length_last, TBS_bytes;
+  int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
+  int CC_id, lcid, offset, i, header_length_last, TBS_bytes;
 
   int UE_id = 0; 
   uint16_t rnti = 0x1234;
@@ -398,10 +398,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       if (TBS_bytes >= 2 + header_length_total + sdu_length_total + ta_len) {
         // we have to consider padding
         // padding param currently not in use
-        padding = TBS_bytes - header_length_total - sdu_length_total - ta_len - 1;
+        //padding = TBS_bytes - header_length_total - sdu_length_total - ta_len - 1;
         post_padding = 1;
       } else {
-        padding = 0;
+        //padding = 0;
         post_padding = 0;
       }
 

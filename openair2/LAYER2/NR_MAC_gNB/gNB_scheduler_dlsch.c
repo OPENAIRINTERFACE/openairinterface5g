@@ -91,7 +91,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     timing_advance_cmd = gNB->ta_command;
     AssertFatal(timing_advance_cmd < 64,"timing_advance_cmd %d > 63\n", timing_advance_cmd);
     ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
-    if (gNB->tag->tag_Id != NULL){
+    if (gNB->tag->tag_Id != 0){
        tag_id = gNB->tag->tag_Id;
       ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
     }

@@ -3558,7 +3558,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
   uint16_t slots_per_subframe = ue->frame_parms.slots_per_subframe;
   uint8_t numerology = ue->frame_parms.numerology_index, mapping_type_ul, mapping_type_dl;
-  int ul_tx_timing_adjustment, N_TA_max, factor_mu, N_t_1, N_t_2, N_1, N_2, d_1_1, d_2_1, d;
+  int ul_tx_timing_adjustment, N_TA_max, factor_mu, N_t_1, N_t_2, N_1, N_2, d_1_1 = 0, d_2_1, d;
   uint8_t d_2_2 = 0;// set to 0 because there is only 1 BWP
                     // TODO this should corresponds to the switching time as defined in
                     // TS 38.133
@@ -4276,8 +4276,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            uint8_t do_pdcch_flag,
                            runmode_t mode)
 {
-  int l,l2;
-  int pilot1;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int slot_pbch;

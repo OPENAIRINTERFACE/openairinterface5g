@@ -2127,7 +2127,7 @@ void nr_ue_process_mac_pdu(
     uint16_t mac_subheader_len;
     uint16_t mac_sdu_len;
 
-    NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
+    //NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
     //uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
     //uint16_t bwp_ul_NB_RB = UE_mac_inst->initial_bwp_ul.N_RB;
 
