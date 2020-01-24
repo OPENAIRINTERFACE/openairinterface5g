@@ -113,7 +113,7 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 volatile int             oai_exit = 0;
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int UE_scan = 1;
