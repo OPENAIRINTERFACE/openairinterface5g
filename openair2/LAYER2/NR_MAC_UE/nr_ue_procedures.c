@@ -2995,6 +2995,8 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   // Generate header
   // if (num_sdus>0) {
 
+  // cycle through SDUs and place in ulsch_buffer
+  if (sdu_length_total) {
   payload_offset = nr_generate_ulsch_header(ulsch_buffer,  // mac header
                                          num_sdus,  // num sdus
                                          short_padding, // short pading
@@ -3012,8 +3014,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         short_padding, post_padding, bsr_len, phr_len,
         buflen - sdu_length_total - payload_offset);
 
-  // cycle through SDUs and place in ulsch_buffer
-  if (sdu_length_total) {
+
     memcpy(&ulsch_buffer[payload_offset], ulsch_buff,
            sdu_length_total);
   }

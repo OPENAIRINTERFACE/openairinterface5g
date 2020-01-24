@@ -45,7 +45,7 @@
 
 //#define DEBUG_SCFDMA
 //#define DEBUG_PUSCH_MAPPING
-#define DEBUG_MAC_PDU
+//#define DEBUG_MAC_PDU
 
 //extern int32_t uplink_counter;
 
@@ -174,6 +174,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     	if (IS_SOFTMODEM_NOS1){
     		data_existing = nr_ue_get_sdu(UE->Mod_id, UE->CC_id, frame,
     				slot, 0, ulsch_input_buffer, harq_process_ul_ue->TBS/8, &access_mode);
+    		//IP traffic to be transmitted
     		if(data_existing){
     			//harq_process_ul_ue->a = (unsigned char*)calloc(harq_process_ul_ue->TBS/8, sizeof(unsigned char));
     			memcpy(harq_process_ul_ue->a, ulsch_input_buffer, harq_process_ul_ue->TBS/8);
@@ -186,16 +187,20 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     				printf("\n");
 				#endif
     		}
+    		//Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
     		else{
-    			//Use different rnti for the random (non-IP traffic) in noS1 mode, in order to use it as a filter
-    			//to block this traffic from being forwarded to the MAC layer of the gNB
-    			ulsch_ue->rnti        = 0x1111;
+    			//Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+    			//and block this traffic from being forwarded to the upper layers at the gNB
+    			uint16_t payload_offset = 5;
     			LOG_E(PHY, "Random data to be tranmsitted: \n");
-    			for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
+    			//Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
+    			for (i = 0; i<payload_offset; i++)
+    				harq_process_ul_ue->a[i] = 0;
+
+    			for (i = payload_offset; i < harq_process_ul_ue->TBS / 8; i++) {
     				harq_process_ul_ue->a[i] = (unsigned char) rand();
     				//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
     				}
-    			data_existing = 1;
     		}
     	}
         //else if(uplink_counter == 0){ //if(!IS_SOFTMODEM_NOS1){
@@ -205,7 +210,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         		harq_process_ul_ue->a[i] = (unsigned char) rand();
         		//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
         	}
-        	data_existing = 1;
         	//uplink_counter++;
         }
     } else {
@@ -219,7 +223,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ///////////
 
 
-    //if(data_existing){
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
 
     ///////////

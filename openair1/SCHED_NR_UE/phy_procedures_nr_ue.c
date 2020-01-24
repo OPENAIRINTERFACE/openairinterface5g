@@ -2502,7 +2502,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-  //if(data_existing){
 	  LOG_I(PHY, "Sending data \n");
 	  nr_ue_pusch_common_procedures(ue,
                                 harq_pid,
@@ -2510,7 +2509,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                 thread_id,
                                 gNB_id,
                                 &ue->frame_parms);
-  //}
+
 
 
 
