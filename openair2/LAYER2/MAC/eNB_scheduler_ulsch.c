@@ -123,17 +123,15 @@ rx_sdu(const module_id_t enb_mod_idP,
   unsigned short rx_lengths[NB_RB_MAX];
   uint8_t lcgid = 0;
   int lcgid_updated[4] = {0, 0, 0, 0};
-  eNB_MAC_INST *mac = NULL;
-  UE_list_t *UE_list = NULL;
+  eNB_MAC_INST *mac = RC.mac[enb_mod_idP];
+  UE_info_t *UE_info = &mac->UE_info;
   rrc_eNB_ue_context_t *ue_contextP = NULL;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
   UE_TEMPLATE *UE_template_ptr = NULL;
   /* Init */
   current_rnti = rntiP;
   UE_id = find_UE_id(enb_mod_idP, current_rnti);
-  mac = RC.mac[enb_mod_idP];
   harq_pid = subframe2harqpid(&mac->common_channels[CC_idP], frameP, subframeP);
-  UE_list = &mac->UE_list;
   memset(rx_ces, 0, MAX_NUM_CE * sizeof(unsigned char));
   memset(rx_lcids, 0, NB_RB_MAX * sizeof(unsigned char));
   memset(rx_lengths, 0, NB_RB_MAX * sizeof(unsigned short));
@@ -142,8 +140,8 @@ rx_sdu(const module_id_t enb_mod_idP,
   trace_pdu(DIRECTION_UPLINK, sduP, sdu_lenP, 0, WS_C_RNTI, current_rnti, frameP, subframeP, 0, 0);
 
   if (UE_id != -1) {
-    UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
-    UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
+    UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
+    UE_template_ptr = &UE_info->UE_template[CC_idP][UE_id];
     LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           enb_mod_idP,
           harq_pid,
@@ -413,8 +411,8 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_id = old_UE_id;
             current_rnti = old_rnti;
             /* Clear timer */
-            UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
-            UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
+            UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
+            UE_template_ptr = &UE_info->UE_template[CC_idP][UE_id];
             UE_scheduling_control->uplane_inactivity_timer = 0;
             UE_scheduling_control->ul_inactivity_timer = 0;
             UE_scheduling_control->ul_failure_timer = 0;
@@ -430,7 +428,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
             UE_template_ptr->ul_SR = 1;
             UE_scheduling_control->crnti_reconfigurationcomplete_flag = 1;
-            UE_list->UE_template[UE_PCCID(enb_mod_idP, UE_id)][UE_id].configured = 1;
+            UE_info->UE_template[UE_PCCID(enb_mod_idP, UE_id)][UE_id].configured = 1;
             cancel_ra_proc(enb_mod_idP,
                            CC_idP,
                            frameP,
@@ -480,8 +478,8 @@ rx_sdu(const module_id_t enb_mod_idP,
                 ra->crnti_rrc_mui = rrc_eNB_mui-1;
                 ra->crnti_harq_pid = -1;
                 /* Clear timer */
-                UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
-                UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
+                UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
+                UE_template_ptr = &UE_info->UE_template[CC_idP][UE_id];
                 UE_scheduling_control->uplane_inactivity_timer = 0;
                 UE_scheduling_control->ul_inactivity_timer = 0;
                 UE_scheduling_control->ul_failure_timer = 0;
@@ -532,7 +530,7 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_template_ptr->ul_buffer_info[LCGID3];
           RC.eNB[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = (payload_ptr[0] & 0x3f);
 
-          if (UE_id == UE_list->head) {
+          if (UE_id == UE_info->list.head) {
             VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR, (payload_ptr[0] & 0x3f));
           }
 
@@ -689,8 +687,8 @@ rx_sdu(const module_id_t enb_mod_idP,
                     frameP,
                     ra->rnti,
                     UE_id);
-              UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
-              UE_template_ptr = &(UE_list->UE_template[CC_idP][UE_id]);
+              UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
+              UE_template_ptr = &UE_info->UE_template[CC_idP][UE_id];
             }
           } else {
             LOG_D(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %ld\n",
@@ -779,11 +777,11 @@ rx_sdu(const module_id_t enb_mod_idP,
                 enb_mod_idP, CC_idP, frameP, rx_lengths[i], UE_id,
                 rx_lcids[i]);
           mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);  //(unsigned int*)crc_status);
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
+          UE_info->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
+          UE_info->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
 
           if (mac_eNB_get_rrc_status(enb_mod_idP, current_rnti) < RRC_RECONFIGURED) {
-            UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+            UE_info->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
           }
         }
 
@@ -840,8 +838,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 
             if ((rx_lengths[i] < SCH_PAYLOAD_SIZE_MAX) && (rx_lengths[i] > 0)) {  // MAX SIZE OF transport block
               mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);
-              UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
-              UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
+              UE_info->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
+              UE_info->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
               /* Clear uplane_inactivity_timer */
               UE_scheduling_control->uplane_inactivity_timer = 0;
               /* Reset RRC inactivity timer after uplane activity */
@@ -856,7 +854,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                       current_rnti);
               }
             } else {  /* rx_length[i] Max size */
-              UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+              UE_info->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
               LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
                     enb_mod_idP,
                     CC_idP,
@@ -921,12 +919,12 @@ rx_sdu(const module_id_t enb_mod_idP,
   /* NN--> FK: we could either check the payload, or use a phy helper to detect a false msg3 */
   if ((num_sdu == 0) && (num_ce == 0)) {
     if (UE_id != -1)
-      UE_list->eNB_UE_stats[CC_idP][UE_id].total_num_errors_rx += 1;
+      UE_info->eNB_UE_stats[CC_idP][UE_id].total_num_errors_rx += 1;
   } else {
     if (UE_id != -1) {
-      UE_list->eNB_UE_stats[CC_idP][UE_id].pdu_bytes_rx        = sdu_lenP;
-      UE_list->eNB_UE_stats[CC_idP][UE_id].total_pdu_bytes_rx += sdu_lenP;
-      UE_list->eNB_UE_stats[CC_idP][UE_id].total_num_pdus_rx  += 1;
+      UE_info->eNB_UE_stats[CC_idP][UE_id].pdu_bytes_rx        = sdu_lenP;
+      UE_info->eNB_UE_stats[CC_idP][UE_id].total_pdu_bytes_rx += sdu_lenP;
+      UE_info->eNB_UE_stats[CC_idP][UE_id].total_num_pdus_rx  += 1;
     }
   }
 
@@ -1307,20 +1305,16 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   static int32_t tpc_accumulated = 0;
   int sched_frame = 0;
   int CC_id = 0;
-  eNB_MAC_INST *mac = NULL;
-  COMMON_channels_t *cc = NULL;
-  UE_list_t *UE_list = NULL;
-  slice_info_t *sli = NULL;
+  eNB_MAC_INST *mac = RC.mac[module_idP];
+  COMMON_channels_t *cc = mac->common_channels;
+  UE_info_t *UE_info = &mac->UE_info;
+  slice_info_t *sli = &mac->slice_info;
   UE_TEMPLATE *UE_template_ptr = NULL;
   UE_sched_ctrl_t *UE_sched_ctrl_ptr = NULL;
   int rvidx_tab[4] = {0, 2, 3, 1};
   int first_rb_slice[NFAPI_CC_MAX];
   int n_rb_ul_tab[NFAPI_CC_MAX];
   /* Init */
-  mac = RC.mac[module_idP];
-  cc = mac->common_channels;
-  UE_list = &(mac->UE_list);
-  sli = &(mac->slice_info);
   memset(first_rb_slice, 0, NFAPI_CC_MAX * sizeof(int));
   memset(n_rb_ul_tab, 0, NFAPI_CC_MAX * sizeof(int));
   sched_frame = frameP;
@@ -1370,7 +1364,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
         exit(1);
     }
 
-    UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
+    UE_info->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
   }
 
   /*
@@ -1382,19 +1376,19 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_frame, sched_subframeP, first_rb);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    first_rb_slice[CC_id] = first_rb[CC_id] + UE_list->first_rb_offset[CC_id][slice_idx];
+    first_rb_slice[CC_id] = first_rb[CC_id] + UE_info->first_rb_offset[CC_id][slice_idx];
   }
 
   // loop over all active UEs until end of function
-  for (int UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx)) {
       continue;
     }
 
-    if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].rach_resource_type > 0)  continue;
+    if (UE_info->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].rach_resource_type > 0)  continue;
 
     // don't schedule if Msg5 is not received yet
-    if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured == FALSE) {
+    if (UE_info->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured == FALSE) {
       LOG_D(MAC, "[eNB %d] frame %d, subframe %d, UE %d: not configured, skipping UE scheduling \n",
             module_idP,
             frameP,
@@ -1415,11 +1409,11 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     }
 
     // loop over all active UL CC_ids for this UE until end of function
-    for (int n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
+    for (int n = 0; n < UE_info->numactiveULCCs[UE_id]; n++) {
       /* This is the actual CC_id in the list */
-      CC_id = UE_list->ordered_ULCCids[n][UE_id];
-      UE_template_ptr = &(UE_list->UE_template[CC_id][UE_id]);
-      UE_sched_ctrl_ptr = &(UE_list->UE_sched_ctrl[UE_id]);
+      CC_id = UE_info->ordered_ULCCids[n][UE_id];
+      UE_template_ptr = &UE_info->UE_template[CC_id][UE_id];
+      UE_sched_ctrl_ptr = &UE_info->UE_sched_ctrl[UE_id];
       harq_pid = subframe2harqpid(&cc[CC_id], sched_frame, sched_subframeP);
       round_index = UE_sched_ctrl_ptr->round_UL[CC_id][harq_pid];
       AssertFatal(round_index < 8, "round %d > 7 for UE %d/%x\n",
@@ -1578,10 +1572,10 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
           ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
           UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
-          UE_list->eNB_UE_stats[CC_id][UE_id].snr = snr;
-          UE_list->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
+          UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
+          UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
           UE_template_ptr->mcs_UL[harq_pid] = cmin(UE_template_ptr->pre_assigned_mcs_ul, sli->ul[slice_idx].maxmcs);
-          UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template_ptr->mcs_UL[harq_pid];
+          UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template_ptr->mcs_UL[harq_pid];
 
           /* CDRX */
           if (UE_sched_ctrl_ptr->cdrx_configured) {
@@ -1598,7 +1592,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
             rb_table_index = 5; // for PHR
           }
 
-          UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
+          UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
 
           while (((rb_table[rb_table_index] > (n_rb_ul_tab[CC_id] - first_rb_slice[CC_id])) ||
                   (rb_table[rb_table_index] > 45)) && (rb_table_index > 0)) {
@@ -1606,9 +1600,9 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           }
 
           UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]);
-          UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
-          UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template_ptr->TBS_UL[harq_pid];
-          UE_list->eNB_UE_stats[CC_id][UE_id].total_ulsch_TBS += UE_template_ptr->TBS_UL[harq_pid];
+          UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
+          UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template_ptr->TBS_UL[harq_pid];
+          UE_info->eNB_UE_stats[CC_id][UE_id].total_ulsch_TBS += UE_template_ptr->TBS_UL[harq_pid];
           T(T_ENB_MAC_UE_UL_SCHEDULE,
             T_INT(module_idP),
             T_INT(CC_id),
@@ -1627,7 +1621,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           UE_template_ptr->cqi_req[harq_pid] = cqi_req;
           UE_sched_ctrl_ptr->ul_scheduled |= (1 << harq_pid);
 
-          if (UE_id == UE_list->head) {
+          if (UE_id == UE_info->list.head) {
             VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED, UE_sched_ctrl_ptr->ul_scheduled);
           }
 
@@ -1926,7 +1920,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   eNB_MAC_INST      *eNB = RC.mac[module_idP];
   eNB_RRC_INST      *rrc = RC.rrc[module_idP];
   COMMON_channels_t *cc  = eNB->common_channels;
-  UE_list_t         *UE_list = &(eNB->UE_list);
+  UE_info_t         *UE_info = &eNB->UE_info;
   UE_TEMPLATE       *UE_template = NULL;
   UE_sched_ctrl_t     *UE_sched_ctrl = NULL;
   uint8_t     Total_Num_Rep_ULSCH,pusch_maxNumRepetitionCEmodeA_r13;
@@ -1944,8 +1938,8 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
   nfapi_ul_config_request_pdu_t  *ul_config_pdu_Rep;
 
   /* Loop over all active UEs */
-  for (UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
-    UE_template = &(UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id]);
+  for (UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    UE_template = &UE_info->UE_template[UE_PCCID(module_idP, UE_id)][UE_id];
 
     /* LTE-M device */
     if (UE_template->rach_resource_type == 0) {
@@ -1974,12 +1968,12 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
     }
 
     /* Loop over all active UL CC_ids for this UE */
-    for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
+    for (n = 0; n < UE_info->numactiveULCCs[UE_id]; n++) {
       /* This is the actual CC_id in the list */
-      CC_id        = UE_list->ordered_ULCCids[n][UE_id];
+      CC_id        = UE_info->ordered_ULCCids[n][UE_id];
       N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
-      UE_template   = &(UE_list->UE_template[CC_id][UE_id]);
-      UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+      UE_template   = &UE_info->UE_template[CC_id][UE_id];
+      UE_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
       harq_pid      = 0;
       round_UL      = UE_sched_ctrl->round_UL[CC_id][harq_pid];
       AssertFatal(round_UL < 8,"round_UL %d > 7 for UE %d/%x\n",
@@ -2074,12 +2068,12 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
             UE_template->oldNDI_UL[harq_pid] = ndi;
             UE_template->mcs_UL[harq_pid] = 4;
             UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid], 6);
-            UE_list->eNB_UE_stats[CC_id][UE_id].snr = snr;
-            UE_list->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
-            UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = 4;
-            UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template->mcs_UL[harq_pid];
-            UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += 6;
-            UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template->TBS_UL[harq_pid];
+            UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
+            UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
+            UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = 4;
+            UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template->mcs_UL[harq_pid];
+            UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += 6;
+            UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template->TBS_UL[harq_pid];
             T(T_ENB_MAC_UE_UL_SCHEDULE,
               T_INT(module_idP),
               T_INT(CC_id),
@@ -2096,7 +2090,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
             UE_template->nb_rb_ul[harq_pid]    = 6;
             UE_sched_ctrl->ul_scheduled |= (1 << harq_pid);
 
-            if (UE_id == UE_list->head) {
+            if (UE_id == UE_info->list.head) {
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED, UE_sched_ctrl->ul_scheduled);
             }
 

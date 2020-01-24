@@ -193,7 +193,7 @@ void add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
 
 //main.c
 
-void init_UE_list(UE_list_t *UE_list);
+void init_UE_info(UE_info_t *UE_info);
 
 void init_slice_info(slice_info_t *sli);
 
@@ -448,7 +448,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
 
 void set_ue_dai(sub_frame_t subframeP,
                 int UE_id,
-                uint8_t CC_id, uint8_t tdd_config, UE_list_t *UE_list);
+                uint8_t CC_id, uint8_t tdd_config, UE_info_t *UE_info);
 
 uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 /** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
@@ -685,10 +685,11 @@ int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 void store_dlsch_buffer(module_id_t Mod_id, frame_t frameP, sub_frame_t subframeP);
 void assign_rbs_required(module_id_t Mod_id, int CC_id, uint16_t nb_rbs_required[MAX_MOBILES_PER_ENB]);
 
-int prev(UE_list_t *listP, int nodeP, int ul_flag);
-void add_ue_list(UE_list_t *listP, int UE_id, int ul_flag);
-void dump_ue_list(UE_list_t *listP, int ul_flag);
-int UE_num_active_CC(UE_list_t *listP, int ue_idP);
+int prev(UE_list_t *listP, int nodeP);
+void add_ue_list(UE_list_t *listP, int UE_id);
+int remove_ue_list(UE_list_t *listP, int UE_id);
+void dump_ue_list(UE_list_t *listP);
+int UE_num_active_CC(UE_info_t *listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 

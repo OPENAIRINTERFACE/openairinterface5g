@@ -1129,7 +1129,15 @@ typedef struct {
   uint8_t sb_size;
   uint8_t nb_active_sb;
 } SBMAP_CONF;
-/*! \brief UE list used by eNB to order UEs/CC for scheduling*/
+
+/*! \brief UE_list_t is a "list" of users within UE_info_t. Especial useful in
+ * the scheduler and to keep "classes" of users. */
+typedef struct {
+  int head;
+  int next[MAX_MOBILES_PER_ENB];
+} UE_list_t;
+
+/*! \brief UE info used by eNB to order UEs/CC for scheduling*/
 typedef struct {
 
   DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
@@ -1151,11 +1159,7 @@ typedef struct {
   eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
   /// scheduling control info
   UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_ENB];
-  int next[MAX_MOBILES_PER_ENB];
-  int head;
-  int next_ul[MAX_MOBILES_PER_ENB];
-  int head_ul;
-  int avail;
+  UE_list_t list;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_ENB];
 
@@ -1163,7 +1167,7 @@ typedef struct {
   uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
   uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
   int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
-} UE_list_t;
+} UE_info_t;
 
 /*! \brief deleting control information*/
 typedef struct {
@@ -1395,7 +1399,7 @@ typedef struct eNB_MAC_INST_s {
   nfapi_ue_release_request_t UE_release_req;
   /// UL handle
   uint32_t ul_handle;
-  UE_list_t UE_list;
+  UE_info_t UE_info;
 
   /// slice-related configuration
   slice_info_t slice_info;

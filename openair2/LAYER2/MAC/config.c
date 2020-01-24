@@ -782,7 +782,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
   int i;
   int UE_id = -1;
   eNB_MAC_INST *eNB = RC.mac[Mod_idP];
-  UE_list_t *UE_list= &eNB->UE_list;
+  UE_info_t *UE_info= &eNB->UE_info;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
   LOG_D(MAC, "RC.mac:%p mib:%p\n", RC.mac, mib);
 
@@ -892,9 +892,9 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
 
     if (logicalChannelConfig) {
-      UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-      UE_list->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
-    } else UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
+      UE_info->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+      UE_info->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
+    } else UE_info->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
   }
 
   if (physicalConfigDedicated != NULL) {
@@ -905,7 +905,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       return(-1);
     }
 
-    UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    UE_info->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
     LOG_I(MAC,"Added physicalConfigDedicated %p for %d.%d\n",physicalConfigDedicated,CC_idP,UE_id);
   }
 
@@ -1048,15 +1048,11 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
                           rrc_mac_drx_config_req_t *rrc_mac_drx_config_req)
 //-----------------------------------------------------------------------------
 {
-  UE_list_t *UE_list_mac = NULL;
+  UE_info_t *UE_info_mac = &RC.mac[Mod_id]->UE_info;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
-  int UE_id = -1;
-  
-  rnti_t rnti = rrc_mac_drx_config_req->rnti;
   LTE_DRX_Config_t *const drx_Configuration = rrc_mac_drx_config_req->drx_Configuration;
-
-  UE_list_mac = &(RC.mac[Mod_id]->UE_list);
-  UE_id = find_UE_id(Mod_id, rnti);
+  rnti_t rnti = rrc_mac_drx_config_req->rnti;
+  int UE_id = find_UE_id(Mod_id, rnti);
 
   /* Check UE_id */
   if (UE_id == -1) {
@@ -1065,7 +1061,7 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   }
 
   /* Get struct to modify */
-  UE_scheduling_control = &(UE_list_mac->UE_sched_ctrl[UE_id]);
+  UE_scheduling_control = &(UE_info_mac->UE_sched_ctrl[UE_id]);
   UE_scheduling_control->cdrx_configured = FALSE; // will be set to true when no error
 
   /* Check drx_Configuration */

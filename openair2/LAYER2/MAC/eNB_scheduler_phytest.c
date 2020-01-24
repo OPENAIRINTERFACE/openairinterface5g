@@ -133,13 +133,13 @@ schedule_ue_spec_phy_test(
       /*
       LOG_D(MAC,"CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
       CC_id, frameP,subframeP,UE_id,
-      rnti,harq_pid,UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid]);
+      rnti,harq_pid,UE_info->UE_template[CC_id][UE_id].oldNDI[harq_pid]);
 
-      UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid]=1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
-      UE_list->UE_template[CC_id][UE_id].oldmcs1[harq_pid] = mcs;
-      UE_list->UE_template[CC_id][UE_id].oldmcs2[harq_pid] = 0;
-      AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated is NULL\n");
-      AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated!=NULL,"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
+      UE_info->UE_template[CC_id][UE_id].oldNDI[harq_pid]=1-UE_info->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+      UE_info->UE_template[CC_id][UE_id].oldmcs1[harq_pid] = mcs;
+      UE_info->UE_template[CC_id][UE_id].oldmcs2[harq_pid] = 0;
+      AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated is NULL\n");
+      AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated!=NULL,"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
       */
       fill_nfapi_dlsch_config(eNB,
                               dl_req,
@@ -170,7 +170,7 @@ schedule_ue_spec_phy_test(
                                   (frameP*10)+subframeP,
                                   TBS,
                                   eNB->pdu_index[CC_id],
-                                  eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0]);
+                                  eNB->UE_info.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0]);
     } else {
       LOG_W(MAC,"[eNB_scheduler_phytest] DCI allocation infeasible!\n");
     }
@@ -192,7 +192,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int               N_RB_UL;
   eNB_MAC_INST      *mac = RC.mac[module_idP];
   COMMON_channels_t *cc  = &mac->common_channels[0];
-  UE_list_t         *UE_list=&mac->UE_list;
+  UE_info_t         *UE_info=&mac->UE_info;
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl_t     *UE_sched_ctrl;
   int               sched_frame=frameP;
@@ -231,8 +231,8 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
     first_rb[CC_id] = 1;
     // loop over all active UEs
     //      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
-    UE_template   = &UE_list->UE_template[CC_id][UE_id];
-    UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+    UE_template   = &UE_info->UE_template[CC_id][UE_id];
+    UE_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframe);
     RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->TBS_UL[harq_pid];
     //power control
@@ -242,15 +242,15 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
     // new transmission
     ndi = 1-UE_template->oldNDI_UL[harq_pid];
     UE_template->oldNDI_UL[harq_pid]=ndi;
-    UE_list->eNB_UE_stats[CC_id][UE_id].snr = snr;
-    UE_list->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
-    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = mcs;
+    UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
+    UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
+    UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = mcs;
     UE_template->mcs_UL[harq_pid] = mcs;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
-    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = mcs;
+    UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = mcs;
     //            buffer_occupancy = UE_template->ul_total_buffer;
     UE_template->TBS_UL[harq_pid] = get_TBS_UL(mcs,nb_rb);
-    UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += nb_rb;
-    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = get_TBS_UL(mcs,nb_rb);
+    UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += nb_rb;
+    UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = get_TBS_UL(mcs,nb_rb);
     //            buffer_occupancy -= TBS;
     // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
     //store for possible retransmission

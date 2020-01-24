@@ -98,7 +98,7 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time) {
 int flexran_get_mac_num_ues(mid_t mod_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.num_UEs;
+  return RC.mac[mod_id]->UE_info.num_UEs;
 }
 
 int flexran_get_num_ue_lcs(mid_t mod_id, mid_t ue_id) {
@@ -123,7 +123,7 @@ int flexran_get_mac_ue_id_rnti(mid_t mod_id, rnti_t rnti) {
 
   /* get the (active) UE with RNTI i */
   for (n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[mod_id]->UE_list.active[n] == TRUE
+    if (RC.mac[mod_id]->UE_info.active[n] == TRUE
         && rnti == UE_RNTI(mod_id, n)) {
       return n;
     }
@@ -139,7 +139,7 @@ int flexran_get_mac_ue_id(mid_t mod_id, int i) {
 
   /* get the (i+1)'th active UE */
   for (n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[mod_id]->UE_list.active[n] == TRUE) {
+    if (RC.mac[mod_id]->UE_info.active[n] == TRUE) {
       if (i == 0)
         return n;
 
@@ -159,19 +159,19 @@ rnti_t flexran_get_mac_ue_crnti(mid_t mod_id, mid_t ue_id) {
 int flexran_get_ue_bsr_ul_buffer_info(mid_t mod_id, mid_t ue_id, lcid_t lcid) {
   if (!mac_is_present(mod_id)) return -1;
 
-  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].ul_buffer_info[lcid];
+  return RC.mac[mod_id]->UE_info.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].ul_buffer_info[lcid];
 }
 
 int8_t flexran_get_ue_phr(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].phr_info;
+  return RC.mac[mod_id]->UE_info.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].phr_info;
 }
 
 uint8_t flexran_get_ue_wcqi(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].dl_cqi[0];
+  return RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].dl_cqi[0];
 }
 
 rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id) {
@@ -242,7 +242,7 @@ int32_t flexran_get_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id) {
 uint32_t flexran_get_total_size_dl_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_sdu_bytes;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_sdu_bytes;
 }
 
 uint32_t flexran_get_total_size_ul_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id) {
@@ -251,7 +251,7 @@ uint32_t flexran_get_total_size_ul_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id
   uint64_t bytes = 0;
 
   for (int i = 0; i < NB_RB_MAX; ++i) {
-    bytes += RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].num_bytes_rx[i];
+    bytes += RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].num_bytes_rx[i];
   }
 
   return bytes;
@@ -260,135 +260,135 @@ uint32_t flexran_get_total_size_ul_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id
 uint32_t flexran_get_TBS_dl(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].TBS;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].TBS;
 }
 
 uint32_t flexran_get_TBS_ul(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].ulsch_TBS;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].ulsch_TBS;
 }
 
 uint16_t flexran_get_num_prb_retx_dl_per_ue(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].rbs_used_retx;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].rbs_used_retx;
 }
 
 uint32_t flexran_get_num_prb_retx_ul_per_ue(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].rbs_used_retx_rx;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].rbs_used_retx_rx;
 }
 
 uint16_t flexran_get_num_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].rbs_used;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].rbs_used;
 }
 
 uint16_t flexran_get_num_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].rbs_used_rx;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].rbs_used_rx;
 }
 
 uint8_t flexran_get_ue_wpmi(mid_t mod_id, mid_t ue_id, uint8_t cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].periodic_wideband_pmi[cc_id];
+  return RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].periodic_wideband_pmi[cc_id];
 }
 
 uint8_t flexran_get_mcs1_dl(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].dlsch_mcs1;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].dlsch_mcs1;
 }
 
 uint8_t flexran_get_mcs2_dl(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].dlsch_mcs2;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].dlsch_mcs2;
 }
 
 uint8_t flexran_get_mcs1_ul(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].ulsch_mcs1;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].ulsch_mcs1;
 }
 
 uint8_t flexran_get_mcs2_ul(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].ulsch_mcs2;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].ulsch_mcs2;
 }
 
 uint32_t flexran_get_total_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_rbs_used;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_rbs_used;
 }
 
 uint32_t flexran_get_total_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_rbs_used_rx;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_rbs_used_rx;
 }
 
 uint32_t flexran_get_total_num_pdu_dl(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_num_pdus;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_num_pdus;
 }
 
 uint32_t flexran_get_total_num_pdu_ul(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_num_pdus_rx;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_num_pdus_rx;
 }
 
 uint64_t flexran_get_total_TBS_dl(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_pdu_bytes;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_pdu_bytes;
 }
 
 uint64_t flexran_get_total_TBS_ul(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].total_ulsch_TBS;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].total_ulsch_TBS;
 }
 
 int flexran_get_harq_round(mid_t mod_id, uint8_t cc_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].harq_round;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].harq_round;
 }
 
 uint32_t flexran_get_num_mac_sdu_tx(mid_t mod_id, mid_t ue_id, int cc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].num_mac_sdu_tx;
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].num_mac_sdu_tx;
 }
 
 unsigned char flexran_get_mac_sdu_lcid_index(mid_t mod_id, mid_t ue_id, int cc_id, int index) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].lcid_sdu[index];
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].lcid_sdu[index];
 }
 
 uint32_t flexran_get_mac_sdu_size(mid_t mod_id, mid_t ue_id, int cc_id, int lcid) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].sdu_length_tx[lcid];
+  return RC.mac[mod_id]->UE_info.eNB_UE_stats[cc_id][ue_id].sdu_length_tx[lcid];
 }
 
 
 /* TODO needs to be revised */
 void flexran_update_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id) {
   /*
-    UE_list_t *UE_list=&eNB_mac_inst[mod_id].UE_list;
-    UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[ue_id];
+    UE_info_t *UE_info=&eNB_mac_inst[mod_id].UE_info;
+    UE_sched_ctrl *ue_sched_ctl = &UE_info->UE_sched_ctrl[ue_id];
 
     if (ue_sched_ctl->ta_timer == 0) {
 
@@ -432,7 +432,7 @@ int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id) {
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.numactiveCCs[ue_id];
+  return RC.mac[mod_id]->UE_info.numactiveCCs[ue_id];
 }
 
 uint8_t flexran_get_current_RI(mid_t mod_id, mid_t ue_id, uint8_t cc_id) {
@@ -890,13 +890,13 @@ uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti) {
 uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
+  return RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
 }
 
 uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
+  return RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
 int flexran_get_half_duplex(mid_t mod_id, rnti_t rnti) {
@@ -1235,7 +1235,7 @@ uint64_t flexran_get_ue_imsi(mid_t mod_id, rnti_t rnti) {
 long flexran_get_lcg(mid_t mod_id, mid_t ue_id, mid_t lc_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].lcgidmap[lc_id];
+  return RC.mac[mod_id]->UE_info.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].lcgidmap[lc_id];
 }
 
 /* TODO Navid: needs to be revised */
@@ -3016,7 +3016,7 @@ uint32_t flexran_get_rrc_enb_ue_s1ap_id(mid_t mod_id, rnti_t rnti)
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return -1;
 
-  int slice_idx = 0; //RC.mac[mod_id]->UE_list.assoc_dl_slice_idx[ue_id];
+  int slice_idx = 0; //RC.mac[mod_id]->UE_info.assoc_dl_slice_idx[ue_id];
 
   if (slice_idx >= 0 && slice_idx < RC.mac[mod_id]->slice_info.n_dl)
     return RC.mac[mod_id]->slice_info.dl[slice_idx].id;
@@ -3031,13 +3031,13 @@ void flexran_set_ue_dl_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx) {
 
   if (!flexran_dl_slice_exists(mod_id, slice_idx)) return;
 
-  //RC.mac[mod_id]->UE_list.assoc_dl_slice_idx[ue_id] = slice_idx;
+  //RC.mac[mod_id]->UE_info.assoc_dl_slice_idx[ue_id] = slice_idx;
 }
 
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return -1;
 
-  int slice_idx = RC.mac[mod_id]->UE_list.assoc_ul_slice_idx[ue_id];
+  int slice_idx = RC.mac[mod_id]->UE_info.assoc_ul_slice_idx[ue_id];
 
   if (slice_idx >= 0 && slice_idx < RC.mac[mod_id]->slice_info.n_ul)
     return RC.mac[mod_id]->slice_info.ul[slice_idx].id;
@@ -3052,7 +3052,7 @@ void flexran_set_ue_ul_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx) {
 
   if (!flexran_ul_slice_exists(mod_id, slice_idx)) return;
 
-  RC.mac[mod_id]->UE_list.assoc_ul_slice_idx[ue_id] = slice_idx;
+  RC.mac[mod_id]->UE_info.assoc_ul_slice_idx[ue_id] = slice_idx;
 }
 
 int flexran_dl_slice_exists(mid_t mod_id, int slice_idx) {
@@ -3103,7 +3103,7 @@ int flexran_remove_dl_slice(mid_t mod_id, int slice_idx) {
 
   memset(&sli->dl[sli->n_dl], 0, sizeof(sli->dl[sli->n_dl]));
   /* all UEs that have been in the old slice are put into slice index 0 */
-  //int *assoc_list = RC.mac[mod_id]->UE_list.assoc_dl_slice_idx;
+  //int *assoc_list = RC.mac[mod_id]->UE_info.assoc_dl_slice_idx;
 
   //for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i) {
   //  if (assoc_list[i] == slice_idx)
@@ -3397,7 +3397,7 @@ int flexran_remove_ul_slice(mid_t mod_id, int slice_idx) {
 
   memset(&sli->ul[sli->n_ul], 0, sizeof(sli->ul[sli->n_ul]));
   /* all UEs that have been in the old slice are put into slice index 0 */
-  int *assoc_list = RC.mac[mod_id]->UE_list.assoc_ul_slice_idx;
+  int *assoc_list = RC.mac[mod_id]->UE_info.assoc_ul_slice_idx;
 
   for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i) {
     if (assoc_list[i] == slice_idx)
