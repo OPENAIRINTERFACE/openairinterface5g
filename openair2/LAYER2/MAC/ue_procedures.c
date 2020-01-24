@@ -746,6 +746,9 @@ ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
   LOG_D(MAC, "[UE %d] parse_mch_header, found %d sdus\n", module_idP,
         num_sdu);
 
+  if(sdu[0]==0 && sdu[1]==0)
+        num_sdu=0;
+
   for (i = 0; i < num_sdu; i++) {
     if (rx_lcids[i] == MCH_SCHDL_INFO) {
       if (rx_lengths[i] & 0x01) {
