@@ -51,7 +51,7 @@ termStatusArray[termOAIUE] = false
 def eNB_Repository
 def eNB_Branch
 def eNB_CommitID
-def eNB_AllowMergeRequestProcess = false
+def ranAllowMergeRequestProcess = false
 def eNB_TargetBranch
 
 def doEpcLogCollection = true
@@ -130,8 +130,8 @@ pipeline {
                     }
                     echo "eNB_CommitID          :   ${eNB_CommitID}"
                     if (params.eNB_mergeRequest != null) {
-                        eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
-                        if (eNB_AllowMergeRequestProcess) {
+                        ranAllowMergeRequestProcess = params.eNB_mergeRequest
+                        if (ranAllowMergeRequestProcess) {
                             if (params.eNB_TargetBranch != null) {
                                 eNB_TargetBranch = params.eNB_TargetBranch
                             } else {
@@ -168,7 +168,7 @@ pipeline {
 
                     if (allParametersPresent) {
                         echo "All parameters are present"
-                        if (eNB_AllowMergeRequestProcess) {
+                        if (ranAllowMergeRequestProcess) {
                             sh "git fetch"
                             sh "./ci-scripts/doGitLabMerge.sh --src-branch ${eNB_Branch} --src-commit ${eNB_CommitID} --target-branch ${eNB_TargetBranch} --target-commit latest"
                         } else {
@@ -208,12 +208,12 @@ pipeline {
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                         ]) {
-                            sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
+                            sh "python3 main.py --mode=InitiateHtml --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
                             String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                             for (xmlFile in myXmlTestSuite) {
                             if (fileExists(xmlFile)) {
                                 try {
-                                    sh "python3 main.py --mode=TesteNB --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                                    sh "python3 main.py --mode=TesteNB --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
                                 } catch (Exception e) {
                                     currentBuild.result = 'FAILURE'
                                     buildStageStatus = false
