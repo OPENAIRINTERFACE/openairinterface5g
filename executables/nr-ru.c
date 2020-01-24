@@ -721,8 +721,9 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  int slot_type         = nr_slot_select(cfg,frame,slot);
-  int prevslot_type     = nr_slot_select(cfg,frame,(slot+fp->slots_per_frame-1)%fp->slots_per_frame);
+  int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
+  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
+  int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
   int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
   int siglen=fp->samples_per_slot;
   int flags=1;
@@ -747,7 +748,14 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         prevslot_type == NR_UPLINK_SLOT) {
       flags = 2; // start of burst
     }
-    
+
+    if (cfg->cell_config.frame_duplex_type.value == TDD &&
+        slot_type == NR_DOWNLINK_SLOT &&
+        nextslot_type == NR_UPLINK_SLOT) {
+      flags = 3; // end of burst
+    }
+   
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags ); 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
     for (i=0; i<ru->nb_tx; i++)
@@ -1098,6 +1106,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
+  } else if (mu == NR_MU_3) {
+    if (N_RB == 66) {
+      cfg->sample_rate = 122.88e6;
+      cfg->samples_per_frame = 1228800;
+      cfg->tx_bw = 100e6;
+      cfg->rx_bw = 100e6;
+    } else if(N_RB == 32) {
+      cfg->sample_rate=61.44e6;
+      cfg->samples_per_frame = 614400;
+      cfg->tx_bw = 50e6;
+      cfg->rx_bw = 50e6;
+    }
   } else {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
   }
@@ -1113,8 +1133,14 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->rx_num_channels=ru->nb_rx;
 
   for (i=0; i<ru->nb_tx; i++) {
-    cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
-    cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
+    if (ru->if_frequency == 0) {
+      cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
+      cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
+    }
+    else {
+      cfg->tx_freq[i] = (double)ru->if_frequency;
+      cfg->rx_freq[i] = (double)(ru->if_frequency+fp->ul_CarrierFreq-fp->dl_CarrierFreq);
+    }
     cfg->tx_gain[i] = ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
     cfg->configFilename = rf_config_file;
@@ -1244,7 +1270,10 @@ void *ru_thread_tx( void *param ) {
 
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RU_TX_WAIT, 1 );
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RU_TX_WAIT, 0 );
 
     ret = pthread_mutex_lock(&proc->mutex_gNBs);
     AssertFatal(ret == 0,"mutex_lock return %d\n",ret);
@@ -1337,14 +1366,14 @@ void *ru_thread_tx( void *param ) {
         ret = pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
         // the thread can now be woken up
-        //if (L1_proc->instance_cnt_RUs == -1) {
+        if (L1_proc->instance_cnt_RUs == -1) {
           L1_proc->instance_cnt_RUs = 0;
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
                        "ERROR pthread_cond_signal for gNB_L1_thread\n");
-        //} //else AssertFatal(1==0,"gNB TX thread is not ready\n");
+        } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         ret = pthread_mutex_unlock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
       }
     }
   }
@@ -2332,6 +2361,7 @@ void RCconfig_RU(void)
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
+      RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].uptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;

@@ -169,13 +169,13 @@ rrc_gNB_get_ue_context(
   }
 }
 
-rrc_gNB_free_mem_UE_context(
+void rrc_gNB_free_mem_UE_context(
   const protocol_ctxt_t               *const ctxt_pP,
   struct rrc_gNB_ue_context_s         *const ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
-  int i;
+
   LOG_T(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Clearing UE context 0x%p (free internal structs)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),

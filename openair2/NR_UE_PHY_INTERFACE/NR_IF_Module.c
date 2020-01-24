@@ -155,8 +155,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
       LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
       //      fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
 
-      ret_mask |= (handle_dci(
-			      dl_info->module_id,
+      ret_mask |= (handle_dci(dl_info->module_id,
 			      dl_info->cc_id,
 			      dl_info->gNB_index,
 			      dl_info->dci_ind->dci_list+i)<< FAPI_NR_DCI_IND);

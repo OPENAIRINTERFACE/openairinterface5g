@@ -163,6 +163,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
                                                       *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
   cfg->carrier_config.dl_frequency = from_nrarfcn(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                                                  *scc->ssbSubcarrierSpacing,
                                                   scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA)/1000; // freq in kHz
 
   for (i=0; i<5; i++) {
@@ -187,6 +188,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     UL_pointA = *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA; 
 
   cfg->carrier_config.uplink_frequency = from_nrarfcn(*scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0],
+                                                      *scc->ssbSubcarrierSpacing,
                                                       UL_pointA)/1000; // freq in kHz
 
 

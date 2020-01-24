@@ -26,7 +26,7 @@
     {"wait-for-sync",         NULL,                   PARAMFLAG_BOOL,   iptr:&wait_for_sync,                defintval:0,                   TYPE_INT,    0},        \
     {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,   iptr:&single_thread_flag,           defintval:1,                   TYPE_INT,    0},        \
     {"A" ,                    CONFIG_HLP_TADV,        0,                uptr:&timing_advance,               defintval:0,                   TYPE_UINT,   0},        \
-    {"C" ,                    CONFIG_HLP_DLF,         0,                uptr:&(downlink_frequency[0][0]),   defuintval:DEFAULT_DLF,        TYPE_UINT,   0},        \
+    {"C" ,                    CONFIG_HLP_DLF,         0,                u64ptr:&(downlink_frequency[0][0]), defuintval:DEFAULT_DLF,        TYPE_UINT64, 0},        \
     {"a" ,                    CONFIG_HLP_CHOFF,       0,                iptr:&chain_offset,                 defintval:0,                   TYPE_INT,    0},        \
     {"d" ,                    CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,   uptr:(uint32_t *)&do_forms,         defintval:0,                   TYPE_INT8,   0},        \
     {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,             defintval:0,                   TYPE_INT8,   0},        \

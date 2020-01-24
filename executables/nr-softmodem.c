@@ -113,7 +113,7 @@ int single_thread_flag=1;
 
 static int8_t threequarter_fs=0;
 
-uint32_t downlink_frequency[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 //Temp fix for inexisting NR upper layer
@@ -679,7 +679,7 @@ void wait_RUs(void) {
 }
 
 void wait_gNBs(void) {
-  int i,j;
+  int i;
   int waiting=1;
 
   while (waiting==1) {
@@ -855,7 +855,7 @@ void init_pdcp(void) {
 
 int main( int argc, char **argv )
 {
-  int i, ru_id, CC_id = 0;
+  int ru_id, CC_id = 0;
   start_background_system();
 
   ///static configuration for NR at the moment

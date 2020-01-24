@@ -79,7 +79,7 @@
 
 extern uint16_t sf_ahead;
 
-extern int config_check_band_frequencies(int ind, int16_t band, uint32_t downlink_frequency,
+extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
 void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
@@ -213,8 +213,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 }
 
 
-void fix_scc(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
-
+void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 
   int ssbmaplen = (int)scc->ssb_PositionsInBurst->present;
   AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
@@ -232,14 +231,8 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,int ssbmap) {
     scc->ssb_PositionsInBurst->choice.longBitmap.size = 8;
     scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.longBitmap.buf = CALLOC(1,8);
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[0] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[1] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[2] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[3] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[4] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[5] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[6] = 0xff;
-    scc->ssb_PositionsInBurst->choice.longBitmap.buf[7] = 0xff;
+    for (int i=0; i<8; i++)
+      scc->ssb_PositionsInBurst->choice.longBitmap.buf[i] = (ssbmap>>(i<<3))&(0xff);
   }
 
   // fix UL absolute frequency
@@ -290,7 +283,6 @@ void RCconfig_nr_flexran()
   /* this will possibly truncate the cell id (RRC assumes int32_t).
    * Both Nid_cell and gnb_id are signed in RRC case, but we use unsigned for
    * the bitshifting to work properly */
-  int32_t   Nid_cell = 0;
   uint16_t  Nid_cell_tr = 0;
   uint32_t  gnb_id = 0;
 
@@ -369,7 +361,7 @@ void RCconfig_nr_flexran()
 }
 
 void RCconfig_NR_L1(void) {
-  int               i,j;
+  int j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
@@ -520,7 +512,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
   int ssb_SubcarrierOffset = 0;
   int pdsch_AntennaPorts = 1;
-  int ssb_bitmap=0xff;
+  uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
@@ -645,7 +637,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	
         // Parse optional physical parameters
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
-
 
         printf("SSB SCO %d\n",ssb_SubcarrierOffset);
 	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
@@ -963,8 +954,6 @@ void NRRCConfig(void) {
   
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];  
   
-
-
 /* get global parameters, defined outside any section in the config file */
  
   printf("Getting GNBSParams\n");

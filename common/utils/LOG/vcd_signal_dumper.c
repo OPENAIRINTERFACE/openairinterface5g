@@ -512,7 +512,8 @@ const char* eurecomFunctionsNames[] = {
   /*NR softmodem signal*/
   "wakeup_txfh",
   "gNB_thread_rxtx0",
-  "gNB_thread_rxtx1"
+  "gNB_thread_rxtx1",
+  "ru_thread_tx_wait"
 };
 
 struct vcd_module_s vcd_modules[] = {
