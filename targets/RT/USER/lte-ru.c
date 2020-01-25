@@ -2683,13 +2683,9 @@ void init_RU(char *rf_config_file, clock_source_t clock_source, clock_source_t t
   PHY_VARS_eNB *eNB0     = (PHY_VARS_eNB *)NULL;
   LTE_DL_FRAME_PARMS *fp = (LTE_DL_FRAME_PARMS *)NULL;
   // create status mask
-  RC.ru_mask = 0;
+  RC.ru_mask= (1 << RC.nb_RU) - 1;
   pthread_mutex_init(&RC.ru_mutex,NULL);
   pthread_cond_init(&RC.ru_cond,NULL);
-  // read in configuration file)
-  printf("configuring RU from file\n");
-  RCconfig_RU();
-  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
   if (RC.nb_CC != 0)
     for (i=0; i<RC.nb_L1_inst; i++)
@@ -2919,8 +2915,6 @@ void RCconfig_RU(void) {
 
   if ( RUParamList.numelt > 0) {
     RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
-    RC.ru_mask=(1<<RC.nb_RU) - 1;
-    printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (int j = 0; j < RC.nb_RU; j++) {
       RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));

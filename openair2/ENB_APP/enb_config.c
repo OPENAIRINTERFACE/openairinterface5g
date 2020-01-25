@@ -3104,4 +3104,6 @@ void read_config_and_init(void) {
     memset((void *)RC.rrc[enb_id], 0, sizeof(eNB_RRC_INST));
     RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }
+
+  RCconfig_flexran();
 }

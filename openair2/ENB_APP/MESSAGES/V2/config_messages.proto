@@ -107,6 +107,10 @@ message flex_lc_ue_config {
 	repeated flex_lc_config lc_config = 2;	// A list of LC configurations for the given UE
 }
 
-
-
-
+message flex_s1ap_config {
+  optional uint32 pending = 1;              // number of pending (to be connected) MMEs
+  optional uint32 connected = 2;            // number of connected MMEs
+  optional string enb_s1_ip = 3;            // S1-MME IP of eNodeB
+  optional string enb_name = 4;             // S1-MME name of eNodeB
+  repeated flex_s1ap_mme mme = 5;
+}

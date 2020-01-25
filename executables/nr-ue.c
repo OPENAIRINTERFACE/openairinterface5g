@@ -18,7 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
+#include "executables/thread-common.h"
 #include "executables/nr-uesoftmodem.h"
 
 #include "LAYER2/NR_MAC_UE/mac.h"

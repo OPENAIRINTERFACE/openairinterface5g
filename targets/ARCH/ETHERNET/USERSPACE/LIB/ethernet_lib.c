@@ -417,7 +417,6 @@ int transport_init(openair0_device *device,
     device->trx_stop_func        = trx_eth_stop;
     device->trx_set_freq_func = trx_eth_set_freq;
     device->trx_set_gains_func = trx_eth_set_gains;
-    device->uhd_set_thread_priority = NULL;
 
     if (eth->flags == ETH_RAW_MODE) {
         device->trx_write_func   = trx_eth_write_raw;

@@ -1468,7 +1468,7 @@ int s1ap_eNB_path_switch_req(instance_t instance,
       break;
     }
   } while(1);
-
+  
   ue_context_p->mme_ue_s1ap_id = path_switch_req_p->mme_ue_s1ap_id;
 
   /* Prepare the S1AP message to encode */

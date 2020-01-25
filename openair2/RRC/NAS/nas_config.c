@@ -260,7 +260,7 @@ int nas_config_mbms(int interface_id, int thirdOctet, int fourthOctet, char *ifn
     bringInterfaceUp(interfaceName, 1);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
@@ -301,7 +301,7 @@ int nas_config_mbms_s1(int interface_id, int thirdOctet, int fourthOctet, char *
   printf("returnValue %d\n",returnValue);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, "255.255.255.0", broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",

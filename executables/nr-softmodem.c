@@ -428,7 +428,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
   /*
-  #   if defined(ENABLE_USE_MME)
+    if (EPC_MODE_ENABLED) {
         if (gnb_nb > 0) {
           if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
             LOG_E(SCTP, "Create task for SCTP failed\n");
@@ -452,7 +452,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
           }
         }
 
-  #      endif
+    }
   */
 
   if (gnb_nb > 0) {

@@ -19,24 +19,22 @@
  *      contact@openairinterface.org
  */
 
-#if defined(ENABLE_ITTI)
+
 # include "intertask_interface.h"
 # include "create_nr_tasks.h"
 # include "common/utils/LOG/log.h"
 
 # ifdef OPENAIR2
-#   if defined(ENABLE_USE_MME)
-#     include "sctp_eNB_task.h"
-#     include "s1ap_eNB.h"
-#     include "nas_ue_task.h"
-#     include "udp_eNB_task.h"
-#     include "gtpv1u_eNB_task.h"
-#   endif
+#include "sctp_eNB_task.h"
+#include "s1ap_eNB.h"
+#include "nas_ue_task.h"
+#include "udp_eNB_task.h"
+#include "gtpv1u_eNB_task.h"
 #   if ENABLE_RAL
 #     include "lteRALue.h"
 #     include "lteRALenb.h"
 #   endif
-#   include "RRC/NR/nr_rrc_defs.h"
+#include "RRC/NR/nr_rrc_defs.h"
 # endif
 # include "gnb_app.h"
 
@@ -61,7 +59,7 @@ int create_gNB_tasks(uint32_t gnb_nb)
   }
 
 /*
-#   if defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
       if (gnb_nb > 0) {
         if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
           LOG_E(SCTP, "Create task for SCTP failed\n");
@@ -85,7 +83,7 @@ int create_gNB_tasks(uint32_t gnb_nb)
         }
       }
 
-#      endif
+   }
 */
 
     if (gnb_nb > 0) {

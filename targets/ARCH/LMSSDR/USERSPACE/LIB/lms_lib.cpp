@@ -405,7 +405,6 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
   device->trx_stop_func = trx_lms_stop;
   device->trx_set_freq_func = trx_lms_set_freq;
   device->trx_set_gains_func = trx_lms_set_gains;
-  device->uhd_set_thread_priority = NULL;
 
   device->openair0_cfg = openair0_cfg;
 
