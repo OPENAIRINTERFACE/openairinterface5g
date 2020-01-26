@@ -54,7 +54,7 @@ termStatusArray[termHSS] = false
 def eNB_Repository
 def eNB_Branch
 def eNB_CommitID
-def ranAllowMergeRequestProcess = false
+def eNB_AllowMergeRequestProcess = false
 def eNB_TargetBranch
 
 pipeline {
@@ -145,8 +145,8 @@ pipeline {
                     }
                     echo "eNB_CommitID          :   ${eNB_CommitID}"
                     if (params.eNB_mergeRequest != null) {
-                        ranAllowMergeRequestProcess = params.eNB_mergeRequest
-                        if (ranAllowMergeRequestProcess) {
+                        eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
+                        if (eNB_AllowMergeRequestProcess) {
                             if (params.eNB_TargetBranch != null) {
                                 eNB_TargetBranch = params.eNB_TargetBranch
                             } else {
@@ -178,7 +178,7 @@ pipeline {
 
                     if (allParametersPresent) {
                         echo "All parameters are present"
-                        if (ranAllowMergeRequestProcess) {
+                        if (eNB_AllowMergeRequestProcess) {
                             sh "git fetch"
                             sh "./ci-scripts/doGitLabMerge.sh --src-branch ${eNB_Branch} --src-commit ${eNB_CommitID} --target-branch ${eNB_TargetBranch} --target-commit latest"
                         } else {
