@@ -64,7 +64,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
   RLC_BearerConfig->servedRadioBearer->present = 	NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
 
-  RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=5;
+  RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=1;
   RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
   *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
   RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
@@ -2044,7 +2044,7 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
   drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
   drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
   drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity=5;
-  drb_ToAddMod->drb_Identity = 4;
+  drb_ToAddMod->drb_Identity = 1;
   drb_ToAddMod->reestablishPDCP = NULL;
   drb_ToAddMod->recoverPDCP = NULL;
   drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
@@ -2073,7 +2073,7 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
 
   rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
   rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
-  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea2;
+  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
   rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
   rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
   *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
