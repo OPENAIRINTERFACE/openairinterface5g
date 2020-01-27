@@ -28,6 +28,31 @@ class EPCManagement():
 		self.EPCType = ''
 		self.EPC_PcapFileName = ''
 
+	def SetIPAddress(self, ipaddress):
+		self.EPCIPAddress = ipaddress
+	def GetIPAddress(self):
+		return self.EPCIPAddress
+	def SetUserName(self, username):
+		self.EPCUserName = username
+	def GetUserName(self):
+		return self.EPCUserName
+	def SetPassword(self, password):
+		self.EPCPassword = password
+	def GetPassword(self):
+		return self.EPCPassword
+	def SetSourceCodePath(self, sourcecodepath):
+		self.EPCSourceCodePath = sourcecodepath
+	def GetSourceCodePath(self):
+		return self.EPCSourceCodePath
+	def SetType(self, typ):
+		self.EPCType = typ
+	def GetType(self):
+		return self.EPCType
+	def Set_PcapFileName(self, pcapfn):
+		self.PcapFileName = pcapfn
+	def Get_PcapFileName(self):
+		return self.PcapFileName
+
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
 			HELP.GenericHelp(Version)

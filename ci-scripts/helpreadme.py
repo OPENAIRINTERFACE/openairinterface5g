@@ -6,7 +6,7 @@ def GenericHelp(vers):
 	print('----------------------------------------------------------------------------------------------------------------------')
 	print('main.py Ver: ' + vers)
 	print('----------------------------------------------------------------------------------------------------------------------')
-	print('Usage: python main.py [options]')
+	print('python main.py [options]')
 	print('  --help  Show this help.')
 	print('  --mode=[Mode]')
 	print('      TesteNB')

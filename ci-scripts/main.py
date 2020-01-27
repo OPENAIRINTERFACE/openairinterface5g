@@ -1,4 +1,4 @@
-#/*
+
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -195,7 +195,7 @@ class OaiCiTest():
 
 	def BuildeNB(self):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
@@ -213,7 +213,7 @@ class OaiCiTest():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(lIpAddr, lUserName, lPassWord)
 		# Check if we build an 5G-NR gNB or an LTE eNB
@@ -314,7 +314,7 @@ class OaiCiTest():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(lIpAddr, lUserName, lPassWord)
 		count = 40
@@ -386,7 +386,7 @@ class OaiCiTest():
 
 	def BuildOAIUE(self):
 		if self.UEIPAddress == '' or self.ranRepository == '' or self.ranBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		result = re.search('--nrUE', self.Build_OAI_UE_args)
@@ -486,106 +486,11 @@ class OaiCiTest():
 			self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
-	"""
-	def InitializeHSS(self):
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '' or EPC.EPCType == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
-		SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		if re.match('OAI-Rel14-CUPS', EPC.EPCType, re.IGNORECASE):
-			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
-			SSH.command('cd ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
-			logging.debug('\u001B[1m Launching tshark on all interfaces \u001B[0m')
-			EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S rm -f ' + EPC_PcapFileName, '\$', 5)
-			SSH.command('echo $USER; nohup sudo tshark -f "tcp port not 22 and port not 53" -i any -w ' + EPC.EPCSourceCodePath + '/scripts/' + EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', EPC.EPCUserName, 5)
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S rm -f hss_' + self.testCase_id + '.log logs/hss*.*', '\$', 5)
-			SSH.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
-			SSH.command('chmod 755 ./my-hss.sh', '\$', 5)
-			SSH.command('sudo daemon --unsafe --name=hss_daemon --chdir=' + EPC.EPCSourceCodePath + '/scripts -o ' + EPC.EPCSourceCodePath + '/scripts/hss_' + self.testCase_id + '.log ./my-hss.sh', '\$', 5)
-		elif re.match('OAI', EPC.EPCType, re.IGNORECASE):
-			logging.debug('Using the OAI EPC HSS')
-			SSH.command('cd ' + EPC.EPCSourceCodePath, '\$', 5)
-			SSH.command('source oaienv', '\$', 5)
-			SSH.command('cd scripts', '\$', 5)
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S ./run_hss 2>&1 | stdbuf -o0 awk \'{ print strftime("[%Y/%m/%d %H:%M:%S] ",systime()) $0 }\' | stdbuf -o0 tee -a hss_' + self.testCase_id + '.log &', 'Core state: 2 -> 3', 35)
-		elif re.match('ltebox', EPC.EPCType, re.IGNORECASE):
-			logging.debug('Using the ltebox simulated HSS')
-			SSH.command('if [ -d ' + EPC.EPCSourceCodePath + '/scripts ]; then echo ' + self.eNBPassword + ' | sudo -S rm -Rf ' + EPC.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
-			SSH.command('mkdir -p ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
-			SSH.command('cd /opt/hss_sim0609', '\$', 5)
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
-		else:
-			logging.error('This option should not occur!')
-		SSH.close()
-		self.CreateHtmlTestRow(EPC.EPCType, 'OK', ALL_PROCESSES_OK)
-
-	def InitializeMME(self):
-		if self.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '' or EPC.EPCType == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			logging.debug('Using the OAI EPC Release 14 MME')
-			SSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f mme_' + self.testCase_id + '.log', '\$', 5)
-			SSH.command('echo "./run_mme --config-file /usr/local/etc/oai/mme.conf --set-virt-if" > ./my-mme.sh', '\$', 5)
-			SSH.command('chmod 755 ./my-mme.sh', '\$', 5)
-			SSH.command('sudo daemon --unsafe --name=mme_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/mme_' + self.testCase_id + '.log ./my-mme.sh', '\$', 5)
-		elif re.match('OAI', self.EPCType, re.IGNORECASE):
-			SSH.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-			SSH.command('source oaienv', '\$', 5)
-			SSH.command('cd scripts', '\$', 5)
-			SSH.command('stdbuf -o0 hostname', '\$', 5)
-			result = re.search('hostname\\\\r\\\\n(?P<host_name>[a-zA-Z0-9\-\_]+)\\\\r\\\\n', SSH.getBefore())
-			if result is None:
-				logging.debug('\u001B[1;37;41m Hostname Not Found! \u001B[0m')
-				sys.exit(1)
-			host_name = result.group('host_name')
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S ./run_mme 2>&1 | stdbuf -o0 tee -a mme_' + self.testCase_id + '.log &', 'MME app initialization complete', 100)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cd /opt/ltebox/tools', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S ./start_mme', '\$', 5)
-		else:
-			logging.error('This option should not occur!')
-		SSH.close()
-		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
-
-	def InitializeSPGW(self):
-		if self.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '' or EPC.EPCType == '':
-			Usage()
-			sys.exit('Insufficient Parameter')
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS')
-			SSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f spgwc_' + self.testCase_id + '.log spgwu_' + self.testCase_id + '.log', '\$', 5)
-			SSH.command('echo "spgwc -c /usr/local/etc/oai/spgw_c.conf" > ./my-spgwc.sh', '\$', 5)
-			SSH.command('chmod 755 ./my-spgwc.sh', '\$', 5)
-			SSH.command('sudo daemon --unsafe --name=spgwc_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwc_' + self.testCase_id + '.log ./my-spgwc.sh', '\$', 5)
-			time.sleep(5)
-			SSH.command('echo "spgwu -c /usr/local/etc/oai/spgw_u.conf" > ./my-spgwu.sh', '\$', 5)
-			SSH.command('chmod 755 ./my-spgwu.sh', '\$', 5)
-			SSH.command('sudo daemon --unsafe --name=spgwu_daemon --chdir=' + self.EPCSourceCodePath + '/scripts -o ' + self.EPCSourceCodePath + '/scripts/spgwu_' + self.testCase_id + '.log ./my-spgwu.sh', '\$', 5)
-		elif re.match('OAI', self.EPCType, re.IGNORECASE):
-			SSH.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-			SSH.command('source oaienv', '\$', 5)
-			SSH.command('cd scripts', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S ./run_spgw 2>&1 | stdbuf -o0 tee -a spgw_' + self.testCase_id + '.log &', 'Initializing SPGW-APP task interface: DONE', 30)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cd /opt/ltebox/tools', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S ./start_xGw', '\$', 5)
-		else:
-			logging.error('This option should not occur!')
-		SSH.close()
-		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
-	"""
+	
 	def CheckFlexranCtrlInstallation(self):
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '':
+		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
 			return
-		SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
+		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
@@ -596,15 +501,15 @@ class OaiCiTest():
 	def InitializeFlexranCtrl(self):
 		if self.flexranCtrlInstalled == False:
 			return
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '':
-			Usage()
+		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-		SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
+		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 		SSH.command('cd /opt/flexran_rtc', '\$', 5)
-		SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S rm -f log/*.log', '\$', 5)
-		SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
-		SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
-		SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
+		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S rm -f log/*.log', '\$', 5)
+		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
+		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
+		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
 		SSH.command('ps -aux | grep --color=never rt_controller', '\$', 5)
 		result = re.search('rt_controller -c ', SSH.getBefore())
 		if result is not None:
@@ -630,7 +535,7 @@ class OaiCiTest():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = False
 		check_OAI_UE = False
@@ -642,15 +547,15 @@ class OaiCiTest():
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if result is not None:
-			SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
+			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 			SSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', SSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
 				EPC.EPC_PcapFileName  = 'enb_' + self.testCase_id + '_s1log.pcap'
-				SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S rm -f /tmp/' + EPC.EPC_PcapFileName , '\$', 5)
-				SSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + EPC.EPC_PcapFileName  + ' > /tmp/tshark.log 2>&1 &', EPC.EPCUserName, 5)
+				SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S rm -f /tmp/' + EPC.EPC_PcapFileName , '\$', 5)
+				SSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + EPC.EPC_PcapFileName  + ' > /tmp/tshark.log 2>&1 &', EPC.GetUserName(), 5)
 			SSH.close()
 		SSH.open(lIpAddr, lUserName, lPassWord)
 		SSH.command('cd ' + lSourcePath, '\$', 5)
@@ -689,7 +594,7 @@ class OaiCiTest():
 				SSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		SSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		SSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + EPC.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		SSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + EPC.GetIPAddress() + '/\' ' + ci_full_config_file, '\$', 2);
 		SSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		SSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		SSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -742,16 +647,16 @@ class OaiCiTest():
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
-					SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
+					SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-					SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+					SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 					if EPC.EPC_PcapFileName  != '':
 						time.sleep(0.5)
-						SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S chmod 666 /tmp/' + EPC.EPC_PcapFileName , '\$', 5)
+						SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S chmod 666 /tmp/' + EPC.EPC_PcapFileName , '\$', 5)
 					SSH.close()
 					time.sleep(1)
 					if EPC.EPC_PcapFileName  != '':
-						copyin_res = SSH.copyin(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, '/tmp/' + EPC.EPC_PcapFileName , '.')
+						copyin_res = SSH.copyin(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), '/tmp/' + EPC.EPC_PcapFileName , '.')
 						if (copyin_res == 0):
 							SSH.copyout(lIpAddr, lUserName, lPassWord, EPC.EPC_PcapFileName , lSourcePath + '/cmake_targets/.')
 				self.prematureExit = True
@@ -840,7 +745,7 @@ class OaiCiTest():
 
 	def InitializeUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		i = 0
@@ -856,7 +761,7 @@ class OaiCiTest():
 
 	def InitializeOAIUE(self):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		if self.air_interface == 'lte':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
@@ -1045,7 +950,7 @@ class OaiCiTest():
 
 	def InitializeCatM(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		self.picocom_closure = True
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -1079,7 +984,7 @@ class OaiCiTest():
 
 	def TerminateCatM(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		self.picocom_closure = True
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -1100,7 +1005,7 @@ class OaiCiTest():
 
 	def AttachCatM(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		self.picocom_closure = True
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -1173,8 +1078,8 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB()
 
 	def PingCatM(self):
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '':
-			Usage()
+		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -1186,10 +1091,10 @@ class OaiCiTest():
 		try:
 			statusQueue = SimpleQueue()
 			lock = Lock()
-			SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-			SSH.command('cd ' + EPC.EPCSourceCodePath, '\$', 5)
+			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+			SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
 			SSH.command('cd scripts', '\$', 5)
-			if re.match('OAI', EPC.EPCType, re.IGNORECASE):
+			if re.match('OAI', EPC.GetType(), re.IGNORECASE):
 				logging.debug('Using the OAI EPC HSS: not implemented yet')
 				self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 				self.CreateHtmlTabFooter(False)
@@ -1340,7 +1245,7 @@ class OaiCiTest():
 
 	def AttachUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -1414,7 +1319,7 @@ class OaiCiTest():
 
 	def DetachUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -1485,7 +1390,7 @@ class OaiCiTest():
 
 	def RebootUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -1519,7 +1424,7 @@ class OaiCiTest():
 
 	def DataDisableUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		i = 0
@@ -1548,7 +1453,7 @@ class OaiCiTest():
 
 	def DataEnableUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		i = 0
@@ -1564,7 +1469,7 @@ class OaiCiTest():
 
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
@@ -1608,7 +1513,7 @@ class OaiCiTest():
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
@@ -1680,7 +1585,7 @@ class OaiCiTest():
 
 	def CheckStatusUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -1702,7 +1607,7 @@ class OaiCiTest():
 		for job in multi_jobs:
 			job.join()
 		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
-			SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
+			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 			SSH.command('cd /opt/flexran_rtc', '\$', 5)
 			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
 			SSH.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
@@ -1744,13 +1649,13 @@ class OaiCiTest():
 
 	def GetAllUEIPAddresses(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		ue_ip_status = 0
 		self.UEIPAddresses = []
 		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
 			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-				Usage()
+				GenericHelp(Version)
 				sys.exit('Insufficient Parameter')
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('ifconfig oaitun_ue1', '\$', 4)
@@ -1814,13 +1719,13 @@ class OaiCiTest():
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 			# But for OAI-Rel14-CUPS, we launch from python executor
 			launchFromEpc = True
-			if re.match('OAI-Rel14-CUPS', EPC.EPCType, re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', EPC.GetType(), re.IGNORECASE):
 				launchFromEpc = False
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 
 			if launchFromEpc:
-				SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-				SSH.command('cd ' + EPC.EPCSourceCodePath, '\$', 5)
+				SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+				SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
 				SSH.command('cd scripts', '\$', 5)
 				ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
 			else:
@@ -1829,9 +1734,9 @@ class OaiCiTest():
 				logging.debug(cmd)
 				ret = subprocess.run(cmd, shell=True)
 				ping_status = ret.returncode
-				SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.EPCSourceCodePath + '/scripts')
-				SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-				SSH.command('cat ' + EPC.EPCSourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+				SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+				SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+				SSH.command('cat ' + EPC.GetSourceCodePath() + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 			# TIMEOUT CASE
 			if ping_status < 0:
 				message = 'Ping with UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT!'
@@ -1912,11 +1817,11 @@ class OaiCiTest():
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
 			if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
-				Usage()
+				GenericHelp(Version)
 				sys.exit('Insufficient Parameter')
 		else:
 			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
-				Usage()
+				GenericHelp(Version)
 				sys.exit('Insufficient Parameter')
 		try:
 			if ping_from_eNB is not None:
@@ -1989,7 +1894,7 @@ class OaiCiTest():
 			else:
 				copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/ping_' + self.testCase_id + '.log', '.')
 			if (copyin_res == 0):
-				SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'ping_' + self.testCase_id + '.log', EPC.EPCSourceCodePath + '/scripts')
+				SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'ping_' + self.testCase_id + '.log', EPC.GetSourceCodePath() + '/scripts')
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -1998,8 +1903,8 @@ class OaiCiTest():
 		if result is not None:
 			self.PingNoS1()
 			return
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '':
-			Usage()
+		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
@@ -2342,7 +2247,7 @@ class OaiCiTest():
 		# Launch iperf server on EPC side (true for ltebox and old open-air-cn0
 		# But for OAI-Rel14-CUPS, we launch from python executor and we are using its IP address as iperf client address
 		launchFromEpc = True
-		if re.match('OAI-Rel14-CUPS', EPC.EPCType, re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', EPC.GetType(), re.IGNORECASE):
 			launchFromEpc = False
 			cmd = 'hostname -I'
 			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
@@ -2350,13 +2255,13 @@ class OaiCiTest():
 				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
 		port = 5001 + idx
 		if launchFromEpc:
-			SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-			SSH.command('cd ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
+			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+			SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
 			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 			if udpIperf:
-				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.EPCUserName, 5)
+				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.GetUserName(), 5)
 			else:
-				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.EPCUserName, 5)
+				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.GetUserName(), 5)
 			SSH.close()
 		else:
 			if self.ueIperfVersion == self.dummyIperfVersion:
@@ -2379,7 +2284,7 @@ class OaiCiTest():
 			SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
 		else:
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			SSH.command('cd ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
+			SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
 		iperf_time = self.Iperf_ComputeTime()
 		time.sleep(0.5)
 
@@ -2413,27 +2318,27 @@ class OaiCiTest():
 
 		# Kill iperf server on EPC side
 		if launchFromEpc:
-			SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-			SSH.command('killall --signal SIGKILL iperf', EPC.EPCUserName, 5)
+			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+			SSH.command('killall --signal SIGKILL iperf', EPC.GetUserName(), 5)
 			SSH.close()
 		else:
 			cmd = 'killall --signal SIGKILL iperf'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True)
 			time.sleep(1)
-			SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.EPCSourceCodePath + '/scripts')
+			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1) or (clientStatus == -2):
 			if launchFromEpc:
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-				SSH.copyin(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, EPC.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				SSH.copyin(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath() + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
 		if (device_id == 'OAI-UE'):
 			SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
-			SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.EPCSourceCodePath + '/scripts')
+			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
@@ -2447,8 +2352,8 @@ class OaiCiTest():
 			if (device_id != 'OAI-UE'):
 				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 				# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
-				SSH.command('if [ ! -d ' + EPC.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
-				SSH.command('cd ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
+				SSH.command('if [ ! -d ' + EPC.GetSourceCodePath() + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
+				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
 				# Checking if iperf / iperf3 are installed
 				if self.ADBCentralized:
 					SSH.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
@@ -2507,7 +2412,7 @@ class OaiCiTest():
 					SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -u -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
 			else:
 				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				SSH.command('cd ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
+				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
 				if self.ADBCentralized:
 					if (useIperf3):
 						SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
@@ -2529,11 +2434,11 @@ class OaiCiTest():
 			# Launch the IPERF client on the EPC side for DL (true for ltebox and old open-air-cn
 			# But for OAI-Rel14-CUPS, we launch from python executor
 			launchFromEpc = True
-			if re.match('OAI-Rel14-CUPS', EPC.EPCType, re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', EPC.GetType(), re.IGNORECASE):
 				launchFromEpc = False
 			if launchFromEpc:
-				SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-				SSH.command('cd ' + EPC.EPCSourceCodePath + '/scripts', '\$', 5)
+				SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
 			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
@@ -2568,9 +2473,9 @@ class OaiCiTest():
 					logging.debug(cmd)
 					ret = subprocess.run(cmd, shell=True)
 					iperf_status = ret.returncode
-					SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.EPCSourceCodePath + '/scripts')
-					SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-					SSH.command('cat ' + EPC.EPCSourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+					SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+					SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+					SSH.command('cat ' + EPC.GetSourceCodePath() + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				if iperf_status < 0:
 					if launchFromEpc:
 						SSH.close()
@@ -2607,7 +2512,7 @@ class OaiCiTest():
 				if (device_id == 'OAI-UE'):
 					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				else:
-					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.GetSourceCodePath() + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				SSH.command('fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
@@ -2615,16 +2520,16 @@ class OaiCiTest():
 			if (device_id == 'OAI-UE'):
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					if not launchFromEpc:
-						SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.EPCSourceCodePath + '/scripts')
+						SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
 				else:
 					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-					SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.EPCSourceCodePath + '/scripts')
+					SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def IperfNoS1(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = True
@@ -2702,10 +2607,10 @@ class OaiCiTest():
 		if (clientStatus == -1):
 			copyin_res = SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
 			if (copyin_res == 0):
-				SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', EPC.EPCSourceCodePath + '/scripts')
+				SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_OAI-UE.log', EPC.GetSourceCodePath() + '/scripts')
 		copyin_res = SSH.copyin(iClientIPAddr, iClientUser, iClientPasswd, '/tmp/tmp_iperf_' + self.testCase_id + '.log', 'iperf_' + self.testCase_id + '_OAI-UE.log')
 		if (copyin_res == 0):
-			SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, 'iperf_' + self.testCase_id + '_OAI-UE.log', EPC.EPCSourceCodePath + '/scripts')
+			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_' + self.testCase_id + '_OAI-UE.log', EPC.GetSourceCodePath() + '/scripts')
 		iperf_noperf = False
 		if status_queue.empty():
 			iperf_status = False
@@ -2736,8 +2641,8 @@ class OaiCiTest():
 		if result is not None:
 			self.IperfNoS1()
 			return
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			Usage()
+		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
@@ -2934,72 +2839,7 @@ class OaiCiTest():
 			SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
-	"""
-	def CheckHSSProcess(self, status_queue):
-		try:
-			SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-			SSH.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
-			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				result = re.search('oai_hss -j', SSH.getBefore())
-			elif re.match('OAI', self.EPCType, re.IGNORECASE):
-				result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
-			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-				result = re.search('hss_sim s6as diam_hss', SSH.getBefore())
-			else:
-				logging.error('This should not happen!')
-			if result is None:
-				logging.debug('\u001B[1;37;41m HSS Process Not Found! \u001B[0m')
-				status_queue.put(HSS_PROCESS_FAILED)
-			else:
-				status_queue.put(HSS_PROCESS_OK)
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def CheckMMEProcess(self, status_queue):
-		try:
-			SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-			SSH.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
-			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				result = re.search('mme -c', SSH.getBefore())
-			elif re.match('OAI', self.EPCType, re.IGNORECASE):
-				result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
-			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-				result = re.search('mme', SSH.getBefore())
-			else:
-				logging.error('This should not happen!')
-			if result is None:
-				logging.debug('\u001B[1;37;41m MME Process Not Found! \u001B[0m')
-				status_queue.put(MME_PROCESS_FAILED)
-			else:
-				status_queue.put(MME_PROCESS_OK)
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def CheckSPGWProcess(self, status_queue):
-		try:
-			SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				SSH.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
-				result = re.search('spgwu -c ', SSH.getBefore())
-			elif re.match('OAI', self.EPCType, re.IGNORECASE):
-				SSH.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
-				result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
-			elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-				SSH.command('stdbuf -o0 ps -aux | grep --color=never xGw | grep -v grep', '\$', 5)
-				result = re.search('xGw', SSH.getBefore())
-			else:
-				logging.error('This should not happen!')
-			if result is None:
-				logging.debug('\u001B[1;37;41m SPGW Process Not Found! \u001B[0m')
-				status_queue.put(SPGW_PROCESS_FAILED)
-			else:
-				status_queue.put(SPGW_PROCESS_OK)
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-	"""
+	
 	def AnalyzeLogFile_eNB(self, eNBlogFile):
 		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
@@ -3524,7 +3364,7 @@ class OaiCiTest():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(lIpAddr, lUserName, lPassWord)
 		SSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
@@ -3548,13 +3388,13 @@ class OaiCiTest():
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if result is not None:
-			SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
+			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-			SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+			SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
 			if EPC.EPC_PcapFileName  != '':
-				SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S chmod 666 /tmp/' + EPC.EPC_PcapFileName , '\$', 5)
-				SSH.copyin(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, '/tmp/' + EPC.EPC_PcapFileName , '.')
+				SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S chmod 666 /tmp/' + EPC.EPC_PcapFileName , '\$', 5)
+				SSH.copyin(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), '/tmp/' + EPC.EPC_PcapFileName , '.')
 				SSH.copyout(lIpAddr, lUserName, lPassWord, EPC.EPC_PcapFileName , lSourcePath + '/cmake_targets/.')
 			SSH.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
@@ -3603,93 +3443,17 @@ class OaiCiTest():
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
-	"""
-	def TerminateHSS(self):
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT oai_hss || true', '\$', 5)
-			time.sleep(2)
-			SSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
-			result = re.search('oai_hss -j', SSH.getBefore())
-			if result is not None:
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL oai_hss || true', '\$', 5)
-			SSH.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-hss.sh', '\$', 5)
-		elif re.match('OAI', self.EPCType, re.IGNORECASE):
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_hss oai_hss || true', '\$', 5)
-			time.sleep(2)
-			SSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
-			result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
-			if result is not None:
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_hss oai_hss || true', '\$', 5)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-			SSH.command('cd scripts', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
-			time.sleep(1)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
-		else:
-			logging.error('This should not happen!')
-		SSH.close()
-		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-
-	def TerminateMME(self):
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_mme mme || true', '\$', 5)
-			time.sleep(2)
-			SSH.command('stdbuf -o0 ps -aux | grep mme | grep -v grep', '\$', 5)
-			result = re.search('mme -c', SSH.getBefore())
-			if result is not None:
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_mme mme || true', '\$', 5)
-			SSH.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-mme.sh', '\$', 5)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cd /opt/ltebox/tools', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_mme', '\$', 5)
-		else:
-			logging.error('This should not happen!')
-		SSH.close()
-		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-
-	def TerminateSPGW(self):
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT spgwc spgwu || true', '\$', 5)
-			time.sleep(2)
-			SSH.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
-			result = re.search('spgwc -c |spgwu -c ', SSH.getBefore())
-			if result is not None:
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL spgwc spgwu || true', '\$', 5)
-			SSH.command('rm -f ' + self.EPCSourceCodePath + '/scripts/my-spgw*.sh', '\$', 5)
-			SSH.command('stdbuf -o0 ps -aux | grep tshark | grep -v grep', '\$', 5)
-			result = re.search('-w ', SSH.getBefore())
-			if result is not None:
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT tshark || true', '\$', 5)
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 ' + EPC.EPCSourceCodePath + '/scripts/*.pcap', '\$', 5)
-		elif re.match('OAI', self.EPCType, re.IGNORECASE):
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGINT run_spgw spgw || true', '\$', 5)
-			time.sleep(2)
-			SSH.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
-			result = re.search('\/bin\/bash .\/run_', SSH.getBefore())
-			if result is not None:
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL run_spgw spgw || true', '\$', 5)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cd /opt/ltebox/tools', '\$', 5)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_xGw', '\$', 5)
-		else:
-			logging.error('This should not happen!')
-		SSH.close()
-		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-	"""
+	
 	def TerminateFlexranCtrl(self):
 		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
 			return
-		if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '':
-			Usage()
+		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
+			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-		SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
+		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
 		time.sleep(1)
-		SSH.command('echo ' + EPC.EPCPassword + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
+		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
 		time.sleep(1)
 		SSH.close()
 		self.flexranCtrlStarted = False
@@ -3820,7 +3584,7 @@ class OaiCiTest():
 		self.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', ALL_PROCESSES_OK)
 
 	def X2_Status(self, idx, fileName):
-		cmd = "curl --silent http://" + EPC.EPCIPAddress + ":9999/stats | jq '.' > " + fileName
+		cmd = "curl --silent http://" + EPC.GetIPAddress() + ":9999/stats | jq '.' > " + fileName
 		message = cmd + '\n'
 		logging.debug(cmd)
 		subprocess.run(cmd, shell=True)
@@ -3884,7 +3648,7 @@ class OaiCiTest():
 				eNB_cnt = self.x2NbENBs
 				cnt = 0
 				while cnt < eNB_cnt:
-					cmd = "curl -XPOST http://" + EPC.EPCIPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
+					cmd = "curl -XPOST http://" + EPC.GetIPAddress() + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
 					logging.debug(cmd)
 					fullMessage += cmd + '\n'
 					subprocess.run(cmd, shell=True)
@@ -3898,7 +3662,7 @@ class OaiCiTest():
 				while cnt < eNB_cnt:
 					ueIdx = 0
 					while ueIdx < len(self.x2ENBConnectedUEs[0][cnt]):
-						cmd = "curl -XPOST http://" + EPC.EPCIPAddress + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
+						cmd = "curl -XPOST http://" + EPC.GetIPAddress() + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
 						logging.debug(cmd)
 						fullMessage += cmd + '\n'
 						subprocess.run(cmd, shell=True)
@@ -3959,8 +3723,8 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectPing(self):
-		SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		SSH.command('cd ' + EPC.EPCSourceCodePath, '\$', 5)
+		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+		SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
 		SSH.command('rm -f ping.log.zip', '\$', 5)
 		SSH.command('zip ping.log.zip ping*.log', '\$', 60)
@@ -3968,59 +3732,14 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectIperf(self):
-		SSH.open(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		SSH.command('cd ' + EPC.EPCSourceCodePath, '\$', 5)
+		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+		SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
 		SSH.command('rm -f iperf.log.zip', '\$', 5)
 		SSH.command('zip iperf.log.zip iperf*.log', '\$', 60)
 		SSH.command('rm iperf*.log', '\$', 5)
 		SSH.close()
-	"""
-	def LogCollectHSS(self):
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		SSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-		SSH.command('rm -f hss.log.zip', '\$', 5)
-		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			SSH.command('zip hss.log.zip hss*.log', '\$', 60)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S rm hss*.log', '\$', 5)
-			if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-				SSH.command('zip hss.log.zip logs/hss*.* *.pcap', '\$', 60)
-				SSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f logs/hss*.* *.pcap', '\$', 5)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cp /opt/hss_sim0609/hss.log .', '\$', 60)
-			SSH.command('zip hss.log.zip hss.log', '\$', 60)
-		else:
-			logging.error('This option should not occur!')
-		SSH.close()
-
-	def LogCollectMME(self):
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		SSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-		SSH.command('rm -f mme.log.zip', '\$', 5)
-		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			SSH.command('zip mme.log.zip mme*.log', '\$', 60)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S rm mme*.log', '\$', 5)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cp /opt/ltebox/var/log/*Log.0 .', '\$', 5)
-			SSH.command('zip mme.log.zip mmeLog.0 s1apcLog.0 s1apsLog.0 s11cLog.0 libLog.0 s1apCodecLog.0', '\$', 60)
-		else:
-			logging.error('This option should not occur!')
-		SSH.close()
-
-	def LogCollectSPGW(self):
-		SSH.open(self.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword)
-		SSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
-		SSH.command('rm -f spgw.log.zip', '\$', 5)
-		if re.match('OAI', self.EPCType, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
-			SSH.command('zip spgw.log.zip spgw*.log', '\$', 60)
-			SSH.command('echo ' + self.EPCPassword + ' | sudo -S rm spgw*.log', '\$', 5)
-		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
-			SSH.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
-			SSH.command('zip spgw.log.zip xGwLog.0', '\$', 60)
-		else:
-			logging.error('This option should not occur!')
-		SSH.close()
-	"""
+	
 	def LogCollectOAIUE(self):
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
@@ -4448,50 +4167,6 @@ class OaiCiTest():
 		logging.debug('\u001B[1m' + self.desc + '\u001B[0m')
 		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 
-#-----------------------------------------------------------
-# Usage()
-#-----------------------------------------------------------
-def Usage():
-	print('----------------------------------------------------------------------------------------------------------------------')
-	print('main.py Ver:' + Version)
-	print('----------------------------------------------------------------------------------------------------------------------')
-	print('Usage: python main.py [options]')
-	print('  --help  Show this help.')
-	print('  --mode=[Mode]')
-	print('      TesteNB')
-	print('      InitiateHtml, FinalizeHtml')
-	print('      TerminateeNB, TerminateUE, TerminateHSS, TerminateMME, TerminateSPGW')
-	print('      LogCollectBuild, LogCollecteNB, LogCollectHSS, LogCollectMME, LogCollectSPGW, LogCollectPing, LogCollectIperf')
-	print('---------------------------------------------------------------------------------------------------- Git Options --')
-	print('  --ranRepository=[OAI RAN Repository URL]')
-	print('  --ranBranch=[OAI RAN Repository Branch]')
-	print('  --ranCommitID=[OAI RAN Repository Commit SHA-1]')
-	print('  --ranAllowMerge=[Allow Merge Request (with target branch) (true or false)]')
-	print('  --ranTargetBranch=[Target Branch in case of a Merge Request]')
-	print('--------------------------------------------------------------------------------------------- eNB Server Options --')
-	print('  --eNBIPAddress=[eNB\'s IP Address]')
-	print('  --eNBUserName=[eNB\'s Login User Name]')
-	print('  --eNBPassword=[eNB\'s Login Password]')
-	print('  --eNBSourceCodePath=[eNB\'s Source Code Path]')
-	print('------------------------------------------------------------------------------------------ OAI UE Server Options --')
-	print('  --UEIPAddress=[UE\'s IP Address]')
-	print('  --UEUserName=[UE\'s Login User Name]')
-	print('  --UEPassword=[UE\'s Login Password]')
-	print('  --UESourceCodePath=[UE\'s Source Code Path]')
-	print('--------------------------------------------------------------------------------------------- EPC Server Options --')
-	print('  --EPCIPAddress=[EPC\'s IP Address]')
-	print('  --EPCUserName=[EPC\'s Login User Name]')
-	print('  --EPCPassword=[EPC\'s Login Password]')
-	print('  --EPCSourceCodePath=[EPC\'s Source Code Path]')
-	print('  --EPCType=[EPC\'s Type: OAI or ltebox or OAI-Rel14-CUPS]')
-	print('--------------------------------------------------------------------------------------------- ABD Server Options --')
-	print('  --ADBIPAddress=[ADB\'s IP Address]')
-	print('  --ADBUserName=[ADB\'s Login User Name]')
-	print('  --ADBPassword=[ADB\'s Login Password]')
-	print('----------------------------------------------------------------------------------------------------------------------')
-	print('  --XMLTestFile=[XML Test File to be run]')
-	print('----------------------------------------------------------------------------------------------------------------------')
-
 def CheckClassValidity(action,id):
 	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
@@ -4672,7 +4347,7 @@ cwd = os.getcwd()
 while len(argvs) > 1:
 	myArgv = argvs.pop(1)	# 0th is this file's name
 	if re.match('^\-\-help$', myArgv, re.IGNORECASE):
-		Usage()
+		GenericHelp(Version)
 		sys.exit(0)
 	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
@@ -4751,23 +4426,23 @@ while len(argvs) > 1:
 			CiTestObj.eNB2SourceCodePath = matchReg.group(1)
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		EPC.EPCIPAddress = matchReg.group(1)
+		EPC.SetIPAddress(matchReg.group(1))
 	elif re.match('^\-\-EPCBranch=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCBranch=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.EPCBranch = matchReg.group(1)
 	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
-		EPC.EPCUserName = matchReg.group(1)
+		EPC.SetUserName(matchReg.group(1))
 	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
-		EPC.EPCPassword = matchReg.group(1)
+		EPC.SetPassword(matchReg.group(1))
 	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		EPC.EPCSourceCodePath = matchReg.group(1)
+		EPC.SetSourceCodePath(matchReg.group(1))
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
 		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
-			EPC.EPCType = matchReg.group(1)
+			EPC.SetType(matchReg.group(1))
 		else:
 			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS)')
 	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
@@ -4810,12 +4485,12 @@ while len(argvs) > 1:
 		if ((finalStatus == 'true') or (finalStatus == 'True')):
 			CiTestObj.finalStatus = True
 	else:
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Invalid Parameter: ' + myArgv)
 
 if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if CiTestObj.eNBIPAddress == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '':
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.eNB_serverId = '0'
 	CiTestObj.eNB_instance = '0'
@@ -4823,74 +4498,74 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	CiTestObj.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
 	CiTestObj.TerminateUE()
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
 	CiTestObj.TerminateOAIUE()
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.TerminateHSS()
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.TerminateMME()
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.TerminateSPGW()
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
 	if (CiTestObj.eNBIPAddress == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectBuild()
 elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 	if CiTestObj.eNBIPAddress == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '':
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectHSS()
 elif re.match('^LogCollectMME$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectMME()
 elif re.match('^LogCollectSPGW$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectSPGW()
 elif re.match('^LogCollectPing$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectPing()
 elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
-	if EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCSourceCodePath == '':
-		Usage()
+	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectIperf()
 elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
-		Usage()
+		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
 	count = 0
 	foundCount = 0
@@ -4915,16 +4590,19 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	CiTestObj.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if CiTestObj.eNBIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '' or EPC.EPCIPAddress == '' or EPC.EPCUserName == '' or EPC.EPCPassword == '' or EPC.EPCType == '' or EPC.EPCSourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
-			Usage()
+		if CiTestObj.eNBIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.eNBUserName == '' or CiTestObj.eNBPassword == '' or CiTestObj.eNBSourceCodePath == '' or EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
+			GenericHelp(Version)
+			if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or EPC.GetType() == '':
+				EPCSrvHelp(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath(), EPC.GetType())
+		# Gabriele: other if conditions relevant to eNB etc. to be added	
 			sys.exit('Insufficient Parameter')
 
-		if (EPC.EPCIPAddress != '') and (EPC.EPCIPAddress != 'none'):
-			SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
-			SSH.copyout(EPC.EPCIPAddress, EPC.EPCUserName, EPC.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
+		if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
+			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), cwd + "/tcp_iperf_stats.awk", "/tmp")
+			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
 		if CiTestObj.UEIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
-			Usage()
+			GenericHelp(Version)
 			sys.exit('UE: Insufficient Parameter')
 
 	#read test_case_list.xml file
@@ -4969,7 +4647,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
-	if (EPC.EPCIPAddress != '') and (EPC.EPCIPAddress != 'none'):
+	if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation()
 
 	#get the list of tests to be done
@@ -5087,6 +4765,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		CiTestObj.CreateHtmlTabFooter(True)
 else:
-	Usage()
+	GenericHelp(Version)
 	sys.exit('Invalid mode')
 sys.exit(0)
