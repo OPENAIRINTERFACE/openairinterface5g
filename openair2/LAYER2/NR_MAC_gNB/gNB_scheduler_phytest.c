@@ -21,9 +21,9 @@
 
 /*! \file gNB_scheduler_phytest.c
  * \brief gNB scheduling procedures in phy_test mode
- * \author  Guy De Souza
+ * \author  Guy De Souza, G. Casati
  * \date 07/2018
- * \email: desouza@eurecom.fr
+ * \email: desouza@eurecom.fr, guido.casati@iis.fraunhofer.de
  * \version 1.0
  * @ingroup _mac
  */
@@ -310,16 +310,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
     //through the LTE stack
     if (IS_SOFTMODEM_NOS1){
-
-      /* TODO
-      // RLC data on DCCH
-      if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
-      }*/
-
-      /* TODO
-      // RLC data on DCCH1
-      if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
-      }*/
 
       for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
         LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",

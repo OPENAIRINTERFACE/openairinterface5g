@@ -30,6 +30,8 @@
  * \warning
  */
 
+#include "executables/nr-softmodem.h"
+
 /* MAC related headers */
 #include "mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
@@ -51,11 +53,6 @@
 /* log utils */
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
-/* TODO remove this for debugging purpose
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/MAC/mac.h"
-*/
 
 #include <stdio.h>
 #include <math.h>
@@ -2055,10 +2052,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
   LOG_D(MAC, "Handling PDU frame %d slot %d\n", frameP, ttiP);
 
-  // Changes wrt LTE: replaced subframeP with ttiP
-  // TODO double check this and eventually create a type for TTI (tti_t)
-  // Note: pdu_len was previously named sdu and sdu_len
-
   uint8_t * pduP = pdu;
   NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
 
@@ -2098,7 +2091,8 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
-  nr_ue_process_mac_pdu(module_idP, CC_id, pduP, pdu_len, gNB_index, ul_time_alignment);
+  if (pduP != NULL)
+    nr_ue_process_mac_pdu(module_idP, CC_id, frameP, pduP, pdu_len, gNB_index, ul_time_alignment);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
 
@@ -2112,6 +2106,7 @@ void nr_ue_send_sdu(module_id_t module_idP,
 void nr_ue_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,
+    frame_t frameP,
     uint8_t *pduP, 
     uint16_t mac_pdu_len,
     uint8_t gNB_index,
@@ -2120,12 +2115,9 @@ void nr_ue_process_mac_pdu(
     // This function is adapting code from the old
     // parse_header(...) and ue_send_sdu(...) functions of OAI LTE
 
-    uint8_t *pdu_ptr = pduP;
+    uint8_t *pdu_ptr = pduP, rx_lcid, done = 0, i;
     int pdu_len = mac_pdu_len;
-
-    uint16_t mac_ce_len;
-    uint16_t mac_subheader_len;
-    uint16_t mac_sdu_len;
+    uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
 
     //NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
     //uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
@@ -2155,14 +2147,14 @@ void nr_ue_process_mac_pdu(
     //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
     //  F: lenght of L is 0:8 or 1:16 bits wide
     //  R: Reserved bit, set to zero.
-
-    uint8_t done = 0;
     
     while (!done && pdu_len > 0){
         mac_ce_len = 0;
         mac_subheader_len = 1; //  default to fixed-length subheader = 1-oct
         mac_sdu_len = 0;
-        switch(((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID){
+        rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
+
+        switch(rx_lcid){
             //  MAC CE
 
             /*#ifdef DEBUG_HEADER_PARSING
@@ -2178,24 +2170,6 @@ void nr_ue_process_mac_pdu(
                     mac_subheader_len = 3;
                 }
 
-                /*LOG_D(MAC, "[UE %d] rnti %x Frame %d : DLSCH -> DL-CCCH, RRC message (eNB %d, %d bytes)\n",
-                    module_idP, UE_mac_inst[module_idP].crnti, frameP, eNB_index, rx_lengths[i]);*/
-
-                /*#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                  int j;
-                  for (j = 0; j < rx_lengths[i]; j++) {
-                    LOG_T(MAC, "%x.", (uint8_t) payload_ptr[j]);
-                  }
-                  LOG_T(MAC, "\n");
-                #endif*/
-
-                /*mac_rrc_data_ind_ue(module_idP,
-                            CC_id,
-                            frameP, subframeP,
-                            UE_mac_inst[module_idP].crnti,
-                            CCCH,
-                            (uint8_t *) payload_ptr,
-                            rx_lengths[i], eNB_index, 0);*/
                 break;
 
             case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
@@ -2306,48 +2280,6 @@ void nr_ue_process_mac_pdu(
                 //  38.321 Ch6.1.3.3
                 mac_ce_len = 6;
 
-                // TODO index should be shifted by 1
-                // LOG_I(MAC,"[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, payload_ptr[0], payload_ptr[1], payload_ptr[2], payload_ptr[3], payload_ptr[4], payload_ptr[5]);
-
-                // TODO RACH is missing
-
-                /*if (UE_mac_inst[module_idP].RA_active == 1) {
-                  LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n",
-                    module_idP, frameP);
-                    UE_mac_inst[module_idP].RA_active = 0;
-                    // check if RA procedure has finished completely (no contention)
-                    tx_sdu = &UE_mac_inst[module_idP].CCCH_pdu.payload[3];
-
-                  //Note: 3 assumes sizeof(SCH_SUBHEADER_SHORT) + PADDING CE, which is when UL-Grant has TBS >= 9 (64 bits)
-                  // (other possibility is 1 for TBS=7 (SCH_SUBHEADER_FIXED), or 2 for TBS=8 (SCH_SUBHEADER_FIXED+PADDING or SCH_SUBHEADER_SHORT)
-                  for (i = 0; i < 6; i++)
-                    if (tx_sdu[i] != payload_ptr[i]) {
-                      LOG_E(MAC, "[UE %d][RAPROC] Contention detected, RA failed\n", module_idP);
-                      if(nfapi_mode == 3) { // phy_stub mode
-                      //  Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
-                      // PRACH state.
-                        LOG_I(MAC, "nfapi_mode3: Setting UE_mode BACK to PRACH 1\n");
-                        UE_mac_inst[module_idP].UE_mode[eNB_index] = PRACH;
-                      //ra_failed(module_idP,CC_id,eNB_index);UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
-                      }
-                      else{
-                        ra_failed(module_idP, CC_id, eNB_index);
-                      }
-                    UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
-                    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
-                    return;
-                    }
-                    LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Clearing contention resolution timer\n", module_idP, frameP);
-                    UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
-                    if(nfapi_mode == 3){
-                      // phy_stub mode
-                      // Modification for phy_stub mode operation here. We only need to change the ue_mode to PUSCH
-                      UE_mac_inst[module_idP].UE_mode[eNB_index] = PUSCH;
-                  } else { // Full stack mode
-                    ra_succeeded(module_idP,CC_id,eNB_index);
-                  }
-                }*/
-
                 break;
             case DL_SCH_LCID_PADDING:
                 done = 1;
@@ -2355,43 +2287,13 @@ void nr_ue_process_mac_pdu(
                 break;
 
             //  MAC SDU
-            /* TODO double check SRBs 1-3 & DRB 1-3 */
 
-            case DL_SCH_LCID_SRB1:
-            //  check if LCID is valid at current time.
-
-              /*if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
-
-              LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n",
-              module_idP, frameP, rx_lcids[i], eNB_index, rx_lengths[i]);
-
-              mac_rlc_data_ind(module_idP, UE_mac_inst[module_idP].crnti, eNB_index, frameP, ENB_FLAG_NO,
-              MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);
-              } else if ((rx_lcids[i] < NB_RB_MAX) && (rx_lcids[i] > DCCH1)) {
-              LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n",
-              module_idP, frameP, rx_lcids[i], eNB_index, rx_lengths[i]);
-
-              #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                int j;
-                for (j = 0; j < rx_lengths[i]; j++)
-                LOG_T(MAC, "%x.", (unsigned char) payload_ptr[j]);
-                LOG_T(MAC, "\n");
-              #endif
-
-              mac_rlc_data_ind(module_idP,
-                         UE_mac_inst[module_idP].crnti,
-                         eNB_index,
-                         frameP,
-                         ENB_FLAG_NO,
-                         MBMS_FLAG_NO,
-                         rx_lcids[i],
-                         (char *) payload_ptr, rx_lengths[i], 1, NULL);
-            }*/
-
-            case UL_SCH_LCID_SRB2:
+            case DL_SCH_LCID_DCCH:
                 //  check if LCID is valid at current time.
-            case UL_SCH_LCID_SRB3:
+
+            case DL_SCH_LCID_DCCH1:
                 //  check if LCID is valid at current time.
+
             default:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
@@ -2405,8 +2307,37 @@ void nr_ue_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                //  DRB LCID by RRC
-                break;
+                LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
+
+                #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+
+                    for (i = 0; i < 32; i++)
+                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
+
+                    LOG_T(MAC, "\n");
+                #endif
+
+                if (IS_SOFTMODEM_NOS1){
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
+
+                    mac_rlc_data_ind(module_idP,
+                                     0x1234,
+                                     gNB_index,
+                                     frameP,
+                                     ENB_FLAG_NO,
+                                     MBMS_FLAG_NO,
+                                     rx_lcid,
+                                     (char *) (pdu_ptr + mac_subheader_len),
+                                     mac_sdu_len,
+                                     1,
+                                     NULL);
+                  } else {
+                    LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
+                  }
+                }
+
+            break;
         }
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
