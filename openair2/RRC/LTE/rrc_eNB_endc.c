@@ -47,12 +47,16 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   LTE_RRCConnectionReconfiguration_t                      *r;
   int                                                     trans_id;
   LTE_RadioResourceConfigDedicated_t                      rrcd;
+#if 0
   LTE_DRB_ToAddModList_t                                  drb_list;
   struct LTE_DRB_ToAddMod                                 drb;
   long                                                    eps_bearer_id;
   struct LTE_RLC_Config                                   rlc;
   long                                                    lcid;
   struct LTE_LogicalChannelConfig                         lc;
+#endif
+  LTE_DRB_ToReleaseList_t                                 drb_list;
+  LTE_DRB_Identity_t                                      drb;
   struct LTE_LogicalChannelConfig__ul_SpecificParameters  ul_params;
   long                                                    lcg;
   struct LTE_RadioResourceConfigDedicated__mac_MainConfig mac;
@@ -62,8 +66,10 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   memset(&rrcd, 0, sizeof(rrcd));
   memset(&drb_list, 0, sizeof(drb_list));
   memset(&drb, 0, sizeof(drb));
+#if 0
   memset(&rlc, 0, sizeof(rlc));
   memset(&lc, 0, sizeof(lc));
+#endif
   memset(&ul_params, 0, sizeof(ul_params));
   memset(&mac, 0, sizeof(mac));
   memset(&mac_ext4, 0, sizeof(mac_ext4));
@@ -83,6 +89,7 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   r->criticalExtensions.choice.c1.present = LTE_RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8;
   r->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated = &rrcd;
 
+#if 0
   rrcd.drb_ToAddModList = &drb_list;
 
   eps_bearer_id = 5;
@@ -93,6 +100,8 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   drb.logicalChannelIdentity = &lcid;
   drb.logicalChannelConfig = &lc;
 
+  ASN_SEQUENCE_ADD(&drb_list.list, &drb);
+
   rlc.present = LTE_RLC_Config_PR_am;
   rlc.choice.am.ul_AM_RLC.t_PollRetransmit = LTE_T_PollRetransmit_ms50;
   rlc.choice.am.ul_AM_RLC.pollPDU = LTE_PollPDU_p16;
@@ -102,6 +111,12 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   rlc.choice.am.dl_AM_RLC.t_StatusProhibit = LTE_T_StatusProhibit_ms25;
 
   lc.ul_SpecificParameters = &ul_params;
+#endif
+
+  /* release drb 1 */
+  drb = 1;
+  ASN_SEQUENCE_ADD(&drb_list.list, &drb);
+  rrcd.drb_ToReleaseList = &drb_list;
 
   ul_params.priority = 12;
   ul_params.prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
@@ -202,13 +217,13 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 #endif
 
 
+#if 0
   OCTET_STRING_t nr2_conf;
   unsigned char nr2_buf[4] = { 0, 0, 0, 0 };
   cr_1510.nr_RadioBearerConfig2_r15 = &nr2_conf;
   nr2_conf.buf = nr2_buf;
   nr2_conf.size = 4;
-
-  ASN_SEQUENCE_ADD(&drb_list.list, &drb);
+#endif
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message,
                                    NULL,
