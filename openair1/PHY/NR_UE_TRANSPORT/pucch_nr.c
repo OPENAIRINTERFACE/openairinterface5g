@@ -266,25 +266,27 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
    */
   //int32_t *txptr;
   uint32_t re_offset=0;
+  uint8_t l2;
 
   for (int l=0; l<nrofSymbols; l++) {
-
-    re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
+    l2=l+startingSymbolIndex;
+    re_offset = (12*startingPRB) + frame_parms->first_carrier_offset;
     if (re_offset>= frame_parms->ofdm_symbol_size) 
       re_offset-=frame_parms->ofdm_symbol_size;
 
     //txptr = &txdataF[0][re_offset];
     for (int n=0; n<12; n++) {
 
-      ((int16_t *)&txdataF[0][re_offset])[0] = (int16_t)(((int32_t)(amp) * x_n_re[(12*l)+n])>>15);
-      ((int16_t *)&txdataF[0][re_offset])[1] = (int16_t)(((int32_t)(amp) * x_n_im[(12*l)+n])>>15);
+      ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[0] = (int16_t)(((int32_t)(amp) * x_n_re[(12*l)+n])>>15);
+      ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[1] = (int16_t)(((int32_t)(amp) * x_n_im[(12*l)+n])>>15);
       //((int16_t *)txptr[0][re_offset])[0] = (int16_t)((int32_t)amp * x_n_re[(12*l)+n])>>15;
       //((int16_t *)txptr[0][re_offset])[1] = (int16_t)((int32_t)amp * x_n_im[(12*l)+n])>>15;
       //txptr[re_offset] = (x_n_re[(12*l)+n]<<16) + x_n_im[(12*l)+n];
 #ifdef DEBUG_NR_PUCCH_TX
       printf("\t [nr_generate_pucch0] mapping to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-             amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,re_offset,
-             l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
+             amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size) + re_offset,
+             l2,n,((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[0],
+             ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[1]);
 #endif
       re_offset++;
       if (re_offset>= frame_parms->ofdm_symbol_size) 

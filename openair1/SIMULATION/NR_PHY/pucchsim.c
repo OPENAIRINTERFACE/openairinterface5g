@@ -305,6 +305,7 @@ int main(int argc, char **argv)
       printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-i Enter number of ofdm symbols for pucch\n");
+      printf("-I Starting symbol index for pucch\n");
       printf("-r PUCCCH starting PRB\n");
       printf("-P Enter the format of PUCCH\n");
       printf("-b number of HARQ bits (1-2)\n");

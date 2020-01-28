@@ -106,20 +106,24 @@ void nr_decode_pucch0( int32_t **rxdataF,
    * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources FIXME!
    */
   uint32_t re_offset=0;
+  uint8_t l2;
+
   for (l=0; l<nrofSymbols; l++) {
 
-    re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
+    l2 = l+startingSymbolIndex;
+    re_offset = (12*startingPRB) + frame_parms->first_carrier_offset;
     if (re_offset>= frame_parms->ofdm_symbol_size) 
       re_offset-=frame_parms->ofdm_symbol_size;
 
     for (n=0; n<12; n++){
 
-      r_re[(12*l)+n]=((int16_t *)&rxdataF[0][re_offset])[0];
-      r_im[(12*l)+n]=((int16_t *)&rxdataF[0][re_offset])[1];
+      r_re[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0];
+      r_im[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1];
       #ifdef DEBUG_NR_PUCCH_RX
         printf("\t [nr_generate_pucch0] mapping to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,re_offset,
-                l,n,((int16_t *)&rxdataF[0][re_offset])[0],((int16_t *)&rxdataF[0][re_offset])[1]);
+                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size)+re_offset,
+                l,n,((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0],
+                ((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1]);
       #endif
       re_offset++;
       if (re_offset>= frame_parms->ofdm_symbol_size) 
