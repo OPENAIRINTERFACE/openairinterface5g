@@ -204,7 +204,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          );
 
 
-  if (phy_test > 0) {
+  /*if (phy_test > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     FILE *fd;
 
@@ -253,7 +253,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);    
       rrc_add_nsa_user(rrc,ue_context_p);
     } 
-  }
+  }*/
 }
 
 
@@ -299,6 +299,52 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   return 0;
 }//END openair_rrc_gNB_configuration
 
+
+void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x2ap_ENDC_sgnb_addition_req_t *m) {
+
+
+    LTE_UL_DCCH_Message_t *LTE_UL_DCCH_Message = NULL; 
+
+    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+						      &asn_DEF_LTE_UL_DCCH_Message,
+						      (void **)&LTE_UL_DCCH_Message,
+						      (uint8_t *)m->rrc_buffer,
+						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
+
+/*    asn_dec_rval_t dec_rval = uper_decode( NULL,
+						      &asn_DEF_LTE_UL_DCCH_Message,
+						      (void **)&LTE_UL_DCCH_Message,
+						      (uint8_t *)m->rrc_buffer,
+						      (int) m->rrc_buffer_size, 0, 0);//m->rrc_buffer_size);
+*/
+    gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      AssertFatal(1==0,"NR_UL_DCCH_MESSAGE decode error\n");
+	// free the memory
+	SEQUENCE_free( &asn_DEF_LTE_UL_DCCH_Message, LTE_UL_DCCH_Message, 1 );
+	return;
+    }
+    xer_fprint(stdout,&asn_DEF_LTE_UL_DCCH_Message, LTE_UL_DCCH_Message);
+    // recreate enough of X2 EN-DC Container
+    AssertFatal(LTE_UL_DCCH_Message->message.choice.c1.present == LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation,
+		  "ueCapabilityInformation not present\n");
+    NR_CG_ConfigInfo_t *CG_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo));
+    CG_ConfigInfo->criticalExtensions.present = NR_CG_ConfigInfo__criticalExtensions_PR_c1;
+    CG_ConfigInfo->criticalExtensions.choice.c1 = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1));
+    CG_ConfigInfo->criticalExtensions.choice.c1->present = NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo;
+    CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo));
+    NR_CG_ConfigInfo_IEs_t *cg_ConfigInfo = CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo;
+    cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof(*cg_ConfigInfo->ue_CapabilityInfo));
+    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,(void*)&LTE_UL_DCCH_Message->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList,m->rrc_buffer,m->rrc_buffer_size);
+    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+		   enc_rval.failed_type->name, enc_rval.encoded);
+    OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
+			   (const char *)m->rrc_buffer,
+			   (enc_rval.encoded+7)>>3);
+    parse_CG_ConfigInfo(rrc,CG_ConfigInfo);
+   
+}
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
@@ -395,6 +441,17 @@ void *rrc_gnb_task(void *args_p) {
         LOG_I(NR_RRC, "[gNB %d] Received %s : %p\n", instance, msg_name_p,&NRRRC_CONFIGURATION_REQ(msg_p));
         openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(instance), &NRRRC_CONFIGURATION_REQ(msg_p));
         break;
+
+        /* Messages from X2AP */
+      case X2AP_ENDC_SGNB_ADDITION_REQ:
+    	LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");
+    	rrc_gNB_process_AdditionRequestInformation(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ(msg_p));
+    	break;
+
+      case X2AP_ENDC_SGNB_RECONF_COMPLETE:
+    	  LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
+    	  break;
+
 
       default:
         LOG_E(NR_RRC, "[gNB %d] Received unexpected message %s\n", instance, msg_name_p);

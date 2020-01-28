@@ -977,3 +977,188 @@ void NRRCConfig(void) {
     
 
 }
+
+int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
+  int   J, l;
+  char *address = NULL;
+  char *cidr    = NULL;
+
+  //int                    num_gnbs                                                      = 0;
+  //int                    num_component_carriers                                        = 0;
+  int                    j,k                                                           = 0;
+  int32_t                gnb_id                                                        = 0;
+
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+  /* get global parameters, defined outside any section in the config file */
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL);
+
+  //paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
+
+  AssertFatal(i < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
+              "Failed to parse config file %s, %uth attribute %s \n",
+              RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+
+  if (GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt > 0) {
+    // Output a list of all gNBs.
+    config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
+
+    if (GNBParamList.numelt > 0) {
+      for (k = 0; k < GNBParamList.numelt; k++) {
+        if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {
+          // Calculate a default eNB ID
+          if (EPC_MODE_ENABLED) {
+            uint32_t hash;
+            hash = s1ap_generate_eNB_id ();
+            gnb_id = k + (hash & 0xFFFF8);
+          } else {
+            gnb_id = k;
+          }
+        } else {
+          gnb_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
+        }
+
+        // search if in active list
+        for (j = 0; j < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt; j++) {
+          if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[j], *(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr)) == 0) {
+            paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
+            paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
+            paramdef_t X2Params[]  = X2PARAMS_DESC;
+            paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
+            paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+            paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
+            /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
+            /* this is most probably a problem with the config module */
+            char aprefix[MAX_OPTNAME_SIZE*80 + 8];
+            sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
+            /* Some default/random parameters */
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = gnb_id;
+
+            if (strcmp(*(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
+              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;
+            }else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                           RC.config_file_name, i, *(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr));
+            }
+
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).tac              = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
+            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                          PLMNParamList.numelt);
+
+            if (PLMNParamList.numelt > 1)
+              LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
+
+            X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+            AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
+                        || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
+                        "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                        X2AP_REGISTER_ENB_REQ(msg_p).mnc);
+
+            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = 1;
+            J = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = 78; //ccparams_nr_x2.nr_band; //78
+            X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = 3600000000; //ccparams_nr_x2.downlink_frequency; //3600000000
+            X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = 0; //(unsigned int) ccparams_nr_x2.uplink_frequency_offset; //0
+            X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= 0; //ccparams_nr_x2.Nid_cell; //0
+            X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= 106; //ccparams_nr_x2.N_RB_DL; //106
+
+            X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
+
+            //Temp out
+            /*X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
+              X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);*/
+
+            sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
+            config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
+            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
+            X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
+
+            for (l = 0; l < X2ParamList.numelt; l++) {
+              X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
+
+              if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 0;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 0;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              }
+            }
+
+            // timers
+            {
+              int t_reloc_prep = 0;
+              int tx2_reloc_overall = 0;
+              paramdef_t p[] = {
+                { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 }
+              };
+              config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
+
+              if (t_reloc_prep <= 0 || t_reloc_prep > 10000 ||
+                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000) {
+                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000]\n");
+                exit(1);
+              }
+
+              X2AP_REGISTER_ENB_REQ (msg_p).t_reloc_prep = t_reloc_prep;
+              X2AP_REGISTER_ENB_REQ (msg_p).tx2_reloc_overall = tx2_reloc_overall;
+            }
+            // SCTP SETTING
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
+
+            if (EPC_MODE_ENABLED) {
+              sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
+              config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+              X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+              X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+            }
+
+            sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+            // NETWORK_INTERFACES
+            config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[GNB_PORT_FOR_X2C_IDX].uptr);
+
+            //temp out
+            if ((NETParams[GNB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
+              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
+              exit(1);
+            }
+
+            cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
+            address = strtok(cidr, "/");
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
+            strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
+          }
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+

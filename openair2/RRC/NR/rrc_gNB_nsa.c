@@ -103,6 +103,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
 
+  MessageDef *msg;
+  msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+
 // NR RRCReconfiguration
 
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
@@ -127,8 +130,19 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void*)CG_Config,0,sizeof(*CG_Config));
-  generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
+  int CG_Config_size = generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
+
+  //X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = CG_Config_size; //Need to verify correct value for the buffer_size
   // Send to X2 entity to transport to MeNB
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_Config,
+          	  	  	  	  	  	  	  	  	  	  NULL,
+          	  	  	  	  	  	  	  	  	  	  (void *)CG_Config,
+          	  	  	  	  	  	  	  	  	  	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer,
+												  1024);
+
+  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
+
+  itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
 
   rrc->Nb_ue++;
   // configure MAC and RLC

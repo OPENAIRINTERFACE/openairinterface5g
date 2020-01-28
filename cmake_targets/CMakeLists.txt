@@ -320,7 +320,7 @@ set (NR_RRC_ASN1_VERSION "NR_Rel15" )
 make_version(NR_RRC_VERSION 15 6 0)
 set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-15.6.0.asn1)
 add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
-set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
+set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}" "NR_" "-findirect-choice"
@@ -1538,6 +1538,7 @@ set(L2_SRC
   ${PDCP_DIR}/pdcp_netlink.c
 #  ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
+  ${RRC_DIR}/rrc_eNB_endc.c
   ${RRC_DIR}/rrc_eNB_S1AP.c
   ${RRC_DIR}/rrc_eNB_UE_context.c
   ${RRC_DIR}/rrc_common.c
@@ -2332,7 +2333,7 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB 
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP X2AP_LIB X2AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB 
   PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
