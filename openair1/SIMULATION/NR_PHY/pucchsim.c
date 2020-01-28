@@ -495,6 +495,7 @@ int main(int argc, char **argv)
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
+    printf("Decoded payload is %ld\n",payload_received);
     printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,n_errors);
     if((float)ack_nack_errors/(float)(nr_bit*n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");
