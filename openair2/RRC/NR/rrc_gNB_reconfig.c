@@ -106,7 +106,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig = NULL;
   secondaryCellGroup->mac_CellGroupConfig->bsr_Config=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->bsr_Config));
   secondaryCellGroup->mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf80;
-  secondaryCellGroup->mac_CellGroupConfig->bsr_Config->retxBSR_Timer     = NR_BSR_Config__periodicBSR_Timer_sf320;
+  secondaryCellGroup->mac_CellGroupConfig->bsr_Config->retxBSR_Timer     = NR_BSR_Config__retxBSR_Timer_sf320;
   secondaryCellGroup->mac_CellGroupConfig->tag_Config=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->tag_Config));
   secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
   secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList));
