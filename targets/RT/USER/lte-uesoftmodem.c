@@ -123,7 +123,7 @@ clock_source_t clock_source = internal,time_source=internal;
 unsigned int                    mmapped_dma=0;
 
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
