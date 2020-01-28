@@ -46,6 +46,7 @@
   #define DEBUG_PUCCH_TX
   #define DEBUG_NR_PUCCH_TX
 #endif
+
 //#define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
 void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
@@ -74,10 +75,7 @@ void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
   // Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2) BIT STRING (SIZE (10))
   //uint16_t n_id = ue->pucch_config_common_nr->hoppingId; // from higher layers FIXME!!!
 #ifdef DEBUG_NR_PUCCH_TX
-  // initialization to be removed
-  PUCCH_GroupHopping=neither;
-  n_id=10;
-  printf("\t\t [nr_group_sequence_hopping] initialization PUCCH_GroupHopping=%u, n_id=%u -> variable initializations TO BE REMOVED\n",PUCCH_GroupHopping,n_id);
+  printf("\t\t [nr_group_sequence_hopping] PUCCH_GroupHopping=%u, n_id=%u \n",PUCCH_GroupHopping,n_id);
 #endif
   uint8_t f_ss=0,f_gh=0;
   *u=0;
@@ -156,11 +154,7 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
   // alpha_init initialized to 2*PI/12=0.5235987756
   double alpha = 0.5235987756;
   uint32_t c_init = n_id; // we initialize c_init again to calculate n_cs
-#ifdef DEBUG_NR_PUCCH_TX
-  // initialization to be remo.ved
-  c_init=10;
-  printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%u -> variable initialization TO BE REMOVED\n",c_init);
-#endif
+
   uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
   uint8_t n_cs=0;
   int l = 32, minShift = (14*8*nr_tti_tx )+ 8*(lnormal+lprime);
@@ -188,6 +182,7 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
 #endif
   return(alpha);
 }
+
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,

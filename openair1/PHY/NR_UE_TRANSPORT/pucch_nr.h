@@ -139,8 +139,8 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                           uint8_t occ_index_format4);
 
 // tables for mcs values for different payloads 
- static const uint8_t table1_mcs[]={0,3,6,9};
- static const uint8_t table2_mcs[]={0,1,3,4,6,7,9,10};
+ static const uint8_t table1_mcs[]={0,6,3,9};
+ static const uint8_t table2_mcs[]={0,3,9,6,1,4,10,7};
 
   /*
    * The following tables implement TS 38.211 Subclause 5.2.2.2 Base sequences of length less than 36 (rows->u {0,1,..,29} / columns->n {0,1,...,M_ZC-1)
