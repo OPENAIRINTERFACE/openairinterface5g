@@ -852,10 +852,10 @@ typedef struct {
 
   // Logical channel info for link with RLC
 
-  /// LCGID mapping
+  /// LCGID mapping (UL)
   long lcgidmap[11];
 
-  ///UE logical channel priority
+  ///UE logical channel priority (UL)
   long lcgidpriority[11];
 
   /// phr information
@@ -913,30 +913,14 @@ typedef struct {
 
 /*! \brief scheduling control information set through an API (not used)*/
 typedef struct {
-  ///UL transmission bandwidth in RBs
-  uint8_t ul_bandwidth[MAX_NUM_LCID];
-  ///DL transmission bandwidth in RBs
-  uint8_t dl_bandwidth[MAX_NUM_LCID];
-
-  //To do GBR bearer
-  uint8_t min_ul_bandwidth[MAX_NUM_LCID];
-
-  uint8_t min_dl_bandwidth[MAX_NUM_LCID];
-
-  ///aggregated bit rate of non-gbr bearer per UE
-  uint64_t ue_AggregatedMaximumBitrateDL;
-  ///aggregated bit rate of non-gbr bearer per UE
-  uint64_t ue_AggregatedMaximumBitrateUL;
-  ///CQI scheduling interval in subframes.
-  uint16_t cqiSchedInterval;
-  ///Contention resolution timer used during random access
-  uint8_t mac_ContentionResolutionTimer;
+  /// number of active DL LCs
+  uint8_t dl_lc_num;
+  /// order in which DLSCH scheduler should allocate LCs
+  uint8_t dl_lc_ids[MAX_NUM_LCID];
+  /// number of bytes to schedule for each LC
+  uint32_t dl_lc_bytes[MAX_NUM_LCID];
 
   uint16_t max_rbs_allowed_slice_uplink[NFAPI_CC_MAX][MAX_NUM_SLICES];
-
-  uint8_t max_mcs[MAX_NUM_LCID];
-
-  uint16_t priority[MAX_NUM_LCID];
 
   // resource scheduling information
 

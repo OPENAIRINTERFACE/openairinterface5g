@@ -890,13 +890,13 @@ uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti) {
 uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
+  return 0; //RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
 }
 
 uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return 0;
 
-  return RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
+  return 0; //RC.mac[mod_id]->UE_info.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
 int flexran_get_half_duplex(mid_t mod_id, rnti_t rnti) {

@@ -882,6 +882,34 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   }
 
+  if (logicalChannelIdentity > 0) { // is SRB1,2 or DRB
+    if ((UE_id = find_UE_id(Mod_idP, rntiP)) < 0) {
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
+    int idx = -1;
+    UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
+      if (sched_ctrl->dl_lc_ids[i] == logicalChannelIdentity) {
+        /* TODO this might also mean we have to remove it, not clear */
+        idx = i;
+        break;
+      }
+    }
+    if (idx < 0) {
+      sched_ctrl->dl_lc_num++;
+      sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num-1] = logicalChannelIdentity;
+      sched_ctrl->dl_lc_bytes[sched_ctrl->dl_lc_num-1] = 0;
+      LOG_I(MAC, "UE %d RNTI %x adding LC %ld idx %d to scheduling control (total %d)\n", UE_id, rntiP, logicalChannelIdentity, sched_ctrl->dl_lc_num-1, sched_ctrl->dl_lc_num);
+      if (logicalChannelIdentity == 1) { // if it is SRB1, add SRB2 directly because RRC does not indicate this separately
+        sched_ctrl->dl_lc_num++;
+        sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num-1] = 2;
+        sched_ctrl->dl_lc_bytes[sched_ctrl->dl_lc_num-1] = 0;
+        LOG_I(MAC, "UE %d RNTI %x adding LC 2 idx %d to scheduling control (total %d)\n", UE_id, rntiP, sched_ctrl->dl_lc_num-1, sched_ctrl->dl_lc_num);
+      }
+    }
+  }
+
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig != NULL) { // check for eMTC specific things
     UE_id = find_UE_id(Mod_idP, rntiP);
