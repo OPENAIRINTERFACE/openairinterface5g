@@ -63,24 +63,23 @@ sort_ue_ul(module_id_t module_idP,
 // This function stores the downlink buffer for all the logical channels
 void
 store_dlsch_buffer(module_id_t Mod_id,
+                   int CC_id,
                    frame_t frameP,
                    sub_frame_t subframeP) {
   UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
 
-  for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-    if (UE_info->active[UE_id] != TRUE)
-      continue;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
 
-    /* TODO why UE_template per CC? */
-    UE_TEMPLATE *UE_template = &UE_info->UE_template[UE_PCCID(Mod_id, UE_id)][UE_id];
+    UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
+    UE_sched_ctrl_t *UE_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_template->dl_buffer_total = 0;
     UE_template->dl_pdus_total = 0;
 
-    const rnti_t rnti = UE_RNTI(Mod_id, UE_id);
-
-    for (int lcid = 0; lcid < MAX_NUM_LCID; ++lcid) {    // loop over all the logical channels
+    /* loop over all activated logical channels */
+    for (int i = 0; i < UE_sched_ctrl->dl_lc_num; ++i) {
+      const int lcid = UE_sched_ctrl->dl_lc_ids[i];
       const mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(Mod_id,
-                                                                  rnti,
+                                                                  UE_template->rnti,
                                                                   Mod_id,
                                                                   frameP,
                                                                   subframeP,
@@ -91,15 +90,20 @@ store_dlsch_buffer(module_id_t Mod_id,
                                                                   0,
                                                                   0
                                                                  );
-      UE_template->dl_buffer_info[lcid] = rlc_status.bytes_in_buffer;    //storing the dlsch buffer for each logical channel
+      UE_template->dl_buffer_info[lcid] = rlc_status.bytes_in_buffer;
       UE_template->dl_pdus_in_buffer[lcid] = rlc_status.pdus_in_buffer;
       UE_template->dl_buffer_head_sdu_creation_time[lcid] = rlc_status.head_sdu_creation_time;
       UE_template->dl_buffer_head_sdu_creation_time_max =
         cmax(UE_template->dl_buffer_head_sdu_creation_time_max, rlc_status.head_sdu_creation_time);
       UE_template->dl_buffer_head_sdu_remaining_size_to_send[lcid] = rlc_status.head_sdu_remaining_size_to_send;
       UE_template->dl_buffer_head_sdu_is_segmented[lcid] = rlc_status.head_sdu_is_segmented;
-      UE_template->dl_buffer_total += UE_template->dl_buffer_info[lcid];    //storing the total dlsch buffer
+      UE_template->dl_buffer_total += UE_template->dl_buffer_info[lcid];
       UE_template->dl_pdus_total += UE_template->dl_pdus_in_buffer[lcid];
+
+      /* update the number of bytes in the UE_sched_ctrl. The DLSCH will use
+       * this to request the corresponding data from the RLC, and this might be
+       * limited in the preprocessor */
+      UE_sched_ctrl->dl_lc_bytes[i] = rlc_status.bytes_in_buffer;
 
 #ifdef DEBUG_eNB_SCHEDULER
       /* note for dl_buffer_head_sdu_remaining_size_to_send[lcid] :
@@ -285,9 +289,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
                                       CC_id,
                                       rballoc_sub);
 
-  store_dlsch_buffer(Mod_id,
-                     frameP,
-                     subframeP);
+  /* update all buffers. TODO move before CC scheduling */
+  store_dlsch_buffer(Mod_id, CC_id, frameP, subframeP);
 
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
   uint16_t nb_rbs_required[MAX_MOBILES_PER_ENB];

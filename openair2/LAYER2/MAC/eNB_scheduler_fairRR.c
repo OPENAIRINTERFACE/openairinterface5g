@@ -947,8 +947,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   }
 
 #if (!defined(PRE_SCD_THREAD))
-  // Store the DLSCH buffer for each logical channel
-  store_dlsch_buffer(Mod_id, frameP, subframeP);
+  // Store the DLSCH buffer for each logical channel and for PCCID (assume 0)
+  store_dlsch_buffer(Mod_id, 0, frameP, subframeP);
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
   assign_rbs_required_fairRR(Mod_id, frameP, subframeP, nb_rbs_required);
 #else
