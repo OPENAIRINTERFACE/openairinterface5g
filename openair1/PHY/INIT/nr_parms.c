@@ -83,7 +83,7 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp)
   return symbol;
 }
 
-void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
+void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
 {
   switch(mu) {
 
@@ -107,15 +107,13 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
 		AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
       }
 
-      switch(fp->N_RB_DL){
-        case 11:
-        case 24:
-        case 38:
-        case 78:
-        case 51:
-        case 65:
-
-        case 106: //40 MHz
+      switch(bw){
+        case 5:
+        case 15:
+        case 20:
+        case 25:
+        case 30:
+        case 40: //40 MHz
           if (fp->threequarter_fs) {
             fp->ofdm_symbol_size = 1536;
             fp->first_carrier_offset = 900; //1536 - ( (106*12) / 2 )
@@ -130,11 +128,11 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
           }
           break;
 
-        case 133:
-        case 162:
-        case 189:
+        case 50:
+        case 60:
+        case 70:
 
-        case 217: //80 MHz
+        case 80: //80 MHz
           if (fp->threequarter_fs) {
             fp->ofdm_symbol_size = 3072;
             fp->first_carrier_offset = 1770; //3072 - ( (217*12) / 2 )
@@ -149,14 +147,14 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
 	  }
           break;
 
-        case 245:
+        case 90:
 	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2626; //4096 - ( (245*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
-        case 273:
+        case 100:
 	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2458; //4096 - ( (273*12) / 2 )
@@ -172,19 +170,19 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_2];
 
-      switch(fp->N_RB_DL){ //FR1 bands only
-        case 11:
-        case 18:
-        case 38:
-        case 24:
-        case 31:
-        case 51:
-        case 65:
-        case 79:
-        case 93:
-        case 107:
-        case 121:
-        case 135:
+      switch(bw){ //FR1 bands only
+        case 10:
+        case 15:
+        case 20:
+        case 25:
+        case 30:
+        case 40:
+        case 50:
+        case 60:
+        case 70:
+        case 80:
+        case 90:
+        case 100:
       default:
         AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
       }
@@ -194,14 +192,14 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
       fp->ssb_type = nr_ssb_type_D;
-      switch(fp->N_RB_DL){
-        case 66:
+      switch(bw){
+        case 100:
           fp->ofdm_symbol_size = 1024;
           fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
           fp->nb_prefix_samples0 = 88;
           fp->nb_prefix_samples = 72;
           break;
-        case 32:
+        case 50:
           fp->ofdm_symbol_size = 512;
           fp->first_carrier_offset = 320; //1024 - ( (66*12) / 2 )
           fp->nb_prefix_samples0 = 44;
@@ -224,21 +222,22 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu)
 }
 
 
-int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
-			 nfapi_nr_config_request_scf_t* cfg,
-			 int mu0,
-			 int Ncp,
-			 int N_RB_DL,
-                         int N_RB_UL)
-
+int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
+                        NR_DL_FRAME_PARMS *fp)
 {
 
-  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : mu0;
+  fp->frame_type = cfg->cell_config.frame_duplex_type.value;
+  fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[1].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[0].ssb_mask.value ;
+  fp->N_RB_DL = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
+  fp->N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
+
+  int Ncp = NFAPI_CP_NORMAL;
+  int mu = cfg!= NULL ?  cfg->ssb_config.scs_common.value : 0;
 
 #if DISABLE_LOG_X
-  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
+  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
 #else
-  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
 #endif
 
   if (Ncp == NFAPI_CP_EXTENDED)
@@ -246,11 +245,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 
   fp->half_frame_bit = 0;  // half frame bit initialized to 0 here
   fp->numerology_index = mu;
-  fp->Ncp = Ncp;
-  fp->N_RB_DL = N_RB_DL;
-  fp->N_RB_UL = N_RB_UL;
 
-  set_scs_parameters(fp, mu);
+  set_scs_parameters(fp, mu, cfg->carrier_config.dl_bandwidth.value);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
@@ -267,6 +263,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
+
+  fp->Ncp = Ncp;
 
   // definition of Lmax according to ts 38.213 section 4.1
   if (fp->dl_CarrierFreq < 6e9) {
@@ -285,22 +283,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
     fp->N_ssb += ((fp->L_ssb >> p) & 0x01);
 
   return 0;
-}
 
-int nr_init_frame_parms(nfapi_nr_config_request_scf_t* config,
-                        NR_DL_FRAME_PARMS *fp)
-{
-
-  fp->frame_type = config->cell_config.frame_duplex_type.value;
-  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask.value)<<32) | config->ssb_table.ssb_mask_list[0].ssb_mask.value ;
-  int N_RB_DL = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
-  int N_RB_UL = config->carrier_config.ul_grid_size[config->ssb_config.scs_common.value].value;
-  return nr_init_frame_parms0(fp,
-			      config,
-			      0,
-			      NFAPI_CP_NORMAL,
-			      N_RB_DL,
-                              N_RB_UL);
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
@@ -336,7 +319,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   fp->Ncp = Ncp;
 
-  set_scs_parameters(fp,fp->numerology_index);
+  set_scs_parameters(fp,fp->numerology_index,config->carrier_config.dl_bandwidth);
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
