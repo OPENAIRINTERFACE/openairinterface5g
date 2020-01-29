@@ -417,12 +417,80 @@ set_ul_DAI(int module_idP,
   return;
 }
 
+void ue_rrc_release(rnti_t rnti) {
+  if(rrc_release_info.num_UEs == 0 || rlc_am_mui.rrc_mui_num == 0) {
+    return;
+  }
+
+  while(pthread_mutex_trylock(&rrc_release_freelist)) {
+    /* spin... */
+  }
+
+  uint16_t release_total = 0;
+
+  for (uint16_t n = 0; n < NUMBER_OF_UE_MAX; n++) {
+    RRC_release_ctrl_t *release_ctrl = &rrc_release_info.RRC_release_ctrl[n];
+    if(release_ctrl->flag == 0)
+      continue;
+
+    release_total++;
+    if(release_ctrl->flag == 1 && release_ctrl->rnti == rnti) {
+      for(uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
+        if(release_ctrl->rrc_eNB_mui == rlc_am_mui.rrc_mui[mui_num]) {
+          release_ctrl->flag = 3;
+          LOG_D(MAC,
+                "DLSCH Release send:index %d rnti %x mui %d mui_num %d flag 1->3\n",
+                n, rnti, rlc_am_mui.rrc_mui[mui_num], mui_num);
+          break;
+        }
+      }
+    }
+
+    if(release_ctrl->flag == 2 && release_ctrl->rnti == rnti) {
+      for (uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
+        if(release_ctrl->rrc_eNB_mui == rlc_am_mui.rrc_mui[mui_num]) {
+          release_ctrl->flag = 4;
+          LOG_D(MAC, "DLSCH Release send:index %d rnti %x mui %d mui_num %d flag 2->4\n",
+                n,
+                rnti,
+                rlc_am_mui.rrc_mui[mui_num],
+                mui_num);
+          break;
+        }
+      }
+    }
+
+    if(release_total >= rrc_release_info.num_UEs)
+      break;
+  }
+
+  pthread_mutex_unlock(&rrc_release_freelist);
+}
+
+void check_ra_rnti_mui(module_id_t mod_id, int CC_id, frame_t f, sub_frame_t sf, rnti_t rnti) {
+  LTE_TDD_Config_t *tdd_config = RC.mac[mod_id]->common_channels[CC_id].tdd_Config;
+  int harq_pid = frame_subframe2_dl_harq_pid(tdd_config, f, sf);
+  RA_t *ra = &RC.mac[mod_id]->common_channels[CC_id].ra[0];
+  for (uint8_t ra_ii = 0; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
+    if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
+      for (uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
+        if (ra->crnti_rrc_mui == rlc_am_mui.rrc_mui[mui_num]) {
+          ra->crnti_harq_pid = harq_pid;
+          ra->state = MSGCRNTI_ACK;
+          break;
+        }
+      }
+    }
+  }
+}
+
 //------------------------------------------------------------------------------
 void
 schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag) {
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     if (mbsfn_flag[CC_id] == 0)
       schedule_ue_spec(module_idP, CC_id, frameP, subframeP);
+
   }
 }
 
@@ -464,13 +532,9 @@ schedule_ue_spec(module_id_t module_idP,
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   int round_DL = 0;
   int harq_pid = 0;
-  uint16_t release_num;
-  uint8_t ra_ii;
   eNB_UE_STATS *eNB_UE_stats = NULL;
   UE_TEMPLATE *ue_template = NULL;
-  RRC_release_ctrl_t *release_ctrl = NULL;
   DLSCH_PDU *dlsch_pdu = NULL;
-  RA_t *ra = NULL;
   int sdu_length_total = 0;
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = eNB->common_channels;
@@ -589,6 +653,9 @@ schedule_ue_spec(module_id_t module_idP,
     rnti = UE_RNTI(module_idP, UE_id);
     ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     ue_template = &UE_info->UE_template[CC_id][UE_id];
+
+    ue_rrc_release(rnti);
+    check_ra_rnti_mui(module_idP, CC_id, frameP, subframeP, rnti);
 
     if (ue_template->rach_resource_type > 0) {
       continue_flag = 1;
@@ -968,73 +1035,6 @@ schedule_ue_spec(module_id_t module_idP,
                                             0,
                                             0
                                            );
-
-          if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
-            while(pthread_mutex_trylock(&rrc_release_freelist)) {
-              /* spin... */
-            }
-
-            uint16_t release_total = 0;
-
-            for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
-                 release_num < NUMBER_OF_UE_MAX;
-                 release_num++, release_ctrl++) {
-              if(release_ctrl->flag > 0) {
-                release_total++;
-              } else {
-                continue;
-              }
-
-              if(release_ctrl->flag == 1) {
-                if(release_ctrl->rnti == rnti) {
-                  for(uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
-                    if(release_ctrl->rrc_eNB_mui == rlc_am_mui.rrc_mui[mui_num]) {
-                      release_ctrl->flag = 3;
-                      LOG_D(MAC,"DLSCH Release send:index %d rnti %x mui %d mui_num %d flag 1->3\n",
-                            release_num,
-                            rnti,
-                            rlc_am_mui.rrc_mui[mui_num],
-                            mui_num);
-                      break;
-                    }
-                  }
-                }
-              }
-
-              if(release_ctrl->flag == 2) {
-                if(release_ctrl->rnti == rnti) {
-                  for (uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
-                    if(release_ctrl->rrc_eNB_mui == rlc_am_mui.rrc_mui[mui_num]) {
-                      release_ctrl->flag = 4;
-                      LOG_D(MAC, "DLSCH Release send:index %d rnti %x mui %d mui_num %d flag 2->4\n",
-                            release_num,
-                            rnti,
-                            rlc_am_mui.rrc_mui[mui_num],
-                            mui_num);
-                      break;
-                    }
-                  }
-                }
-              }
-
-              if(release_total >= rrc_release_info.num_UEs)
-                break;
-            }
-
-            pthread_mutex_unlock(&rrc_release_freelist);
-          }
-
-          for (ra_ii = 0, ra = &eNB->common_channels[CC_id].ra[0]; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
-            if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
-              for (uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
-                if (ra->crnti_rrc_mui == rlc_am_mui.rrc_mui[mui_num]) {
-                  ra->crnti_harq_pid = harq_pid;
-                  ra->state = MSGCRNTI_ACK;
-                  break;
-                }
-              }
-            }
-          }
 
           T(T_ENB_MAC_UE_DL_SDU,
             T_INT(module_idP),
