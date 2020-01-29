@@ -55,6 +55,8 @@ pipeline {
             "Analysis with cppcheck",
             "Test phy-sim",
             "Test basic-sim",
+            "Test L1-sim",
+            "Test RF-sim",
             "Test L2-sim",
             "Test-Mono-FDD-Band7",
             "Test-Mono-TDD-Band40",

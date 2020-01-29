@@ -17,17 +17,17 @@
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
- */ 
+ */
 
-/*! \file flexran_agent_pdcp.h
- * \brief FlexRAN agent Control Module PDCP header
- * \author shahab SHARIAT BAGHERI 
+/*! \file flexran_agent_s1ap.h
+ * \brief FlexRAN agent S1AP Control Module
+ * \author navid nikaein
  * \date 2017
  * \version 0.1
  */
 
-#ifndef FLEXRAN_AGENT_PDCP_H_
-#define FLEXRAN_AGENT_PDCP_H_
+#ifndef FLEXRAN_AGENT_S1AP_H_
+#define FLEXRAN_AGENT_S1AP_H_
 
 #include "header.pb-c.h"
 #include "flexran.pb-c.h"
@@ -37,31 +37,33 @@
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_defs.h"
-#include "flexran_agent_pdcp_defs.h"
+#include "flexran_agent_s1ap_defs.h"
 #include "flexran_agent_ran_api.h"
-// for flexran_agent_get_pdcp_xface()
-#include "flexran_agent_extern.h"
 
-/**********************************
- * FlexRAN agent - technology PDCP API
- **********************************/
+/***************************************
+ * FlexRAN agent - technology S1AP API *
+ ***************************************/
 
-/* Send to the controller all the pdcp stat updates that occured during this subframe*/
-int flexran_agent_pdcp_stats_reply(mid_t mod_id,       
+/* Send to the controller all the S1AP configs */
+void flexran_agent_fill_s1ap_cell_config(mid_t mod_id,
+                                         Protocol__FlexS1apConfig **s1ap_config);
+
+/* Free allocated S1AP cell configs */
+void flexran_agent_free_s1ap_cell_config(Protocol__FlexS1apConfig **s1ap);
+
+/* Fill the stats message for S1AP */
+int flexran_agent_s1ap_stats_reply(mid_t mod_id,
                                    Protocol__FlexUeStatsReport **ue_report,
                                    int n_ue,
                                    uint32_t ue_flags);
-int flexran_agent_pdcp_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
-/* Get the stats from RAN API and aggregate them per USER*/
-void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
-                                        uint16_t uid,
-					Protocol__FlexPdcpStats *pdcp_aggr_stats);
+/* Free allocated S1AP stats message */
+void flexran_agent_s1ap_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
-/*Register technology specific interface callbacks*/
-int flexran_agent_register_pdcp_xface(mid_t mod_id);
+/* Register technology specific interface callbacks */
+int flexran_agent_register_s1ap_xface(mid_t mod_id);
 
-/*Unregister technology specific callbacks*/
-int flexran_agent_unregister_pdcp_xface(mid_t mod_id);
+/* Unregister technology specific callbacks */
+int flexran_agent_unregister_s1ap_xface(mid_t mod_id);
 
 #endif

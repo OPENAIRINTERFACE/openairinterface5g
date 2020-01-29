@@ -585,9 +585,22 @@ int main ( int argc, char **argv )
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
-    /* Start the agent. If it is turned off in the configuration, it won't start */
-    RCconfig_flexran();
+  } else {
+    printf("RC.nb_inst = 0, Initializing L1\n");
+    RCconfig_L1();
+  }
 
+  /* We need to read RU configuration before FlexRAN starts so it knows what
+   * splits to report. Actual RU start comes later. */
+  if (RC.nb_RU > 0 && NFAPI_MODE != NFAPI_MODE_VNF) {
+    RCconfig_RU();
+    LOG_I(PHY,
+          "number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
+          RC.nb_L1_inst, RC.nb_RU, get_nprocs());
+  }
+
+  if (RC.nb_inst > 0) {
+    /* Start the agent. If it is turned off in the configuration, it won't start */
     for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
     }
@@ -607,9 +620,6 @@ int main ( int argc, char **argv )
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
     node_type = RC.rrc[0]->node_type;
-  } else {
-    printf("RC.nb_inst = 0, Initializing L1\n");
-    RCconfig_L1();
   }
 
   if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {

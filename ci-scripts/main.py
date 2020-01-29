@@ -3079,6 +3079,7 @@ class SSHConnection():
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		ulschOK = 0
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -3191,6 +3192,10 @@ class SSHConnection():
 			result = re.search('ULSCH in error in round', str(line))
 			if result is not None:
 				ulschFailure += 1
+			if self.air_interface == 'nr':
+				result = re.search('ULSCH received ok', str(line))
+				if result is not None:
+					ulschOK += 1
 			result = re.search('BAD all_segments_received', str(line))
 			if result is not None:
 				rlcDiscardBuffer += 1
@@ -3223,6 +3228,11 @@ class SSHConnection():
 			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
+		if self.air_interface == 'nr':
+			if ulschOK > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(ulschOK) + ' "ULSCH received ok" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				self.htmleNBFailureMsg += statMsg + '\n'
 		if dropNotEnoughRBs > 0:
 			statMsg = 'eNB showed ' + str(dropNotEnoughRBs) + ' "dropping, not enough RBs" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
