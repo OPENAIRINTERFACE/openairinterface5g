@@ -754,10 +754,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         nextslot_type == NR_UPLINK_SLOT) {
       flags = 3; // end of burst
     }
-
-    // the beam index is written in bits 8-10 of the flags
-    // the following choice cycles through the beams every slot, starting with beam 3
-    flags |= ((3+slot)&7)<<8;
    
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags ); 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
