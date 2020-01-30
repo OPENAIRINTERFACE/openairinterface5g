@@ -140,10 +140,11 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
+@param CC_id the component carrier
 @param frame Frame index
 @param subframe Index of subframe
 */
-void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+void fill_DLSCH_dci(module_id_t module_idP, int CC_id, frame_t frameP,sub_frame_t subframe);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
@@ -874,8 +875,7 @@ void add_common_dci(DCI_PDU *DCI_pdu,
                     uint8_t ra_flag);
 */
 
-uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG,
-                           uint8_t *rballoc);
+uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, const uint8_t *rballoc);
 
 void update_ul_dci(module_id_t module_idP, uint8_t CC_id, rnti_t rnti,
                    uint8_t dai, sub_frame_t subframe);

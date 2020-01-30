@@ -2653,7 +2653,7 @@ uint32_t
 allocate_prbs_sub(int nb_rb,
                   int N_RB_DL,
                   int N_RBG,
-                  uint8_t *rballoc)
+                  const uint8_t *rballoc)
 //------------------------------------------------------------------------------
 {
   int check = 0;    //check1=0,check2=0;
