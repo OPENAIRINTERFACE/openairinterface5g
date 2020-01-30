@@ -46,3 +46,5 @@ void handle_nr_nfapi_dlsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             uint8_t *sdu);
 
 void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t harq_pid);
+
+void nr_fill_crc_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t crc_flag);

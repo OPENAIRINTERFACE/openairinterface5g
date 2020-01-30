@@ -64,7 +64,7 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
-int nfapi_mode = 0;
+uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 // dummy functions
@@ -393,6 +393,10 @@ int main(int argc, char **argv)
   RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0][0];
   //gNB_config = &gNB->gNB_config;
+
+  //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
+  gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list = (nfapi_rx_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_rx_indication_pdu_t));
+  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
 
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;

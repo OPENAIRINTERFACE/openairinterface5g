@@ -55,11 +55,13 @@
 #include "common/ran_context.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 
+
+#include "NR_TAG.h"
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -107,10 +109,16 @@ typedef struct gNB_MAC_INST_s {
   /// frame counter
   frame_t                         frame;
   /// slot counter
-  int                             slot;  
+  int                             slot;
+  /// timing advance group
+  NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
-    /// Common cell resources
+  /// TA command
+  int                             ta_command;
+  /// MAC CE flag indicating TA length
+  int                             ta_len;
+  /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
@@ -136,6 +144,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI search space structure
   nfapi_nr_search_space_t           search_space[NFAPI_CC_MAX][NFAPI_NR_MAX_NB_SEARCH_SPACES];
 
+  /// this is an LTE structure and needs to be urgenly updated
   UE_list_t UE_list;
 
   /// UL handle

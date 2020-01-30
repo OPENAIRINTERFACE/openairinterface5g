@@ -30,6 +30,10 @@
  * \warning
  */
 
+#include "mac_defs.h"
+
+//extern NR_UE_MAC_INST_t *UE_mac_inst;
+
 //	Type0-PDCCH search space
 extern const int32_t table_38213_13_1_c2[16];
 extern const int32_t table_38213_13_1_c3[16];
