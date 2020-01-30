@@ -1010,7 +1010,6 @@ schedule_ue_spec(module_id_t module_idP,
                                         ENB_FLAG_YES,
                                         MBMS_FLAG_NO,
                                         DCCH,
-                                        TBS - ta_len - header_length_total - sdu_length_total - 3,
                                         0,
                                         0
                                        );
@@ -1030,7 +1029,7 @@ schedule_ue_spec(module_id_t module_idP,
                                             ENB_FLAG_YES,
                                             MBMS_FLAG_NO,
                                             DCCH,
-                                            TBS, //not used
+                                            TBS - ta_len - header_length_total - sdu_length_total - 3,
                                             (char *)&dlsch_buffer[0],
                                             0,
                                             0
@@ -1084,7 +1083,6 @@ schedule_ue_spec(module_id_t module_idP,
                                         ENB_FLAG_YES,
                                         MBMS_FLAG_NO,
                                         DCCH + 1,
-                                        TBS - ta_len - header_length_total - sdu_length_total - 3,
                                         0,
                                         0
                                        );
@@ -1101,7 +1099,7 @@ schedule_ue_spec(module_id_t module_idP,
                                                     frameP,
                                                     ENB_FLAG_YES,
                                                     MBMS_FLAG_NO, DCCH + 1,
-                                                    TBS, //not used
+                                                    TBS - ta_len - header_length_total - sdu_length_total - 3,
                                                     (char *) &dlsch_buffer[sdu_length_total],
                                                     0,
                                                     0
@@ -1159,7 +1157,8 @@ schedule_ue_spec(module_id_t module_idP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
                                           lcid,
-                                          TBS - ta_len - header_length_total - sdu_length_total - 3, 0, 0
+                                          0,
+                                          0
                                          );
 
           if (rlc_status.bytes_in_buffer > 0) {
@@ -1176,7 +1175,7 @@ schedule_ue_spec(module_id_t module_idP,
                                                      ENB_FLAG_YES,
                                                      MBMS_FLAG_NO,
                                                      lcid,
-                                                     TBS, //not used
+                                                     TBS - ta_len - header_length_total - sdu_length_total - 3,
                                                      (char *) &dlsch_buffer[sdu_length_total],
                                                      0,
                                                      0
@@ -1799,7 +1798,6 @@ schedule_ue_spec_br(module_id_t module_idP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
                                           DCCH,
-                                          (TBS-ta_len-header_len_dcch),
                                           0,
                                           0); // transport block set size
           sdu_lengths[0] = 0;
@@ -1817,7 +1815,7 @@ schedule_ue_spec_br(module_id_t module_idP,
                                               ENB_FLAG_YES,
                                               MBMS_FLAG_NO,
                                               DCCH,
-                                              TBS, //not used
+                                              TBS-ta_len-header_len_dcch,
                                               (char *)&dlsch_buffer[0],
                                               0,
                                               0);
@@ -1855,7 +1853,6 @@ schedule_ue_spec_br(module_id_t module_idP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
                                           DCCH + 1,
-                                          (TBS-ta_len-header_len_dcch-sdu_length_total),
                                           0,
                                           0); // transport block set size less allocations for timing advance and DCCH SDU
           sdu_lengths[num_sdus] = 0;
@@ -1873,7 +1870,7 @@ schedule_ue_spec_br(module_id_t module_idP,
                                      ENB_FLAG_YES,
                                      MBMS_FLAG_NO,
                                      DCCH+1,
-                                     TBS, //not used
+                                     TBS-ta_len-header_len_dcch-sdu_length_total,
                                      (char *)&dlsch_buffer[sdu_length_total],
                                      0,
                                      0);
@@ -1920,7 +1917,6 @@ schedule_ue_spec_br(module_id_t module_idP,
                                             ENB_FLAG_YES,
                                             MBMS_FLAG_NO,
                                             lcid,
-                                            TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch,
                                             0,
                                             0);
 
@@ -1951,7 +1947,7 @@ schedule_ue_spec_br(module_id_t module_idP,
                                       ENB_FLAG_YES,
                                       MBMS_FLAG_NO,
                                       lcid,
-                                      TBS, //not used
+                                      TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch,
                                       (char *) &dlsch_buffer[sdu_length_total],
                                       0,
                                       0);

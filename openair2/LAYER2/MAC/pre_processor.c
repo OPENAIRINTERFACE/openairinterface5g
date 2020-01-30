@@ -87,7 +87,6 @@ store_dlsch_buffer(module_id_t Mod_id,
                                                                   MBMS_FLAG_NO,
                                                                   lcid,
                                                                   0,
-                                                                  0,
                                                                   0
                                                                  );
       UE_template->dl_buffer_info[lcid] = rlc_status.bytes_in_buffer;

@@ -134,7 +134,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
     for (lc_id = DCCH; lc_id <= DTCH; lc_id++) {
       rlc_status =
         mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP,
-                           ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0,0, 0
+                           ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0, 0
                           );
       UE_template.dl_buffer_total += rlc_status.bytes_in_buffer; //storing the total dlsch buffer
     }
@@ -1572,7 +1572,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
         header_len_dcch = 2;  // 2 bytes DCCH SDU subheader
 
         if (TBS - ta_len - header_len_dcch > 0) {
-          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, (TBS - ta_len - header_len_dcch),0, 0); // transport block set size
+          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, 0, 0); // transport block set size
           sdu_lengths[0] = 0;
 
           if (rlc_status.bytes_in_buffer > 0) { // There is DCCH to transmit
@@ -1580,7 +1580,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                   "[eNB %d] SFN/SF %d.%d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   module_idP, frameP, subframeP, CC_id,
                   TBS - header_len_dcch);
-            sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, TBS,  //not used
+            sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
+                                              TBS - ta_len - header_len_dcch,
                                               (char *) &dlsch_buffer[0],0, 0
                                              );
 
@@ -1674,7 +1675,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
         // check for DCCH1 and update header information (assume 2 byte sub-header)
         if (TBS - ta_len - header_len_dcch - sdu_length_total > 0) {
-          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, (TBS - ta_len - header_len_dcch - sdu_length_total),0, 0
+          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, 0, 0
                                          ); // transport block set size less allocations for timing advance and
           // DCCH SDU
           sdu_lengths[num_sdus] = 0;
@@ -1684,7 +1685,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                   "[eNB %d], Frame %d, DCCH1->DLSCH, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   module_idP, frameP, CC_id,
                   TBS - header_len_dcch - sdu_length_total);
-            sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, TBS,  //not used
+            sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
+                                                      TBS - ta_len - header_len_dcch - sdu_length_total,
                                      (char *) &dlsch_buffer[sdu_length_total],0, 0
                                                      );
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
@@ -1737,7 +1739,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                             ENB_FLAG_YES,
                                             MBMS_FLAG_NO,
                                             lcid,
-                                            TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch, 0, 0
+                                            0, 0
                                            );
 
             if (rlc_status.bytes_in_buffer > 0) {
@@ -1754,7 +1756,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                       ENB_FLAG_YES,
                                       MBMS_FLAG_NO,
                                       lcid,
-                                      TBS,  //not used
+                                      TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch,
                                       (char *)&dlsch_buffer[sdu_length_total], 0, 0
                                                       );
               T(T_ENB_MAC_UE_DL_SDU,
