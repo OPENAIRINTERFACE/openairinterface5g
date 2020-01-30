@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 
 #include "assertions.h"
+#include "common/utils/system.h"
 #include "queue.h"
 
 #include "intertask_interface.h"
@@ -716,8 +717,7 @@ static int sctp_create_new_listener(
         SCTP_DEBUG("ipv4 addresses:\n");
 
         for (i = 0; i < init_p->nb_ipv4_addr; i++) {
-            SCTP_DEBUG("\t- "IPV4_ADDR"\n",
-                       IPV4_ADDR_FORMAT(init_p->ipv4_address[i]));
+            SCTP_DEBUG("\t- "IPV4_ADDR"\n", IPV4_ADDR_FORMAT(init_p->ipv4_address[i]));
             ip4_addr = (struct sockaddr_in *)&addr[i];
             ip4_addr->sin_family = AF_INET;
             ip4_addr->sin_port   = htons(init_p->port);

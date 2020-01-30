@@ -52,7 +52,7 @@ inline unsigned int taus(unsigned int comp) {
   return r[comp];
 }
 
-void set_taus_seed(unsigned int seed_type) {
+/*void set_taus_seed(unsigned int seed_type) {
   unsigned int i; // i index of component
 
   for (i=MIN_NUM_COMPS; i < MAX_NUM_COMPS  ; i ++)  {
@@ -79,7 +79,7 @@ void set_taus_seed(unsigned int seed_type) {
         break;
     }
   }
-}
+}*/
 
 int get_rand (unsigned int comp) {
   if ((comp > MIN_NUM_COMPS) && (comp < MAX_NUM_COMPS))

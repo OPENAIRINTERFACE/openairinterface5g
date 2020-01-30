@@ -264,13 +264,11 @@ rx_sdu(const module_id_t enb_mod_idP,
     // if UE_id == -1
   } else if ((RA_id = find_RA_id(enb_mod_idP, CC_idP, current_rnti)) != -1) { // Check if this is an RA process for the rnti
     RA_t *ra = (RA_t *) &(mac->common_channels[CC_idP].ra[RA_id]);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
     if (ra->rach_resource_type > 0) {
       harq_pid = 0;
     }
 
-#endif
     AssertFatal(mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx > 1,
                 "maxHARQ %d should be greater than 1\n",
                 (int) mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
@@ -458,16 +456,15 @@ rx_sdu(const module_id_t enb_mod_idP,
               RA_t *ra = &(mac->common_channels[CC_idP].ra[RA_id]);
               int8_t ret = mac_rrc_data_ind(enb_mod_idP,
                                             CC_idP,
-                                            frameP, subframeP,
+                                            frameP,
+                                            subframeP,
                                             UE_id,
                                             old_rnti,
                                             DCCH,
                                             (uint8_t *) payload_ptr,
                                             rx_lengths[i],
-                                            0
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                            ,ra->rach_resource_type > 0
-#endif
+                                            0,
+                                            ra->rach_resource_type > 0
                                            );
 
               /* Received a new rnti */
@@ -683,11 +680,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                   rx_lengths[i],
                   payload_ptr - sduP);
 
-            if ((UE_id = add_new_ue(enb_mod_idP, CC_idP, ra->rnti, harq_pid
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                    , ra->rach_resource_type
-#endif
-                                   )) == -1) {
+            if ((UE_id = add_new_ue(enb_mod_idP, CC_idP, ra->rnti, harq_pid, ra->rach_resource_type )) == -1) {
               LOG_E(MAC,"[MAC][eNB] Max user count reached\n");
               cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti); // send Connection Reject ???
               break;
@@ -721,10 +714,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                            CCCH,
                            (uint8_t *) payload_ptr,
                            rx_lengths[i],
-                           0
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                           ,ra->rach_resource_type > 0
-#endif
+                           0,ra->rach_resource_type > 0
                           );
 
           if (num_ce > 0) { // handle msg3 which is not RRCConnectionRequest
@@ -1223,38 +1213,13 @@ schedule_ulsch(module_id_t module_idP,
     sched_frame %= 1024;
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int emtc_active[5];
   memset(emtc_active, 0, 5 * sizeof(int));
   schedule_ulsch_rnti_emtc(module_idP, frameP, subframeP, sched_subframe, emtc_active);
-#endif
 
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     first_rb[CC_id] = (emtc_active[CC_id] == 1) ? 7 : 1;
-#else
-
-    /* Note: the size of PUCCH is arbitrary, to be done properly. */
-    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
-      case 25:
-        first_rb[CC_id] = 1;
-        break; // leave out first RB for PUCCH
-
-      case 50:
-        first_rb[CC_id] = 2;
-        break; // leave out first RB for PUCCH
-
-      case 100:
-        first_rb[CC_id] = 3;
-        break; // leave out first RB for PUCCH
-
-      default:
-        LOG_E(MAC, "nb RBs not handled, todo.\n");
-        exit(1);
-    }
-
-#endif
     RA_t *ra_ptr = cc->ra;
 
     /* From Louis-Adrien to François:
@@ -1758,7 +1723,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                                                0,         // current_tx_nb
                                                0,         // n_srs
                                                get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]));
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
           /* This is a BL/CE UE allocation */
           if (UE_template_ptr->rach_resource_type > 0) {
@@ -1768,8 +1732,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                                                  1,  // repetition_number
                                                  (frameP * 10) + subframeP);
           }
-
-#endif
 
           if (dlsch_flag == 1) {
             if (cqi_req == 1) {
@@ -1874,7 +1836,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                                                0, // current_tx_nb
                                                0, // n_srs
                                                UE_template_ptr->TBS_UL[harq_pid]);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
           /* This is a BL/CE UE allocation */
           if (UE_template_ptr->rach_resource_type > 0) {
@@ -1884,8 +1845,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                                                  1, // repetition_number
                                                  (frameP * 10) + subframeP);
           }
-
-#endif
 
           if(dlsch_flag == 1) {
             if(cqi_req == 1) {
@@ -1943,7 +1902,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   }  // loop over UE_ids
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 //-----------------------------------------------------------------------------
 /*
  * default ULSCH scheduler for LTE-M
@@ -2404,4 +2363,3 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
     } //repetition_number < total_number_of_repetitions
   }   // For loop on PDUs
 }
-#endif

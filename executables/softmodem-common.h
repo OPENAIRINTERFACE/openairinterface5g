@@ -1,0 +1,4 @@
+#ifndef SOFTMODEM_COMMON_H
+#define SOFTMODEM_COMMON_H
+
+#endif

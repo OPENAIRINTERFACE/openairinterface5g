@@ -61,7 +61,6 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
         proc->subframe_tx, idx, pdcch_vars->num_dci);
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
                              L1_rxtx_proc_t *proc,
@@ -77,7 +76,6 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
 }
 
-#endif
 
 void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                                   nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
@@ -139,6 +137,14 @@ void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   // adjust transmit amplitude here based on NFAPI info
 }
 
+extern uint32_t localRIV2alloc_LUT6[32];
+extern uint32_t localRIV2alloc_LUT25[512];
+extern uint32_t localRIV2alloc_LUT50_0[1600];
+extern uint32_t localRIV2alloc_LUT50_1[1600];
+extern uint32_t localRIV2alloc_LUT100_0[6000];
+extern uint32_t localRIV2alloc_LUT100_1[6000];
+extern uint32_t localRIV2alloc_LUT100_2[6000];
+extern uint32_t localRIV2alloc_LUT100_3[6000];
 
 void handle_nfapi_mch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                             nfapi_dl_config_request_pdu_t *dl_config_pdu,
@@ -187,28 +193,13 @@ void handle_nfapi_mch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_
   dlsch->active = 1;
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  extern uint32_t localRIV2alloc_LUT6[32];
-  extern uint32_t localRIV2alloc_LUT25[512];
-  extern uint32_t localRIV2alloc_LUT50_0[1600];
-  extern uint32_t localRIV2alloc_LUT50_1[1600];
-  extern uint32_t localRIV2alloc_LUT100_0[6000];
-  extern uint32_t localRIV2alloc_LUT100_1[6000];
-  extern uint32_t localRIV2alloc_LUT100_2[6000];
-  extern uint32_t localRIV2alloc_LUT100_3[6000];
-#endif
-
 void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                             nfapi_dl_config_request_pdu_t *dl_config_pdu,
                             uint8_t codeword_index,
                             uint8_t *sdu) {
   nfapi_dl_config_dlsch_pdu_rel8_t *rel8 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   nfapi_dl_config_dlsch_pdu_rel10_t *rel10 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   nfapi_dl_config_dlsch_pdu_rel13_t *rel13 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13;
-#endif
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   int UE_id;
@@ -227,11 +218,9 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
   //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
   if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[proc->frame_tx%2][proc->subframe_tx] = 0;
 
-#endif
   harq_pid        = dlsch0->harq_ids[proc->frame_tx%2][proc->subframe_tx];
 
   if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
@@ -268,13 +257,13 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
-  if (dlsch0_harq->DLround==0) {  //get pointer to SDU if this a new SDU
+  if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
     if(sdu == NULL) {
       LOG_E(PHY,
             "NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d dlsch0_harq[round:%d SFN/SF:%d%d pdu:%p mcs:%d ndi:%d pdschstart:%d]\n",
             frame,subframe,
             proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
-            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->DLround,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
+            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
       return;
     }
 
@@ -289,11 +278,10 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     else                     dlsch1_harq->pdu                    = sdu;
   } else {
     if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d, subframe %d]: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
-                                      frame,subframe,proc->frame_tx,proc->subframe_tx,dlsch0_harq->DLround,
+                                      frame,subframe,proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
                                       rel8->rnti,UE_id,harq_pid);
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 #ifdef PHY_TX_THREAD
   dlsch0_harq->sib1_br_flag=0;
 #else
@@ -369,42 +357,31 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     dlsch0_harq->Nl                 = 1;
     dlsch0_harq->mimo_mode          = (eNB->frame_parms.nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off       = 1;
-    dlsch0_harq->DLround              = 0;
+    dlsch0_harq->round              = 0;
     dlsch0_harq->status             = ACTIVE;
     dlsch0_harq->TBS                = rel8->length<<3;
     dlsch0_harq->Qm                 = rel8->modulation;
     dlsch0_harq->codeword           = 0;
     dlsch0_harq->pdsch_start        = rel10->pdsch_start;
-  } else
-#endif
-  {
+  } else {
     UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
     AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
     AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
     dlsch0 = eNB->dlsch[UE_id][0];
     dlsch1 = eNB->dlsch[UE_id][1];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     dlsch0->sib1_br_flag=0;
     dlsch0->i0               = 0xFFFF;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     LOG_D(PHY,"dlsch->i0:%04x dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n",
 #ifdef PHY_TX_THREAD
           dlsch0_harq->i0,
 #else
           dlsch0->i0,
 #endif
-          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->DLround, dlsch0_harq->status,
+          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status,
           dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
           rel8->length
          );
-#else
-    LOG_D(PHY,"dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n",
-          dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->DLround, dlsch0_harq->status,
-          dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
-          rel8->length
-         );
-#endif
+
     dlsch0->active = 1;
     harq_pid        = dlsch0->harq_ids[frame%2][proc->subframe_tx];
     dlsch0->harq_mask |= (1<<harq_pid);
@@ -425,15 +402,12 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
       computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
     }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
     if (rel13->ue_type>0)
       dlsch0_harq->pdsch_start = rel10->pdsch_start;
     else
-#endif
       dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
-    if (dlsch0_harq->DLround==0) {  //get pointer to SDU if this a new SDU
+    if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
       AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
                   proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
                   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
@@ -445,7 +419,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
       else                     dlsch1_harq->pdu                    = sdu;
     } else {
       if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
-                                        proc->frame_tx,proc->subframe_tx,dlsch0_harq->DLround,
+                                        proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
                                         rel8->rnti,UE_id,harq_pid);
     }
   }
@@ -631,11 +605,9 @@ void handle_uci_sr_pdu(PHY_VARS_eNB *eNB,
   uci->n_pucch_1_0_sr[0]   = ul_config_pdu->uci_sr_pdu.sr_information.sr_information_rel8.pucch_index;
   uci->srs_active          = srs_active;
   uci->active              = 1;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uci->ue_type                     = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel13.ue_type;
   uci->empty_symbols               = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel13.empty_symbols;
   uci->total_repetitions = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel13.total_number_of_repetitions;
-#endif
   LOG_D(PHY,"Programming UCI SR rnti %x, pucch1_0 %d for (%d,%d)\n",
         uci->rnti,
         uci->n_pucch_1_0_sr[0],
@@ -658,11 +630,9 @@ void handle_uci_sr_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_
   uci->n_pucch_1_0_sr[0]   = ul_config_pdu->uci_sr_harq_pdu.sr_information.sr_information_rel8.pucch_index;
   uci->srs_active          = srs_active;
   uci->active              = 1;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uci->ue_type                     = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel13.ue_type;
   uci->empty_symbols               = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel13.empty_symbols;
   uci->total_repetitions = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel13.total_number_of_repetitions;
-#endif
   handle_uci_harq_information(eNB,uci,&ul_config_pdu->uci_sr_harq_pdu.harq_information);
 }
 
@@ -679,11 +649,9 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
   uci->type              = HARQ;
   uci->srs_active        = srs_active;
   uci->num_antenna_ports = ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel11.num_ant_ports;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uci->ue_type                     = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.ue_type;
   uci->empty_symbols               = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.empty_symbols;
   uci->total_repetitions           = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.total_number_of_repetitions;
-#endif
   handle_uci_harq_information(eNB,uci,&ul_config_pdu->uci_harq_pdu.harq_information);
   uci->active=1;
 }
@@ -817,9 +785,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
   eNB->pdcch_vars[subframe&1].num_pdcch_symbols = number_pdcch_ofdm_symbols;
   eNB->pdcch_vars[subframe&1].num_dci           = 0;
   eNB->phich_vars[subframe&1].num_hi            = 0;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   eNB->mpdcch_vars[subframe&1].num_dci           = 0;
-#endif
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d\n",
         frame,subframe,
         NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
@@ -974,7 +940,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
       case NFAPI_DL_CONFIG_EPDCCH_DL_PDU_TYPE:
         //      handle_nfapi_epdcch_pdu(eNB,dl_config_pdu);
         break;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
       case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
         if (NFAPI_MODE!=NFAPI_MODE_VNF)
@@ -982,7 +947,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
 
         eNB->mpdcch_vars[subframe&1].num_dci++;
         break;
-#endif
     }
   }
 

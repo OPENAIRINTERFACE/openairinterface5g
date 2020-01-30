@@ -34,11 +34,11 @@
 #include "UTIL/OPT/opt.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
+#include "executables/thread-common.h"
 #include <dlfcn.h>
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
-
 
 uint64_t get_softmodem_optmask(void) {
   return softmodem_params.optmask;
@@ -57,13 +57,9 @@ void get_common_options(void) {
   uint32_t online_log_messages=0;
   uint32_t glog_level =0;
   uint32_t start_telnetsrv=0;
-  uint32_t noS1=0;
-  uint32_t nokrnmod=0;
-  uint32_t nonbiot=0;
-  uint32_t rfsim=0;
-  uint32_t basicsim=0;
+  uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
+  uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
   char *logmem_filename = NULL;
-  uint32_t do_forms=0;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
@@ -96,6 +92,7 @@ void get_common_options(void) {
   }
 
   if (nokrnmod) {
+	  printf("nokrnmod bit enabled \n");
     set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
   }
 

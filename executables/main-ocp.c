@@ -269,7 +269,7 @@ void stop_eNB(int nb_inst) {
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
-  LTE_DL_FRAME_PARMS *fp   = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp   = ru->frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
   //printf("////////////////numerology in config = %d\n",numerology);
   int numerology = get_softmodem_params()->numerology;
@@ -354,7 +354,7 @@ int setup_RU_buffers(RU_t *ru) {
   //uint16_t N_TA_offset = 0;
   LTE_DL_FRAME_PARMS *frame_parms;
   AssertFatal(ru, "ru is NULL");
-  frame_parms = &ru->frame_parms;
+  frame_parms = ru->frame_parms;
   LOG_I(PHY,"setup_RU_buffers: frame_parms = %p\n",frame_parms);
 
   if (frame_parms->frame_type == TDD) {
@@ -415,6 +415,47 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
   }
 }
 
+void ocp_rx_prach(PHY_VARS_eNB *eNB,
+		  L1_rxtx_proc_t *proc,
+		  RU_t *ru,
+		  uint16_t *max_preamble,
+		  uint16_t *max_preamble_energy,
+		  uint16_t *max_preamble_delay,
+		  uint16_t *avg_preamble_energy,
+		  uint16_t Nf,
+		  uint8_t tdd_mapindex,
+		  uint8_t br_flag) {
+  int i;
+  int prach_mask=0;
+  
+  if (br_flag == 0) {
+    rx_prach0(eNB,ru,proc->frame_prach, proc->subframe_prach,
+	      max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,0,0);
+  } else { // This is procedure for eMTC, basically handling the repetitions
+    prach_mask = is_prach_subframe(&eNB->frame_parms,proc->frame_prach_br,proc->subframe_prach_br);
+
+    for (i=0; i<4; i++) {
+      if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i]==1) &&
+          ((prach_mask&(1<<(i+1))) > 0)) { // check that prach CE level is active now
+
+        // if first reception in group of repetitions store frame for later (in RA-RNTI for Msg2)
+        if (eNB->prach_vars_br.repetition_number[i]==0) eNB->prach_vars_br.first_frame[i]=proc->frame_prach_br;
+
+        // increment repetition number
+        eNB->prach_vars_br.repetition_number[i]++;
+        // do basic PRACH reception
+        rx_prach0(eNB,ru,proc->frame_prach, proc->subframe_prach_br,
+		  max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,1,i);
+
+        // if last repetition, clear counter
+        if (eNB->prach_vars_br.repetition_number[i] == eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[i]) {
+          eNB->prach_vars_br.repetition_number[i]=0;
+        }
+      }
+    } /* for i ... */
+  } /* else br_flag == 0 */
+}
+
 void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int br_flag) {
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
   RU_t *ru;
@@ -435,7 +476,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int br_flag) 
   }
 
   // run PRACH detection for CE-level 0 only for now when br_flag is set
-  rx_prach(eNB,
+  ocp_rx_prach(eNB,
            proc,
            eNB->RU_list[0],
            &max_preamble[0],
@@ -583,7 +624,7 @@ void eNB_top(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int dummy1, int dummy2,  c
 }
 
 void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
@@ -623,8 +664,8 @@ void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
   setAllfromTS(timestamp_rx, proc);
 }
 
-void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+void ocp_tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   void *txp[ru->nb_tx];
   int i;
   lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
@@ -690,42 +731,39 @@ static void *ru_thread( void *param ) {
   RU_t               *ru      = (RU_t *)param;
   L1_rxtx_proc_t L1proc= {0};
   L1_rxtx_proc_t *proc=&L1proc;
-
+  
   if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
     initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
   else
     initTpool("n", &L1proc.threadPool, true);
-
+  
   initNotifiedFIFO(&L1proc.respEncode);
   initNotifiedFIFO(&L1proc.respDecode);
-
+  
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);
-    init_frame_parms(&ru->frame_parms,1);
+    init_frame_parms(ru->frame_parms,1);
     phy_init_RU(ru);
     init_rf(ru);
   }
-
+  
   AssertFatal(setup_RU_buffers(ru)==0, "Exiting, cannot initialize RU Buffers\n");
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   wait_sync("ru_thread");
-
+  
   // Start RF device if any
-  if (ru->start_rf) {
-    if (ru->start_rf(ru) != 0)
-      LOG_E(HW,"Could not start the RF device\n");
-    else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
-  } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
-
+  if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)
+    LOG_E(HW,"Could not start the RF device\n");
+  else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
+    
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
     // synchronization on input FH interface, acquire signals/data and block
     rx_rf(ru, proc);
-
+    
     // do RX front-end processing (frequency-shift, dft) if needed
-    if (ru->feprx)
-      ru->feprx(ru, proc);
-
+    fep_full(ru, proc->subframe_rx);
+    
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
     // Fixme: not used
@@ -733,30 +771,24 @@ static void *ru_thread( void *param ) {
     for (int i=0; i<ru->num_eNB; i++) {
       char string[20];
       sprintf(string,"Incoming RU %d",ru->idx);
-      ru->eNB_top(ru->eNB_list[i],proc, proc->frame_rx,proc->subframe_rx,string,ru);
+      eNB_top(ru->eNB_list[i],proc, proc->frame_rx,proc->subframe_rx,string,ru);
     }
-
+    
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec)
-      ru->feptx_prec(ru, proc);
-
+    feptx_prec(ru, proc->frame_tx, proc->subframe_tx);
+    
     // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm))
-      ru->feptx_ofdm(ru, proc);
-
+    feptx_ofdm(ru, proc->frame_tx, proc->subframe_tx);
+    
     // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out))
-      ru->fh_south_out(ru, proc);
+    ocp_tx_rf(ru, proc);
   }
-
+  
   LOG_W(PHY,"Exiting ru_thread \n");
-
-  if (ru->stop_rf != NULL) {
-    if (ru->stop_rf(ru) != 0)
-      LOG_E(HW,"Could not stop the RF device\n");
-    else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
-  }
-
+  
+  ru->rfdevice.trx_end_func(&ru->rfdevice);
+  LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+  
   return NULL;
 }
 
@@ -769,33 +801,8 @@ int init_rf(RU_t *ru) {
   return ret;
 }
 
-int start_rf(RU_t *ru) {
-  int ret=ru->rfdevice.trx_start_func(&ru->rfdevice);
-  return ret;
-}
-
-int stop_rf(RU_t *ru) {
-  ru->rfdevice.trx_end_func(&ru->rfdevice);
-  return 0;
-}
 
 void set_function_spec_param(RU_t *ru) {
-  switch (ru->if_south) {
-    case LOCAL_RF: // this is an RU with integrated RF (RRU, eNB)
-      ru->feprx                = fep_full;
-      ru->feptx_ofdm           = feptx_ofdm;
-      ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
-      ru->rfdevice.host_type   = RAU_HOST;
-      ru->fh_south_out         = tx_rf;                               // local synchronous RF TX
-      ru->start_rf             = start_rf;                            // need to start the local RF interface
-      ru->stop_rf              = stop_rf;
-      ru->eNB_top              = eNB_top;
-      break;
-
-    default:
-      LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
-      break;
-  } // switch on interface type
 }
 
 //extern void RCconfig_RU(void);
@@ -846,7 +853,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     //    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
     if (ru->generate_dmrs_sync == 1) {
       generate_ul_ref_sigs();
-      ru->dmrssync = (int16_t *)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t));
+      ru->dmrssync = (int16_t *)malloc16_clear(ru->frame_parms->ofdm_symbol_size*2*sizeof(int16_t));
     }
 
     ru->wakeup_L1_sleeptime = 2000;
@@ -875,7 +882,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
 
     if (eNB0) {
       LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
-      memcpy((void *)&ru->frame_parms,(void *)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+      ru->frame_parms=&eNB0->frame_parms;
 
       for (i=0; i<ru->num_eNB; i++) {
         eNB0 = ru->eNB_list[i];
@@ -884,7 +891,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     }
 
     LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",
-          ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+          ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     init_RU_proc(ru);
@@ -903,6 +910,7 @@ void stop_RU(int nb_ru) {
 
 /* --------------------------------------------------------*/
 /* from here function to use configuration module          */
+static int DEFBFW[] = {0x00007fff};
 void RCconfig_RU(void) {
   int               j                             = 0;
   int               i                             = 0;

@@ -33,11 +33,10 @@
 #include <linux/types.h>
 // global var to enable openair performance profiler
 extern int opp_enabled;
-double cpu_freq_GHz;
+double cpu_freq_GHz  __attribute__ ((aligned(32)));;
+
 #if defined(__x86_64__) || defined(__i386__)
-
 typedef struct {
-
   long long in;
   long long diff;
   long long p_time; /*!< \brief absolute process duration */
@@ -55,8 +54,8 @@ typedef struct {
   uint32_t max;
   int trials;
 } time_stats_t;
-
 #endif
+
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
 
@@ -122,11 +121,12 @@ static inline void stop_meas(time_stats_t *ts) {
 }
 
 static inline void reset_meas(time_stats_t *ts) {
-  ts->trials=0;
+  ts->in=0;
   ts->diff=0;
   ts->p_time=0;
   ts->diff_square=0;
   ts->max=0;
+  ts->trials=0;
   ts->meas_flag=0;
 }
 

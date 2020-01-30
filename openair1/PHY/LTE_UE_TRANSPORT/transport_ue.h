@@ -32,7 +32,6 @@
 #ifndef __TRANSPORT_UE__H__
 #define __TRANSPORT_UE__H__
 #include "PHY/defs_UE.h"
-#include "PHY/impl_defs_lte.h"
 #include "../LTE_TRANSPORT/dci.h"
 #include "../LTE_TRANSPORT/mdci.h"
 #include "../LTE_TRANSPORT/uci_common.h"
@@ -195,7 +194,7 @@ typedef struct {
   /// allocated CBA RNTI
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
   /// UL max-harq-retransmission
-  uint8_t Mlimit;
+  uint16_t Mlimit;
 } LTE_UE_ULSCH_t;
 
 

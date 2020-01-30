@@ -40,6 +40,7 @@
 #include "SCHED/sched_eNB.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
+#include "targets/RT/USER/lte-softmodem.h"
 #include <syscall.h>
 #include "targets/RT/USER/rt_wrapper.h"
 #include <common/utils/threadPool/thread-pool.h>
@@ -58,8 +59,8 @@
   uint64_t runtime,
   uint64_t deadline,
   uint64_t period);*/
-extern WORKER_CONF_t get_thread_worker_conf(void);
 
+extern volatile int oai_exit;
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   int i, r, aa, layer;
@@ -94,7 +95,14 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   }
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS *frame_parms) {
+
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,
+                               unsigned char Mdlharq,
+                               uint32_t Nsoft,
+                               unsigned char N_RB_DL,
+                               uint8_t abstraction_flag,
+                               LTE_DL_FRAME_PARMS *frame_parms)
+{
   LTE_eNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r,aa,layer;
   int re;
@@ -188,7 +196,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
 
     if (exit_flag==0) {
       for (i=0; i<Mdlharq; i++) {
-        dlsch->harq_processes[i]->DLround=0;
+        dlsch->harq_processes[i]->round=0;
       }
 
       return(dlsch);
@@ -200,6 +208,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
   free_eNB_dlsch(dlsch);
   return(NULL);
 }
+
 
 void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   unsigned char Mdlharq;
@@ -225,14 +234,16 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch) {
       if (dlsch->harq_processes[i]) {
         //  dlsch->harq_processes[i]->Ndi    = 0;
         dlsch->harq_processes[i]->status = 0;
-        dlsch->harq_processes[i]->DLround  = 0;
+        dlsch->harq_processes[i]->round  = 0;
 
       }
     }
   }
 }
 
-extern int oai_exit;
+void *te_thread(void *param) {
+  return(NULL);
+}
 
 int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 		       L1_rxtx_proc_t *proc,
@@ -350,7 +361,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   proc->nbEncode=0;
 
   //  if (hadlsch->Ndi == 1) {  // this is a new packet
-  if (hadlsch->DLround == 0) {  // this is a new packet
+  if (hadlsch->round == 0) {  // this is a new packet
     // Add 24-bit crc (polynomial A) to payload
     unsigned int A=hadlsch->TBS; //6228;
     unsigned int crc = crc24a(a,
@@ -389,7 +400,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
     rdata->rm_stats=rm_stats;
     rdata->te_stats=te_stats;
     rdata->i_stats=i_stats;
-    rdata->round=hadlsch->DLround;
+    rdata->round=hadlsch->round;
     rdata->r_offset=r_offset;
     rdata->G=G;
     
@@ -414,10 +425,3 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 
   return(0);
 }
-
-
-
-
-
-
-

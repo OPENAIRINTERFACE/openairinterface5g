@@ -36,7 +36,6 @@
 #include "commonDef.h"
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "PHY/impl_defs_lte.h"
 #include "s1ap_messages_types.h"
 #include "SystemInformationBlockType2.h"
 

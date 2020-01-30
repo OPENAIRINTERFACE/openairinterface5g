@@ -25,7 +25,7 @@
  * \date 2012
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
+ * \email: {knopp, florian.kaltenberger, navid.nikaein}@eurecom.fr
  * \note
  * \warning
  */
@@ -87,7 +87,6 @@
 
 
 #include "lte-softmodem.h"
-
 
 
 /* temporary compilation wokaround (UE/eNB split */
@@ -173,14 +172,9 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
-/* prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include
-   file */
+// prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include file.
 extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
-
-extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t UE_id,
-                                 uint8_t abstraction_flag);
-
+extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 extern void get_uethreads_params(void);
 
 int transmission_mode=1;
@@ -201,7 +195,7 @@ extern char uecap_xer[1024];
 char uecap_xer_in=0;
 
 int oaisim_flag=0;
-
+//threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -312,11 +306,6 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-
-
-
-
-
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
@@ -325,8 +314,9 @@ static void get_options(void) {
   char *loopfile=NULL;
   int dumpframe=0;
   int timingadv=0;
-  uint8_t nfapi_mode=0;
+  uint8_t nfapi_mode = NFAPI_MONOLITHIC;
   int simL1flag =0;
+
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
@@ -422,7 +412,7 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS *) malloc(sizeof(LTE_DL_FRAME_PARMS));
+    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS *) calloc(1, sizeof(LTE_DL_FRAME_PARMS));
     /* Set some default values that may be overwritten while reading options */
     frame_parms[CC_id]->frame_type          = FDD;
     frame_parms[CC_id]->tdd_config          = 3;
@@ -528,25 +518,6 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
     }
 
     if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
-
-    if (usrp_clksrc) {
-      if (strcmp(usrp_clksrc, "internal") == 0) {
-        openair0_cfg[card].clock_source = internal;
-        LOG_D(PHY, "USRP clock source set as internal\n");
-      } else if (strcmp(usrp_clksrc, "external") == 0) {
-        openair0_cfg[card].clock_source = external;
-        LOG_D(PHY, "USRP clock source set as external\n");
-      } else if (strcmp(usrp_clksrc, "gpsdo") == 0) {
-        openair0_cfg[card].clock_source = gpsdo;
-        LOG_D(PHY, "USRP clock source set as gpsdo\n");
-      } else {
-        openair0_cfg[card].clock_source = internal;
-        LOG_I(PHY, "USRP clock source unknown ('%s'). defaulting to internal\n", usrp_clksrc);
-      }
-    } else {
-      openair0_cfg[card].clock_source = internal;
-      LOG_I(PHY, "USRP clock source not specified. defaulting to internal\n");
-    }
   }
 }
 
@@ -661,6 +632,7 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
+
   printf("ITTI init\n");
 #define UE
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
@@ -719,7 +691,10 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-#ifndef DEADLINE_SCHEDULER
+  
+  
+#if 0 // #ifndef DEADLINE_SCHEDULER
+  
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   cpu_set_t cpuset;
@@ -727,17 +702,18 @@ int main( int argc, char **argv ) {
   char cpu_affinity[1024];
   CPU_ZERO(&cpuset);
 #ifdef CPU_AFFINITY
-
+  int j;
   if (get_nprocs() > 2) {
-    CPU_SET(0, &cpuset);
+    for (j = 2; j < get_nprocs(); j++)
+      CPU_SET(j, &cpuset);
+    
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
     if (s != 0) {
       perror( "pthread_setaffinity_np");
       exit_fun("Error setting processor affinity");
     }
-
-    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+    LOG_I(HW, "Setting the affinity of main function to all CPUs, for device library to use CPU 0 only!\n");
   }
 
 #endif

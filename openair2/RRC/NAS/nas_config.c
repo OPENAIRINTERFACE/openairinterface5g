@@ -61,9 +61,9 @@ void nas_getparams(void) {
     /*                                            configuration parameters for netlink, includes network parameters when running in noS1 mode                             */
     /*   optname                     helpstr                paramflags           XXXptr                               defXXXval               type                 numelt */
     /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-    {"NetworkPrefix",    NASHLP_NETPREFIX,         0,              strptr:&baseNetAddress,        defstrval:"10.0",            TYPE_STRING,  0 },
+    {"NetworkPrefix",    NASHLP_NETPREFIX,       0,              strptr:&baseNetAddress,        defstrval:"10.0",            TYPE_STRING,  0 },
     {"NetworkMask",      NASHLP_NETMASK,         0,              strptr:&netMask,               defstrval:"255.255.255.0",   TYPE_STRING,  0 },
-    {"BroadcastAddr",    NASHLP_BROADCASTADDR,         0,              strptr:&broadcastAddr,         defstrval:"10.0.255.255",    TYPE_STRING,  0 },
+    {"BroadcastAddr",    NASHLP_BROADCASTADDR,   0,              strptr:&broadcastAddr,         defstrval:"10.0.255.255",    TYPE_STRING,  0 },
   };
   config_get( nasoptions,sizeof(nasoptions)/sizeof(paramdef_t),"nas.noS1");
 }
@@ -260,7 +260,7 @@ int nas_config_mbms(int interface_id, int thirdOctet, int fourthOctet, char *ifn
     bringInterfaceUp(interfaceName, 1);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
@@ -301,7 +301,7 @@ int nas_config_mbms_s1(int interface_id, int thirdOctet, int fourthOctet, char *
   printf("returnValue %d\n",returnValue);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, "255.255.255.0", broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
@@ -335,10 +335,10 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
     returnValue= setInterfaceParameter(interfaceName, broadcastAddress,SIOCSIFBRDADDR);
 
   if(!returnValue)
-    bringInterfaceUp(interfaceName, 1);
+	  returnValue=bringInterfaceUp(interfaceName, 1);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",

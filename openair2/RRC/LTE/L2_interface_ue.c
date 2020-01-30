@@ -59,9 +59,8 @@ mac_rrc_data_req_ue(
 )
 //--------------------------------------------------------------------------
 {
-  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  LOG_D(RRC,"[UE %d] Frame %d Filling SL DISCOVERY SRB_ID %d\n",Mod_idP,frameP,Srb_id);
+  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
+  LOG_D(RRC,"[UE %d] Frame %d Filling SL DISCOVERY SRB_ID %ld\n",Mod_idP,frameP,Srb_id);
   LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size);
 
   //TTN (for D2D)
@@ -73,8 +72,7 @@ mac_rrc_data_req_ue(
     return(Ret_size);
   }
 
-#endif
-  LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
+  LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %ld\n",Mod_idP,frameP,Srb_id);
   LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
 
   if( (UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
@@ -138,42 +136,38 @@ mac_rrc_data_ind_ue(
    */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, 0, rntiP, frameP, sub_frameP,eNB_indexP);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-   if(srb_idP == BCCH_SI_MBMS) {
-      LOG_D(RRC,"[UE %d] Received SDU for BCCH on MBMS SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
-
+  if(srb_idP == BCCH_SI_MBMS) {
+    LOG_D(RRC,"[UE %d] Received SDU for BCCH on MBMS SRB %ld from eNB %d\n",module_idP,srb_idP,eNB_indexP);
 #if defined(ENABLE_ITTI)
-      {
-        MessageDef *message_p;
-        int msg_sdu_size = sizeof(RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu);
+    {
+      MessageDef *message_p;
+      int msg_sdu_size = sizeof(RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu);
 
-        if (sdu_lenP > msg_sdu_size) {
-          LOG_E(RRC, "SDU larger than BCCH SDU buffer size (%d, %d)", sdu_lenP, msg_sdu_size);
-          sdu_size = msg_sdu_size;
-        } else {
-          sdu_size = sdu_lenP;
-        }
-
-        message_p = itti_alloc_new_message (TASK_MAC_UE, RRC_MAC_BCCH_MBMS_DATA_IND);
-        memset (RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu, 0, BCCH_SDU_MBMS_SIZE);
-        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).frame     = frameP;
-        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sub_frame = sub_frameP;
-        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu_size  = sdu_size;
-        memcpy (RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu, sduP, sdu_size);
-        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).enb_index = eNB_indexP;
-        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).rsrq      = 30 /* TODO change phy to report rspq */;
-        RRC_MAC_BCCH_MBMS_DATA_IND (message_p).rsrp      = 45 /* TODO change phy to report rspp */;
-
-        itti_send_msg_to_task (TASK_RRC_UE, ctxt.instance, message_p);
+      if (sdu_lenP > msg_sdu_size) {
+        LOG_E(RRC, "SDU larger than BCCH SDU buffer size (%d, %d)", sdu_lenP, msg_sdu_size);
+        sdu_size = msg_sdu_size;
+      } else {
+        sdu_size = sdu_lenP;
       }
-#else
-      decode_BCCH_MBMS_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t*)sduP,sdu_lenP, 0, 0);
-#endif
+
+      message_p = itti_alloc_new_message (TASK_MAC_UE, RRC_MAC_BCCH_MBMS_DATA_IND);
+      memset (RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu, 0, BCCH_SDU_MBMS_SIZE);
+      RRC_MAC_BCCH_MBMS_DATA_IND (message_p).frame     = frameP;
+      RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sub_frame = sub_frameP;
+      RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu_size  = sdu_size;
+      memcpy (RRC_MAC_BCCH_MBMS_DATA_IND (message_p).sdu, sduP, sdu_size);
+      RRC_MAC_BCCH_MBMS_DATA_IND (message_p).enb_index = eNB_indexP;
+      RRC_MAC_BCCH_MBMS_DATA_IND (message_p).rsrq      = 30 /* TODO change phy to report rspq */;
+      RRC_MAC_BCCH_MBMS_DATA_IND (message_p).rsrp      = 45 /* TODO change phy to report rspp */;
+      itti_send_msg_to_task (TASK_RRC_UE, ctxt.instance, message_p);
     }
+#else
+    decode_BCCH_MBMS_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t *)sduP,sdu_lenP, 0, 0);
 #endif
+  }
 
   if(srb_idP == BCCH) {
-    LOG_D(RRC,"[UE %d] Received SDU for BCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+    LOG_D(RRC,"[UE %d] Received SDU for BCCH on SRB %ld from eNB %d\n",module_idP,srb_idP,eNB_indexP);
 #if defined(ENABLE_ITTI)
     {
       MessageDef *message_p;
@@ -203,13 +197,13 @@ mac_rrc_data_ind_ue(
   }
 
   if(srb_idP == PCCH) {
-    LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+    LOG_D(RRC,"[UE %d] Received SDU for PCCH on SRB %ld from eNB %d\n",module_idP,srb_idP,eNB_indexP);
     decode_PCCH_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t *)sduP,sdu_lenP);
   }
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
     if (sdu_lenP>0) {
-      LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %d from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);
+      LOG_T(RRC,"[UE %d] Received SDU for CCCH on SRB %ld from eNB %d\n",module_idP,srb_idP & RAB_OFFSET,eNB_indexP);
 #if defined(ENABLE_ITTI)
       {
         MessageDef *message_p;
@@ -242,10 +236,8 @@ mac_rrc_data_ind_ue(
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
   if ((srb_idP & RAB_OFFSET) == MCCH) {
-    LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
+    LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
           module_idP,frameP, mbsfn_sync_areaP, srb_idP & RAB_OFFSET,eNB_indexP);
 #if defined(ENABLE_ITTI)
     {
@@ -274,11 +266,10 @@ mac_rrc_data_ind_ue(
 
   //TTN (for D2D)
   if(srb_idP == SL_DISCOVERY) {
-    LOG_I(RRC,"[UE %d] Received SDU (%d bytes) for SL_DISCOVERY on SRB %d from eNB %d\n",module_idP, sdu_lenP, srb_idP,eNB_indexP);
+    LOG_I(RRC,"[UE %d] Received SDU (%d bytes) for SL_DISCOVERY on SRB %ld from eNB %d\n",module_idP, sdu_lenP, srb_idP,eNB_indexP);
     decode_SL_Discovery_Message(&ctxt, eNB_indexP, sduP, sdu_lenP);
   }
 
-#endif // #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   return(0);
 }
 
@@ -343,10 +334,7 @@ rrc_data_req_ue(
            confirmP,
            sdu_sizeP,
            buffer_pP,
-           modeP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-           ,NULL, NULL
-#endif
+           modeP,NULL, NULL
          );
 #endif
 }
@@ -362,7 +350,7 @@ rrc_data_ind_ue(
 //------------------------------------------------------------------------------
 {
   rb_id_t    DCCH_index = Srb_id;
-  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+  LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %ld message on SRB %ld with Size %d from eNB %d\n",
         ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
 #if defined(ENABLE_ITTI)
   {

@@ -60,12 +60,12 @@
 //#        include "rlc_am_test.h"
 
 
-#define PROTOCOL_RLC_AM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
+#define PROTOCOL_RLC_AM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld]"
 #define PROTOCOL_RLC_AM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
           rLC_Pp->rb_id
 
-#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %" PRIx16 " %s %02u]"
+#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %" PRIx16 " %s %02ld]"
 #define PROTOCOL_RLC_AM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
         CTXT_Pp->rnti,\
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\

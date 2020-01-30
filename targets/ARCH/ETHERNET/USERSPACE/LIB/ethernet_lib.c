@@ -53,8 +53,8 @@ struct sockaddr_in dest_addr[MAX_INST];
 int dest_addr_len[MAX_INST];
 
 
-int trx_eth_start(openair0_device *device) {
-
+int trx_eth_start(openair0_device *device)
+{
     eth_state_t *eth = (eth_state_t*)device->priv;
 
     /* initialize socket */
@@ -153,8 +153,8 @@ int trx_eth_start(openair0_device *device) {
 }
 
 
-void trx_eth_end(openair0_device *device) {
-
+void trx_eth_end(openair0_device *device)
+{
     eth_state_t *eth = (eth_state_t*)device->priv;
     /* destroys socket only for the processes that call the eth_end fuction-- shutdown() for beaking the pipe */
     if ( close(eth->sockfdd) <0 ) {
@@ -166,29 +166,42 @@ void trx_eth_end(openair0_device *device) {
 }
 
 
-int trx_eth_stop(openair0_device *device) {
-    return(0);
-}
-
-int trx_eth_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
-    return(0);
-}
-
-int trx_eth_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
-    return(0);
-}
-
-int trx_eth_get_stats(openair0_device* device) {
-    return(0);
-}
-
-int trx_eth_reset_stats(openair0_device* device) {
+int trx_eth_stop(openair0_device *device)
+{
     return(0);
 }
 
 
-int ethernet_tune(openair0_device *device, unsigned int option, int value) {
+int trx_eth_set_freq(openair0_device* device,
+                     openair0_config_t *openair0_cfg,
+                     int exmimo_dump_config)
+{
+    return(0);
+}
 
+
+int trx_eth_set_gains(openair0_device* device, openair0_config_t *openair0_cfg)
+{
+    return(0);
+}
+
+
+int trx_eth_get_stats(openair0_device* device)
+{
+    return(0);
+}
+
+
+int trx_eth_reset_stats(openair0_device* device)
+{
+    return(0);
+}
+
+
+int ethernet_tune(openair0_device *device,
+                  unsigned int option,
+                  int value)
+{
     eth_state_t *eth = (eth_state_t*)device->priv;
     struct timeval timeout;
     struct ifreq ifr;
@@ -363,8 +376,10 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
 }
 
 
-int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params ) {
-
+int transport_init(openair0_device *device,
+                   openair0_config_t *openair0_cfg,
+                   eth_params_t * eth_params )
+{
     eth_state_t *eth = (eth_state_t*)malloc(sizeof(eth_state_t));
     memset(eth, 0, sizeof(eth_state_t));
 
@@ -470,8 +485,11 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
 /**************************************************************************************************************************
  *                                         DEBUGING-RELATED FUNCTIONS                                                     *
  **************************************************************************************************************************/
-void dump_packet(char *title, unsigned char* pkt, int bytes, unsigned int tx_rx_flag) {
-
+void dump_packet(char *title,
+                 unsigned char* pkt,
+                 int bytes,
+                 unsigned int tx_rx_flag)
+{
     static int numSend = 1;
     static int numRecv = 1;
     int num, k;
@@ -484,8 +502,10 @@ void dump_packet(char *title, unsigned char* pkt, int bytes, unsigned int tx_rx_
     printf("%s-%s (%06d): %s 0x%04X\n", title,(tx_rx_flag)? "TX":"RX", num, tmp, cksum);
 }
 
-unsigned short calc_csum (unsigned short *buf, int nwords) {
 
+unsigned short calc_csum (unsigned short *buf,
+                          int nwords)
+{
     unsigned long sum;
     for (sum = 0; nwords > 0; nwords--)
         sum += *buf++;
@@ -494,8 +514,9 @@ unsigned short calc_csum (unsigned short *buf, int nwords) {
     return ~sum;
 }
 
-void dump_dev(openair0_device *device) {
 
+void dump_dev(openair0_device *device)
+{
     eth_state_t *eth = (eth_state_t*)device->priv;
 
     printf("Ethernet device interface %i configuration:\n" ,device->openair0_cfg->Mod_id);
@@ -511,21 +532,28 @@ void dump_dev(openair0_device *device) {
 
 }
 
-void inline dump_txcounters(openair0_device *device) {
+
+void inline dump_txcounters(openair0_device *device)
+{
     eth_state_t *eth = (eth_state_t*)device->priv;
     printf("   Ethernet device interface %i, tx counters:\n" ,device->openair0_cfg->Mod_id);
     printf("   Sent packets: %llu send errors: %i\n",   (long long unsigned int)eth->tx_count, eth->num_tx_errors);
 }
 
-void inline dump_rxcounters(openair0_device *device) {
 
+void inline dump_rxcounters(openair0_device *device)
+{
     eth_state_t *eth = (eth_state_t*)device->priv;
     printf("   Ethernet device interface %i rx counters:\n" ,device->openair0_cfg->Mod_id);
     printf("   Received packets: %llu missed packets errors: %i\n", (long long unsigned int)eth->rx_count, eth->num_underflows);
 }
 
-void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_flag, int nsamps) {
 
+void inline dump_buff(openair0_device *device,
+                      char *buff,
+                      unsigned int tx_rx_flag,
+                      int nsamps)
+{
     char *strptr;
     eth_state_t *eth = (eth_state_t*)device->priv;
     /*need to add ts number of iqs in printf need to fix dump iqs call */
@@ -544,7 +572,10 @@ void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_fla
 
 }
 
-void dump_iqs(char * buff, int iq_cnt) {
+
+void dump_iqs(char * buff,
+              int iq_cnt)
+{
     int i;
     for (i=0; i<iq_cnt; i++) {
         printf("s%02i: Q=%+ij I=%+i%s",i,

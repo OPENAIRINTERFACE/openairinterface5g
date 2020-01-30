@@ -31,7 +31,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "nfapi_interface.h"
+#include "nfapi_nr_interface.h"
 #include "nfapi_vnf_interface.h"
 #include "nfapi.h"
 #include "vendor_ext.h"
@@ -1168,7 +1168,26 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   return retval;
 }
 
-int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) {
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req)
+{
+  nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
+
+  dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+
+  int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);
+
+  dl_config_req->dl_config_request_body.number_dci                          = 0;
+  dl_config_req->dl_config_request_body.number_pdu                          = 0;
+  dl_config_req->dl_config_request_body.number_pdsch_rnti                   = 0;
+
+  if (retval!=0) {
+    LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
+  }
+  return retval;
+}
+
+int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)
+{
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   tx_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   tx_req->header.message_id = NFAPI_TX_REQUEST;

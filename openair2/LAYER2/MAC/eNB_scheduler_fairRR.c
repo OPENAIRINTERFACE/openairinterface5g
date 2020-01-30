@@ -134,10 +134,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
     for (lc_id = DCCH; lc_id <= DTCH; lc_id++) {
       rlc_status =
         mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP,
-                           ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                           ,0, 0
-#endif
+                           ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0,0, 0
                           );
       UE_template.dl_buffer_total += rlc_status.bytes_in_buffer; //storing the total dlsch buffer
     }
@@ -174,7 +171,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
   frame_t         frameP,
   sub_frame_t     subframeP,
   int            *mbsfn_flag,
-  uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+  uint16_t        nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB],
   DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]) {
   eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
   COMMON_channels_t              *cc       = eNB->common_channels;
@@ -576,8 +573,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   uint8_t slice_allocation[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i;
   uint16_t                j,c;
-  uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+  uint16_t                nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
+  uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
   //  uint16_t                nb_rbs_required_remaining_1[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                average_rbs_per_user[MAX_NUM_CCs] = {0};
   rnti_t             rnti;
@@ -620,7 +617,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                           frameP,
                                           subframeP,
                                           min_rb_unit,
-                                          (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
+                                          (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required,
                                           rballoc_sub,
                                           MIMO_mode_indicator,
                                           mbsfn_flag);
@@ -634,7 +631,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   assign_rbs_required(Mod_id, 0, frameP, subframeP, nb_rbs_required,
                       min_rb_unit);
 #else
-  memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use], sizeof(uint16_t)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+  memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use], sizeof(uint16_t)*MAX_NUM_CCs*MAX_MOBILES_PER_ENB);
 #endif
   dlsch_scheduler_pre_ue_select_fairRR(Mod_id,frameP,subframeP, mbsfn_flag,nb_rbs_required,dlsch_ue_select);
 
@@ -704,8 +701,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                               CC_id,
                                               N_RBG[CC_id],
                                               min_rb_unit[CC_id],
-                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
-                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
+                                              (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required,
+                                              (uint16_t (*)[MAX_MOBILES_PER_ENB])nb_rbs_required_remaining,
                                               rballoc_sub,
                                               slice_allocation,
                                               MIMO_mode_indicator);
@@ -1292,11 +1289,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
         header_len_dcch = 2;  // 2 bytes DCCH SDU subheader
 
         if (TBS - ta_len - header_len_dcch > 0) {
-          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, (TBS - ta_len - header_len_dcch)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                          ,0, 0
-#endif
-                                         ); // transport block set size
+          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, (TBS - ta_len - header_len_dcch),0, 0); // transport block set size
           sdu_lengths[0] = 0;
 
           if (rlc_status.bytes_in_buffer > 0) { // There is DCCH to transmit
@@ -1305,12 +1298,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                   module_idP, frameP, subframeP, CC_id,
                   TBS - header_len_dcch);
             sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, TBS,  //not used
-                                              (char *)
-                                              &dlsch_buffer
-                                              [0]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                              ,0, 0
-#endif
+                                              (char *) &dlsch_buffer[0],0, 0
                                              );
 
             if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
@@ -1406,10 +1394,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
         // check for DCCH1 and update header information (assume 2 byte sub-header)
         if (TBS - ta_len - header_len_dcch - sdu_length_total > 0) {
-          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, (TBS - ta_len - header_len_dcch - sdu_length_total)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                          ,0, 0
-#endif
+          rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, (TBS - ta_len - header_len_dcch - sdu_length_total),0, 0
                                          ); // transport block set size less allocations for timing advance and
           // DCCH SDU
           sdu_lengths[num_sdus] = 0;
@@ -1420,12 +1405,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                   module_idP, frameP, CC_id,
                   TBS - header_len_dcch - sdu_length_total);
             sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, TBS,  //not used
-                                     (char *)
-                                     &dlsch_buffer
-                                     [sdu_length_total]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                     ,0, 0
-#endif
+                                     (char *) &dlsch_buffer[sdu_length_total],0, 0
                                                      );
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
               T_INT(CC_id), T_INT(rnti), T_INT(frameP),
@@ -1480,10 +1460,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                             ENB_FLAG_YES,
                                             MBMS_FLAG_NO,
                                             lcid,
-                                            TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                            , 0, 0
-#endif
+                                            TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch, 0, 0
                                            );
 
             if (rlc_status.bytes_in_buffer > 0) {
@@ -1501,10 +1478,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                       MBMS_FLAG_NO,
                                       lcid,
                                       TBS,  //not used
-                                      (char *)&dlsch_buffer[sdu_length_total]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                      , 0, 0
-#endif
+                                      (char *)&dlsch_buffer[sdu_length_total], 0, 0
                                                       );
               T(T_ENB_MAC_UE_DL_SDU,
                 T_INT(module_idP),
@@ -2979,7 +2953,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
                                              get_TBS_UL(UE_template->mcs_UL[harq_pid],
                                                  rb_table[rb_table_index])
                                             );
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
         if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
           fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
@@ -2988,8 +2961,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
                                                1, //repetition_number
                                                (frameP*10)+subframeP);
         }
-
-#endif
 
         if(dlsch_flag == 1) {
           if(cqi_req == 1) {
@@ -3131,7 +3102,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
                                              0, // n_srs
                                              UE_template->TBS_UL[harq_pid]
                                             );
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
         if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
           fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
@@ -3140,8 +3110,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
                                                1, //repetition_number
                                                (frameP*10)+subframeP);
         }
-
-#endif
 
         if(dlsch_flag == 1) {
           if(cqi_req == 1) {

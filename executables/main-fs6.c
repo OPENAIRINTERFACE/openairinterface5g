@@ -164,7 +164,7 @@ void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_r
     }
   }
 
-  rx_prach(eNB,
+  ocp_rx_prach(eNB,
            proc,
            eNB->RU_list[0],
            header->max_preamble,
@@ -1356,9 +1356,9 @@ void *DL_du_fs6(void *arg) {
     }
 
     pickStaticTime(begingProcessing);
-    feptx_prec(ru, &L1_proc);
-    feptx_ofdm(ru, &L1_proc);
-    tx_rf(ru, &L1_proc);
+    feptx_prec(ru, L1_proc.frame_tx,L1_proc.subframe_tx );
+    feptx_ofdm(ru, L1_proc.frame_tx,L1_proc.subframe_tx );
+    ocp_tx_rf(ru, &L1_proc);
     updateTimesReset(begingProcessing, &DuLow, 1000, false, "DU low layer1 processing for DL");
 
     if ( IS_SOFTMODEM_RFSIM )
@@ -1377,7 +1377,7 @@ void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
   setAllfromTS(proc->timestamp_rx, proc);
   // front end processing: convert from time domain to frequency domain
   // fills rxdataF buffer
-  fep_full(ru, proc);
+  fep_full(ru, proc->subframe_rx);
   // Fixme: datamodel issue
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
 
@@ -1477,7 +1477,7 @@ void *cu_fs6(void *arg) {
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
   fill_rf_config(ru,ru->rf_config_file);
-  init_frame_parms(&ru->frame_parms,1);
+  init_frame_parms(ru->frame_parms,1);
   phy_init_RU(ru);
   wait_sync("ru_thread");
   char *remoteIP;
@@ -1506,7 +1506,7 @@ void *cu_fs6(void *arg) {
   uint64_t DuClock=0, startProcessing=0;
 
   while(1) {
-    timeStamp+=ru->frame_parms.samples_per_tti;
+    timeStamp+=ru->frame_parms->samples_per_tti;
     updateTimesReset(begingWait, &fullLoop, 1000, true, "CU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_cu_fs6(ru, &L1proc, &timeStamp, &DuClock, &startProcessing);
@@ -1525,7 +1525,7 @@ void *du_fs6(void *arg) {
   RU_t               *ru      = (RU_t *)arg;
   //RU_proc_t          *proc    = &ru->proc;
   fill_rf_config(ru,ru->rf_config_file);
-  init_frame_parms(&ru->frame_parms,1);
+  init_frame_parms(ru->frame_parms,1);
   phy_init_RU(ru);
   init_rf(ru);
   wait_sync("ru_thread");
@@ -1538,13 +1538,10 @@ void *du_fs6(void *arg) {
 
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, CU_PORT, &sockFS6), "");
 
-  if (ru->start_rf) {
-    if (ru->start_rf(ru) != 0)
-      LOG_E(HW,"Could not start the RF device\n");
-    else
-      LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
-  } else
-    LOG_I(PHY,"RU %d no rf device\n",ru->idx);
+  if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)
+    LOG_E(HW,"Could not start the RF device\n");
+  else
+    LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
 
   initStaticTime(begingWait);
   initRefTimes(waitRxAndProcessingUL);
@@ -1554,7 +1551,7 @@ void *du_fs6(void *arg) {
   if ( !IS_SOFTMODEM_RFSIM )
     threadCreate(&t, DL_du_fs6, (void *)ru, "MainDuTx", -1, OAI_PRIORITY_RT_MAX);
 
-  while(1) {
+  while(oai_exit) {
     L1_rxtx_proc_t L1proc;
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
@@ -1565,6 +1562,8 @@ void *du_fs6(void *arg) {
 
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
   }
-
+  
+  ru->rfdevice.trx_end_func(&ru->rfdevice);
+  LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   return NULL;
 }

@@ -38,6 +38,11 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
+#define MAX_LDPC_ITERATIONS 5
+#define MAX_LDPC_ITERATIONS_MBSFN 4
+
+#define LTE_NULL 2
+#define NR_NULL  2
 typedef struct {
   unsigned short nb_bits;
   unsigned short f1;
@@ -337,7 +342,7 @@ void ccodedab_init_inv(void);
 
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/
-//void crcTableInit (void);
+void crcTableInit (void);
 
 
 
@@ -347,7 +352,7 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24a (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc24a (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc24b(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('b' variant for transport-block segments)
@@ -355,25 +360,35 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24b (uint8_t * inptr, uint32_t bitlen);
-    
+uint32_t crc24b (uint8_t *inPtr, int32_t bitlen);
+
+/*!\fn uint32_t crc24c(uint8_t *inPtr, int32_t bitlen)
+\brief This computes a 24-bit crc ('c' variant for transport-block segments)
+based on 3GPP Rel 15 specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits
+*/
+uint32_t crc24c (uint8_t *inPtr, int32_t bitlen);
+
 /*!\fn uint32_t crc16(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc16 (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc16 (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc12(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 12-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc12 (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc12 (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc8(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 8-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc8 (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc8 (unsigned char * inptr, int bitlen);
+
+int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type);
     
 /*!\fn void phy_viterbi_dot11_sse2(int8_t *y, uint8_t *decoded_bytes, uint16_t n,int offset,int traceback)
 \brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code. It can be
@@ -428,15 +443,57 @@ int32_t rate_matching_lte(uint32_t N_coded,
                           uint8_t *inPtr,
                           uint32_t off);
 
-
-
-
-uint32_t crcbit (uint8_t * ,
-                 int32_t,
-                 uint32_t);
+unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 
 int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
+
+int32_t nr_segmentation(unsigned char *input_buffer,
+                     unsigned char **output_buffers,
+                     unsigned int B,
+                     unsigned int *C,
+                     unsigned int *K,
+                     unsigned int *Zout,
+                     unsigned int *F,
+                     uint8_t BG);
+
+uint32_t nr_compute_tbs(uint16_t Qm,
+                        uint16_t R,
+			uint16_t nb_rb,
+			uint16_t nb_symb_sch,
+			uint16_t nb_dmrs_prb,
+                        uint16_t nb_rb_oh,
+			uint8_t Nl);
+
+uint32_t nr_compute_tbslbrm(uint16_t table,
+			    uint16_t nb_rb,
+		            uint8_t Nl,
+                            uint8_t C);
+
+void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
+
+void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f);
+
+int nr_rate_matching_ldpc(uint8_t Ilbrm,
+                          uint32_t Tbslbrm,
+                          uint8_t BG,
+                          uint16_t Z,
+                          uint8_t *w,
+                          uint8_t *e,
+                          uint8_t C,
+                          uint8_t rvidx,
+                          uint32_t E);
+
+int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
+                             uint32_t Tbslbrm,
+                             uint8_t BG,
+                             uint16_t Z,
+                             int16_t *w,
+                             int16_t *soft_input,
+                             uint8_t C,
+                             uint8_t rvidx,
+                             uint8_t clear,
+                             uint32_t E);
 
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;

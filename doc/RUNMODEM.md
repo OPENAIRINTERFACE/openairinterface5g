@@ -12,7 +12,7 @@
   </tr>
 </table>
 
-After you have [built the softmodem executables](BUILD.md) you can set your default directory  to the build directory `cmake_targets/lte_build_oai/build/` and start testing some use cases. Below, the description of the different oai functionalities should help you choose the oai configuration that suits your need. 
+After you have [built the softmodem executables](BUILD.md) you can set your default directory  to the build directory `cmake_targets/ran_build/build/` and start testing some use cases. Below, the description of the different oai functionalities should help you choose the oai configuration that suits your need. 
 
 # Basic Simulator
 
@@ -20,19 +20,18 @@ See the [dedicated page](BASIC_SIM.md).
 
 # RF Simulator
 
-The rf simulator is a oai device replacing the radio heads (for example the USRP device). It allows connecting the oai UE and the oai eNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.
+The rf simulator is a oai device replacing the radio heads (for example the USRP device). It allows connecting the oai UE (LTE or 5G) and respectively the oai eNodeB or gNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.  The rf simulator has some preliminary support for channel modeling.
 
 It is planned to enhance this simulator with the following functionalities:
 
-- Support for multiple UE connections,each UE being a `lte-uesoftmodem` instance.
-- Support for multiple eNodeB for hand-over tests
-- Support for channel modeling
+- Support for multiple UE connections,each UE being a `lte-uesoftmodem` or `nr_uesoftmodem` instance.
+- Support for multiple eNodeB's or gNodeB's for hand-over tests
 
    This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../targets/ARCH/rfsimulator/README.md ) contains the detailed documentation.
 
 # L2 nFAPI Simulator
 
-This simulator connects a eNodeB and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
+This simulator connects a eNodeB  and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
 
 As for the rf simulator, no specific hardware is required. The [L2 nfapi simlator page](L2NFAPI.md) contains the detailed documentation.
 

@@ -82,7 +82,6 @@ sin_addr:
 
   while(!connected) {
     //LOG_I(HW,"rfsimulator: trying to connect to %s:%d\n", IP, port);
-
     if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
       //LOG_I(HW,"rfsimulator: connection established\n");
       connected=true;
@@ -162,7 +161,6 @@ int main(int argc, char *argv[]) {
     // Purge incoming samples
     setblocking(serviceSock, blocking);
 
-
     while(readTS < wroteTS) {
       if ( fullread(serviceSock, &header,sizeof(header)) != sizeof(header) ||
            fullread(serviceSock, buff, sizeof(int32_t)*header.size*header.nbAnt) !=
@@ -178,4 +176,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

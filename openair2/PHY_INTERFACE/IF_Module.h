@@ -53,12 +53,12 @@
 #define MAX_NUM_RACH_IND 100
 #define MAX_NUM_SRS_IND 100
 
-typedef struct{
+typedef struct {
   /// Module ID
   module_id_t module_id;
   /// CC ID
   int CC_id;
-  /// frame 
+  /// frame
   frame_t frame;
   /// subframe
   sub_frame_t subframe;
@@ -77,12 +77,8 @@ typedef struct{
 
   /// RACH indication list
   nfapi_rach_indication_t rach_ind;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// RACH indication list for BR UEs
   nfapi_rach_indication_t rach_ind_br;
-#endif
-
   /// SRS indication list
   nfapi_srs_indication_body_t srs_ind;
 
@@ -93,7 +89,7 @@ typedef struct{
 
 // Downlink subframe P7
 #define NUM_NFPAI_SUBFRAME 5
-typedef struct{
+typedef struct {
   /// harq indication list
   nfapi_harq_indication_t harq_ind[NUM_NFPAI_SUBFRAME];
 
@@ -114,9 +110,9 @@ typedef struct{
 
 } UL_RCC_IND_t;
 
-typedef struct{
+typedef struct {
   /// Module ID
-  module_id_t module_id; 
+  module_id_t module_id;
   /// CC ID
   uint8_t CC_id;
   /// frame
@@ -133,7 +129,7 @@ typedef struct{
   nfapi_tx_request_t *TX_req;
   /// Pointers to ue_release
   nfapi_ue_release_request_t *UE_release_req;
-}Sched_Rsp_t;
+} Sched_Rsp_t;
 
 typedef struct {
     uint8_t Mod_id;
@@ -185,6 +181,12 @@ typedef struct {
   int nbDecode;
   notifiedFIFO_t respEncode;
   notifiedFIFO_t respDecode;
+    pthread_mutex_t mutex_emulateRF;
+  int instance_cnt_emulateRF;
+  pthread_t pthread_emulateRF;
+  pthread_attr_t attr_emulateRF;
+  pthread_cond_t cond_emulateRF;
+  int first_rx;
 } L1_rxtx_proc_t;
 
 typedef struct IF_Module_s{
@@ -192,13 +194,14 @@ typedef struct IF_Module_s{
   void (*UL_indication)(UL_IND_t *UL_INFO, L1_rxtx_proc_t *proc);
   void (*schedule_response)(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);
   void (*PHY_config_req)(PHY_Config_t* config_INFO);
+
   void (*PHY_config_update_sib2_req)(PHY_Config_t* config_INFO);
   void (*PHY_config_update_sib13_req)(PHY_Config_t* config_INFO);
   uint32_t CC_mask;
   uint16_t current_frame;
   uint8_t current_subframe;
   pthread_mutex_t if_mutex;
-}IF_Module_t;
+} IF_Module_t;
 
 // These mutex is used for multiple UEs L2 FAPI simulator.
 // Each UEs set these value in UL and UL_INFO is shared in all UE's thread.
@@ -209,7 +212,7 @@ typedef struct {
   pthread_mutex_t harq_mutex;
   pthread_mutex_t cqi_mutex;
   pthread_mutex_t rach_mutex;
-}FILL_UL_INFO_MUTEX_t;
+} FILL_UL_INFO_MUTEX_t;
 
 /*Initial */
 IF_Module_t *IF_Module_init(int Mod_id);

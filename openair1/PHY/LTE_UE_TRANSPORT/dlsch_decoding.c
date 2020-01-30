@@ -705,7 +705,7 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
   G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,beamforming_mode);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
-  if (dlsch->harq_processes[harq_pid]->DLround == 0) {  // this is a new packet
+  if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 #ifdef DEBUG_DLSCH_CODING
     printf("SIC encoding thinks this is a new packet \n");
 #endif

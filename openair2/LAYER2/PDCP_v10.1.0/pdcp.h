@@ -46,10 +46,9 @@
 #include "LTE_DRB-ToAddModList.h"
 #include "LTE_SRB-ToAddMod.h"
 #include "LTE_SRB-ToAddModList.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  #include "LTE_MBMS-SessionInfoList-r9.h"
-  #include "LTE_PMCH-InfoList-r9.h"
-#endif
+#include "LTE_MBMS-SessionInfoList-r9.h"
+#include "LTE_PMCH-InfoList-r9.h"
+
 
 typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
     const srb_flag_t, const MBMS_flag_t,
@@ -75,8 +74,9 @@ typedef struct {
 } pdcp_params_t;
 
 
-
-#define PDCP_USE_NETLINK            ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
+#ifndef PDCP_USE_NETLINK
+  #define PDCP_USE_NETLINK          ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
+#endif
 #define LINK_ENB_PDCP_TO_IP_DRIVER  ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_IP_DRIVER_BIT)
 #define LINK_ENB_PDCP_TO_GTPV1U     ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_GTPV1U_BIT)
 #define UE_NAS_USE_TUN              ( get_pdcp_optmask() & UE_NAS_USE_TUN_BIT)
@@ -84,16 +84,17 @@ typedef struct {
 uint64_t get_pdcp_optmask(void);
 
 extern pthread_t       pdcp_thread;
-extern pthread_attr_t  pdcp_thread_attr;
 extern pthread_mutex_t pdcp_mutex;
 extern pthread_cond_t  pdcp_cond;
 extern int             pdcp_instance_cnt;
 
-#define PROTOCOL_PDCP_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u] "
+#define PROTOCOL_PDCP_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld] "
 
 #define PROTOCOL_PDCP_CTXT_ARGS(CTXT_Pp, pDCP_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
   (pDCP_Pp->is_srb) ? "SRB" : "DRB",\
   pDCP_Pp->rb_id
+//#define ENABLE_PDCP_PAYLOAD_DEBUG 1
+
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
@@ -221,12 +222,11 @@ typedef struct pdcp_s {
 
 } pdcp_t;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 typedef struct pdcp_mbms_s {
   boolean_t instanciated_instance;
   rb_id_t   rb_id;
 } pdcp_mbms_t;
-#endif
+
 /*
  * Following symbolic constant alters the behaviour of PDCP
  * and makes it linked to PDCP test code under targets/TEST/PDCP/
@@ -257,11 +257,9 @@ boolean_t pdcp_data_req(
   const confirm_t confirmP, \
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
-  const pdcp_transmission_mode_t mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t *const sourceL2Id
-  ,const uint32_t *const destinationL2Id
-#endif
+  const pdcp_transmission_mode_t mode,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
 );
 
 /*! \fn boolean_t pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t)
@@ -324,11 +322,9 @@ boolean_t rrc_pdcp_config_asn1_req (
   const uint8_t                   security_modeP,
   uint8_t                  *const kRRCenc,
   uint8_t                  *const kRRCint,
-  uint8_t                  *const kUPenc
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-#endif
-  ,rb_id_t                 *const defaultDRB
+  uint8_t                  *const kUPenc,
+  LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9,
+  rb_id_t                 *const defaultDRB
 );
 
 /*! \fn boolean_t pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
@@ -415,6 +411,7 @@ void pdcp_run            (
   const protocol_ctxt_t *const  ctxt_pP);
 uint64_t pdcp_module_init     (uint64_t pdcp_optmask);
 void pdcp_module_cleanup (void);
+void nr_ip_over_LTE_DRB_preconfiguration (void);
 void pdcp_layer_init     (void);
 void pdcp_layer_cleanup  (void);
 #define PDCP2NW_DRIVER_FIFO 21
@@ -442,10 +439,8 @@ typedef struct pdcp_data_req_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   traffic_type;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
-#endif
 } pdcp_data_req_header_t;
 
 typedef struct pdcp_data_ind_header_s {
@@ -453,10 +448,8 @@ typedef struct pdcp_data_ind_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   dummy_traffic_type;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
-#endif
 } pdcp_data_ind_header_t;
 
 struct pdcp_netlink_element_s {
@@ -467,7 +460,6 @@ struct pdcp_netlink_element_s {
 };
 
 //TTN for D2D (PC5S)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #define PDCP_SOCKET_PORT_NO 9999 //temporary value
 #define PC5_SIGNALLING_PAYLOAD_SIZE   100  //should be updated with a correct value
 int pdcp_pc5_sockfd;
@@ -500,8 +492,6 @@ typedef struct {
 } __attribute__((__packed__)) sidelink_pc5s_element;
 
 
-#endif
-
 /*
  * PDCP limit values
  */
@@ -526,10 +516,10 @@ pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];
 rnti_t                 pdcp_UE_UE_module_id_to_rnti[MAX_MOBILES_PER_ENB];
 rnti_t                 pdcp_eNB_UE_instance_to_rnti[MAX_MOBILES_PER_ENB]; // for noS1 mode
 unsigned int           pdcp_eNB_UE_instance_to_rnti_index;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  pdcp_mbms_t               pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][LTE_maxServiceCount][LTE_maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-  pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceCount][LTE_maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-#endif
+
+pdcp_mbms_t               pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][LTE_maxServiceCount][LTE_maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceCount][LTE_maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+
 sdu_size_t             pdcp_output_sdu_bytes_to_write;
 sdu_size_t             pdcp_output_header_bytes_to_write;
 list_t                 pdcp_sdu_list;

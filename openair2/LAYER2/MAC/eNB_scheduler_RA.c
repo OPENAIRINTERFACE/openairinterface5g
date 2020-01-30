@@ -115,7 +115,6 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
   ul_req_body = &ul_req->ul_config_request_body;
   AssertFatal(ra->state != IDLE, "RA is not active for RA %X\n",
               ra->rnti);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (ra->rach_resource_type > 0) {
     LOG_D (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
@@ -155,9 +154,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel13.initial_transmission_sf_io = (ra->Msg3_frame * 10) + ra->Msg3_subframe;
     ul_req_body->number_of_pdus++;
   }                             //  if (ra->rach_resource_type>0) {
-  else
-#endif
-  {
+  else {
     LOG_D(MAC,
           "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n",
           module_idP, frameP, subframeP, CC_id, ra->Msg3_frame,
@@ -260,7 +257,6 @@ void generate_Msg2(module_id_t module_idP,
   dl_req_body = &mac->DL_req[CC_idP].dl_config_request_body;
   dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
   N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t PUSCH_Rep_Level;
   int             rmax = 0;
   int             rep = 0;
@@ -480,9 +476,7 @@ void generate_Msg2(module_id_t module_idP,
         mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
       }
     }
-  } else
-#endif
-  {
+  } else {
     if ((ra->Msg2_frame == frameP) && (ra->Msg2_subframe == subframeP)) {
       LOG_D(MAC,
             "[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, state %d\n",
@@ -612,7 +606,6 @@ generate_Msg4(module_id_t module_idP,
   nfapi_dl_config_request_t      *dl_req = NULL;
   nfapi_dl_config_request_body_t *dl_req_body = NULL;
   nfapi_ul_config_request_body_t *ul_req_body = NULL;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int             rmax = 0;
   int             rep = 0;
   int             reps = 0;
@@ -666,7 +659,6 @@ generate_Msg4(module_id_t module_idP,
     }
   }
 
-#endif
   vrb_map = cc[CC_idP].vrb_map;
   dl_req        = &mac->DL_req[CC_idP];
   dl_req_body   = &dl_req->dl_config_request_body;
@@ -697,7 +689,6 @@ generate_Msg4(module_id_t module_idP,
    LOG_D(MAC,
    "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
    module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);*/
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (ra->rach_resource_type > 0) {
     ra->harq_pid = 0;
@@ -917,9 +908,7 @@ generate_Msg4(module_id_t module_idP,
                  mac->frame, mac->subframe, 0, 0);
     }                           // Msg4 frame/subframe
   }                             // rach_resource_type > 0
-  else
-#endif
-  {
+  else {
     // This is normal LTE case
     LOG_I(MAC, "generate_Msg4 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
 
@@ -1133,39 +1122,6 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
   nfapi_dl_config_request_t *dl_req;
   nfapi_dl_config_request_body_t *dl_req_body;
   int round;
-  /*
-     #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-     COMMON_channels_t               *cc  = mac->common_channels;
-
-     int rmax            = 0;
-     int rep             = 0;
-     int reps            = 0;
-
-     first_rb        = 0;
-     struct PRACH_ConfigSIB_v1310 *ext4_prach;
-     PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
-     PRACH_ParametersCE_r13_t *p[4];
-
-     if (cc[CC_idP].radioResourceConfigCommon_BR) {
-
-     ext4_prach                 = cc[CC_idP].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
-     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
-
-     switch (prach_ParametersListCE_r13->list.count) {
-     case 4:
-     p[3]=prach_ParametersListCE_r13->list.array[3];
-     case 3:
-     p[2]=prach_ParametersListCE_r13->list.array[2];
-     case 2:
-     p[1]=prach_ParametersListCE_r13->list.array[1];
-     case 1:
-     p[0]=prach_ParametersListCE_r13->list.array[0];
-     default:
-     AssertFatal(1==0,"Illegal count for prach_ParametersListCE_r13 %d\n",prach_ParametersListCE_r13->list.count);
-     }
-     }
-     #endif
-   */
   // check HARQ status and retransmit if necessary
   UE_id = find_UE_id(module_idP, ra->rnti);
   AssertFatal(UE_id >= 0, "Can't find UE for t-crnti\n");
@@ -1180,15 +1136,11 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
         module_idP, CC_idP, frameP, subframeP, ra->harq_pid, round, UE_id);
 
   if (round != 8) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
     if (ra->rach_resource_type > 0 && round > 0) {
       AssertFatal(1 == 0,
                   "Msg4 Retransmissions not handled yet for BL/CE UEs, Frame %d, subframeP %d harq_pid %d round %d, UE_id: %d \n",
                   frameP, subframeP, ra->harq_pid, round, UE_id);
-    } else
-#endif
-    {
+    } else {
       if ((ra->Msg4_frame == frameP)
           && (ra->Msg4_subframe == subframeP)) {
         //ra->wait_ack_Msg4++;
@@ -1320,15 +1272,13 @@ initiate_ra_proc(module_id_t module_idP,
                  frame_t frameP,
                  sub_frame_t subframeP,
                  uint16_t preamble_index,
-                 int16_t timing_offset, uint16_t ra_rnti
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  , uint8_t rach_resource_type
-#endif
+                 int16_t timing_offset,
+                 uint16_t ra_rnti,
+                 uint8_t rach_resource_type
                 ) {
   uint8_t i;
   COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
   RA_t *ra = &cc->ra[0];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
   LTE_PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
 
@@ -1340,20 +1290,16 @@ initiate_ra_proc(module_id_t module_idP,
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
   }
 
-#endif /* #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
   LOG_D(MAC,
         "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
         module_idP, CC_id, frameP, subframeP, preamble_index);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LOG_D(MAC,
         "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",
         module_idP, CC_id, frameP, subframeP, rach_resource_type);
-#endif
   uint16_t msg2_frame = frameP;
   uint16_t msg2_subframe = subframeP;
   int offset;
   static uint8_t failure_cnt = 0 ;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
   if (prach_ParametersListCE_r13 &&
       prach_ParametersListCE_r13->list.count < rach_resource_type) {
@@ -1364,7 +1310,6 @@ initiate_ra_proc(module_id_t module_idP,
     return;
   }
 
-#endif /* #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 
@@ -1377,11 +1322,9 @@ initiate_ra_proc(module_id_t module_idP,
       ra[i].Msg4_delay_cnt=0;
       ra[i].timing_offset = timing_offset;
       ra[i].preamble_subframe = subframeP;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       ra[i].rach_resource_type = rach_resource_type;
       ra[i].msg2_mpdcch_repetition_cnt = 0;
       ra[i].msg4_mpdcch_repetition_cnt = 0;
-#endif
 
       //TODO Fill in other TDD config. What about nfapi_mode?
       if(cc->tdd_Config!=NULL) {

@@ -158,7 +158,7 @@ int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
         break;
 
       default:
-        fprintf(stderr,"[CONFIG] %s.%s type %i  not supported\n",prefix, cfgoptions[i].optname,cfgoptions[i].type);
+        fprintf(stderr,"[CONFIG] %s.%s type %i not supported\n",prefix, cfgoptions[i].optname,cfgoptions[i].type);
         fatalerror=1;
         break;
     } /* switch on param type */
@@ -181,7 +181,10 @@ int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
   return numdefvals;
 }
 
-configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags) {
+configmodule_interface_t *load_configmodule(int argc,
+		                                    char **argv,
+											uint32_t initflags)
+{
   char *cfgparam=NULL;
   char *modeparams=NULL;
   char *cfgmode=NULL;
@@ -193,7 +196,8 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
 
   /* first parse the command line to look for the -O option */
   for (i = 0; i<argc; i++) {
-    if (strlen(argv[i]) < 2) continue;
+    if (strlen(argv[i]) < 2)
+    	continue;
 
     if ( argv[i][1] == 'O' && i < (argc -1)) {
       cfgparam = argv[i+1];
@@ -210,7 +214,7 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
     }
   }
 
-  /* look for the OAI_CONFIGMODULE environement variable */
+  /* look for the OAI_CONFIGMODULE environment variable */
   if ( cfgparam == NULL ) {
     cfgparam = getenv("OAI_CONFIGMODULE");
   }
@@ -223,7 +227,7 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
   if (cfgparam == NULL) {
     tmpflags = tmpflags | CONFIG_NOOOPT;
 
-    if ( initflags &  CONFIG_ENABLECMDLINEONLY) {
+    if ( initflags & CONFIG_ENABLECMDLINEONLY) {
       cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;
     } else {
       cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;
@@ -261,8 +265,8 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
   atoken=strtok_r(modeparams,":",&strtokctx);
 
   while ( cfgptr->num_cfgP< CONFIG_MAX_OOPT_PARAMS && atoken != NULL) {
-    /* look for debug level in the config parameters, it is commom to all config mode
-       and will be removed frome the parameter array passed to the shared module */
+    /* look for debug level in the config parameters, it is common to all config mode
+       and will be removed from the parameter array passed to the shared module */
     char *aptr;
     aptr=strcasestr(atoken,"dbgl");
 

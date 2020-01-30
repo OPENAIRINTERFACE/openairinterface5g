@@ -53,7 +53,8 @@ fill_rar(const module_id_t module_idP,
          RA_t *ra,
          const frame_t frameP,
          uint8_t *const dlsch_buffer,
-         const uint16_t N_RB_UL, const uint8_t input_buffer_length)
+         const uint16_t N_RB_UL,
+         const uint8_t input_buffer_length)
 //------------------------------------------------------------------------------
 {
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *) dlsch_buffer;
@@ -96,10 +97,11 @@ fill_rar(const module_id_t module_idP,
   trace_pdu(DIRECTION_DOWNLINK, dlsch_buffer, input_buffer_length, module_idP,  WS_RA_RNTI, 1,
             RC.mac[module_idP]->frame, RC.mac[module_idP]->subframe,
             0, 0);
+
   return (ra->rnti);
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 //------------------------------------------------------------------------------
 /*
  * Fill the RAR buffer (header + PDU) for LTE-M devices
@@ -185,6 +187,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
         rarh->RAPID,
         ra->preamble_index,
         ra->timing_offset);
+
   trace_pdu(DIRECTION_DOWNLINK,
             dlsch_buffer,
             input_buffer_length,
@@ -195,7 +198,6 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
             eNB->subframe,
             0,
             0);
+
   return (ra->rnti);
 }
-#endif
-

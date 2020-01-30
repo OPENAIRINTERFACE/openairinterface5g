@@ -30,6 +30,7 @@
 * \warning
 */
 
+//#define DEBUG_ULSCH_DECODING
 
 #include <syscall.h>
 #include "PHY/defs_eNB.h"
@@ -39,14 +40,12 @@
 #include "LAYER2/MAC/mac.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
-
-#include "common/utils/LOG/vcd_signal_dumper.h"
-//#define DEBUG_ULSCH_DECODING
-#include "targets/RT/USER/rt_wrapper.h"
 #include "transport_proto.h"
 #include <executables/split_headers.h>
 
 extern WORKER_CONF_t get_thread_worker_conf(void);
+extern volatile int oai_exit;
+
 
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
@@ -211,8 +210,6 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH) {
   return(crc);
 }
 
-extern int oai_exit;
-
 void processULSegment(void * arg) {
   turboDecode_t* rdata=(turboDecode_t*) arg;
   PHY_VARS_eNB *eNB=rdata->eNB;
@@ -288,6 +285,11 @@ void processULSegment(void * arg) {
 					     &eNB->ulsch_tc_intl2_stats);
   stop_meas(&eNB->ulsch_turbo_decoding_stats);
   
+}
+
+void *td_thread(void *param) {
+
+  return(NULL);
 }
 
 int ulsch_decoding_data(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
@@ -397,11 +399,13 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
   //  printf("n=%d : c %x\n",n,x1^x2);
 }
 
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
+                             L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
-                             uint8_t llr8_flag) {
+                             uint8_t llr8_flag)
+{
   int16_t *ulsch_llr = eNB->pusch_vars[UE_id]->llr;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
@@ -432,17 +436,14 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   int frame = proc->frame_rx;
   int subframe = proc->subframe_rx;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
   LOG_D(PHY,"ue_type %d\n",ulsch->ue_type);
 
-  if (ulsch->ue_type>0)     harq_pid = 0;
+  if (ulsch->ue_type>0)
+    harq_pid = 0;
   else
-#endif
-  {
     harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
-  }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,1);
   // x1 is set in lte_gold_generic
   x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   ulsch_harq = ulsch->harq_processes[harq_pid];
@@ -1087,6 +1088,5 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   LOG_D(PHY,"frame %d subframe %d O_ACK:%d o_ACK[]=%d:%d:%d:%d\n",frame,subframe,ulsch_harq->O_ACK,ulsch_harq->o_ACK[0],ulsch_harq->o_ACK[1],ulsch_harq->o_ACK[2],ulsch_harq->o_ACK[3]);
   // Do ULSCH Decoding for data portion
   ret = ulsch_decoding_data_all(eNB,proc, UE_id,harq_pid,llr8_flag);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
   return(ret);
 }

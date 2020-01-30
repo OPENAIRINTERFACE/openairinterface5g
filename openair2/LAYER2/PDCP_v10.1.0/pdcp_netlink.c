@@ -53,6 +53,7 @@
 #include "liblfds611.h"
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/system.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -96,8 +97,7 @@ pdcp_netlink_init(
   int                i;
   int                nb_inst_enb;
   int                nb_inst_ue;
-  pthread_attr_t     attr;
-  struct sched_param sched_param;
+
   reset_meas(&ip_pdcp_stats_tmp);
   nb_inst_enb = 1;
   nb_inst_ue  = 1;
@@ -137,27 +137,11 @@ pdcp_netlink_init(
   }
 
   if ((nb_inst_ue + nb_inst_enb) > 0) {
-    if (pthread_attr_init(&attr) != 0) {
-      LOG_E(PDCP, "[NETLINK]Failed to initialize pthread attribute for Netlink -> PDCP communication (%d:%s)\n",
-            errno, strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-
-    sched_param.sched_priority = 10;
-    pthread_attr_setschedpolicy(&attr, SCHED_RR);
-    pthread_attr_setschedparam(&attr, &sched_param);
-
     /* Create one thread that fetchs packets from the netlink.
      * When the netlink fifo is full, packets are silently dropped, this behaviour
      * should be avoided if we want a reliable link.
      */
-    if (pthread_create(&pdcp_netlink_thread, &attr, pdcp_netlink_thread_fct, NULL) != 0) {
-      LOG_E(PDCP, "[NETLINK]Failed to create new thread for Netlink/PDCP communication (%d:%s)\n",
-            errno, strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-
-    pthread_setname_np( pdcp_netlink_thread, "PDCP netlink" );
+    threadCreate(&pdcp_netlink_thread, pdcp_netlink_thread_fct, (void*)NULL, "PDCP netlink", -1, OAI_PRIORITY_RT_LOW );
   }
 
   return 0;
@@ -237,7 +221,7 @@ void *pdcp_netlink_thread_fct(void *arg)
             pdcp_thread_read_state = 1;
             memcpy((void *)&new_data_p->pdcp_read_header, (void *)NLMSG_DATA(nas_nlh_rx), sizeof(pdcp_data_req_header_t));
             LOG_I(PDCP, "[NETLINK_THREAD] RX pdcp_data_req_header_t inst %u, "
-                  "rb_id %u data_size %d\n",
+                  "rb_id %ld data_size %d\n",
                   new_data_p->pdcp_read_header.inst,
                   new_data_p->pdcp_read_header.rb_id,
                   new_data_p->pdcp_read_header.data_size);

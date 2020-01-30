@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,7 +26,6 @@
  * \version 0.1
  * \email: navid.nikaein@eurecom.fr
  * @ingroup _mac
-
  */
 
 #include "COMMON/platform_types.h"
@@ -35,9 +33,7 @@
 #include "LTE_SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "LTE_RadioResourceConfigDedicated.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-  #include "LTE_PRACH-ConfigSIB-v1310.h"
-#endif
+#include "LTE_PRACH-ConfigSIB-v1310.h"
 #include "LTE_MeasGapConfig.h"
 #include "LTE_MeasObjectToAddModList.h"
 #include "LTE_TDD-Config.h"
@@ -82,38 +78,37 @@ typedef struct band_info_s {
 } band_info_t;
 
 
-
 static const eutra_bandentry_t eutra_bandtable[] = {
-  {1, 19200, 19800, 21100, 21700, 0},
-  {2, 18500, 19100, 19300, 19900, 6000},
-  {3, 17100, 17850, 18050, 18800, 12000},
-  {4, 17100, 17550, 21100, 21550, 19500},
-  {5, 8240, 8490, 8690, 8940, 24000},
-  {6, 8300, 8400, 8750, 8850, 26500},
-  {7, 25000, 25700, 26200, 26900, 27500},
-  {8, 8800, 9150, 9250, 9600, 34500},
-  {9, 17499, 17849, 18449, 18799, 38000},
-  {10, 17100, 17700, 21100, 21700, 41500},
-  {11, 14279, 14529, 14759, 15009, 47500},
-  {12, 6980, 7160, 7280, 7460, 50100},
-  {13, 7770, 7870, 7460, 7560, 51800},
-  {14, 7880, 7980, 7580, 7680, 52800},
-  {17, 7040, 7160, 7340, 7460, 57300},
-  {18, 8150, 9650, 8600, 10100, 58500},
-  {19, 8300, 8450, 8750, 8900, 60000},
-  {20, 8320, 8620, 7910, 8210, 61500},
-  {21, 14479, 14629, 14959, 15109, 64500},
-  {22, 34100, 34900, 35100, 35900, 66000},
-  {23, 20000, 20200, 21800, 22000, 75000},
-  {24, 16126, 16605, 15250, 15590, 77000},
-  {25, 18500, 19150, 19300, 19950, 80400},
-  {26, 8140, 8490, 8590, 8940, 86900},
-  {27, 8070, 8240, 8520, 8690, 90400},
-  {28, 7030, 7580, 7580, 8130, 92100},
-  {29, 0, 0, 7170, 7280, 96600},
-  {30, 23050, 23250, 23500, 23600, 97700},
-  {31, 45250, 34900, 46250, 35900, 98700},
-  {32, 0, 0, 14520, 14960, 99200},
+  {1,  19200, 19800, 21100, 21700, 0     },
+  {2,  18500, 19100, 19300, 19900, 6000  },
+  {3,  17100, 17850, 18050, 18800, 12000 },
+  {4,  17100, 17550, 21100, 21550, 19500 },
+  {5,  8240,  8490,  8690,  8940,  24000 },
+  {6,  8300,  8400,  8750,  8850,  26500 },
+  {7,  25000, 25700, 26200, 26900, 27500 },
+  {8,  8800,  9150,  9250,  9600,  34500 },
+  {9,  17499, 17849, 18449, 18799, 38000 },
+  {10, 17100, 17700, 21100, 21700, 41500 },
+  {11, 14279, 14529, 14759, 15009, 47500 },
+  {12, 6980,  7160,  7280,  7460,  50100 },
+  {13, 7770,  7870,  7460,  7560,  51800 },
+  {14, 7880,  7980,  7580,  7680,  52800 },
+  {17, 7040,  7160,  7340,  7460,  57300 },
+  {18, 8150,  9650,  8600,  10100, 58500 },
+  {19, 8300,  8450,  8750,  8900,  60000 },
+  {20, 8320,  8620,  7910,  8210,  61500 },
+  {21, 14479, 14629, 14959, 15109, 64500 },
+  {22, 34100, 34900, 35100, 35900, 66000 },
+  {23, 20000, 20200, 21800, 22000, 75000 },
+  {24, 16126, 16605, 15250, 15590, 77000 },
+  {25, 18500, 19150, 19300, 19950, 80400 },
+  {26, 8140,  8490,  8590,  8940,  86900 },
+  {27, 8070,  8240,  8520,  8690,  90400 },
+  {28, 7030,  7580,  7580,  8130,  92100 },
+  {29, 0,     0,     7170,  7280,  96600 },
+  {30, 23050, 23250, 23500, 23600, 97700 },
+  {31, 45250, 34900, 46250, 35900, 98700 },
+  {32, 0,     0,     14520, 14960, 99200 },
   {33, 19000, 19200, 19000, 19200, 360000},
   {34, 20100, 20250, 20100, 20250, 362000},
   {35, 18500, 19100, 18500, 19100, 363500},
@@ -125,13 +120,13 @@ static const eutra_bandentry_t eutra_bandtable[] = {
   {41, 24960, 26900, 24960, 26900, 396500},
   {42, 34000, 36000, 34000, 36000, 415900},
   {43, 36000, 38000, 36000, 38000, 435900},
-  {44, 7030, 8030, 7030, 8030, 455900},
+  {44, 7030,  8030,  7030,  8030,  455900},
   {45, 14470, 14670, 14470, 14670, 465900},
   {46, 51500, 59250, 51500, 59250, 467900},
   {65, 19200, 20100, 21100, 22000, 655360},
   {66, 17100, 18000, 21100, 22000, 664360},
-  {67, 0, 0, 7380, 7580, 67336},
-  {68, 6980, 7280, 7530, 7830, 67536}
+  {67, 0,     0,     7380,  7580,  67336 },
+  {68, 6980,  7280,  7530,  7830,  67536 }
 };
 
 
@@ -146,7 +141,6 @@ uint32_t to_earfcn(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw) {
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
-
   AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
               "Band %d, bw %u : DL carrier frequency %u Hz < %u\n",
               eutra_bandP, bw, dl_CarrierFreq,
@@ -211,7 +205,6 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) {
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
-
   return (eutra_bandtable[i].dl_min +
           (dl_earfcn - (eutra_bandtable[i].N_OFFs_DL / 10))) * 100000;
 }
@@ -223,7 +216,6 @@ int32_t get_uldl_offset(int eutra_bandP) {
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   AssertFatal(i < BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, BANDTABLE_SIZE);
-
   return (eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
 
@@ -238,11 +230,8 @@ void config_mib(int                 Mod_idP,
                 int                 NcpP,
                 int                 p_eNBP,
                 uint32_t            dl_CarrierFreqP,
-                uint32_t            ul_CarrierFreqP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,
-  uint32_t            pbch_repetitionP
-#endif
+                uint32_t            ul_CarrierFreqP,
+                uint32_t            pbch_repetitionP
                ) {
   nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
   cfg->num_tlv=0;
@@ -293,16 +282,12 @@ void config_mib(int                 Mod_idP,
   cfg->sch_config.physical_cell_id.value                             = Nid_cellP;
   cfg->sch_config.physical_cell_id.tl.tag = NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG;
   cfg->num_tlv++;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   cfg->emtc_config.pbch_repetitions_enable_r13.value                 = pbch_repetitionP;
   cfg->emtc_config.pbch_repetitions_enable_r13.tl.tag = NFAPI_EMTC_CONFIG_PBCH_REPETITIONS_ENABLE_R13_TAG;
   cfg->num_tlv++;
-#endif
   LOG_I(MAC,
         "%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         " PBCH repetition %d"
-#endif
         "\n"
         ,__FUNCTION__
         ,cfg->num_tlv
@@ -317,9 +302,7 @@ void config_mib(int                 Mod_idP,
         ,cfg->sch_config.primary_synchronization_signal_epre_eprers.value
         ,cfg->sch_config.secondary_synchronization_signal_epre_eprers.value
         ,cfg->sch_config.physical_cell_id.value
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         ,cfg->emtc_config.pbch_repetitions_enable_r13.value
-#endif
        );
 }
 
@@ -350,9 +333,7 @@ void
 config_sib2(int Mod_idP,
             int CC_idP,
             LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommonP,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BRP,
-#endif
+            LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BRP,
             LTE_ARFCN_ValueEUTRA_t *ul_CArrierFreqP,
             long *ul_BandwidthP,
             LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmissionP,
@@ -442,8 +423,6 @@ config_sib2(int Mod_idP,
     cfg->srs_config.max_up_pts.tl.tag = NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG;
     cfg->num_tlv++;
   }
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0) {
     AssertFatal(radioResourceConfigCommon_BRP != NULL, "radioResource rou is missing\n");
@@ -630,8 +609,6 @@ config_sib2(int Mod_idP,
       }
     }
   }
-
-#endif
 }
 
 void
@@ -726,9 +703,7 @@ config_sib13( int Mod_id,
 //  }
 //  lte_gold_mbsfn (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table, fp->Nid_cell_mbsfn);
 //
-//#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //  lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
-//#endif
 //
    PHY_Config_t phycfg;
    phycfg.Mod_id = Mod_id;
@@ -770,23 +745,15 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                            int physCellId,
                            int p_eNB,
                            int Ncp, int eutra_band, uint32_t dl_CarrierFreq,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  int pbch_repetition,
-#endif
+                           int pbch_repetition,
                            rnti_t rntiP,
                            LTE_BCCH_BCH_Message_t *mib,
                            LTE_RadioResourceConfigCommonSIB_t *
                            radioResourceConfigCommon,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  LTE_RadioResourceConfigCommonSIB_t *
-  radioResourceConfigCommon_BR,
-#endif
+                           LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR,
                            struct LTE_PhysicalConfigDedicated
                            *physicalConfigDedicated,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
-  //struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
-#endif
+                           LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                            LTE_MeasObjectToAddMod_t **measObj,
                            LTE_MAC_MainConfig_t *mac_MainConfig,
                            long logicalChannelIdentity,
@@ -800,28 +767,18 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                            LTE_AdditionalSpectrumEmission_t *
                            additionalSpectrumEmission,
                            struct LTE_MBSFN_SubframeConfigList
-                           *mbsfn_SubframeConfigList
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  , uint8_t MBMS_Flag,
-  LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-  LTE_PMCH_InfoList_r9_t *pmch_InfoList
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-  ,
-  LTE_SystemInformationBlockType1_v1310_IEs_t *
-  sib1_v13ext
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                       ,
-                       uint8_t FeMBMS_Flag,
-                       LTE_BCCH_DL_SCH_Message_MBMS_t * mib_fembms,
-                       LTE_SchedulingInfo_MBMS_r14_t * schedulingInfo_fembms,
-                       struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
-                       LTE_SystemInformationBlockType1_MBMS_r14_t *  sib1_mbms_r14_fembms,
-                       LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
-#endif
-			   ) {
-  
+                           *mbsfn_SubframeConfigList,
+                           uint8_t MBMS_Flag,
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+                           LTE_PMCH_InfoList_r9_t *pmch_InfoList,
+                           LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext,
+                           uint8_t FeMBMS_Flag,
+                           LTE_BCCH_DL_SCH_Message_MBMS_t *mib_fembms,
+                           LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
+                           LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                          ) {
   int i;
   int UE_id = -1;
   eNB_MAC_INST *eNB = RC.mac[Mod_idP];
@@ -859,10 +816,8 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                Ncp,
                p_eNB,
                dl_CarrierFreq,
-               ul_CarrierFreq
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-               , pbch_repetition
-#endif
+               ul_CarrierFreq,
+               pbch_repetition
               );
     mac_init_cell_params(Mod_idP,CC_idP);
 
@@ -872,20 +827,16 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       config_sib1(Mod_idP,CC_idP,tdd_Config);
     }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) //TODO MBMS this must be passed through function
+    //TODO MBMS this must be passed through function
     /*if (schedulingInfoList_MBMS!=NULL)  {
-      RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList_MBMS = schedulingInfoList_MBMS;    
+      RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList_MBMS = schedulingInfoList_MBMS;
       config_sib1_mbms(Mod_idP,CC_idP,tdd_Config);
     }*/
-#endif
-    
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
     if (sib1_v13ext != NULL) {
       RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;
     }
 
-#endif
     AssertFatal(radioResourceConfigCommon != NULL, "radioResourceConfigCommon is null\n");
     LOG_I(MAC, "[CONFIG]SIB2/3 Contents (partial)\n");
     LOG_I(MAC, "[CONFIG]pusch_config_common.n_SB = %ld\n",
@@ -916,20 +867,15 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
 
     config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                 radioResourceConfigCommon_BR,
-#endif
                 NULL, ul_Bandwidth, additionalSpectrumEmission,
                 mbsfn_SubframeConfigList);
   } // mib != NULL
 
   if (mobilityControlInfo !=NULL) {
     if ((UE_id = add_new_ue(Mod_idP, CC_idP,
-                            rntiP, -1
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                            ,
+                            rntiP, -1,
                             0
-#endif
                            )) == -1) {
       LOG_E(MAC, "%s:%d: fatal\n", __FILE__, __LINE__);
       abort();
@@ -963,8 +909,6 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     LOG_I(MAC,"Added physicalConfigDedicated %p for %d.%d\n",physicalConfigDedicated,CC_idP,UE_id);
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
   if (sCellToAddMod_r10 != NULL) {
     if (UE_id<0) {
       LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
@@ -974,8 +918,6 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
     config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
   }
-
-#endif
 
   if (mbsfn_SubframeConfigList != NULL) {
     LOG_I(MAC,
@@ -993,47 +935,33 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
             subframeAllocation.choice.oneFrame.buf[0]);
     }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     RC.mac[Mod_idP]->common_channels[0].MBMS_flag = MBMS_Flag;
-#endif
     config_sib2_mbsfn_part(Mod_idP,0,mbsfn_SubframeConfigList);
-
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
- if (nonMBSFN_SubframeConfig != NULL){
-         LOG_D(MAC,
+  if (nonMBSFN_SubframeConfig != NULL) {
+    LOG_D(MAC,
           "[eNB %d][CONFIG] Received a non MBSFN subframe allocation pattern (%x,%x):%x for FeMBMS-CAS\n",
-          Mod_idP, nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7 );
-         //RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1) | (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
-         RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = nonMBSFN_SubframeConfig;
-
-        nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
-        cfg->fembms_config.non_mbsfn_config_flag.value   = 1;
-        cfg->fembms_config.non_mbsfn_config_flag.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG;
-        cfg->num_tlv++;
-
-        cfg->fembms_config.non_mbsfn_subframeconfig.value = (nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
-        cfg->fembms_config.non_mbsfn_subframeconfig.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG;
-        cfg->num_tlv++;
-
-        cfg->fembms_config.radioframe_allocation_period.value   = nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
-        cfg->fembms_config.radioframe_allocation_period.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG;
-        cfg->num_tlv++;
-
-        cfg->fembms_config.radioframe_allocation_offset.value   = nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
-        cfg->fembms_config.radioframe_allocation_offset.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG;
-        cfg->num_tlv++;
-
-
-
-        //We need to reuse current MCH scheduler 
-        //TOCHECK whether we can simply reuse current mbsfn_SubframeConfig stuff
+          Mod_idP, nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1],
+          nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7 );
+    //RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1) | (int)(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+    RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = nonMBSFN_SubframeConfig;
+    nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+    cfg->fembms_config.non_mbsfn_config_flag.value   = 1;
+    cfg->fembms_config.non_mbsfn_config_flag.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG;
+    cfg->num_tlv++;
+    cfg->fembms_config.non_mbsfn_subframeconfig.value = (nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+    cfg->fembms_config.non_mbsfn_subframeconfig.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG;
+    cfg->num_tlv++;
+    cfg->fembms_config.radioframe_allocation_period.value   = nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
+    cfg->fembms_config.radioframe_allocation_period.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG;
+    cfg->num_tlv++;
+    cfg->fembms_config.radioframe_allocation_offset.value   = nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
+    cfg->fembms_config.radioframe_allocation_offset.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG;
+    cfg->num_tlv++;
+    //We need to reuse current MCH scheduler
+    //TOCHECK whether we can simply reuse current mbsfn_SubframeConfig stuff
   }
-#endif
-
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbsfn_AreaInfoList != NULL) {
     // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
@@ -1082,7 +1010,6 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   }
 
-#endif
   LOG_D(MAC, "%s() %s:%d RC.mac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
 
   // if in nFAPI mode
@@ -1129,7 +1056,6 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   LTE_DRX_Config_t *const drx_Configuration = rrc_mac_drx_config_req->drx_Configuration;
 
   UE_list_mac = &(RC.mac[Mod_id]->UE_list);
-
   UE_id = find_UE_id(Mod_id, rnti);
 
   /* Check UE_id */
@@ -1159,134 +1085,174 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   UE_scheduling_control->cdrx_waiting_ack = TRUE; // waiting for RRC Reconfiguration Complete message
   UE_scheduling_control->in_active_time = FALSE;
   UE_scheduling_control->dci0_ongoing_timer = 0;
-
   UE_scheduling_control->on_duration_timer = 0;
   struct LTE_DRX_Config__setup *choiceSetup = &drx_Configuration->choice.setup;
+
   switch (choiceSetup->onDurationTimer) {
     case 0:
       UE_scheduling_control->on_duration_timer_thres = 1;
       break;
+
     case 1:
       UE_scheduling_control->on_duration_timer_thres = 2;
       break;
+
     case 2:
       UE_scheduling_control->on_duration_timer_thres = 3;
       break;
+
     case 3:
       UE_scheduling_control->on_duration_timer_thres = 4;
       break;
+
     case 4:
       UE_scheduling_control->on_duration_timer_thres = 5;
       break;
+
     case 5:
       UE_scheduling_control->on_duration_timer_thres = 6;
       break;
+
     case 6:
       UE_scheduling_control->on_duration_timer_thres = 8;
       break;
+
     case 7:
       UE_scheduling_control->on_duration_timer_thres = 10;
       break;
+
     case 8:
       UE_scheduling_control->on_duration_timer_thres = 20;
       break;
+
     case 9:
       UE_scheduling_control->on_duration_timer_thres = 30;
       break;
+
     case 10:
       UE_scheduling_control->on_duration_timer_thres = 40;
       break;
+
     case 11:
       UE_scheduling_control->on_duration_timer_thres = 50;
       break;
+
     case 12:
       UE_scheduling_control->on_duration_timer_thres = 60;
       break;
+
     case 13:
       UE_scheduling_control->on_duration_timer_thres = 80;
       break;
+
     case 14:
       UE_scheduling_control->on_duration_timer_thres = 100;
       break;
+
     case 15:
       UE_scheduling_control->on_duration_timer_thres = 200;
       break;
+
     default:
       LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the on duration timer value specified is unknown\n");
       break;
   }
 
   UE_scheduling_control->drx_inactivity_timer = 0;
+
   switch (choiceSetup->drx_InactivityTimer) {
     case 0:
       UE_scheduling_control->drx_inactivity_timer_thres = 1;
       break;
+
     case 1:
       UE_scheduling_control->drx_inactivity_timer_thres = 2;
       break;
+
     case 2:
       UE_scheduling_control->drx_inactivity_timer_thres = 3;
       break;
+
     case 3:
       UE_scheduling_control->drx_inactivity_timer_thres = 4;
       break;
+
     case 4:
       UE_scheduling_control->drx_inactivity_timer_thres = 5;
       break;
+
     case 5:
       UE_scheduling_control->drx_inactivity_timer_thres = 6;
       break;
+
     case 6:
       UE_scheduling_control->drx_inactivity_timer_thres = 8;
       break;
+
     case 7:
       UE_scheduling_control->drx_inactivity_timer_thres = 10;
       break;
+
     case 8:
       UE_scheduling_control->drx_inactivity_timer_thres = 20;
       break;
+
     case 9:
       UE_scheduling_control->drx_inactivity_timer_thres = 30;
       break;
+
     case 10:
       UE_scheduling_control->drx_inactivity_timer_thres = 40;
       break;
+
     case 11:
       UE_scheduling_control->drx_inactivity_timer_thres = 50;
       break;
+
     case 12:
       UE_scheduling_control->drx_inactivity_timer_thres = 60;
       break;
+
     case 13:
       UE_scheduling_control->drx_inactivity_timer_thres = 80;
       break;
+
     case 14:
       UE_scheduling_control->drx_inactivity_timer_thres = 100;
       break;
+
     case 15:
       UE_scheduling_control->drx_inactivity_timer_thres = 200;
       break;
+
     case 16:
       UE_scheduling_control->drx_inactivity_timer_thres = 300;
       break;
+
     case 17:
       UE_scheduling_control->drx_inactivity_timer_thres = 500;
       break;
+
     case 18:
       UE_scheduling_control->drx_inactivity_timer_thres = 750;
       break;
+
     case 19:
       UE_scheduling_control->drx_inactivity_timer_thres = 1280;
       break;
+
     case 20:
       UE_scheduling_control->drx_inactivity_timer_thres = 1920;
       break;
+
     case 21:
       UE_scheduling_control->drx_inactivity_timer_thres = 2560;
       break;
+
     case 22:
       UE_scheduling_control->drx_inactivity_timer_thres = 0;
       break;
+
     default:
       LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the drx inactivity timer value specified is unknown\n");
       break;
@@ -1301,55 +1267,72 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   } else {
     UE_scheduling_control->in_short_drx_cycle = FALSE;
     UE_scheduling_control->drx_shortCycle_timer_value = (uint8_t) choiceSetup->shortDRX->drxShortCycleTimer;
+
     switch (choiceSetup->shortDRX->shortDRX_Cycle) {
       case 0:
         UE_scheduling_control->short_drx_cycle_duration = 2;
         break;
+
       case 1:
         UE_scheduling_control->short_drx_cycle_duration = 5;
         break;
+
       case 2:
         UE_scheduling_control->short_drx_cycle_duration = 8;
         break;
+
       case 3:
         UE_scheduling_control->short_drx_cycle_duration = 10;
         break;
+
       case 4:
         UE_scheduling_control->short_drx_cycle_duration = 16;
         break;
+
       case 5:
         UE_scheduling_control->short_drx_cycle_duration = 20;
         break;
+
       case 6:
         UE_scheduling_control->short_drx_cycle_duration = 32;
         break;
+
       case 7:
         UE_scheduling_control->short_drx_cycle_duration = 40;
         break;
+
       case 8:
         UE_scheduling_control->short_drx_cycle_duration = 64;
         break;
+
       case 9:
         UE_scheduling_control->short_drx_cycle_duration = 80;
         break;
+
       case 10:
         UE_scheduling_control->short_drx_cycle_duration = 128;
         break;
+
       case 11:
         UE_scheduling_control->short_drx_cycle_duration = 160;
         break;
+
       case 12:
         UE_scheduling_control->short_drx_cycle_duration = 256;
         break;
+
       case 13:
         UE_scheduling_control->short_drx_cycle_duration = 320;
         break;
+
       case 14:
         UE_scheduling_control->short_drx_cycle_duration = 512;
         break;
+
       case 15:
         UE_scheduling_control->short_drx_cycle_duration = 640;
         break;
+
       default:
         LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the short drx timer value specified is unknown\n");
         break;
@@ -1361,102 +1344,128 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
 
   UE_scheduling_control->in_long_drx_cycle = FALSE;
   UE_scheduling_control->drx_longCycle_timer = 0;
+
   switch (choiceSetup->longDRX_CycleStartOffset.present) {
     case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf10:
       UE_scheduling_control->drx_longCycle_timer_thres = 10;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf10;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20:
       UE_scheduling_control->drx_longCycle_timer_thres = 20;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf20;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32:
       UE_scheduling_control->drx_longCycle_timer_thres = 32;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf32;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40:
       UE_scheduling_control->drx_longCycle_timer_thres = 40;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf40;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64:
       UE_scheduling_control->drx_longCycle_timer_thres = 64;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf64;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80:
       UE_scheduling_control->drx_longCycle_timer_thres = 80;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf80;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128:
       UE_scheduling_control->drx_longCycle_timer_thres = 128;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf128;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160:
       UE_scheduling_control->drx_longCycle_timer_thres = 160;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf160;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256:
       UE_scheduling_control->drx_longCycle_timer_thres = 256;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf256;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320:
       UE_scheduling_control->drx_longCycle_timer_thres = 320;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf320;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512:
       UE_scheduling_control->drx_longCycle_timer_thres = 512;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf512;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640:
       UE_scheduling_control->drx_longCycle_timer_thres = 640;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf640;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024:
       UE_scheduling_control->drx_longCycle_timer_thres = 1024;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf1024;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280:
       UE_scheduling_control->drx_longCycle_timer_thres = 1280;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf1280;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048:
       UE_scheduling_control->drx_longCycle_timer_thres = 2048;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf2048;
       break;
-    case 	LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560:
+
+    case  LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560:
       UE_scheduling_control->drx_longCycle_timer_thres = 2560;
       UE_scheduling_control->drx_start_offset = (uint16_t) choiceSetup->longDRX_CycleStartOffset.choice.sf2560;
       break;
+
     default:
       LOG_E(MAC, "[eNB_Config_Local_DRX] Invalid long_DRX value in DRX local configuration\n");
       break;
   }
 
   memset(UE_scheduling_control->drx_retransmission_timer, 0, sizeof(UE_scheduling_control->drx_retransmission_timer));
+
   switch (choiceSetup->drx_RetransmissionTimer) {
     case 0:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 1, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 1:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 2, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 2:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 4, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 3:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 6, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 4:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 8, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 5:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 16, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 6:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 24, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     case 7:
       memset(UE_scheduling_control->drx_retransmission_timer_thres, 33, sizeof(UE_scheduling_control->drx_retransmission_timer_thres));
       break;
+
     default:
       LOG_E(MAC, "[eNB_Config_Local_DRX] Error in local DRX configuration, the drx retransmission timer value specified is unknown\n");
       break;

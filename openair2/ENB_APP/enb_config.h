@@ -37,7 +37,6 @@
 #include "commonDef.h"
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "PHY/impl_defs_lte.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
 #include "f1ap_messages_types.h"

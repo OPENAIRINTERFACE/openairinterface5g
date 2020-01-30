@@ -90,10 +90,7 @@ int cli_server_init(cli_handler_t handler)
   }
 
   /* create telnet listener thread */
-  if (pthread_create(&cli_server_listener, NULL, cli_server_listen, NULL)) {
-    perror("thread");
-    return -1;
-  }
+  threadCreate(&cli_server_listener, cli_server_listen, NULL, "telnet", -1, OAI_PRIORITY_RT_LOW);
 
   return 0;
 }

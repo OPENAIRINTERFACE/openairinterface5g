@@ -83,43 +83,43 @@ You can get the list of variant specific variables specifying the variant argume
                VM_NAME=ci-flexran-rtc           ARCHIVES_LOC=flexran        
                VM_MEMORY=2048                   VM_CPU=4              
                NB_PATTERN_FILES=1               BUILD_OPTIONS="cmake . && make -j2"
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant enb-usrp        OR -v1     ( build and test  )
                VM_NAME=ci-enb-usrp              ARCHIVES_LOC=enb_usrp       
                VM_MEMORY=2048                   VM_CPU=4              
                NB_PATTERN_FILES=9               BUILD_OPTIONS="--eNB -w USRP --mu"
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant l1-sim          OR -v20    ( test  )
                VM_NAME=ci-l1-sim                ARCHIVES_LOC=l1_sim         
                VM_MEMORY=2048                   VM_CPU=4              
                NB_PATTERN_FILES=9               BUILD_OPTIONS=""             
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant rf-sim          OR -v21    ( test  )
                VM_NAME=ci-rf-sim                ARCHIVES_LOC=rf_sim         
                VM_MEMORY=2048                   VM_CPU=4              
                NB_PATTERN_FILES=9               BUILD_OPTIONS=""             
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant l2-sim          OR -v22    ( test  )
                VM_NAME=ci-l2-sim                ARCHIVES_LOC=l2_sim         
                VM_MEMORY=2048                   VM_CPU=4              
                NB_PATTERN_FILES=9               BUILD_OPTIONS=""             
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant basic-sim       OR -v2     ( build and test  )
                VM_NAME=ci-basic-sim             ARCHIVES_LOC=basic_sim      
                VM_MEMORY=8192                   VM_CPU=4              
                NB_PATTERN_FILES=13              BUILD_OPTIONS="--eNB --UE"   
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant phy-sim         OR -v3     ( build and test  )
                VM_NAME=ci-phy-sim               ARCHIVES_LOC=phy_sim        
                VM_MEMORY=2048                   VM_CPU=4              
                NB_PATTERN_FILES=3               BUILD_OPTIONS="--phy_simulators"
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant cppcheck        OR -v4     ( build and test  )
                VM_NAME=ci-cppcheck              ARCHIVES_LOC=cppcheck       
@@ -131,13 +131,13 @@ You can get the list of variant specific variables specifying the variant argume
                VM_NAME=ci-enb-ethernet          ARCHIVES_LOC=enb_eth        
                VM_MEMORY=4096                   VM_CPU=4              
                NB_PATTERN_FILES=8               BUILD_OPTIONS="--eNB"        
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
     --variant ue-ethernet     OR -v8     ( build and test  )
                VM_NAME=ci-ue-ethernet           ARCHIVES_LOC=ue_eth         
                VM_MEMORY=4096                   VM_CPU=4              
                NB_PATTERN_FILES=12              BUILD_OPTIONS="--UE"         
-               LOG_PATTERN=.Rel14.txt     
+               LOG_PATTERN=.Rel15.txt     
 
 ```
 

@@ -33,30 +33,28 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include "SIMULATION/TOOLS/sim.h"
+#include "LAYER2/MAC/mac_vars.h"
 #include "PHY/types.h"
 #include "PHY/defs_common.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_vars.h"
-
-
+#include "PHY/INIT/phy_init.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/TOOLS/lte_phy_scope.h"
 #include "SCHED/sched_common_vars.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_UE/sched_UE.h"
-#include "LAYER2/MAC/mac_vars.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "OCG_vars.h"
-
-#include "PHY/LTE_TRANSPORT/transport_proto.h"
-#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
-#include "PHY/INIT/phy_init.h"
-
 #include "unitary_defs.h"
-
-#include "PHY/TOOLS/lte_phy_scope.h"
 #include "dummy_functions.c"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/config/config_load_configmodule.h"
+#include "executables/thread-common.h"
+#include "targets/RT/USER/lte-softmodem.h"
+
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
@@ -83,10 +81,10 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
 
-extern void fep_full(RU_t *ru);
-extern void ru_fep_full_2thread(RU_t *ru);
-extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+extern void fep_full(RU_t *ru, int subframe);
+extern void ru_fep_full_2thread(RU_t *ru, int subframe);
+//extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+//extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 
 nfapi_dl_config_request_t DL_req;
 nfapi_ul_config_request_t UL_req;
@@ -96,7 +94,6 @@ nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
-THREAD_STRUCT thread_struct;
 
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
@@ -393,9 +390,10 @@ int main(int argc, char **argv) {
   cpuf = cpu_freq_GHz;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
-  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
-              "cannot load configuration module, exiting\n");
+  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL, "Cannot load configuration module, exiting\n");
   logInit();
+  set_glog(OAILOG_WARNING);
+  T_stdout = 1;
   // enable these lines if you need debug info
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
@@ -1019,7 +1017,7 @@ int main(int argc, char **argv) {
             eNB->proc.frame_rx = 1;
             eNB->proc.subframe_rx = subframe;
             ru->proc.frame_rx = 1;
-            ru->proc.subframe_rx = subframe;
+            ru->proc.tti_rx = subframe;
             proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
             proc_rxtx_ue->frame_rx = proc_rxtx->frame_tx;
             proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
@@ -1143,7 +1141,7 @@ int main(int argc, char **argv) {
 
           start_meas(&eNB->phy_proc_rx);
           ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
-          ru->feprx(ru);
+          ru->feprx(ru,subframe);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
           stop_meas(&eNB->phy_proc_rx);
 

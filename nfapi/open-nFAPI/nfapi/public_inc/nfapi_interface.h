@@ -1,12 +1,12 @@
 /*
  * Copyright 2017 Cisco Systems, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@
 #define _NFAPI_INTERFACE_H_
 
 #include "stddef.h"
+#include <stdint.h>
 
 // Constants - update based on implementation
 #define NFAPI_MAX_PHY_RF_INSTANCES 2
@@ -30,7 +31,7 @@
 // These may be changed if desired. They are used in the encoder to make sure 
 // that the user has not specified a 'count' larger than the max array, and also
 // used by the decoder when decode an array. If the 'count' received is larger
-// than the array it is to be stored in the decode fails. 
+// than the array it is to be stored in the decode fails.
 #define NFAPI_MAX_NUM_ANTENNAS 8
 #define NFAPI_MAX_NUM_SUBBANDS 13
 #define NFAPI_MAX_BF_VECTORS 8
@@ -73,6 +74,9 @@
 
 #define NFAPI_VERSION_3_0_11	0x000
 #define NFAPI_VERSION_3_0_12    0x001
+
+#define NFAPI_HALF_FRAME_INDEX_FIRST_HALF 0
+#define NFAPI_HALF_FRAME_INDEX_SECOND_HALF 1
 
 // The IANA agreed port definition of the P5 SCTP VNF enpoint 
 // http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=7701
@@ -340,7 +344,8 @@ typedef enum {
 	NFAPI_3GPP_REL_SUPPORTED_9 = 1,
 	NFAPI_3GPP_REL_SUPPORTED_10 = 2,
 	NFAPI_3GPP_REL_SUPPORTED_11 = 4,
-	NFAPI_3GPP_REL_SUPPORTED_12 = 8
+	NFAPI_3GPP_REL_SUPPORTED_12 = 8,
+  NFAPI_3GPP_REL_SUPPORTED_15 = 64
 } nfapi_3gpp_release_supported_e;
 
 
@@ -359,7 +364,8 @@ typedef enum {
 	NFAPI_RAT_TYPE_LTE = 0,
 	NFAPI_RAT_TYPE_UTRAN = 1,
 	NFAPI_RAT_TYPE_GERAN = 2,
-	NFAPI_RAT_TYPE_NB_IOT = 3
+	NFAPI_RAT_TYPE_NB_IOT = 3,
+  NFAPI_RAT_TYPE_NR = 4
 } nfapi_rat_type_e;
 
 typedef enum {
@@ -536,6 +542,16 @@ typedef struct {
 } nfapi_pnf_phy_rel13_nb_iot_t;
 #define NFAPI_PNF_PHY_REL13_NB_IOT_TAG 0x100E
 
+typedef struct {
+  uint16_t phy_config_index;
+} nfapi_pnf_phy_rel15_info_t;
+
+typedef struct {
+  nfapi_tl_t tl;
+  uint16_t number_of_phys;
+  nfapi_pnf_phy_rel15_info_t phy[NFAPI_MAX_PNF_PHY];
+} nfapi_pnf_phy_rel15_t;
+#define NFAPI_PNF_PHY_REL15_TAG 0x100H
 
 
 typedef struct {
@@ -621,6 +637,7 @@ typedef struct {
 #define NFAPI_L23_CONFIG_SFNSF_TAG 0x00F1
 
 typedef struct {
+  nfapi_uint16_tlv_t numerology_index_mu;
 	nfapi_uint16_tlv_t duplex_mode;
 	nfapi_uint16_tlv_t pcfich_power_offset;
 	nfapi_uint16_tlv_t pb;
@@ -633,6 +650,7 @@ typedef struct {
 #define NFAPI_SUBFRAME_CONFIG_PB_TAG 0x0003
 #define NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG 0x0004
 #define NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG 0x0005
+#define NFAPI_SUBFRAME_CONFIG_NUMEROLOGY_INDEX_MU_TAG 0x0006
 
 typedef struct {
 	nfapi_uint16_tlv_t dl_channel_bandwidth;
@@ -658,15 +676,28 @@ typedef struct {
 #define NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG 0x0015
 #define NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG 0x0016
 
+
 typedef struct {
 	nfapi_uint16_tlv_t primary_synchronization_signal_epre_eprers;
 	nfapi_uint16_tlv_t secondary_synchronization_signal_epre_eprers;
 	nfapi_uint16_tlv_t physical_cell_id;
+  nfapi_uint16_tlv_t half_frame_index;
+  nfapi_uint16_tlv_t ssb_subcarrier_offset;
+  nfapi_uint16_tlv_t ssb_position_in_burst;
+  nfapi_uint16_tlv_t ssb_periodicity;
+  nfapi_uint16_tlv_t ss_pbch_block_power;
+  nfapi_uint16_tlv_t n_ssb_crb;
 } nfapi_sch_config_t;
 
 #define NFAPI_SCH_CONFIG_PRIMARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG 0x001E
 #define NFAPI_SCH_CONFIG_SECONDARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG 0x001F
 #define NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG 0x0020
+#define NFAPI_SCH_CONFIG_HALF_FRAME_INDEX_TAG 0x0021
+#define NFAPI_SCH_CONFIG_SSB_SUBCARRIER_OFFSET_TAG 0x0022
+#define NFAPI_SCH_CONFIG_SSB_POSITION_IN_BURST 0x0023
+#define NFAPI_SCH_CONFIG_SSB_PERIODICITY 0x0024
+#define NFAPI_SCH_CONFIG_SS_PBCH_BLOCK_POWER 0x0025
+#define NFAPI_SCH_CONFIG_N_SSB_CRB 0x0025
 
 typedef struct {
 	nfapi_uint16_tlv_t configuration_index;
@@ -1069,6 +1100,7 @@ typedef struct {
 	nfapi_pnf_phy_rel12_t pnf_phy_rel12;
 	nfapi_pnf_phy_rel13_t pnf_phy_rel13;
 	nfapi_pnf_phy_rel13_nb_iot_t pnf_phy_rel13_nb_iot;
+  nfapi_pnf_phy_rel15_t pnf_phy_rel15;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_pnf_param_response_t;
 

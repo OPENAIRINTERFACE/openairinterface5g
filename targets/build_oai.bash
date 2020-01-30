@@ -344,6 +344,10 @@ build_enb(){
         SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES USRP=1 "
     fi
     
+    if [ $HW = "ADRV9371_ZC706" ]; then 
+        SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES ADRV9371_ZC706=1 "
+    fi
+    
     if [ $HW = "EXMIMO" ]; then 
         SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES EXMIMO=1 "
     fi

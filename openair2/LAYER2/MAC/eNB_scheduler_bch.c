@@ -26,7 +26,6 @@
  * \email: navid.nikaein@eurecom.fr
  * \version 1.0
  * @ingroup _mac
-
  */
 
 #include "assertions.h"
@@ -59,7 +58,6 @@ extern RAN_CONTEXT_t RC;
 // NEED TO ADD schedule_SI_BR for SIB1_BR and SIB23_BR
 // CCE_allocation_infeasible to be done for EPDCCH/MPDCCH
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 #define size_Sj25 2
 int Sj25[size_Sj25] = { 0, 3 };
@@ -201,7 +199,8 @@ schedule_SIB1_MBMS(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -424,7 +423,8 @@ schedule_SIB1_BR(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 0xFFFF, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -584,7 +584,7 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
         long si_Narrowband_r13 = schedulingInfoList_BR_r13->list.array[i]->si_Narrowband_r13;
         long si_TBS_r13 = si_TBS_r13tab[schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13];
         // check if the SI is to be scheduled now
-        int period_in_sf;
+        int period_in_sf = 0;
 
         if ((si_Periodicity >= 0) && (si_Periodicity < 25)) {
           // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
@@ -908,13 +908,11 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //schedule_SIB1_BR(module_idP, frameP, subframeP);
   //schedule_SI_BR(module_idP, frameP, subframeP);
-#endif
   stop_meas(&eNB->schedule_si_mbms);
 }
-#endif
+
 
 void
 schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
@@ -941,17 +939,11 @@ schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
       LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
 
       if ((frameP & 1023) < 40)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         LOG_D(MAC,
               "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
               module_idP, frameP, CC_id, mib_sdu_length,
               (int) cc->mib->message.schedulingInfoSIB1_BR_r13);
 
-#else
-        LOG_D(MAC,
-              "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
-              module_idP, frameP, CC_id, mib_sdu_length);
-#endif
       dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
       memset((void *) dl_config_pdu, 0,
              sizeof(nfapi_dl_config_request_pdu_t));
@@ -1185,9 +1177,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   schedule_SIB1_BR(module_idP, frameP, subframeP);
   schedule_SI_BR(module_idP, frameP, subframeP);
-#endif
   stop_meas(&eNB->schedule_si);
 }

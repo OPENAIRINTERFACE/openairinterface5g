@@ -269,12 +269,36 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 void uci_procedures(PHY_VARS_eNB *eNB,
                     L1_rxtx_proc_t *proc);
+void ocp_rx_prach(PHY_VARS_eNB *eNB,
+		  L1_rxtx_proc_t *proc,
+		  RU_t *ru,
+		  uint16_t *max_preamble,
+		  uint16_t *max_preamble_energy,
+		  uint16_t *max_preamble_delay,
+		  uint16_t *avg_preamble_energy,
+		  uint16_t Nf,
+		  uint8_t tdd_mapindex,
+		  uint8_t br_flag);
+void rx_prach0(PHY_VARS_eNB *eNB,
+               RU_t *ru,
+	       int frame_prach,
+	       int subframe,
+               uint16_t *max_preamble,
+               uint16_t *max_preamble_energy,
+               uint16_t *max_preamble_delay,
+               uint16_t *avg_preamble_energy,
+               uint16_t Nf,
+               uint8_t tdd_mapindex,
+               uint8_t br_flag,
+               uint8_t ce_level
+	       );
+void ocp_tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 
 // mistakes in main OAI
 void  phy_init_RU(RU_t *);
-void feptx_prec(RU_t *, L1_rxtx_proc_t *proc);
-void feptx_ofdm(RU_t *, L1_rxtx_proc_t *proc);
+void fep_full(RU_t *ru, int subframe);
+void feptx_prec(RU_t *ru,int frame,int subframe);
+void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
-void fep_full(RU_t *ru, L1_rxtx_proc_t *proc);
 extern uint16_t sf_ahead;
 #endif

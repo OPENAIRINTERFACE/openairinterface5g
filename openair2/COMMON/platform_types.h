@@ -65,13 +65,14 @@ typedef int32_t               sdu_size_t;
 typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
+typedef uint32_t              slot_t;
 typedef uint16_t              module_id_t;
 typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
 typedef int16_t               smodule_id_t;
-typedef uint16_t              rb_id_t;
-typedef uint16_t              srb_id_t;
+typedef long              rb_id_t;
+typedef long              srb_id_t;
 
 typedef boolean_t             MBMS_flag_t;
 #define  MBMS_FLAG_NO         FALSE
@@ -80,6 +81,10 @@ typedef boolean_t             MBMS_flag_t;
 typedef boolean_t             eNB_flag_t;
 #define  ENB_FLAG_NO          FALSE
 #define  ENB_FLAG_YES         TRUE
+
+typedef boolean_t             gNB_flag_t;
+#define  GNB_FLAG_NO          FALSE
+#define  GNB_FLAG_YES         TRUE
 
 typedef boolean_t             srb_flag_t;
 #define  SRB_FLAG_NO          FALSE
@@ -246,6 +251,9 @@ typedef struct protocol_ctxt_s {
 #define UE_INSTANCE_TO_MODULE_ID( iNSTANCE ) iNSTANCE - NB_eNB_INST
 #define ENB_INSTANCE_TO_MODULE_ID( iNSTANCE )iNSTANCE
 
+//NR
+#define GNB_MODULE_ID_TO_INSTANCE( mODULE_iD ) mODULE_iD
+#define GNB_INSTANCE_TO_MODULE_ID( iNSTANCE )iNSTANCE
 
 #define MODULE_ID_TO_INSTANCE(mODULE_iD, iNSTANCE, eNB_fLAG) \
   if(eNB_fLAG == ENB_FLAG_YES) \
@@ -294,5 +302,12 @@ typedef struct protocol_ctxt_s {
 #define CHECK_CTXT_ARGS(CTXT_Pp)
 
 #define exit_fun(msg) exit_function(__FILE__,__FUNCTION__,__LINE__,msg)
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 void exit_function(const char *file, const char *function, const int line, const char *s);
+#ifdef __cplusplus
+}
+#endif
 #endif

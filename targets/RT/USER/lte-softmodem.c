@@ -124,7 +124,7 @@ FILE *input_fd=NULL;
 
 
 #if MAX_NUM_CCs == 1
-rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
+rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0}};
 double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0}};
 #else
@@ -138,7 +138,6 @@ double rx_gain_off = 0.0;
 double sample_rate=30.72e6;
 double bw = 10.0e6;
 
-
 uint8_t dci_Format = 0;
 uint8_t agregation_Level =0xFF;
 
@@ -149,9 +148,7 @@ char ref[128] = "internal";
 char channels[128] = "0";
 
 int rx_input_level_dBm;
-
-int    otg_enabled;
-
+int otg_enabled;
 
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
@@ -173,7 +170,8 @@ eth_params_t *eth_params;
 
 double cpuf;
 
-/* forward declarations */
+int oaisim_flag=0;
+
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -522,7 +520,8 @@ static  void wait_nfapi_init(char *thread_name) {
   printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
-int main( int argc, char **argv ) {
+int main ( int argc, char **argv )
+{
   int i;
   int CC_id = 0;
   int ru_id;
@@ -586,9 +585,22 @@ int main( int argc, char **argv ) {
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
+  } else {
+    printf("RC.nb_inst = 0, Initializing L1\n");
+    RCconfig_L1();
+  }
+
+  /* We need to read RU configuration before FlexRAN starts so it knows what
+   * splits to report. Actual RU start comes later. */
+  if (RC.nb_RU > 0 && NFAPI_MODE != NFAPI_MODE_VNF) {
+    RCconfig_RU();
+    LOG_I(PHY,
+          "number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
+          RC.nb_L1_inst, RC.nb_RU, get_nprocs());
+  }
+
+  if (RC.nb_inst > 0) {
     /* Start the agent. If it is turned off in the configuration, it won't start */
-    RCconfig_flexran();
-    
     for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
     }
@@ -608,9 +620,6 @@ int main( int argc, char **argv ) {
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
     node_type = RC.rrc[0]->node_type;
-  } else {
-    printf("RC.nb_inst = 0, Initializing L1\n");
-    RCconfig_L1();
   }
 
   if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
@@ -711,6 +720,8 @@ int main( int argc, char **argv ) {
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
   create_tasks_mbms(1);
+
+  // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
   fflush(stdout);

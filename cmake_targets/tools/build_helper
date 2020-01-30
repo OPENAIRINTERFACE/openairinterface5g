@@ -103,6 +103,7 @@ check_supported_distribution() {
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
 	"rhel7.6")     return 0 ;;
+	"rhel7.7")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -149,7 +150,7 @@ clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
- rm -rf $dir/lte_build_oai $dir/lte-simulators/build
+ rm -rf $dir/ran_build $dir/lte-simulators/build
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
@@ -299,7 +300,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
-        $SUDO pip install requests
+        $SUDO -H pip install requests
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
             # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
             $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
@@ -319,13 +320,13 @@ install_usrp_uhd_driver() {
     # quick workaround for RHE7.6
     local distribution=$(get_distribution_release)
     if [ -z $1 ]; then
-      if [[ "$distribution" == "rhel7.6" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader
       else
           $SUDO uhd_images_downloader
       fi
     else
-      if [[ "$distribution" == "rhel7.6" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader -i $1
       else
           $SUDO uhd_images_downloader -i $1
@@ -560,8 +561,8 @@ check_install_additional_tools (){
 
   #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2 colorama
+    $SUDO -H pip install paramiko
+    $SUDO -H pip install pyroute2 colorama
     log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
     (
@@ -761,7 +762,7 @@ install_asn1c_from_source(){
     # better to use a given commit than a branch in case the branch
     # is updated and requires modifications in the source of OAI
     #git checkout velichkov_s1ap_plus_option_group
-    git checkout 0a7524184f16e7093990a31d8d4db487a16e5782
+    git checkout f12568d617dbf48497588f8e227d70388fa217c9
     autoreconf -iv
     ./configure
     make -j`nproc`

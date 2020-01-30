@@ -127,12 +127,8 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-void prach_procedures(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
+void prach_procedures(PHY_VARS_eNB *eNB, 
 		      int br_flag);
-#else
-void prach_procedures(PHY_VARS_eNB *eNB);
-#endif
 
 /*! \brief Function to compute timing of Msg3 transmission on UL-SCH (first UE transmission in RA procedure). This implements the timing in paragraph a) from Section 6.1.1 in 36.213 (p. 17 in version 8.6).  Used by eNB upon transmission of random-access response (RA_RNTI) to program corresponding ULSCH reception procedure.  Used by UE upon reception of random-access response (RA_RNTI) to program corresponding ULSCH transmission procedure.  This does not support the UL_delay field in RAR (always assumed to be 0).
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -197,7 +193,7 @@ int8_t find_ue_ulsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
 void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);
 
-LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
+LTE_eNB_UE_stats *get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
   @param Mod_id Index of eNB

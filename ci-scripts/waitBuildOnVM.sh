@@ -76,6 +76,8 @@ function wait_on_vm_build {
         echo "echo \"ps -aux | grep build \"" >> $VM_CMDS
         echo "while [ \$(ps -aux | grep --color=never build_oai | grep -v grep | wc -l) -gt 0 ]; do sleep 3; done" >> $VM_CMDS
     fi
+    echo "echo \"df -h\"" >> $VM_CMDS
+    echo "df -h" >> $VM_CMDS
 
     ssh -T -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
@@ -134,13 +136,9 @@ function check_on_vm_build {
         if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
         then
             filename=$(basename -- "$FULLFILE")
-            if [ "$LOG_PATTERN" == ".Rel14.txt" ]
+            if [ "$LOG_PATTERN" == ".Rel15.txt" ]
             then
                 PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
-            fi
-            if [ "$LOG_PATTERN" == "basic_simulator" ]
-            then
-                PASS_PATTERN="lte-"
             fi
             if [ "$LOG_PATTERN" == "cppcheck.xml" ]
             then
@@ -172,6 +170,9 @@ function check_on_vm_build {
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         echo "COMMAND: cppcheck $BUILD_OPTIONS . 2> cppcheck.xml" > $ARCHIVES_LOC/build_final_status.log
+    elif [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        echo "COMMAND: $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
     else
         echo "COMMAND: build_oai -I $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
     fi

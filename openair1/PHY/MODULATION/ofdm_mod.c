@@ -30,6 +30,7 @@ This section deals with basic functions for OFDM Modulation.
 */
 
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/impl_defs_top.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -60,6 +61,22 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
   
 }
 
+void nr_normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,NR_DL_FRAME_PARMS *frame_parms)
+{
+  PHY_ofdm_mod(txdataF,        // input
+	       txdata,         // output
+	       frame_parms->ofdm_symbol_size,                
+	       1,                 // number of symbols
+	       frame_parms->nb_prefix_samples0,               // number of prefix samples
+	       CYCLIC_PREFIX);
+  PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
+	       txdata + frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0,         // output
+	       frame_parms->ofdm_symbol_size,                
+	       nsymb - 1,
+	       frame_parms->nb_prefix_samples,               // number of prefix samples
+	       CYCLIC_PREFIX);  
+}
+
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                   int *output,                      /// pointer to complex output
                   int fftsize,            /// FFT_SIZE
@@ -69,7 +86,9 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                  )
 {
 
-  short temp[2048*4] __attribute__((aligned(32)));
+  if(nb_symbols == 0) return;
+
+  short temp[4096*4] __attribute__((aligned(32)));
   unsigned short i,j;
   short k;
 
@@ -103,6 +122,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     idft = idft2048;
     break;
 
+  case 3072:
+    idft = idft3072;
+    break;
+  case 4096:
+    idft = idft4096;
+    break;
   default:
     idft = idft512;
     break;

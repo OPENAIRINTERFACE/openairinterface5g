@@ -31,7 +31,7 @@
 #include "local.h"
 #include "proto_extern.h"
 #ifndef OAI_NW_DRIVER_USE_NETLINK
-#include "rtai_fifos.h"
+  #include "rtai_fifos.h"
 #endif
 
 
@@ -41,20 +41,20 @@
 #include <net/udp.h>
 
 #define NIPADDR(addr) \
-        (uint8_t)(addr & 0x000000FF), \
-        (uint8_t)((addr & 0x0000FF00) >> 8), \
-        (uint8_t)((addr & 0x00FF0000) >> 16), \
-        (uint8_t)((addr & 0xFF000000) >> 24)
+  (uint8_t)(addr & 0x000000FF), \
+  (uint8_t)((addr & 0x0000FF00) >> 8), \
+  (uint8_t)((addr & 0x00FF0000) >> 16), \
+  (uint8_t)((addr & 0xFF000000) >> 24)
 
 #define NIP6ADDR(addr) \
-        ntohs((addr)->s6_addr16[0]), \
-        ntohs((addr)->s6_addr16[1]), \
-        ntohs((addr)->s6_addr16[2]), \
-        ntohs((addr)->s6_addr16[3]), \
-        ntohs((addr)->s6_addr16[4]), \
-        ntohs((addr)->s6_addr16[5]), \
-        ntohs((addr)->s6_addr16[6]), \
-        ntohs((addr)->s6_addr16[7])
+  ntohs((addr)->s6_addr16[0]), \
+  ntohs((addr)->s6_addr16[1]), \
+  ntohs((addr)->s6_addr16[2]), \
+  ntohs((addr)->s6_addr16[3]), \
+  ntohs((addr)->s6_addr16[4]), \
+  ntohs((addr)->s6_addr16[5]), \
+  ntohs((addr)->s6_addr16[6]), \
+  ntohs((addr)->s6_addr16[7])
 
 
 //#define OAI_DRV_DEBUG_SEND
@@ -65,9 +65,7 @@ ue_ip_common_class_wireless2ip(
   sdu_size_t data_lenP,
   void      *pdcp_sdu_pP,
   int        instP,
-  rb_id_t    rb_idP)
-{
-
+  rb_id_t    rb_idP) {
   //---------------------------------------------------------------------------
   struct sk_buff      *skb_p           = NULL;
   ipversion_t         *ipv_p           = NULL;
@@ -79,11 +77,9 @@ ue_ip_common_class_wireless2ip(
 #endif
   unsigned char        protocol;
   struct iphdr        *network_header_p  = NULL;
-
 #ifdef OAI_DRV_DEBUG_RECEIVE
   printk("[UE_IP_DRV][%s] begin RB %d Inst %d Length %d bytes\n",__FUNCTION__, rb_idP,instP,data_lenP);
 #endif
-
   skb_p = dev_alloc_skb( data_lenP + 2 );
 
   if(!skb_p) {
@@ -94,17 +90,13 @@ ue_ip_common_class_wireless2ip(
 
   skb_reserve(skb_p,2);
   memcpy(skb_put(skb_p, data_lenP), pdcp_sdu_pP,data_lenP);
-
   skb_p->dev = ue_ip_dev[instP];
   hard_header_len = ue_ip_dev[instP]->hard_header_len;
-
   skb_set_mac_header(skb_p, 0);
   skb_set_network_header(skb_p, hard_header_len);
-skb_p->mark = rb_idP;
+  skb_p->mark = rb_idP;
   //printk("[NAC_COMMIN_RECEIVE]: Packet Type %d (%d,%d)",skb_p->pkt_type,PACKET_HOST,PACKET_BROADCAST);
   skb_p->pkt_type = PACKET_HOST;
-
-
 #ifdef OAI_DRV_DEBUG_RECEIVE
   printk("[UE_IP_DRV][%s] Receiving packet of size %d from PDCP \n",__FUNCTION__, skb_p->len);
 
@@ -118,97 +110,91 @@ skb_p->mark = rb_idP;
   printk("[UE_IP_DRV][%s] skb_p->data           @ %p\n",__FUNCTION__,  skb_p->data);
   printk("[UE_IP_DRV][%s] skb_p->mac_header     @ %p\n",__FUNCTION__,  skb_p->mac_header);
 #endif
-
-
-
   // LG TEST skb_p->ip_summed = CHECKSUM_NONE;
   skb_p->ip_summed = CHECKSUM_UNNECESSARY;
   ipv_p = (ipversion_t *)((void *)&(skb_p->data[hard_header_len]));
 
   switch (ipv_p->version) {
-
-  case 6:
+    case 6:
 #ifdef OAI_DRV_DEBUG_RECEIVE
-    printk("[UE_IP_DRV][%s] receive IPv6 message\n",__FUNCTION__);
+      printk("[UE_IP_DRV][%s] receive IPv6 message\n",__FUNCTION__);
 #endif
-    skb_set_network_header(skb_p, hard_header_len);
-    //skb_p->network_header_p = &skb_p->data[hard_header_len];
+      skb_set_network_header(skb_p, hard_header_len);
 
-    if (hard_header_len == 0) {
-      skb_p->protocol = htons(ETH_P_IPV6);
-    } else {
+      //skb_p->network_header_p = &skb_p->data[hard_header_len];
+
+      if (hard_header_len == 0) {
+        skb_p->protocol = htons(ETH_P_IPV6);
+      } else {
 #ifdef OAI_NW_DRIVER_TYPE_ETHERNET
-      skb_p->protocol = eth_type_trans(skb_p, ue_ip_dev[instP]);
+        skb_p->protocol = eth_type_trans(skb_p, ue_ip_dev[instP]);
 #else
 #endif
-    }
+      }
 
-    //printk("Writing packet with protocol %x\n",ntohs(skb_p->protocol));
-    break;
+      //printk("Writing packet with protocol %x\n",ntohs(skb_p->protocol));
+      break;
 
-  case 4:
-
+    case 4:
 #ifdef OAI_DRV_DEBUG_RECEIVE
-    //printk("NAS_TOOL_RECEIVE: receive IPv4 message\n");
-    addr_p = (unsigned char *)&((struct iphdr *)&skb_p->data[hard_header_len])->saddr;
+      //printk("NAS_TOOL_RECEIVE: receive IPv4 message\n");
+      addr_p = (unsigned char *)&((struct iphdr *)&skb_p->data[hard_header_len])->saddr;
 
-    if (addr_p) {
-      printk("[UE_IP_DRV][%s] Source %d.%d.%d.%d\n",__FUNCTION__, addr_p[0],addr_p[1],addr_p[2],addr_p[3]);
-    }
+      if (addr_p) {
+        printk("[UE_IP_DRV][%s] Source %d.%d.%d.%d\n",__FUNCTION__, addr_p[0],addr_p[1],addr_p[2],addr_p[3]);
+      }
 
-    addr_p = (unsigned char *)&((struct iphdr *)&skb_p->data[hard_header_len])->daddr;
+      addr_p = (unsigned char *)&((struct iphdr *)&skb_p->data[hard_header_len])->daddr;
 
-    if (addr_p) {
-      printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, addr_p[0],addr_p[1],addr_p[2],addr_p[3]);
-    }
+      if (addr_p) {
+        printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, addr_p[0],addr_p[1],addr_p[2],addr_p[3]);
+      }
 
-    printk("[UE_IP_DRV][%s] protocol  %d\n",__FUNCTION__, ((struct iphdr *)&skb_p->data[hard_header_len])->protocol);
+      printk("[UE_IP_DRV][%s] protocol  %d\n",__FUNCTION__, ((struct iphdr *)&skb_p->data[hard_header_len])->protocol);
+#endif
+      skb_set_network_header(skb_p, hard_header_len);
+      //network_header_p = (struct iphdr *)skb_network_header(skb_p);
+      network_header_p = (struct iphdr *)skb_network_header(skb_p);
+      protocol = network_header_p->protocol;
+#ifdef OAI_DRV_DEBUG_RECEIVE
+
+      switch (protocol) {
+        case IPPROTO_IP:
+          printk("[UE_IP_DRV][%s] Received Raw IPv4 packet\n",__FUNCTION__);
+          break;
+
+        case IPPROTO_IPV6:
+          printk("[UE_IP_DRV][%s] Received Raw IPv6 packet\n",__FUNCTION__);
+          break;
+
+        case IPPROTO_ICMP:
+          printk("[UE_IP_DRV][%s] Received Raw ICMP packet\n",__FUNCTION__);
+          break;
+
+        case IPPROTO_TCP:
+          printk("[UE_IP_DRV][%s] Received TCP packet\n",__FUNCTION__);
+          break;
+
+        case IPPROTO_UDP:
+          printk("[UE_IP_DRV][%s] Received UDP packet\n",__FUNCTION__);
+          break;
+
+        default:
+          break;
+      }
+
 #endif
 
-    skb_set_network_header(skb_p, hard_header_len);
-    //network_header_p = (struct iphdr *)skb_network_header(skb_p);
-    network_header_p = (struct iphdr *)skb_network_header(skb_p);
-    protocol = network_header_p->protocol;
+      if (hard_header_len == 0) {
+        skb_p->protocol = htons(ETH_P_IP);
+      }
 
-#ifdef OAI_DRV_DEBUG_RECEIVE
-
-    switch (protocol) {
-    case IPPROTO_IP:
-      printk("[UE_IP_DRV][%s] Received Raw IPv4 packet\n",__FUNCTION__);
-      break;
-
-    case IPPROTO_IPV6:
-      printk("[UE_IP_DRV][%s] Received Raw IPv6 packet\n",__FUNCTION__);
-      break;
-
-    case IPPROTO_ICMP:
-      printk("[UE_IP_DRV][%s] Received Raw ICMP packet\n",__FUNCTION__);
-      break;
-
-    case IPPROTO_TCP:
-      printk("[UE_IP_DRV][%s] Received TCP packet\n",__FUNCTION__);
-      break;
-
-    case IPPROTO_UDP:
-      printk("[UE_IP_DRV][%s] Received UDP packet\n",__FUNCTION__);
+      //printk("[UE_IP_DRV][COMMON] Writing packet with protocol %x\n",ntohs(skb_p->protocol));
       break;
 
     default:
-      break;
-    }
-
-#endif
-
-    if (hard_header_len == 0) {
-      skb_p->protocol = htons(ETH_P_IP);
-    }
-
-    //printk("[UE_IP_DRV][COMMON] Writing packet with protocol %x\n",ntohs(skb_p->protocol));
-    break;
-
-  default:
-    printk("[UE_IP_DRV][%s] begin RB %d Inst %d Length %d bytes\n",__FUNCTION__,rb_idP,instP,data_lenP);
-    printk("[UE_IP_DRV][%s] Inst %d: receive unknown message (version=%d)\n",__FUNCTION__,instP,ipv_p->version);
+      printk("[UE_IP_DRV][%s] begin RB %ld Inst %d Length %d bytes\n",__FUNCTION__,rb_idP,instP,data_lenP);
+      printk("[UE_IP_DRV][%s] Inst %d: receive unknown message (version=%d)\n",__FUNCTION__,instP,ipv_p->version);
   }
 
   ++gpriv_p->stats.rx_packets;
@@ -230,8 +216,7 @@ skb_p->mark = rb_idP;
 
 //---------------------------------------------------------------------------
 // Delete the data
-void ue_ip_common_ip2wireless_drop(struct sk_buff *skb_pP,  int instP)
-{
+void ue_ip_common_ip2wireless_drop(struct sk_buff *skb_pP,  int instP) {
   //---------------------------------------------------------------------------
   ue_ip_priv_t *priv_p=netdev_priv(ue_ip_dev[instP]);
   ++priv_p->stats.tx_dropped;
@@ -243,18 +228,14 @@ void
 ue_ip_common_ip2wireless(
   struct sk_buff *skb_pP,
   int instP
-)
-{
+) {
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;
   ue_ip_priv_t                     *priv_p=netdev_priv(ue_ip_dev[instP]);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ipversion_t         *ipv_p             = NULL;
   unsigned int         hard_header_len   = 0;
   unsigned char       *src_addr          = 0;
   unsigned char       *dst_addr          = 0;
-#endif
-
 #ifdef LOOPBACK_TEST
   int i;
 #endif
@@ -274,7 +255,6 @@ ue_ip_common_ip2wireless(
     return;
   }
 
-
   pdcph.data_size  = skb_pP->len;
 
   if (skb_pP->mark) {
@@ -284,47 +264,51 @@ ue_ip_common_ip2wireless(
   }
 
   pdcph.inst       = instP;
-
   //pass source/destination IP addresses to PDCP header
   hard_header_len = ue_ip_dev[instP]->hard_header_len;
   ipv_p = (ipversion_t *)((void *)&(skb_pP->data[hard_header_len]));
 
   switch (ipv_p->version) {
-  case 6:
-    printk("[UE_IP_DRV][%s] receive IPv6 message\n",__FUNCTION__);
-    //TODO
-    break;
+    case 6:
+      printk("[UE_IP_DRV][%s] receive IPv6 message\n",__FUNCTION__);
+      //TODO
+      break;
 
-  case 4:
-     src_addr = (unsigned char *)&((struct iphdr *)&skb_pP->data[hard_header_len])->saddr;
-    if (src_addr) {
-      printk("[UE_IP_DRV][%s] Source %d.%d.%d.%d\n",__FUNCTION__, src_addr[0],src_addr[1],src_addr[2],src_addr[3]);
-    }
-    dst_addr = (unsigned char *)&((struct iphdr *)&skb_pP->data[hard_header_len])->daddr;
-    if (dst_addr) {
-      printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, dst_addr[0],dst_addr[1],dst_addr[2],dst_addr[3]);
-    }
-    // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator start
+    case 4:
+      src_addr = (unsigned char *)&((struct iphdr *)&skb_pP->data[hard_header_len])->saddr;
+
+      if (src_addr) {
+        printk("[UE_IP_DRV][%s] Source %d.%d.%d.%d\n",__FUNCTION__, src_addr[0],src_addr[1],src_addr[2],src_addr[3]);
+      }
+
+      dst_addr = (unsigned char *)&((struct iphdr *)&skb_pP->data[hard_header_len])->daddr;
+
+      if (dst_addr) {
+        printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, dst_addr[0],dst_addr[1],dst_addr[2],dst_addr[3]);
+      }
+
+      // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator start
 #ifdef UESIM_EXPANSION
-    if ((src_addr[3] - 2)> instP) {
+
+      if ((src_addr[3] - 2)> instP) {
         pdcph.inst = src_addr[3] - 2;
         printk("[UE_IP_DRV] change INST from %d to %d\n",instP, pdcph.inst);
         instP = src_addr[3] - 2;
         priv_p=netdev_priv(ue_ip_dev[instP]);
-    }
+      }
+
 #endif
-    // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator end
-    //get Ipv4 address and pass to PCDP header
-    printk("[UE_IP_DRV] source Id: 0x%08x\n",pdcph.sourceL2Id );
-    printk("[UE_IP_DRV] destinationL2Id Id: 0x%08x\n",pdcph.destinationL2Id );
-    pdcph.sourceL2Id = ntohl( ((struct iphdr *)&skb_pP->data[hard_header_len])->saddr) & 0x00FFFFFF;
-    pdcph.destinationL2Id = ntohl( ((struct iphdr *)&skb_pP->data[hard_header_len])->daddr) & 0x00FFFFFF;
-    break;
+      // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator end
+      //get Ipv4 address and pass to PCDP header
+      printk("[UE_IP_DRV] source Id: 0x%08x\n",pdcph.sourceL2Id );
+      printk("[UE_IP_DRV] destinationL2Id Id: 0x%08x\n",pdcph.destinationL2Id );
+      pdcph.sourceL2Id = ntohl( ((struct iphdr *)&skb_pP->data[hard_header_len])->saddr) & 0x00FFFFFF;
+      pdcph.destinationL2Id = ntohl( ((struct iphdr *)&skb_pP->data[hard_header_len])->daddr) & 0x00FFFFFF;
+      break;
 
-  default:
-     break;
+    default:
+      break;
   }
-
 
   bytes_wrote = ue_ip_netlink_send((char *)&pdcph,UE_IP_PDCPH_SIZE);
 #ifdef OAI_DRV_DEBUG_SEND
@@ -334,23 +318,21 @@ ue_ip_common_ip2wireless(
 
   if (bytes_wrote != UE_IP_PDCPH_SIZE) {
     printk("[UE_IP_DRV][%s] problem while writing PDCP's header (bytes wrote = %d)\n",__FUNCTION__,bytes_wrote);
-    printk("rb_id %d, Wrote %d, Header Size %d \n", pdcph.rb_id , bytes_wrote, UE_IP_PDCPH_SIZE);
+    printk("rb_id %ld, Wrote %d, Header Size %d \n", pdcph.rb_id, bytes_wrote, UE_IP_PDCPH_SIZE);
     priv_p->stats.tx_dropped ++;
     return;
   }
 
   bytes_wrote += ue_ip_netlink_send((char *)skb_pP->data,skb_pP->len);
 
-
   if (bytes_wrote != skb_pP->len+UE_IP_PDCPH_SIZE) {
-    printk("[UE_IP_DRV][%s] Inst %d, RB_ID %d: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %d\n",
+    printk("[UE_IP_DRV][%s] Inst %d, RB_ID %ld: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %d\n",
            __FUNCTION__,
            instP,
            pdcph.rb_id,
            bytes_wrote,
            skb_pP->len,
            UE_IP_PDCPH_SIZE); // congestion
-
     priv_p->stats.tx_dropped ++;
     return;
   }
@@ -364,7 +346,6 @@ ue_ip_common_ip2wireless(
 
   printk("\n");
 #endif
-
   priv_p->stats.tx_bytes   += skb_pP->len;
   priv_p->stats.tx_packets ++;
 #ifdef OAI_DRV_DEBUG_SEND
@@ -373,25 +354,18 @@ ue_ip_common_ip2wireless(
 }
 
 //---------------------------------------------------------------------------
-void ue_ip_common_wireless2ip(struct nlmsghdr *nlh_pP)
-{
+void ue_ip_common_wireless2ip(struct nlmsghdr *nlh_pP) {
   //---------------------------------------------------------------------------
-
   struct pdcp_data_ind_header_s     *pdcph_p = (struct pdcp_data_ind_header_s *)NLMSG_DATA(nlh_pP);
   ue_ip_priv_t                      *priv_p;
-
   priv_p = netdev_priv(ue_ip_dev[pdcph_p->inst]);
-
-
 #ifdef OAI_DRV_DEBUG_RECEIVE
   printk("[UE_IP_DRV][%s] QOS receive from PDCP, size %d, rab %d, inst %d\n",__FUNCTION__,
          pdcph_p->data_size,pdcph_p->rb_id,pdcph_p->inst);
 #endif
-
   ue_ip_common_class_wireless2ip(pdcph_p->data_size,
                                  (unsigned char *)NLMSG_DATA(nlh_pP) + UE_IP_PDCPH_SIZE,
                                  pdcph_p->inst,
                                  pdcph_p->rb_id);
-
 }
 

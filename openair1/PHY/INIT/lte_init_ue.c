@@ -201,20 +201,16 @@ void phy_config_sib13_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_A
   }
 
   lte_gold_mbsfn(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
-
-  
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   lte_gold_mbsfn_khz_1dot25(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table,fp->Nid_cell_mbsfn);
-#endif
-
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
-                        uint8_t eNB_id,
-                        struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig){
+                               uint8_t eNB_id,
+                               struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig) {
   PHY_VARS_UE *ue        = PHY_vars_UE_g[Mod_id][CC_id];
   LTE_DL_FRAME_PARMS *fp = &ue->frame_parms;
+
   if (nonMBSFN_SubframeConfig != NULL) {
     fp->NonMBSFN_config_flag = 0;
     fp->NonMBSFN_config.radioframeAllocationPeriod=nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
@@ -222,7 +218,7 @@ void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
     fp->NonMBSFN_config.non_mbsfn_SubframeConfig=(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]>>7);
   }
 }
-#endif
+
 
 
 /*
@@ -346,17 +342,19 @@ void phy_config_meas_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8
   memcpy((void *)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                                    int CC_id) {
 }
-#endif
 
 
-void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
-                        uint16_t max_harq_tx ) {
+
+void phy_config_harq_ue(module_id_t Mod_id,
+                        int CC_id,
+                        uint8_t eNB_id,
+                        uint16_t max_harq_tx) {
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
@@ -533,18 +531,6 @@ void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
         }
       }
     }
-
-#ifdef CBA
-
-    if (physicalConfigDedicated->pusch_CBAConfigDedicated_vlola) {
-      phy_vars_ue->pusch_ca_config_dedicated[eNB_id].betaOffset_CA_Index = (uint16_t) *physicalConfigDedicated->pusch_CBAConfigDedicated_vlola->betaOffset_CBA_Index;
-      phy_vars_ue->pusch_ca_config_dedicated[eNB_id].cShift = (uint16_t) *physicalConfigDedicated->pusch_CBAConfigDedicated_vlola->cShift_CBA;
-      LOG_D(PHY,"[UE %d ] physicalConfigDedicated pusch CBA config dedicated: beta offset %d cshift %d \n",Mod_id,
-            phy_vars_ue->pusch_ca_config_dedicated[eNB_id].betaOffset_CA_Index,
-            phy_vars_ue->pusch_ca_config_dedicated[eNB_id].cShift);
-    }
-
-#endif
   } else {
     LOG_D(PHY,"[PHY][UE %d] Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id,eNB_id);
     return;
@@ -638,6 +624,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   int eNB_id;
   int th_id;
   LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
+  crcTableInit();
   init_dfts();
   init_frame_parms(&ue->frame_parms,1);
   lte_sync_time_init(&ue->frame_parms);

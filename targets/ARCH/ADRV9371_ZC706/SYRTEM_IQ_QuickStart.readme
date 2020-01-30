@@ -1,0 +1,136 @@
+/* ********** ********** ********** ********** ********** ********** ********** */
+Requirements:
+-------------
+- Previous kernel module/libraries shall be uninstalled !!!
+  - cf. command line below "SYRTEM_IQ_uninstall_previous_SW.sh"
+./SYRTEM_IQ_unload_previous_SW.sh
+- You shall have SYRIQ1.4.6nr.tar.gz
+- Ubuntu kernel version is restricted to:
+  - Kernel 4.15.0-20-lowlatency (Ubuntu 18.04)
+  - Kernel 4.10.0-42-lowlatency (Ubuntu 17.04)
+  - Kernel 3.19.0-61-lowlatency (Ubuntu 14.04)
+- ADRV9371+ZC706 PCIe board shall be switched on
+- PC shall be reboot once ADRV9371+ZC706 PCIe board is switched on
+
+mkdir eur_oai_develop-nr
+cd eur_oai_develop-nr
+
+git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
+cd openairinterface5g
+
+git checkout 375-syrtem-sdr-platform
+or
+git checkout develop-nr (after merge request accepted)
+
+./targets/ARCH/ADRV9371_ZC706/SYRTEM_IQ_uninstall_previous_SW.sh
+-> Reading package lists... Done
+-> Building dependency tree       
+-> Reading state information... Done
+-> linux-headers-4.15.0-20-lowlatency is already the newest version (4.15.0-20.21).
+-> 0 upgraded, 0 newly installed, 0 to remove and 327 not upgraded.
+-> Previous SYRIQ is loaded!
+    -> previous SYRIQ is unloaded!
+    -> previous SYRIQ is uninstall!
+-> Previous SYRIQ uninstallation is done
+
+
+
+
+/* ********** ********** ********** ********** ********** ********** ********** */
+UE:
+---
+configuration:
+--------------
+sudo apt update
+sudo apt-get update
+
+tar -xvzf SYRIQ1.4.6nr.tar.gz
+./SYRIQplatformR1.4.6nr_install.sh
+sudo reboot
+
+sudo lspci -vv | grep Xilinx
+sudo lspci -vv -s 02:00.0 | grep LnkSta
+sudo lspci -vv -s 03:00.0 | grep LnkSta
+sudo lspci -vv -s 02:00.0 | grep Interr
+sudo lspci -vv -s 03:00.0 | grep Interr
+
+sudo gedit /usr/local/etc/syriq/cpu-irq.sh
+echo '1' > /proc/irq/49/smp_affinity_list
+echo '5' > /proc/irq/48/smp_affinity_list
+
+gedit oaienv
+export IIOD_REMOTE=192.168.1.11
+
+
+
+compilation:
+------------
+sudo cset shield --reset
+cd eur_oai_develop-nr/openairinterface5g/
+source oaienv
+
+sudo -E ./cmake_targets/build_oai -c --nrUE -w ADRV9371_ZC706 -I
+sudo -E ./cmake_targets/build_oai -c --nrUE -w ADRV9371_ZC706
+
+
+
+run:
+----
+source oaienv
+sudo -E /usr/local/etc/syriq/cpu-irq.sh
+
+sudo -E cset shield -e ./targets/bin/nr-uesoftmodem.Rel15 -- --numerology 1 -r 106 -C 3510000000 --loop-memory --rf-config-file /usr/local/etc/syriq/ue.band22.tm1.PRB100.NR40.dat
+
+
+
+
+
+/* ********** ********** ********** ********** ********** ********** ********** */
+gNB:
+----
+configuration:
+--------------
+sudo apt update
+sudo apt-get update
+
+tar -xvzf SYRIQ1.4.6nr.tar.gz
+./SYRIQplatformR1.4.6nr_install.sh
+sudo reboot
+
+sudo lspci -vv | grep Xilinx
+sudo lspci -vv -s 02:00.0 | grep LnkSta
+sudo lspci -vv -s 02:00.0 | grep Interr
+
+sudo gedit /usr/local/etc/syriq/cpu-irq.sh
+echo '1' > /proc/irq/46/smp_affinity_list
+
+gedit oaienv
+export IIOD_REMOTE=192.168.1.21
+
+
+
+compilation:
+------------
+sudo cset shield --reset
+cd eur_oai_develop-nr/openairinterface5g/
+source oaienv
+
+sudo -E ./cmake_targets/build_oai -c --gNB -w ADRV9371_ZC706 -I --enable-cpu-affinity
+
+/* CPU available shall be mapped on CPU2 to get_nprocs() number with hyperthreading disabled */
+/* because : */
+/* - cset shield leave CPU0 for system */
+/* - CPU1 is reserved for HwRxTx thread for I/Q acquisition ! */
+/* Note: "/usr/local/etc/syriq/cpu-irq.sh" shall be changed if more than 8 cores are used */
+/*   ie. "cset shield --force --kthread on -c 1-7" where "-c 1-7" reserves CPU1 to CPU7 for application (CPU0 is for system) */
+
+sudo -E ./cmake_targets/build_oai -c --gNB -w ADRV9371_ZC706 --enable-cpu-affinity
+
+
+
+run:
+----
+source oaienv
+sudo -E /usr/local/etc/syriq/cpu-irq.sh
+
+sudo -E cset shield -e ./targets/bin/nr-softmodem.Rel15 -- -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band22.tm1.106PRB.adrv9371zc706.conf --rf-config-file /usr/local/etc/syriq/gnb.band22.tm1.PRB100.NR40_hwgain15.dat

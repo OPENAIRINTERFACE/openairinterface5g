@@ -38,9 +38,7 @@
 #include "SCHED_UE/sched_UE.h"
 #include "LTE_SystemInformationBlockType2.h"
 #include "LTE_RadioResourceConfigDedicated.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-  #include "LTE_PRACH-ConfigSIB-v1310.h"
-#endif
+#include "LTE_PRACH-ConfigSIB-v1310.h"
 #include "LTE_MeasGapConfig.h"
 #include "LTE_MeasObjectToAddModList.h"
 #include "LTE_TDD-Config.h"
@@ -53,12 +51,11 @@
 #include "PHY/INIT/phy_init.h"
 
 #include "common/ran_context.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  #include "LTE_MBSFN-AreaInfoList-r9.h"
-  #include "LTE_MBSFN-AreaInfo-r9.h"
-  #include "LTE_MBSFN-SubframeConfigList.h"
-  #include "LTE_PMCH-InfoList-r9.h"
-#endif
+#include "LTE_MBSFN-AreaInfoList-r9.h"
+#include "LTE_MBSFN-AreaInfo-r9.h"
+#include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_PMCH-InfoList-r9.h"
+
 
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 extern void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
@@ -96,14 +93,9 @@ int
 rrc_mac_config_req_ue(module_id_t Mod_idP,
                       int CC_idP,
                       uint8_t eNB_index,
-                      LTE_RadioResourceConfigCommonSIB_t *
-                      radioResourceConfigCommon,
-                      struct LTE_PhysicalConfigDedicated
-                      *physicalConfigDedicated,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
-  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
-#endif
+                      LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+                      struct LTE_PhysicalConfigDedicated *physicalConfigDedicated,
+                      LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                       LTE_MeasObjectToAddMod_t **measObj,
                       LTE_MAC_MainConfig_t *mac_MainConfig,
                       long logicalChannelIdentity,
@@ -115,32 +107,18 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
                       uint16_t *SIperiod,
                       LTE_ARFCN_ValueEUTRA_t *ul_CarrierFreq,
                       long *ul_Bandwidth,
-                      LTE_AdditionalSpectrumEmission_t *
-                      additionalSpectrumEmission,
-                      struct LTE_MBSFN_SubframeConfigList
-                      *mbsfn_SubframeConfigList
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  , uint8_t MBMS_Flag,
-  LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-  LTE_PMCH_InfoList_r9_t *pmch_InfoList
-#endif
-#ifdef CBA
-  , uint8_t num_active_cba_groups, uint16_t cba_rnti
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,config_action_t  config_action
-  ,const uint32_t *const sourceL2Id
-  ,const uint32_t *const destinationL2Id
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                           ,
-                           uint8_t FeMBMS_Flag,
-                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
-                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
-#endif
-		      )
-{
-
+                      LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+                      struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+                      uint8_t MBMS_Flag,
+                      LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+                      LTE_PMCH_InfoList_r9_t *pmch_InfoList,
+                      config_action_t  config_action,
+                      const uint32_t *const sourceL2Id,
+                      const uint32_t *const destinationL2Id,
+                      uint8_t FeMBMS_Flag,
+                      struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
+                      LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                     ) {
   int i;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
@@ -212,14 +190,8 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
           (uint16_t) *
           mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
       } else {
-        UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer =
-#if (LTE_RRC_VERSION < MAKE_VERSION(12, 0, 0))
-          (uint16_t)
-          LTE_MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
-#else
-          (uint16_t) LTE_PeriodicBSR_Timer_r12_infinity;
-#endif
-          ;
+        UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) LTE_PeriodicBSR_Timer_r12_infinity;
+        ;
       }
 
       if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx) {
@@ -232,27 +204,16 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       }
 
       if(NFAPI_MODE !=  NFAPI_UE_STUB_PNF)
-        phy_config_harq_ue(Mod_idP, 0, eNB_index,
-                           UE_mac_inst[Mod_idP].
-                           scheduling_info.maxHARQ_Tx);
+        phy_config_harq_ue(Mod_idP, 0, eNB_index, UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
 
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
         UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
           (uint16_t) mac_MainConfig->ul_SCH_Config->
           retxBSR_Timer;
       } else {
-#if (LTE_RRC_VERSION < MAKE_VERSION(12, 0, 0))
-        UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
-          (uint16_t)
-          LTE_MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
-#else
-        UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
-          (uint16_t) LTE_RetxBSR_Timer_r12_sf2560;
-#endif
+        UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer = (uint16_t) LTE_RetxBSR_Timer_r12_sf2560;
       }
     }
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if (mac_MainConfig->ext1
         && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
@@ -293,7 +254,6 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
         (uint16_t) 0;
     }
 
-#endif
     UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF =
       MAC_UE_BSR_TIMER_NOT_RUNNING;
     UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF =
@@ -358,15 +318,11 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     UE_mac_inst[Mod_idP].physicalConfigDedicated = physicalConfigDedicated; // for SR proc
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
   if (sCellToAddMod_r10 != NULL) {
     phy_config_dedicated_scell_ue(Mod_idP, eNB_index,
                                   sCellToAddMod_r10, 1);
     UE_mac_inst[Mod_idP].physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10; // using SCell index 0
   }
-
-#endif
 
   if (measObj != NULL) {
     if (measObj[0] != NULL &&
@@ -533,8 +489,6 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
   if (mbsfn_AreaInfoList != NULL) {
     LOG_I(MAC, "[UE %d][CONFIG] Received %d MBSFN Area Info\n",
           Mod_idP, mbsfn_AreaInfoList->list.count);
@@ -572,35 +526,15 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     UE_mac_inst[Mod_idP].mcch_status = 1;
   }
 
-#endif
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if(nonMBSFN_SubframeConfig!=NULL) {
-    	LOG_I(MAC, "[UE %d] Configuring LTE_NonMBSFN \n",
-	  Mod_idP);
-	phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0, nonMBSFN_SubframeConfig);
-  }
-#endif
-
-#ifdef CBA
-
-  if (cba_rnti) {
-    UE_mac_inst[Mod_idP].cba_rnti[num_active_cba_groups - 1] =
-      cba_rnti;
-    LOG_D(MAC,
-          "[UE %d] configure CBA group %d RNTI %x for eNB %d (total active cba group %d)\n",
-          Mod_idP, Mod_idP % num_active_cba_groups, cba_rnti,
-          eNB_index, num_active_cba_groups);
-    phy_config_cba_rnti(Mod_idP, CC_idP, eNB_flagP, eNB_index,
-                        cba_rnti, num_active_cba_groups - 1,
-                        num_active_cba_groups);
+    LOG_I(MAC, "[UE %d] Configuring LTE_NonMBSFN \n",
+          Mod_idP);
+    phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0, nonMBSFN_SubframeConfig);
   }
 
-#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   //for D2D
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   switch (config_action) {
     case CONFIG_ACTION_ADD:
@@ -635,6 +569,5 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       break;
   }
 
-#endif
   return (0);
 }

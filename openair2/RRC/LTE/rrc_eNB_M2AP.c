@@ -52,7 +52,6 @@ rrc_M2AP_openair_rrc_top_init_MBMS(int eMBMS_active){
   LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_eNB_INST=%d\n", RC.nb_inst);
 
   if (RC.nb_inst > 0) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
 
     for (module_id=0; module_id<NB_eNB_INST; module_id++) {
@@ -60,8 +59,6 @@ rrc_M2AP_openair_rrc_top_init_MBMS(int eMBMS_active){
         RC.rrc[module_id]->carrier[CC_id].MBMS_flag = (uint8_t)eMBMS_active;
       }
     }
-
-#endif
   }
 }
 
@@ -222,9 +219,7 @@ static void rrc_M2AP_init_MBMS(
                               NULL,   // LTE_DRB_ToAddModList
                               NULL,   // DRB_ToReleaseList
                               &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,0, 0
-#endif
                               );
     }
             //rrc_mac_config_req();
@@ -280,15 +275,11 @@ static void rrc_M2AP_init_MCCH(
    if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
                            0,0,0,0,0,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            0,
-#endif
                            0,//rnti
                            (LTE_BCCH_BCH_Message_t *)NULL,
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#endif
                            (struct LTE_PhysicalConfigDedicated *)NULL,
                            (LTE_SCellToAddMod_r10_t *)NULL,
                          //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
@@ -304,20 +295,14 @@ static void rrc_M2AP_init_MCCH(
                            ,
                            0,
                            (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                           (LTE_PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                           ,
-                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
+                           (LTE_PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9),
+                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
                         0,
                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
-#endif
                         );
   }
   
@@ -343,14 +328,12 @@ static void rrc_M2AP_init_MCCH(
 //
 //  LTE_BCCH_DL_SCH_Message_t         *bcch_message = &RC.rrc[Mod_id]->carrier[CC_id].systemInformation;
 //
-//#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //  if (ctxt_pP->brOption) {
 //    buffer       = RC.rrc[Mod_id]->carrier[CC_id].SIB1_BR;
 //    bcch_message = &RC.rrc[Mod_id]->carrier[CC_id].siblock1_BR;
 //    sib1         = &RC.rrc[Mod_id]->carrier[CC_id].sib1_BR;
 //  }
 //  else
-//#endif
 //    {
 //      buffer       = RC.rrc[Mod_id]->carrier[CC_id].SIB1;
 //      bcch_message = &RC.rrc[Mod_id]->carrier[CC_id].siblock1;
@@ -409,11 +392,9 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
   rrc_eNB_carrier_data_t *carrier=&rrc->carrier[CC_id];
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   //struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part=NULL;
   LTE_MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList/*,*MBSFNSubframeConfigList_copy*/;
   //LTE_MBSFN_AreaInfoList_r9_t *MBSFNArea_list/*,*MBSFNArea_list_copy*/;
-#endif
 
  asn_enc_rval_t enc_rval;
 
@@ -422,15 +403,12 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
  LTE_SystemInformationBlockType2_t **sib2;
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if(ctxt_pP->brOption){
 	buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23_BR;	
 	sib2 	 =  &RC.rrc[Mod_id]->carrier[CC_id].sib2_BR;
         LOG_I(RRC,"Running SIB2/3 Encoding for eMTC\n");
 
-  }else
-#endif
-  {
+  } else {
 	buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23;	
 	sib2 	 =  &RC.rrc[Mod_id]->carrier[CC_id].sib2;
   }
@@ -497,6 +475,12 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib20_v1310: 
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430: 
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib24_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib25_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2: 
 
@@ -568,15 +552,11 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
                            0,0,0,0,0,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            0,
-#endif
                            0,//rnti
                            (LTE_BCCH_BCH_Message_t *)NULL,
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#endif
                            (struct LTE_PhysicalConfigDedicated *)NULL,
                            (LTE_SCellToAddMod_r10_t *)NULL,
                          //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
@@ -593,20 +573,14 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
  			   (LTE_MBSFN_SubframeConfigList_t *) carrier->sib2->mbsfn_SubframeConfigList,
                            carrier->MBMS_flag,
                            (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                           (LTE_PMCH_InfoList_r9_t *) NULL 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                           ,
-                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
+                           (LTE_PMCH_InfoList_r9_t *) NULL,
+                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
                         0,
                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
-#endif
                         );
   }
 
@@ -627,11 +601,9 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
   rrc_eNB_carrier_data_t *carrier=&rrc->carrier[CC_id];
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part=NULL;
   //LTE_MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList;
   LTE_MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
-#endif
 
  asn_enc_rval_t enc_rval;
 
@@ -640,20 +612,14 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
    LTE_SystemInformationBlockType2_t **sib2;
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if(ctxt_pP->brOption){
 	buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23_BR;	
 	sib2 	 =  &RC.rrc[Mod_id]->carrier[CC_id].sib2_BR;
-        LOG_I(RRC,"Running SIB2/3 Encoding for eMTC\n");
-
-  }else
-#endif
-  {
+    LOG_I(RRC,"Running SIB2/3 Encoding for eMTC\n");
+  } else {
 	buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23;	
 	sib2 	 =  &RC.rrc[Mod_id]->carrier[CC_id].sib2;
   }
-
-
 
   if (bcch_message) {
     //memset(bcch_message,0,sizeof(LTE_BCCH_DL_SCH_Message_t));
@@ -701,20 +667,15 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
   }*/
 
   
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
  LTE_SystemInformationBlockType13_r9_t   **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
-#endif
 
   struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1/*, *MBSFN_Area2*/;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
  sib13_part = CALLOC(1,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
  memset(sib13_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
  sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
 
  *sib13 = &sib13_part->choice.sib13_v920;
-#endif
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
  (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9=LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
  (*sib13)->notificationConfig_r9.notificationOffset_r9=0;
  (*sib13)->notificationConfig_r9.notificationSF_Index_r9=1;
@@ -741,11 +702,8 @@ for( i=0; i < m2ap_setup_resp->num_mcch_config_per_mbsfn; i++){
  MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
  ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
  }
-#endif
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
-#endif
 
  //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message, (void *)bcch_message);
 
@@ -767,15 +725,11 @@ for( i=0; i < m2ap_setup_resp->num_mcch_config_per_mbsfn; i++){
  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
                            0,0,0,0,0,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            0,
-#endif
                            0,//rnti
                            (LTE_BCCH_BCH_Message_t *)NULL,
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#endif
                            (struct LTE_PhysicalConfigDedicated *)NULL,
                            (LTE_SCellToAddMod_r10_t *)NULL,
                          //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
@@ -791,20 +745,14 @@ for( i=0; i < m2ap_setup_resp->num_mcch_config_per_mbsfn; i++){
                            ,
                            0,
                            (LTE_MBSFN_AreaInfoList_r9_t *) & carrier->sib13->mbsfn_AreaInfoList_r9,
-                           (LTE_PMCH_InfoList_r9_t *) NULL 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                           ,
-                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
+                           (LTE_PMCH_InfoList_r9_t *) NULL,
+                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
                         0,
                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
-#endif
                         );
   }
 
@@ -829,10 +777,8 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
   rrc_eNB_carrier_data_t *carrier=&rrc->carrier[CC_id];
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part=NULL;
   LTE_MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList/*,*MBSFNSubframeConfigList_copy*/;
-#endif
 
  asn_enc_rval_t enc_rval;
 
@@ -840,28 +786,19 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
  uint8_t                       *buffer;
  LTE_SystemInformationBlockType2_t **sib2;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   LTE_MBSFN_AreaInfoList_r9_t *MBSFNArea_list/*,*MBSFNArea_list_copy*/;
  LTE_SystemInformationBlockType13_r9_t   **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
  struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1;
-#endif
 
-
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if(ctxt_pP->brOption){
 	buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23_BR;	
 	sib2 	 =  &RC.rrc[Mod_id]->carrier[CC_id].sib2_BR;
         LOG_I(RRC,"Running SIB2/3 Encoding for eMTC\n");
 
-  }else
-#endif
-  {
+  } else {
 	buffer   = RC.rrc[Mod_id]->carrier[CC_id].SIB23;	
 	sib2 	 =  &RC.rrc[Mod_id]->carrier[CC_id].sib2;
   }
-
-
 
   if (bcch_message) {
     //memset(bcch_message,0,sizeof(LTE_BCCH_DL_SCH_Message_t));
@@ -912,7 +849,6 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920: 
 	*sib13=&typeandinfo->choice.sib13_v920;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 	(*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9=LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
  	(*sib13)->notificationConfig_r9.notificationOffset_r9=0;
  	(*sib13)->notificationConfig_r9.notificationSF_Index_r9=1;
@@ -938,7 +874,6 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
  	   MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= m2ap_setup_resp->mcch_config_per_mbsfn[j].mcs;
  	   ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
  	}
-#endif
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib14_v1130: 
 	break;
@@ -955,6 +890,12 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib20_v1310: 
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430: 
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib24_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib25_v1530:
+	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2: 
 
@@ -1004,15 +945,10 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
   }
 
  if(*sib13==NULL){
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     sib13_part = CALLOC(1,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     memset(sib13_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
-
     *sib13 = &sib13_part->choice.sib13_v920;
-#endif
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
    (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9=LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
    (*sib13)->notificationConfig_r9.notificationOffset_r9=0;
    (*sib13)->notificationConfig_r9.notificationSF_Index_r9=1;
@@ -1039,12 +975,8 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
    ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
    }
-#endif
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
-#endif
-
  }
 
   
@@ -1070,15 +1002,11 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
                            0,0,0,0,0,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            0,
-#endif
                            0,//rnti
                            (LTE_BCCH_BCH_Message_t *)NULL,
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-#endif
                            (struct LTE_PhysicalConfigDedicated *)NULL,
                            (LTE_SCellToAddMod_r10_t *)NULL,
                          //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
@@ -1095,20 +1023,14 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
  			   (LTE_MBSFN_SubframeConfigList_t *) carrier->sib2->mbsfn_SubframeConfigList,
                            carrier->MBMS_flag,
                            (LTE_MBSFN_AreaInfoList_r9_t *) & carrier->sib13->mbsfn_AreaInfoList_r9,
-                           (LTE_PMCH_InfoList_r9_t *) NULL 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                           ,
-                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                        ,
+                           (LTE_PMCH_InfoList_r9_t *) NULL,
+                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
                         0,
                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
-#endif
                         );
   }
 

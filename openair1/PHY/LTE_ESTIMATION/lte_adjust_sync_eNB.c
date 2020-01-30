@@ -112,14 +112,15 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB *eNB,module_id_t UE_id)
+int lte_est_timing_advance_pusch(PHY_VARS_eNB *eNB,
+                                 module_id_t UE_id)
 {
   int temp, i, aa, max_pos=0, max_val=0;
   short Re,Im;
 
   RU_t *ru;
   ru = RC.ru[UE_id];
-  LTE_DL_FRAME_PARMS *frame_parms = (eNB==NULL) ? &ru->frame_parms : &eNB->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = (eNB==NULL) ? ru->frame_parms : &eNB->frame_parms;
   LTE_eNB_PUSCH *eNB_pusch_vars = (eNB!=NULL) ? eNB->pusch_vars[UE_id] : (LTE_eNB_PUSCH*)NULL;
   RU_CALIBRATION *calibration = &ru->calibration;
   int32_t **ul_ch_estimates_time = (eNB==NULL) ? calibration->drs_ch_estimates_time : eNB_pusch_vars->drs_ch_estimates_time;
@@ -147,10 +148,5 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB *eNB,module_id_t UE_id)
   if (max_pos>frame_parms->ofdm_symbol_size/2)
     max_pos = max_pos-frame_parms->ofdm_symbol_size;
 
-  //#ifdef DEBUG_PHY
-  LOG_D(PHY,"max_pos = %d, sync_pos=%d\n",max_pos,sync_pos);
-  //#endif //DEBUG_PHY
-
   return max_pos - sync_pos;
 }
-

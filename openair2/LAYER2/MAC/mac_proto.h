@@ -33,6 +33,7 @@
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
 #include "openair2/COMMON/mac_messages_types.h"
 
+
 /** \addtogroup _mac
  *  @{
  */
@@ -46,7 +47,7 @@
 */
 
 void schedule_mib(module_id_t module_idP,
-		  frame_t frameP, sub_frame_t subframeP);
+                  frame_t frameP, sub_frame_t subframeP);
 
 /** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 \brief First stage of Random-Access Scheduling. Loops over the ras and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
@@ -58,7 +59,7 @@ for the message.
 
 
 void schedule_RA(module_id_t module_idP, frame_t frameP,
-		 sub_frame_t subframe);
+                 sub_frame_t subframe);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
@@ -66,17 +67,15 @@ void schedule_RA(module_id_t module_idP, frame_t frameP,
 @param subframe Subframe number on which to act
 */
 void schedule_SI(module_id_t module_idP, frame_t frameP,
-		 sub_frame_t subframeP);
+                 sub_frame_t subframeP);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 */
 void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
-                sub_frame_t subframeP);
-#endif
+                      sub_frame_t subframeP);
 
 
 /** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
@@ -85,15 +84,14 @@ void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
 @param subframe Subframe number on which to act
 */
 int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
-		  sub_frame_t subframe);
+                  sub_frame_t subframe);
 
 /** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 */
-int schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
-		  sub_frame_t subframe);
+int schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframe);
 
 
 /** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
@@ -102,7 +100,7 @@ int schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 @param[out] index of sf pattern
 */
 int8_t get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
-			      uint8_t mbsfn_sync_area);
+                              uint8_t mbsfn_sync_area);
 
 /** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
 @param Mod_id Instance ID of eNB
@@ -111,8 +109,8 @@ int8_t get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 @param[out] index of sf pattern
 */
 int8_t ue_get_mbsfn_sf_alloction(module_id_t module_idP,
-				 uint8_t mbsfn_sync_area,
-				 unsigned char eNB_index);
+                                 uint8_t mbsfn_sync_area,
+                                 unsigned char eNB_index);
 
 /** \brief top ULSCH Scheduling for TDD (config 1-6).
 @param Mod_id Instance ID of eNB
@@ -120,7 +118,7 @@ int8_t ue_get_mbsfn_sf_alloction(module_id_t module_idP,
 @param subframe Subframe number on which to act
 */
 void schedule_ulsch(module_id_t module_idP, frame_t frameP,
-		    sub_frame_t subframe);
+                    sub_frame_t subframe);
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
@@ -130,15 +128,15 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
 void schedule_ulsch_rnti(module_id_t module_idP, int slice_idx, frame_t frameP,
-			 sub_frame_t subframe,
-			 unsigned char sched_subframe,
-			 uint16_t * first_rb);
+                         sub_frame_t subframe,
+                         unsigned char sched_subframe,
+                         uint16_t *first_rb);
 
 void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
-			      frame_t       frameP,
-			      sub_frame_t   subframeP,
-			      unsigned char sched_subframeP,
-			      int          *emtc_active);
+                              frame_t       frameP,
+                              sub_frame_t   subframeP,
+                              unsigned char sched_subframeP,
+                              int          *emtc_active);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
@@ -156,13 +154,13 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
 void schedule_dlsch(module_id_t module_idP, frame_t frameP,
-		      sub_frame_t subframe, int *mbsfn_flag);
+                    sub_frame_t subframe, int *mbsfn_flag);
 
 void schedule_ue_spec(module_id_t module_idP, int slice_idxP,
-		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
+                      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
 void schedule_ue_spec_br(module_id_t   module_idP,
-			 frame_t       frameP,
-			 sub_frame_t   subframeP);
+                         frame_t       frameP,
+                         sub_frame_t   subframeP);
 void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
@@ -187,10 +185,10 @@ int8_t get_DELTA_PREAMBLE(module_id_t module_idP, int CC_id);
 int8_t get_deltaP_rampup(module_id_t module_idP, uint8_t CC_id);
 
 uint16_t mac_computeRIV(uint16_t N_RB_DL, uint16_t RBstart,
-			uint16_t Lcrbs);
+                        uint16_t Lcrbs);
 
-void add_msg3(module_id_t module_idP, int CC_id, RA_t * ra, frame_t frameP,
-	      sub_frame_t subframeP);
+void add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
+              sub_frame_t subframeP);
 
 //main.c
 
@@ -199,7 +197,7 @@ void init_UE_list(UE_list_t *UE_list);
 void init_slice_info(slice_info_t *sli);
 
 int mac_top_init(int eMBMS_active, char *uecap_xer,
-		 uint8_t cba_group_active, uint8_t HO_active);
+                 uint8_t cba_group_active, uint8_t HO_active);
 
 void mac_top_init_eNB(void);
 
@@ -216,10 +214,10 @@ int mac_init_global_param(void);
 void mac_top_cleanup(void);
 
 void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
-			    uint16_t eNB_index);
+                            uint16_t eNB_index);
 
-void clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
-			     frame_t frameP, sub_frame_t subframeP);
+void clear_nfapi_information(eNB_MAC_INST *eNB, int CC_idP,
+                             frame_t frameP, sub_frame_t subframeP);
 
 
 // eNB functions
@@ -240,74 +238,74 @@ void dlsch_scheduler_pre_processor(module_id_t module_idP,
                                    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
-                                         int slice_idx,
-                                         frame_t frameP,
-                                         sub_frame_t subframeP,
-                                         int min_rb_unit[NFAPI_CC_MAX],
-                                         uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                         uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                         uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
-                                         int *mbsfn_flag);
+    int slice_idx,
+    frame_t frameP,
+    sub_frame_t subframeP,
+    int min_rb_unit[NFAPI_CC_MAX],
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
+    int *mbsfn_flag);
 
 void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
-                                                int slice_idx,
-                                                const uint8_t rbs_retx[NFAPI_CC_MAX]);
+    int slice_idx,
+    const uint8_t rbs_retx[NFAPI_CC_MAX]);
 
 void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
-                                              int slice_idx,
-                                              frame_t frameP,
-                                              sub_frame_t subframeP,
-                                              int min_rb_unit[NFAPI_CC_MAX],
-                                              uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                              uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+    int slice_idx,
+    frame_t frameP,
+    sub_frame_t subframeP,
+    int min_rb_unit[NFAPI_CC_MAX],
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
 
 void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
-                                               int slice_idx,
-                                               int min_rb_unit[NFAPI_CC_MAX],
-                                               uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                               uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+    int slice_idx,
+    int min_rb_unit[NFAPI_CC_MAX],
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
-                                                      int slice_idx,
-                                                      int min_rb_unit[NFAPI_CC_MAX],
-                                                      uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                                      uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                                      uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                                      uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                                      uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+    int slice_idx,
+    int min_rb_unit[NFAPI_CC_MAX],
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void slice_priority_sort(module_id_t Mod_id, int slice_list[MAX_NUM_SLICES]);
 
 void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
-                                             int frameP,
-                                             sub_frame_t subframeP,
-                                             uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
+    int frameP,
+    sub_frame_t subframeP,
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id,
                                       int frameP,
                                       sub_frame_t subframeP);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
-                                            int UE_id,
-                                            uint8_t CC_id,
-                                            int N_RBG,
-                                            int min_rb_unit,
-                                            uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                            uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                            uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                            uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
-                                            uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+    int UE_id,
+    uint8_t CC_id,
+    int N_RBG,
+    int min_rb_unit,
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+    uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
+    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
-   and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 
+   and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f.
 @param Mod_id Instance ID of eNB
 @param subframe Index of current subframe
 @param calibration_flag Flag to indicate that eNB scheduler should schedule TDD auto-calibration PUSCH.
 */
-void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);	//, int calibration_flag);
+void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);  //, int calibration_flag);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param Mod_id Instance ID of eNB
@@ -317,12 +315,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 @param rach_resource type (0=non BL/CE,1 CE level 0,2 CE level 1, 3 CE level 2,4 CE level 3)
 */
 void initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
-		      sub_frame_t subframeP, uint16_t preamble_index,
-		      int16_t timing_offset, uint16_t rnti
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-		      , uint8_t rach_resource_type
-#endif
-    );
+                      sub_frame_t subframeP, uint16_t preamble_index,
+                      int16_t timing_offset, uint16_t rnti,
+                      uint8_t rach_resource_type
+                     );
 
 /* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
 @param Mod_id Instance ID of eNB
@@ -331,29 +327,28 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 @returns t_CRNTI
 */
 unsigned short fill_rar(const module_id_t module_idP,
-			const int CC_id,
-			RA_t *ra,
-			const frame_t frameP,
-			uint8_t * const dlsch_buffer,
-			const uint16_t N_RB_UL,
-			const uint8_t input_buffer_length);
+                        const int CC_id,
+                        RA_t *ra,
+                        const frame_t frameP,
+                        uint8_t *const dlsch_buffer,
+                        const uint16_t N_RB_UL,
+                        const uint8_t input_buffer_length);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-unsigned short fill_rar_br(eNB_MAC_INST * eNB,
-			   int CC_id,
-			   RA_t * ra,
-			   const frame_t frameP,
-			   const sub_frame_t subframeP,
-			   uint8_t * const dlsch_buffer,
-			   const uint8_t ce_level);
-#endif
+unsigned short fill_rar_br(eNB_MAC_INST *eNB,
+                           int CC_id,
+                           RA_t *ra,
+                           const frame_t frameP,
+                           const sub_frame_t subframeP,
+                           uint8_t *const dlsch_buffer,
+                           const uint8_t ce_level);
+
 
 /* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
 @param Mod_id Instance ID of eNB
 @param preamble_index index of the received RA request.
 */
 void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
-		    uint16_t preamble_index);
+                    uint16_t preamble_index);
 
 /* \brief Function used by PHY to inform MAC that an uplink is scheduled
           for Msg3 in given subframe. This is used so that the MAC
@@ -370,10 +365,10 @@ void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 void clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 
 void set_msg3_subframe(module_id_t Mod_id,
-		       int CC_id,
-		       int frame,
-		       int subframe,
-		       int rnti, int Msg3_frame, int Msg3_subframe);
+                       int CC_id,
+                       int frame,
+                       int subframe,
+                       int rnti, int Msg3_frame, int Msg3_subframe);
 
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of eNB
@@ -385,13 +380,13 @@ void set_msg3_subframe(module_id_t Mod_id,
 @param ul_cqi Uplink CQI estimate after this pdu (SNR quantized to 8 bits, -64 ... 63.5 dB in .5dB steps)
 */
 void rx_sdu(const module_id_t enb_mod_idP,
-	    const int CC_idP,
-	    const frame_t frameP,
-	    const sub_frame_t subframeP,
-	    const rnti_t rntiP,
-	    uint8_t * sduP,
-	    const uint16_t sdu_lenP,
-	    const uint16_t timing_advance, const uint8_t ul_cqi);
+            const int CC_idP,
+            const frame_t frameP,
+            const sub_frame_t subframeP,
+            const rnti_t rntiP,
+            uint8_t *sduP,
+            const uint16_t sdu_lenP,
+            const uint16_t timing_advance, const uint8_t ul_cqi);
 
 
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
@@ -403,7 +398,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 @param ul_cqi SNR measurement of PUCCH (SNR quantized to 8 bits, -64 ... 63.5 dB in .5dB steps)
 */
 void SR_indication(module_id_t module_idP, int CC_id, frame_t frameP,
-		   sub_frame_t subframe, rnti_t rnti, uint8_t ul_cqi);
+                   sub_frame_t subframe, rnti_t rnti, uint8_t ul_cqi);
 
 /* \brief Function to indicate a UL failure was detected by eNB PHY.
 @param Mod_id Instance ID of eNB
@@ -413,7 +408,7 @@ void SR_indication(module_id_t module_idP, int CC_id, frame_t frameP,
 @param subframe Index of subframe where SR was received
 */
 void UL_failure_indication(module_id_t Mod_id, int CC_id, frame_t frameP,
-			   rnti_t rnti, sub_frame_t subframe);
+                           rnti_t rnti, sub_frame_t subframe);
 
 /* \brief Function to indicate an HARQ ACK/NAK.
 @param Mod_id Instance ID of eNB
@@ -423,8 +418,8 @@ void UL_failure_indication(module_id_t Mod_id, int CC_id, frame_t frameP,
 @param harq_pdu NFAPI HARQ PDU descriptor
 */
 void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
-		     sub_frame_t subframeP,
-		     nfapi_harq_indication_pdu_t * harq_pdu);
+                     sub_frame_t subframeP,
+                     nfapi_harq_indication_pdu_t *harq_pdu);
 
 /* \brief Function to indicate a received CQI pdu
 @param Mod_id Instance ID of eNB
@@ -435,12 +430,12 @@ void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 @param ul_cqi_information NFAPI UL CQI measurement
 */
 void cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
-		    sub_frame_t subframeP, rnti_t rntiP,
-		    nfapi_cqi_indication_rel9_t * rel9, uint8_t * pdu,
-		    nfapi_ul_cqi_information_t * ul_cqi_information);
+                    sub_frame_t subframeP, rnti_t rntiP,
+                    nfapi_cqi_indication_rel9_t *rel9, uint8_t *pdu,
+                    nfapi_ul_cqi_information_t *ul_cqi_information);
 
 uint8_t *get_dlsch_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-		       rnti_t rnti, uint8_t TBindex);
+                       rnti_t rnti, uint8_t TBindex);
 
 /* \brief Function to retrieve MCH transport block and MCS used for MCH in this MBSFN subframe.  Returns null if no MCH is to be transmitted
 @param Mod_id Instance ID of eNB
@@ -450,7 +445,7 @@ uint8_t *get_dlsch_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 @returns Pointer to MCH transport block and mcs for subframe
 */
 MCH_PDU *get_mch_sdu(module_id_t Mod_id, int CC_id, frame_t frame,
-		     sub_frame_t subframe);
+                     sub_frame_t subframe);
 
 
 
@@ -460,9 +455,9 @@ void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index);
 void ue_init_mac(module_id_t module_idP);
 void init_ue_sched_info(void);
 void add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id,
-		       sub_frame_t subframe, UE_ULSCH_STATUS status);
+                       sub_frame_t subframe, UE_ULSCH_STATUS status);
 void add_ue_dlsch_info(module_id_t module_idP, int CC_id, int UE_id,
-		                   sub_frame_t subframe, UE_DLSCH_STATUS status, rnti_t rnti);
+                       sub_frame_t subframe, UE_DLSCH_STATUS status, rnti_t rnti);
 int find_UE_id(module_id_t module_idP, rnti_t rnti);
 int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 rnti_t UE_RNTI(module_id_t module_idP, int UE_id);
@@ -476,23 +471,23 @@ int8_t find_active_UEs_with_traffic(module_id_t module_idP);
 void init_CCE_table(int *CCE_table);
 
 int get_nCCE_offset(int *CCE_table,
-		    const unsigned char L,
-		    const int nCCE,
-		    const int common_dci,
-		    const unsigned short rnti,
-		    const unsigned char subframe);
+                    const unsigned char L,
+                    const int nCCE,
+                    const int common_dci,
+                    const unsigned short rnti,
+                    const unsigned char subframe);
 
 int allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, int test_only);
 
 boolean_t CCE_allocation_infeasible(int module_idP,
-				    int CC_idP,
-				    int common_flag,
-				    int subframe,
-				    int aggregation, int rnti);
+                                    int CC_idP,
+                                    int common_flag,
+                                    int subframe,
+                                    int aggregation, int rnti);
 
 void set_ue_dai(sub_frame_t subframeP,
-		int UE_id,
-		uint8_t CC_id, uint8_t tdd_config, UE_list_t * UE_list);
+                int UE_id,
+                uint8_t CC_id, uint8_t tdd_config, UE_list_t *UE_list);
 
 uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 /** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
@@ -504,16 +499,16 @@ uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP
 void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
 uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP,
-					unsigned char group_id);
+                                        unsigned char group_id);
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP, int CC_id,
-			      uint8_t UE_id);
+                              uint8_t UE_id);
 /** \brief Round-robin scheduler for ULSCH traffic.
 @param Mod_id Instance ID for eNB
 @param subframe Subframe number on which to act
 @returns UE index that is to be scheduled if needed/room
 */
 module_id_t schedule_next_ulue(module_id_t module_idP, int UE_id,
-			       sub_frame_t subframe);
+                               sub_frame_t subframe);
 
 /** \brief Round-robin scheduler for DLSCH traffic.
 @param Mod_id Instance ID for eNB
@@ -521,7 +516,7 @@ module_id_t schedule_next_ulue(module_id_t module_idP, int UE_id,
 @returns UE index that is to be scheduled if needed/room
 */
 int schedule_next_dlue(module_id_t module_idP, int CC_id,
-		       sub_frame_t subframe);
+                       sub_frame_t subframe);
 
 /* \brief Allocates a set of PRBS for a particular UE.  This is a simple function for the moment, later it should process frequency-domain CQI information and/or PMI information.  Currently it just returns the first PRBS that are available in the subframe based on the number requested.
 @param UE_id Index of UE on which to act
@@ -531,7 +526,7 @@ int schedule_next_dlue(module_id_t module_idP, int CC_id,
 @returns an rballoc bitmap for resource type 0 allocation (DCI).
 */
 uint32_t allocate_prbs(int UE_id, uint8_t nb_rb, int N_RB_DL,
-		       uint32_t * rballoc);
+                       uint32_t *rballoc);
 
 /* \fn uint32_t req_new_ulsch(module_id_t module_idP)
 \brief check for a new transmission in any drb
@@ -549,41 +544,38 @@ uint32_t req_new_ulsch(module_id_t module_idP);
 @returns 0 for no SR, 1 for SR
 */
 uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
-		   uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
+                   uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
 
 uint8_t get_ue_weight(module_id_t module_idP, int CC_id, int UE_id);
 
 // UE functions
 void mac_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
-			 uint16_t CH_index);
+                         uint16_t CH_index);
 
 void ue_decode_si(module_id_t module_idP, int CC_id, frame_t frame,
-		  uint8_t CH_index, void *pdu, uint16_t len);
+                  uint8_t CH_index, void *pdu, uint16_t len);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frame,
-                 uint8_t CH_index, void *pdu, uint16_t len);
-#endif
+                       uint8_t CH_index, void *pdu, uint16_t len);
 
 void ue_decode_p(module_id_t module_idP, int CC_id, frame_t frame,
-		 uint8_t CH_index, void *pdu, uint16_t len);
+                 uint8_t CH_index, void *pdu, uint16_t len);
 
 
 void ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frame,
-		 sub_frame_t subframe, uint8_t * sdu, uint16_t sdu_len,
-		 uint8_t CH_index);
+                 sub_frame_t subframe, uint8_t *sdu, uint16_t sdu_len,
+                 uint8_t CH_index);
 
 void ue_send_sl_sdu(module_id_t module_idP,
-		    uint8_t CC_id,
-		    frame_t frameP,
-		    sub_frame_t subframeP,
-		    uint8_t* sdu,
-		    uint16_t sdu_len,
-		    uint8_t eNB_index,
-	       sl_discovery_flag_t sl_discovery_flag
-		    );
+                    uint8_t CC_id,
+                    frame_t frameP,
+                    sub_frame_t subframeP,
+                    uint8_t *sdu,
+                    uint16_t sdu_len,
+                    uint8_t eNB_index,
+                    sl_discovery_flag_t sl_discovery_flag
+                   );
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -593,8 +585,8 @@ void ue_send_sl_sdu(module_id_t module_idP,
 @param sync_area the index of MBSFN sync area
 */
 void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
-		     uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index,
-		     uint8_t sync_area);
+                     uint8_t *sdu, uint16_t sdu_len, uint8_t eNB_index,
+                     uint8_t sync_area);
 
 /*\brief Function to check if UE PHY needs to decode MCH for MAC.
 @param Mod_id Index of protocol instance
@@ -605,10 +597,9 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 @param[out] mcch_active flag indicating whether this MCCH is active in this SF
 */
 int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
-		 sub_frame_t subframe, uint8_t eNB_index,
-		 uint8_t * sync_area, uint8_t * mcch_active);
+                 sub_frame_t subframe, uint8_t eNB_index,
+                 uint8_t *sync_area, uint8_t *mcch_active);
 
-#endif
 
 /* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
 @param Mod_id Instance id of UE in machine
@@ -617,9 +608,9 @@ int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
 @param subframe subframe number
 */
 void ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-		sub_frame_t subframe, uint8_t eNB_index,
-		uint8_t * ulsch_buffer, uint16_t buflen,
-		uint8_t * access_mode);
+                sub_frame_t subframe, uint8_t eNB_index,
+                uint8_t *ulsch_buffer, uint16_t buflen,
+                uint8_t *access_mode);
 
 /* \brief Called by PHY to get sdu for PSBCH/SSS/PSS transmission.
 @param Mod_id Instance id of UE in machine
@@ -652,8 +643,8 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP, int CC_id,frame_t frameP, sub_fram
 @param subframe Index of subframe for PRACH transmission (0 ... 9)
 @returns A pointer to a PRACH_RESOURCES_t */
 PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
-			       frame_t frameP, uint8_t new_Msg3,
-			       sub_frame_t subframe);
+                               frame_t frameP, uint8_t new_Msg3,
+                               sub_frame_t subframe);
 
 /* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
@@ -669,13 +660,13 @@ random-access procedure
 */
 uint16_t
 ue_process_rar(const module_id_t module_idP,
-	       const int CC_id,
-	       const frame_t frameP,
-	       const rnti_t ra_rnti,
-	       uint8_t * const dlsch_buffer,
-	       rnti_t * const t_crnti,
-	       const uint8_t preamble_index,
-	       uint8_t * selected_rar_buffer);
+               const int CC_id,
+               const frame_t frameP,
+               const rnti_t ra_rnti,
+               uint8_t *const dlsch_buffer,
+               rnti_t *const t_crnti,
+               const uint8_t preamble_index,
+               uint8_t *selected_rar_buffer);
 
 
 /* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
@@ -694,17 +685,17 @@ in the ULSCH buffer.
 @param post_padding Number of bytes for padding at the end of MAC PDU
 @returns Number of bytes used for header
 */
-unsigned char generate_ulsch_header(uint8_t * mac_header,
-				    uint8_t num_sdus,
-				    uint8_t short_padding,
-				    uint16_t * sdu_lengths,
-				    uint8_t * sdu_lcids,
-				    POWER_HEADROOM_CMD * power_headroom,
-				    uint16_t * crnti,
-				    BSR_SHORT * truncated_bsr,
-				    BSR_SHORT * short_bsr,
-				    BSR_LONG * long_bsr,
-				    unsigned short post_padding);
+unsigned char generate_ulsch_header(uint8_t *mac_header,
+                                    uint8_t num_sdus,
+                                    uint8_t short_padding,
+                                    uint16_t *sdu_lengths,
+                                    uint8_t *sdu_lcids,
+                                    POWER_HEADROOM_CMD *power_headroom,
+                                    uint16_t *crnti,
+                                    BSR_SHORT *truncated_bsr,
+                                    BSR_SHORT *short_bsr,
+                                    BSR_LONG *long_bsr,
+                                    unsigned short post_padding);
 
 /* \brief Parse header for UL-SCH.  This function parses the received UL-SCH header as described
 in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload
@@ -717,30 +708,26 @@ in the ULSCH buffer.
 @param rx_lengths Pointer to array of SDU lengths
 @returns Pointer to payload following header
 */
-uint8_t *parse_ulsch_header(uint8_t * mac_header,
-			    uint8_t * num_ce,
-			    uint8_t * num_sdu,
-			    uint8_t * rx_ces,
-			    uint8_t * rx_lcids,
-			    uint16_t * rx_lengths, uint16_t tx_lenght);
+uint8_t *parse_ulsch_header(uint8_t *mac_header,
+                            uint8_t *num_ce,
+                            uint8_t *num_sdu,
+                            uint8_t *rx_ces,
+                            uint8_t *rx_lcids,
+                            uint16_t *rx_lengths, uint16_t tx_lenght);
 
 int to_prb(int);
 int to_rbg(int);
 int mac_init(void);
-int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-	       , uint8_t rach_resource_type
-#endif
-    );
+int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid, uint8_t rach_resource_type);
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
 void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
 void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
 
-void swap_UEs(UE_list_t * listP, int nodeiP, int nodejP, int ul_flag);
-int prev(UE_list_t * listP, int nodeP, int ul_flag);
-void dump_ue_list(UE_list_t * listP, int ul_flag);
-int UE_num_active_CC(UE_list_t * listP, int ue_idP);
+void swap_UEs(UE_list_t *listP, int nodeiP, int nodejP, int ul_flag);
+int prev(UE_list_t *listP, int nodeP, int ul_flag);
+void dump_ue_list(UE_list_t *listP, int ul_flag);
+int UE_num_active_CC(UE_list_t *listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
@@ -753,16 +740,16 @@ void set_ul_DAI(int module_idP,
                 int subframeP);
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP, int slice_idx, int frameP,
-				   sub_frame_t subframeP,
+                                   sub_frame_t subframeP,
                                    int sched_frameP,
                                    unsigned char sched_subframeP,
-				   uint16_t * first_rb);
+                                   uint16_t *first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
-			sub_frame_t subframeP);
+                        sub_frame_t subframeP);
 void assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
-			   sub_frame_t subframeP, uint16_t * first_rb);
+                           sub_frame_t subframeP, uint16_t *first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
-		     UE_TEMPLATE * UE_template);
+                     UE_TEMPLATE *UE_template);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
 void sort_UEs(module_id_t Mod_idP, int slice_idx, int frameP, sub_frame_t subframeP);
@@ -779,12 +766,12 @@ void sort_UEs(module_id_t Mod_idP, int slice_idx, int frameP, sub_frame_t subfra
 @returns L2 state (CONNETION_OK or CONNECTION_LOST or PHY_RESYNCH)
 */
 UE_L2_STATE_t ue_scheduler(const module_id_t module_idP,
-			   const frame_t rxFrameP,
-			   const sub_frame_t rxSubframe,
-			   const frame_t txFrameP,
-			   const sub_frame_t txSubframe,
-			   const lte_subframe_t direction,
-			   const uint8_t eNB_index, const int CC_id);
+                           const frame_t rxFrameP,
+                           const sub_frame_t rxSubframe,
+                           const frame_t txFrameP,
+                           const sub_frame_t txSubframe,
+                           const lte_subframe_t direction,
+                           const uint8_t eNB_index, const int CC_id);
 
 /*! \fn  int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8_t eNB_index,uint16_t buflen);
 \brief determine whether to use cba resource to transmit or not
@@ -795,7 +782,7 @@ UE_L2_STATE_t ue_scheduler(const module_id_t module_idP,
 \param[out] access(1) or postpone (0)
 */
 int cba_access(module_id_t module_idP, frame_t frameP,
-	       sub_frame_t subframe, uint8_t eNB_index, uint16_t buflen);
+               sub_frame_t subframe, uint8_t eNB_index, uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level
@@ -819,7 +806,7 @@ BSR_LONG *get_bsr_long(module_id_t module_idP, uint8_t bsr_len);
 \param[in] frame Frame index
 */
 boolean_t update_bsr(module_id_t module_idP, frame_t frameP,
-		     sub_frame_t subframeP, eNB_index_t eNB_index);
+                     sub_frame_t subframeP, eNB_index_t eNB_index);
 
 /*! \fn  locate_BsrIndexByBufferSize (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
@@ -828,8 +815,8 @@ boolean_t update_bsr(module_id_t module_idP, frame_t frameP,
 \param[in] value Value of the buffer
 \return the index in the BSR_LEVEL table
 */
-uint8_t locate_BsrIndexByBufferSize(const uint32_t * table, int size,
-				    int value);
+uint8_t locate_BsrIndexByBufferSize(const uint32_t *table, int size,
+                                    int value);
 
 
 /*! \fn  int get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
@@ -881,7 +868,7 @@ int get_db_dl_PathlossChange(uint8_t dl_PathlossChange);
 \return phr mapping
 */
 uint8_t get_phr_mapping(module_id_t module_idP, int CC_id,
-			uint8_t eNB_index);
+                        uint8_t eNB_index);
 
 /*! \fn  void update_phr (module_id_t module_idP)
    \brief update/reset the phr timers
@@ -896,7 +883,7 @@ void update_phr(module_id_t module_idP, int CC_id);
 \param[in] eNB_id Index of eNB
 */
 void Msg3_tx(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
-	     uint8_t eNB_id);
+             uint8_t eNB_id);
 
 
 /*! \brief Function to indicate the transmission of msg1/rach
@@ -905,11 +892,11 @@ void Msg3_tx(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 */
 
 void Msg1_tx(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
-	     uint8_t eNB_id);
+             uint8_t eNB_id);
 
 void dl_phy_sync_success(module_id_t module_idP,
-			 frame_t frameP,
-			 unsigned char eNB_index, uint8_t first_sync);
+                         frame_t frameP,
+                         unsigned char eNB_index, uint8_t first_sync);
 
 int dump_eNB_l2_stats(char *buffer, int length);
 
@@ -927,10 +914,10 @@ void add_common_dci(DCI_PDU *DCI_pdu,
 */
 
 uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG,
-			   uint8_t * rballoc);
+                           uint8_t *rballoc);
 
 void update_ul_dci(module_id_t module_idP, uint8_t CC_id, rnti_t rnti,
-		   uint8_t dai, sub_frame_t subframe);
+                   uint8_t dai, sub_frame_t subframe);
 
 int get_bw_index(module_id_t module_id, uint8_t CC_id);
 
@@ -979,73 +966,51 @@ int generate_dlsch_header(unsigned char *mac_header,
 @param mbsfn_SubframeConfigList pointer to mbsfn subframe configuration list from SIB2
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
-@param sib1_ext_r13 SI Scheduling information for SI-BR UEs         
+@param sib1_ext_r13 SI Scheduling information for SI-BR UEs
 @param mib_fembms pointer to FeMBMS MIB
 @param FeMBMS_Flag indicates FeMBMS transmission
 @param schedulingInfo_fembms pointer to FeMBMS SI Scheduling Information
-@param non_MBSFN_SubframeConfig pointer to FeMBMS Non MBSFN Subframe Config 
+@param non_MBSFN_SubframeConfig pointer to FeMBMS Non MBSFN Subframe Config
 @param sib1_mbms_r14_fembms pointer SI Scheduling infomration for SI-MBMS
 @param mbsfn_AreaInfoList_fembms pointer to FeMBMS MBSFN Area Info list from SIB1-MBMS
 */
 
 int rrc_mac_config_req_eNB(module_id_t module_idP,
-			   int CC_id,
-			   int physCellId,
-			   int p_eNB,
-			   int Ncp,
-			   int eutra_band, uint32_t dl_CarrierFreq,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			   int pbch_repetition,
-#endif
-			   rnti_t rntiP,
-			   LTE_BCCH_BCH_Message_t * mib,
-			   LTE_RadioResourceConfigCommonSIB_t *
-			   radioResourceConfigCommon,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			   LTE_RadioResourceConfigCommonSIB_t *
-			   LTE_radioResourceConfigCommon_BR,
-#endif
-			   struct LTE_PhysicalConfigDedicated
-			   *physicalConfigDedicated,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			   LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
-			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
-#endif
-			   LTE_MeasObjectToAddMod_t ** measObj,
-			   LTE_MAC_MainConfig_t * mac_MainConfig,
-			   long logicalChannelIdentity,
-			   LTE_LogicalChannelConfig_t * logicalChannelConfig,
-			   LTE_MeasGapConfig_t * measGapConfig,
-			   LTE_TDD_Config_t * tdd_Config,
-			   LTE_MobilityControlInfo_t * mobilityControlInfo,
-			   LTE_SchedulingInfoList_t * schedulingInfoList,
-			   uint32_t ul_CarrierFreq,
-			   long *ul_Bandwidth,
-			   LTE_AdditionalSpectrumEmission_t *
-			   additionalSpectrumEmission,
-			   struct LTE_MBSFN_SubframeConfigList
-			   *mbsfn_SubframeConfigList
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			   ,
-			   uint8_t MBMS_Flag,
-			   LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-			   LTE_PMCH_InfoList_r9_t * pmch_InfoList
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-			   ,
-			   LTE_SystemInformationBlockType1_v1310_IEs_t *
-			   sib1_ext_r13
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                           ,
+                           int CC_id,
+                           int physCellId,
+                           int p_eNB,
+                           int Ncp,
+                           int eutra_band, uint32_t dl_CarrierFreq,
+                           int pbch_repetition,
+                           rnti_t rntiP,
+                           LTE_BCCH_BCH_Message_t *mib,
+                           LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+                           LTE_RadioResourceConfigCommonSIB_t *LTE_radioResourceConfigCommon_BR,
+                           struct LTE_PhysicalConfigDedicated  *physicalConfigDedicated,
+                           LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
+                           LTE_MeasObjectToAddMod_t **measObj,
+                           LTE_MAC_MainConfig_t *mac_MainConfig,
+                           long logicalChannelIdentity,
+                           LTE_LogicalChannelConfig_t *logicalChannelConfig,
+                           LTE_MeasGapConfig_t *measGapConfig,
+                           LTE_TDD_Config_t *tdd_Config,
+                           LTE_MobilityControlInfo_t *mobilityControlInfo,
+                           LTE_SchedulingInfoList_t *schedulingInfoList,
+                           uint32_t ul_CarrierFreq,
+                           long *ul_Bandwidth,
+                           LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+                           struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+                           uint8_t MBMS_Flag,
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+                           LTE_PMCH_InfoList_r9_t *pmch_InfoList,
+                           LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_ext_r13,
                            uint8_t FeMBMS_Flag,
-                           LTE_BCCH_DL_SCH_Message_MBMS_t * mib_fembms,
-                           LTE_SchedulingInfo_MBMS_r14_t * schedulingInfo_fembms,
-                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
-                           LTE_SystemInformationBlockType1_MBMS_r14_t *  sib1_mbms_r14_fembms,
-                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
-#endif
-    );
+                           LTE_BCCH_DL_SCH_Message_MBMS_t *mib_fembms,
+                           LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
+                           LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                          );
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of ue
@@ -1068,53 +1033,39 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
 */
 int rrc_mac_config_req_ue(module_id_t module_idP,
-			  int CC_id,
-			  uint8_t eNB_index,
-			  LTE_RadioResourceConfigCommonSIB_t *
-			  radioResourceConfigCommon,
-			  struct LTE_PhysicalConfigDedicated
-			  *physicalConfigDedicated,
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			  LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
-			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
-#endif
-			  LTE_MeasObjectToAddMod_t ** measObj,
-			  LTE_MAC_MainConfig_t * mac_MainConfig,
-			  long logicalChannelIdentity,
-			  LTE_LogicalChannelConfig_t * logicalChannelConfig,
-			  LTE_MeasGapConfig_t * measGapConfig,
-			  LTE_TDD_Config_t * tdd_Config,
-			  LTE_MobilityControlInfo_t * mobilityControlInfo,
-			  uint8_t * SIwindowsize,
-			  uint16_t * SIperiod,
-			  LTE_ARFCN_ValueEUTRA_t * ul_CarrierFreq,
-			  long *ul_Bandwidth,
-			  LTE_AdditionalSpectrumEmission_t *
-			  additionalSpectrumEmission,
-			  struct LTE_MBSFN_SubframeConfigList
-			  *mbsfn_SubframeConfigList
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			  ,
-			  uint8_t MBMS_Flag,
-			  LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-			  LTE_PMCH_InfoList_r9_t * pmch_InfoList
-#endif
+                          int CC_id,
+                          uint8_t eNB_index,
+                          LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+                          struct LTE_PhysicalConfigDedicated *physicalConfigDedicated,
+                          LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
+                          LTE_MeasObjectToAddMod_t **measObj,
+                          LTE_MAC_MainConfig_t *mac_MainConfig,
+                          long logicalChannelIdentity,
+                          LTE_LogicalChannelConfig_t *logicalChannelConfig,
+                          LTE_MeasGapConfig_t *measGapConfig,
+                          LTE_TDD_Config_t *tdd_Config,
+                          LTE_MobilityControlInfo_t *mobilityControlInfo,
+                          uint8_t *SIwindowsize,
+                          uint16_t *SIperiod,
+                          LTE_ARFCN_ValueEUTRA_t *ul_CarrierFreq,
+                          long *ul_Bandwidth,
+                          LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmission,
+                          struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+                          uint8_t MBMS_Flag,
+                          LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+                          LTE_PMCH_InfoList_r9_t *pmch_InfoList
 #ifdef CBA
-			  ,
-			  uint8_t num_active_cba_groups, uint16_t cba_rnti
+  ,
+  uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			  ,config_action_t config_action
-			  ,const uint32_t * const sourceL2Id
-			  ,const uint32_t * const destinationL2Id
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                           ,
-                           uint8_t FeMBMS_Flag,
-                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
-                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
-#endif
-			  );
+
+                          ,config_action_t config_action,
+                          const uint32_t *const sourceL2Id,
+                          const uint32_t *const destinationL2Id,
+                          uint8_t FeMBMS_Flag,
+                          struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
+                          LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                         );
 
 
 uint16_t getRIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
@@ -1122,24 +1073,24 @@ uint16_t getRIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 int get_subbandsize(uint8_t dl_bandwidth);
 
 
-void get_Msg3allocret(COMMON_channels_t * cc,
-		      sub_frame_t current_subframe,
-		      frame_t current_frame,
-		      frame_t * frame, sub_frame_t * subframe);
+void get_Msg3allocret(COMMON_channels_t *cc,
+                      sub_frame_t current_subframe,
+                      frame_t current_frame,
+                      frame_t *frame, sub_frame_t *subframe);
 
-void get_Msg3alloc(COMMON_channels_t * cc,
-		   sub_frame_t current_subframe,
-		   frame_t current_frame,
-		   frame_t * frame, sub_frame_t * subframe);
+void get_Msg3alloc(COMMON_channels_t *cc,
+                   sub_frame_t current_subframe,
+                   frame_t current_frame,
+                   frame_t *frame, sub_frame_t *subframe);
 
 uint16_t mac_computeRIV(uint16_t N_RB_DL, uint16_t RBstart,
-			uint16_t Lcrbs);
+                        uint16_t Lcrbs);
 
-int get_phich_resource_times6(COMMON_channels_t * cc);
+int get_phich_resource_times6(COMMON_channels_t *cc);
 
 uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 
-uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
+uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 
 unsigned char ul_ACK_subframe2M(LTE_TDD_Config_t *tdd_Config,unsigned char subframe);
 
@@ -1147,88 +1098,110 @@ int to_rbg(int dl_Bandwidth);
 
 int to_prb(int dl_Bandwidth);
 
-uint8_t get_Msg3harqpid(COMMON_channels_t * cc,
-			frame_t frame, sub_frame_t current_subframe);
+uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
+                        frame_t frame, sub_frame_t current_subframe);
 
-uint32_t pdcchalloc2ulframe(COMMON_channels_t * ccP, uint32_t frame,
-			    uint8_t n);
+uint32_t pdcchalloc2ulframe(COMMON_channels_t *ccP, uint32_t frame,
+                            uint8_t n);
 
-uint8_t pdcchalloc2ulsubframe(COMMON_channels_t * ccP, uint8_t n);
+uint8_t pdcchalloc2ulsubframe(COMMON_channels_t *ccP, uint8_t n);
 
-int is_UL_sf(COMMON_channels_t * ccP, sub_frame_t subframeP);
+int is_UL_sf(COMMON_channels_t *ccP, sub_frame_t subframeP);
 
 uint8_t getQm(uint8_t mcs);
 
-uint8_t subframe2harqpid(COMMON_channels_t * cc, frame_t frame,
-			 sub_frame_t subframe);
+uint8_t subframe2harqpid(COMMON_channels_t *cc, frame_t frame,
+                         sub_frame_t subframe);
 
 
-void get_srs_pos(COMMON_channels_t * cc, uint16_t isrs,
-		 uint16_t * psrsPeriodicity, uint16_t * psrsOffset);
+void get_srs_pos(COMMON_channels_t *cc, uint16_t isrs,
+                 uint16_t *psrsPeriodicity, uint16_t *psrsOffset);
 
-void get_csi_params(COMMON_channels_t * cc,
-		    struct LTE_CQI_ReportPeriodic *cqi_PMI_ConfigIndex,
-		    uint16_t * Npd, uint16_t * N_OFFSET_CQI, int *H);
+void get_csi_params(COMMON_channels_t *cc,
+                    struct LTE_CQI_ReportPeriodic *cqi_PMI_ConfigIndex,
+                    uint16_t *Npd, uint16_t *N_OFFSET_CQI, int *H);
 
-uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl_t * sched_ctl, int CC_idP,
-				 COMMON_channels_t * cc, uint8_t tmode,
-				 struct LTE_CQI_ReportPeriodic
-				 *cqi_ReportPeriodic);
+uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl_t *sched_ctl, int CC_idP,
+                                 COMMON_channels_t *cc, uint8_t tmode,
+                                 struct LTE_CQI_ReportPeriodic
+                                 *cqi_ReportPeriodic);
 
-uint8_t get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
-				  uint8_t ri,
-				  LTE_CQI_ReportModeAperiodic_t *
-				  cqi_ReportModeAperiodic);
+uint8_t get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc, uint8_t tmode,
+                                  uint8_t ri,
+                                  LTE_CQI_ReportModeAperiodic_t *
+                                  cqi_ReportModeAperiodic);
 void extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
-		       frame_t frameP, sub_frame_t subframeP,
-		       uint8_t * pdu, uint8_t length);
+                       frame_t frameP, sub_frame_t subframeP,
+                       uint8_t *pdu, uint8_t length);
 
 void extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
-		       frame_t frameP, sub_frame_t subframeP,
-		       uint8_t * pdu, uint8_t length);
+                       frame_t frameP, sub_frame_t subframeP,
+                       uint8_t *pdu, uint8_t length);
 
-uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t * tx_req_body,
-			   uint16_t absSF, uint16_t pdu_length,
-			   int16_t pdu_index, uint8_t * pdu);
+uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,
+                           uint16_t absSF, uint16_t pdu_length,
+                           int16_t pdu_index, uint8_t *pdu);
 
 void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
-					  ul_config_pdu, uint8_t cqi_req,
-					  COMMON_channels_t * cc,
-					  struct LTE_PhysicalConfigDedicated
-					  *physicalConfigDedicated,
-					  uint8_t tmode, uint32_t handle,
-					  uint16_t rnti,
-					  uint8_t resource_block_start,
-					  uint8_t
-					  number_of_resource_blocks,
-					  uint8_t mcs,
-					  uint8_t cyclic_shift_2_for_drms,
-					  uint8_t
-					  frequency_hopping_enabled_flag,
-					  uint8_t frequency_hopping_bits,
-					  uint8_t new_data_indication,
-					  uint8_t redundancy_version,
-					  uint8_t harq_process_number,
-					  uint8_t ul_tx_mode,
-					  uint8_t current_tx_nb,
-					  uint8_t n_srs, uint16_t size);
+    ul_config_pdu, uint8_t cqi_req,
+    COMMON_channels_t *cc,
+    struct LTE_PhysicalConfigDedicated
+    *physicalConfigDedicated,
+    uint8_t tmode, uint32_t handle,
+    uint16_t rnti,
+    uint8_t resource_block_start,
+    uint8_t
+    number_of_resource_blocks,
+    uint8_t mcs,
+    uint8_t cyclic_shift_2_for_drms,
+    uint8_t
+    frequency_hopping_enabled_flag,
+    uint8_t frequency_hopping_bits,
+    uint8_t new_data_indication,
+    uint8_t redundancy_version,
+    uint8_t harq_process_number,
+    uint8_t ul_tx_mode,
+    uint8_t current_tx_nb,
+    uint8_t n_srs, uint16_t size);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
-					  ul_config_pdu, uint8_t ue_type,
-					  uint16_t
-					  total_number_of_repetitions,
-					  uint16_t repetition_number,
-					  uint16_t
-					  initial_transmission_sf_io);
-#endif
+    ul_config_pdu, uint8_t ue_type,
+    uint16_t
+    total_number_of_repetitions,
+    uint16_t repetition_number,
+    uint16_t
+    initial_transmission_sf_io);
 
 void program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
-			  frame_t frameP, sub_frame_t subframeP,
-			  uint8_t cce_idx);
+                          frame_t frameP, sub_frame_t subframeP,
+                          uint8_t cce_idx);
 
-void
-fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
+void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
+                             nfapi_dl_config_request_body_t *dl_req,
+                             uint16_t length, int16_t pdu_index,
+                             uint16_t rnti,
+                             uint8_t resource_allocation_type,
+                             uint8_t
+                             virtual_resource_block_assignment_flag,
+                             uint16_t resource_block_coding,
+                             uint8_t modulation,
+                             uint8_t redundancy_version,
+                             uint8_t transport_blocks,
+                             uint8_t transport_block_to_codeword_swap_flag,
+                             uint8_t transmission_scheme,
+                             uint8_t number_of_layers,
+                             uint8_t number_of_subbands,
+                             //                      uint8_t codebook_index,
+                             uint8_t ue_category_capacity,
+                             uint8_t pa,
+                             uint8_t delta_power_offset_index,
+                             uint8_t ngap,
+                             uint8_t nprb,
+                             uint8_t transmission_mode,
+                             uint8_t num_bf_prb_per_subband,
+                             uint8_t num_bf_vector);
+
+void fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
                   uint16_t length,
                   uint16_t pdu_index,
                   uint16_t rnti,
@@ -1238,92 +1211,64 @@ fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
                   uint16_t transmission_power,
                   uint8_t mbsfn_area_id);
 
-void fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
-			     nfapi_dl_config_request_body_t * dl_req,
-			     uint16_t length, int16_t pdu_index,
-			     uint16_t rnti,
-			     uint8_t resource_allocation_type,
-			     uint8_t
-			     virtual_resource_block_assignment_flag,
-			     uint16_t resource_block_coding,
-			     uint8_t modulation,
-			     uint8_t redundancy_version,
-			     uint8_t transport_blocks,
-			     uint8_t transport_block_to_codeword_swap_flag,
-			     uint8_t transmission_scheme,
-			     uint8_t number_of_layers,
-			     uint8_t number_of_subbands,
-			     //                      uint8_t codebook_index,
-			     uint8_t ue_category_capacity,
-			     uint8_t pa,
-			     uint8_t delta_power_offset_index,
-			     uint8_t ngap,
-			     uint8_t nprb,
-			     uint8_t transmission_mode,
-			     uint8_t num_bf_prb_per_subband,
-			     uint8_t num_bf_vector);
-
 void fill_nfapi_harq_information(module_id_t module_idP,
-				 int CC_idP,
-				 uint16_t rntiP,
-				 nfapi_ul_config_harq_information *
-				 harq_information, uint8_t cce_idxP);
+                                 int CC_idP,
+                                 uint16_t rntiP,
+                                 nfapi_ul_config_harq_information *
+                                 harq_information, uint8_t cce_idxP);
 
 void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
-				       int CC_idP,
-				       uint16_t rntiP,
-				       nfapi_ul_config_ulsch_harq_information
-				       * harq_information,
-				       sub_frame_t subframeP);
+                                       int CC_idP,
+                                       uint16_t rntiP,
+                                       nfapi_ul_config_ulsch_harq_information
+                                       * harq_information,
+                                       sub_frame_t subframeP);
 
 uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
-							int CC_idP,
-							uint16_t rntiP,
-							uint16_t absSFP,
-							uint8_t cce_idxP);
+                               int CC_idP,
+                               uint16_t rntiP,
+                               uint16_t absSFP,
+                               uint8_t cce_idxP);
 
-void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t * dl_config_pdu,
-			  uint8_t aggregation_level,
-			  uint16_t rnti,
-			  uint8_t rnti_type,
-			  uint8_t harq_process,
-			  uint8_t tpc,
-			  uint16_t resource_block_coding,
-			  uint8_t mcs,
-			  uint8_t ndi, uint8_t rv, uint8_t vrb_flag);
+void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t *dl_config_pdu,
+                          uint8_t aggregation_level,
+                          uint16_t rnti,
+                          uint8_t rnti_type,
+                          uint8_t harq_process,
+                          uint8_t tpc,
+                          uint16_t resource_block_coding,
+                          uint8_t mcs,
+                          uint8_t ndi, uint8_t rv, uint8_t vrb_flag);
 
 nfapi_ul_config_request_pdu_t *has_ul_grant(module_id_t module_idP,
-					    int CC_idP, uint16_t subframeP,
-					    uint16_t rnti);
+    int CC_idP, uint16_t subframeP,
+    uint16_t rnti);
 
 uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP);
 
 uint8_t get_ul_req_index(module_id_t module_idP, int CC_idP,
-			 sub_frame_t subframeP);
+                         sub_frame_t subframeP);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_numnarrowbandbits(long dl_Bandwidth);
 
-int mpdcch_sf_condition(eNB_MAC_INST * eNB, int CC_id, frame_t frameP,
-			sub_frame_t subframeP, int rmax,
-			MPDCCH_TYPES_t mpdcch_type, int UE_id);
+int mpdcch_sf_condition(eNB_MAC_INST *eNB, int CC_id, frame_t frameP,
+                        sub_frame_t subframeP, int rmax,
+                        MPDCCH_TYPES_t mpdcch_type, int UE_id);
 
 int get_numnarrowbands(long dl_Bandwidth);
 
-int narrowband_to_first_rb(COMMON_channels_t * cc, int nb_index);
-
-#endif
+int narrowband_to_first_rb(COMMON_channels_t *cc, int nb_index);
 
 int l2_init_eNB(void);
 
 void Msg1_transmitted(module_id_t module_idP, uint8_t CC_id,
-		      frame_t frameP, uint8_t eNB_id);
+                      frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP, uint8_t CC_id,
-		      frame_t frameP, uint8_t eNB_id);
+                      frame_t frameP, uint8_t eNB_id);
 uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn);
 int32_t get_uldl_offset(int eutra_bandP);
 int l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
-	       uint8_t HO_active);
+               uint8_t HO_active);
 #if defined(PRE_SCD_THREAD)
 void pre_scd_nb_rbs_required(    module_id_t     module_idP,
                                  frame_t         frameP,
@@ -1342,7 +1287,7 @@ int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 void eNB_Config_Local_DRX(instance_t Mod_id, rrc_mac_drx_config_req_t *rrc_mac_drx_config_req);                        
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
-uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
+uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 #endif
 /** @}*/
 

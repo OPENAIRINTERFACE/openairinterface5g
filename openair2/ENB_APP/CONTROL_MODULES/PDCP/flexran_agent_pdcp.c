@@ -65,25 +65,17 @@ void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
 
 
 int flexran_agent_pdcp_stats_reply(mid_t mod_id,       
-				   const report_config_t *report_config,
-				   Protocol__FlexUeStatsReport **ue_report,
-				   Protocol__FlexCellStatsReport **cell_report) {
-  
-  
-  // Protocol__FlexHeader *header;
-  int i;
-  // int cc_id = 0;
- 
-  
-  /* Allocate memory for list of UE reports */
-  if (report_config->nr_ue > 0) {
+                                   Protocol__FlexUeStatsReport **ue_report,
+                                   int n_ue,
+                                   uint32_t ue_flags) {
+  if (n_ue > 0) {
     
-    for (i = 0; i < report_config->nr_ue; i++) {
-      const rnti_t rnti = report_config->ue_report_type[i].ue_rnti;
+    for (int i = 0; i < n_ue; i++) {
+      const rnti_t rnti = ue_report[i]->rnti;
       const uint16_t uid = flexran_get_pdcp_uid_from_rnti(mod_id, rnti);
 
       /* Check flag for creation of buffer status report */
-      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PDCP_STATS) {
+      if (ue_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PDCP_STATS) {
 	
 	Protocol__FlexPdcpStats *pdcp_aggr_stats;
 	pdcp_aggr_stats = malloc(sizeof(Protocol__FlexPdcpStats));
@@ -129,12 +121,6 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   
  error:
   LOG_W(FLEXRAN_AGENT, "Can't allocate PDCP stats\n");
-  
-  /* if (cell_report != NULL)
-        free(cell_report);
-  if (ue_report != NULL)
-        free(ue_report);
-  */
   return -1;
 }
 
