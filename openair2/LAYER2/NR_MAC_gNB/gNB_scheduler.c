@@ -308,6 +308,14 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
+bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot){
+
+  if((bitmap>>slot)&0x01)
+    return true;
+  else
+    return false;
+}
+
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame_rxP,
                                sub_frame_t slot_rxP,
@@ -318,8 +326,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       
   protocol_ctxt_t   ctxt;
   int               CC_id;
-    
+
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
+
   //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
@@ -328,62 +337,79 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   pdcp_run(&ctxt);
   //rrc_rx_tx(&ctxt, CC_id);
 
-  
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;
 
+  uint64_t *dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+  uint64_t *ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+
+  // hardcoding dlsch to be in slot 1
+  if (phy_test && !(slot_txP%cc->num_slots_per_tdd)) {
+    if(slot_txP==0)
+      *dlsch_in_slot_bitmap = 0x02;
+    else
+      *dlsch_in_slot_bitmap = 0x00;
+  }
+
+  // hardcoding ulsch to be in slot 8
+  if (phy_test && !(slot_rxP%cc->num_slots_per_tdd)) {
+    if(slot_rxP==0)
+      *ulsch_in_slot_bitmap = 0x100;
+    else
+      *ulsch_in_slot_bitmap = 0x00;
+  }
 
   // Check if there are downlink symbols in the slot, 
   if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)) {
 
-  memset(RC.nrmac[module_idP]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    //mbsfn_status[CC_id] = 0;
+    memset(RC.nrmac[module_idP]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      //mbsfn_status[CC_id] = 0;
 
-    // clear vrb_maps
-    memset(cc[CC_id].vrb_map, 0, 100);
-    memset(cc[CC_id].vrb_map_UL, 0, 100);
+      // clear vrb_maps
+      memset(cc[CC_id].vrb_map, 0, 100);
+      memset(cc[CC_id].vrb_map_UL, 0, 100);
 
-    clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
-  }
+      clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
+    }
 
-  // refresh UE list based on UEs dropped by PHY in previous subframe
-  /*
-  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_list->active[i]) {
+    // refresh UE list based on UEs dropped by PHY in previous subframe
+    /*
+    for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+      if (UE_list->active[i]) {
 
-      nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
+        nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
       
       
-      rnti = 0;//UE_RNTI(module_idP, i);
-      CC_id = 0;//UE_PCCID(module_idP, i);
+        rnti = 0;//UE_RNTI(module_idP, i);
+        CC_id = 0;//UE_PCCID(module_idP, i);
       
-    } //END if (UE_list->active[i])
-  } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
-  */
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
+      } //END if (UE_list->active[i])
+    } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
+    */
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
 
-  // This schedules MIB
-  if((slot_txP == 0) && (frame_txP & 7) == 0){
-    schedule_nr_mib(module_idP, frame_txP, slot_txP);
-  }
+    // This schedules MIB
+    if((slot_txP == 0) && (frame_txP & 7) == 0){
+      schedule_nr_mib(module_idP, frame_txP, slot_txP);
+    }
 
-  // Phytest scheduling
-  if (phy_test && slot_txP==1){
-    nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
-  }
+    // Phytest scheduling
+    if (phy_test && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%cc->num_slots_per_tdd))) {
+        nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
+    }
 
-  /*
-  // Allocate CCEs for good after scheduling is done
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
-    allocate_CCEs(module_idP, CC_id, subframeP, 0);
-  */
+    /*
+    // Allocate CCEs for good after scheduling is done
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+      allocate_CCEs(module_idP, CC_id, subframeP, 0);
+    */
 
   } //is_nr_DL_slot
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
-    if (phy_test && slot_rxP==8){
+    if (phy_test && (is_xlsch_in_slot(*ulsch_in_slot_bitmap,slot_rxP%cc->num_slots_per_tdd))){
       nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
     }
   }

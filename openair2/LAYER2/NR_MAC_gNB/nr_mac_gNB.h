@@ -98,6 +98,8 @@ typedef struct {
   uint8_t vrb_map_UL[100];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
+  /// number of slots per TDD period
+  uint8_t num_slots_per_tdd;
 } NR_COMMON_channels_t;
 
 /*! \brief scheduling control information set through an API (not used)*/
@@ -152,6 +154,9 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t       TX_req[NFAPI_CC_MAX];
   NR_UE_list_t UE_list;
+
+  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+  uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
 
   /// UL handle
   uint32_t ul_handle;

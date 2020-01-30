@@ -273,7 +273,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
 
-  free_gNB_dlsch(dlsch,N_RB);
+  free_gNB_dlsch(&dlsch,N_RB);
 
   return(NULL);
 
@@ -323,7 +323,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
   unsigned int G;
   unsigned int crc=1;
-  uint8_t harq_pid = dlsch->harq_ids[frame&2][slot];
+  uint8_t harq_pid = dlsch->harq_ids[frame%2][slot];
   AssertFatal(harq_pid<8 && harq_pid>=0,"illegal harq_pid %d\b",harq_pid);
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
