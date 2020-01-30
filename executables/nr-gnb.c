@@ -412,18 +412,28 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   RU_t *ru;
   RU_proc_t *ru_proc;
 
-  int waitret = 0,ret;
- 
-// note this  should depend on the numerology used by the TX L1 thread, set here for 500us slot time
+  int waitret = 0, ret = 0, time_ns = 1000*1000;
+  struct timespec now, abstime;
+
+  // note this should depend on the numerology used by the TX L1 thread, set here for 500us slot time
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,1);
+  time_ns = time_ns/gNB->frame_parms.slots_per_subframe;
   AssertFatal((ret = pthread_mutex_lock(&proc->mutex_RUs_tx))==0,"mutex_lock returns %d\n",ret);
   while (proc->instance_cnt_RUs < 0) {
-    pthread_cond_wait(&proc->cond_RUs,&proc->mutex_RUs_tx); // this unlocks mutex_rxtx while waiting and then locks it again
+    clock_gettime(CLOCK_REALTIME, &now);
+    abstime.tv_sec = now.tv_sec;
+    abstime.tv_nsec = now.tv_nsec + time_ns;
+
+    if (abstime.tv_nsec >= 1000*1000*1000) {
+      abstime.tv_nsec -= 1000*1000*1000;
+      abstime.tv_sec  += 1;
+    }
+    if((waitret = pthread_cond_timedwait(&proc->cond_RUs,&proc->mutex_RUs_tx,&abstime)) == 0) break; // this unlocks mutex_rxtx while waiting and then locks it again
   }
   proc->instance_cnt_RUs = -1;
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
   AssertFatal((ret = pthread_mutex_unlock(&proc->mutex_RUs_tx))==0,"mutex_unlock returns %d\n",ret);
-
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL,0);
 
   if (waitret == ETIMEDOUT) {
      LOG_W(PHY,"Dropping TX slot (%d.%d) because FH is blocked more than 1 slot times (500us)\n",frame_tx,slot_tx);
