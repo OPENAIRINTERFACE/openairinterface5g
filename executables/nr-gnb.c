@@ -412,10 +412,8 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   RU_t *ru;
   RU_proc_t *ru_proc;
 
-  int waitret,ret;
+  int waitret = 0,ret;
  
-
-
 // note this  should depend on the numerology used by the TX L1 thread, set here for 500us slot time
   AssertFatal((ret = pthread_mutex_lock(&proc->mutex_RUs_tx))==0,"mutex_lock returns %d\n",ret);
   while (proc->instance_cnt_RUs < 0) {
@@ -424,7 +422,6 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
   proc->instance_cnt_RUs = -1;
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
   AssertFatal((ret = pthread_mutex_unlock(&proc->mutex_RUs_tx))==0,"mutex_unlock returns %d\n",ret);
-
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,proc->instance_cnt_RUs);
 
