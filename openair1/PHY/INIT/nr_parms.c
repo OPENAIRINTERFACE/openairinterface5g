@@ -196,13 +196,13 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
         case 100:
           fp->ofdm_symbol_size = 1024;
           fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
-          fp->nb_prefix_samples0 = 88;
+          fp->nb_prefix_samples0 = 136;
           fp->nb_prefix_samples = 72;
           break;
         case 50:
           fp->ofdm_symbol_size = 512;
           fp->first_carrier_offset = 320; //1024 - ( (66*12) / 2 )
-          fp->nb_prefix_samples0 = 44;
+          fp->nb_prefix_samples0 = 68;
           fp->nb_prefix_samples = 36;
           break;
       default:
