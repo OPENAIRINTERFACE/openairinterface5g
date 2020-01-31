@@ -108,8 +108,7 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 extern int transmission_mode;
 
-uint16_t sl_ahead=6;
-uint16_t sf_ahead=6;
+uint16_t sf_ahead=3;
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -216,7 +215,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   if (oai_exit) return(-1);
 
   // *****************************************
-  // TX processing for subframe n+sl_ahead
+  // TX processing for subframe n+sf_ahead
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
   // (may be relaxed in the future for performance reasons)
   // *****************************************
@@ -407,11 +406,11 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct 
 
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->slot_rx));
-    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sl_ahead*fp->samples_per_slot);
+    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     L1_proc->frame_rx     = ru_proc->frame_rx;
     L1_proc->slot_rx      = ru_proc->tti_rx;
-    L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-    L1_proc->slot_tx      = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
+    L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+    L1_proc->slot_tx      = (L1_proc->slot_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
 
     if (rxtx(gNB,L1_proc->frame_rx,L1_proc->slot_rx,L1_proc->frame_tx,L1_proc->slot_tx,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
 
@@ -571,7 +570,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     abstime.tv_sec  += 1;
   }
 
-  // wake up TX for subframe n+sl_ahead
+  // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
   AssertFatal((ret=pthread_mutex_timedlock(&L1_proc->mutex, &abstime)) == 0,"mutex_lock returns %d\n", ret);
 
@@ -587,15 +586,15 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
   // transmitted timestamp of the next TX slot (first).
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
-  // we want to generate subframe (n+sl_ahead), so TS_tx = TX_rx+sl_ahead*samples_per_tti,
-  // and proc->slot_tx = proc->slot_rx+sl_ahead
-  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sl_ahead*fp->samples_per_slot);
+  // we want to generate subframe (n+sf_ahead), so TS_tx = TX_rx+sf_ahead*samples_per_tti,
+  // and proc->slot_tx = proc->slot_rx+sf_ahead
+  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
   L1_proc->frame_rx     = ru_proc->frame_rx;
   L1_proc->slot_rx  = ru_proc->tti_rx;
-  L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-  L1_proc->slot_tx  = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
+  L1_proc->frame_tx = (L1_proc->slot_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->slot_tx  = (L1_proc->slot_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
 
-  LOG_D(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sl_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sl_ahead);
+  LOG_D(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sf_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sf_ahead);
 
   pthread_mutex_unlock( &L1_proc->mutex );
 

@@ -66,7 +66,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0) , 1 );
 
-  slot_offset  = slot*fp->samples_per_slot;
+  slot_offset  = fp->get_samples_slot_timestamp(slot,fp);
   slot_offsetF = first_symbol*fp->ofdm_symbol_size;
 
 
@@ -370,7 +370,7 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   int slot_sizeF = (fp->ofdm_symbol_size)*
                    ((cyclic_prefix_type == 1) ? 12 : 14);
   int slot = tti_tx;
-  int *txdata = &ru->common.txdata[aa][slot*fp->samples_per_slot];
+  int *txdata = &ru->common.txdata[aa][fp->get_samples_slot_timestamp(slot,fp)];
 
   if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
 
@@ -386,8 +386,8 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   stop_meas(&ru->ofdm_mod_stats);
 
   LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, slot %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_slot)),
-	dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
+	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->get_samples_per_slot(
+  slot,fp))),dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
 
 }
 

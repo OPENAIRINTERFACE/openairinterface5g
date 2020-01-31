@@ -364,7 +364,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   timing_advance = 0;
 #endif
 
-  tx_offset = slot*frame_parms->samples_per_slot - timing_advance;
+  tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms) - timing_advance;
 
   if (tx_offset < 0)
     tx_offset += frame_parms->samples_per_frame;

@@ -65,7 +65,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
   for (int aa=0; aa<ru->nb_rx; aa++) 
-    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(subframe*fp->samples_per_slot<<1)-ru->N_TA_offset];
+    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(subframe*fp->samples_per_subframe)-ru->N_TA_offset];
   
 
 
