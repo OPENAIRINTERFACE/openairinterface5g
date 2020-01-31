@@ -122,9 +122,11 @@ typedef struct {
   boolean_t active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+  uint64_t dlsch_in_slot_bitmap[MAX_MOBILES_PER_GNB];  // static bitmap signaling which slot in a tdd period contains dlsch
+  uint64_t ulsch_in_slot_bitmap[MAX_MOBILES_PER_GNB];  // static bitmap signaling which slot in a tdd period contains ulsch
 } NR_UE_list_t;
 
-/*! \brief top level eNB MAC structure */
+/*! \brief top level gNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t                    eth_params_n;
@@ -154,9 +156,6 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t       TX_req[NFAPI_CC_MAX];
   NR_UE_list_t UE_list;
-
-  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
-  uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
 
   /// UL handle
   uint32_t ul_handle;

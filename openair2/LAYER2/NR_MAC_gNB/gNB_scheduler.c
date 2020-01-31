@@ -326,6 +326,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       
   protocol_ctxt_t   ctxt;
   int               CC_id;
+  int UE_id;
+  uint64_t *dlsch_in_slot_bitmap=NULL;
+  uint64_t *ulsch_in_slot_bitmap=NULL;
+ 
+  if (phy_test) UE_id=0;
 
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
 
@@ -340,23 +345,25 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;
 
-  uint64_t *dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
-  uint64_t *ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+  if (phy_test) {
+    dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.dlsch_in_slot_bitmap[UE_id];  // static bitmap signaling which slot in a tdd period contains dlsch
+    ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.ulsch_in_slot_bitmap[UE_id];  // static bitmap signaling which slot in a tdd period contains ulsch
 
-  // hardcoding dlsch to be in slot 1
-  if (phy_test && !(slot_txP%cc->num_slots_per_tdd)) {
-    if(slot_txP==0)
-      *dlsch_in_slot_bitmap = 0x02;
-    else
-      *dlsch_in_slot_bitmap = 0x00;
-  }
+    // hardcoding dlsch to be in slot 1
+    if (!(slot_txP%cc->num_slots_per_tdd)) {
+      if(slot_txP==0)
+        *dlsch_in_slot_bitmap = 0x02;
+      else
+        *dlsch_in_slot_bitmap = 0x00;
+    }
 
-  // hardcoding ulsch to be in slot 8
-  if (phy_test && !(slot_rxP%cc->num_slots_per_tdd)) {
-    if(slot_rxP==0)
-      *ulsch_in_slot_bitmap = 0x100;
-    else
-      *ulsch_in_slot_bitmap = 0x00;
+    // hardcoding ulsch to be in slot 8
+    if (!(slot_rxP%cc->num_slots_per_tdd)) {
+      if(slot_rxP==0)
+        *ulsch_in_slot_bitmap = 0x100;
+      else
+        *ulsch_in_slot_bitmap = 0x00;
+    }
   }
 
   // Check if there are downlink symbols in the slot, 
