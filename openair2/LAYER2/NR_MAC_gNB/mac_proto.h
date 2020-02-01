@@ -33,6 +33,7 @@
 
 #include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
+#include "NR_TAG-Id.h"
 
 void set_cset_offset(uint16_t);
 
@@ -70,19 +71,34 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_txP, sub_frame_t slot_txP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
+int nr_generate_dlsch_pdu(module_id_t Mod_idP,
+                          unsigned char *sdus_payload,
+                          unsigned char *mac_pdu,
+                          unsigned char num_sdus,
+                          unsigned short *sdu_lengths,
+                          unsigned char *sdu_lcids,
+                          unsigned char drx_cmd,
+                          unsigned char *ue_cont_res_id,
+                          unsigned short post_padding);
+
+void nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
-int configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
-		                  nfapi_tx_request_pdu_t *TX_req,
-						  nfapi_nr_config_request_t *cfg,
-						  nfapi_nr_coreset_t* coreset,
-						  nfapi_nr_search_space_t* search_space,
-						  int16_t pdu_index,
+int configure_fapi_dl_pdu(nfapi_nr_dl_config_request_body_t *dl_req,
+                          nfapi_nr_config_request_t *cfg,
+                          nfapi_nr_coreset_t* coreset,
+                          nfapi_nr_search_space_t* search_space,
                           nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config);
+
+void configure_fapi_dl_Tx(nfapi_nr_dl_config_request_body_t *dl_req,
+                          nfapi_tx_request_pdu_t *tx_req,
+                          int tbs_bytes,
+                          int16_t pdu_index);
 
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
@@ -135,6 +151,10 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
 int32_t get_nr_uldl_offset(int nr_bandP);
 
+int find_nrUE_id(module_id_t mod_idP, rnti_t rntiP);
+
+int nrUE_PCCID(module_id_t mod_idP, int ue_idP);
+
 void config_nr_mib(int Mod_idP, 
                    int CC_idP,
                    int p_gNBP,
@@ -144,5 +164,23 @@ void config_nr_mib(int Mod_idP,
                    uint32_t pdcch_ConfigSIB1,
                    int cellBarred,
                    int intraFreqReselection);
+
+/* \brief Function to indicate a received SDU on ULSCH.
+@param Mod_id Instance ID of gNB
+@param CC_id Component carrier index
+@param rnti RNTI of UE transmitting the SDU
+@param sdu Pointer to received SDU
+@param sdu_len Length of SDU
+@param timing_advance timing advance adjustment after this pdu
+@param ul_cqi Uplink CQI estimate after this pdu (SNR quantized to 8 bits, -64 ... 63.5 dB in .5dB steps)
+*/
+void nr_rx_sdu(const module_id_t gnb_mod_idP,
+      const int CC_idP,
+      const frame_t frameP,
+      const sub_frame_t subframeP,
+      const rnti_t rntiP,
+      uint8_t * sduP,
+      const uint16_t sdu_lenP,
+      const uint16_t timing_advance, const uint8_t ul_cqi);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
