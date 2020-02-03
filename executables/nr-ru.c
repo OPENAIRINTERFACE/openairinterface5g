@@ -81,7 +81,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "enb_config.h"
-#include <executables/nr-softmodem.h>
+#include <executables/softmodem-common.h>
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
