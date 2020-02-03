@@ -800,8 +800,11 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
-  nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
-  uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &harq_processes[harq_pid]->dl_config_pdu
+  uint8_t dmrs_type = dl_config_pdu->dmrsConfigType;
+  //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
+  //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
+
   uint8_t nb_re_dmrs = (dmrs_type==1)?6:4;
   uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
 
