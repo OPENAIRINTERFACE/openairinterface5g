@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-10-tm1</htmlTabRef>
-	<htmlTabName>Test-10MHz-TM1</htmlTabName>
+	<htmlTabRef>test-lte-m-10-tm1</htmlTabRef>
+	<htmlTabName>Test-LTE-M-10MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>

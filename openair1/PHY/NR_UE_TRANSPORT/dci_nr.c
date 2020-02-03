@@ -195,7 +195,7 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
 #endif
 
 
-
+#if 0
 int32_t pdcch_llr(NR_DL_FRAME_PARMS *frame_parms,
                   int32_t **rxdataF_comp,
                   char *pdcch_llr,
@@ -227,11 +227,12 @@ int32_t pdcch_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   return(0);
 }
+#endif
 
 //__m128i avg128P;
 
 //compute average channel_level on each (TX,RX) antenna pair
-void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
+void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          int32_t *avg,
                          uint8_t nb_rb) {
@@ -324,10 +325,8 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
   // after removing the 3 DMRS RE, the RB contains 9 RE with PDCCH
 #define NBR_RE_PER_RB_WITHOUT_DMRS         9
   uint16_t c_rb, nb_rb = 0;
-  // this variable will be incremented by 1 each time a bit set to '0' is found in coreset_freq_dom bitmap
-  uint16_t offset_discontiguous=0;
   //uint8_t rb_count_bit;
-  uint8_t i, j, aarx, bitcnt_coreset_freq_dom=0;
+  uint8_t i, j, aarx;
   int32_t *dl_ch0, *dl_ch0_ext, *rxF, *rxF_ext;
 
 #ifdef DEBUG_DCI_DECODING
@@ -608,7 +607,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 }
 
 
-void pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
+void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                          int32_t **rxdataF_comp,
                          uint8_t symbol) {
 #if defined(__x86_64__) || defined(__i386__)
@@ -643,6 +642,7 @@ void pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
+#if 0
 void pdcch_siso(NR_DL_FRAME_PARMS *frame_parms,
                 int32_t **rxdataF_comp,
                 uint8_t l) {
@@ -657,11 +657,7 @@ void pdcch_siso(NR_DL_FRAME_PARMS *frame_parms,
     }
   }
 }
-
-
-
-
-
+#endif
 
 #ifdef NR_PDCCH_DCI_RUN
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
@@ -681,10 +677,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     rel15 = &pdcch_vars->pdcch_config[i];
     int n_rb,rb_offset;
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
-    for (int s=rel15->coreset.StartSymbolIndex;
-	 s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration);
-	 s++) {
-      
+    for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
+      LOG_DD("in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
+
       nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[slot]].rxdataF,
 				  pdcch_vars->dl_ch_estimates,
 				  pdcch_vars->rxdataF_ext,
@@ -695,41 +690,40 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 				  n_rb,
 				  rel15->BWPStart);
 
-      LOG_DD("we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
-      LOG_DD("in pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
+      LOG_DD("we enter nr_pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
+      LOG_DD("in nr_pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
       // compute channel level based on ofdm symbol 0
-      pdcch_channel_level(pdcch_vars->dl_ch_estimates_ext,
-			  frame_parms,
-			  avgP,
-			  n_rb);
+      nr_pdcch_channel_level(pdcch_vars->dl_ch_estimates_ext,
+                             frame_parms,
+                             avgP,
+                             n_rb);
       avgs = 0;
-      
-      for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
-	avgs = cmax(avgs, avgP[aarx]);
 
-      log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
+      for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
+        avgs = cmax(avgs, avgP[aarx]);
+
+        log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
 #ifdef UE_DEBUG_TRACE
       LOG_D(PHY,"slot %d: pdcch log2_maxh = %d (%d,%d)\n",slot,log2_maxh,avgP[0],avgs);
 #endif
 #if T_TRACER
       T(T_UE_PHY_PDCCH_ENERGY, T_INT(0), T_INT(0), T_INT(frame%1024), T_INT(slot),
-	T_INT(avgP[0]), T_INT(avgP[1]), T_INT(avgP[2]), T_INT(avgP[3]));
+	    T_INT(avgP[0]), T_INT(avgP[1]), T_INT(avgP[2]), T_INT(avgP[3]));
 #endif
       LOG_DD("we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
       LOG_DD("in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
       // compute LLRs for ofdm symbol 0 only
       nr_pdcch_channel_compensation(pdcch_vars->rxdataF_ext,
-				    pdcch_vars->dl_ch_estimates_ext,
-				    pdcch_vars->rxdataF_comp,
-				    NULL,
-				    frame_parms,
-				    s,
-				    log2_maxh,
-				    n_rb); // log2_maxh+I0_shift
+                                    pdcch_vars->dl_ch_estimates_ext,
+                                    pdcch_vars->rxdataF_comp,
+                                    NULL,
+                                    frame_parms,
+                                    s,
+                                    log2_maxh,
+                                    n_rb); // log2_maxh+I0_shift
       if (frame_parms->nb_antennas_rx > 1) {
-        LOG_DD("we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
-               frame_parms->nb_antennas_rx);
-        pdcch_detection_mrc(frame_parms, pdcch_vars->rxdataF_comp,s);
+        LOG_DD("we enter nr_pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n", frame_parms->nb_antennas_rx);
+        nr_pdcch_detection_mrc(frame_parms, pdcch_vars->rxdataF_comp,s);
       }
 
       LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
@@ -773,200 +767,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   }
   return (0);
 }
-  /*
-int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    uint32_t frame,
-                    uint8_t nr_tti_rx,
-                    uint8_t eNB_id,
-                    MIMO_mode_t mimo_mode,
-                    uint32_t high_speed_flag,
-                    uint8_t is_secondary_ue,
-                    int nb_coreset_active,
-                    uint16_t symbol_mon,
-                    NR_SEARCHSPACE_TYPE_t searchSpaceType) {
-  NR_UE_COMMON *common_vars      = &ue->common_vars;
-  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  NR_UE_PDCCH **pdcch_vars       = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
-  NR_UE_PDCCH *pdcch_vars2       = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
-  int do_common;
-
-  if (searchSpaceType == common) do_common=1;
-
-  if (searchSpaceType == ue_specific) do_common=0;
-
-  uint8_t log2_maxh, aarx;
-  int32_t avgs;
-  int32_t avgP[4];
-  // number of RB (1 symbol) or REG (12 RE) in one CORESET: higher-layer parameter CORESET-freq-dom
-  // (bit map 45 bits: each bit indicates 6 RB in CORESET -> 1 bit MSB indicates PRB 0..6 are part of CORESET)
-  uint64_t coreset_freq_dom                                 = pdcch_vars2->coreset[nb_coreset_active].frequencyDomainResources;
-  // number of symbols in CORESET: higher-layer parameter CORESET-time-dur {1,2,3}
-  int coreset_time_dur                                      = pdcch_vars2->coreset[nb_coreset_active].duration;
-  // depends on higher-layer parameter CORESET-shift-index {0,1,...,274}
-  int n_shift                                               = pdcch_vars2->coreset[nb_coreset_active].cce_reg_mappingType.shiftIndex;
-  // higher-layer parameter CORESET-REG-bundle-size (for non-interleaved L = 6 / for interleaved L {2,6})
-  NR_UE_CORESET_REG_bundlesize_t reg_bundle_size_L          = pdcch_vars2->coreset[nb_coreset_active].cce_reg_mappingType.reg_bundlesize;
-  // higher-layer parameter CORESET-interleaver-size {2,3,6}
-  NR_UE_CORESET_interleaversize_t coreset_interleaver_size_R= pdcch_vars2->coreset[nb_coreset_active].cce_reg_mappingType.interleaversize;
-  //NR_UE_CORESET_precoder_granularity_t precoder_granularity = pdcch_vars2->coreset[nb_coreset_active].precoderGranularity;
-  //int tci_statesPDCCH                                       = pdcch_vars2->coreset[nb_coreset_active].tciStatesPDCCH;
-  //int tci_present                                           = pdcch_vars2->coreset[nb_coreset_active].tciPresentInDCI;
-  uint16_t pdcch_DMRS_scrambling_id                         = pdcch_vars2->coreset[nb_coreset_active].pdcchDMRSScramblingID;
-  // The UE can be assigned 4 different BWP but only one active at a time.
-  // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
-  //uint32_t n_BWP_start = 0;
-  //uint32_t n_rb_offset = 0;
-  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset;//+(int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB);
-  // start time position for CORESET
-  // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
-  uint8_t start_symbol = 0;
-
-  // at the moment we are considering that the PDCCH is always starting at symbol 0 of current slot
-  // the following code to initialize start_symbol must be activated once we implement PDCCH demapping on symbol not equal to 0 (considering symbol_mon)
-  for (int i=0; i < 14; i++) {
-    if (((symbol_mon >> (i+1))&0x1) != 0) {
-      start_symbol = i;
-      i=14;
-    }
-  }
-
-  LOG_DD("symbol_mon=(%u) and start_symbol=(%u)\n",symbol_mon,start_symbol);
-  LOG_DD("coreset_freq_dom=(%lu) n_rb_offset=(%u) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) scrambling_ID=(%d) \n",
-         coreset_freq_dom,n_rb_offset,coreset_time_dur,n_shift,reg_bundle_size_L,coreset_interleaver_size_R,pdcch_DMRS_scrambling_id);
-  //
-  // according to 38.213 v15.1.0: a PDCCH monitoring pattern within a slot,
-  // indicating first symbol(s) of the control resource set within a slot
-  // for PDCCH monitoring, by higher layer parameter monitoringSymbolsWithinSlot
-  //
-  // at the moment we do not implement this and start_symbol is always 0
-  // note that the bitmap symbol_mon may indicate several monitoring times within a same slot (symbols 0..13)
-  // this may lead to a modification in ue scheduler
-  // indicates the number of active CORESETs for the current BWP to decode PDCCH: max is 3 (this variable is not useful here, to be removed)
-  //uint8_t  coreset_nbr_act;
-  // indicates the number of REG contained in the PDCCH (number of RBs * number of symbols, in CORESET)
-  uint32_t coreset_nbr_rb = 0;
-  // for (int j=0; j < coreset_nbr_act; j++) {
-  // for each active CORESET (max number of active CORESETs in a BWP is 3),
-  // we calculate the number of RB for each CORESET bitmap
-  LOG_DD("coreset_freq_dom=(%lu)\n",coreset_freq_dom);
-  int i; //for each bit in the coreset_freq_dom bitmap
-
-  for (i = 0; i < 45; i++) {
-    // this loop counts each bit of the bit map coreset_freq_dom, and increments nbr_RB_coreset for each bit set to '1'
-    if (((coreset_freq_dom & 0x1FFFFFFFFFFF) >> i) & 0x1) coreset_nbr_rb++;
-  }
-
-  coreset_nbr_rb = 6 * coreset_nbr_rb; // coreset_nbr_rb has to be multiplied by 6 to indicate the number of PRB or REG(=12 RE) within the CORESET
-  LOG_DD("coreset_freq_dom=(%lu,%lx), coreset_nbr_rb=%u\n", coreset_freq_dom,coreset_freq_dom,coreset_nbr_rb);
-  LOG_DD("coreset_nbr_rb=%u, coreset_nbr_reg=%u, coreset_C=(%u/(%d*%d))=%u\n",
-         coreset_nbr_rb, 
-	 coreset_time_dur * coreset_nbr_rb,
-	 coreset_time_dur * coreset_nbr_rb,
-	 reg_bundle_size_L,coreset_interleaver_size_R,
-	(uint32_t)((coreset_time_dur * coreset_nbr_rb) / (reg_bundle_size_L * coreset_interleaver_size_R)) );
-
-  for (int s = start_symbol; s < (start_symbol + coreset_time_dur); s++) {
-    LOG_DD("we enter nr_pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",
-           is_secondary_ue);
-    LOG_DD("in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
-    nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                pdcch_vars[eNB_id]->dl_ch_estimates,
-                                pdcch_vars[eNB_id]->rxdataF_ext,
-                                pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                                s,
-                                high_speed_flag,
-                                frame_parms,
-                                coreset_freq_dom,
-                                coreset_nbr_rb,
-                                n_rb_offset);
-    LOG_DD("we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
-    LOG_DD("in pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
-    // compute channel level based on ofdm symbol 0
-    pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                        frame_parms,
-                        avgP,
-                        coreset_nbr_rb);
-    avgs = 0;
-
-    for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
-      avgs = cmax(avgs, avgP[aarx]);
-
-    log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
-#ifdef UE_DEBUG_TRACE
-    LOG_D(PHY,"nr_tti_rx %d: pdcch log2_maxh = %d (%d,%d)\n",nr_tti_rx,log2_maxh,avgP[0],avgs);
-#endif
-#if T_TRACER
-    T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id), T_INT(0), T_INT(frame%1024), T_INT(nr_tti_rx),
-      T_INT(avgP[0]), T_INT(avgP[1]), T_INT(avgP[2]), T_INT(avgP[3]));
-#endif
-    LOG_DD("we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
-    LOG_DD("in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
-    // compute LLRs for ofdm symbol 0 only
-    nr_pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
-                                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                                  pdcch_vars[eNB_id]->rxdataF_comp,
-                                  NULL,
-                                  frame_parms,
-                                  s,
-                                  log2_maxh,
-                                  coreset_nbr_rb); // log2_maxh+I0_shift
-#ifdef DEBUG_PHY
-
-    if (nr_tti_rx==5)
-      write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 
 #endif
-
-    if (frame_parms->nb_antennas_rx > 1) {
-      LOG_DD("we enter pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n",
-             frame_parms->nb_antennas_rx);
-      pdcch_detection_mrc(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
-    }
-
-    LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
-    LOG_DD("in nr_pdcch_llr(rxdataF_comp -> llr)\n");
-    nr_pdcch_llr(frame_parms,
-                 pdcch_vars[eNB_id]->rxdataF_comp,
-                 pdcch_vars[eNB_id]->llr,
-                 s,
-                 coreset_nbr_rb);
-#if T_TRACER
-    
-    //  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
-    //  T_INT(n_pdcch_symbols),
-    //  T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
-    
-#endif
-#ifdef DEBUG_DCI_DECODING
-    printf("demapping: nr_tti_rx %d, mi %d\n",nr_tti_rx,get_mi(frame_parms,nr_tti_rx));
-#endif
-  }
-
-  LOG_DD("we enter nr_pdcch_demapping_deinterleaving()\n");
-  nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars[eNB_id]->llr,
-                                    (uint32_t *) pdcch_vars[eNB_id]->e_rx,
-                                    frame_parms,
-                                    coreset_time_dur,
-                                    coreset_nbr_rb,
-                                    reg_bundle_size_L,
-                                    coreset_interleaver_size_R,
-                                    n_shift);
-  nr_pdcch_unscrambling(pdcch_vars[eNB_id]->crnti,
-                        frame_parms,
-                        nr_tti_rx,
-                        pdcch_vars[eNB_id]->e_rx,
-                        coreset_time_dur*coreset_nbr_rb*9*2,
-                        // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
-                        pdcch_DMRS_scrambling_id,
-                        do_common);
-  LOG_DD("we end nr_pdcch_unscrambling()\n");
-  LOG_DD("Ending nr_rx_pdcch() function\n");
-  return (0);
-}
-  */
-#endif
-
-
 
 void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
                       uint8_t nr_tti_rx,

@@ -413,7 +413,6 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_set_freq_func    = tcp_bridge_set_freq;
   device->trx_set_gains_func   = tcp_bridge_set_gains;
   device->trx_write_func       = tcp_bridge_write;
-  device->uhd_set_thread_priority = NULL;
 
   if (tcp_bridge->is_enb) {
     device->trx_read_func      = tcp_bridge_read;

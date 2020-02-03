@@ -125,7 +125,7 @@ typedef struct xer_sprint_string_s {
   size_t string_index;
 } xer_sprint_string_t;
 
-//repplace LTE
+//replace LTE
 //extern unsigned char NB_eNB_INST;
 extern unsigned char NB_gNB_INST;
 extern uint8_t usim_test;

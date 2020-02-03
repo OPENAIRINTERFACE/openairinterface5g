@@ -40,6 +40,7 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN=0
 XFORMS="True"
+SKIP_SHARED_LIB_FLAG="False"
 UE_EXPANSION="False"
 UESIM_EXPANSION="False"
 PRINT_STATS="False"
@@ -88,8 +89,11 @@ Options
 -i | --install-system-files
    Install OpenAirInterface required files in Linux system
    This option will require root password
--g | --run-with-gdb
-   Add debugging symbols to compilation directives. It also disables any compiler optimization. Only for debugging. Do not use in normal operation!
+-g | --run-with-gdb <Release | RelWithDebInfo | MinSizeRel | Debug
+  specify the build mode used by cmake. defaults to Debug mode if -g is used alone, with no mode parameter
+  if -g is not specifies, Release mode is used.
+-G | --cmaketrace
+   enable cmake debugging messages
 --eNB
   Makes the LTE softmodem
 --gNB
@@ -147,11 +151,13 @@ Options
 --uhd-images-dir
    Download UHD images in the indicated location
 --build-eclipse
-   Build eclipse project files. Paths are auto corrected by fixprj.sh
+   Build eclipse project files.
 --build-lib <libraries>
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
+-k | --skip-shared-libraries
+   Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 -h | --help
    Print this help
 
@@ -191,10 +197,41 @@ function main() {
             echo_info "Will copy OpenAirInterface files in Linux directories"
             shift;;
        -g | --run-with-gdb)
-            GDB=1
-            CMAKE_BUILD_TYPE="Debug"
-            echo_info "Will Compile with gdb symbols and disable compiler optimization"
-            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug --trace-expand"
+            case "$2" in
+                "Release")
+                    GDB=0
+                    CMAKE_BUILD_TYPE="Release"
+                    echo_info "Will Compile without gdb symbols and with compiler optimization"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Release"
+                    shift
+                    ;;
+                "RelWithDebInfo")
+                    GDB=0
+                    CMAKE_BUILD_TYPE="RelWithDebInfo"
+                    echo_info "Will Compile with gdb symbols"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                    shift
+                    ;;
+                "MinSizeRel")
+                    GDB=0
+                    CMAKE_BUILD_TYPE="MinSizeRel"
+                    echo_info "Will Compile for minimal exec size"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=MinSizeRel"
+                    shift
+                    ;;
+                "Debug" | *)
+                    GDB=1
+                    CMAKE_BUILD_TYPE="Debug"
+                    echo_info "Will Compile with gdb symbols and disable compiler optimization"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
+                    if [ "$2" == "Debug" ] ; then
+                        shift
+                    fi
+                    ;;
+            esac
+            shift;;
+       -G | --cmaketrace)
+            CMAKE_CMD="$CMAKE_CMD --trace-expand"
             shift;;
        --eNB)
             eNB=1
@@ -367,6 +404,10 @@ function main() {
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
             shift 1;;
+        -k | --skip-shared-libraries)
+            SKIP_SHARED_LIB_FLAG="True"
+            echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
+            shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -513,22 +554,17 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-
-  if [ "$T_TRACER" =  "False" ] ; then
-      build_dir=ran_build_noLOG
+  if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
+    build_dir=phy_simulators
   else
+    if [ "$T_TRACER" =  "False" ] ; then
+      build_dir=ran_build_noLOG
+    else
       build_dir=ran_build  
+    fi
   fi
-
-  if [ "$gNB" = "1" ] ; then
-     exec=nr-softmodem
-  elif [ "$nrUE" = "1" ] ; then
-     exec=nr-uesoftmodem
-  elif [ "$eNB" = "1" ] ; then
-     exec=lte-softmodem
-  elif [ "$UE" = "1" ] ; then
-     exec=lte-uesoftmodem
-  fi
+  [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
+  mkdir -p $DIR/$build_dir/build
 
 # configuration module libraries, one currently available, using libconfig 
   config_libconfig_shlib=params_libconfig
@@ -537,8 +573,7 @@ function main() {
   if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
     # softmodem compilation
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
-    mkdir -p $DIR/$build_dir/build
+
     cmake_file=$DIR/$build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
@@ -558,55 +593,60 @@ function main() {
     echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
+    echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
-  fi
 
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" ] ; then
-    echo_info "Compiling $exec"
-    compilations \
-	  $build_dir $exec \
-	  $exec $dbin/$exec.$REL
-	  
-# if --eNB --UE are both provided together as build options
-	  if [ "$eNB" = "1" -a "$UE" = "1" ] ; then
-	    echo_info "Compiling lte-uesoftmodem"
-        compilations \
-	      $build_dir lte-uesoftmodem \
-	      lte-uesoftmodem $dbin/lte-uesoftmodem.$REL	  
-	  fi
-	  
-# if --gNB --nrUE are both provided together as build options
-	  if [ "$gNB" = "1" -a "$nrUE" = "1" ] ; then
-	    echo_info "Compiling nr-uesoftmodem"
-        compilations \
-	      $build_dir nr-uesoftmodem \
-	      nr-uesoftmodem $dbin/nr-uesoftmodem.$REL	  
-	  fi
+    execlist=""
+    if [ "$eNB" = "1" ] ; then
+      execlist="$execlist lte-softmodem"
+    fi
+    if [ "$gNB" = "1" ] ; then
+      execlist="$execlist nr-softmodem"
+    fi
+    if [ "$UE" = 1 ] ; then
+      execlist="$execlist lte-uesoftmodem"
+    fi
+    if [ "$nrUE" = 1 ] ; then
+      execlist="$execlist nr-uesoftmodem"
+    fi
+
+    for f in $execlist ; do
+      echo_info "Compiling $f..."
+      compilations \
+        $build_dir $f \
+        $f $dbin/$f.$REL
+    done
+
 
 # mandatory shared libraries common to UE and (e/g)NB
 
-    compilations \
-	  $build_dir $config_libconfig_shlib \
-	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+      echo_info "Building shared libraries common to UE and gNB"
 
-    compilations \
-      $build_dir coding \
-      libcoding.so $dbin/libcoding.so
+      compilations \
+        $build_dir $config_libconfig_shlib \
+        lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
 
-	compilations \
-	  $build_dir nasmesh \
-	  CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+      compilations \
+        $build_dir coding \
+        libcoding.so $dbin/libcoding.so
 
-	compilations \
-	  $build_dir rb_tool \
-	  rb_tool $dbin/rb_tool
+      compilations \
+        $build_dir nasmesh \
+        CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+
+      compilations \
+        $build_dir rb_tool \
+        rb_tool $dbin/rb_tool
       cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+    fi
+
   fi
-  
+
   if [ "$UE" = 1 ] ; then
-    # ue_ip driver compilation
+
     echo_info "Compiling UE specific part"
     compilations \
       $build_dir ue_ip \
@@ -618,11 +658,11 @@ function main() {
 #    compilations \
 #      at_commands at_nas_ue \
 #      at_nas_ue $dbin/at_nas_ue
-    
+
     [ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
-    
+
     eval $CMAKE_CMD
     compilations \
       nas_sim_tools usim \
@@ -647,11 +687,7 @@ function main() {
   fi
 
   if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
-    cd $OPENAIR_DIR/cmake_targets/phy_simulators
-    [ "$CLEAN" = "1" ] && rm -rf build
-    mkdir -p build
-    cd build
-    rm -f *sim
+    cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
   fi
 
@@ -789,18 +825,18 @@ function main() {
 
           # link liboai_device.so with the selected RF device library
           if [ "$HW" == "EXMIMO" ] ; then
-	          compilations \
+              compilations \
                   $build_dir oai_exmimodevif \
-		          liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
+                  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
 
-	          ln -sf liboai_exmimodevif.so liboai_device.so
-	          ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
-	          echo_info "liboai_device.so is linked to EXMIMO device library"
-	      elif [ "$HW" == "OAI_USRP" ] ; then
+              ln -sf liboai_exmimodevif.so liboai_device.so
+              ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
+              echo_info "liboai_device.so is linked to EXMIMO device library"
+          elif [ "$HW" == "OAI_USRP" ] ; then
               compilations \
                   $build_dir oai_usrpdevif \
                   liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
-                  
+
               ln -sf liboai_usrpdevif.so liboai_device.so
               ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to USRP device library"        
@@ -844,31 +880,36 @@ function main() {
                   echo_error "== FAILED == Unexpected Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
               fi
               echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
-	      else 
-	          echo_info "liboai_device.so is not linked to any device library"	    
-	      fi
+          else
+              echo_info "liboai_device.so is not linked to any device library"
+          fi
       fi
-      
+
       #build simulators devices
-      echo_info "Compiling rfsimulator"
-      compilations \
-          $build_dir rfsimulator \
-          librfsimulator.so $dbin/librfsimulator.so.$REL
-      
-      echo_info "Compiling basicsimulator"
-      compilations \
-          $build_dir tcp_bridge_oai \
-          libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
+      if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+          echo_info "Compiling rfsimulator"
+          compilations \
+              $build_dir rfsimulator \
+              librfsimulator.so $dbin/librfsimulator.so.$REL
+
+          echo_info "Compiling basicsimulator"
+          compilations \
+              $build_dir tcp_bridge_oai \
+              libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
+      fi
 
       #build transport protocol libraries (currently only ETHERNET is available)
-      rm -f liboai_transpro.so
-	  rm -f $dbin/liboai_transpro.so
-	  compilations \
-          $build_dir oai_eth_transpro \
-		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	  ln -sf liboai_eth_transpro.so liboai_transpro.so
-	  ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-	  echo_info "liboai_transpro.so is linked to ETHERNET transport"
+      if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+          echo_info "Building transport protocol libraries"
+          rm -f liboai_transpro.so
+          rm -f $dbin/liboai_transpro.so
+          compilations \
+              $build_dir oai_eth_transpro \
+              liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+          ln -sf liboai_eth_transpro.so liboai_transpro.so
+          ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+          echo_info "liboai_transpro.so is linked to ETHERNET transport"
+      fi
   fi
 
   ###################

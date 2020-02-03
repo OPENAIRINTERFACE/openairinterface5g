@@ -57,6 +57,7 @@
 #include "common_lib.h"
 #include "msc.h"
 #include "defs_common.h"
+#include "defs_RU.h"
 #include "impl_defs_top.h"
 #include "PHY/TOOLS/time_meas.h"
 //#include "PHY/CODING/coding_defs.h"
@@ -71,7 +72,6 @@
 #define PBCH_A 24
 #define MAX_NUM_RU_PER_eNB 64
 #define MAX_NUM_RX_PRACH_PREAMBLES 4
-
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.

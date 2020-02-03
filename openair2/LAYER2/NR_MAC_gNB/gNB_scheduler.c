@@ -33,9 +33,10 @@
 #include "assertions.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
@@ -63,10 +64,6 @@
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
-
-extern RAN_CONTEXT_t RC;
-extern int phy_test;
-extern uint8_t nfapi_mode;
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -317,10 +314,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   //printf("gNB_dlsch_ulsch_scheduler frameRX %d slotRX %d frameTX %d slotTX %d\n",frame_rxP,slot_rxP,frame_txP,slot_txP);
 			       
   protocol_ctxt_t   ctxt;
-  int               CC_id;
-    
-  NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
-  //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
+  int CC_id, i = -1, UE_id = 0;
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  NR_UE_list_t *UE_list = &gNB->UE_list;
+  rnti_t rnti;
+  UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  NR_COMMON_channels_t *cc = gNB->common_channels;
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -328,10 +327,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   pdcp_run(&ctxt);
   //rrc_rx_tx(&ctxt, CC_id);
 
-  
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;
-
 
   // Check if there are downlink symbols in the slot, 
   if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)) {
@@ -363,15 +360,30 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
-
   // This schedules MIB
   if((slot_txP == 0) && (frame_txP & 7) == 0){
     schedule_nr_mib(module_idP, frame_txP, slot_txP);
   }
 
+  // TbD once RACH is available, start ta_timer when UE is connected
+  if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
+
+  if (ue_sched_ctl->ta_timer == 0) {
+    gNB->ta_command = ue_sched_ctl->ta_update;
+    /* if time is up, then set the timer to not send it for 5 frames
+    // regardless of the TA value */
+    ue_sched_ctl->ta_timer = 100;
+    /* reset ta_update */
+    ue_sched_ctl->ta_update = 31;
+    /* MAC CE flag indicating TA length */
+    gNB->ta_len = 2;
+  }
+
   // Phytest scheduling
   if (phy_test && slot_txP==1){
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
+    // resetting ta flag
+    gNB->ta_len = 0;
   }
 
   /*

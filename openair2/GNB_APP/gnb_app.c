@@ -37,28 +37,18 @@
 
 #include "common/utils/LOG/log.h"
 
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
-#   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-#   include "gtpv1u_eNB_task.h"
-# endif
+#include "x2ap_eNB.h"
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
+#include "gtpv1u_eNB_task.h"
+#include "PHY/INIT/phy_init.h" 
 
-# include "PHY/INIT/phy_init.h" 
-# include "x2ap_eNB.h"
 extern unsigned char NB_gNB_INST;
-#endif
 
 extern RAN_CONTEXT_t RC;
 
-#if defined(ENABLE_ITTI)
-
-/*------------------------------------------------------------------------------*/
-# if defined(ENABLE_USE_MME)
-#   define GNB_REGISTER_RETRY_DELAY 10
-# endif
-
+#define GNB_REGISTER_RETRY_DELAY 10
 
 /*------------------------------------------------------------------------------*/
 static void configure_nr_rrc(uint32_t gnb_id)
@@ -82,7 +72,6 @@ static void configure_nr_rrc(uint32_t gnb_id)
 /*------------------------------------------------------------------------------*/
 
 /*
-# if defined(ENABLE_USE_MME)
 static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, const Enb_properties_array_t *enb_properties)
 {
   uint32_t         gnb_id;
@@ -113,7 +102,6 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   return register_gnb_pending;
 }
-# endif
 */
 
 /*------------------------------------------------------------------------------*/
@@ -135,23 +123,15 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
   return register_gnb_x2_pending;
 }
 
-#endif
-
 
 /*------------------------------------------------------------------------------*/
 void *gNB_app_task(void *args_p)
 {
 
-#if defined(ENABLE_ITTI)
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
   uint32_t                        x2_register_gnb_pending = 0;
-# if defined(ENABLE_USE_MME)
-  //uint32_t                        register_gnb_pending;
-  //uint32_t                        registered_gnb;
-  //long                            gnb_register_retry_timer_id;
-# endif
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
   const char                      *msg_name        = NULL;
@@ -162,7 +142,7 @@ void *gNB_app_task(void *args_p)
 
   itti_mark_task_ready (TASK_GNB_APP);
 
-  LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
+  LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
   RCconfig_NR_L1();
 
@@ -191,18 +171,17 @@ void *gNB_app_task(void *args_p)
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
-
   }
 
-# if defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
   /* Try to register each gNB */
   //registered_gnb = 0;
   //register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
-# else
+  } else {
   /* Start L2L1 task */
-  msg_p = itti_alloc_new_message(TASK_GNB_APP, INITIALIZE_MESSAGE);
-  itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
-# endif
+    msg_p = itti_alloc_new_message(TASK_GNB_APP, INITIALIZE_MESSAGE);
+    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+  }
 
   do {
     // Wait for a message
@@ -221,7 +200,7 @@ void *gNB_app_task(void *args_p)
       LOG_I(GNB_APP, "Received %s\n", ITTI_MSG_NAME(msg_p));
       break;
 
-# if defined(ENABLE_USE_MME)
+
 /*
     case S1AP_REGISTER_ENB_CNF:
       LOG_I(GNB_APP, "[gNB %d] Received %s: associated MME %d\n", instance, msg_name,
@@ -282,7 +261,6 @@ void *gNB_app_task(void *args_p)
       //}
 
       break;
-# endif
 
     default:
       LOG_E(GNB_APP, "Received unexpected message %s\n", msg_name);
@@ -292,8 +270,6 @@ void *gNB_app_task(void *args_p)
     result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
   } while (1);
-
-#endif
 
 
   return NULL;

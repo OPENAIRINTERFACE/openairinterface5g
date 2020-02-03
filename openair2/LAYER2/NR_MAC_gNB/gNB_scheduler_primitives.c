@@ -34,7 +34,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/LOG/log.h"
@@ -1005,9 +1005,7 @@ dump_nr_ue_list(NR_UE_list_t *listP,
   return;
 }
 
-int
-find_nr_UE_id(module_id_t mod_idP,
-           rnti_t rntiP)
+int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
   int UE_id;
@@ -1023,9 +1021,8 @@ find_nr_UE_id(module_id_t mod_idP,
 
   return -1;
 }
- 
-int add_new_nr_ue(module_id_t mod_idP,
-		  rnti_t rntiP){
+
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   int UE_id;
   int i;
@@ -1367,8 +1364,3 @@ int add_new_nr_ue(module_id_t mod_idP,
   }
 }
 */
-
-
-
-
-

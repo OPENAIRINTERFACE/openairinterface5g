@@ -41,7 +41,7 @@ enum sctp_state_e {
 };
 
 typedef struct sctp_new_association_req_s {
-  /* Upper layer connexion identifier */
+  /* Upper layer connection identifier */
   uint16_t         ulp_cnx_id;
 
   /* The port to connect to */
@@ -60,7 +60,7 @@ typedef struct sctp_new_association_req_s {
 } sctp_new_association_req_t;
 
 typedef struct sctp_new_association_req_multi_s {
-  /* Upper layer connexion identifier */
+  /* Upper layer connection identifier */
   uint16_t         ulp_cnx_id;
 
   /* The port to connect to */
@@ -98,7 +98,7 @@ typedef struct sctp_new_association_ind_s {
 } sctp_new_association_ind_t;
 
 typedef struct sctp_new_association_resp_s {
-  /* Upper layer connexion identifier */
+  /* Upper layer connection identifier */
   uint16_t ulp_cnx_id;
 
   /* SCTP Association ID */
@@ -149,7 +149,7 @@ typedef struct sctp_listener_register_upper_layer_s {
   /* Port to listen to */
   uint16_t port;
   /* Payload protocol identifier
-   * Any data receveid on PPID != will be discarded
+   * Any data received on PPID != will be discarded
    */
   uint32_t ppid;
 } sctp_listener_register_upper_layer_t;

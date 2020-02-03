@@ -36,7 +36,7 @@
 #include "assertions.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include "executables/nr-uesoftmodem.h"
+//#include "executables/nr-uesoftmodem.h"
 #include "targets/RT/USER/lte-softmodem.h"
 
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
@@ -2957,7 +2957,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
 
       dlsch_unscrambling(&ue->frame_parms,1,ue->dlsch_MCH[0],
                          ue->dlsch_MCH[0]->harq_processes[0]->G,
-                         ue->pdsch_vars_MCH[0]->llr[0],0,subframe_rx<<1);
+                         ue->pdsch_vars_MCH[ue->current_thread_id[subframe_rx]][0]->llr[0],0,subframe_rx<<1);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> nb_rb %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->nb_rb);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> rb_alloc_even %x \n", frame_rx, subframe_rx, (unsigned int)((intptr_t)ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even));
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> Qm %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->Qm);
@@ -2965,7 +2965,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> G  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->G);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> Kmimo  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->Kmimo);
       ret = dlsch_decoding(ue,
-                           ue->pdsch_vars_MCH[0]->llr[0],
+                           ue->pdsch_vars_MCH[ue->current_thread_id[subframe_rx]][0]->llr[0],
                            &ue->frame_parms,
                            ue->dlsch_MCH[0],
                            ue->dlsch_MCH[0]->harq_processes[0],

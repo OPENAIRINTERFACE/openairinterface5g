@@ -357,6 +357,7 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 }
 #endif
 
+#if 0
 void phy_config_harq_ue(module_id_t Mod_id,
                         int CC_id,
                         uint8_t eNB_id,
@@ -368,6 +369,7 @@ void phy_config_harq_ue(module_id_t Mod_id,
     for (num_of_code_words=0; num_of_code_words<NR_MAX_NB_CODEWORDS; num_of_code_words++)
       phy_vars_ue->ulsch[num_of_threads][eNB_id][num_of_code_words]->Mlimit = max_harq_tx;
 }
+#endif
 
 extern uint16_t beta_cqi[16];
 
@@ -696,7 +698,12 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   for (i=0; i<MAX_NR_OF_UL_ALLOCATIONS; i++) {
     ue->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeA;
+    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
+  }
+
+  for (i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++){
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (NR_PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = typeA;
   }
 
   //------------- config DMRS parameters--------------//
@@ -704,6 +711,11 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
   ue->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
+  ue->dmrs_DownlinkConfig.pdsch_maxLength = pdsch_len1;
+  //-------------------------------------------------//
+
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization

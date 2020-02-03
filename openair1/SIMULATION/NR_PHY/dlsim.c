@@ -76,15 +76,14 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 
-int sf_ahead=4;
+int sf_ahead=4, phy_test = 0;
+uint8_t nfapi_mode = 0;
+uint16_t NB_UE_INST = 1;
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
 void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
-
-int nfapi_mode=0;
-
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 			      const int             CC_id,
@@ -96,8 +95,6 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
   return 0;
 }
 
-
-uint16_t NB_UE_INST = 1;
 
 //Dummy Functions
 //lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
@@ -466,6 +463,9 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
 
   RC.nb_nr_macrlc_inst = 1;
+  RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
+  for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
+    RC.nb_nr_mac_CC[i] = 1;
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
@@ -630,7 +630,6 @@ int main(int argc, char **argv)
   nr_gold_pbch(UE);
   nr_gold_pdcch(UE,0,2);
 
-   
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
   

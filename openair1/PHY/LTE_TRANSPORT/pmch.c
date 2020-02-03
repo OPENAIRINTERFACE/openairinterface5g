@@ -96,13 +96,17 @@ void generate_mch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,uint8_t *a)
 	    get_Qm(eNB->dlsch_MCH->harq_processes[0]->mcs),1,
 	    2,proc->frame_tx,subframe,0);
   
+  eNB->dlsch_MCH->harq_processes[0]->Qm = get_Qm(eNB->dlsch_MCH->harq_processes[0]->mcs);
+ 
   generate_mbsfn_pilot(eNB,proc,
 		       eNB->common_vars.txdataF,
 		       AMP);
   
+  AssertFatal(eNB->dlsch_MCH->harq_processes[0]->pdu != NULL, "attempt to encode a NULL harq PDU\n");
   
   AssertFatal(dlsch_encoding(eNB,
-			     a,
+			    // a,
+			    eNB->dlsch_MCH->harq_processes[0]->pdu,
 			     1,
 			     eNB->dlsch_MCH,
 			     proc->frame_tx,

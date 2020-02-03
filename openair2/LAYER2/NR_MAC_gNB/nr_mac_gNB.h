@@ -54,7 +54,7 @@
 #include "common/ran_context.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
@@ -64,6 +64,8 @@
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
+
+#include "NR_TAG.h"
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -133,10 +135,16 @@ typedef struct gNB_MAC_INST_s {
   /// frame counter
   frame_t                         frame;
   /// slot counter
-  int                             slot;  
+  int                             slot;
+  /// timing advance group
+  NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
-    /// Common cell resources
+  /// TA command
+  int                             ta_command;
+  /// MAC CE flag indicating TA length
+  int                             ta_len;
+  /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
@@ -144,13 +152,14 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
-  nfapi_nr_dl_tti_request_t      DL_req[NFAPI_CC_MAX];
+  nfapi_nr_dl_tti_request_t         DL_req[NFAPI_CC_MAX];
   /// NFAPI UL TTI Request Structure (this is from the new SCF specs)
   nfapi_nr_ul_tti_request_t         UL_tti_req[NFAPI_CC_MAX];
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
-  nfapi_nr_tx_data_request_t       TX_req[NFAPI_CC_MAX];
+  nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
+
   NR_UE_list_t UE_list;
 
   /// UL handle

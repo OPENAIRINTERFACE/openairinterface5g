@@ -55,6 +55,8 @@ pipeline {
             "Analysis with cppcheck",
             "Test phy-sim",
             "Test basic-sim",
+            "Test L1-sim",
+            "Test RF-sim",
             "Test L2-sim",
             "Test-Mono-FDD-Band7",
             "Test-Mono-TDD-Band40",
@@ -340,7 +342,11 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nrue_usrp red_hat"
+                            if (fileExists('red_hat')) {
+                                sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nr_ue_usrp red_hat"
+                            } else {
+                                sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nr_ue_usrp"
+                            }
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'

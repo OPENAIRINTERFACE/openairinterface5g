@@ -56,9 +56,10 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      int32_t *output,
                      unsigned short p,
                      unsigned char lp,
-                     unsigned short nb_pusch_rb)
+                     unsigned short nb_pusch_rb,
+                     uint8_t dmrs_type)
 {
-  int8_t w,config_type;
+  int8_t w;
   short *mod_table;
   unsigned char idx=0;
 
@@ -66,18 +67,16 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
   array_of_w *wf;
   array_of_w *wt;
 
-  config_type = 0; //to be updated by higher layer
+  wf = (dmrs_type==pusch_dmrs_type1) ? wf1 : wf2;
+  wt = (dmrs_type==pusch_dmrs_type1) ? wt1 : wt2;
 
-  wf = (config_type==0) ? wf1 : wf2;
-  wt = (config_type==0) ? wt1 : wt2;
+  if (dmrs_type > 2)
+    LOG_E(PHY,"Bad PUSCH DMRS config type %d\n", dmrs_type);
 
-  if (config_type > 1)
-    LOG_E(PHY,"Bad PUSCH DMRS config type %d\n", config_type);
-
-  if ((p>=1000) && (p<((config_type==0) ? 1008 : 1012))) {
+  if ((p>=1000) && (p<((dmrs_type==pusch_dmrs_type1) ? 1008 : 1012))) {
       if (gNB->frame_parms.Ncp == NORMAL) {
 
-        for (int i=0; i<nb_pusch_rb*((config_type==0) ? 6:4); i++) {
+        for (int i=0; i<nb_pusch_rb*((dmrs_type==pusch_dmrs_type1) ? 6:4); i++) {
 
           w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
           mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
@@ -86,7 +85,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
         ((int16_t*)output)[i<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
         ((int16_t*)output)[(i<<1)+1] = mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PUSCH
-        printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", config_type, p, nb_pusch_rb);
+        printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", dmrs_type, p, nb_pusch_rb);
         printf("wf[%d] = %d wt[%d]= %d\n", i&1, wf[p-1000][i&1], lp, wt[p-1000][lp]);
         printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
             (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1]);

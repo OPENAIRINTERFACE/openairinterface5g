@@ -913,15 +913,6 @@ int trx_usrp_reset_stats(openair0_device *device) {
   return(0);
 }
 
-/*! \brief Set uhd priority
- */
-static void uhd_set_thread_priority(void) {
-  uhd::set_thread_priority_safe(1.0);
-}
-
-void noop_func(void) {
-  return;
-}
 extern "C" {
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     LOG_D(HW, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
@@ -961,7 +952,6 @@ extern "C" {
       set_rx_gain_offset(&openair0_cfg[0],0,bw_gain_adjust);
       device->trx_write_func = trx_usrp_write_recplay;
       device->trx_read_func  = trx_usrp_read_recplay;
-      device->uhd_set_thread_priority = noop_func;
       std::cerr << "USRP device initialized in subframes replay mode for " << s->recplay_state->u_sf_loops << " loops. Use mmap="
                 << s->recplay_state->use_mmap << std::endl;
     } else {
@@ -1314,7 +1304,6 @@ extern "C" {
       LOG_I(HW,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
       device->trx_write_func = trx_usrp_write;
       device->trx_read_func  = trx_usrp_read;
-      device->uhd_set_thread_priority = uhd_set_thread_priority;
       s->sample_rate = openair0_cfg[0].sample_rate;
 
       // TODO:
