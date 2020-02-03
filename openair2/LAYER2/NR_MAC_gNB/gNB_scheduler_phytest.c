@@ -262,13 +262,9 @@ int configure_fapi_dl_Tx(int Mod_idP,
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
   int TBS;
-
-  
   int bwp_id=1;
-  
   int UE_id = 0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
@@ -422,7 +418,6 @@ int configure_fapi_dl_Tx(int Mod_idP,
 	TBS);
   
   dl_req->nPDUs+=2;
-  
 
   TX_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
   TX_req->PDU_index  = nr_mac->pdu_index[0]++;
@@ -740,12 +735,12 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 
   UL_tti_req->SFN = frameP;
   UL_tti_req->Slot = slotP;
-  UL_tti_req->n_pdus = 1;
-  UL_tti_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-  UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+  UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+  UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu,0,sizeof(nfapi_nr_pusch_pdu_t));
-  
+  UL_tti_req->n_pdus+=1;  
+
   LOG_D(MAC, "Scheduling UE specific PUSCH\n");
   //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
   /*
@@ -842,7 +837,6 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 		     1, // ue-specific,
 		     scc,
 		     bwp);
-
   
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
 

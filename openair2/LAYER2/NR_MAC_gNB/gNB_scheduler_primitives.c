@@ -547,6 +547,141 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 
+// This function configures pucch_pdu according to pucch_ResourceId value
+void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+                        NR_PUCCH_ResourceId_t pucch_ResourceId,
+			NR_ServingCellConfigCommon_t *scc,
+			NR_BWP_Uplink_t *bwp){
+
+  NR_PUCCH_Config_t *pucch_Config;
+  NR_PUCCH_Resource_t *pucchres;
+  NR_PUCCH_FormatConfig_t *pucchfmt;
+  NR_PUSCH_Config_t *pusch_Config = bwp->bwp_Dedicated->pusch_Config->choice.setup;
+  long *pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
+  long *id0 = NULL;
+  int n_list;
+  if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+    id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
+  if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+    id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
+
+  // hop flags and hopping id are valid for any BWP
+  switch (scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping){
+    case 0 :
+      // if neither, both disabled
+      pucch_pdu->group_hop_flag = 0;
+      pucch_pdu->sequence_hop_flag = 0;
+      break;
+    case 1 :
+      // if enable, group enabled
+      pucch_pdu->group_hop_flag = 1;
+      pucch_pdu->sequence_hop_flag = 0;
+      break;
+    case 2 :
+      // if disable, sequence disabled
+      pucch_pdu->group_hop_flag = 0;
+      pucch_pdu->sequence_hop_flag = 1;
+      break;
+    default:
+      AssertFatal(1==0,"msg1 FDM identifier %ld undefined (0,1,2,3) \n", scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM);
+  } 
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId != NULL)
+    pucch_pdu->hopping_id = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId;
+  else
+    pucch_pdu->hopping_id = *scc->physCellId;
+
+  if (bwp) { // This is not the InitialBWP
+
+    pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pucch_pdu->subcarrier_spacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+    pucch_pdu->cyclic_prefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
+
+    pucch_Config = bwp->bwp_Dedicated->pucch_Config->choice.setup;
+
+    AssertFatal(pucch_Config->resourceToAddModList!=NULL,
+		"PUCCH resourceToAddModList is null\n");
+
+    n_list = pucch_Config->resourceToAddModList->list.count; 
+    AssertFatal(n_list>0,"PUCCH resourceToAddModList is empty\n");
+
+    for (int i=0; i<n_list; i++) {
+      pucchres = pucch_Config->resourceToAddModList->list.array[i];
+      if (pucchres->pucch_ResourceId == pucch_ResourceId) {
+        pucch_pdu->prb_start = pucchres->startingPRB;
+        pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
+        pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
+
+        switch(pucchres->format.present) {
+          case NR_PUCCH_Resource__format_PR_format0 :
+            pucch_pdu->format_type = 0;
+            pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format0->initialCyclicShift;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format0->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format0->startingSymbolIndex;
+            break;
+          case NR_PUCCH_Resource__format_PR_format1 :
+            pucch_pdu->format_type = 1;
+            pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format1->initialCyclicShift;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format1->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format1->startingSymbolIndex;
+            pucch_pdu->time_domain_occ_idx = pucchres->format.choice.format1->timeDomainOCC;
+            break;
+          case NR_PUCCH_Resource__format_PR_format2 :
+            pucch_pdu->format_type = 2;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format2->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format2->startingSymbolIndex;
+            pucch_pdu->prb_size = pucchres->format.choice.format2->nrofPRBs;
+            pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
+            pucch_pdu->dmrs_scrambling_id = id0!= NULL ? *id0 : *scc->physCellId;
+            break;
+          case NR_PUCCH_Resource__format_PR_format3 :
+            pucch_pdu->format_type = 3;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format3->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format3->startingSymbolIndex;
+            pucch_pdu->prb_size = pucchres->format.choice.format3->nrofPRBs;
+            pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
+            if (pucch_Config->format3 == NULL) {
+              pucch_pdu->pi_2bpsk = 0;
+              pucch_pdu->add_dmrs_flag = 0;
+            }
+            else {
+              pucchfmt = pucch_Config->format3->choice.setup;
+              pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
+              pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
+            }
+            break;
+          case NR_PUCCH_Resource__format_PR_format4 :
+            pucch_pdu->format_type = 4;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format4->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format4->startingSymbolIndex;
+            pucch_pdu->pre_dft_occ_len = pucchres->format.choice.format4->occ_Length;
+            pucch_pdu->pre_dft_occ_idx = pucchres->format.choice.format4->occ_Index;
+            pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
+            if (pucch_Config->format3 == NULL) {
+              pucch_pdu->pi_2bpsk = 0;
+              pucch_pdu->add_dmrs_flag = 0;
+            }
+            else {
+              pucchfmt = pucch_Config->format3->choice.setup;
+              pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
+              pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
+            }
+            break;
+          default :
+            AssertFatal(1==0,"Undefined PUCCH format \n");
+        }
+      }
+    }
+
+  }  
+  else { // this is for InitialBWP
+    AssertFatal(1==0,"Fill in InitialBWP PUCCH configuration\n");
+  }
+
+}
+
+
 
 void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			dci_pdu_rel15_t *dci_pdu_rel15,

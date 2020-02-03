@@ -103,6 +103,10 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           uint16_t slot,
                           nfapi_nr_config_request_scf_t cfg);
 */
+void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+                        NR_PUCCH_ResourceId_t pucch_ResourceId,
+			NR_ServingCellConfigCommon_t *scc,
+			NR_BWP_Uplink_t *bwp);
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 			int ss_type,
 			NR_ServingCellConfigCommon_t *scc,
