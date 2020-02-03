@@ -2070,7 +2070,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
     dl_res_alloc_type_1 = 1;
   }
 
-  uint8_t n_bits_freq_dom_res_assign_dl=0,n_dl_RGB_tmp;
+  uint8_t n_bits_freq_dom_res_assign_dl=0,n_dl_RGB_tmp=-1;
 
   if (dl_res_alloc_type_0 == 1) { // implementation of Table 5.1.2.2.1-1 TC 38.214 subclause 6.1.2.2.1
     // config1: PDSCH-Config IE contains rbg-Size ENUMERATED {config1, config2}

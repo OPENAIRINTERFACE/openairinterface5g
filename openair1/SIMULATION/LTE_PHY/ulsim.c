@@ -995,7 +995,7 @@ int main(int argc, char **argv) {
                                             srs_flag);
           sched_resp.subframe=(subframe+6)%10;
           sched_resp.frame=(1024+eNB->proc.frame_rx+((subframe<4)?-1:0))&1023;
-          schedule_response(&sched_resp);
+          schedule_response(&sched_resp, proc_rxtx);
 
           /////////////////////
           if (abstx) {

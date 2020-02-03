@@ -2067,7 +2067,7 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
   if (opt_enabled) {
     trace_pdu(DIRECTION_DOWNLINK, pduP, pdu_len, module_idP, WS_C_RNTI,
-    (int) UE_mac_inst[module_idP].cs_RNTI, frameP, ttiP, 0, 0); //subframeP
+    *UE_mac_inst[module_idP].cs_RNTI, frameP, ttiP, 0, 0); //subframeP
     LOG_D(OPT, "[UE %d][DLSCH] Frame %d trace pdu for rnti %p  with size %d\n",
       module_idP, frameP, UE_mac_inst[module_idP].cs_RNTI, pdu_len);
     }

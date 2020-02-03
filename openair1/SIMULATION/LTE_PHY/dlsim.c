@@ -515,7 +515,7 @@ int main(int argc, char **argv) {
   char fname[32],vname[32];
   FILE *bler_fd;
   char bler_fname[256];
-  FILE *time_meas_fd;
+  FILE *time_meas_fd=NULL;
   char time_meas_fname[256];
   //  FILE *tikz_fd;
   //  char tikz_fname[256];
@@ -1446,7 +1446,7 @@ int main(int argc, char **argv) {
             sched_resp.subframe=subframe;
             sched_resp.frame=proc_eNB->frame_tx;
             eNB->abstraction_flag=0;
-            schedule_response(&sched_resp);
+            schedule_response(&sched_resp, proc_eNB);
             phy_procedures_eNB_TX(eNB,proc_eNB,1);
 
             if (uncoded_ber_bit == NULL) {
@@ -1480,7 +1480,7 @@ int main(int argc, char **argv) {
             TX_req.tx_request_body.number_of_pdus=0;
             proc_eNB->subframe_tx = subframe+1;
             sched_resp.subframe=subframe+1;
-            schedule_response(&sched_resp);
+            schedule_response(&sched_resp, proc_eNB);
             phy_procedures_eNB_TX(eNB,proc_eNB,0);
             ru->proc.tti_tx=(subframe+1)%10;
             feptx_prec(ru,proc_eNB->frame_tx,subframe+1);
