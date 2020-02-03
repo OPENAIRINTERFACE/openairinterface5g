@@ -1030,12 +1030,12 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                       0,
                                       0,
                                       rel15_ul->number_symbols,
-                                      &gNB->dmrs_UplinkConfig,
+                                      &gNB->pusch_config.dmrs_UplinkConfig,
                                       mapping_type,
                                       frame_parms->ofdm_symbol_size);
 
     if (dmrs_symbol_flag == 1){
-      nb_re_pusch = rel15_ul->number_rbs * ((gNB->dmrs_UplinkConfig.pusch_dmrs_type==pusch_dmrs_type1)?6:8);
+      nb_re_pusch = rel15_ul->number_rbs * ((gNB->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type==pusch_dmrs_type1)?6:8);
       gNB->pusch_vars[UE_id]->dmrs_symbol = symbol;
     } else {
         nb_re_pusch = rel15_ul->number_rbs * NR_NB_SC_PER_RB;
@@ -1054,7 +1054,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   symbol,
                                   bwp_start_subcarrier,
                                   rel15_ul->number_rbs,
-                                  &gNB->dmrs_UplinkConfig);
+                                  &gNB->pusch_config.dmrs_UplinkConfig);
 
     //----------------------------------------------------------
     //--------------------- RBs extraction ---------------------
@@ -1073,7 +1073,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 gNB->pusch_vars[UE_id]->dmrs_symbol,
                                 rel15_ul->number_symbols,
                                 mapping_type,
-                                &gNB->dmrs_UplinkConfig);
+                                &gNB->pusch_config.dmrs_UplinkConfig);
 
     nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                            frame_parms,
@@ -1081,7 +1081,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                            symbol,
                            dmrs_symbol_flag,
                            rel15_ul->number_rbs,
-                           gNB->dmrs_UplinkConfig.pusch_dmrs_type);
+                           gNB->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type);
 
     if (first_symbol_flag==1) {
 

@@ -85,6 +85,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   nfapi_nr_config_request_t *cfg    = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
   NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  dmrs_UplinkConfig_t *dmrs_Uplink_Config = &gNB->pusch_config.dmrs_UplinkConfig;
+  ptrs_UplinkConfig_t *ptrs_Uplink_Config = &gNB->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   /*LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
@@ -154,9 +156,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   //------------- config PUSCH DMRS parameters(to be updated from RRC)--------------//
-  gNB->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
-  gNB->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  gNB->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
+  dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
+  dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
   //--------------------------------------------------------------------------------//
 
   nr_init_pdsch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
@@ -167,6 +169,17 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
     gNB->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
   }
+
+  gNB->ptrs_configured = 0;
+
+  //------------- config PUSCH PTRS parameters(to be updated from RRC)--------------//
+  ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 0; // setting MCS values to 0 indicate abscence of time_density field in the configuration
+  ptrs_Uplink_Config->timeDensity.ptrs_mcs2 = 0;
+  ptrs_Uplink_Config->timeDensity.ptrs_mcs3 = 0;
+  ptrs_Uplink_Config->frequencyDensity.n_rb0 = 0;     // setting N_RB values to 0 indicate abscence of frequency_density field in the configuration
+  ptrs_Uplink_Config->frequencyDensity.n_rb1 = 0;
+  ptrs_Uplink_Config->resourceElementOffset = 0;
+  //--------------------------------------------------------------------------------//
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);

@@ -669,6 +669,9 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
+
+  /// flag to indicate if PTRS is configured
+  uint8_t ptrs_configured;
   
   /// PUSCH DMRS
   uint32_t nr_gold_pusch[2][20][2][NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD];
@@ -726,8 +729,6 @@ typedef struct PHY_VARS_gNB_s {
 
   // SRS Variables
   SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_UE_MAX];
-
-  dmrs_UplinkConfig_t dmrs_UplinkConfig;
 
   dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
 

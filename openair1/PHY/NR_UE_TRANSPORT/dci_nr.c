@@ -1975,7 +1975,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
   PUSCH_Config_t pusch_config       = ue->pusch_config;
   PUCCH_Config_t pucch_config_dedicated       = ue->pucch_config_dedicated_nr[eNB_id];
   crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig = ue->crossCarrierSchedulingConfig;
-  dmrs_UplinkConfig_t dmrs_UplinkConfig = ue->dmrs_UplinkConfig;
+  dmrs_UplinkConfig_t dmrs_UplinkConfig = ue->pusch_config.dmrs_UplinkConfig;
   dmrs_DownlinkConfig_t dmrs_DownlinkConfig = ue->dmrs_DownlinkConfig;
   csi_MeasConfig_t csi_MeasConfig = ue->csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig= ue->PUSCH_ServingCellConfig;

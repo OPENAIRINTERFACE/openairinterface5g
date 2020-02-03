@@ -142,14 +142,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                             0,
                                             0,
                                             harq_process_ul_ue->number_of_symbols,
-                                            &UE->dmrs_UplinkConfig,
+                                            &UE->pusch_config.dmrs_UplinkConfig,
                                             mapping_type,
                                             frame_parms->ofdm_symbol_size);
 
-    ulsch_ue->length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+    ulsch_ue->length_dmrs = UE->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
     ulsch_ue->rnti        = n_rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    ulsch_ue->nb_re_dmrs  = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+    ulsch_ue->nb_re_dmrs  = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
     N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs - N_PRB_oh;
 
@@ -277,7 +277,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   n_dmrs = (harq_process_ul_ue->nb_rb*ulsch_ue->nb_re_dmrs);
   int16_t mod_dmrs[n_dmrs<<1];
-  dmrs_type = UE->dmrs_UplinkConfig.pusch_dmrs_type;
+  dmrs_type = UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type;
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -313,7 +313,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                              0,
                              0,
                              harq_process_ul_ue->number_of_symbols,
-                             &UE->dmrs_UplinkConfig,
+                             &UE->pusch_config.dmrs_UplinkConfig,
                              mapping_type,
                              frame_parms->ofdm_symbol_size);
 
@@ -379,7 +379,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                  n,
                                  delta,
                                  harq_process_ul_ue->number_of_symbols,
-                                 &UE->dmrs_UplinkConfig,
+                                 &UE->pusch_config.dmrs_UplinkConfig,
                                  mapping_type,
                                  frame_parms->ofdm_symbol_size);
 
