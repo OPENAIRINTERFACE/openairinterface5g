@@ -471,7 +471,7 @@ rb_found:
 #endif
 }
 
-static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
+__attribute__ ((unused)) static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
 {
   nr_rlc_entity_t            *nr_rlc_am;
   nr_rlc_ue_t                *ue;
@@ -739,7 +739,7 @@ static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
 
-static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
+__attribute__ ((unused)) static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
 {
   switch (s->rlc_Config->present) {
   case LTE_RLC_Config_PR_am:

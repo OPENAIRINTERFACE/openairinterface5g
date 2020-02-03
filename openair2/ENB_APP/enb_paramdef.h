@@ -1172,7 +1172,6 @@ typedef struct srb1_params_s {
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
 #define CONFIG_STRING_MACRLC_SCHED_MODE                    "scheduler_mode"
-#define CONFIG_STRING_MACRLC_PHY_TEST_MODE                 "phy_test_mode"
 
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -1192,7 +1191,6 @@ typedef struct srb1_params_s {
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
 #define MACRLC_SCHED_MODE_IDX                                  17
-#define MACRLC_PHY_TEST_IDX                                    18
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* thread configuration parameters section name */
