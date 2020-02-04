@@ -348,7 +348,7 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
 
 void nr_fill_crc_indication (PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t crc_flag){
   // pthread_mutex_lock(&gNB->UL_INFO_mutex);
-  nfapi_crc_indication_pdu_t *pdu = &gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list[gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs];
+  // nfapi_crc_indication_pdu_t *pdu = &gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list[gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs];
   // gNB->UL_INFO.crc_ind.sfn_sf                         = frame<<4 | subframe;
   // gNB->UL_INFO.crc_ind.header.message_id              = NFAPI_CRC_INDICATION;
   // gNB->UL_INFO.crc_ind.crc_indication_body.tl.tag     = NFAPI_CRC_INDICATION_BODY_TAG;

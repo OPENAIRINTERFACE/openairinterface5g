@@ -68,7 +68,7 @@
 	<testCase id="040503">
 		<class>Ping</class>
 		<desc>ping (5MHz - 20 sec)</desc>
-		<ping_args>-I 192.168.248.159 -c 20</ping_args>
+		<ping_args>-c 20</ping_args>
        		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
