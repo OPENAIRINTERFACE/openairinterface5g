@@ -239,7 +239,8 @@ static void UE_synch(void *arg) {
 
       if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
-        hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
+        hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
+                         round(((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %lu, UL %lu), UE_scan_carrier %d\n",
               hw_slot_offset,
               freq_offset,
@@ -719,24 +720,25 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
       rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
-               UE->frame_parms.nb_prefix_samples0+
-               slot_nr*UE->frame_parms.samples_per_slot];
+-              UE->frame_parms.nb_prefix_samples0+UE->frame_parms.
+               get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      txp[i] = (void *)&UE->common_vars.txdata[i][((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX)%nb_slot_frame)*UE->frame_parms.samples_per_slot];
+      txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
+               ((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
-      readBlockSize=UE->frame_parms.samples_per_slot;
-      writeBlockSize=UE->frame_parms.samples_per_slot;
+      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
-      readBlockSize=UE->frame_parms.samples_per_slot -
+      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
                     UE->frame_parms.ofdm_symbol_size -
                     UE->frame_parms.nb_prefix_samples0 -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.samples_per_slot -
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
                      UE->rx_offset_diff;
     }
 
@@ -750,7 +752,8 @@ void *UE_thread(void *arg) {
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
-                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
+                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
+                     &UE->frame_parms,DURATION_RX_TO_TX) -
                      UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
                      openair0_cfg[0].tx_sample_advance,
                      txp,
@@ -774,7 +777,8 @@ void *UE_thread(void *arg) {
     }
 
     curMsg->proc.timestamp_tx = timestamp+
-                                (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot)-
+                                UE->frame_parms.get_samples_slot_timestamp(slot_nr,
+                                &UE->frame_parms,DURATION_RX_TO_TX) -
                                 UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
     notifiedFIFO_elt_t *res;
 

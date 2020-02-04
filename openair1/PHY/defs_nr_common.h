@@ -227,7 +227,7 @@ typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
 
-typedef uint32_t (*get_samples_slot_timestamp_t)(int slot, NR_DL_FRAME_PARMS* fp);
+typedef uint32_t (*get_samples_slot_timestamp_t)(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead);
 
 struct NR_DL_FRAME_PARMS {
   /// frequency range

@@ -229,13 +229,17 @@ uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
     return fp->samples_per_slot0;
 }
 
-uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp)
+uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead)
 {
   uint32_t samp_count = 0;
 
-  for(uint8_t idx_slot = 0; idx_slot < slot; idx_slot++)
-    samp_count += fp->get_samples_per_slot(idx_slot, fp);
-
+  if(!sl_ahead) {
+    for(uint8_t idx_slot = 0; idx_slot < slot; idx_slot++)
+      samp_count += fp->get_samples_per_slot(idx_slot, fp);
+  } else {
+    for(uint8_t idx_slot = slot; idx_slot < slot+sl_ahead; idx_slot++)
+      samp_count += fp->get_samples_per_slot(idx_slot, fp);
+  }
   return samp_count;
 }
 

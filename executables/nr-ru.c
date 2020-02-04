@@ -394,7 +394,7 @@ void fh_if4p5_south_in(RU_t *ru,
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
   proc->tti_rx   = sl;
   proc->frame_rx = f;
-  proc->timestamp_rx = (proc->frame_rx * fp->samples_per_subframe * 10)  + fp->get_samples_slot_timestamp(proc->tti_rx, fp);
+  proc->timestamp_rx = (proc->frame_rx * fp->samples_per_subframe * 10)  + fp->get_samples_slot_timestamp(proc->tti_rx, fp, 0);
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_subframe);
   proc->tti_tx   = (sl+(fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
   proc->frame_tx = (sl>(fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (f+1)&1023 : f;
@@ -564,7 +564,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
   if ((frame_tx == 0)&&(slot_tx == 0)) proc->frame_tx_unwrap += 1024;
 
-  proc->timestamp_tx = (((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * fp->samples_per_subframe * 10) + fp->get_samples_slot_timestamp(slot_tx, fp);
+  proc->timestamp_tx = (((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * fp->samples_per_subframe * 10) + fp->get_samples_slot_timestamp(slot_tx, fp, 0);
   LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,slot_tx);
 
   // dump VCD output for first RU in list
@@ -636,7 +636,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   AssertFatal(*slot<fp->slots_per_frame && *slot>=0, "slot %d is illegal (%d)\n",*slot,fp->slots_per_frame);
 
   for (i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(*slot,fp)];
+    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(*slot,fp,0)];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
   old_ts = proc->timestamp_rx;
@@ -724,7 +724,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   unsigned int txs;
   int i,txsymb;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp)], fp->samples_per_subframe));
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe));
 
   int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
   int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
@@ -767,7 +767,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp)-sf_extension];
+      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)-sf_extension];
     
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
