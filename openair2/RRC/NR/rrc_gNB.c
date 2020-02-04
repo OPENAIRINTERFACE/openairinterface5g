@@ -204,7 +204,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          );
 
 
-  /*if (phy_test > 0) {
+  if (phy_test > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     FILE *fd;
 
@@ -253,7 +253,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);    
       rrc_add_nsa_user(rrc,ue_context_p);
     } 
-  }*/
+  }
 }
 
 
