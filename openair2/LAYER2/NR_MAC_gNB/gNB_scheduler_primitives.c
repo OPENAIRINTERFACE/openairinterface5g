@@ -547,19 +547,29 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 
-// This function configures pucch_pdu according to pucch_ResourceId value
+// This function configures pucch pdu fapi structure
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
-                        NR_PUCCH_ResourceId_t pucch_ResourceId,
 			NR_ServingCellConfigCommon_t *scc,
-			NR_BWP_Uplink_t *bwp){
+			NR_BWP_Uplink_t *bwp,
+                        uint8_t pucch_resource,
+                        uint16_t O_uci,
+                        uint16_t O_ack,
+                        uint8_t SR_flag) {
 
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_Resource_t *pucchres;
+  NR_PUCCH_ResourceSet_t *pucchresset;
   NR_PUCCH_FormatConfig_t *pucchfmt;
+  NR_PUCCH_ResourceId_t *resource_id = NULL;
   NR_PUSCH_Config_t *pusch_Config = bwp->bwp_Dedicated->pusch_Config->choice.setup;
   long *pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
   long *id0 = NULL;
-  int n_list;
+  int n_list, n_set;
+  uint16_t N2,N3;
+  int res_found = 0;
+
+  pucch_pdu->bit_len_harq = O_ack;
+
   if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
   if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
@@ -600,25 +610,60 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
     pucch_Config = bwp->bwp_Dedicated->pucch_Config->choice.setup;
 
+    AssertFatal(pucch_Config->resourceSetToAddModList!=NULL,
+		"PUCCH resourceSetToAddModList is null\n");
+
+    n_set = pucch_Config->resourceSetToAddModList->list.count; 
+    AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
+
+    N2 = 2;
+    // procedure to select pucch resource id from resource sets according to 
+    // number of uci bits and pucch resource indicator pucch_resource
+    // ( see table 9.2.3.2 in 38.213)
+    for (int i=0; i<n_set; i++) {
+      pucchresset = pucch_Config->resourceSetToAddModList->list.array[i];
+      n_list = pucchresset->resourceList.list.count;
+      if (pucchresset->pucch_ResourceSetId == 0 && O_uci<3) {
+        if (pucch_resource < n_list)
+          resource_id = pucchresset->resourceList.list.array[pucch_resource];
+        else 
+          AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
+      }
+      else {
+        N3 = pucchresset->maxPayloadMinus1!= NULL ?  *pucchresset->maxPayloadMinus1 : 1706;
+        if (N2<O_uci && N3>O_uci) {
+          if (pucch_resource < n_list)
+            resource_id = pucchresset->resourceList.list.array[pucch_resource];
+          else 
+            AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
+        }
+        else N2 = N3;
+      }
+    }
+
+    AssertFatal(resource_id!=NULL,"Couldn-t find any matching PUCCH resource in the PUCCH resource sets");
+
     AssertFatal(pucch_Config->resourceToAddModList!=NULL,
 		"PUCCH resourceToAddModList is null\n");
 
     n_list = pucch_Config->resourceToAddModList->list.count; 
     AssertFatal(n_list>0,"PUCCH resourceToAddModList is empty\n");
 
+    // going through the list of PUCCH resources to find the one indexed by resource_id
     for (int i=0; i<n_list; i++) {
       pucchres = pucch_Config->resourceToAddModList->list.array[i];
-      if (pucchres->pucch_ResourceId == pucch_ResourceId) {
+      if (pucchres->pucch_ResourceId == *resource_id) {
+        res_found = 1;
         pucch_pdu->prb_start = pucchres->startingPRB;
         pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
         pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
-
         switch(pucchres->format.present) {
           case NR_PUCCH_Resource__format_PR_format0 :
             pucch_pdu->format_type = 0;
             pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format0->initialCyclicShift;
             pucch_pdu->nr_of_symbols = pucchres->format.choice.format0->nrofSymbols;
             pucch_pdu->start_symbol_index = pucchres->format.choice.format0->startingSymbolIndex;
+            pucch_pdu->sr_flag = SR_flag;
             break;
           case NR_PUCCH_Resource__format_PR_format1 :
             pucch_pdu->format_type = 1;
@@ -626,6 +671,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
             pucch_pdu->nr_of_symbols = pucchres->format.choice.format1->nrofSymbols;
             pucch_pdu->start_symbol_index = pucchres->format.choice.format1->startingSymbolIndex;
             pucch_pdu->time_domain_occ_idx = pucchres->format.choice.format1->timeDomainOCC;
+            pucch_pdu->sr_flag = SR_flag;
             break;
           case NR_PUCCH_Resource__format_PR_format2 :
             pucch_pdu->format_type = 2;
@@ -673,7 +719,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
         }
       }
     }
-
+    AssertFatal(res_found==1,"No PUCCH resource found corresponding to id %ld\n",*resource_id);
   }  
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PUCCH configuration\n");
