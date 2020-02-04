@@ -1049,7 +1049,11 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
 }
 
 void phy_config_request(PHY_Config_t *phy_config) {
+}
 
+void phy_config_update_sib2_request(PHY_Config_t *phy_config) {
+}
+void phy_config_update_sib13_request(PHY_Config_t *phy_config) {
 }
 
 uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) { return(0);}

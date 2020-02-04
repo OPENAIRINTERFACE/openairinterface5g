@@ -22,6 +22,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
@@ -213,15 +214,38 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
   
   uint8_t ret;
+  uint8_t l, number_dmrs_symbols = 0;
+  uint8_t mapping_type;
   uint32_t G;
   int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
+  uint16_t start_symbol, number_symbols, nb_re_dmrs;
+
+  mapping_type = gNB->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
+
+  start_symbol = nfapi_ulsch_pdu_rel15->start_symbol;
+  number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
+
+  for (l = start_symbol; l < start_symbol + number_symbols; l++)
+      number_dmrs_symbols += is_dmrs_symbol(l,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            number_symbols,
+                                            &gNB->dmrs_UplinkConfig,
+                                            mapping_type,
+                                            frame_parms->ofdm_symbol_size);
+
+  nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
-               nfapi_ulsch_pdu_rel15->number_symbols,
-               nfapi_ulsch_pdu_rel15->nb_re_dmrs,
+               number_symbols,
+               nb_re_dmrs,
                nfapi_ulsch_pdu_rel15->length_dmrs,
                nfapi_ulsch_pdu_rel15->Qm,
                nfapi_ulsch_pdu_rel15->n_layers);
+
 
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
@@ -242,7 +266,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                     gNB->pusch_vars[ULSCH_id]->llr,
                     frame_parms,
                     frame_rx,
-                    nfapi_ulsch_pdu_rel15->number_symbols,
+                    number_symbols,
+                    nb_re_dmrs,
                     slot_rx,
                     harq_pid,
                     0);
@@ -261,17 +286,17 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
   // [hna] TO BE CLEANED
   // --------------------
 
-  // nfapi_rx_indication_pdu_t *pdu;
-
+  nfapi_rx_indication_pdu_t *pdu;
   int timing_advance_update;
   int sync_pos;
 
+  uint16_t mu = gNB->frame_parms.numerology_index;
   // pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   // gNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| slot_rx;
   // gNB->UL_INFO.rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
 
-  // pdu                                    = &gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list[gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus];
+  pdu = &gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list[gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus];
 
   // pdu->rx_ue_information.handle          = gNB->ulsch[UE_id+1][0]->handle;
   // pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
@@ -279,22 +304,18 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
   // pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   // pdu->rx_indication_rel8.length         = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->TBS>>3;
   // pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  // pdu->data                              = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b;
-  // estimate timing advance for MAC
-  sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id);
-  timing_advance_update                  = sync_pos; // - gNB->frame_parms.nb_prefix_samples/4; //to check
-  // printf("\x1B[33m" "timing_advance_update = %d\n" "\x1B[0m", timing_advance_update);
 
+  pdu->data                              = gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->b;
+  sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
+  timing_advance_update                  = sync_pos * (1 << mu);                    // scale by the used scs numerology
+
+  // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (gNB->frame_parms.N_RB_DL) {
-    // case 6:   /* nothing to do */          break;
-    // case 15:  timing_advance_update /= 2;  break;
-    // case 25:  timing_advance_update /= 4;  break;
-    // case 50:  timing_advance_update /= 8;  break;
-    // case 75:  timing_advance_update /= 12; break;
     case 106: timing_advance_update /= 16; break;
     case 217: timing_advance_update /= 32; break;
+    case 245: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
-    case 66: timing_advance_update /= 12; break;
+    case 66:  timing_advance_update /= 12; break;
     default: abort();
   }
 
@@ -304,7 +325,9 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
 
-  // pdu->rx_indication_rel8.timing_advance = timing_advance_update;
+  LOG_D(PHY, "Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", sync_pos,timing_advance_update);
+
+  pdu->rx_indication_rel8.timing_advance = timing_advance_update;
 
   // estimate UL_CQI for MAC (from antenna port 0 only)
   // int SNRtimes10 = dB_fixed_times10(gNB->pusch_vars[UE_id]->ulsch_power[0]) - 300;//(10*gNB->measurements.n0_power_dB[0]);
@@ -317,12 +340,28 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
   // harq_pid,frame,slot_rx,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
   // timing_advance_update);
 
-  // gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus++;
+  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus++;
   // gNB->UL_INFO.rx_ind.sfn_sf = frame<<4 | slot_rx;
 
   // pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
 
+void nr_fill_crc_indication (PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t crc_flag){
+  // pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  nfapi_crc_indication_pdu_t *pdu = &gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list[gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs];
+  // gNB->UL_INFO.crc_ind.sfn_sf                         = frame<<4 | subframe;
+  // gNB->UL_INFO.crc_ind.header.message_id              = NFAPI_CRC_INDICATION;
+  // gNB->UL_INFO.crc_ind.crc_indication_body.tl.tag     = NFAPI_CRC_INDICATION_BODY_TAG;
+  // pdu->instance_length = 0;     // don't know what to do with this
+  // //  pdu->rx_ue_information.handle                       = handle;
+  // pdu->rx_ue_information.tl.tag                       = NFAPI_RX_UE_INFORMATION_TAG;
+  // pdu->rx_ue_information.rnti                         = gNB->ulsch[UE_id]->rnti;
+  // pdu->crc_indication_rel8.tl.tag                     = NFAPI_CRC_INDICATION_REL8_TAG;
+  // pdu->crc_indication_rel8.crc_flag                   = crc_flag;
+  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs++;
+  //LOG_D(PHY, "%s() rnti:%04x crcs:%d crc_flag:%d\n", __FUNCTION__, pdu->rx_ue_information.rnti, gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs, crc_flag);
+  // pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+}
 
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
@@ -350,29 +389,30 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   int num_pusch_pdu = UL_tti_req->n_pdus;
 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pusch_pdu %d\n",frame_rx,slot_rx,num_pusch_pdu);
-  
+
+  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus  = 0;
+
   for (int i = 0; i < num_pusch_pdu; i++) {
-
     switch (UL_tti_req->pdus_list[i].pdu_type) {
-    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
-      {
-	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
+    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:{
+      LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
 
-	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
-	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);      
-	
-	uint8_t ULSCH_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
-	uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;
-	uint8_t symbol_start = pusch_pdu->start_symbol_index;
-	uint8_t symbol_end = symbol_start + pusch_pdu->nr_of_symbols;
-	
-	for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	  nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-	}
-	//LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
-	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
-	nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
-	nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
+      nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+      nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);
+      
+      uint8_t ULSCH_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
+      uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;
+      uint8_t symbol_start = pusch_pdu->start_symbol_index;
+      uint8_t symbol_end = symbol_start + pusch_pdu->nr_of_symbols;
+      
+      for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+        nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+      }
+      //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
+      //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
+      nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+      nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
+      nr_fill_crc_indication(gNB, frame_rx, slot_rx, ULSCH_id, 0);
       }
     }
   }

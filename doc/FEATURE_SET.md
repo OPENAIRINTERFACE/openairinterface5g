@@ -7,15 +7,18 @@
    4. [eNB PDCP Layer](#enb-pdcp-layer)
    5. [eNB RRC Layer](#enb-rrc-layer)
    6. [eNB X2AP](#enb-x2ap)
-   7. [eNB Advanced Features](#enb-advanced-features)
-2. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
+   7. [eNB/MCE M2AP](#enbmce-m2ap)
+   8. [MCE/MME M3AP](#mcemme-m3ap)
+   9. [eNB Advanced Features](#enb-advanced-features)
+2. [OpenAirInterface Functional Split](#openairinterface-functional-split)
+3. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
    1.  [LTE UE PHY Layer](#lte-ue-phy-layer)
    2.  [LTE UE MAC Layer](#lte-ue-mac-layer)
    3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
    4.  [LTE UE PDCP Layer](#lte-ue-pdcp-layer)
    5.  [LTE UE RRC Layer](#lte-ue-rrc-layer)
-3. [OpenAirInterface Functional Split](#openairinterface-functional-split)
-4. [OpenAirInterface 5G-NR Feature Set](#openairinterface-5g-nr-feature-set)
+4. [OpenAirInterface Functional Split](#openairinterface-functional-split)
+5. [OpenAirInterface 5G-NR Feature Set](#openairinterface-5g-nr-feature-set)
    1. [General Parameters](#general-parameters)
    2. [gNB Features](#gnb-features)
       1. [gNB Physical Layer](#gnb-phy-layer)
@@ -147,6 +150,26 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - X2 timers (t_reloc_prep, tx2_reloc_overall)
  - Handover Cancel
  - X2-U interface implemented
+
+## eNB/MCE M2AP ##
+
+The M2AP layer is based on **3GPP 36.443** v14.0.1:
+ - M2 Setup Request
+ - M2 Setup Response 
+ - M2 Setup Failure
+ - M2 Scheduling Information
+ - M2 Scheduling Information Response 
+ - M2 Session Start Request
+ - M2 Session Start Response
+
+## MCE/MME M3AP ##
+
+The M3AP layer is based on **3GPP 36.444** v14.0.1:
+ - M3 Setup Request
+ - M3 Setup Response 
+ - M3 Setup Failure
+ - M3 Session Start Request
+ - M3 Session Start Response
 
 ## eNB Advanced Features ##
 

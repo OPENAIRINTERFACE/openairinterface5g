@@ -1,6 +1,8 @@
 syntax = "proto2";
 package protocol;
 
+import "config_common.proto"; // for flex_plmn
+
 //
 // UE related statistics
 //
@@ -218,23 +220,14 @@ message flex_eutra_cgi_measurements {
 	// Tracking area code of the neighbor cell.
 	optional uint32 tracking_area_code = 2;
 	// Public land mobile network identifiers of neighbor cell.
-	repeated flex_plmn_identity plmn_id = 3;
+	repeated flex_plmn plmn = 3;
 }
 
 message flex_cell_global_eutra_id {
 	// Public land mobile network identifier of neighbor cell.
-	optional flex_plmn_identity plmn_id = 1;
+	optional flex_plmn plmn = 1;
 	// Cell identifier of neighbor cell.
 	optional uint32 cell_id = 2;
-}
-
-message flex_plmn_identity {
-	// Mobile Network Code (MNC).
-	repeated uint32 mnc = 1;
-	// Mobile Country Code (MCC).
-	repeated uint32 mcc = 2;
-	// tracking area code 
-	repeated uint32 tac = 3;
 }
 
 message flex_eutra_ref_signal_meas {
@@ -317,3 +310,15 @@ message flex_gtp_stats {
     optional uint32 teid_sgw = 4;
     optional string addr_sgw = 5;
 }
+
+//
+// S1AP stats
+//
+
+message flex_s1ap_ue {
+        optional string mme_s1_ip = 1;                  // IP of MME to which UE is connected
+        optional uint32 enb_ue_s1ap_id = 2;             // S1AP ID on eNodeB side for UE
+        optional uint32 mme_ue_s1ap_id = 3;             // S1AP ID on MME side for UE
+        optional flex_plmn selected_plmn = 4;           // UE-selected PLMN in RRC Conn Setup Cplt
+}
+

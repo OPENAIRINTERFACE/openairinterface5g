@@ -402,6 +402,8 @@ typedef struct {
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
+  // DMRS symbol index, to be updated every DMRS symbol within a slot.
+  uint8_t dmrs_symbol;
 } NR_gNB_PUSCH;
 
 
@@ -690,6 +692,12 @@ typedef struct PHY_VARS_gNB_s {
   int mac_enabled;
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
+
+  PUSCH_Config_t pusch_config;
+
+  dmrs_UplinkConfig_t dmrs_UplinkConfig;
+
+  dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
 
   /*
   time_stats_t phy_proc;

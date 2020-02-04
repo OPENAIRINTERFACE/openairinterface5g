@@ -124,7 +124,9 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
     sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
     s1ap_mme_data_p->assoc_id          = -1;
     s1ap_mme_data_p->broadcast_plmn_num = broadcast_plmn_num;
-
+    memcpy(&s1ap_mme_data_p->mme_s1_ip,
+    	   mme_ip_address,
+    	   sizeof(*mme_ip_address));
     for (int i = 0; i < broadcast_plmn_num; ++i)
       s1ap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
 
@@ -193,6 +195,10 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     new_instance->eNB_id           = s1ap_register_eNB->eNB_id;
     new_instance->cell_type        = s1ap_register_eNB->cell_type;
     new_instance->tac              = s1ap_register_eNB->tac;
+    
+    memcpy(&new_instance->eNB_s1_ip,
+	   &s1ap_register_eNB->enb_ip_address,
+	   sizeof(s1ap_register_eNB->enb_ip_address));
 
     for (int i = 0; i < s1ap_register_eNB->num_plmn; i++) {
       new_instance->mcc[i]              = s1ap_register_eNB->mcc[i];

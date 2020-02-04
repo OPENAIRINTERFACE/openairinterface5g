@@ -88,17 +88,13 @@ uint8_t nr_subframe2harq_pid(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8
 }
 
 uint8_t nr_pdcch_alloc2ul_subframe(NR_DL_FRAME_PARMS *frame_parms,uint8_t n) {
-  uint8_t ul_subframe = 255;
 
   AssertFatal(1==0,"Not ready for this\n");
 
 }
 
 uint32_t nr_pdcch_alloc2ul_frame(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n) {
-  uint32_t ul_frame = 255;
-
 
   AssertFatal(1==0,"Not ready for this\n");
-
 
 }

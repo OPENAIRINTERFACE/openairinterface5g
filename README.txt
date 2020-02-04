@@ -17,7 +17,7 @@ openairinterface5g
 ├── maketags : Script to generate emacs tags
 ├── nfapi : Contains the NFAPI code. A local Readme file provides more details.
 ├── openair1 : 3GPP LTE Rel-10/12 PHY layer + PHY RF simulation. A local Readme file provides more details.
-├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation.
+├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP + LTE Rel-14 M2AP implementation.
     ├── COMMON
     ├── DOCS
     ├── ENB_APP
@@ -28,12 +28,15 @@ openairinterface5g
     ├── RRC/LITE
     ├── UTIL
     ├── X2AP
+    ├── M2AP
+    ├── MCE_APP
 ├── openair3: 3GPP LTE Rel10 for S1AP, NAS GTPV1-U for both ENB and UE.
     ├── COMMON
     ├── DOCS
     ├── GTPV1-U
     ├── NAS
     ├── S1AP
+    ├── M3AP
     ├── SCTP
     ├── SECU
     ├── UDP
@@ -42,6 +45,17 @@ openairinterface5g
 
 
 RELEASE NOTES:
+
+v1.2.0 -> January 2020. This version adds the following implemented features:
+           * LTE-M : eNB support for Mode A repetitions
+             - PUSCH CE - 8 Repetitions
+           * Improved CDRX implementation for monolithic eNB
+           * Experimental eMBMS support (now also on eNB side)
+           * Experimental MCE - Multicast Coordination Entity
+           * Bug fixes
+          This version also has an improved code quality:
+           * Better Test Coverage in Continuous Integration:
+             - Initial framework to do long-run testing at R2LAB
 
 v1.1.1 -> November 2019. Bug fix in the TDD Fair Round-Robin scheduler
 v1.1.0 -> July 2019. This version adds the following implemented features:
@@ -93,3 +107,4 @@ v0.4 -> Merge of feature-131-new-license. It closes issue#131 and changes the li
 v0.3 -> Last stable commit on develop branch before the merge of feature-131-new-license. This is the last commit with GPL License
 v0.2 -> Merge of enhancement-10-harmony to include NGFI RRH + New Interface for RF/BBU
 v0.1 -> Last stable commit on develop branch before enhancement-10-harmony
+

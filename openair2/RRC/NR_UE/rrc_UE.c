@@ -477,14 +477,14 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                     case NR_DL_DCCH_MessageType__c1_PR_spare2:
                     case NR_DL_DCCH_MessageType__c1_PR_spare1:
                     default:
-                        //  not support or unuse
+                        //  not supported or unused
                         break;
                 }   
                 break;
             case NR_DL_DCCH_MessageType_PR_NOTHING:
             case NR_DL_DCCH_MessageType_PR_messageClassExtension:
             default:
-                //  not support or unuse
+                //  not supported or unused
                 break;
         }
         

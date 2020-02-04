@@ -69,6 +69,10 @@ void multadd_real_vector_complex_scalar(int16_t *x,
                                         int16_t *y,
                                         uint32_t N);
 
+void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
+                                                     int16_t *alpha,
+                                                     int16_t *y);
+
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
 @param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ...

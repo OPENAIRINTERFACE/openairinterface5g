@@ -59,16 +59,16 @@ Description NAS procedure functions triggered by the network
 
 /****************************************************************************
  **                                                                        **
- ** Name:    nas_network_initialize()                                  **
+ ** Name:    nas_network_initialize()                                      **
  **                                                                        **
  ** Description: Initializes network internal data                         **
  **                                                                        **
- ** Inputs:  None                                                      **
- **          Others:    None                                       **
+ ** Inputs:  None                                                          **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     None                                                      **
- **      Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: None                                                          **
+ **          Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 void nas_network_initialize(void)
@@ -80,16 +80,16 @@ void nas_network_initialize(void)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    nas_network_cleanup()                                     **
+ ** Name:    nas_network_cleanup()                                         **
  **                                                                        **
  ** Description: Performs clean up procedure before the system is shutdown **
  **                                                                        **
- ** Inputs:  None                                                      **
- **          Others:    None                                       **
+ ** Inputs:  None                                                          **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     None                                                      **
- **          Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: None                                                          **
+ **          Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 void nas_network_cleanup(nas_user_t *user)
@@ -103,20 +103,20 @@ void nas_network_cleanup(nas_user_t *user)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    nas_network_process_data()                                **
+ ** Name:    nas_network_process_data()                                    **
  **                                                                        **
  ** Description: Process Access Stratum messages received from the network **
- **      and call applicable NAS procedure function.               **
+ **              and call applicable NAS procedure function.               **
  **                                                                        **
- ** Inputs:  msg_id:    AS message identifier                      **
- **          data:      Generic pointer to data structure that has **
- **             to be processed                            **
- **          Others:    None                                       **
+ ** Inputs:  msg_id:    AS message identifier                              **
+ **          data:      Generic pointer to data structure that has         **
+ **                     to be processed                                    **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     None                                                      **
- **      Return:    RETURNok if the message has been success-  **
- **             fully processed; RETURNerror otherwise     **
- **          Others:    None                                       **
+ ** Outputs: None                                                          **
+ **          Return:    RETURNok if the message has been success-          **
+ **                     fully processed; RETURNerror otherwise             **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
@@ -173,7 +173,7 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
   }
 
   case AS_NAS_RELEASE_IND:
-    /* Received NAS signalling connection releaase indication */
+    /* Received NAS signalling connection release indication */
     rc = nas_proc_release_ind(user, msg->msg.nas_release_ind.cause);
     break;
 

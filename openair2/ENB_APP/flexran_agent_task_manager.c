@@ -33,7 +33,7 @@
 #include <stdio.h>
 
 #include "flexran_agent_task_manager.h"
-#include "flexran_agent_common.c"
+#include "flexran_agent_common.h"
 
 
 /* Util macros */

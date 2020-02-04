@@ -27,6 +27,7 @@
 #include "assertions.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/defs.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 //#include "common/utils/threadPool/thread-pool.h"
@@ -82,7 +83,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 /* Callbacks, globals and object handlers */
 
 extern void reset_stats( FL_OBJECT *, long );
-//extern void initTpool(char *params,tpool_t *pool, bool performanceMeas);
+//extern void initTpool(char *params, tpool_t *pool, bool performanceMeas);
 
 /* Forms and Objects */
 
@@ -110,6 +111,16 @@ static pthread_t forms_thread; //xforms
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
+
+// Raphael : missing
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+uint16_t sf_ahead=6; //??? value ???
+pthread_cond_t sync_cond;
+pthread_mutex_t sync_mutex;
+int sync_var=-1; //!< protected by mutex \ref sync_mutex.
+int config_sync_var=-1;
 
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
@@ -206,6 +217,10 @@ int oaisim_flag=0;
 int emulate_rf = 0;
 
 tpool_t *Tpool;
+#ifdef UE_DLSCH_PARALLELISATION
+tpool_t *Tpool_dl;
+#endif
+
 
 char *usrp_args=NULL;
 
@@ -435,19 +450,19 @@ static void get_options(void) {
   /*if (frame_parms[0]->N_RB_DL !=0) {
       if ( frame_parms[0]->N_RB_DL < 6 ) {
        frame_parms[0]->N_RB_DL = 6;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 100 ) {
        frame_parms[0]->N_RB_DL = 100;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
        frame_parms[0]->N_RB_DL = 50;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
        frame_parms[0]->N_RB_DL = 25;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
       }
       UE_scan = 0;
       frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
@@ -566,7 +581,7 @@ void init_openair0(void) {
      } else if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
 	  openair0_cfg[card].sample_rate=46.08e6;
-	  openair0_cfg[card].samples_per_frame = 480800;
+	  openair0_cfg[card].samples_per_frame = 460800;
 	}
 	else {
 	  openair0_cfg[card].sample_rate=61.44e6;
@@ -599,7 +614,7 @@ void init_openair0(void) {
     else //FDD
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
-    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
+    printf("HW: Configuring card %d, nb_antennas_tx/rx %hhu/%hhu\n",card,
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx,
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
     openair0_cfg[card].Mod_id = 0;
@@ -685,6 +700,12 @@ int main( int argc, char **argv ) {
   Tpool = &pool;
   char params[]="-1,-1"; 
   initTpool(params, Tpool, false);
+#ifdef UE_DLSCH_PARALLELISATION
+  tpool_t pool_dl;
+  Tpool_dl = &pool_dl;
+  char params_dl[]="-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1"; 
+  initTpool(params_dl, Tpool_dl, false);
+#endif
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
@@ -725,6 +746,7 @@ int main( int argc, char **argv ) {
     LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
 
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
