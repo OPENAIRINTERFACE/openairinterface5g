@@ -57,18 +57,12 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                         uint8_t timeDomainOCC,
                         uint8_t nr_bit);
 
-void nr_decode_pucch0( int32_t **rxdataF,
-			pucch_GroupHopping_t PUCCH_GroupHopping,
-                        uint32_t n_id,                                       //PHY_VARS_gNB *gNB, generally rxdataf is in gNB->common_vars
-                        uint64_t *payload,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,                                          // should come from resource set
-                        uint8_t nrofSymbols,				    // should come from resource set	
-                        uint8_t startingSymbolIndex,			    // should come from resource set
-                        uint16_t startingPRB,				   // should come from resource set
-			uint8_t nr_bit);
+void nr_decode_pucch0(int32_t **rxdataF,
+                      uint64_t *payload,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      int slot,
+                      int16_t amp,
+                      nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
                                 uint32_t n_id,

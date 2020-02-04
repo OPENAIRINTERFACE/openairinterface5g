@@ -18,27 +18,25 @@
 #include "T.h"
 
 
-void nr_decode_pucch0( int32_t **rxdataF,
-			pucch_GroupHopping_t pucch_GroupHopping,
-			uint32_t n_id,       // hoppingID higher layer parameter                                        
-                        uint64_t *payload,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,                                          // should come from resource set
-                        uint8_t nrofSymbols,				    // should come from resource set	
-                        uint8_t startingSymbolIndex,			    // should come from resource set
-                        uint16_t startingPRB,				   // should come from resource set
-			uint8_t nr_bit) {                                 // is number of UCI bits to be decoded
+void nr_decode_pucch0(int32_t **rxdataF,
+                      uint64_t *payload,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      int slot,
+                      int16_t amp,
+                      nfapi_nr_pucch_pdu_t* pucch_pdu) {
+
   int nr_sequences;
   const uint8_t *mcs;
-  if(nr_bit==1){
+
+  pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
+
+  if(pucch_pdu->bit_len_harq==1){
     mcs=table1_mcs;
-    nr_sequences=4;
+    nr_sequences=4>>(1-pucch_pdu->sr_flag);
   }
   else{
     mcs=table2_mcs;
-    nr_sequences=8;
+    nr_sequences=8>>(1-pucch_pdu->sr_flag);
   }
   /*
    * Implement TS 38.211 Subclause 6.3.2.3.1 Sequence generation
@@ -53,8 +51,6 @@ void nr_decode_pucch0( int32_t **rxdataF,
   //uint8_t lnormal;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
   //uint8_t lprime;
-  // mcs is provided by TC 38.213 subclauses 9.2.3, 9.2.4, 9.2.5 FIXME!
-  //uint8_t mcs;
 
   /*
    * in TS 38.213 Subclause 9.2.1 it is said that:
@@ -73,19 +69,17 @@ void nr_decode_pucch0( int32_t **rxdataF,
   // if frequency hopping is enabled by the higher-layer parameter PUCCH-frequency-hopping
   //              n_hop = 0 for first hop
   //              n_hop = 1 for second hop
-  uint8_t n_hop = 0;
-  //uint8_t PUCCH_Frequency_Hopping; // from higher layers FIXME!!
+  uint8_t n_hop = 0;  // Frequnecy hopping not implemented FIXME!!
 
   // x_n contains the sequence r_u_v_alpha_delta(n)
   int16_t x_n_re[nr_sequences][24],x_n_im[nr_sequences][24];
   int n,i,l;
   for(i=0;i<nr_sequences;i++){ 
   // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
-    for (l=0; l<nrofSymbols; l++){
-    // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
-    // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
-      nr_group_sequence_hopping(pucch_GroupHopping,n_id,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-      alpha = nr_cyclic_shift_hopping(n_id,m0,mcs[i],l,startingSymbolIndex,nr_tti_tx);
+    for (l=0; l<pucch_pdu->nr_of_symbols; l++){
+
+      nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,n_hop,slot,&u,&v); // calculating u and v value
+      alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
       #ifdef DEBUG_NR_PUCCH_RX
         printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
       #endif
@@ -108,10 +102,10 @@ void nr_decode_pucch0( int32_t **rxdataF,
   uint32_t re_offset=0;
   uint8_t l2;
 
-  for (l=0; l<nrofSymbols; l++) {
+  for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
 
-    l2 = l+startingSymbolIndex;
-    re_offset = (12*startingPRB) + frame_parms->first_carrier_offset;
+    l2 = l+pucch_pdu->start_symbol_index;
+    re_offset = (12*pucch_pdu->prb_start) + frame_parms->first_carrier_offset;
     if (re_offset>= frame_parms->ofdm_symbol_size) 
       re_offset-=frame_parms->ofdm_symbol_size;
 
@@ -135,7 +129,7 @@ void nr_decode_pucch0( int32_t **rxdataF,
   memset(corr_re,0,nr_sequences*sizeof(double));
   memset(corr_im,0,nr_sequences*sizeof(double));
   for(i=0;i<nr_sequences;i++){
-    for(l=0;l<nrofSymbols;l++){
+    for(l=0;l<pucch_pdu->nr_of_symbols;l++){
       for(n=0;n<12;n++){
         corr_re[i]+= (double)(r_re[12*l+n])/32767*(double)(x_n_re[i][12*l+n])/32767+(double)(r_im[12*l+n])/32767*(double)(x_n_im[i][12*l+n])/32767;
 	corr_im[i]+= (double)(r_re[12*l+n])/32767*(double)(x_n_im[i][12*l+n])/32767-(double)(r_im[12*l+n])/32767*(double)(x_n_re[i][12*l+n])/32767;
