@@ -36,6 +36,9 @@ def testStageName = params.pipelineTestStageName
 // Name of the phone resource
 def ciSmartPhoneResource = params.smartphonesResource
 
+// Name of the phone resource
+def ciEpcResource = params.epcResource
+
 // Terminate Status
 def termUE = 0
 def termENB = 1
@@ -64,7 +67,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock (ciSmartPhoneResource)
+        lock(extra: [[resource: ciEpcResource]], resource: ciSmartPhoneResource)
     }
     // the following parameter options are commented out so it shows the ones
     // that you SHALL have to run the job.
