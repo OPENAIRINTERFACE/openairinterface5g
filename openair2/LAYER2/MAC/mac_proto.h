@@ -122,12 +122,12 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
-@param slice_idx Slice instance index for this eNB
+@param CC_id The component carrier to schedule
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
-void schedule_ulsch_rnti(module_id_t module_idP, int slice_idx, frame_t frameP,
+void schedule_ulsch_rnti(module_id_t module_idP, int CC_id, frame_t frameP,
                          sub_frame_t subframe,
                          unsigned char sched_subframe,
                          uint16_t *first_rb);
@@ -677,7 +677,9 @@ void set_ul_DAI(int module_idP,
                 int frameP,
                 int subframeP);
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int slice_idx, int frameP,
+void ulsch_scheduler_pre_processor(module_id_t module_idP,
+                                   int CC_id,
+                                   int frameP,
                                    sub_frame_t subframeP,
                                    int sched_frameP,
                                    unsigned char sched_subframeP,

@@ -419,7 +419,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 /// ULSCH PRE_PROCESSOR
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
-                                   int slice_idx,
+                                   int CC_id,
                                    int frameP,
                                    sub_frame_t subframeP,
                                    int sched_frameP,
@@ -427,7 +427,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    uint16_t *first_rb) {
   int UE_id;
   uint16_t n;
-  uint8_t CC_id, harq_pid;
+  uint8_t harq_pid;
   uint16_t nb_allocated_rbs[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
   uint16_t total_allocated_rbs[NFAPI_CC_MAX];
   uint16_t average_rbs_per_user[NFAPI_CC_MAX];
@@ -436,6 +436,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   UE_info_t *UE_info = &eNB->UE_info;
   slice_info_t *sli = &eNB->slice_info;
+  const int slice_idx = 0;
   UE_TEMPLATE *UE_template = 0;
   UE_sched_ctrl_t *ue_sched_ctl;
   int N_RB_UL = 0;
@@ -498,8 +499,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx] =
         nb_rbs_allowed_slice(sli->ul[slice_idx].pct, N_RB_UL);
       first_rb_offset = UE_info->first_rb_offset[CC_id][slice_idx];
-      available_rbs =
-        cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx], N_RB_UL - first_rb[CC_id] - first_rb_offset);
+      available_rbs = N_RB_UL - 2 * first_rb[CC_id]; // factor 2: top&bottom
 
       if (available_rbs < 0)
         available_rbs = 0;
@@ -668,8 +668,7 @@ assign_max_mcs_min_rb(module_id_t module_idP,
         }
 
         first_rb_offset = UE_info->first_rb_offset[CC_id][slice_idx];
-        available_rbs =
-          cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx], N_RB_UL - first_rb[CC_id] - first_rb_offset);
+        available_rbs = N_RB_UL - 2 * first_rb[CC_id];
 
         while (tbs < bits_to_schedule &&
                rb_table[rb_table_index] < available_rbs &&

@@ -1101,13 +1101,11 @@ schedule_ulsch(module_id_t module_idP,
 {
   uint16_t first_rb[NFAPI_CC_MAX];
   eNB_MAC_INST *mac = NULL;
-  slice_info_t *sli = NULL;
   COMMON_channels_t *cc = NULL;
   int sched_subframe;
   int sched_frame;
   /* Init */
   mac = RC.mac[module_idP];
-  sli = &(mac->slice_info);
   memset(first_rb, 0, NFAPI_CC_MAX * sizeof(uint16_t));
   start_meas(&(mac->schedule_ulsch));
   sched_subframe = (subframeP + 4) % 10;
@@ -1263,12 +1261,8 @@ schedule_ulsch(module_id_t module_idP,
         // break;
       }
     }
-  }
 
-  /* Run each enabled slice-specific schedulers one by one */
-  for (int i = 0; i < sli->n_ul; i++) {
-    /* By default the scheduler is schedule_ulsch_rnti (see below) */
-    sli->ul[i].sched_cb(module_idP, i, frameP, subframeP, sched_subframe, first_rb);
+    schedule_ulsch_rnti(module_idP, CC_id, frameP, subframeP, sched_subframe, first_rb);
   }
 
   stop_meas(&mac->schedule_ulsch);
@@ -1280,44 +1274,23 @@ schedule_ulsch(module_id_t module_idP,
 */
 void
 schedule_ulsch_rnti(module_id_t   module_idP,
-                    int           slice_idx,
+                    int           CC_id,
                     frame_t       frameP,
                     sub_frame_t   subframeP,
                     unsigned char sched_subframeP,
-                    uint16_t      *first_rb)
-//-----------------------------------------------------------------------------
-{
-  rnti_t rnti = -1;
-  uint8_t aggregation = 2;
-  uint8_t round_index = 0;
-  uint8_t harq_pid = 0;
-  uint8_t status = 0;
-  uint8_t rb_table_index = -1;
-  uint8_t dlsch_flag = 0;
-  uint16_t ul_req_index = 0;
-  uint32_t cqi_req = 0;
-  uint32_t cshift = 0;
-  uint32_t ndi = 0;
-  uint32_t tpc = 0;
-  int32_t snr = 0;
-  int32_t target_snr = 0;
-  int32_t framex10psubframe = 0;
+                    uint16_t      *first_rb) {
+  const uint8_t aggregation = 2;
+  /* TODO: does this need to be static? */
   static int32_t tpc_accumulated = 0;
-  int sched_frame = 0;
-  int CC_id = 0;
+  /* values from 0 to 7 can be used for mapping the cyclic shift
+   * (36.211 , Table 5.5.2.1.1-1) */
+  const uint32_t cshift = 0;
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   UE_info_t *UE_info = &mac->UE_info;
-  slice_info_t *sli = &mac->slice_info;
-  UE_TEMPLATE *UE_template_ptr = NULL;
-  UE_sched_ctrl_t *UE_sched_ctrl_ptr = NULL;
-  int rvidx_tab[4] = {0, 2, 3, 1};
-  int first_rb_slice[NFAPI_CC_MAX];
-  int n_rb_ul_tab[NFAPI_CC_MAX];
-  /* Init */
-  memset(first_rb_slice, 0, NFAPI_CC_MAX * sizeof(int));
-  memset(n_rb_ul_tab, 0, NFAPI_CC_MAX * sizeof(int));
-  sched_frame = frameP;
+  const int rvidx_tab[4] = {0, 2, 3, 1};
+
+  int sched_frame = frameP;
 
   if (sched_subframeP < subframeP) {
     sched_frame++;
@@ -1333,39 +1306,35 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information;
   hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
 
-  /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
-  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    n_rb_ul_tab[CC_id] = to_prb(cc[CC_id].ul_Bandwidth); // return total number of PRB
+  int n_rb_ul_tab = to_prb(cc[CC_id].ul_Bandwidth);
+  /* HACK: let's remove the PUCCH from available RBs
+   * we suppose PUCCH size is:
+   * - for 25 RBs: 1 RB (top and bottom of ressource grid)
+   * - for 50:     2 RBs
+   * - for 100:    3 RBs
+   * This is totally arbitrary and might even be wrong.
+   * We suppose 'first_rb[]' has been correctly populated by the caller,
+   * so we only remove the top part of the resource grid.
+   */
+  switch (n_rb_ul_tab) {
+    case 25:
+      n_rb_ul_tab -= 1;
+      break;
 
-    /* HACK: let's remove the PUCCH from available RBs
-     * we suppose PUCCH size is:
-     * - for 25 RBs: 1 RB (top and bottom of ressource grid)
-     * - for 50:     2 RBs
-     * - for 100:    3 RBs
-     * This is totally arbitrary and might even be wrong.
-     * We suppose 'first_rb[]' has been correctly populated by the caller,
-     * so we only remove the top part of the resource grid.
-     */
-    switch (n_rb_ul_tab[CC_id]) {
-      case 25:
-        n_rb_ul_tab[CC_id] -= 1;
-        break;
+    case 50:
+      n_rb_ul_tab -= 2;
+      break;
 
-      case 50:
-        n_rb_ul_tab[CC_id] -= 2;
-        break;
+    case 100:
+      n_rb_ul_tab -= 3;
+      break;
 
-      case 100:
-        n_rb_ul_tab[CC_id] -= 3;
-        break;
-
-      default:
-        LOG_E(MAC, "RBs setting not handled. Todo.\n");
-        exit(1);
-    }
-
-    UE_info->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
+    default:
+      LOG_E(MAC, "RBs setting not handled. Todo.\n");
+      exit(1);
   }
+
+  UE_info->first_rb_offset[CC_id][0] = n_rb_ul_tab;
 
   /*
    * ULSCH preprocessor: set UE_template->
@@ -1373,23 +1342,17 @@ schedule_ulsch_rnti(module_id_t   module_idP,
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
    */
-  ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_frame, sched_subframeP, first_rb);
+  ulsch_scheduler_pre_processor(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP, first_rb);
 
-  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    first_rb_slice[CC_id] = first_rb[CC_id] + UE_info->first_rb_offset[CC_id][slice_idx];
-  }
-
-  // loop over all active UEs until end of function
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx)) {
+    if (UE_info->UE_template[CC_id][UE_id].rach_resource_type > 0)
       continue;
-    }
-
-    if (UE_info->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].rach_resource_type > 0)  continue;
 
     // don't schedule if Msg5 is not received yet
-    if (UE_info->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured == FALSE) {
-      LOG_D(MAC, "[eNB %d] frame %d, subframe %d, UE %d: not configured, skipping UE scheduling \n",
+    if (UE_info->UE_template[CC_id][UE_id].configured == FALSE) {
+      LOG_D(MAC,
+            "[eNB %d] frame %d, subframe %d, UE %d: not configured, skipping "
+            "UE scheduling \n",
             module_idP,
             frameP,
             subframeP,
@@ -1397,10 +1360,11 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
     }
 
-    rnti = UE_RNTI(module_idP, UE_id);
+    const rnti_t rnti = UE_RNTI(module_idP, UE_id);
 
     if (rnti == NOT_A_RNTI) {
-      LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d: no RNTI \n",
+      LOG_W(MAC,
+            "[eNB %d] frame %d, subframe %d, UE %d: no RNTI \n",
             module_idP,
             frameP,
             subframeP,
@@ -1408,485 +1372,518 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
     }
 
-    // loop over all active UL CC_ids for this UE until end of function
-    for (int n = 0; n < UE_info->numactiveULCCs[UE_id]; n++) {
-      /* This is the actual CC_id in the list */
-      CC_id = UE_info->ordered_ULCCids[n][UE_id];
-      UE_template_ptr = &UE_info->UE_template[CC_id][UE_id];
-      UE_sched_ctrl_ptr = &UE_info->UE_sched_ctrl[UE_id];
-      harq_pid = subframe2harqpid(&cc[CC_id], sched_frame, sched_subframeP);
-      round_index = UE_sched_ctrl_ptr->round_UL[CC_id][harq_pid];
-      AssertFatal(round_index < 8, "round %d > 7 for UE %d/%x\n",
-                  round_index,
-                  UE_id,
-                  rnti);
-      LOG_D(MAC, "[eNB %d] frame %d subframe %d (sched_frame %d, sched_subframe %d), Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
-            module_idP,
-            frameP,
-            subframeP,
-            sched_frame,
-            sched_subframeP,
-            harq_pid,
-            UE_id,
-            rnti,
-            CC_id,
-            aggregation,
-            n_rb_ul_tab[CC_id]);
-      /* Seems unused, only for debug */
-      RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP] = UE_template_ptr->estimated_ul_buffer;
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO, UE_template_ptr->estimated_ul_buffer);
+    UE_TEMPLATE *UE_template_ptr = &UE_info->UE_template[CC_id][UE_id];
+    UE_sched_ctrl_t *UE_sched_ctrl_ptr = &UE_info->UE_sched_ctrl[UE_id];
+    const uint8_t harq_pid = subframe2harqpid(&cc[CC_id], sched_frame, sched_subframeP);
+    uint8_t round_index = UE_sched_ctrl_ptr->round_UL[CC_id][harq_pid];
+    AssertFatal(round_index < 8,
+                "round %d > 7 for UE %d/%x\n",
+                round_index,
+                UE_id,
+                rnti);
+    LOG_D(MAC,
+          "[eNB %d] %d.%d (sched_frame %d, sched_subframe %d), "
+          "Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, "
+          "N_RB_UL %d\n",
+          module_idP,
+          frameP,
+          subframeP,
+          sched_frame,
+          sched_subframeP,
+          harq_pid,
+          UE_id,
+          rnti,
+          CC_id,
+          aggregation,
+          n_rb_ul_tab);
+    /* Seems unused, only for debug */
+    RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP] =
+        UE_template_ptr->estimated_ul_buffer;
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,
+                                            UE_template_ptr->estimated_ul_buffer);
 
-      /*
-       * If there is information on BSR of DCCH, DTCH or if there is UL_SR,
-       * or if there is a packet to retransmit, or we want to schedule a periodic feedback
-       */
-      if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0 || round_index > 0) {
-        LOG_D(MAC, "[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
+    /*
+     * If there is information on BSR of DCCH, DTCH or if there is UL_SR,
+     * or if there is a packet to retransmit, or we want to schedule a periodic
+     * feedback
+     * TODO: this should be decided in the preprocessor
+     */
+    if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) == 0 && round_index == 0)
+      continue;
+
+    LOG_D(MAC,
+          "[eNB %d][PUSCH %d] %d.%d Scheduling UE %d/%x in "
+          "round %d (SR %d, UL_inactivity timer %d, UL_failure timer "
+          "%d, cqi_req_timer %d)\n",
+          module_idP,
+          harq_pid,
+          frameP,
+          subframeP,
+          UE_id,
+          rnti,
+          round_index,
+          UE_template_ptr->ul_SR,
+          UE_sched_ctrl_ptr->ul_inactivity_timer,
+          UE_sched_ctrl_ptr->ul_failure_timer,
+          UE_sched_ctrl_ptr->cqi_req_timer);
+
+    /* Reset the scheduling request */
+    UE_template_ptr->ul_SR = 0;
+    const uint8_t status = mac_eNB_get_rrc_status(module_idP, rnti);
+
+    /* New transmission */
+    if (round_index == 0) {
+      /* Should format_flag be 2 in CCE_allocation_infeasible??? */
+      /* This test seems to be way too long, can we provide an optimization? */
+      if (CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP, aggregation, rnti)) {
+        LOG_W(MAC,
+              "[eNB %d] %d.%d, UE %d/%x CC %d: not enough CCE\n",
               module_idP,
-              harq_pid,
               frameP,
               subframeP,
               UE_id,
               rnti,
-              round_index,
-              UE_template_ptr->ul_SR,
-              UE_sched_ctrl_ptr->ul_inactivity_timer,
-              UE_sched_ctrl_ptr->ul_failure_timer,
-              UE_sched_ctrl_ptr->cqi_req_timer);
-        /* Reset the scheduling request */
-        UE_template_ptr->ul_SR = 0;
-        status = mac_eNB_get_rrc_status(module_idP, rnti);
+              CC_id);
+        continue;
+      }
 
-        /* New transmission */
-        if (round_index == 0) {
-          /* Be sure that there are some free RBs */
-          if (first_rb_slice[CC_id] >= n_rb_ul_tab[CC_id]) {
-            LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                  module_idP,
-                  frameP,
-                  subframeP,
-                  UE_id,
-                  rnti,
-                  CC_id);
-            continue;
-          }
+      /* Handle the aperiodic CQI report */
+      uint32_t cqi_req = 0;
+      LOG_D(MAC,
+            "RRC Connection status %d, cqi_timer %d\n",
+            status,
+            UE_sched_ctrl_ptr->cqi_req_timer);
 
-          /* Should format_flag be 2 in CCE_allocation_infeasible??? */
-          /* This test seems to be way too long, can we provide an optimization? */
-          if (CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP, aggregation, rnti)) {
-            LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: not enough CCE\n",
-                  module_idP,
-                  frameP,
-                  subframeP,
-                  UE_id,
-                  rnti,
-                  CC_id);
-            continue;
-          }
+      if (status >= RRC_CONNECTED && UE_sched_ctrl_ptr->cqi_req_timer > 30) {
+        if (UE_sched_ctrl_ptr->cqi_received == 0) {
+          cqi_req = 1;
+          LOG_D(MAC,
+                "Setting CQI_REQ (timer %d)\n",
+                UE_sched_ctrl_ptr->cqi_req_timer);
 
-          /* Handle the aperiodic CQI report */
-          cqi_req = 0;
-          LOG_D(MAC,"RRC Conenction status %d, cqi_timer %d\n",status,UE_sched_ctrl_ptr->cqi_req_timer);
+          /* TDD: to be safe, do not ask CQI in special
+           * Subframes:36.213/7.2.3 CQI definition */
+          if (cc[CC_id].tdd_Config) {
+            switch (cc[CC_id].tdd_Config->subframeAssignment) {
+              case 1:
+                if (subframeP == 1 || subframeP == 6)
+                  cqi_req = 0;
+                break;
 
-          if (status >= RRC_CONNECTED && UE_sched_ctrl_ptr->cqi_req_timer > 30) {
-            if (UE_sched_ctrl_ptr->cqi_received == 0) {
-              cqi_req = 1;
-              LOG_D(MAC,
-                    "Setting CQI_REQ (timer %d)\n",
-                    UE_sched_ctrl_ptr->cqi_req_timer);
+              case 3:
+                if (subframeP == 1)
+                  cqi_req = 0;
+                break;
 
-              /* TDD: to be safe, do not ask CQI in special
-               * Subframes:36.213/7.2.3 CQI definition */
-              if (cc[CC_id].tdd_Config) {
-                switch (cc[CC_id].tdd_Config->subframeAssignment) {
-                  case 1:
-                    if (subframeP == 1 || subframeP == 6)
-                      cqi_req = 0;
-                    break;
-
-                  case 3:
-                    if (subframeP == 1)
-                      cqi_req = 0;
-                    break;
-
-                  default:
-                    LOG_E(MAC, " TDD config not supported\n");
-                    break;
-                }
-              }
-
-              if (cqi_req == 1) {
-                UE_sched_ctrl_ptr->cqi_req_flag |= 1 << sched_subframeP;
-              }
-            } else {
-              LOG_D(MAC,"Clearing CQI request timer\n");
-              UE_sched_ctrl_ptr->cqi_req_flag = 0;
-              UE_sched_ctrl_ptr->cqi_received = 0;
-              UE_sched_ctrl_ptr->cqi_req_timer = 0;
+              default:
+                LOG_E(MAC, " TDD config not supported\n");
+                break;
             }
           }
 
-          /* Power control */
-          /*
-           * Compute the expected ULSCH RX snr (for the stats)
-           * This is the normalized RX snr and this should be constant (regardless of mcs)
-           * Is not in dBm, unit from nfapi, converting to dBm
-           */
-          snr = (5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10;
-          target_snr = mac->puSch10xSnr / 10;
-          /*
-           * This assumes accumulated tpc
-           * Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
-           */
-          framex10psubframe = (UE_template_ptr->pusch_tpc_tx_frame * 10) + UE_template_ptr->pusch_tpc_tx_subframe;
+          if (cqi_req == 1)
+            UE_sched_ctrl_ptr->cqi_req_flag |= 1 << sched_subframeP;
+        } else {
+          LOG_D(MAC, "Clearing CQI request timer\n");
+          UE_sched_ctrl_ptr->cqi_req_flag = 0;
+          UE_sched_ctrl_ptr->cqi_received = 0;
+          UE_sched_ctrl_ptr->cqi_req_timer = 0;
+        }
+      }
 
-          if (((framex10psubframe + 10) <= (frameP * 10 + subframeP)) || // normal case
-              ((framex10psubframe > (frameP * 10 + subframeP)) && (((10240 - framex10psubframe + frameP * 10 + subframeP) >= 10)))) { //frame wrap-around
-            UE_template_ptr->pusch_tpc_tx_frame = frameP;
-            UE_template_ptr->pusch_tpc_tx_subframe = subframeP;
+      /* Power control */
+      /*
+       * Compute the expected ULSCH RX snr (for the stats)
+       * This is the normalized RX snr and this should be constant (regardless
+       * of mcs) Is not in dBm, unit from nfapi, converting to dBm
+       */
+      const int32_t snr = (5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10;
+      const int32_t target_snr = mac->puSch10xSnr / 10;
+      /*
+       * This assumes accumulated tpc
+       * Make sure that we are only sending a tpc update once a frame, otherwise
+       * the control loop will freak out
+       */
+      const int32_t fx10psf = (UE_template_ptr->pusch_tpc_tx_frame * 10)
+                              + UE_template_ptr->pusch_tpc_tx_subframe;
+      uint32_t tpc = 0;
 
-            if (snr > target_snr + 4) {
-              tpc = 0; // -1
-              tpc_accumulated--;
-            } else if (snr < target_snr - 4) {
-              tpc = 2; // +1
-              tpc_accumulated++;
-            } else {
-              tpc = 1; // 0
-            }
-          } else {
-            tpc = 1; // 0
-          }
+      if (((fx10psf + 10) <= (frameP * 10 + subframeP)) // normal case
+          || ((fx10psf > (frameP * 10 + subframeP))
+              && (((10240 - fx10psf + frameP * 10 + subframeP) >= 10)))) { // frame wrap-around
+        UE_template_ptr->pusch_tpc_tx_frame = frameP;
+        UE_template_ptr->pusch_tpc_tx_subframe = subframeP;
 
-          if (tpc != 1) {
-            LOG_D(MAC, "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, snr/target snr %d/%d\n",
-                  module_idP,
-                  frameP,
-                  subframeP,
-                  harq_pid,
-                  tpc,
-                  tpc_accumulated,
-                  snr,
-                  target_snr);
-          }
+        if (snr > target_snr + 4) {
+          tpc = 0; // -1
+          tpc_accumulated--;
+        } else if (snr < target_snr - 4) {
+          tpc = 2; // +1
+          tpc_accumulated++;
+        } else {
+          tpc = 1; // 0
+        }
+      } else {
+        tpc = 1; // 0
+      }
 
-          ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
-          UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
-          UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
-          UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
-          UE_template_ptr->mcs_UL[harq_pid] = cmin(UE_template_ptr->pre_assigned_mcs_ul, sli->ul[slice_idx].maxmcs);
-          UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template_ptr->mcs_UL[harq_pid];
+      if (tpc != 1) {
+        LOG_D(MAC,
+              "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, "
+              "tpc %d, accumulated %d, snr/target snr %d/%d\n",
+              module_idP,
+              frameP,
+              subframeP,
+              harq_pid,
+              tpc,
+              tpc_accumulated,
+              snr,
+              target_snr);
+      }
 
-          /* CDRX */
-          if (UE_sched_ctrl_ptr->cdrx_configured) {
-            UE_sched_ctrl_ptr->drx_inactivity_timer = 1; // reset drx inactivity timer when new transmission
-            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) UE_sched_ctrl_ptr->drx_inactivity_timer);
-            UE_sched_ctrl_ptr->dci0_ongoing_timer = 1; // when set the UE_template_ptr->ul_SR cannot be set to 1,
-            // see definition for more information
-          }
+      const uint8_t ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
+      UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
+      UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
+      UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
+      UE_template_ptr->mcs_UL[harq_pid] = UE_template_ptr->pre_assigned_mcs_ul;
+      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = UE_template_ptr->mcs_UL[harq_pid];
 
-          if (UE_template_ptr->pre_allocated_rb_table_index_ul >= 0) {
-            rb_table_index = UE_template_ptr->pre_allocated_rb_table_index_ul;
-          } else {
-            UE_template_ptr->mcs_UL[harq_pid] = 10;
-            rb_table_index = 5; // for PHR
-          }
+      /* CDRX */
+      if (UE_sched_ctrl_ptr->cdrx_configured) {
+        // reset drx inactivity timer when new transmission
+        UE_sched_ctrl_ptr->drx_inactivity_timer = 1;
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(
+            VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY,
+            (unsigned long)UE_sched_ctrl_ptr->drx_inactivity_timer);
+        // when set the UE_template_ptr->ul_SR cannot be set to 1,
+        // see definition for more information
+        UE_sched_ctrl_ptr->dci0_ongoing_timer = 1;
+      }
 
-          UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
+      uint8_t rb_table_index = -1;
+      if (UE_template_ptr->pre_allocated_rb_table_index_ul >= 0) {
+        rb_table_index = UE_template_ptr->pre_allocated_rb_table_index_ul;
+      } else {
+        UE_template_ptr->mcs_UL[harq_pid] = 10;
+        rb_table_index = 5; // for PHR
+      }
 
-          while (((rb_table[rb_table_index] > (n_rb_ul_tab[CC_id] - first_rb_slice[CC_id])) ||
-                  (rb_table[rb_table_index] > 45)) && (rb_table_index > 0)) {
-            rb_table_index--;
-          }
+      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
 
-          UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]);
-          UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
-          UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template_ptr->TBS_UL[harq_pid];
-          UE_info->eNB_UE_stats[CC_id][UE_id].total_ulsch_TBS += UE_template_ptr->TBS_UL[harq_pid];
-          T(T_ENB_MAC_UE_UL_SCHEDULE,
-            T_INT(module_idP),
-            T_INT(CC_id),
-            T_INT(rnti),
-            T_INT(frameP),
-            T_INT(subframeP),
-            T_INT(harq_pid),
-            T_INT(UE_template_ptr->mcs_UL[harq_pid]),
-            T_INT(first_rb_slice[CC_id]),
-            T_INT(rb_table[rb_table_index]),
-            T_INT(UE_template_ptr->TBS_UL[harq_pid]),
-            T_INT(ndi));
-          /* Store information for possible retransmission */
-          UE_template_ptr->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
-          UE_template_ptr->first_rb_ul[harq_pid] = first_rb_slice[CC_id];
-          UE_template_ptr->cqi_req[harq_pid] = cqi_req;
-          UE_sched_ctrl_ptr->ul_scheduled |= (1 << harq_pid);
+      while (((rb_table[rb_table_index] > (n_rb_ul_tab - first_rb[CC_id]))
+              || (rb_table[rb_table_index] > 45))
+             && (rb_table_index > 0)) {
+        rb_table_index--;
+      }
 
-          if (UE_id == UE_info->list.head) {
-            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED, UE_sched_ctrl_ptr->ul_scheduled);
-          }
+      UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]);
+      UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
+      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template_ptr->TBS_UL[harq_pid];
+      UE_info->eNB_UE_stats[CC_id][UE_id].total_ulsch_TBS += UE_template_ptr->TBS_UL[harq_pid];
+      T(T_ENB_MAC_UE_UL_SCHEDULE,
+        T_INT(module_idP),
+        T_INT(CC_id),
+        T_INT(rnti),
+        T_INT(frameP),
+        T_INT(subframeP),
+        T_INT(harq_pid),
+        T_INT(UE_template_ptr->mcs_UL[harq_pid]),
+        T_INT(first_rb[CC_id]),
+        T_INT(rb_table[rb_table_index]),
+        T_INT(UE_template_ptr->TBS_UL[harq_pid]),
+        T_INT(ndi));
+      /* Store information for possible retransmission */
+      UE_template_ptr->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
+      UE_template_ptr->first_rb_ul[harq_pid] = first_rb[CC_id];
+      UE_template_ptr->cqi_req[harq_pid] = cqi_req;
+      UE_sched_ctrl_ptr->ul_scheduled |= (1 << harq_pid);
 
-          /* Adjust scheduled UL bytes by TBS, wait for UL sdus to do final update */
-          LOG_D(MAC, "[eNB %d] CC_id %d UE %d/%x : adjusting scheduled_ul_bytes, old %d, TBS %d\n",
-                module_idP,
-                CC_id,
-                UE_id,
+      if (UE_id == UE_info->list.head) {
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(
+            VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,
+            UE_sched_ctrl_ptr->ul_scheduled);
+      }
+
+      /* Adjust scheduled UL bytes by TBS, wait for UL sdus to do final update */
+      LOG_D(MAC,
+            "[eNB %d] CC_id %d UE %d/%x : adjusting scheduled_ul_bytes, old "
+            "%d, TBS %d\n",
+            module_idP,
+            CC_id,
+            UE_id,
+            rnti,
+            UE_template_ptr->scheduled_ul_bytes,
+            UE_template_ptr->TBS_UL[harq_pid]);
+      UE_template_ptr->scheduled_ul_bytes += UE_template_ptr->TBS_UL[harq_pid];
+      LOG_D(MAC,
+            "scheduled_ul_bytes, new %d\n",
+            UE_template_ptr->scheduled_ul_bytes);
+      /* Cyclic shift for DM-RS */
+      /* Save it for a potential retransmission */
+      UE_template_ptr->cshift[harq_pid] = cshift;
+      /* Setting DCI0 NFAPI struct */
+      hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
+      memset((void *)hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
+      hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_dci_pdu);
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag =
+          NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format = NFAPI_UL_DCI_FORMAT_0;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb[CC_id];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block =
+          rb_table[rb_table_index];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 =
+          UE_template_ptr->mcs_UL[harq_pid];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms = cshift;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag = 0;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.new_data_indication_1 = ndi;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tpc = tpc;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request = cqi_req;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index =
+          UE_template_ptr->DAI_ul[sched_subframeP];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid = harq_pid;
+      hi_dci0_req_body->number_of_dci++;
+      hi_dci0_req_body->sfnsf =
+          sfnsf_add_subframe(sched_frame, sched_subframeP, 0);
+      hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
+      hi_dci0_req->sfn_sf = frameP << 4 | subframeP;
+      hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
+      LOG_D(MAC,
+            "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE "
+            "%d/%x, ulsch_frame %d, ulsch_subframe %d\n",
+            harq_pid,
+            frameP,
+            subframeP,
+            UE_id,
+            rnti,
+            sched_frame,
+            sched_subframeP);
+      uint16_t ul_req_index = 0;
+      uint8_t dlsch_flag = 0;
+
+      for (ul_req_index = 0; ul_req_index < ul_req_tmp_body->number_of_pdus; ul_req_index++) {
+        if (ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE &&
+            ul_req_tmp_body->ul_config_pdu_list[ul_req_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) {
+          dlsch_flag = 1;
+          LOG_D(MAC,
+                "Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI "
+                "HARQ to ULSCH HARQ(first)\n",
+                frameP,
+                subframeP,
                 rnti,
-                UE_template_ptr->scheduled_ul_bytes,
-                UE_template_ptr->TBS_UL[harq_pid]);
-          UE_template_ptr->scheduled_ul_bytes += UE_template_ptr->TBS_UL[harq_pid];
-          LOG_D(MAC, "scheduled_ul_bytes, new %d\n",
-                UE_template_ptr->scheduled_ul_bytes);
-          /* Cyclic shift for DM-RS */
-          cshift = 0; // values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
-          /* Save it for a potential retransmission */
-          UE_template_ptr->cshift[harq_pid] = cshift;
-          /* Setting DCI0 NFAPI struct */
-          hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
-          memset((void *) hi_dci0_pdu, 0,sizeof(nfapi_hi_dci0_request_pdu_t));
-          hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
-          hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_dci_pdu);
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format = NFAPI_UL_DCI_FORMAT_0;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb_slice[CC_id];
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block = rb_table[rb_table_index];
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 = UE_template_ptr->mcs_UL[harq_pid];
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms = cshift;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag = 0;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.new_data_indication_1 = ndi;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tpc = tpc;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request = cqi_req;
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index = UE_template_ptr->DAI_ul[sched_subframeP];
-          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid = harq_pid;
-          hi_dci0_req_body->number_of_dci++;
-          hi_dci0_req_body->sfnsf = sfnsf_add_subframe(sched_frame, sched_subframeP, 0);
-          hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
-          hi_dci0_req->sfn_sf = frameP << 4 | subframeP;
-          hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
-          LOG_D(MAC, "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
-                harq_pid,
+                ul_req_index);
+          break;
+        }
+      }
+
+      /* Add UL_config PDUs */
+      fill_nfapi_ulsch_config_request_rel8(
+          &ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
+          cqi_req,
+          cc,
+          UE_template_ptr->physicalConfigDedicated,
+          get_tmode(module_idP, CC_id, UE_id),
+          mac->ul_handle,
+          rnti,
+          first_rb[CC_id], // resource_block_start
+          rb_table[rb_table_index], // number_of_resource_blocks
+          UE_template_ptr->mcs_UL[harq_pid],
+          cshift, // cyclic_shift_2_for_drms
+          0, // frequency_hopping_enabled_flag
+          0, // frequency_hopping_bits
+          ndi, // new_data_indication
+          0, // redundancy_version
+          harq_pid, // harq_process_number
+          0, // ul_tx_mode
+          0, // current_tx_nb
+          0, // n_srs
+          get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid],
+                     rb_table[rb_table_index]));
+
+      /* This is a BL/CE UE allocation */
+      if (UE_template_ptr->rach_resource_type > 0) {
+        fill_nfapi_ulsch_config_request_emtc(
+            &ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
+            UE_template_ptr->rach_resource_type > 2 ? 2 : 1,
+            1, // total_number_of_repetitions
+            1, // repetition_number
+            (frameP * 10) + subframeP);
+      }
+
+      if (dlsch_flag == 1) {
+        if (cqi_req == 1) {
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
+          ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.harq_information;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0; // last symbol not punctured
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
+        } else {
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+          ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0; // last symbol not punctured
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
+        }
+
+        fill_nfapi_ulsch_harq_information(module_idP, CC_id, rnti, ulsch_harq_information, subframeP);
+      } else {
+        ul_req_tmp_body->number_of_pdus++;
+      }
+
+      ul_req_tmp->header.message_id = NFAPI_UL_CONFIG_REQUEST;
+      ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
+      mac->ul_handle++;
+      ul_req_tmp->sfn_sf = sched_frame << 4 | sched_subframeP;
+      add_ue_ulsch_info(module_idP, CC_id, UE_id, subframeP, S_UL_SCHEDULED);
+      LOG_D(MAC,
+            "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for "
+            "next UE_id %d, format 0\n",
+            module_idP,
+            CC_id,
+            frameP,
+            subframeP,
+            UE_id);
+      LOG_D(
+          MAC,
+          "[PUSCH %d] SFN/SF:%04d%d UL_CFG:SFN/SF:%04d%d CQI:%d for UE %d/%x\n",
+          harq_pid,
+          frameP,
+          subframeP,
+          sched_frame,
+          sched_subframeP,
+          cqi_req,
+          UE_id,
+          rnti);
+      /* Increment first rb for next UE allocation */
+      first_rb[CC_id] += rb_table[rb_table_index];
+    } else { // round_index > 0 => retransmission
+      T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION,
+        T_INT(module_idP),
+        T_INT(CC_id),
+        T_INT(rnti),
+        T_INT(frameP),
+        T_INT(subframeP),
+        T_INT(harq_pid),
+        T_INT(UE_template_ptr->mcs_UL[harq_pid]),
+        T_INT(UE_template_ptr->first_rb_ul[harq_pid]),
+        T_INT(UE_template_ptr->nb_rb_ul[harq_pid]),
+        T_INT(round_index));
+      /* Add UL_config PDUs */
+      LOG_D(MAC,
+            "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE "
+            "%d/%x, ulsch_frame %d, ulsch_subframe %d\n",
+            harq_pid,
+            frameP,
+            subframeP,
+            UE_id,
+            rnti,
+            sched_frame,
+            sched_subframeP);
+      uint16_t ul_req_index = 0;
+      uint8_t dlsch_flag = 0;
+      uint32_t cqi_req = UE_template_ptr->cqi_req[harq_pid];
+
+      for (ul_req_index = 0; ul_req_index < ul_req_tmp_body->number_of_pdus; ul_req_index++) {
+        if (ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE &&
+            ul_req_tmp_body->ul_config_pdu_list[ul_req_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) {
+          dlsch_flag = 1;
+          LOG_D(MAC,
+                "Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI "
+                "HARQ to ULSCH HARQ(first)\n",
                 frameP,
                 subframeP,
-                UE_id,
                 rnti,
-                sched_frame,
-                sched_subframeP);
-          ul_req_index = 0;
-          dlsch_flag = 0;
+                ul_req_index);
+          break;
+        }
+      }
 
-          for(ul_req_index = 0; ul_req_index < ul_req_tmp_body->number_of_pdus; ul_req_index++) {
-            if(ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE &&
-                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) {
-              dlsch_flag = 1;
-              LOG_D(MAC, "Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",
-                    frameP,
-                    subframeP,
-                    rnti,
-                    ul_req_index);
-              break;
-            }
-          }
+      fill_nfapi_ulsch_config_request_rel8(
+          &ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
+          cqi_req,
+          cc,
+          UE_template_ptr->physicalConfigDedicated,
+          get_tmode(module_idP, CC_id, UE_id),
+          mac->ul_handle,
+          rnti,
+          UE_template_ptr->first_rb_ul[harq_pid], // resource_block_start
+          UE_template_ptr->nb_rb_ul[harq_pid], // number_of_resource_blocks
+          UE_template_ptr->mcs_UL[harq_pid],
+          cshift, // cyclic_shift_2_for_drms
+          0, // frequency_hopping_enabled_flag
+          0, // frequency_hopping_bits
+          UE_template_ptr->oldNDI_UL[harq_pid], // new_data_indication
+          rvidx_tab[round_index & 3], // redundancy_version
+          harq_pid, // harq_process_number
+          0, // ul_tx_mode
+          0, // current_tx_nb
+          0, // n_srs
+          UE_template_ptr->TBS_UL[harq_pid]);
 
-          /* Add UL_config PDUs */
-          fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
-                                               cqi_req,
-                                               cc,
-                                               UE_template_ptr->physicalConfigDedicated,
-                                               get_tmode(module_idP, CC_id, UE_id),
-                                               mac->ul_handle,
-                                               rnti,
-                                               first_rb_slice[CC_id],     // resource_block_start
-                                               rb_table[rb_table_index],  // number_of_resource_blocks
-                                               UE_template_ptr->mcs_UL[harq_pid],
-                                               cshift,    // cyclic_shift_2_for_drms
-                                               0,         // frequency_hopping_enabled_flag
-                                               0,         // frequency_hopping_bits
-                                               ndi,       // new_data_indication
-                                               0,         // redundancy_version
-                                               harq_pid,  // harq_process_number
-                                               0,         // ul_tx_mode
-                                               0,         // current_tx_nb
-                                               0,         // n_srs
-                                               get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]));
+      /* This is a BL/CE UE allocation */
+      if (UE_template_ptr->rach_resource_type > 0) {
+        fill_nfapi_ulsch_config_request_emtc(
+            &ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
+            UE_template_ptr->rach_resource_type > 2 ? 2 : 1,
+            1, // total_number_of_repetitions
+            1, // repetition_number
+            (frameP * 10) + subframeP);
+      }
 
-          /* This is a BL/CE UE allocation */
-          if (UE_template_ptr->rach_resource_type > 0) {
-            fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
-                                                 UE_template_ptr->rach_resource_type > 2 ? 2 : 1,
-                                                 1,  // total_number_of_repetitions
-                                                 1,  // repetition_number
-                                                 (frameP * 10) + subframeP);
-          }
+      if (dlsch_flag == 1) {
+        if (cqi_req == 1) {
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
+          ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.harq_information;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0; // last symbol not punctured
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = UE_template_ptr->nb_rb_ul[harq_pid];
+        } else {
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+          ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0; // last symbol not punctured
+          ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = UE_template_ptr->nb_rb_ul[harq_pid];
+        }
 
-          if (dlsch_flag == 1) {
-            if (cqi_req == 1) {
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
-              ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.harq_information;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag =
-                NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks =
-                rb_table[rb_table_index];
-            } else {
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
-              ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag =
-                NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
-            }
+        fill_nfapi_ulsch_harq_information(module_idP, CC_id, rnti, ulsch_harq_information, subframeP);
+      } else {
+        ul_req_tmp_body->number_of_pdus++;
+      }
 
-            fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti, ulsch_harq_information,subframeP);
-          } else {
-            ul_req_tmp_body->number_of_pdus++;
-          }
+      mac->ul_handle++;
+      ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
+      ul_req_tmp->sfn_sf = sched_frame << 4 | sched_subframeP;
+      ul_req_tmp->header.message_id = NFAPI_UL_CONFIG_REQUEST;
+      LOG_D(MAC,
+            "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE "
+            "%d/%x, ulsch_frame %d, ulsch_subframe %d cqi_req %d\n",
+            harq_pid,
+            frameP,
+            subframeP,
+            UE_id,
+            rnti,
+            sched_frame,
+            sched_subframeP,
+            cqi_req);
 
-          ul_req_tmp->header.message_id = NFAPI_UL_CONFIG_REQUEST;
-          ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-          mac->ul_handle++;
-          ul_req_tmp->sfn_sf = sched_frame << 4 | sched_subframeP;
-          add_ue_ulsch_info(module_idP, CC_id, UE_id, subframeP, S_UL_SCHEDULED);
-          LOG_D(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n",
-                module_idP,
-                CC_id,
-                frameP,
-                subframeP,
-                UE_id);
-          LOG_D(MAC, "[PUSCH %d] SFN/SF:%04d%d UL_CFG:SFN/SF:%04d%d CQI:%d for UE %d/%x\n",
-                harq_pid,
-                frameP,
-                subframeP,
-                sched_frame,
-                sched_subframeP,
-                cqi_req,
-                UE_id,
-                rnti);
-          /* Increment first rb for next UE allocation */
-          first_rb_slice[CC_id] += rb_table[rb_table_index];
-        } else { // round_index > 0 => retransmission
-          T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION,
-            T_INT(module_idP),
-            T_INT(CC_id),
-            T_INT(rnti),
-            T_INT(frameP),
-            T_INT(subframeP),
-            T_INT(harq_pid),
-            T_INT(UE_template_ptr->mcs_UL[harq_pid]),
-            T_INT(UE_template_ptr->first_rb_ul[harq_pid]),
-            T_INT(UE_template_ptr->nb_rb_ul[harq_pid]),
-            T_INT(round_index));
-          /* Add UL_config PDUs */
-          LOG_D(MAC, "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
-                harq_pid,
-                frameP,
-                subframeP,
-                UE_id,
-                rnti,
-                sched_frame,
-                sched_subframeP);
-          ul_req_index = 0;
-          dlsch_flag = 0;
-          cqi_req = UE_template_ptr->cqi_req[harq_pid];
-
-          for(ul_req_index = 0; ul_req_index < ul_req_tmp_body->number_of_pdus; ul_req_index++) {
-            if(ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE &&
-                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) {
-              dlsch_flag = 1;
-              LOG_D(MAC, "Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",
-                    frameP,
-                    subframeP,
-                    rnti,
-                    ul_req_index);
-              break;
-            }
-          }
-
-          fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
-                                               cqi_req,
-                                               cc,
-                                               UE_template_ptr->physicalConfigDedicated,
-                                               get_tmode(module_idP, CC_id, UE_id),
-                                               mac->ul_handle,
-                                               rnti,
-                                               UE_template_ptr->first_rb_ul[harq_pid], // resource_block_start
-                                               UE_template_ptr->nb_rb_ul[harq_pid],    // number_of_resource_blocks
-                                               UE_template_ptr->mcs_UL[harq_pid],
-                                               cshift, // cyclic_shift_2_for_drms
-                                               0,      // frequency_hopping_enabled_flag
-                                               0,      // frequency_hopping_bits
-                                               UE_template_ptr->oldNDI_UL[harq_pid], // new_data_indication
-                                               rvidx_tab[round_index & 3],           // redundancy_version
-                                               harq_pid,  // harq_process_number
-                                               0, // ul_tx_mode
-                                               0, // current_tx_nb
-                                               0, // n_srs
-                                               UE_template_ptr->TBS_UL[harq_pid]);
-
-          /* This is a BL/CE UE allocation */
-          if (UE_template_ptr->rach_resource_type > 0) {
-            fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index],
-                                                 UE_template_ptr->rach_resource_type > 2 ? 2 : 1,
-                                                 1, // total_number_of_repetitions
-                                                 1, // repetition_number
-                                                 (frameP * 10) + subframeP);
-          }
-
-          if(dlsch_flag == 1) {
-            if(cqi_req == 1) {
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
-              ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.harq_information;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag=
-                NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;    // last symbol not punctured
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks =
-                UE_template_ptr->nb_rb_ul[harq_pid];
-            } else {
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
-              ulsch_harq_information = &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag =
-                NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
-              ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks =
-                UE_template_ptr->nb_rb_ul[harq_pid];
-            }
-
-            fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti, ulsch_harq_information, subframeP);
-          } else {
-            ul_req_tmp_body->number_of_pdus++;
-          }
-
-          mac->ul_handle++;
-          ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-          ul_req_tmp->sfn_sf = sched_frame<<4|sched_subframeP;
-          ul_req_tmp->header.message_id = NFAPI_UL_CONFIG_REQUEST;
-          LOG_D(MAC, "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d cqi_req %d\n",
-                harq_pid,
-                frameP,
-                subframeP,
-                UE_id,
-                rnti,
-                sched_frame,
-                sched_subframeP,
-                cqi_req);
-
-          /* HACK: RBs used by retransmission have to be reserved.
-           * The current mechanism uses the notion of 'first_rb', so
-           * we skip all RBs below the ones retransmitted. This is
-           * not correct. Imagine only RB 23 is retransmitted, then all
-           * RBs < 23 will be marked unusable for new transmissions (case where round == 0).
-           * Note also that this code works only if the preprocessor orders
-           * UEs with retransmission with higher priority than UEs with new
-           * transmission.
-           * All this should be cleaned up properly.
-           */
-          if (first_rb_slice[CC_id] < UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid])
-            first_rb_slice[CC_id] = UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid];
-        }  // end of round > 0
-      }  // UE_is_to_be_scheduled
-    }  // loop over all active CC_ids
-  }  // loop over UE_ids
+      /* HACK: RBs used by retransmission have to be reserved.
+       * The current mechanism uses the notion of 'first_rb', so
+       * we skip all RBs below the ones retransmitted. This is
+       * not correct. Imagine only RB 23 is retransmitted, then all
+       * RBs < 23 will be marked unusable for new transmissions (case where
+       * round == 0). Note also that this code works only if the preprocessor
+       * orders UEs with retransmission with higher priority than UEs with new
+       * transmission.
+       * All this should be cleaned up properly.
+       */
+      if (first_rb[CC_id] < UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid])
+        first_rb[CC_id] = UE_template_ptr->first_rb_ul[harq_pid]
+                    + UE_template_ptr->nb_rb_ul[harq_pid];
+    } // end of round > 0
+  } // loop over UE_ids
 }
 
 
