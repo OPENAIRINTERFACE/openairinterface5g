@@ -334,7 +334,7 @@ void fh_if5_south_in(RU_t *ru,
   recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL);
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
   uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
+  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
 
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *tti) {
@@ -506,7 +506,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   frame_tx    = (timestamp_tx / (fp->samples_per_subframe*10))&1023;
   uint32_t idx_sf = timestamp_tx / fp->samples_per_subframe;
-  tti_tx = (idx_sf * fp->slots_per_subframe + (int)round((timestamp_tx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
+  tti_tx = (idx_sf * fp->slots_per_subframe + (int)round((float)(timestamp_tx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
 
   if (proc->first_tx != 0) {
     *slot = tti_tx;
@@ -667,7 +667,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
     ru->ts_offset = proc->timestamp_rx;
     proc->timestamp_rx = 0;
   } else {
-    if (proc->timestamp_rx - old_ts != samples_per_slot) {
+    if (proc->timestamp_rx - old_ts != fp->get_samples_per_slot((*slot-1)%fp->slots_per_frame,fp)) {
       LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - samples_per_slot,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - samples_per_slot);
       proc->timestamp_rx = ts-ru->ts_offset;
@@ -676,7 +676,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
   uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
+  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
   // synchronize first reception to frame 0 subframe 0
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
         ru->idx,
