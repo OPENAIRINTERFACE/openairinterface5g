@@ -546,7 +546,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       //LOG_E(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d A %d ",frame%1024,nr_tti_rx,r,harq_process->C-1, A);
 
-      printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
+      //printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
 
       memset(pv,0,2*harq_process->Z*sizeof(int16_t));
       //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
