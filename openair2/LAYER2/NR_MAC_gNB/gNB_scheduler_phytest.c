@@ -247,9 +247,11 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 }
 
 int configure_fapi_dl_Tx(int Mod_idP,
+                         sub_frame_t slotP,
 			 int *CCEIndex,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req,
+                         NR_sched_pucch *pucch_sched,
 			 uint8_t *mcsIndex,
 			 uint16_t *rbSize,
 			 uint16_t *rbStart) {
@@ -350,10 +352,10 @@ int configure_fapi_dl_Tx(int Mod_idP,
   dci_pdu_rel15[0].ndi = 1;
   dci_pdu_rel15[0].rv = 0;
   dci_pdu_rel15[0].harq_pid = 0;
-  dci_pdu_rel15[0].dai = 2;
+  dci_pdu_rel15[0].dai = (pucch_sched->dai_c)&3;
   dci_pdu_rel15[0].tpc = 2;
-  dci_pdu_rel15[0].pucch_resource_indicator = 7;
-  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = 7;
+  dci_pdu_rel15[0].pucch_resource_indicator = 7;  //FIXME
+  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = pucch_sched->ul_slot - slotP; //FIXME put check on validity of indicator depending on type of DCI
   
   LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment,
@@ -372,9 +374,6 @@ int configure_fapi_dl_Tx(int Mod_idP,
 		     1, // ue-specific
 		     scc,
 		     bwp);
-  
-
-
   
   pdcch_pdu_rel15->numDlDci = 1;
   pdcch_pdu_rel15->AggregationLevel[0] = 4;  
@@ -466,15 +465,16 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
+                                   NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config)
 {
   LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest \n");
-  
-  gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
+
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   //NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
   nfapi_nr_dl_tti_request_body_t   *dl_req;
-  nfapi_nr_pdu_t            *TX_req;
+  nfapi_nr_pdu_t *TX_req;
 
   int TBS;
   int TBS_bytes;
@@ -630,9 +630,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       CCEIndices[0] = CCEIndex;
 
       TBS_bytes = configure_fapi_dl_Tx(module_idP,
+                                       slotP,
 				       CCEIndices,
 				       dl_req, 
 				       TX_req,
+                                       pucch_sched,
 				       dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
 				       dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
 				       dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
@@ -670,7 +672,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     int CCEIndices[2];
     CCEIndices[0] = CCEIndex;
     LOG_D(MAC,"Configuring DL_TX in %d.%d\n",frameP,slotP);
-    TBS_bytes = configure_fapi_dl_Tx(module_idP,CCEIndices,dl_req, TX_req,
+    TBS_bytes = configure_fapi_dl_Tx(module_idP,slotP,CCEIndices,dl_req, TX_req, pucch_sched,
 				     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
 				     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
 				     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL); 

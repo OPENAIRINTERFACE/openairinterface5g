@@ -70,6 +70,8 @@ extern uint8_t nfapi_mode;
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
+uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
+
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
                                 frame_t frameP,
@@ -308,6 +310,61 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
+void nr_schedule_pucch(int Mod_idP,
+                       int UE_id,
+                       frame_t frameP,
+                       sub_frame_t slotP) {
+
+  uint16_t O_uci;
+  uint16_t O_ack;
+  uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
+  uint8_t pucch_resource = 0; // in PHY test only one UE -> only one PUCCH resource used
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  int bwp_id=1;
+  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+
+  NR_sched_pucch *curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+  NR_sched_pucch *temp_pucch;
+  int release_pucch = 0;
+
+  if (curr_pucch != NULL) {
+    if ((frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+      UL_tti_req->SFN = frameP;
+      UL_tti_req->Slot = slotP;
+      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+      nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
+      memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
+      UL_tti_req->n_pdus+=1;  
+
+      O_ack = curr_pucch->dai_c;
+      O_uci = O_ack; // for now we are just sending acknacks in pucch
+
+      nr_configure_pucch(pucch_pdu,
+			 scc,
+			 ubwp,
+                         pucch_resource,
+                         O_uci,
+                         O_ack,
+                         SR_flag);
+
+      release_pucch = 1;
+    }
+  }
+
+  if (release_pucch) {
+    temp_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+    UE_list->UE_sched_ctrl[UE_id].sched_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch->next_sched_pucch;
+    free(temp_pucch);
+  }
+
+}
+
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot){
 
   if((bitmap>>slot)&0x01)
@@ -329,10 +386,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   int UE_id;
   uint64_t *dlsch_in_slot_bitmap=NULL;
   uint64_t *ulsch_in_slot_bitmap=NULL;
- 
+  NR_sched_pucch *pucch_sched = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
+
   if (phy_test) UE_id=0;
 
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
+  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
+  int num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])>>(7-scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
 
   //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
 
@@ -346,11 +406,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   RC.nrmac[module_idP]->slot     = slot_rxP;
 
   if (phy_test) {
-    dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.dlsch_in_slot_bitmap[UE_id];  // static bitmap signaling which slot in a tdd period contains dlsch
-    ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.ulsch_in_slot_bitmap[UE_id];  // static bitmap signaling which slot in a tdd period contains ulsch
+    dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+    ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
 
     // hardcoding dlsch to be in slot 1
-    if (!(slot_txP%cc->num_slots_per_tdd)) {
+    if (!(slot_txP%num_slots_per_tdd)) {
       if(slot_txP==0)
         *dlsch_in_slot_bitmap = 0x02;
       else
@@ -358,7 +418,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     }
 
     // hardcoding ulsch to be in slot 8
-    if (!(slot_rxP%cc->num_slots_per_tdd)) {
+    if (!(slot_rxP%num_slots_per_tdd)) {
       if(slot_rxP==0)
         *ulsch_in_slot_bitmap = 0x100;
       else
@@ -403,8 +463,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     }
 
     // Phytest scheduling
-    if (phy_test && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%cc->num_slots_per_tdd))) {
-        nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
+    if (phy_test && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
+        nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,pucch_sched);
+        nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, pucch_sched, NULL);
     }
 
     /*
@@ -416,8 +477,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   } //is_nr_DL_slot
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
-    if (phy_test && (is_xlsch_in_slot(*ulsch_in_slot_bitmap,slot_rxP%cc->num_slots_per_tdd))){
-      nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
+    if (phy_test) {
+      nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
+      if (is_xlsch_in_slot(*ulsch_in_slot_bitmap,slot_rxP%num_slots_per_tdd)){
+        nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
+      }
     }
   }
 

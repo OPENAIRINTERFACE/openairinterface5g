@@ -50,7 +50,6 @@ extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
-uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
@@ -280,8 +279,6 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   }
   else LOG_I(PHY,"TDD has been properly configurated\n");
   }
-
-  RC.nrmac[Mod_idP]->common_channels[0].num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])>>(7-cfg->tdd_table.tdd_period.value);
 
 /*
   // PDCCH-ConfigCommon

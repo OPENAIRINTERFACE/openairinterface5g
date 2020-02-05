@@ -68,9 +68,11 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   subframeP);
 
 int configure_fapi_dl_Tx(int Mod_id,
+                         sub_frame_t slotP,
 			 int *CCEIndeces,
 			 nfapi_nr_dl_tti_request_body_t *dl_req,
 			 nfapi_nr_pdu_t *TX_req,
+                         NR_sched_pucch *pucch_sched,
 			 uint8_t *mcsIndex,
 			 uint16_t *rbSize,
 			 uint16_t *rbStart);
@@ -79,11 +81,19 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
+                                   NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
 void nr_schedule_uss_ulsch_phytest(int Mod_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP);
+
+void nr_update_pucch_scheduling(int Mod_idP,
+                                int UE_id,
+                                frame_t frameP,
+                                sub_frame_t slotP,
+                                int slots_per_tdd,
+                                NR_sched_pucch *sched_pucch);
   
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                                   nr_scs_e scs_common,
@@ -117,8 +127,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			dci_pdu_rel15_t *dci_pdu_rel15,
 			int *dci_formats,
-			int *rnti_types
-			);
+			int *rnti_types);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 

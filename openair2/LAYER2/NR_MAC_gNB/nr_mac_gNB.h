@@ -98,13 +98,21 @@ typedef struct {
   uint8_t vrb_map_UL[100];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
-  /// number of slots per TDD period
-  uint8_t num_slots_per_tdd;
 } NR_COMMON_channels_t;
 
-/*! \brief scheduling control information set through an API (not used)*/
+typedef struct NR_sched_pucch {
+  int frame;
+  int ul_slot;
+  uint8_t dai_c;
+  uint8_t dai_t;
+  struct NR_sched_pucch *next_sched_pucch;
+} NR_sched_pucch;
+
+/*! \brief scheduling control information set through an API */
 typedef struct {
-  int dummy;
+  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+  uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+  NR_sched_pucch *sched_pucch;
 } NR_UE_sched_ctrl_t;
 
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
@@ -122,8 +130,6 @@ typedef struct {
   boolean_t active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
-  uint64_t dlsch_in_slot_bitmap[MAX_MOBILES_PER_GNB];  // static bitmap signaling which slot in a tdd period contains dlsch
-  uint64_t ulsch_in_slot_bitmap[MAX_MOBILES_PER_GNB];  // static bitmap signaling which slot in a tdd period contains ulsch
 } NR_UE_list_t;
 
 /*! \brief top level gNB MAC structure */

@@ -655,6 +655,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
       if (pucchres->pucch_ResourceId == *resource_id) {
         res_found = 1;
         pucch_pdu->prb_start = pucchres->startingPRB;
+        // FIXME why there is only one frequency hopping flag
+        // what about inter slot frequency hopping?
         pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
         pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
         switch(pucchres->format.present) {
@@ -732,8 +734,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			dci_pdu_rel15_t *dci_pdu_rel15,
 			int *dci_formats,
-			int *rnti_types
-			) {
+			int *rnti_types) {
   
   uint16_t N_RB = pdcch_pdu_rel15->BWPSize;
   uint8_t fsize=0, pos=0;
@@ -1244,6 +1245,63 @@ int add_new_nr_ue(module_id_t mod_idP,
 		  0);
   return -1;
 }
+
+// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
+void nr_update_pucch_scheduling(int Mod_idP,
+                                int UE_id,
+                                frame_t frameP,
+                                sub_frame_t slotP,
+                                int slots_per_tdd,
+                                NR_sched_pucch *sched_pucch) {
+
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  int first_ul_slot_tdd,next_slot;
+  NR_sched_pucch *curr_pucch;
+
+  // if the list of pucch to be scheduled is empty
+  if (UE_list->UE_sched_ctrl[UE_id].sched_pucch == NULL) {
+    sched_pucch->frame = frameP;
+    sched_pucch->next_sched_pucch = NULL;
+    sched_pucch->dai_c = 1;
+    if ( (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots!=0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)) {
+      // first pucch occasion in first UL or MIXED slot
+      first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+      // computing slot in which pucch is scheduled
+      sched_pucch->ul_slot = first_ul_slot_tdd + slotP - (slotP % slots_per_tdd);
+    }
+    else
+      AssertFatal(1==0,"No Uplink Slots in this Frame\n");
+
+    UE_list->UE_sched_ctrl[UE_id].sched_pucch = sched_pucch;
+  }
+  else {
+    curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+    while (curr_pucch->next_sched_pucch != NULL)
+      curr_pucch = curr_pucch->next_sched_pucch;
+    // we are scheduling at most 11 ack nacks in the same pucch
+    if (curr_pucch->dai_c==11) {
+      next_slot = curr_pucch->ul_slot + 1;
+      if (next_slot == slots_per_tdd)
+        AssertFatal(1==0,"No more slots in this TDD period\n");
+      else {
+        // generating a new item in the list
+        sched_pucch->frame = frameP;
+        sched_pucch->next_sched_pucch = NULL;
+        sched_pucch->dai_c = 1;
+        sched_pucch->ul_slot = next_slot;
+        curr_pucch->next_sched_pucch = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
+        curr_pucch->next_sched_pucch = sched_pucch;
+      }
+    }
+    else {
+      sched_pucch = curr_pucch;
+      sched_pucch->dai_c = 1 + sched_pucch->dai_c;
+    }
+  }
+
+}
+
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,

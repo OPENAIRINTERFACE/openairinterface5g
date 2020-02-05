@@ -347,15 +347,13 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
-  int num_pusch_pdu = UL_tti_req->n_pdus;
+  int num_pdus = UL_tti_req->n_pdus;
 
-  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pusch_pdu %d\n",frame_rx,slot_rx,num_pusch_pdu);
+  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pdus %d\n",frame_rx,slot_rx,num_pdus);
   
-  for (int i = 0; i < num_pusch_pdu; i++) {
-
+  for (int i = 0; i < num_pdus; i++) {
     switch (UL_tti_req->pdus_list[i].pdu_type) {
-    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
-      {
+      case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
 
 	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
@@ -373,7 +371,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
 	nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
 	nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
-      }
+        break;
+      case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
+	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE\n",frame_rx,slot_rx);
+        break;
     }
   }
 }
