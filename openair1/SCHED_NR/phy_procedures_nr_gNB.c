@@ -279,9 +279,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                     0);
         
   if (ret > gNB->ulsch[ULSCH_id][0]->max_ldpc_iterations)
-    LOG_I(PHY, "ULSCH in error\n");
+    LOG_I(PHY, "ULSCH %d in error\n",ULSCH_id);
   else
-    LOG_I(PHY, "ULSCH received ok\n");
+    LOG_I(PHY, "ULSCH %d received ok\n",ULSCH_id);
 
 }
 

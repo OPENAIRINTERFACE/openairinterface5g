@@ -131,9 +131,9 @@ int main(int argc, char **argv)
   int i,sf;
   double SNR, snr0 = -2.0, snr1 = 2.0;
   double sigma, sigma_dB;
-  double snr_step = 0.1;
+  double snr_step = 1;
   uint8_t snr1set = 0;
-  int slot = 0;
+  int slot = 0, frame = 0;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
@@ -147,13 +147,12 @@ int main(int argc, char **argv)
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
-  int number_of_frames = 1;
   int frame_length_complex_samples,frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
-  int start_symbol = 2;
+  int start_symbol = 0;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t precod_nbr_layers = 1;
@@ -164,7 +163,8 @@ int main(int argc, char **argv)
   int32_t txlev;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
-
+  float target_error_rate = 0.01;
+  
   cpuf = get_cpu_freq_GHz();
 
 
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:G:M:N:P:R:S:L:")) != -1) {
+  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:L:")) != -1) {
     switch (c) {
 
       /*case 'd':
@@ -191,10 +191,6 @@ int main(int argc, char **argv)
         break;
 
       case 'f':
-        number_of_frames = atoi(optarg);
-        break;
-
-      case 'G':
          scg_fd = fopen(optarg, "r");
 
          if (scg_fd == NULL) {
@@ -505,7 +501,6 @@ int main(int argc, char **argv)
           printf("Can't get ue ulsch structures\n");
           exit(-1);
         }
-
     }
   }
   */
@@ -543,7 +538,6 @@ int main(int argc, char **argv)
   unsigned char *test_input_bit;
   uint32_t errors_decoding   = 0;
   uint32_t errors_scrambling = 0;
-  uint32_t is_frame_in_error = 0;
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -580,13 +574,6 @@ int main(int argc, char **argv)
   printf("\n");
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
-
-    printf("-------------------\n");
-    printf("SNR %f\n", SNR);
-    printf("-------------------\n");
-
-    is_frame_in_error = 0;
-    for (int frame = 0; frame < number_of_frames; frame++) {
 
       UE_proc.nr_tti_tx = slot;
       UE_proc.frame_tx = frame;
@@ -677,7 +664,7 @@ int main(int argc, char **argv)
 
       phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
 
-      if (number_of_frames==1)
+      if (n_trials==1)
 	LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
 
       ///////////
@@ -717,11 +704,15 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-	if (number_of_frames==1)
+	if (n_trials==1)
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],frame_length_complex_samples_no_prefix,1,1);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
         ////////////////////////////////////////////////////////////
+
+	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
+	    gNB->ulsch[0][0]->max_ldpc_iterations+1)
+	  n_errors++;
 
         //----------------------------------------------------------
         //----------------- count and print errors -----------------
@@ -732,14 +723,15 @@ int main(int argc, char **argv)
           if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
              ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
           {
-            if(errors_scrambling == 0)
-              printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);
+            /*if(errors_scrambling == 0)
+              printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
             errors_scrambling++;
           }
         }
 
         if (errors_scrambling > 0) {
-          printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %d\n" "\x1B[0m", frame, trial, errors_scrambling);
+	  if (n_trials==1)
+	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %d\n" "\x1B[0m", frame, trial, errors_scrambling);
         }
 
         for (i = 0; i < TBS; i++) {
@@ -748,37 +740,38 @@ int main(int argc, char **argv)
           test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
 
           if (estimated_output_bit[i] != test_input_bit[i]) {
-            if(errors_decoding == 0)
-              printf("\x1B[34m""[frame %d][trial %d]\t1st bit in error in decoding     = %d\n" "\x1B[0m", frame, trial, i);
+            /*if(errors_decoding == 0)
+              printf("\x1B[34m""[frame %d][trial %d]\t1st bit in error in decoding     = %d\n" "\x1B[0m", frame, trial, i);*/
             errors_decoding++;
           }
         }
 
         if (errors_decoding > 0) {
-          is_frame_in_error = 1;
           n_false_positive++;
-          printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %d\n" "\x1B[0m", frame, trial, errors_decoding);
-        } else {
-          is_frame_in_error = 0;
-          break;
-        }
-        ////////////////////////////////////////////////////////////
+	  if (n_trials==1)
+	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %d\n" "\x1B[0m", frame, trial, errors_decoding);
+        } 
+
       } // trial loop
 
-      if (is_frame_in_error == 1)
-        break;
-    } // frame loop
+      printf("*****************************************\n");
+      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %d/%d\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, n_trials);
+      printf("\n");
+      printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
+      printf("*****************************************\n");
+      printf("\n");
 
-    if(is_frame_in_error == 1)
-      break;
+      if(n_trials==1)
+	break;
+
+      if ((float)n_errors/(float)n_trials <= target_error_rate) {
+	printf("*************\n");
+	printf("PUSCH test OK\n");
+	printf("*************\n");
+	break;
+      }
+      
   } // SNR loop
-
-  if(is_frame_in_error == 0) {
-    printf("\n");
-    printf("*************\n");
-    printf("PUSCH test OK\n");
-    printf("*************\n");
-  }
 
   printf("\n");
 

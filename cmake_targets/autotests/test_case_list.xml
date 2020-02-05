@@ -1253,11 +1253,11 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_ulsim.Rel15</main_exec>
-      <main_exec_args>-f100 -m9 -r106 -s10
-                      -f100 -m16 -s20
-                      -f100 -m28 -s30
-                      -f100 -m9 -R217 -r217 -s10
-                      -f100 -m9 -R273 -r273 -s10</main_exec_args>
+      <main_exec_args>-n100 -m9 -r106 -s0 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m16 -s10 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m28 -s20 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m9 -R217 -r217 -s0 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m9 -R273 -r273 -s0 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
