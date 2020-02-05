@@ -1334,7 +1334,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       exit(1);
   }
 
-  UE_info->first_rb_offset[CC_id][0] = n_rb_ul_tab;
+  UE_info->first_rb_offset[CC_id] = n_rb_ul_tab;
 
   /*
    * ULSCH preprocessor: set UE_template->

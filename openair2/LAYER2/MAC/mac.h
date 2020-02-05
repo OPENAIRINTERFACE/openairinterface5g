@@ -824,7 +824,7 @@ typedef struct {
   uint16_t cshift[8];   // num_max_harq
 
   /// Number of Allocated RBs by the ulsch preprocessor
-  uint8_t pre_allocated_nb_rb_ul[MAX_NUM_SLICES];
+  uint8_t pre_allocated_nb_rb_ul;
 
   /// index of Allocated RBs by the ulsch preprocessor
   int8_t pre_allocated_rb_table_index_ul;
@@ -919,8 +919,6 @@ typedef struct {
   uint8_t dl_lc_ids[MAX_NUM_LCID];
   /// number of bytes to schedule for each LC
   uint32_t dl_lc_bytes[MAX_NUM_LCID];
-
-  uint16_t max_rbs_allowed_slice_uplink[NFAPI_CC_MAX][MAX_NUM_SLICES];
 
   // resource scheduling information
 
@@ -1149,8 +1147,7 @@ typedef struct {
 
   /// Sorting criteria for the UE list in the MAC preprocessor
   uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
-  uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
-  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
+  uint16_t first_rb_offset[NFAPI_CC_MAX];
 } UE_info_t;
 
 /*! \brief deleting control information*/

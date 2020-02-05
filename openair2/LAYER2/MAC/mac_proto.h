@@ -686,8 +686,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    uint16_t *first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
                         sub_frame_t subframeP);
-void assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
-                           sub_frame_t subframeP, uint16_t *first_rb);
+void assign_max_mcs_min_rb(module_id_t module_idP,
+                           int CC_id,
+                           int frameP,
+                           sub_frame_t subframeP,
+                           uint16_t *first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
                      UE_TEMPLATE *UE_template);
 

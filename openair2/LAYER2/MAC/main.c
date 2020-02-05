@@ -55,7 +55,6 @@ void init_UE_info(UE_info_t *UE_info)
   memset(UE_info->eNB_UE_stats, 0, sizeof(UE_info->eNB_UE_stats));
   memset(UE_info->UE_sched_ctrl, 0, sizeof(UE_info->UE_sched_ctrl));
   memset(UE_info->active, 0, sizeof(UE_info->active));
-  memset(UE_info->assoc_ul_slice_idx, 0, sizeof(UE_info->assoc_ul_slice_idx));
 }
 
 void init_slice_info(slice_info_t *sli)

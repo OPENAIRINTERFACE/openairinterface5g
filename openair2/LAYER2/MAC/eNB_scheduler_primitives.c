@@ -2209,8 +2209,6 @@ add_new_ue(module_id_t mod_idP,
            0,
            sizeof(eNB_UE_STATS));
     UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
-    /* default slice in case there was something different */
-    UE_info->assoc_ul_slice_idx[UE_id] = 0;
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
 
     for (j = 0; j < 8; j++) {
@@ -5054,23 +5052,4 @@ nb_rbs_allowed_slice(float rb_percentage,
 //------------------------------------------------------------------------------
 {
   return (uint16_t) floor(rb_percentage * total_rbs);
-}
-
-//------------------------------------------------------------------------------
-int
-ue_ul_slice_membership(module_id_t mod_id,
-                       int UE_id,
-                       int slice_idx)
-//------------------------------------------------------------------------------
-{
-  eNB_MAC_INST *eNB = RC.mac[mod_id];
-
-  if (slice_idx < 0 || slice_idx >= eNB->slice_info.n_ul) {
-    LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
-          slice_idx,
-          eNB->slice_info.dl[slice_idx].id);
-    return 0;
-  }
-
-  return eNB->UE_info.active[UE_id] == TRUE && eNB->UE_info.assoc_ul_slice_idx[UE_id] == slice_idx;
 }

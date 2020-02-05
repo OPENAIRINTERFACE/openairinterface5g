@@ -3037,7 +3037,7 @@ void flexran_set_ue_dl_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx) {
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return -1;
 
-  int slice_idx = RC.mac[mod_id]->UE_info.assoc_ul_slice_idx[ue_id];
+  int slice_idx = 0; //RC.mac[mod_id]->UE_info.assoc_ul_slice_idx[ue_id];
 
   if (slice_idx >= 0 && slice_idx < RC.mac[mod_id]->slice_info.n_ul)
     return RC.mac[mod_id]->slice_info.ul[slice_idx].id;
@@ -3052,7 +3052,7 @@ void flexran_set_ue_ul_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx) {
 
   if (!flexran_ul_slice_exists(mod_id, slice_idx)) return;
 
-  RC.mac[mod_id]->UE_info.assoc_ul_slice_idx[ue_id] = slice_idx;
+  //RC.mac[mod_id]->UE_info.assoc_ul_slice_idx[ue_id] = slice_idx;
 }
 
 int flexran_dl_slice_exists(mid_t mod_id, int slice_idx) {
@@ -3397,12 +3397,12 @@ int flexran_remove_ul_slice(mid_t mod_id, int slice_idx) {
 
   memset(&sli->ul[sli->n_ul], 0, sizeof(sli->ul[sli->n_ul]));
   /* all UEs that have been in the old slice are put into slice index 0 */
-  int *assoc_list = RC.mac[mod_id]->UE_info.assoc_ul_slice_idx;
+  //int *assoc_list = RC.mac[mod_id]->UE_info.assoc_ul_slice_idx;
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i) {
-    if (assoc_list[i] == slice_idx)
-      assoc_list[i] = 0;
-  }
+  //for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i) {
+  //  if (assoc_list[i] == slice_idx)
+  //    assoc_list[i] = 0;
+  //}
 
   return sli->n_ul;
 }
