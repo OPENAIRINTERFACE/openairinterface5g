@@ -202,7 +202,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   mib->message.choice.mib->spare.size = 1;
   mib->message.choice.mib->spare.bits_unused = 7;  // This makes a spare of 1 bits
 
-  mib->message.choice.mib->ssb_SubcarrierOffset = carrier->ssb_SubcarrierOffset;
+  mib->message.choice.mib->ssb_SubcarrierOffset = (carrier->ssb_SubcarrierOffset)&15;
   mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
   mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
   AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");

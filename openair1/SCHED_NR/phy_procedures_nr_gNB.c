@@ -54,8 +54,14 @@ uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,25
 extern uint8_t nfapi_mode;
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
-  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + cfg->ssb_table.ssb_subcarrier_offset.value);
-  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,cfg->ssb_table.ssb_subcarrier_offset.value);
+
+  uint8_t sco = 0;
+  if (((fp->freq_range == nr_FR1) && (cfg->ssb_table.ssb_subcarrier_offset.value<24)) ||
+      ((fp->freq_range == nr_FR2) && (cfg->ssb_table.ssb_subcarrier_offset.value<12)) )
+    sco = cfg->ssb_table.ssb_subcarrier_offset.value;
+
+  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + sco);
+  LOG_I(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
 }
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
