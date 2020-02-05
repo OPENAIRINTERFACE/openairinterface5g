@@ -53,12 +53,99 @@
 #include "PHY/defs_nr_common.h"
 
 #define NB_NR_UE_MAC_INST 1
+/*!\brief Maximum number of logical channl group IDs */
+#define MAX_NUM_LCGID 4
+/*!\brief Maximum number of logical chanels */
+#define MAX_NUM_LCID 11
+
+/*!\brief value for indicating BSR Timer is not running */
+#define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
 typedef enum {
     SFN_C_MOD_2_EQ_0, 
     SFN_C_MOD_2_EQ_1,
     SFN_C_IMPOSSIBLE
 } SFN_C_TYPE;
+
+#define UL_SCH_LCID_CCCH                           0x00
+#define UL_SCH_LCID_SRB1                           0x01
+#define UL_SCH_LCID_SRB2                           0x02
+#define UL_SCH_LCID_DTCH						   0x03
+#define UL_SCH_LCID_SRB3                           0x04
+#define UL_SCH_LCID_CCCH_MSG3                      0x21
+#define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
+#define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
+#define UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION  0x37
+#define UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT          0x38
+#define UL_SCH_LCID_SINGLE_ENTRY_PHR               0x39
+#define UL_SCH_LCID_C_RNTI                         0x3A
+#define UL_SCH_LCID_S_TRUNCATED_BSR                0x3B
+#define UL_SCH_LCID_L_TRUNCATED_BSR                0x3C
+#define UL_SCH_LCID_S_BSR                          0x3D
+#define UL_SCH_LCID_L_BSR                          0x3E
+#define UL_SCH_LCID_PADDING                        0x3F
+
+// LTE structure, might need to be adapted for NR
+typedef struct {
+  /// buffer status for each lcgid
+  uint8_t  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
+  /// keep the number of bytes in rlc buffer for each lcgid
+  int32_t  BSR_bytes[MAX_NUM_LCGID];
+  /// after multiplexing buffer remain for each lcid
+  int32_t  LCID_buffer_remain[MAX_NUM_LCID];
+  /// sum of all lcid buffer size
+  uint16_t  All_lcid_buffer_size_lastTTI;
+  /// buffer status for each lcid
+  uint8_t  LCID_status[MAX_NUM_LCID];
+  /// SR pending as defined in 36.321
+  uint8_t  SR_pending;
+  /// SR_COUNTER as defined in 36.321
+  uint16_t SR_COUNTER;
+  /// logical channel group ide for each LCID
+  uint8_t  LCGID[MAX_NUM_LCID];
+  /// retxBSR-Timer, default value is sf2560
+  uint16_t retxBSR_Timer;
+  /// retxBSR_SF, number of subframe before triggering a regular BSR
+  uint16_t retxBSR_SF;
+  /// periodicBSR-Timer, default to infinity
+  uint16_t periodicBSR_Timer;
+  /// periodicBSR_SF, number of subframe before triggering a periodic BSR
+  uint16_t periodicBSR_SF;
+  /// default value is 0: not configured
+  uint16_t sr_ProhibitTimer;
+  /// sr ProhibitTime running
+  uint8_t sr_ProhibitTimer_Running;
+  ///  default value to n5
+  uint16_t maxHARQ_Tx;
+  /// default value is false
+  uint16_t ttiBundling;
+  /// default value is release
+  struct DRX_Config *drx_config;
+  /// default value is release
+  struct MAC_MainConfig__phr_Config *phr_config;
+  ///timer before triggering a periodic PHR
+  uint16_t periodicPHR_Timer;
+  ///timer before triggering a prohibit PHR
+  uint16_t prohibitPHR_Timer;
+  ///DL Pathloss change value
+  uint16_t PathlossChange;
+  ///number of subframe before triggering a periodic PHR
+  int16_t periodicPHR_SF;
+  ///number of subframe before triggering a prohibit PHR
+  int16_t prohibitPHR_SF;
+  ///DL Pathloss Change in db
+  uint16_t PathlossChange_db;
+
+  /// default value is false
+  uint16_t extendedBSR_Sizes_r10;
+  /// default value is false
+  uint16_t extendedPHR_r10;
+
+  //Bj bucket usage per  lcid
+  int16_t Bj[MAX_NUM_LCID];
+  // Bucket size per lcid
+  int16_t bucket_size[MAX_NUM_LCID];
+} NR_UE_SCHEDULING_INFO;
 
 
 /*!\brief Top level UE MAC structure */
@@ -82,6 +169,7 @@ typedef struct {
   
   ///     Random access parameter
   uint16_t ra_rnti;
+  uint16_t crnti;
 
    //BWP params
   NR_BWP_PARMS initial_bwp_dl;
@@ -96,6 +184,13 @@ typedef struct {
   nr_ue_if_module_t       *if_module;
   nr_scheduled_response_t scheduled_response;
   nr_phy_config_t         phy_config;
+
+  /// BSR report flag management
+  uint8_t BSR_reporting_active;
+  NR_UE_SCHEDULING_INFO   scheduling_info;
+
+  /// PHR
+  uint8_t PHR_reporting_active;
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {

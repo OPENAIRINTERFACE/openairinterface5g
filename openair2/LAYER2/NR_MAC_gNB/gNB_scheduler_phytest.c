@@ -34,6 +34,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/nr-softmodem.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 extern RAN_CONTEXT_t RC;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
@@ -549,7 +550,185 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
   }
 }
 
-void
+void nr_process_mac_pdu(
+    module_id_t module_idP,
+    uint8_t CC_id,
+    frame_t frameP,
+    uint8_t *pduP,
+    uint16_t mac_pdu_len)
+{
+
+    // This function is adapting code from the old
+    // parse_header(...) and ue_send_sdu(...) functions of OAI LTE
+
+    uint8_t *pdu_ptr = pduP, rx_lcid, done = 0, i;
+    int pdu_len = mac_pdu_len;
+    uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
+
+    rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
+
+    LOG_I(MAC, "LCID received at gNB side: %d \n", rx_lcid);
+
+    //  For both DL/UL-SCH
+    //  Except:
+    //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
+    //   - UL/DL-SCH: padding
+    //   - UL-SCH:    MSG3 48-bits
+    //  |0|1|2|3|4|5|6|7|  bit-wise
+    //  |R|F|   LCID    |
+    //  |       L       |
+    //  |0|1|2|3|4|5|6|7|  bit-wise
+    //  |R|F|   LCID    |
+    //  |       L       |
+    //  |       L       |
+
+    //  For both DL/UL-SCH
+    //  For:
+    //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
+    //   - UL/DL-SCH: padding, for single/multiple 1-oct padding CE(s)
+    //   - UL-SCH:    MSG3 48-bits
+    //  |0|1|2|3|4|5|6|7|  bit-wise
+    //  |R|R|   LCID    |
+    //  LCID: The Logical Channel ID field identifies the logical channel instance of the corresponding MAC SDU or the type of the corresponding MAC CE or padding as described in Tables 6.2.1-1 and 6.2.1-2 for the DL-SCH and UL-SCH respectively. There is one LCID field per MAC subheader. The LCID field size is 6 bits;
+    //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
+    //  F: lenght of L is 0:8 or 1:16 bits wide
+    //  R: Reserved bit, set to zero.
+
+    while (!done && pdu_len > 0){
+        mac_ce_len = 0;
+        mac_subheader_len = 1; //  default to fixed-length subheader = 1-oct
+        mac_sdu_len = 0;
+        rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
+
+        LOG_I(MAC, "LCID received at gNB side: %d \n", rx_lcid);
+
+        switch(rx_lcid){
+            //  MAC CE
+
+            /*#ifdef DEBUG_HEADER_PARSING
+              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
+            #endif*/
+
+        case UL_SCH_LCID_PADDING:
+                done = 1;
+                //  end of MAC PDU, can ignore the rest.
+                break;
+
+        case UL_SCH_LCID_DTCH:
+                //  check if LCID is valid at current time.
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                    mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L1 & 0x7f) << 8)
+                    | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pdu_ptr)->L2 & 0xff);
+
+                } else {
+                  mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                  mac_subheader_len = 2;
+                }
+
+                LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+
+                #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+
+                    for (i = 0; i < 32; i++)
+                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
+
+                    LOG_T(MAC, "\n");
+                #endif
+
+                if (IS_SOFTMODEM_NOS1){
+                  if (rx_lcid < NB_RB_MAX && rx_lcid >= UL_SCH_LCID_DTCH) {
+
+                    mac_rlc_data_ind(module_idP,
+                                     0x1234,
+                                     module_idP,
+                                     frameP,
+                                     ENB_FLAG_YES,
+                                     MBMS_FLAG_NO,
+                                     rx_lcid,
+                                     (char *) (pdu_ptr + mac_subheader_len),
+                                     mac_sdu_len,
+                                     1,
+                                     NULL);
+                  } else {
+                    LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, module_idP);
+                  }
+                }
+
+            break;
+
+        default:
+        	return;
+        	break;
+        }
+        pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
+        pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
+
+        AssertFatal(pdu_len >= 0, "[MAC] nr_process_mac_pdu, residual mac pdu length < 0!\n");
+    }
+}
+
+void nr_rx_sdu(module_id_t module_idP,
+                    uint8_t CC_id,
+                    frame_t frameP,
+                    uint8_t ttiP,
+                    const rnti_t rntiP,
+                    uint8_t * pdu,
+                    const uint16_t pdu_len,
+                    const uint16_t timing_advance,
+                    const uint8_t ul_cqi)
+{
+
+  LOG_I(MAC, "Handling PDU frame %d slot %d pdu_len: %d \n", frameP, ttiP, pdu_len);
+
+  uint8_t * pduP = pdu;
+
+
+  /*if (opt_enabled) {
+    trace_pdu(DIRECTION_DOWNLINK, pduP, pdu_len, module_idP, WS_C_RNTI,
+    UE_mac_inst[module_idP].cs_RNTI, frameP, ttiP, 0, 0); //subframeP
+    LOG_D(OPT, "[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
+      module_idP, frameP, UE_mac_inst[module_idP].cs_RNTI, pdu_len);
+    }*/
+
+  /*
+  #ifdef DEBUG_HEADER_PARSING
+    LOG_D(MAC, "[UE %d] ue_send_sdu : Frame %d gNB_index %d : num_ce %d num_sdu %d\n",
+      module_idP, frameP, gNB_index, num_ce, num_sdu);
+  #endif
+  */
+
+  /*
+  #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+    for (i = 0; i < 32; i++) {
+      LOG_T(MAC, "%x.", sdu[i]);
+    }
+    LOG_T(MAC, "\n");
+  #endif
+  */
+
+  // Processing MAC PDU
+  // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
+  if (pduP != NULL){
+	  LOG_I(MAC, "Received PDU at MAC gNB \n");
+	  nr_process_mac_pdu(module_idP, CC_id, frameP, pduP, pdu_len);
+  }
+
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
+
+  /*
+  #if UE_TIMING_TRACE
+    stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
+  #endif
+  */
+}
+
+
+/* LTE based function to be substituted once NR version is ready */
+/*void
 nr_rx_sdu(const module_id_t enb_mod_idP,
        const int CC_idP,
        const frame_t frameP,
@@ -582,7 +761,7 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
   rrc_eNB_ue_context_t *ue_contextP = NULL;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
   UE_TEMPLATE *UE_template_ptr = NULL;
-  /* Init */
+  // Init
   current_rnti = rntiP;
   UE_id = 0; //find_UE_id(enb_mod_idP, current_rnti);
   //mac = RC.mac[enb_mod_idP];
@@ -604,7 +783,7 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
     return;
   }
 
-  /* Control element */
+  // Control element
   for (int i = 0; i < num_ce; i++) {
 
     switch (rx_ces[i]) {  // implement and process PHR + CRNTI + BSR
@@ -690,7 +869,7 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
                 rx_lcids[i]);
 
           if (UE_id != -1) {
-            /* Adjust buffer occupancy of the correponding logical channel group */
+            // Adjust buffer occupancy of the correponding logical channel group
             LOG_D(MAC, "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d \n",
                   enb_mod_idP,
                   CC_idP,
@@ -709,14 +888,15 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
             	    pritnf("\n");
 #endif
               mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr+1, rx_lengths[i], 1, NULL);
-            } else {  /* rx_length[i] Max size */
+            } else {  // rx_length[i] Max size
               //UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
-              LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",
+              LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d. Size of received payload: %d \n",
                     enb_mod_idP,
                     CC_idP,
                     frameP,
                     rx_lcids[i],
-                    UE_id);
+                    UE_id,
+                    rx_lengths[i]);
             }
           } else {  // end if (UE_id != -1)
             LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
@@ -734,32 +914,5 @@ nr_rx_sdu(const module_id_t enb_mod_idP,
     payload_ptr += rx_lengths[i];
   }
 
-  /* Program ACK for PHICH */
-
-  /*LOG_D(MAC, "Programming PHICH ACK for rnti %x harq_pid %d (first_rb %d)\n",
-        current_rnti,
-        harq_pid,
-        first_rb);
-  nfapi_hi_dci0_request_t *hi_dci0_req;
-  uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
-  hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP+sf_ahead_dl)%10];
-  nfapi_hi_dci0_request_body_t *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
-  nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci +
-                                      hi_dci0_req_body->number_of_hi];
-  memset((void *) hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
-  hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_HI_PDU_TYPE;
-  hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_hi_pdu);
-  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
-  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.resource_block_start = first_rb;
-  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = 0;
-  hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 1;
-  hi_dci0_req_body->number_of_hi++;
-  hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP,subframeP, 0);
-  hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
-  hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP, sf_ahead_dl);
-  hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;*/
-
-  /* NN--> FK: we could either check the payload, or use a phy helper to detect a false msg3 */
-
-}
+}*/
 

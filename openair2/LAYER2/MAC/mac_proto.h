@@ -1295,14 +1295,3 @@ uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 /* Main loop of MAC itti message handling */
 void *mac_enb_task(void *arg);
 
-unsigned char
-nr_generate_ulsch_header(uint8_t *mac_header,
-                      uint8_t num_sdus,
-                      uint8_t short_padding,
-                      uint16_t *sdu_lengths,
-                      uint8_t *sdu_lcids,
-                      POWER_HEADROOM_CMD *power_headroom,
-                      uint16_t *crnti,
-                      BSR_SHORT *truncated_bsr,
-                      BSR_SHORT *short_bsr,
-                      BSR_LONG *long_bsr, unsigned short post_padding);
