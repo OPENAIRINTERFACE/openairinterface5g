@@ -479,14 +479,14 @@ int main(int argc, char **argv)
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     		if (cyclic_prefix_type == 1) {
     			PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-    			             &txdata[aa][slot*frame_parms->samples_per_slot],
+    			             &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
 				     frame_parms->ofdm_symbol_size,
 				     12,
 				     frame_parms->nb_prefix_samples,
 				     CYCLIC_PREFIX);
     		} else {
     			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-    			                     &txdata[aa][slot*frame_parms->samples_per_slot],
+    			                     &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
 			                     14,
 			                     frame_parms);
     		}

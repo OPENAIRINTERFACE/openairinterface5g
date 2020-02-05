@@ -393,7 +393,7 @@ int main(int argc, char **argv)
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d,Frame type %s, Frequency Range %s\n",NUMBER_OF_OFDM_CARRIERS,
-         frame_parms->Ncp,frame_parms->samples_per_slot<<1,frame_parms->frame_type == FDD ? "FDD" : "TDD", frame_parms->freq_range == nr_FR1 ? "FR1" : "FR2");
+         frame_parms->Ncp,frame_parms->samples_per_subframe,frame_parms->frame_type == FDD ? "FDD" : "TDD", frame_parms->freq_range == nr_FR1 ? "FR1" : "FR2");
 
   ru->nr_frame_parms=frame_parms;
   ru->if_south = LOCAL_RF;
@@ -421,7 +421,7 @@ int main(int argc, char **argv)
   }
 
   txdata = UE->common_vars.txdata;
-  printf("txdata %p\n",&txdata[0][subframe*frame_parms->samples_per_slot<<1]);
+  printf("txdata %p\n",&txdata[0][subframe*frame_parms->samples_per_subframe]);
 
   double fs,bw;
 
@@ -524,25 +524,25 @@ int main(int argc, char **argv)
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  LOG_M("txsig0.m","txs0", &txdata[0][subframe*frame_parms->samples_per_slot<<1],frame_parms->samples_per_slot<<1,1,1);
+  LOG_M("txsig0.m","txs0", &txdata[0][subframe*frame_parms->samples_per_subframe],frame_parms->samples_per_subframe,1,1);
   //LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
   // multipath channel
   dump_nr_prach_config(&gNB->frame_parms,subframe);
 
-  for (i=0; i<2*frame_parms->samples_per_slot<<1; i++) {
+  for (i=0; i<2*frame_parms->samples_per_subframe; i++) {
     for (aa=0; aa<1; aa++) {
       if (awgn_flag == 0) {
-        s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)]);
-        s_im[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)+1]);
+        s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_subframe]))[(i<<1)]);
+        s_im[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_subframe]))[(i<<1)+1]);
       } else {
         for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
           if (aa==0) {
-            r_re[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)]);
-            r_im[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)+1]);
+            r_re[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_subframe]))[(i<<1)]);
+            r_im[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_subframe]))[(i<<1)+1]);
           } else {
-            r_re[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)]);
-            r_im[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_slot<<1]))[(i<<1)+1]);
+            r_re[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_subframe]))[(i<<1)]);
+            r_im[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_subframe]))[(i<<1)+1]);
           }
         }
       }
@@ -573,7 +573,7 @@ int main(int argc, char **argv)
 
         if (awgn_flag == 0) {
           multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
-                               2*frame_parms->samples_per_slot<<1,0);
+                               2*frame_parms->samples_per_subframe,0);
         }
 
         if (n_frames==1) {
@@ -582,11 +582,11 @@ int main(int argc, char **argv)
                  10*log10(tx_lev));
         }
 
-        for (i=0; i<frame_parms->samples_per_slot<<1; i++) {
+        for (i=0; i<frame_parms->samples_per_subframe; i++) {
           for (aa=0; aa<gNB->frame_parms.nb_antennas_rx; aa++) {
 
-            ((short*) &gNB->common_vars.rxdata[aa][subframe*(frame_parms->samples_per_slot<<1)])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-            ((short*) &gNB->common_vars.rxdata[aa][subframe*(frame_parms->samples_per_slot<<1)])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            ((short*) &gNB->common_vars.rxdata[aa][subframe*(frame_parms->samples_per_subframe)])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            ((short*) &gNB->common_vars.rxdata[aa][subframe*(frame_parms->samples_per_subframe)])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
           }
         }
 	uint16_t preamble_rx;
@@ -612,11 +612,11 @@ int main(int argc, char **argv)
 	  printf("preamble %d (tx %d) : energy %d, delay %d\n",preamble_rx,preamble_tx,preamble_energy_list[0],preamble_delay_list[0]);
 	  
           
-          LOG_M("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_slot<<1],frame_parms->samples_per_slot<<1,1,1);
+          LOG_M("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_subframe],frame_parms->samples_per_subframe,1,1);
           LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0],24576,1,1);
           LOG_M("rxsig0.m","rxs0",
-                       &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_slot<<1],
-                       frame_parms->samples_per_slot<<1,1,1);
+                       &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe],
+                       frame_parms->samples_per_subframe,1,1);
           LOG_M("rxsigF0.m","rxsF0", gNB->prach_vars.rxsigF[0],839*4,1,1);
           LOG_M("prach_preamble.m","prachp",&gNB->X_u[0],839,1,1);
         }

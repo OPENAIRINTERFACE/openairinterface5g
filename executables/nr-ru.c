@@ -720,7 +720,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   unsigned int txs;
   int i,txsymb;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe));
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
 
   int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
   int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);

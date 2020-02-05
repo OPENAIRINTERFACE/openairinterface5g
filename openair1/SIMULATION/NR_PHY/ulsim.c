@@ -594,7 +594,7 @@ int main(int argc, char **argv)
 
       ///////////
       ////////////////////////////////////////////////////
-      tx_offset = slot*frame_parms->samples_per_slot;
+      tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
 
       txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
               frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);

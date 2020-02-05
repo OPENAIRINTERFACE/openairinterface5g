@@ -740,7 +740,7 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
       }
-      int tx_offset = slot*frame_parms->samples_per_slot;
+      int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
       if (n_trials==1) printf("samples_per_slot_wCP = %d\n", frame_parms->samples_per_slot_wCP);
       
       //TODO: loop over slots
@@ -769,13 +769,13 @@ int main(int argc, char **argv)
       if (output_fd) 
 	fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
       
-      int txlev = signal_energy(&txdata[0][(slot*frame_parms->samples_per_slot)+5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+      int txlev = signal_energy(&txdata[0][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 				frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
       
       //  if (n_trials==1) printf("txlev %d (%f)\n",txlev,10*log10((double)txlev));
       
-      for (i=(slot * frame_parms->samples_per_slot); 
-	   i<((slot+1) * frame_parms->samples_per_slot); 
+      for (i=(frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)); 
+	   i<(frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0)); 
 	   i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	  r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
@@ -791,8 +791,8 @@ int main(int argc, char **argv)
       sigma2    = pow(10, sigma2_dB/10);
       if (n_trials==1) printf("sigma2 %f (%f dB), txlev %f (factor %f)\n",sigma2,sigma2_dB,10*log10((double)txlev),(double)(double)UE->frame_parms.ofdm_symbol_size/(12*rel15.rbSize));
       
-      for (i=(slot * frame_parms->samples_per_slot); 
-	   i<((slot+1) * frame_parms->samples_per_slot); 
+      for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
+	   i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);
 	   i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
