@@ -337,7 +337,12 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
-  fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + config->ssb_table.ssb_subcarrier_offset);
+  uint8_t sco = 0;
+  if (((fp->freq_range == nr_FR1) && (config->ssb_table.ssb_subcarrier_offset<24)) ||
+      ((fp->freq_range == nr_FR2) && (config->ssb_table.ssb_subcarrier_offset<12)) )
+    sco = config->ssb_table.ssb_subcarrier_offset;
+
+  fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco);
 
   // definition of Lmax according to ts 38.213 section 4.1
   if (fp->dl_CarrierFreq < 6e9) {
