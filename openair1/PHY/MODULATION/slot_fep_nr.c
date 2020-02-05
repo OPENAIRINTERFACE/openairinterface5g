@@ -109,7 +109,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   if (no_prefix) {
     slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_slot) * (Ns);
   } else {
-    slot_offset = frame_parms->get_samples_per_slot(Ns,frame_parms);
+    slot_offset = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
   }
 
   /*if (l<0 || l>=7-frame_parms->Ncp) {
@@ -258,7 +258,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
       break;
   }
   
-  slot_offset   = frame_parms->get_samples_per_slot(Ns,frame_parms);
+  slot_offset   = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
 
   
   if(symbol == 0)
