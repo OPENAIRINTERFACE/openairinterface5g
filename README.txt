@@ -46,6 +46,7 @@ openairinterface5g
 
 RELEASE NOTES:
 
+v1.2.1 -> February 2020. Bug fix for mutex lock for wake-up signal
 v1.2.0 -> January 2020. This version adds the following implemented features:
            * LTE-M : eNB support for Mode A repetitions
              - PUSCH CE - 8 Repetitions
