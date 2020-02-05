@@ -76,7 +76,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {return(0);}
 
 openair0_config_t openair0_cfg[MAX_CARDS];
-int nfapi_mode=0;
+uint8_t nfapi_mode=0;
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
 

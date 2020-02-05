@@ -344,8 +344,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   rel15_ul->ulsch_pdu_rel15.number_rbs     = ulsch_pdu->rb_size;
   rel15_ul->ulsch_pdu_rel15.start_symbol   = ulsch_pdu->start_symbol_index;
   rel15_ul->ulsch_pdu_rel15.number_symbols = ulsch_pdu->nr_of_symbols;
-  rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6; //where should this come from?
-  rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1; //where should this come from?
+  rel15_ul->ulsch_pdu_rel15.length_dmrs    = gNB->dmrs_UplinkConfig.pusch_maxLength;
   rel15_ul->ulsch_pdu_rel15.Qm             = ulsch_pdu->qam_mod_order;
   rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
   rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;

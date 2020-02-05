@@ -83,6 +83,7 @@
 
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
+#include "rrc_eNB_M2AP.h"
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
@@ -2792,6 +2793,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   uint8_t   buffer[RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
+  MessageDef *message_p = NULL;
+
   /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
   eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
   struct LTE_PhysicalConfigDedicated    **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
@@ -2977,43 +2980,28 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer =
     LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
+  /* CDRX Configuration */
+  mac_MainConfig->drx_Config = NULL;
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+  LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX Configuration */
-    // Need to check if UE is a BR UE
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
-    int UE_id = find_UE_id(module_id, rnti);
-    eNB_MAC_INST *mac = RC.mac[module_id];
-    UE_list_t *UE_list = &(mac->UE_list);
+  /* Process the IE drx_Config */    
+  if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
+    mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
 
-    if (UE_id != -1) {
-      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) &&
-          (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-        // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-        LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
-
-        /* Process the IE drx_Config */
-        if (cc_id < MAX_NUM_CCs) {
-          mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-        } else {
-          LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-        }
-
-        /* Set timers and thresholds values in local MAC context of UE */
-        eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
-        LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        mac_MainConfig->drx_Config = NULL;
-      }
-    } else { // UE_id invalid
-      LOG_E(RRC, "Invalid UE_id found!\n");
-      mac_MainConfig->drx_Config = NULL;
+    if (mac_MainConfig->drx_Config == NULL) {
+      LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+    } else {
+      /* Send DRX configuration to MAC task to configure timers of local UE context */
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
+      RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+      itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
+      LOG_D(RRC, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
     }
-  } else { // No CDRX with the CU/DU split in this version
-    LOG_E(RRC, "CU/DU split activated\n");
-    mac_MainConfig->drx_Config = NULL;
   }
+  /* End of CDRX configuration */
 
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2 = 2*SR
@@ -3508,6 +3496,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   uint8_t   buffer[RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
+  MessageDef *message_p = NULL;
+
   /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
   eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
   struct LTE_PhysicalConfigDedicated    **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
@@ -3553,8 +3543,34 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
   int                                    measurements_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
-  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
-  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
+
+#ifdef CBA // Contention Based Access
+  uint8_t                            *cba_RNTI_buf;
+  cba_RNTI = CALLOC(1, sizeof(LTE_C_RNTI_t));
+  cba_RNTI_buf = CALLOC(1, 2 * sizeof(uint8_t));
+  cba_RNTI->buf = cba_RNTI_buf;
+  cba_RNTI->size = 2;
+  cba_RNTI->bits_unused = 0;
+
+  /* Associate UEs to the CBA groups as a function of their UE id */
+  if (rrc_inst->num_active_cba_groups) {
+    cba_RNTI->buf[0] = rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups] & 0xff;
+    cba_RNTI->buf[1] = 0xff;
+    LOG_D(RRC, "[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n",
+          enb_mod_idP,
+          frameP,
+          rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups],
+          ue_mod_idP % rrc_inst->num_active_cba_groups, ue_mod_idP);
+  } else {
+    cba_RNTI->buf[0] = 0x0;
+    cba_RNTI->buf[1] = 0x0;
+    LOG_D(RRC, "[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n",
+          enb_mod_idP,
+          frameP,
+          ue_mod_idP);
+  }
+#endif
+
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION,
     T_INT(ctxt_pP->module_id),
     T_INT(ctxt_pP->frame),
@@ -3690,42 +3706,30 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX Configuration */
-    // Need to check if UE is a BR UE
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
-    int UE_id = find_UE_id(module_id, rnti);
-    eNB_MAC_INST *mac = RC.mac[module_id];
-    UE_list_t *UE_list = &(mac->UE_list);
-
-    if (UE_id != -1) {
-      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) &&
-          (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-        // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-        LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
-
-        /* Process the IE drx_Config */
-        if (cc_id < MAX_NUM_CCs) {
-          mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-        } else {
-          LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-        }
-
-        /* Set timers and thresholds values in local MAC context of UE */
-        eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
-        LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        mac_MainConfig->drx_Config = NULL;
-      }
-    } else { // UE_id invalid
-      LOG_E(RRC, "Invalid UE_id found!\n");
-      mac_MainConfig->drx_Config = NULL;
+  /* CDRX Configuration */
+  mac_MainConfig->drx_Config = NULL;
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
+  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
+  LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
+  
+  /* Process the IE drx_Config */
+  if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
+    mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+  
+    if (mac_MainConfig->drx_Config == NULL) {
+      LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+    } else {
+      /* Send DRX configuration to MAC task to configure timers of local UE context */
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
+      RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+      itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
+      LOG_D(RRC, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
     }
-  } else { // No CDRX with the CU/DU split in this version
-    LOG_E(RRC, "CU/DU split activated\n");
-    mac_MainConfig->drx_Config = NULL;
   }
+  /* End of CDRX configuration */
 
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2 = 2*SR
@@ -6117,26 +6121,31 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   LTE_DRB_ToReleaseList_t            *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   LTE_DRB_Identity_t                 *drb_id_p      = NULL;
+
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
 
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX: activated if ack was expected */
-    int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+  /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+
+  if (NODE_IS_MONOLITHIC(RC.rrc[module_id]->node_type)) {
+    int UE_id_mac = find_UE_id(module_id, rnti);
 
     if (UE_id_mac == -1) {
-      LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ue_context_pP->ue_context.rnti);
+      LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
       return;
     }
 
-    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
 
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
       UE_scheduling_control->cdrx_waiting_ack = FALSE;
-      UE_scheduling_control->cdrx_configured = TRUE;
+      UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration is received
       LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
     }
-  } // No CDRX with the CU/DU split in this version of the code
+  }
+  /* End of CDRX processing */
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
     T_INT(ctxt_pP->module_id),
@@ -8735,6 +8744,43 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     case RRC_SUBFRAME_PROCESS:
       rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
       break;
+
+    case M2AP_SETUP_RESP:
+       rrc_eNB_process_M2AP_SETUP_RESP(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_SETUP_RESP(msg_p));
+      break;
+
+    case M2AP_MBMS_SCHEDULING_INFORMATION:
+       rrc_eNB_process_M2AP_MBMS_SCHEDULING_INFORMATION(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_MBMS_SCHEDULING_INFORMATION(msg_p));
+       break;
+
+    case M2AP_MBMS_SESSION_START_REQ:
+       rrc_eNB_process_M2AP_MBMS_SESSION_START_REQ(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_MBMS_SESSION_START_REQ(msg_p));
+       break;
+
+    case M2AP_MBMS_SESSION_STOP_REQ:
+       rrc_eNB_process_M2AP_MBMS_SESSION_STOP_REQ(&ctxt,&M2AP_MBMS_SESSION_STOP_REQ(msg_p));
+       break;
+
+    case M2AP_RESET:
+       rrc_eNB_process_M2AP_RESET(&ctxt,&M2AP_RESET(msg_p));
+       break;
+
+    case M2AP_ENB_CONFIGURATION_UPDATE_ACK:
+       rrc_eNB_process_M2AP_ENB_CONFIGURATION_UPDATE_ACK(&ctxt,&M2AP_ENB_CONFIGURATION_UPDATE_ACK(msg_p));
+       break;
+
+    case M2AP_ERROR_INDICATION:
+       rrc_eNB_process_M2AP_ERROR_INDICATION(&ctxt,&M2AP_ERROR_INDICATION(msg_p));
+       break;
+
+    case M2AP_MBMS_SERVICE_COUNTING_REQ:
+       rrc_eNB_process_M2AP_MBMS_SERVICE_COUNTING_REQ(&ctxt,&M2AP_MBMS_SERVICE_COUNTING_REQ(msg_p));
+       break;
+
+    case M2AP_MCE_CONFIGURATION_UPDATE:
+       rrc_eNB_process_M2AP_MCE_CONFIGURATION_UPDATE(&ctxt,&M2AP_MCE_CONFIGURATION_UPDATE(msg_p));
+       break;
+
 
     default:
       LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);

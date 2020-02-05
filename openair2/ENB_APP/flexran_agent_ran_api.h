@@ -44,6 +44,7 @@
 #include "RRC/LTE/rrc_eNB_UE_context.h"
 #include "PHY/phy_extern.h"
 #include "common/utils/LOG/log.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 /****************************
  * get generic info from RAN
@@ -651,6 +652,9 @@ int flexran_agent_rrc_gtp_get_teid_enb(mid_t mod_id, rnti_t rnti, int index);
 /* Get the TEID at the SGW for UE */
 int flexran_agent_rrc_gtp_get_teid_sgw(mid_t mod_id, rnti_t rnti, int index);
 
+/* gets the UEs S1AP ID at eNodeB, stored in RRC */
+uint32_t flexran_get_rrc_enb_ue_s1ap_id(mid_t mod_id, rnti_t rnti);
+
 /************************** Slice configuration **************************/
 
 /* Get the DL slice ID for a UE */
@@ -803,6 +807,31 @@ char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx);
 /* Set the scheduler name for a slice in UL */
 int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name);
 
+/************************** S1AP **************************/
+/* Get the number of MMEs to be connected */
+int flexran_get_s1ap_mme_pending(mid_t mod_id);
+
+/* Get the number of connected MMEs */
+int flexran_get_s1ap_mme_connected(mid_t mod_id);
+
+/* Get the eNB S1AP IP address */
+char* flexran_get_s1ap_enb_s1_ip(mid_t mod_id);
+
+/* Get the name of the eNB */
+char* flexran_get_s1ap_enb_name(mid_t mod_id);
+
+/* Get the number of connected MMEs to this eNB */
+int flexran_get_s1ap_nb_mme(mid_t mod_id);
+
+/* Get the number of connected UEs to this eNB */
+int flexran_get_s1ap_nb_ue(mid_t mod_id);
+
+/* Get the S1AP MME conf */
+int flexran_get_s1ap_mme_conf(mid_t mod_id, mid_t mme_index, Protocol__FlexS1apMme * mme_conf);
+
+/* Get the S1AP UE conf */
+int flexran_get_s1ap_ue(mid_t mod_id, rnti_t rnti, Protocol__FlexS1apUe * ue_conf);
+
 /********************* general information *****************/
 /* get an ID for this BS (or part of a BS) */
 uint64_t flexran_get_bs_id(mid_t mod_id);
@@ -814,4 +843,9 @@ size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
 
 /* get the capabilities supported by the underlying network function as a bit
  * mask. */
-uint16_t flexran_get_capabilities_mask(mid_t mod_id);
+uint32_t flexran_get_capabilities_mask(mid_t mod_id);
+
+/* get the splits used by the underlying network function,
+ * return the number and stores list of this length in splits. If there are
+ * zero capabilities, splits will be NULL */
+size_t flexran_get_splits(mid_t mod_id, Protocol__FlexBsSplit **splits);

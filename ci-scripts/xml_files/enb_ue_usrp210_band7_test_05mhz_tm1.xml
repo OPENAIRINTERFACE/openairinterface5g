@@ -109,8 +109,8 @@
 
 	<testCase id="040642">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - UL/8Mbps/UDP)(30 sec)</desc>
-		<iperf_args>-c 10.0.1.1 -u -b 8M -t 30 -i 1 -fm -B 10.0.1.2 -R</iperf_args>
+		<desc>iperf (5MHz - UL/4Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-c 10.0.1.1 -u -b 4M -t 30 -i 1 -fm -B 10.0.1.2 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>balanced</iperf_profile>
 	</testCase>

@@ -1,0 +1,1360 @@
+-- M3AP-PDU-Descriptions.asn
+--
+-- 3GPP TS 36.444 V13.2.0 (2016-03)
+-- http://www.3gpp.org/ftp/Specs/archive/36_series/36.444/36444-d20.zip
+--
+-- 9.3.3	Elementary Procedure Definitions
+--
+
+-- **************************************************************
+--
+-- Elementary Procedure definitions
+--
+-- **************************************************************
+
+M3AP-PDU-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+eps-Access (21) modules (3) m3ap (5) version1 (1) m3ap-PDU-Descriptions (0) }
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+-- **************************************************************
+--
+-- IE parameter types from other modules.
+--
+-- **************************************************************
+
+IMPORTS
+	Criticality,
+	ProcedureCode
+FROM M3AP-CommonDataTypes
+
+	MBMSSessionStartRequest,
+	MBMSSessionStartResponse,
+	MBMSSessionStartFailure,
+	MBMSSessionStopRequest,
+	MBMSSessionStopResponse,
+	MBMSSessionUpdateRequest,
+	MBMSSessionUpdateResponse,
+	MBMSSessionUpdateFailure,
+	MCEConfigurationUpdate,
+	MCEConfigurationUpdateAcknowledge,
+	MCEConfigurationUpdateFailure,
+	M3SetupRequest,
+	M3SetupResponse,
+	M3SetupFailure,
+	ErrorIndication,
+	Reset,
+	ResetAcknowledge,
+	PrivateMessage
+
+FROM M3AP-PDU-Contents
+
+	id-mBMSsessionStart,
+	id-mBMSsessionStop,
+	id-mBMSsessionUpdate,
+	id-mCEConfigurationUpdate,
+	id-m3Setup,
+	id-errorIndication,
+	id-Reset,
+	id-privateMessage
+FROM M3AP-Constants;
+
+
+-- **************************************************************
+--
+-- Interface Elementary Procedure Class
+--
+-- **************************************************************
+
+M3AP-ELEMENTARY-PROCEDURE ::= CLASS {
+	&InitiatingMessage				,
+	&SuccessfulOutcome				OPTIONAL,
+	&UnsuccessfulOutcome				OPTIONAL,
+	&procedureCode			ProcedureCode 	UNIQUE,
+	&criticality			Criticality 	DEFAULT ignore
+}
+WITH SYNTAX {
+	INITIATING MESSAGE		&InitiatingMessage
+	[SUCCESSFUL OUTCOME		&SuccessfulOutcome]
+	[UNSUCCESSFUL OUTCOME		&UnsuccessfulOutcome]
+	PROCEDURE CODE			&procedureCode
+	[CRITICALITY			&criticality]
+}
+
+-- **************************************************************
+--
+-- Interface PDU Definition
+--
+-- **************************************************************
+
+M3AP-PDU ::= CHOICE {
+	initiatingMessage	InitiatingMessage,
+	successfulOutcome	SuccessfulOutcome,
+	unsuccessfulOutcome	UnsuccessfulOutcome,
+	...
+}
+
+InitiatingMessage ::= SEQUENCE {
+	procedureCode	M3AP-ELEMENTARY-PROCEDURE.&procedureCode		({M3AP-ELEMENTARY-PROCEDURES}),
+	criticality		M3AP-ELEMENTARY-PROCEDURE.&criticality			({M3AP-ELEMENTARY-PROCEDURES}{@procedureCode}),
+	value			M3AP-ELEMENTARY-PROCEDURE.&InitiatingMessage	({M3AP-ELEMENTARY-PROCEDURES}{@procedureCode})
+}
+
+SuccessfulOutcome ::= SEQUENCE {
+	procedureCode	M3AP-ELEMENTARY-PROCEDURE.&procedureCode		({M3AP-ELEMENTARY-PROCEDURES}),
+	criticality		M3AP-ELEMENTARY-PROCEDURE.&criticality			({M3AP-ELEMENTARY-PROCEDURES}{@procedureCode}),
+	value			M3AP-ELEMENTARY-PROCEDURE.&SuccessfulOutcome	({M3AP-ELEMENTARY-PROCEDURES}{@procedureCode})
+}
+
+UnsuccessfulOutcome ::= SEQUENCE {
+	procedureCode	M3AP-ELEMENTARY-PROCEDURE.&procedureCode		({M3AP-ELEMENTARY-PROCEDURES}),
+	criticality		M3AP-ELEMENTARY-PROCEDURE.&criticality			({M3AP-ELEMENTARY-PROCEDURES}{@procedureCode}),
+	value			M3AP-ELEMENTARY-PROCEDURE.&UnsuccessfulOutcome	({M3AP-ELEMENTARY-PROCEDURES}{@procedureCode})
+}
+
+
+-- **************************************************************
+--
+-- Interface Elementary Procedure List
+--
+-- **************************************************************
+
+M3AP-ELEMENTARY-PROCEDURES M3AP-ELEMENTARY-PROCEDURE ::= {
+	M3AP-ELEMENTARY-PROCEDURES-CLASS-1			|
+	M3AP-ELEMENTARY-PROCEDURES-CLASS-2			,
+	...
+}
+
+M3AP-ELEMENTARY-PROCEDURES-CLASS-1 M3AP-ELEMENTARY-PROCEDURE ::= {
+	mBMSsessionStart											|
+	mBMSsessionStop												|
+	mBMSsessionUpdate											|
+	reset														|
+	m3Setup														|
+	mCEConfigurationUpdate										,
+	...
+}
+
+M3AP-ELEMENTARY-PROCEDURES-CLASS-2 M3AP-ELEMENTARY-PROCEDURE ::= {
+	errorIndication							|
+	privateMessage							,
+	...
+
+}
+
+
+-- **************************************************************
+--
+-- Interface Elementary Procedures
+--
+-- **************************************************************
+
+mBMSsessionStart M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		MBMSSessionStartRequest
+	SUCCESSFUL OUTCOME		MBMSSessionStartResponse
+	UNSUCCESSFUL OUTCOME	MBMSSessionStartFailure
+	PROCEDURE CODE			id-mBMSsessionStart
+	CRITICALITY				reject
+}
+
+mBMSsessionStop M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		MBMSSessionStopRequest
+	SUCCESSFUL OUTCOME		MBMSSessionStopResponse
+	PROCEDURE CODE			id-mBMSsessionStop
+	CRITICALITY				reject
+}
+
+mBMSsessionUpdate M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		MBMSSessionUpdateRequest
+	SUCCESSFUL OUTCOME		MBMSSessionUpdateResponse
+	UNSUCCESSFUL OUTCOME	MBMSSessionUpdateFailure
+	PROCEDURE CODE			id-mBMSsessionUpdate
+	CRITICALITY				reject
+}
+
+errorIndication M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		ErrorIndication
+	PROCEDURE CODE			id-errorIndication
+	CRITICALITY				ignore
+}
+
+reset M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE	Reset
+	SUCCESSFUL OUTCOME	ResetAcknowledge
+	PROCEDURE CODE		id-Reset
+	CRITICALITY			reject
+}
+
+privateMessage			M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		PrivateMessage
+	PROCEDURE CODE			id-privateMessage
+	CRITICALITY				ignore
+}
+
+mCEConfigurationUpdate M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		MCEConfigurationUpdate
+	SUCCESSFUL OUTCOME		MCEConfigurationUpdateAcknowledge
+	UNSUCCESSFUL OUTCOME	MCEConfigurationUpdateFailure
+	PROCEDURE CODE			id-mCEConfigurationUpdate
+	CRITICALITY				reject
+}
+
+
+m3Setup M3AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		M3SetupRequest
+	SUCCESSFUL OUTCOME		M3SetupResponse
+	UNSUCCESSFUL OUTCOME	M3SetupFailure
+	PROCEDURE CODE			id-m3Setup
+	CRITICALITY				reject
+}
+
+END
+
+-- M3AP-PDU-Contents.asn
+--
+-- 3GPP TS 36.444 V13.2.0 (2016-03)
+-- http://www.3gpp.org/ftp/Specs/archive/36_series/36.444/36444-d20.zip
+--
+-- 9.3.4	PDU Definitions
+--
+
+-- **************************************************************
+--
+-- PDU definitions for M3AP.
+--
+-- **************************************************************
+
+M3AP-PDU-Contents {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+eps-Access (21) modules (3) m3ap (5) version1 (1) m3ap-PDU-Contents (1) }
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+-- **************************************************************
+--
+-- IE parameter types from other modules.
+--
+-- **************************************************************
+
+IMPORTS
+
+	Absolute-Time-ofMBMS-Data,
+	Cause,
+	CriticalityDiagnostics,
+	Global-MCE-ID,
+	MBMS-E-RAB-QoS-Parameters,
+	MBMS-Service-associatedLogicalM3-ConnectionItem,
+	MBMS-Service-Area,
+	MBMSServiceArea1,
+	MBMS-Session-Duration,
+	MBMS-Session-ID,
+	MCE-MBMS-M3AP-ID,
+	MCEname,
+	MinimumTimeToMBMSDataTransfer,
+	MME-MBMS-M3AP-ID,
+	TimeToWait,
+	TMGI,
+	TNL-Information,
+	Reestablishment,
+	MBMS-Cell-List
+
+FROM M3AP-IEs
+
+	PrivateIE-Container{},
+	ProtocolExtensionContainer{},
+	ProtocolIE-Container{},
+	ProtocolIE-ContainerList{},
+	ProtocolIE-ContainerPair{},
+	ProtocolIE-ContainerPairList{},
+	ProtocolIE-Single-Container{},
+	M3AP-PRIVATE-IES,
+	M3AP-PROTOCOL-EXTENSION,
+	M3AP-PROTOCOL-IES,
+	M3AP-PROTOCOL-IES-PAIR
+FROM M3AP-Containers
+
+	id-AllocationAndRetentionPriority,
+	id-MCE-MBMS-M3AP-ID,
+	id-MME-MBMS-M3AP-ID,
+	id-TMGI,
+	id-MBMS-Session-ID,
+	id-MBMS-E-RAB-QoS-Parameters,
+	id-MBMS-Session-Duration,
+	id-MBMS-Service-Area,
+	id-TNL-Information,
+	id-Alternative-TNL-Information,
+	id-CriticalityDiagnostics,
+	id-Cause,
+	id-MBMS-Service-Area-List,
+	id-MBMS-Service-Area-List-Item,
+	id-TimeToWait,
+	id-ResetType,
+	id-MBMS-Service-associatedLogicalM3-ConnectionItem,
+	id-MBMS-Service-associatedLogicalM3-ConnectionListResAck,
+	id-MBMSServiceAreaList,
+	id-MinimumTimeToMBMSDataTransfer,
+	id-Time-ofMBMS-DataStop,
+	id-Time-ofMBMS-DataTransfer,
+	id-Global-MCE-ID,
+	id-MCEname,
+	id-Reestablishment,
+	id-MBMS-Cell-List,
+	maxnoofMBMSServiceAreaIdentitiesPerMCE,
+	maxnooferrors,
+	maxNrOfIndividualM3ConnectionsToReset
+
+FROM M3AP-Constants;
+
+-- **************************************************************
+--
+-- MBMS SESSION START REQUEST
+--
+-- **************************************************************
+
+MBMSSessionStartRequest ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{MBMSSessionStartRequest-IEs}},
+	...
+}
+
+MBMSSessionStartRequest-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY reject	TYPE MME-MBMS-M3AP-ID						PRESENCE mandatory}|
+	{ ID id-TMGI								CRITICALITY reject	TYPE TMGI		 							PRESENCE mandatory}|
+	{ ID id-MBMS-Session-ID						CRITICALITY ignore	TYPE MBMS-Session-ID						PRESENCE optional}|
+	{ ID id-MBMS-E-RAB-QoS-Parameters			CRITICALITY reject	TYPE MBMS-E-RAB-QoS-Parameters			PRESENCE mandatory}|
+	{ ID id-MBMS-Session-Duration				CRITICALITY reject	TYPE MBMS-Session-Duration					PRESENCE mandatory}|
+	{ ID id-MBMS-Service-Area					CRITICALITY reject	TYPE MBMS-Service-Area						PRESENCE mandatory}|
+	{ ID id-MinimumTimeToMBMSDataTransfer		CRITICALITY reject	TYPE MinimumTimeToMBMSDataTransfer		PRESENCE mandatory}|
+	{ ID id-TNL-Information						CRITICALITY reject	TYPE TNL-Information						PRESENCE mandatory}|
+	{ ID id-Time-ofMBMS-DataTransfer			CRITICALITY ignore	TYPE Absolute-Time-ofMBMS-Data			PRESENCE optional}|
+	{ ID id-Reestablishment						CRITICALITY ignore	TYPE Reestablishment						PRESENCE optional}|
+	{ ID id-Alternative-TNL-Information			CRITICALITY ignore	TYPE TNL-Information						PRESENCE optional}|
+	{ ID id-MBMS-Cell-List						CRITICALITY reject	TYPE MBMS-Cell-List							PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- MBMS SESSION START RESPONSE
+--
+-- **************************************************************
+
+MBMSSessionStartResponse ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{ MBMSSessionStartResponse-IEs}},
+	...
+}
+
+MBMSSessionStartResponse-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-MCE-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MCE-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-CriticalityDiagnostics				CRITICALITY ignore	TYPE CriticalityDiagnostics				PRESENCE optional  },
+	...
+}
+
+
+-- **************************************************************
+--
+-- MBMS SESSION START FAILURE
+--
+-- **************************************************************
+
+MBMSSessionStartFailure ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{ MBMSSessionStartFailure-IEs}},
+	...
+}
+
+MBMSSessionStartFailure-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-Cause								CRITICALITY ignore	TYPE Cause								PRESENCE mandatory } |
+	{ ID id-CriticalityDiagnostics				CRITICALITY ignore	TYPE CriticalityDiagnostics				PRESENCE optional  },
+	...
+}
+
+
+-- **************************************************************
+--
+-- MBMS SESSION STOP REQUEST
+--
+-- **************************************************************
+
+MBMSSessionStopRequest ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{MBMSSessionStopRequest-IEs}},
+	...
+}
+
+MBMSSessionStopRequest-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID				CRITICALITY reject	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory}|
+	{ ID id-MCE-MBMS-M3AP-ID				CRITICALITY reject	TYPE MCE-MBMS-M3AP-ID					PRESENCE mandatory}|
+	{ ID id-Time-ofMBMS-DataStop			CRITICALITY ignore	TYPE Absolute-Time-ofMBMS-Data			PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- MBMS SESSION STOP RESPONSE
+--
+-- **************************************************************
+
+MBMSSessionStopResponse ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{ MBMSSessionStopResponse-IEs}},
+	...
+}
+
+MBMSSessionStopResponse-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-MCE-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MCE-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-CriticalityDiagnostics				CRITICALITY ignore	TYPE CriticalityDiagnostics				PRESENCE optional  } ,
+	...
+}
+
+-- **************************************************************
+--
+-- MBMS SESSION UPDATE REQUEST
+--
+-- **************************************************************
+
+MBMSSessionUpdateRequest ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{MBMSSessionUpdateRequest-IEs}},
+	...
+}
+
+MBMSSessionUpdateRequest-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY reject	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory}|
+	{ ID id-MCE-MBMS-M3AP-ID					CRITICALITY reject	TYPE MCE-MBMS-M3AP-ID					PRESENCE mandatory}|
+	{ ID id-TMGI								CRITICALITY reject	TYPE TMGI		 						PRESENCE mandatory}|
+	{ ID id-MBMS-Session-ID						CRITICALITY ignore	TYPE MBMS-Session-ID					PRESENCE optional}|
+	{ ID id-MBMS-E-RAB-QoS-Parameters			CRITICALITY reject	TYPE MBMS-E-RAB-QoS-Parameters		PRESENCE mandatory}|
+	{ ID id-MBMS-Session-Duration				CRITICALITY reject	TYPE MBMS-Session-Duration				PRESENCE mandatory}|
+	{ ID id-MBMS-Service-Area					CRITICALITY ignore	TYPE MBMS-Service-Area					PRESENCE optional}|
+	{ ID id-MinimumTimeToMBMSDataTransfer		CRITICALITY reject	TYPE MinimumTimeToMBMSDataTransfer	PRESENCE mandatory}|
+	{ ID id-TNL-Information						CRITICALITY ignore	TYPE TNL-Information					PRESENCE optional}|
+	{ ID id-Time-ofMBMS-DataTransfer			CRITICALITY ignore	TYPE Absolute-Time-ofMBMS-Data		PRESENCE optional}|
+	{ ID id-MBMS-Cell-List						CRITICALITY reject	TYPE MBMS-Cell-List						PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- MBMS SESSION UPDATE RESPONSE
+--
+-- **************************************************************
+
+MBMSSessionUpdateResponse ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{ MBMSSessionUpdateResponse-IEs}},
+	...
+}
+
+MBMSSessionUpdateResponse-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-MCE-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MCE-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-CriticalityDiagnostics				CRITICALITY ignore	TYPE CriticalityDiagnostics				PRESENCE optional  },
+	...
+}
+
+-- **************************************************************
+--
+-- MBMS SESSION UPDATE FAILURE
+--
+-- **************************************************************
+
+MBMSSessionUpdateFailure ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{ MBMSSessionUpdateFailure-IEs}},
+	...
+}
+
+MBMSSessionUpdateFailure-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MME-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-MCE-MBMS-M3AP-ID					CRITICALITY ignore	TYPE MCE-MBMS-M3AP-ID					PRESENCE mandatory } |
+	{ ID id-Cause								CRITICALITY ignore	TYPE Cause								PRESENCE mandatory } |
+	{ ID id-CriticalityDiagnostics				CRITICALITY ignore	TYPE CriticalityDiagnostics				PRESENCE optional  },
+	...
+}
+
+-- **************************************************************
+--
+-- ERROR INDICATION
+--
+-- **************************************************************
+
+ErrorIndication ::= SEQUENCE {
+	protocolIEs                     ProtocolIE-Container       {{ErrorIndication-IEs}},
+	...
+}
+
+ErrorIndication-IEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MME-MBMS-M3AP-ID				CRITICALITY ignore	TYPE MME-MBMS-M3AP-ID				PRESENCE optional	} |
+	{ ID id-MCE-MBMS-M3AP-ID				CRITICALITY ignore	TYPE MCE-MBMS-M3AP-ID				PRESENCE optional	} |
+	{ ID id-Cause							CRITICALITY ignore	TYPE Cause						PRESENCE optional	} |
+	{ ID id-CriticalityDiagnostics			CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	} ,
+	...
+}
+
+
+-- **************************************************************
+--
+-- Reset
+--
+-- **************************************************************
+
+Reset ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {ResetIEs} },
+	...
+}
+
+ResetIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-ResetType				CRITICALITY reject	TYPE ResetType			PRESENCE mandatory	},
+	...
+}
+
+ResetType ::= CHOICE {
+	m3-Interface		ResetAll,
+	partOfM3-Interface		MBMS-Service-associatedLogicalM3-ConnectionListRes,
+	...
+}
+
+
+
+ResetAll ::= ENUMERATED {
+	reset-all,
+	...
+}
+
+MBMS-Service-associatedLogicalM3-ConnectionListRes ::= SEQUENCE (SIZE(1.. maxNrOfIndividualM3ConnectionsToReset)) OF ProtocolIE-Single-Container { { MBMS-Service-associatedLogicalM3-ConnectionItemRes } }
+
+MBMS-Service-associatedLogicalM3-ConnectionItemRes 	M3AP-PROTOCOL-IES ::= {
+	{ ID id-MBMS-Service-associatedLogicalM3-ConnectionItem	 CRITICALITY reject 	TYPE MBMS-Service-associatedLogicalM3-ConnectionItem 	PRESENCE mandatory },
+	...
+}
+
+
+-- **************************************************************
+--
+-- Reset Acknowledge
+--
+-- **************************************************************
+
+ResetAcknowledge ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {ResetAcknowledgeIEs} },
+	...
+}
+
+ResetAcknowledgeIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-MBMS-Service-associatedLogicalM3-ConnectionListResAck		CRITICALITY ignore	TYPE MBMS-Service-associatedLogicalM3-ConnectionListResAck			PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional	},
+	...
+}
+
+MBMS-Service-associatedLogicalM3-ConnectionListResAck ::= SEQUENCE (SIZE(1.. maxNrOfIndividualM3ConnectionsToReset)) OF ProtocolIE-Single-Container { { MBMS-Service-associatedLogicalM3-ConnectionItemResAck } }
+
+MBMS-Service-associatedLogicalM3-ConnectionItemResAck	M3AP-PROTOCOL-IES ::= {
+	{ ID id-MBMS-Service-associatedLogicalM3-ConnectionItem	CRITICALITY ignore	TYPE MBMS-Service-associatedLogicalM3-ConnectionItem	PRESENCE mandatory },
+	...
+}
+
+-- **************************************************************
+--
+-- PRIVATE MESSAGE
+--
+-- **************************************************************
+
+PrivateMessage ::= SEQUENCE {
+	privateIEs		PrivateIE-Container  {{PrivateMessage-IEs}},
+	...
+}
+
+PrivateMessage-IEs M3AP-PRIVATE-IES ::= {
+	...
+}
+
+
+-- **************************************************************
+--
+-- M3 SETUP ELEMENTARY PROCEDURE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- M3 Setup Request
+--
+-- **************************************************************
+
+M3SetupRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {M3SetupRequestIEs} },
+	...
+}
+
+M3SetupRequestIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-Global-MCE-ID			CRITICALITY reject	TYPE Global-MCE-ID					PRESENCE mandatory}|
+	{ ID id-MCEname					CRITICALITY ignore	TYPE MCEname						PRESENCE optional}|
+	{ ID id-MBMSServiceAreaList		CRITICALITY reject	TYPE MBMSServiceAreaListItem		PRESENCE mandatory},
+	...
+}
+
+
+MBMSServiceAreaListItem ::= SEQUENCE (SIZE(1..maxnoofMBMSServiceAreaIdentitiesPerMCE)) OF MBMSServiceArea1
+
+
+-- **************************************************************
+--
+-- M3 Setup Response
+--
+-- **************************************************************
+
+M3SetupResponse ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {M3SetupResponseIEs} },
+	...
+}
+
+
+M3SetupResponseIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- M3 Setup Failure
+--
+-- **************************************************************
+
+M3SetupFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {M3SetupFailureIEs} },
+	...
+}
+
+M3SetupFailureIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- MCE CONFIGURATION UPDATE ELEMENTARY PROCEDURE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- MCE Configuration Update
+--
+-- **************************************************************
+
+MCEConfigurationUpdate ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {MCEConfigurationUpdateIEs} },
+	...
+}
+
+MCEConfigurationUpdateIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-Global-MCE-ID			CRITICALITY reject	TYPE Global-MCE-ID					PRESENCE optional}|
+	{ ID id-MCEname					CRITICALITY ignore	TYPE MCEname						PRESENCE optional}|
+	{ ID id-MBMSServiceAreaList		CRITICALITY reject	TYPE MBMSServiceAreaListItem		PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- MCE Configuration Update Acknowledge
+--
+-- **************************************************************
+
+MCEConfigurationUpdateAcknowledge ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {MCEConfigurationUpdateAcknowledgeIEs} },
+	...
+}
+
+
+MCEConfigurationUpdateAcknowledgeIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- MCE Configuration Update Failure
+--
+-- **************************************************************
+
+MCEConfigurationUpdateFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {MCEConfigurationUpdateFailureIEs} },
+	...
+}
+
+MCEConfigurationUpdateFailureIEs M3AP-PROTOCOL-IES ::= {
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional},
+	...
+}
+
+END
+
+-- M3AP-IEs.asn
+--
+-- 3GPP TS 36.444 V13.2.0 (2016-03)
+-- http://www.3gpp.org/ftp/Specs/archive/36_series/36.444/36444-d20.zip
+--
+-- 9.3.5	Information Element Definitions
+--
+
+-- **************************************************************
+--
+-- Information Element Definitions
+--
+-- **************************************************************
+
+M3AP-IEs {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+eps-Access (21) modules (3) m3ap (5) version1 (1) m3ap-IEs (2) }
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+	id-AllocationAndRetentionPriority,
+	maxnooferrors,
+	maxnoofCellsforMBMS
+
+FROM M3AP-Constants
+
+	Criticality,
+	ProcedureCode,
+	ProtocolIE-ID,
+	TriggeringMessage
+FROM M3AP-CommonDataTypes
+
+	ProtocolExtensionContainer{},
+	ProtocolIE-Single-Container{},
+	M3AP-PROTOCOL-EXTENSION,
+	M3AP-PROTOCOL-IES
+FROM M3AP-Containers;
+
+-- A
+
+Absolute-Time-ofMBMS-Data			::= BIT STRING (SIZE (64))
+
+AllocationAndRetentionPriority ::= SEQUENCE {
+	priorityLevel				PriorityLevel,
+	pre-emptionCapability		Pre-emptionCapability,
+	pre-emptionVulnerability	Pre-emptionVulnerability,
+	iE-Extensions				ProtocolExtensionContainer { {AllocationAndRetentionPriority-ExtIEs} } OPTIONAL
+}
+
+AllocationAndRetentionPriority-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+-- B
+
+BitRate	::= INTEGER (0..10000000000)
+
+-- C
+
+Cause ::= CHOICE {
+	radioNetwork		CauseRadioNetwork,
+	transport			CauseTransport,
+	nAS					CauseNAS,
+	protocol			CauseProtocol,
+	misc				CauseMisc,
+	...
+}
+
+CauseMisc ::= ENUMERATED {
+	control-processing-overload,
+	not-enough-user-plane-processing-resources,
+	hardware-failure,
+	om-intervention,
+	unspecified,
+	...
+}
+
+CauseNAS ::= ENUMERATED {
+	unspecified,
+	...
+}
+
+CauseProtocol ::= ENUMERATED {
+	transfer-syntax-error,
+	abstract-syntax-error-reject,
+	abstract-syntax-error-ignore-and-notify,
+	message-not-compatible-with-receiver-state,
+	semantic-error,
+	abstract-syntax-error-falsely-constructed-message,
+	unspecified,
+	...
+}
+
+CauseRadioNetwork ::= ENUMERATED {
+	unknown-or-already-allocated-MME-MBMS-M3AP-ID,
+	unknown-or-already-allocated-MCE-MBMS-M3AP-ID,
+	unknown-or-inconsistent-pair-of-MBMS-M3AP-IDs,
+	radio-resources-not-available,
+	invalid-QoS-combination,
+	interaction-with-other-procedure,
+	not-supported-QCI-value,
+	unspecified,
+	...,
+	uninvolved-MCE
+
+}
+
+CauseTransport ::= ENUMERATED {
+	transport-resource-unavailable,
+	unspecified,
+	...
+}
+
+CriticalityDiagnostics ::= SEQUENCE {
+	procedureCode					ProcedureCode					OPTIONAL,
+	triggeringMessage				TriggeringMessage				OPTIONAL,
+	procedureCriticality			Criticality						OPTIONAL,
+	iEsCriticalityDiagnostics		CriticalityDiagnostics-IE-List	OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { {CriticalityDiagnostics-ExtIEs} }	OPTIONAL,
+	...
+}
+
+
+CriticalityDiagnostics-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+CriticalityDiagnostics-IE-List ::= SEQUENCE (SIZE (1..maxnooferrors)) OF
+	SEQUENCE {
+		iECriticality			Criticality,
+		iE-ID					ProtocolIE-ID,
+		typeOfError				TypeOfError,
+		iE-Extensions			ProtocolExtensionContainer { {CriticalityDiagnostics-IE-List-ExtIEs} } OPTIONAL,
+		...
+}
+
+CriticalityDiagnostics-IE-List-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+
+-- D
+-- E
+
+ECGI ::= SEQUENCE {
+	pLMN-Identity				PLMN-Identity,
+	eUTRANcellIdentifier		EUTRANCellIdentifier,
+	iE-Extensions				ProtocolExtensionContainer { {ECGI-ExtIEs} } OPTIONAL,
+	...
+}
+
+ECGI-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+EUTRANCellIdentifier ::= BIT STRING (SIZE (28))
+
+ExtendedMCE-ID ::= OCTET STRING (SIZE(1))
+
+-- F
+-- G
+
+Global-MCE-ID ::= SEQUENCE {
+	pLMN-Identity			PLMN-Identity,
+	mCE-ID					MCE-ID,
+	extendedMCE-ID			ExtendedMCE-ID	OPTIONAL,
+	iE-Extensions			ProtocolExtensionContainer { {GlobalMCE-ID-ExtIEs} } OPTIONAL,
+	...
+}
+
+GlobalMCE-ID-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GBR-QosInformation ::= SEQUENCE {
+	mBMS-E-RAB-MaximumBitrateDL			BitRate,
+	mBMS-E-RAB-GuaranteedBitrateDL		BitRate,
+	iE-Extensions					ProtocolExtensionContainer { { GBR-QosInformation-ExtIEs} } OPTIONAL,
+	...
+}
+
+GBR-QosInformation-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GTP-TEID					::= OCTET STRING (SIZE (4))
+
+-- H
+-- I
+
+IPAddress			::= OCTET STRING (SIZE(4..16, ...))
+
+-- J
+-- K
+-- L
+-- M
+
+MBMS-Cell-List ::= SEQUENCE (SIZE(1.. maxnoofCellsforMBMS)) OF ECGI
+
+MBMS-E-RAB-QoS-Parameters ::= SEQUENCE {
+	qCI								QCI,
+	gbrQosInformation				GBR-QosInformation													OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { MBMS-E-RAB-QoS-Parameters-ExtIEs} }	OPTIONAL,
+	...
+}
+
+MBMS-E-RAB-QoS-Parameters-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+-- Extension for Release 10 ARP support --
+	{ID id-AllocationAndRetentionPriority	CRITICALITY ignore	EXTENSION AllocationAndRetentionPriority	PRESENCE mandatory},
+	...
+}
+
+MBMS-Service-associatedLogicalM3-ConnectionItem ::= SEQUENCE {
+	mME-MBMS-M3AP-ID				MME-MBMS-M3AP-ID OPTIONAL,
+	mCE-MBMS-M3AP-ID				MCE-MBMS-M3AP-ID OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { MBMS-Service-associatedLogicalM3-ConnectionItemExtIEs} } OPTIONAL,
+	...
+}
+
+
+MBMS-Service-associatedLogicalM3-ConnectionItemExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+MBMSServiceArea1 ::= OCTET STRING (SIZE (2))
+
+MBMS-Service-Area			::= OCTET STRING
+
+
+MBMS-Session-Duration ::= OCTET STRING (SIZE (3))
+
+MBMS-Session-ID ::= OCTET STRING (SIZE (1))
+
+
+MCE-MBMS-M3AP-ID			::= INTEGER (0..65535)
+
+MCE-ID ::= OCTET STRING (SIZE(2))
+
+MCEname ::= PrintableString (SIZE (1..150,...))
+
+MinimumTimeToMBMSDataTransfer	::= OCTET STRING (SIZE (1))
+
+MME-MBMS-M3AP-ID		::= INTEGER (0..65535)
+
+-- N
+-- O
+-- P
+
+Pre-emptionCapability ::= ENUMERATED {
+	shall-not-trigger-pre-emption,
+	may-trigger-pre-emption
+}
+
+Pre-emptionVulnerability ::= ENUMERATED {
+	not-pre-emptable,
+	pre-emptable
+}
+
+PriorityLevel	::= INTEGER { spare (0), highest (1), lowest (14), no-priority (15) } (0..15)
+
+PLMN-Identity ::= OCTET STRING (SIZE(3))
+
+-- Q
+
+QCI ::= INTEGER (0..255)
+
+-- R
+
+Reestablishment ::= ENUMERATED {true, ...}
+
+-- S
+-- T
+
+TimeToWait ::= ENUMERATED {v1s, v2s, v5s, v10s, v20s, v60s, ...}
+
+TMGI ::= SEQUENCE {
+	pLMNidentity			PLMN-Identity,
+	serviceID				OCTET STRING (SIZE (3)),
+	iE-Extensions			ProtocolExtensionContainer { {TMGI-ExtIEs} } OPTIONAL
+}
+
+TMGI-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+
+TNL-Information ::= SEQUENCE {
+	iPMCAddress						IPAddress,
+	iPSourceAddress					IPAddress,
+	gTP-DLTEID						GTP-TEID,
+	iE-Extensions					ProtocolExtensionContainer { {TNL-Information-ExtIEs} } OPTIONAL,
+	...
+}
+
+TNL-Information-ExtIEs M3AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+TypeOfError ::= ENUMERATED {
+	not-understood,
+	missing,
+	...
+}
+
+
+-- U
+-- V
+-- W
+-- X
+-- Y
+-- Z
+
+END
+
+-- M3AP-CommonDataTypes.asn
+--
+-- 3GPP TS 36.444 V13.2.0 (2016-03)
+-- http://www.3gpp.org/ftp/Specs/archive/36_series/36.444/36444-d20.zip
+--
+-- 9.3.6	Common Definitions
+--
+
+-- **************************************************************
+--
+-- Common definitions
+--
+-- **************************************************************
+
+M3AP-CommonDataTypes {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+eps-Access (21) modules (3) m3ap (5) version1 (1) m3ap-CommonDataTypes (3)  }
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+-- **************************************************************
+--
+-- Extension constants
+--
+-- **************************************************************
+
+maxPrivateIEs 									INTEGER ::= 65535
+maxProtocolExtensions 							INTEGER ::= 65535
+maxProtocolIEs									INTEGER ::= 65535
+
+-- **************************************************************
+--
+-- Common Data Types
+--
+-- **************************************************************
+
+Criticality		::= ENUMERATED { reject, ignore, notify }
+
+Presence		::= ENUMERATED { optional, conditional, mandatory }
+
+PrivateIE-ID	::= CHOICE {
+	local				INTEGER (0.. maxPrivateIEs),
+	global				OBJECT IDENTIFIER
+}
+
+ProcedureCode		::= INTEGER (0..255)
+
+
+ProtocolIE-ID		::= INTEGER (0..maxProtocolIEs)
+
+
+TriggeringMessage	::= ENUMERATED { initiating-message, successful-outcome, unsuccessful-outcome}
+
+END
+
+-- M3AP-Containers.asn
+--
+-- 3GPP TS 36.444 V13.2.0 (2016-03)
+-- http://www.3gpp.org/ftp/Specs/archive/36_series/36.444/36444-d20.zip
+--
+-- 9.3.8	Container Definitions
+--
+
+-- **************************************************************
+--
+-- Container definitions
+--
+-- **************************************************************
+
+M3AP-Containers {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+eps-Access (21) modules (3) m3ap (5) version1 (1) m3ap-Containers (5)  }
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+-- **************************************************************
+--
+-- IE parameter types from other modules.
+--
+-- **************************************************************
+
+IMPORTS
+	maxPrivateIEs,
+	maxProtocolExtensions,
+	maxProtocolIEs,
+	Criticality,
+	Presence,
+	PrivateIE-ID,
+	ProtocolIE-ID
+FROM M3AP-CommonDataTypes;
+
+-- **************************************************************
+--
+-- Class Definition for Protocol IEs
+--
+-- **************************************************************
+
+M3AP-PROTOCOL-IES ::= CLASS {
+	&id				ProtocolIE-ID 			UNIQUE,
+	&criticality	Criticality,
+	&Value,
+	&presence		Presence
+}
+WITH SYNTAX {
+	ID				&id
+	CRITICALITY		&criticality
+	TYPE			&Value
+	PRESENCE		&presence
+}
+
+-- **************************************************************
+--
+-- Class Definition for Protocol IEs
+--
+-- **************************************************************
+
+M3AP-PROTOCOL-IES-PAIR ::= CLASS {
+	&id						ProtocolIE-ID 		UNIQUE,
+	&firstCriticality		Criticality,
+	&FirstValue,
+	&secondCriticality		Criticality,
+	&SecondValue,
+	&presence				Presence
+}
+WITH SYNTAX {
+	ID						&id
+	FIRST CRITICALITY 		&firstCriticality
+	FIRST TYPE				&FirstValue
+	SECOND CRITICALITY 		&secondCriticality
+	SECOND TYPE				&SecondValue
+	PRESENCE				&presence
+}
+
+-- **************************************************************
+--
+-- Class Definition for Protocol Extensions
+--
+-- **************************************************************
+
+M3AP-PROTOCOL-EXTENSION ::= CLASS {
+	&id					ProtocolIE-ID 		UNIQUE,
+	&criticality		Criticality,
+	&Extension,
+	&presence			Presence
+}
+WITH SYNTAX {
+	ID					&id
+	CRITICALITY			&criticality
+	EXTENSION			&Extension
+	PRESENCE			&presence
+}
+
+-- **************************************************************
+--
+-- Class Definition for Private IEs
+--
+-- **************************************************************
+
+M3AP-PRIVATE-IES ::= CLASS {
+	&id					PrivateIE-ID,
+	&criticality		Criticality,
+	&Value,
+	&presence			Presence
+}
+WITH SYNTAX {
+	ID					&id
+	CRITICALITY			&criticality
+	TYPE				&Value
+	PRESENCE			&presence
+}
+
+-- **************************************************************
+--
+-- Container for Protocol IEs
+--
+-- **************************************************************
+
+ProtocolIE-Container {M3AP-PROTOCOL-IES : IEsSetParam} ::=
+	SEQUENCE (SIZE (0..maxProtocolIEs)) OF
+	ProtocolIE-Field {{IEsSetParam}}
+
+ProtocolIE-Single-Container {M3AP-PROTOCOL-IES : IEsSetParam} ::=
+	ProtocolIE-Field {{IEsSetParam}}
+
+ProtocolIE-Field {M3AP-PROTOCOL-IES : IEsSetParam} ::= SEQUENCE {
+	id				M3AP-PROTOCOL-IES.&id					({IEsSetParam}),
+	criticality		M3AP-PROTOCOL-IES.&criticality			({IEsSetParam}{@id}),
+	value			M3AP-PROTOCOL-IES.&Value	        	({IEsSetParam}{@id})
+}
+
+-- **************************************************************
+--
+-- Container for Protocol IE Pairs
+--
+-- **************************************************************
+
+ProtocolIE-ContainerPair {M3AP-PROTOCOL-IES-PAIR : IEsSetParam} ::=
+	SEQUENCE (SIZE (0..maxProtocolIEs)) OF
+	ProtocolIE-FieldPair {{IEsSetParam}}
+
+ProtocolIE-FieldPair {M3AP-PROTOCOL-IES-PAIR : IEsSetParam} ::= SEQUENCE {
+	id					M3AP-PROTOCOL-IES-PAIR.&id					({IEsSetParam}),
+	firstCriticality	M3AP-PROTOCOL-IES-PAIR.&firstCriticality	({IEsSetParam}{@id}),
+	firstValue			M3AP-PROTOCOL-IES-PAIR.&FirstValue	        ({IEsSetParam}{@id}),
+	secondCriticality	M3AP-PROTOCOL-IES-PAIR.&secondCriticality	({IEsSetParam}{@id}),
+	secondValue			M3AP-PROTOCOL-IES-PAIR.&SecondValue	        ({IEsSetParam}{@id})
+}
+
+-- **************************************************************
+--
+-- Container Lists for Protocol IE Containers
+--
+-- **************************************************************
+
+ProtocolIE-ContainerList {INTEGER : lowerBound, INTEGER : upperBound, M3AP-PROTOCOL-IES : IEsSetParam} ::=
+	SEQUENCE (SIZE (lowerBound..upperBound)) OF
+	ProtocolIE-Container {{IEsSetParam}}
+
+ProtocolIE-ContainerPairList {INTEGER : lowerBound, INTEGER : upperBound, M3AP-PROTOCOL-IES-PAIR : IEsSetParam} ::=
+	SEQUENCE (SIZE (lowerBound..upperBound)) OF
+	ProtocolIE-ContainerPair {{IEsSetParam}}
+
+-- **************************************************************
+--
+-- Container for Protocol Extensions
+--
+-- **************************************************************
+
+ProtocolExtensionContainer {M3AP-PROTOCOL-EXTENSION : ExtensionSetParam} ::=
+	SEQUENCE (SIZE (1..maxProtocolExtensions)) OF
+	ProtocolExtensionField {{ExtensionSetParam}}
+
+ProtocolExtensionField {M3AP-PROTOCOL-EXTENSION : ExtensionSetParam} ::= SEQUENCE {
+	id					M3AP-PROTOCOL-EXTENSION.&id				({ExtensionSetParam}),
+	criticality			M3AP-PROTOCOL-EXTENSION.&criticality	({ExtensionSetParam}{@id}),
+	extensionValue		M3AP-PROTOCOL-EXTENSION.&Extension		({ExtensionSetParam}{@id})
+}
+
+-- **************************************************************
+--
+-- Container for Private IEs
+--
+-- **************************************************************
+
+PrivateIE-Container {M3AP-PRIVATE-IES : IEsSetParam} ::=
+	SEQUENCE (SIZE (1..maxPrivateIEs)) OF
+	PrivateIE-Field {{IEsSetParam}}
+
+PrivateIE-Field {M3AP-PRIVATE-IES : IEsSetParam} ::= SEQUENCE {
+	id				M3AP-PRIVATE-IES.&id			({IEsSetParam}),
+	criticality		M3AP-PRIVATE-IES.&criticality	({IEsSetParam}{@id}),
+	value			M3AP-PRIVATE-IES.&Value			({IEsSetParam}{@id})
+}
+
+END
+
+-- M3AP-Constants.asn
+--
+-- 3GPP TS 36.444 V13.2.0 (2016-03)
+-- http://www.3gpp.org/ftp/Specs/archive/36_series/36.444/36444-d20.zip
+--
+-- 9.3.7	Constant Definitions
+--
+
+-- **************************************************************
+--
+-- Constant definitions
+--
+-- **************************************************************
+
+M3AP-Constants {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+eps-Access (21) modules (3) m3ap (5) version1 (1) m3ap-Constants (4) }
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+	ProcedureCode,
+	ProtocolIE-ID
+FROM M3AP-CommonDataTypes;
+
+-- **************************************************************
+--
+-- Elementary Procedures
+--
+-- **************************************************************
+
+id-mBMSsessionStart												ProcedureCode ::= 0
+id-mBMSsessionStop												ProcedureCode ::= 1
+id-errorIndication												ProcedureCode ::= 2
+id-privateMessage												ProcedureCode ::= 3
+id-Reset														ProcedureCode ::= 4
+id-mBMSsessionUpdate											ProcedureCode ::= 5
+id-mCEConfigurationUpdate										ProcedureCode ::= 6
+id-m3Setup														ProcedureCode ::= 7
+
+
+
+-- **************************************************************
+--
+-- Lists
+--
+-- **************************************************************
+
+maxnoofMBMSServiceAreaIdentitiesPerMCE		INTEGER ::= 65536
+maxnooferrors								INTEGER ::= 256
+maxNrOfIndividualM3ConnectionsToReset		INTEGER ::= 256
+maxnoofCellsforMBMS							INTEGER ::= 4096
+
+-- **************************************************************
+--
+-- IEs
+--
+-- **************************************************************
+
+id-MME-MBMS-M3AP-ID															ProtocolIE-ID ::= 0
+id-MCE-MBMS-M3AP-ID															ProtocolIE-ID ::= 1
+id-TMGI																		ProtocolIE-ID ::= 2
+id-MBMS-Session-ID															ProtocolIE-ID ::= 3
+id-MBMS-E-RAB-QoS-Parameters												ProtocolIE-ID ::= 4
+id-MBMS-Session-Duration													ProtocolIE-ID ::= 5
+id-MBMS-Service-Area														ProtocolIE-ID ::= 6
+id-TNL-Information															ProtocolIE-ID ::= 7
+id-CriticalityDiagnostics													ProtocolIE-ID ::= 8
+id-Cause																	ProtocolIE-ID ::= 9
+id-MBMS-Service-Area-List													ProtocolIE-ID ::= 10
+id-MBMS-Service-Area-List-Item												ProtocolIE-ID ::= 11
+id-TimeToWait																ProtocolIE-ID ::= 12
+id-ResetType																ProtocolIE-ID ::= 13
+id-MBMS-Service-associatedLogicalM3-ConnectionItem							ProtocolIE-ID ::= 14
+id-MBMS-Service-associatedLogicalM3-ConnectionListResAck					ProtocolIE-ID ::= 15
+id-MinimumTimeToMBMSDataTransfer											ProtocolIE-ID ::= 16
+id-AllocationAndRetentionPriority											ProtocolIE-ID ::= 17
+id-Global-MCE-ID															ProtocolIE-ID ::= 18
+id-MCEname																	ProtocolIE-ID ::= 19
+id-MBMSServiceAreaList														ProtocolIE-ID ::= 20
+id-Time-ofMBMS-DataTransfer													ProtocolIE-ID ::= 21
+id-Time-ofMBMS-DataStop														ProtocolIE-ID ::= 22
+id-Reestablishment															ProtocolIE-ID ::= 23
+id-Alternative-TNL-Information												ProtocolIE-ID ::= 24
+id-MBMS-Cell-List															ProtocolIE-ID ::= 25
+END

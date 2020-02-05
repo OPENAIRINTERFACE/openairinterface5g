@@ -61,12 +61,6 @@ err_code_t flexran_agent_init_cont_mac_stats_update(mid_t mod_id);
 err_code_t flexran_agent_destroy_cont_mac_stats_update(mid_t mod_id);
 
 
-/*Enable/Disable the continuous stats update service for the MAC*/
-err_code_t flexran_agent_enable_cont_mac_stats_update(mid_t mod_id, xid_t xid,
-						  stats_request_config_t *stats_req);
-
-err_code_t flexran_agent_disable_cont_mac_stats_update(mid_t mod_id);
-
 Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_report,
 								    Protocol__FlexranMessage *old_report);
 

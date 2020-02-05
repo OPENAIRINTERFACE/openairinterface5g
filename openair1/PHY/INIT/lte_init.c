@@ -69,6 +69,9 @@ l1_north_init_eNB () {
         LOG_I(PHY,"%s() RC.eNB[%d][%d] installing callbacks\n", __FUNCTION__, i,  j);
         RC.eNB[i][j]->if_inst->PHY_config_req = phy_config_request;
         RC.eNB[i][j]->if_inst->schedule_response = schedule_response;
+        RC.eNB[i][j]->if_inst->PHY_config_update_sib2_req = phy_config_update_sib2_request;
+        RC.eNB[i][j]->if_inst->PHY_config_update_sib13_req = phy_config_update_sib13_request;
+       
       }
     }
   } else {
@@ -283,7 +286,51 @@ void phy_config_request(PHY_Config_t *phy_config) {
   LOG_I (PHY, "eNB %d/%d configured\n", Mod_id, CC_id);
 }
 
+void phy_config_update_sib2_request(PHY_Config_t *phy_config) {
 
+  uint8_t         Mod_id = phy_config->Mod_id;
+  int             CC_id = phy_config->CC_id;
+  int i;
+  nfapi_config_request_t *cfg = phy_config->cfg;
+  LOG_I(PHY,"Configure sib2 Mod_id(%d), CC_id(%d) cfg %p\n",Mod_id,CC_id,cfg);
+
+  LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
+
+  fp->num_MBSFN_config =  cfg->embms_mbsfn_config.num_mbsfn_config;
+  for( i=0; i < cfg->embms_mbsfn_config.num_mbsfn_config; i++){
+      fp->MBSFN_config[i].radioframeAllocationPeriod =  cfg->embms_mbsfn_config.radioframe_allocation_period[i];
+      fp->MBSFN_config[i].radioframeAllocationOffset =  cfg->embms_mbsfn_config.radioframe_allocation_offset[i];
+      fp->MBSFN_config[i].fourFrames_flag =            cfg->embms_mbsfn_config.fourframes_flag[i];
+      fp->MBSFN_config[i].mbsfn_SubframeConfig =       cfg->embms_mbsfn_config.mbsfn_subframeconfig[i];  // 6-bit subframe configuration
+      LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
+              fp->MBSFN_config[i].mbsfn_SubframeConfig);
+  }
+
+
+
+}
+void phy_config_update_sib13_request(PHY_Config_t *phy_config) {
+
+  uint8_t         Mod_id = phy_config->Mod_id;
+  int             CC_id = phy_config->CC_id;
+  nfapi_config_request_t *cfg = phy_config->cfg;
+
+  LOG_I(PHY,"configure sib3 Mod_id(%d), CC_id(%d) cfg %p\n",Mod_id,CC_id,cfg);
+  LTE_DL_FRAME_PARMS *fp = &RC.eNB[Mod_id][CC_id]->frame_parms;
+  LOG_I (PHY, "[eNB%d] Applying MBSFN_Area_id %d for index %d\n", Mod_id, (uint16_t)cfg->embms_sib13_config.mbsfn_area_id_r9.value, (uint8_t)cfg->embms_sib13_config.mbsfn_area_idx.value);
+
+  //cfg->embms_sib13_config.mbsfn_area_idx;
+  //cfg->embms_sib13_config.mbsfn_area_id_r9;
+
+  AssertFatal((uint8_t)cfg->embms_sib13_config.mbsfn_area_idx.value == 0, "Fix me: only called when mbsfn_Area_idx == 0\n");
+  if (cfg->embms_sib13_config.mbsfn_area_idx.value == 0) {
+    fp->Nid_cell_mbsfn = (uint16_t)cfg->embms_sib13_config.mbsfn_area_id_r9.value;
+    LOG_I(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
+  }
+  lte_gold_mbsfn (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table, fp->Nid_cell_mbsfn);
+
+  lte_gold_mbsfn_khz_1dot25 (fp, RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table, fp->Nid_cell_mbsfn);
+}
 
 void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
                           long mbsfn_AreaId_r9) {

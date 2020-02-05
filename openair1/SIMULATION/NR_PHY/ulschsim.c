@@ -55,7 +55,7 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
-int nfapi_mode = 0;
+uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 // needed for some functions
@@ -383,7 +383,8 @@ int main(int argc, char **argv)
   uint8_t UE_id = 0;
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
-  nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
+  NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_processes[harq_pid];
+  nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &harq_process_gNB->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
@@ -401,7 +402,6 @@ int main(int argc, char **argv)
   rel15_ul->mcs            = Imcs;
   rel15_ul->rv             = rvidx;
   rel15_ul->n_layers       = Nl;
-  rel15_ul->nb_re_dmrs     = nb_re_dmrs;
   rel15_ul->length_dmrs    = length_dmrs;
   rel15_ul->R              = code_rate;
   ///////////////////////////////////////////////////
@@ -527,7 +527,7 @@ int main(int argc, char **argv)
 #endif
 
       ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms,
-                              frame, nb_symb_sch, subframe, harq_pid, is_crnti);
+                              frame, nb_symb_sch, nb_re_dmrs, subframe, harq_pid, is_crnti);
 
       if (ret > ulsch_gNB->max_ldpc_iterations)
         n_errors++;

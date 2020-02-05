@@ -31,7 +31,7 @@
  */
 
 #include "mac_proto.h"
-#include "LAYER2/MAC/mac_extern.h" //temporary
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
@@ -61,35 +61,42 @@ void mac_top_init_gNB(void)
     AssertFatal(RC.nrmac != NULL,"can't ALLOCATE %zu Bytes for %d gNB_MAC_INST with size %zu \n",
                 RC.nb_nr_macrlc_inst * sizeof(gNB_MAC_INST *),
                 RC.nb_nr_macrlc_inst, sizeof(gNB_MAC_INST));
-    
+
     for (i = 0; i < RC.nb_nr_macrlc_inst; i++) {
+
       RC.nrmac[i] = (gNB_MAC_INST *) malloc16(sizeof(gNB_MAC_INST));
       
       AssertFatal(RC.nrmac != NULL,"can't ALLOCATE %zu Bytes for %d gNB_MAC_INST with size %zu \n",
-		  RC.nb_nr_macrlc_inst * sizeof(gNB_MAC_INST *),
-		  RC.nb_nr_macrlc_inst, sizeof(gNB_MAC_INST));
+                  RC.nb_nr_macrlc_inst * sizeof(gNB_MAC_INST *),
+                  RC.nb_nr_macrlc_inst, sizeof(gNB_MAC_INST));
       
       LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d gNB_MAC_INST @ %p\n",sizeof(gNB_MAC_INST), RC.nb_nr_macrlc_inst, RC.mac);
       
       bzero(RC.nrmac[i], sizeof(gNB_MAC_INST));
       
       RC.nrmac[i]->Mod_id = i;
+
+      RC.nrmac[i]->tag = (NR_TAG_t*)malloc(sizeof(NR_TAG_t));
+      memset((void*)RC.nrmac[i]->tag,0,sizeof(NR_TAG_t));
+        
+      RC.nrmac[i]->ul_handle = 0;
+
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
 
     // These should be out of here later
     pdcp_layer_init();
-    
+
     if(IS_SOFTMODEM_NOS1)
       nr_ip_over_LTE_DRB_preconfiguration();
-    
+
     rrc_init_nr_global_param();
-    
+
   }else {
     RC.nrmac = NULL;
   }
-  
+
   // Initialize Linked-List for Active UEs
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++) {
 
@@ -101,13 +108,13 @@ void mac_top_init_gNB(void)
     UE_list->head = -1;
     UE_list->head_ul = -1;
     UE_list->avail = 0;
-    
+
     for (list_el = 0; list_el < MAX_MOBILES_PER_GNB - 1; list_el++) {
        UE_list->next[list_el] = list_el + 1;
       UE_list->next_ul[list_el] = list_el + 1;
       UE_list->active[list_el] = FALSE;
     }
-    
+
     UE_list->next[list_el] = -1;
     UE_list->next_ul[list_el] = -1;
     UE_list->active[list_el] = FALSE;

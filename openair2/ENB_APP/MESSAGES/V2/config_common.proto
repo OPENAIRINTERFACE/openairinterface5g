@@ -336,3 +336,28 @@ message flex_a5_event {
   optional int64 time_to_trigger = 4;
   optional int64 max_report_cells = 5;
 }
+
+//
+// S1AP cell configuration
+//
+message flex_gummei {
+        optional flex_plmn plmn = 1;
+        optional uint32 mme_group_id = 2;
+        optional uint32 mme_code = 3;
+}
+
+message flex_s1ap_mme {
+        optional string s1_ip = 1;                        // S1-MME IP of MME
+        optional string name = 2;                         // S1-MME name of MME
+        optional flex_mme_state state = 3;                // State of the MME
+        repeated flex_gummei served_gummeis = 4;          // GUMMEIs served by the MME
+        repeated flex_plmn requested_plmns = 5;           // PLMNs communicated to MME
+        optional uint32 rel_capacity = 6;                 // Relative MME capacity, TS23.401
+}
+
+enum flex_mme_state {
+        FLMMES_DISCONNECTED = 0;
+        FLMMES_WAITING = 1;
+        FLMMES_CONNECTED = 2;
+        FLMMES_OVERLOAD = 3;
+}

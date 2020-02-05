@@ -36,13 +36,9 @@
 #include "gnb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
-#   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-# endif
-#endif
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
@@ -328,11 +324,10 @@ void RCconfig_nr_flexran()
     /* gNB ID from configuration, as read in by RCconfig_RRC() */
     if (!GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr) {
       // Calculate a default gNB ID
-# if defined(ENABLE_USE_MME)
+    if (EPC_MODE_ENABLED) 
       gnb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
-# else
+    else
       gnb_id = i;
-# endif
     } else {
         gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
@@ -483,7 +478,7 @@ void RCconfig_nr_macrlc() {
         RC.nrmac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
 
-        //sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+        //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
         configure_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
@@ -510,7 +505,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
-  int ssb_SubcarrierOffset = 0;
+  int ssb_SubcarrierOffset = 31;
   int pdsch_AntennaPorts = 1;
   uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
@@ -530,6 +525,24 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal (i<num_gnbs,"Failed to parse config file no %ith element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
 
+  /*
+  if (EPC_MODE_ENABLED) {
+    if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    } else if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 1;
+    } else if (strcasecmp(*(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr) , GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 2;
+    } else {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    }
+  }
+  */
+
   if (num_gnbs>0) {
 
 
@@ -538,14 +551,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
     
     if (GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr == NULL) {
-      // Calculate a default gNB ID
-# if defined(ENABLE_USE_MME)
-      uint32_t hash;
-      hash = s1ap_generate_eNB_id ();
-      gnb_id = i + (hash & 0xFFFF8);
-# else
-      gnb_id = i;
-# endif
+    // Calculate a default gNB ID
+      if (EPC_MODE_ENABLED) { 
+        uint32_t hash;
+        hash = s1ap_generate_eNB_id ();
+        gnb_id = i + (hash & 0xFFFF8);
+      } else {
+        gnb_id = i;
+      }
     } else {
       gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
@@ -570,10 +583,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	    (int)scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
 	    (int)scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower);
       fix_scc(scc,ssb_bitmap);
-
     }
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
-    
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -667,7 +678,7 @@ int RCconfig_nr_gtpu(void ) {
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   
-  paramdef_t GTPUParams[]  = GNBGTPUPARAMS_DESC;
+  paramdef_t GTPUParams[] = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
 /* get number of active eNodeBs */
@@ -722,7 +733,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
 
   /*
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
     if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
       asn_debug      = 0;
       asn1_xer_print = 0;
@@ -736,7 +747,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
       asn_debug      = 0;
       asn1_xer_print = 0;
     }
-#endif
+  }
   */
   
     AssertFatal (i<GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
@@ -956,7 +967,7 @@ void NRRCConfig(void) {
   
 /* get global parameters, defined outside any section in the config file */
  
-  printf("Getting GNBSParams\n");
+  LOG_I(GNB_APP, "Getting GNBSParams\n");
  
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;

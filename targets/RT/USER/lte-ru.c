@@ -97,6 +97,8 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "pdcp.h"
 
+#define MBMS_EXPERIMENTAL
+
 extern volatile int oai_exit;
 extern int emulate_rf;
 extern int numerology;
@@ -1881,10 +1883,19 @@ static void *ru_thread( void *param ) {
 
         AssertFatal((ret=pthread_mutex_unlock(&ru->proc.mutex_pre_scd))==0,"[eNB] error unlocking mutex_pre_scd mutex for eNB pre scd\n");
 #endif
+	// wakeup all eNB processes waiting for this RU
+	if (ru->num_eNB>0) wakeup_L1s(ru);
 
-        // wakeup all eNB processes waiting for this RU
-        if (ru->num_eNB>0) wakeup_L1s(ru);
-
+#ifdef MBMS_EXPERIMENTAL
+	//Workaround ... this must be properly handled
+	if(ru->if_south==LOCAL_RF && ru->function==eNodeB_3GPP && RC.eNB[0][0]!=NULL){
+		if(ru->frame_parms->num_MBSFN_config!=RC.eNB[0][0]->frame_parms.num_MBSFN_config){
+			ru->frame_parms = &RC.eNB[0][0]->frame_parms;//->frame_parms;
+			LOG_W(PHY,"RU MBSFN SF PARAMS Updated\n");
+		}
+	}
+#endif
+	
 #ifndef PHY_TX_THREAD
 
         if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0) {
@@ -2672,13 +2683,9 @@ void init_RU(char *rf_config_file, clock_source_t clock_source, clock_source_t t
   PHY_VARS_eNB *eNB0     = (PHY_VARS_eNB *)NULL;
   LTE_DL_FRAME_PARMS *fp = (LTE_DL_FRAME_PARMS *)NULL;
   // create status mask
-  RC.ru_mask = 0;
+  RC.ru_mask= (1 << RC.nb_RU) - 1;
   pthread_mutex_init(&RC.ru_mutex,NULL);
   pthread_cond_init(&RC.ru_cond,NULL);
-  // read in configuration file)
-  printf("configuring RU from file\n");
-  RCconfig_RU();
-  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
   if (RC.nb_CC != 0)
     for (i=0; i<RC.nb_L1_inst; i++)
@@ -2908,8 +2915,6 @@ void RCconfig_RU(void) {
 
   if ( RUParamList.numelt > 0) {
     RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
-    RC.ru_mask=(1<<RC.nb_RU) - 1;
-    printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (int j = 0; j < RC.nb_RU; j++) {
       RC.ru[j]                                    = (RU_t *)malloc(sizeof(RU_t));

@@ -150,7 +150,20 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
+  //------------- config PUSCH DMRS parameters(to be updated from RRC)--------------
+  gNB->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
+  gNB->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  gNB->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
+  //--------------------------------------------------------------------------------
+
   nr_init_pdsch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
+
+  // default values until overwritten by RRCConnectionReconfiguration
+
+  for (i=0;i<MAX_NR_OF_UL_ALLOCATIONS;i++){
+    gNB->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
+    gNB->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
+  }
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
@@ -486,8 +499,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
       rel15_ul->ulsch_pdu_rel15.number_rbs     = 50;
       rel15_ul->ulsch_pdu_rel15.start_symbol   = 2;
       rel15_ul->ulsch_pdu_rel15.number_symbols = 12;
-      rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6;
-      rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1;
+      rel15_ul->ulsch_pdu_rel15.length_dmrs    = gNB->dmrs_UplinkConfig.pusch_maxLength;
       rel15_ul->ulsch_pdu_rel15.Qm             = 2;
       rel15_ul->ulsch_pdu_rel15.R              = 679;
       rel15_ul->ulsch_pdu_rel15.mcs            = 9;

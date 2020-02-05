@@ -548,7 +548,6 @@ typedef struct {
     uint8_t frame_offset;
     uint16_t number_symbols;
     uint16_t start_symbol;
-    uint8_t nb_re_dmrs;
     uint8_t length_dmrs;
     nr_pusch_freq_hopping_t pusch_freq_hopping;
     uint8_t mcs;

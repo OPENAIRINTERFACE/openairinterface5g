@@ -31,6 +31,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
+#include "openair2/COMMON/mac_messages_types.h"
 
 
 /** \addtogroup _mac
@@ -84,6 +85,14 @@ void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
 */
 int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
                   sub_frame_t subframe);
+
+/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+*/
+int schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframe);
+
 
 /** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
 @param Mod_id Instance ID of eNB
@@ -1192,6 +1201,16 @@ void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
                              uint8_t num_bf_prb_per_subband,
                              uint8_t num_bf_vector);
 
+void fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
+                  uint16_t length,
+                  uint16_t pdu_index,
+                  uint16_t rnti,
+                  uint8_t resource_allocation_type,
+                  uint16_t resource_block_coding,
+                  uint8_t modulation,
+                  uint16_t transmission_power,
+                  uint8_t mbsfn_area_id);
+
 void fill_nfapi_harq_information(module_id_t module_idP,
                                  int CC_idP,
                                  uint16_t rntiP,
@@ -1265,9 +1284,13 @@ int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 
 /* DRX Configuration */
 /* Configure local DRX timers and thresholds in UE context, following the drx_configuration input */
-void eNB_Config_Local_DRX(module_id_t Mod_id, rnti_t rnti, LTE_DRX_Config_t *drx_Configuration);
+void eNB_Config_Local_DRX(instance_t Mod_id, rrc_mac_drx_config_req_t *rrc_mac_drx_config_req);                        
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
 uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 #endif
 /** @}*/
+
+/* MAC ITTI messaging related functions */
+/* Main loop of MAC itti message handling */
+void *mac_enb_task(void *arg);

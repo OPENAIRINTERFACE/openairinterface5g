@@ -18,7 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
+#include "executables/thread-common.h"
 #include "executables/nr-uesoftmodem.h"
 
 #include "LAYER2/NR_MAC_UE/mac.h"
@@ -55,6 +55,9 @@
   extern char do_forms;
 #endif
 
+// Missing stuff?
+int next_ra_frame = 0;
+module_id_t next_Mod_id = 0;
 
 extern double cpuf;
 //static  nfapi_nr_config_request_t config_t;
@@ -442,7 +445,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       proc->frame_rx = dcireq.dl_config_req.sfn;
     }
     scheduled_response.frame = proc->frame_rx;
-    scheduled_response.slot  = proc->nr_tti_rx;
+    scheduled_response.slot = proc->nr_tti_rx;
 
     nr_ue_scheduled_response(&scheduled_response);
   }
@@ -504,6 +507,31 @@ void UE_processing(void *arg) {
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
 
+  uint8_t gNB_id = 0;
+
+  // params for UL time alignment procedure
+  NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
+  uint8_t numerology = UE->frame_parms.numerology_index;
+  uint16_t bwp_ul_NB_RB = UE->frame_parms.N_RB_UL;
+  int slot_tx = proc->nr_tti_tx;
+  int frame_tx = proc->frame_tx;
+
+  /* UL time alignment
+  // If the current tx frame and slot match the TA configuration in ul_time_alignment
+  // then timing advance is processed and set to be applied in the next UL transmission */
+  if (UE->mac_enabled == 1) {
+
+    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot){
+      LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
+
+      //if (nfapi_mode!=3){
+      nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
+      ul_time_alignment->ta_frame = -1;
+      ul_time_alignment->ta_slot = -1;
+      //}
+    }
+  }
+
   processSlotRX(UE, proc);
 
   processSlotTX(UE, proc);
@@ -552,7 +580,7 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                UE->frame_parms.samples_per_subframe,
                                UE->frame_parms.nb_antennas_rx);
     if (IS_SOFTMODEM_RFSIM ) {
-	 usleep(1000); // slow down, as would do actuall rf to let cpu for the synchro thread
+	 usleep(1000); // slow down, as would do actual rf to let cpu for the synchro thread
     }
   }
 
@@ -651,7 +679,7 @@ void *UE_thread(void *arg) {
       }
     }
 
-    AssertFatal( !syncRunning, "At this point synchronisation can't be running\n");
+    AssertFatal( !syncRunning, "At this point synchronization can't be running\n");
 
     if (!UE->is_synchronized) {
       readFrame(UE, &timestamp);
@@ -680,7 +708,7 @@ void *UE_thread(void *arg) {
       // we have the decoded frame index in the return of the synch process
       // and we shifted above to the first slot of next frame
       decoded_frame_rx++;
-      // we do ++ first in the regular processing, so it will be beging of frame;
+      // we do ++ first in the regular processing, so it will be begin of frame;
       absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
       continue;
     }
@@ -853,3 +881,16 @@ void init_NR_UE_threads(int nb_inst) {
 
   }
 }
+
+/* HACK: this function is needed to compile the UE
+ * fix it somehow
+ */
+int8_t find_dlsch(uint16_t rnti,
+                  PHY_VARS_eNB *eNB,
+                  find_type_t type)
+{
+  printf("you cannot read this\n");
+  abort();
+}
+
+void multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP) {}
