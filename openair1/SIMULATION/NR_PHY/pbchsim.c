@@ -589,7 +589,8 @@ int main(int argc, char **argv)
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
         frame_parms->ssb_index = ssb_index;
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
-        int ssb_slot = (ssb_index/2)+(n_hf*frame_parms->slots_per_frame);
+
+        int ssb_slot = (ssb_index>>1)+(n_hf*frame_parms->slots_per_frame);
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
 	  nr_slot_fep(UE,
 	  	      i%frame_parms->symbols_per_slot,

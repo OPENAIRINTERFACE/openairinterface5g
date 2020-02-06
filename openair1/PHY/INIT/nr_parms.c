@@ -99,12 +99,12 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
 
       // selection of SS block pattern according to TS 38101-1 Table 5.4.3.3-1 for SCS 30kHz
       if (fp->nr_band == 5 || fp->nr_band == 66) 
-	      fp->ssb_type = nr_ssb_type_B;
+        fp->ssb_type = nr_ssb_type_B;
       else{  
       	if (fp->nr_band == 41 || ( fp->nr_band > 76 && fp->nr_band < 80) )
-		fp->ssb_type = nr_ssb_type_C;
+	  fp->ssb_type = nr_ssb_type_C;
 	else
-		AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
+	  AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
       }
 
       switch(bw){
@@ -148,21 +148,21 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
           break;
 
         case 90:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
+	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for %d MHz band and MU %d\n",bw,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2626; //4096 - ( (245*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
         case 100:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
+	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for %d MHz band and MU %d\n",bw,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2458; //4096 - ( (273*12) / 2 )
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
+        AssertFatal(1==0,"%d MHz band undefined for mu %d, frame parms = %p\n", bw, mu, fp);
       }
       break;
 
@@ -184,7 +184,7 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
         case 90:
         case 100:
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
+        AssertFatal(1==0,"%d MHz band undefined for mu %d, frame parms = %p\n", bw, mu, fp);
       }
       break;
 
@@ -206,7 +206,7 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
           fp->nb_prefix_samples = 36;
           break;
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
+        AssertFatal(1==0,"%d MHz band undefined for mu %d, frame parms = %p\n", bw, mu, fp);
       }
       break;
 
@@ -227,7 +227,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 {
 
   fp->frame_type = cfg->cell_config.frame_duplex_type.value;
-  fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[1].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[0].ssb_mask.value ;
+  fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
   fp->N_RB_DL = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
   fp->N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
@@ -354,7 +354,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
     fp->Lmax = 64;
   }
 
-  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[0].ssb_mask;
+  fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[1].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
   
   fp->N_ssb = 0;
   for (int p=0; p<fp->Lmax; p++)

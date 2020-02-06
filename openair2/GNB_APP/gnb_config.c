@@ -212,23 +212,40 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 
   int ssbmaplen = (int)scc->ssb_PositionsInBurst->present;
+  uint8_t curr_bit;
+
   AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
+
+  // changing endianicity of ssbmap and filling the ssb_PositionsInBurst buffers
   if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
     scc->ssb_PositionsInBurst->choice.shortBitmap.size = 1;
     scc->ssb_PositionsInBurst->choice.shortBitmap.bits_unused = 4;
     scc->ssb_PositionsInBurst->choice.shortBitmap.buf = CALLOC(1,1);
-    scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = ssbmap;
+    scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = 0;
+    for (int i=0; i<8; i++) {
+      if (i<scc->ssb_PositionsInBurst->choice.shortBitmap.bits_unused)
+        curr_bit = 0;
+      else
+        curr_bit = (ssbmap>>(7-i))&0x01;
+      scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] |= curr_bit<<i;   
+    }
   }else if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
 	  scc->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
 	  scc->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.mediumBitmap.buf = CALLOC(1,1);
-    scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = ssbmap;
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0;
+    for (int i=0; i<8; i++)
+      scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] |= (((ssbmap>>(7-i))&0x01)<<i); 
   }else {
     scc->ssb_PositionsInBurst->choice.longBitmap.size = 8;
     scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.longBitmap.buf = CALLOC(1,8);
-    for (int i=0; i<8; i++)
-      scc->ssb_PositionsInBurst->choice.longBitmap.buf[i] = (ssbmap>>(i<<3))&(0xff);
+    for (int j=0; j<8; j++) {
+       scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-j] = 0;
+       curr_bit = (ssbmap>>(j<<3))&(0xff);
+       for (int i=0; i<8; i++)
+         scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-j] |= (((curr_bit>>(7-i))&0x01)<<i);
+    }
   }
 
   // fix UL absolute frequency
