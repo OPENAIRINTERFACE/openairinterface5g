@@ -1266,6 +1266,10 @@ int main(int argc, char **argv) {
   }
 
   L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc;
+  initTpool("n", &proc_eNB->threadPool, true);
+  initNotifiedFIFO(&proc_eNB->respEncode);
+  initNotifiedFIFO(&proc_eNB->respDecode);
+
   proc_eNB->frame_tx=0;
 
   if (input_fd==NULL) {

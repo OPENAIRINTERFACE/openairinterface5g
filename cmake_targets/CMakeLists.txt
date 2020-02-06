@@ -186,7 +186,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CU
 # these changes are related to hardcoded path to include .h files
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3 -Og")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -Og")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
 
 set(GIT_BRANCH        "UNKNOWN")
 set(GIT_COMMIT_HASH   "UNKNOWN")
@@ -2449,6 +2449,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem-common.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
@@ -2828,6 +2829,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
   
   add_executable(${myExe}
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
+    ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
     ${OPENAIR_DIR}/common/utils/backtrace.c
     ${OPENAIR_DIR}/common/utils/system.c
     ${XFORMS_SOURCE}

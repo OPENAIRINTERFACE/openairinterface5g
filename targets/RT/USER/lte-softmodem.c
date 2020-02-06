@@ -665,9 +665,19 @@ int main ( int argc, char **argv )
     if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
       init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
-      //      for (inst=0;inst<RC.nb_L1_inst;inst++)
-      //  for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
+    for (int x=0; x < RC.nb_L1_inst; x++) 
+      for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
+        L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
+        if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
+         initTpool(get_softmodem_params()->threadPoolConfig, &L1proc->threadPool, true);
+        else
+         initTpool("n", &L1proc->threadPool, true);
+      initNotifiedFIFO(&L1proc->respEncode);
+      initNotifiedFIFO(&L1proc->respDecode);
+    }
+
+
   }
 
   printf("wait_eNBs()\n");

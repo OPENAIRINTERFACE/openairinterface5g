@@ -217,11 +217,11 @@ static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg) {
 
 static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_t *t) {
   notifiedFIFO_elt_t *msg= pullNotifiedFIFO(responseFifo);
-
+  AssertFatal(t->traceFd, "Thread pool used while not initialized");
   if (t->measurePerf)
     msg->returnTime=rdtsc();
 
-  if (t->traceFd >= 0)
+  if (t->traceFd > 0)
     if(write(t->traceFd, msg, sizeof(*msg)));
 
   return msg;
@@ -229,7 +229,7 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
 
 static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpool_t *t) {
   notifiedFIFO_elt_t *msg= pollNotifiedFIFO(responseFifo);
-
+  AssertFatal(t->traceFd, "Thread pool used while not initialized");
   if (msg == NULL)
     return NULL;
 
