@@ -35,7 +35,7 @@
 #include "mac_defs.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
-/* 38.321 subclause 7.3 - return values are in dB */
+/* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
 
     NR_UE_MAC_INST_t *nrUE_mac_inst = get_mac_inst(mod_id);
@@ -43,12 +43,14 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
 
     AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
-    NR_SubcarrierSpacing_t scs = nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
     uint8_t preambleFormat, prachConfigIndex;
     lte_frame_type_t frame_type = TDD; // TODO TBR retrieve frame type. Currently hardcoded to TDD.
-                                       // was nr_UE_mac_inst[mod_id].tdd_Config 
     nr_frequency_range_e fr = nr_FR1;  // TODO TBR retrieve frame type. Currently hardcoded to FR1.
     int mu; 
+
+    // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211
+
+    NR_SubcarrierSpacing_t scs = nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
 
     switch (scs){
       case NR_SubcarrierSpacing_kHz15:
@@ -86,6 +88,8 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
       default:
       AssertFatal(1 == 0,"Unknown msg1_SubcarrierSpacing %d\n", scs);
     }
+
+    // Preamble formats given by prach_ConfigurationIndex and tables 6.3.3.2-2 and 6.3.3.2-2 in TS 38.211
 
     prachConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
     preambleFormat = get_nr_prach_fmt(prachConfigIndex,frame_type,fr);
@@ -128,28 +132,16 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
     return;
 }
 
+/* TS 38.321 subclause 5.1.3 - RA preamble transmission - ra_PREAMBLE_RECEIVED_TARGET_POWER configuration */
 int8_t nr_get_Po_NOMINAL_PUSCH(module_id_t mod_id, uint8_t CC_id){
   
   NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = nr_UE_mac_inst->nr_rach_ConfigCommon;
   NR_PRACH_RESOURCES_t *prach_resources = &nr_UE_mac_inst->RA_prach_resources;
 
-  //AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
   AssertFatal(nr_rach_ConfigCommon != NULL, "[UE %d] CCid %d FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id, CC_id);
 
   int8_t receivedTargerPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower + nr_get_DELTA_PREAMBLE(mod_id, CC_id) + (nr_UE_mac_inst->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP;
 
   return receivedTargerPower;
-  //return (-120 + (nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower << 1) + nr_get_DELTA_PREAMBLE(mod_id, CC_id) );
 }
-
-/*int8_t get_deltaP_rampup(module_id_t module_idP, uint8_t CC_id){ // TBR
-
-    AssertFatal(CC_id == 0,
-		"Transmission on secondary CCs is not supported yet\n");
-
-    LOG_D(MAC, "[PUSCH]%d dB\n",
-	  nrUE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER << 1);
-    return ((int8_t)
-	    (nrUE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER << 1));
-}*/

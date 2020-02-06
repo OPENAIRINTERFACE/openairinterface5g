@@ -67,7 +67,7 @@ extern UE_MODE_t get_nrUE_mode(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id);
 extern int64_t table_6_3_3_2_2_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 
-//extern uint8_t  nfapi_mode; // TBR
+//extern uint8_t  nfapi_mode;
 
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
 // and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
@@ -80,45 +80,29 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
   NR_PRACH_RESOURCES_t *prach_resources = &nr_UE_mac_inst->RA_prach_resources;
-  NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &nr_UE_mac_inst->RA_BeamFailureRecoveryConfig;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = nr_UE_mac_inst->nr_rach_ConfigCommon;
+  // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &nr_UE_mac_inst->RA_BeamFailureRecoveryConfig; // todo
 
   int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, frequencyStart, i, deltaPreamble_Msg3;
   uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, msg1_FDM, prach_ConfigIndex, SFN_nbr, Msg3_size;
-  NR_RSRP_Range_t rsrp_ThresholdSSB;
 
-  /* TBR retrieve following params
-  // currently hardcoded */
-  prach_resources->ra_PreambleIndex = 51;
-
-  /*uint8_t Msg3_size = nr_UE_mac_inst->RA_Msg3_size;
-  uint8_t f_id = 0, num_prach = 0;*/
-
-  /*AssertFatal(CC_id == 0,
-  "Transmission on secondary CCs is not supported yet\n");
-  AssertFatal(nr_UE_mac_inst->nr_rach_ConfigCommon != NULL,
-  "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n",
-  mod_id);*/
+  // NR_RSRP_Range_t rsrp_ThresholdSSB; // TBR todo
 
   ///////////////////////////////////////////////////////////
   //////////* UE Random Access Resource Selection *//////////
   ///////////////////////////////////////////////////////////
 
-  //numberOfRA_Preambles = (1 + nr_rach_ConfigCommon->preambleInfo.numberOfRA_Preambles) << 2;
-  numberOfRA_Preambles = nr_rach_ConfigCommon->totalNumberOfRA_Preambles;
-  rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB; 
-  nr_UE_mac_inst->nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+  // todo: switch initialisation cases
+  // - RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
+  // -- SSB selection, set prach_resources->ra_PreambleIndex
+  // - RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000 
+  // -- TBR coming from dci_pdu_rel15[0].ra_preamble_index
+  // -- set PREAMBLE_INDEX to ra_preamble_index
+  // -- select the SSB signalled by PDCCH
+  // - RA initiated for SI request:
+  // -- SSB selection, set prach_resources->ra_PreambleIndex
 
-  /* TBR switch initialisation cases
-  - RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
-    - SSB selection, set prach_resources->ra_PreambleIndex
-  - RA initiated by PDCCH: ra_PreambleIndex provided by PDCCH && ra_PreambleIndex != 0b000000 
-    - set REAMBLE_INDEX to ra_PreambleIndex
-    - select the SSB signalled by PDCCH
-  - RA initiated for SI request:
-    - SSB selection, set prach_resources->ra_PreambleIndex */
-
-  // if (rach_ConfigDedicated) {	// This is for network controlled Mobility
+  // if (rach_ConfigDedicated) {  // This is for network controlled Mobility
   //   // TBR operation for contention-free RA resources when:
   //   // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
   //   // - availalbe CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
@@ -126,14 +110,19 @@ void nr_get_prach_resources(module_id_t mod_id,
   //   return;
   // }
 
-  /* Contention-based RA preamble selection:
-   - TBR selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB */
+  //////////* Contention-based RA preamble selection *//////////
+
+  // todo: selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
+  // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB; // TBR
+
+  Msg3_size = nr_UE_mac_inst->RA_Msg3_size;
+  numberOfRA_Preambles = nr_rach_ConfigCommon->totalNumberOfRA_Preambles;
+
   if (!nr_rach_ConfigCommon->groupBconfigured) {
     noGroupB = 1;
   } else {
-    /* RA preambles group B is configured 
+    // RA preambles group B is configured 
     // - Defining the number of RA preambles in RA Preamble Group A for each SSB */
-    //sizeOfRA_PreamblesGroupA = (nr_rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA + 1) << 2;
     sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
     switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
     /* - Threshold to determine the groups of RA preambles */
@@ -169,11 +158,11 @@ void nr_get_prach_resources(module_id_t mod_id,
     break;
     default:
     AssertFatal(1 == 0,"Unknown ra_Msg3SizeGroupA %d\n", nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA);
-    /* TBR cases 10 -15*/
+    /* todo cases 10 -15*/
     }
 
-    /* - Power offset for preamble selection */
-    /* TBR: what value to use as default? */
+    /* Power offset for preamble selection in dB */
+    /* TBR: what value to use as default? Shall it be converted ? */
     messagePowerOffsetGroupB = -9999;
     switch (nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB){
     case 0:
@@ -204,84 +193,58 @@ void nr_get_prach_resources(module_id_t mod_id,
     AssertFatal(1 == 0,"Unknown messagePowerOffsetGroupB %d\n", nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB);
     }
 
-    // TBR Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
+    // todo Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
     nr_UE_mac_inst->deltaPreamble_Msg3 = 0;
     deltaPreamble_Msg3 = nr_UE_mac_inst->deltaPreamble_Msg3;
   }
 
   PLThreshold = prach_resources->RA_PCMAX - nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
-  // PLThreshold =  prach_resources->RA_PCMAX - nr_get_DELTA_PREAMBLE(mod_id, CC_id) - nr_get_Po_NOMINAL_PUSCH(mod_id, CC_id) - messagePowerOffsetGroupB;
-  // TBR Note Pcmax is set to 0 here, we have to fix this
 
   /* Msg3 has not been transmitted yet */
   if (first_Msg3 == 1) {
     if (noGroupB == 1) {
       // use Group A preamble
       prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
-      prach_resources->ra_RACH_MaskIndex = 0;
       nr_UE_mac_inst->RA_usedGroupA = 1;
     } else if ((Msg3_size < messageSizeGroupA) && (get_PL(mod_id, 0, gNB_id) > PLThreshold)) {
-      // TBR update get_PL to NR
-      // TBR add condition for initiation by CCCH 
       // Group B is configured and RA preamble Group A is used
+      // - todo TBR update get_PL to NR get_nr_PL (needs PHY_VARS_NR_UE)
+      // - todo add condition on CCCH_sdu_size for initiation by CCCH
       prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
-      prach_resources->ra_RACH_MaskIndex = 0;
       nr_UE_mac_inst->RA_usedGroupA = 1;
     } else {
       // Group B preamble is configured and used
       // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
       // the remaining belong to RA Preambles Group B
-      prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA
-        + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA); 
-      prach_resources->ra_RACH_MaskIndex = 0;
+      prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
       nr_UE_mac_inst->RA_usedGroupA = 0;
     }
-
-    //TBR check why this is here
-    // prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(mod_id, CC_id);
-  } else {
-    // Msg3 is being retransmitted
+  } else { // Msg3 is being retransmitted
     if (nr_UE_mac_inst->RA_usedGroupA == 1) {
      if (nr_rach_ConfigCommon->groupBconfigured){
      	prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
        } else {
          prach_resources->ra_PreambleIndex = (taus()) & 0x3f; // TBR check this
-         prach_resources->ra_RACH_MaskIndex = 0;
        } 
      } else {
-       // TBR FIXME nr_rach_ConfigCommon->preambleInfo.preamblesGroupAConfig may be zero
-       prach_resources->ra_PreambleIndex =
-         sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
-       prach_resources->ra_RACH_MaskIndex = 0;
+       prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
      }
     }
 
-   // TBR determine next available PRACH occasion
-    // - if RA initiated for SI request and ra_AssociationPeriodIndex and si-RequestPeriod are configured
-    // - else if SSB is selected above
-    // - else if CSI-RS is selected above
-
-  /* // choose random PRACH resource in TDD
-  if (nr_UE_mac_inst->tdd_Config) {
-    num_prach = get_num_prach_tdd(mod_id);
-
-    if ((num_prach > 0) && (num_prach < 6))
-      prach_resources->ra_TDD_map_index = (taus() % num_prach);
-
-    f_id = get_fid_prach_tdd(mod_id, nr_UE_mac_inst [mod_id].RA_prach_resources->ra_TDD_map_index);
-  }*/
+  // todo determine next available PRACH occasion
+  // - if RA initiated for SI request and ra_AssociationPeriodIndex and si-RequestPeriod are configured
+  // - else if SSB is selected above
+  // - else if CSI-RS is selected above
 
   /////////////////////////////////////////////////////////////////////////////
   //////////* Random Access Preamble Transmission (5.1.3 TS 38.321) *//////////
   /////////////////////////////////////////////////////////////////////////////
 
-  // TBR condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
-  // TBR check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
-  if (nr_UE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER >1)
+  // todo condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321) // TBR
+  // todo check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
+  if (nr_UE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
     nr_UE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER++;
 
-  //prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower +
-  // nr_get_DELTA_PREAMBLE(mod_id, CC_id) + (nr_UE_mac_inst->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP; // TBR
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(mod_id, CC_id);
 
    /* RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
@@ -289,11 +252,7 @@ void nr_get_prach_resources(module_id_t mod_id,
    // 2) getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
    // 3) TBR extend this (e.g. f_id selection, ul_carrier_id are hardcoded) */
 
-   ul_carrier_id = 0; // UL carrier used for RA preamble transmission, hardcoded for NUL carrier
-   f_id = 0;
-   //frequencyStart = nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FrequencyStart;
-
-   switch (nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM){
+   switch (nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM){ // todo this is not used
     case 0:
     msg1_FDM = 1;
     break;
@@ -312,35 +271,40 @@ void nr_get_prach_resources(module_id_t mod_id,
 
    prach_ConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
 
-   // TBR this is for TDD FR1 only
-   SFN_nbr = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]; 
-   s_id = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][5]; // starting symbol of the PRACH occasion
+   // ra_RNTI computation
+   // - todo: this is for TDD FR1 only
+   // - ul_carrier_id: UL carrier used for RA preamble transmission, hardcoded for NUL carrier
+   // - f_id: index of the PRACH occasion in the frequency domain
+   // - s_id is starting symbol of the PRACH occasion [0...14]
+   // - t_id is the first slot of the PRACH occasion in a system frame [0...80]
 
-   // pick the first slot of the PRACH occasion in a system frame (0 <= t_id <= 80)
+   ul_carrier_id = 0; // todo SUL
+   f_id = nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FrequencyStart;
+   SFN_nbr = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]; 
+   s_id = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][5];
+
+   // Pick the first slot of the PRACH occasion in a system frame
    for (i = 0; i < 10; i++){
     if (((SFN_nbr & (1 << i)) >> i) == 1){
       t_id = 2*i;
       break;
     }
    }
-
    prach_resources->ra_RNTI = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
+
+   LOG_D(MAC, "Computed ra_RNTI is %d", prach_resources->ra_RNTI);
 }
 
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
-  #if 0 //TBR
+
+  NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
+
   AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
-  
-  // start contention resolution timer
-  nr_UE_mac_inst->RA_attempt_number++;
 
-  if (opt_enabled) {
-    trace_pdu(DIRECTION_UPLINK, NULL, 0, mod_id, WS_NO_RNTI, nr_UE_mac_inst->RA_prach_resources->ra_PreambleIndex, nr_UE_mac_inst->txFrame, nr_UE_mac_inst->txSubframe, 0, nr_UE_mac_inst->RA_attempt_number);
-    LOG_D(OPT, "[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n", mod_id, frameP, 1, nr_UE_mac_inst->RA_Msg3_size);
-    }
-   #endif
+  // Start contention resolution timer
+  nr_UE_mac_inst->RA_attempt_number++; // todo this is not used
+
 }
-
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
   #if 0 // TBR
@@ -352,10 +316,6 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
   nr_UE_mac_inst->RA_contention_resolution_cnt = 0;
   nr_UE_mac_inst->RA_contention_resolution_timer_active = 1;
 
-  if (opt_enabled) {
-    trace_pdu(DIRECTION_UPLINK, &nr_UE_mac_inst->CCCH_pdu.payload[0], nr_UE_mac_inst->RA_Msg3_size, mod_id, WS_C_RNTI, nr_UE_mac_inst->crnti, nr_UE_mac_inst->txFrame, nr_UE_mac_inst->txSubframe, 0, 0);
-	  LOG_D(OPT, "[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n", mod_id, frameP, nr_UE_mac_inst->crnti /*nr_UE_mac_inst->RA_prach_resources->ra_PreambleIndex */, nr_UE_mac_inst->RA_Msg3_size);
-  }
   #endif
 }
 
@@ -374,44 +334,35 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
                                      int nr_tti_tx){
 
   NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
-  uint8_t size_sdu = 0, Nb_tb = 1, lcid = CCCH, dcch_header_len = 0, ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
-  // UE_MODE_t UE_mode;
-  uint16_t Size16, sdu_lengths;
+  uint8_t lcid = CCCH, dcch_header_len = 0, mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES], * payload;
+  uint16_t size_sdu = 0;
+  unsigned short post_padding;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (struct NR_RACH_ConfigCommon_t *) NULL;
   NR_PRACH_RESOURCES_t *prach_resources = &nr_UE_mac_inst->RA_prach_resources;
   int32_t frame_diff = 0;
 
-  // Modification for phy_stub_ue operation // TBR
-  // if(nfapi_mode == 3) { // phy_stub_ue mode
-  // UE_mode = nr_UE_mac_inst->UE_mode[CC_id];
-  // LOG_D(MAC, "ue_get_rach, UE_mode: %d", UE_mode);
-  // }
-  //  else // Full stack mode
-  // UE_mode = get_nrUE_mode(mod_id, CC_id, gNB_id); // TBR
+  uint8_t sdu_lcids[NB_RB_MAX] = {0}; // TBR
+  uint16_t sdu_lengths[NB_RB_MAX] = {0};  // TBR
+  int TBS_bytes = 848, header_length_total, num_sdus, offset; // TBR
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
   if (UE_mode == PRACH) {
-    LOG_D(MAC, "ue_get_rach, RA_active value: %d", nr_UE_mac_inst->RA_active);
-    if (nr_UE_mac_inst->nr_rach_ConfigCommon) {
-      nr_rach_ConfigCommon =	nr_UE_mac_inst->nr_rach_ConfigCommon;
-      printf("nr_rach_ConfigCommon from MAC nr_UE_mac_inst\n"); /* TBR DEBUG only */
-    } else return NULL;
 
-      /* TBR moved below
-      size_sdu = mac_rrc_nr_data_req(mod_id,
-        CC_id,
-        frame,
-        CCCH,
-        1,
-        &nr_UE_mac_inst->CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT) + 1], gNB_id, 0);*/
+    LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", nr_UE_mac_inst->RA_active);
+
+    AssertFatal(nr_UE_mac_inst->nr_rach_ConfigCommon != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
+
+    if (nr_UE_mac_inst->nr_rach_ConfigCommon) { // TBR check the condition
+      nr_rach_ConfigCommon =	nr_UE_mac_inst->nr_rach_ConfigCommon;
+    } else return NULL;
 
     if (nr_UE_mac_inst->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
-      LOG_I(MAC, "RA not active\n");
+      LOG_I(MAC, "RA not active. Starting RA preamble initialization.\n");
 
-      /* TBR flush Msg3 Buffer 
+      /* TBR flush Msg3 Buffer
       this was done like this but at PHY level
       for(i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
         // flush Msg3 buffer
@@ -420,14 +371,7 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
       }
       */
 
-      nr_UE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
-      nr_UE_mac_inst->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
-      prach_resources->RA_PREAMBLE_BACKOFF = 0;
-
-      /* TBR: if carrier to use is explicitly signalled do RA CARRIER SELECTION (SUL, NUL) this will set PCMAX */
-      prach_resources->RA_PCMAX = 0;
-
-      /* TBR: BWP operation (subclause 5.15 TS 38.321) */
+      nr_UE_mac_inst->RA_RAPID_found = 0;
 
       /* Set RA_PREAMBLE_POWER_RAMPING_STEP */
       switch (nr_rach_ConfigCommon->rach_ConfigGeneric.powerRampingStep){ // in dB
@@ -445,187 +389,113 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
        break;
       }
 
+      prach_resources->RA_PREAMBLE_BACKOFF = 0;
       prach_resources->RA_SCALING_FACTOR_BI = 1;
+      prach_resources->RA_PCMAX = 0; // currently hardcoded to 0
 
-      /* TBR: initialization by beam failure recovery */
+      // todo:
+      // - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX
+      // - BWP operation (subclause 5.15 TS 38.321)
+      // - handle initialization by beam failure recovery
+      // - handle initialization by handover
 
-      /* TBR: initialization by handover */
+      if (!IS_SOFTMODEM_NOS1){
+        // todo mac_rrc_nr_data_req_ue
+        payload = &nr_UE_mac_inst->CCCH_pdu.payload;
+        size_sdu = (uint16_t) mac_rrc_nr_data_req_ue(mod_id,
+                                                     CC_id,
+                                                     frame,
+                                                     CCCH,
+                                                     payload[sizeof(NR_MAC_SUBHEADER_SHORT) + 1]);
 
-      /* size_sdu = mac_rrc_nr_data_req(mod_id,
-                                     CC_id, 
-                                     frame,
-                                     CCCH,
-                                     Nb_tb,
-                                     &nr_UE_mac_inst->CCCH_pdu.payload[sizeof(NR_MAC_SUBHEADER_SHORT) + 1]); */ 
-      // TBR mac_rrc_nr_data_req is a GNB func
-      // use nr_mac_rrc_data_ind_ue instead
+        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id,frame, size_sdu);
 
-      // TBR fix CCCH PDU payload
-      Size16 = (uint16_t) size_sdu;
+        // todo: else triggers a transmission on DCCH using PRACH (during handover, or sending SR for example)
 
-      /* TBR FIX THIS
+      } else {
+        // fill ulsch_buffer with random data
+        payload = (uint8_t *)nr_UE_mac_inst->ulsch_pdu.payload[0];
+        for (int i = 0; i < TBS_bytes; i++){
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        }
+        //Sending SDUs with size 1
+        //Initialize elements of sdu_lcids and sdu_lengths
+        sdu_lcids[0] = UL_SCH_LCID_DTCH;
+        sdu_lengths[0] = TBS_bytes - 3;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        size_sdu += sdu_lengths[0];
+        num_sdus +=1;
+      }
 
-      //  LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",mod_id,frame,size_sdu);
-      LOG_I(RRC,
-        "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest gNB %d) --->][MAC_UE][MOD %02d][]\n",
-        frame, mod_id, gNB_id, mod_id);
-      LOG_I(MAC,
-        "[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",
-        mod_id, frame, size_sdu);
-
-      nr_UE_mac_inst->RA_RAPID_found = 0;
-      // TBR which frame and slot ?     
+      // TBR which frame and slot ?
       nr_UE_mac_inst->RA_tx_frame = frame;
       nr_UE_mac_inst->RA_tx_subframe = nr_tti_tx;
       nr_UE_mac_inst->RA_backoff_frame = frame;
-      nr_UE_mac_inst->RA_backoff_subframe = nr_tti_tx;*/
+      nr_UE_mac_inst->RA_backoff_subframe = nr_tti_tx;
 
-      /*if (size_sdu > 0) { */
+      if (size_sdu > 0) { // TBR size_sdu + MAC_Header_len + mac_ce_len
         /* TBR initialisation by RRC
         // PDU from CCCH */
 
         LOG_I(MAC, "[UE %d] Frame %d: Initialisation Random Access Procedure\n", mod_id, frame);
 
-        // TBR
-        /*nr_UE_mac_inst->RA_Msg3_size = size_sdu + sizeof(SCH_SUBHEADER_SHORT) + sizeof(SCH_SUBHEADER_SHORT);
+        nr_UE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
+        nr_UE_mac_inst->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
+        nr_UE_mac_inst->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // TBR size_sdu + MAC_Header_len + mac_ce_len
         nr_UE_mac_inst->RA_prachMaskIndex = 0;
-        prach_resources->Msg3 = nr_UE_mac_inst->CCCH_pdu.payload;
-        nr_UE_mac_inst->RA_backoff_cnt = 0;	// add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
+        // TBR todo: add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
+        nr_UE_mac_inst->RA_backoff_cnt = 0;
+        nr_UE_mac_inst->RA_active = 1;
+        prach_resources->Msg3 = payload;
 
-        AssertFatal(nr_rach_ConfigCommon != NULL,
-          "[UE %d] FATAL Frame %d: nr_rach_ConfigCommon is NULL !!!\n",
-          mod_id, frame);
-        nr_UE_mac_inst->RA_window_cnt = 2 + nr_rach_ConfigCommon->ra_SupervisionInfo.ra_ResponseWindowSize;
-
-        if (nr_UE_mac_inst->RA_window_cnt == 9) {
-            nr_UE_mac_inst->RA_window_cnt = 10;	// Note: 9 subframe window doesn't exist, after 8 is 10!
-        }*/
+        // TBR todo double check window count
+        // nr_UE_mac_inst->RA_window_cnt = 2 + nr_rach_ConfigCommon->ra_SupervisionInfo.ra_ResponseWindowSize;
+        // if (nr_UE_mac_inst->RA_window_cnt == 9) {
+        //     nr_UE_mac_inst->RA_window_cnt = 10;	// Note: 9 subframe window doesn't exist, after 8 is 10!
+        // }
 
         // Fill in preamble and PRACH resources
         nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, NULL);
 
-        /*generate_ulsch_header((uint8_t *) & nr_UE_mac_inst->CCCH_pdu.payload[0],	// mac header
-          1,        // num sdus
-          0,        // short pading
-          &Size16,  // sdu length
-          &lcid,    // sdu lcid
-          NULL,     // power headroom
-          NULL,     // crnti
-          NULL,     // truncated bsr
-          NULL,     // short bsr
-          NULL,     // long_bsr
-          1);       //post_padding*/
-        return (&nr_UE_mac_inst->RA_prach_resources);
+        offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
+                                       (uint8_t *) payload,               // logical channel payload
+                                       num_sdus,                          // num sdus
+                                       sdu_lengths,                       // sdu length
+                                       sdu_lcids,                         // sdu lcid
+                                       0,                                 // power headroom
+                                       0,                                 // crnti
+                                       0,                                 // truncated bsr
+                                       0,                                 // short bsr
+                                       0,                                 // long_bsr
+                                       1);                                // post_padding
 
-      /*} else if (nr_UE_mac_inst->scheduling_info.
-        BSR_bytes[nr_UE_mac_inst->scheduling_info.LCGID[DCCH]] > 0) {
-          // This is for triggering a transmission on DCCH using PRACH (during handover,
-          // or sending SR for example)
+        // Padding: fill remainder of DLSCH with 0
+        if (post_padding > 0){
+          for (int j = 0; j < (TBS_bytes - offset); j++)
+            payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
+        }
 
-          dcch_header_len = 2 + 2;	/// SHORT Subheader + C-RNTI control element
-           LOG_USEDINLOG_VAR(mac_rlc_status_resp_t,rlc_status)=mac_rlc_status_ind(mod_id,
-            nr_UE_mac_inst->crnti,
-            gNB_id, frame, nr_tti_tx,
-            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
-            #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
-            ,0, 0
-            #endif
-            );
-
-          if (nr_UE_mac_inst->crnti_before_ho)
-            LOG_D(MAC,
-           "[UE %d] Frame %d : UL-DCCH -> ULSCH, HO RRCConnectionReconfigurationComplete (%x, %x), RRC message has %d bytes to send throug PRACH (mac header len %d)\n",
-           mod_id, frame,
-           nr_UE_mac_inst->crnti,
-           nr_UE_mac_inst->crnti_before_ho,
-           rlc_status.bytes_in_buffer, dcch_header_len);
-          else
-            LOG_D(MAC,
-           "[UE %d] Frame %d : UL-DCCH -> ULSCH, RRC message has %d bytes to send through PRACH(mac header len %d)\n",
-           mod_id, frame, rlc_status.bytes_in_buffer,
-           dcch_header_len);
-
-          sdu_lengths = mac_rlc_data_req(mod_id, nr_UE_mac_inst->crnti, 
-            gNB_id, frame, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,	//not used
-            (char *) &ulsch_buff[0]
-            #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-            ,0,0
-            #endif
-            );
-
-          if(sdu_lengths > 0)
-            LOG_D(MAC, "[UE %d] TX Got %d bytes for DCCH\n", mod_id, sdu_lengths);
-          else
-           LOG_E(MAC, "[UE %d] TX DCCH error\n", mod_id );
-
-          update_bsr(mod_id, frame, nr_tti_tx, gNB_id);
-          nr_UE_mac_inst->scheduling_info.BSR[nr_UE_mac_inst->
-            scheduling_info.LCGID[DCCH]] = locate_BsrIndexByBufferSize(BSR_TABLE, BSR_TABLE_SIZE,
-            nr_UE_mac_inst
-            [mod_id].scheduling_info.BSR_bytes
-            [nr_UE_mac_inst
-            [mod_id].scheduling_info.LCGID
-            [DCCH]]);
-
-          //TBR: fill BSR infos in UL TBS
-
-          //header_len +=2;
-          nr_UE_mac_inst->RA_active = 1;
-          nr_UE_mac_inst->RA_PREAMBLE_TRANSMISSION_COUNTER =
-              1;
-          nr_UE_mac_inst->RA_Msg3_size =
-              size_sdu + dcch_header_len;
-          nr_UE_mac_inst->RA_prachMaskIndex = 0;
-          prach_resources->Msg3 =
-              ulsch_buff;
-          nr_UE_mac_inst->RA_backoff_cnt = 0;	// add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
-
-          AssertFatal(nr_rach_ConfigCommon != NULL,
-          	    "[UE %d] FATAL Frame %d: nr_rach_ConfigCommon is NULL !!!\n",
-          	    mod_id, frame);
-          nr_UE_mac_inst->RA_window_cnt =
-              2 +
-              nr_rach_ConfigCommon->ra_SupervisionInfo.
-              ra_ResponseWindowSize;
-
-          if (nr_UE_mac_inst->RA_window_cnt == 9) {
-              nr_UE_mac_inst->RA_window_cnt = 10;	// Note: 9 subframe window doesn't exist, after 8 is 10!
-          }
-
-
-          nr_UE_mac_inst->RA_tx_frame = frame;
-          nr_UE_mac_inst->RA_tx_subframe = nr_tti_tx;
-          nr_UE_mac_inst->RA_backoff_frame = frame;
-          nr_UE_mac_inst->RA_backoff_subframe = nr_tti_tx;
-          // Fill in preamble and PRACH resource
-          nr_get_prach_resources(mod_id, CC_id, gNB_id,
-          		    nr_tti_tx, 1, NULL);
-          generate_ulsch_header((uint8_t *) ulsch_buff,	// mac header
-         		      1,	// num sdus
-         		      0,	// short pading
-         		      &Size16,	// sdu length
-         		      &lcid,	// sdu lcid
-         		      NULL,	// power headroom
-         		      &nr_UE_mac_inst->crnti,	// crnti
-         		      NULL,	// truncated bsr
-         		      NULL,	// short bsr
-         		      NULL,	// long_bsr
-         		      0);	//post_padding
-
-          return (&nr_UE_mac_inst->RA_prach_resources);
-        }*/
+        return (prach_resources);
+      } 
     } else { // RACH is active
 
       ////////////////////////////////////////////////////////////////
       /////* Random Access Response reception (5.1.4 TS 38.321) */////
       ////////////////////////////////////////////////////////////////
-      /// Handling ra_responseWindow, RA_PREAMBLE_TRANSMISSION_COUNTER
-      /// and RA_backoff_cnt
+      // Handling ra_responseWindow, RA_PREAMBLE_TRANSMISSION_COUNTER
+      // and RA_backoff_cnt
+      // todo:
+      // - handle beam failure recovery request
+      // - handle DL assignment on PDCCH for RA-RNTI
 
       LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
         mod_id, frame, nr_tti_tx, nr_UE_mac_inst->RA_window_cnt, nr_UE_mac_inst->RA_tx_frame, nr_UE_mac_inst->RA_tx_subframe);
 
-      // - TBR check
+      if (nr_UE_mac_inst->rnti_type = NR_RNTI_RA){ // add condition on BI
+        // TBR todo
+      } else {
+        prach_resources->RA_PREAMBLE_BACKOFF = 0;
+      }
       // compute backoff parameters
       if (nr_UE_mac_inst->RA_backoff_cnt > 0){
         frame_diff = (sframe_t) frame - nr_UE_mac_inst->RA_backoff_frame;

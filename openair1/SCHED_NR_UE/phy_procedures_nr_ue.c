@@ -210,9 +210,12 @@ void nr_dump_dlsch_SI(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
   exit(-1);
 }
 
+#endif
+
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-//unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
-/*
+unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
+#endif
+
   unsigned int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL)
   {
 
@@ -250,9 +253,10 @@ void nr_dump_dlsch_SI(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
   else
   return(amp_x_100/gain_table[-gain_dB]);  // 245 corresponds to the factor sqrt(25/6)
   }
-*/
 
-unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
+#if 0
+
+unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb) // TbD
 {
 
   int gain_dB = power_dBm - power_max_dBm;
@@ -268,8 +272,6 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
   }
   return(0);
 }
-
-#endif
 
 void nr_dump_dlsch_ra(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t nr_tti_rx)
 {
@@ -4480,11 +4482,11 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
     return(0);
 }
 
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t mode) {
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t runmode) {
   /* TBR
   // here params are hardcoded */
   int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power;
-  uint16_t preamble_tx=ue->prach_resources[0]->ra_PreambleIndex; //uint16_t preamble_tx=50; // TBR
+  uint16_t preamble_tx = 50, pathloss;
   NR_PRACH_RESOURCES_t prach_resources;
   uint8_t mod_id = ue->Mod_id;
   NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
@@ -4493,76 +4495,56 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
   ue->generate_nr_prach = 0;
- if (ue->mac_enabled == 0){
-   ue->prach_resources[gNB_id] = &prach_resources;  // TBR double check pointer
-   ue->prach_resources[gNB_id]->ra_PreambleIndex = preamble_tx;
-   ue->prach_resources[gNB_id]->ra_TDD_map_index = 0;
-   // ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10; // TBR
-   // ue->prach_resources[gNB_id]->ra_RNTI = 93; // TBR
- } else {
+  if (ue->mac_enabled == 0){
+    ue->prach_resources[gNB_id] = &prach_resources;  // TBR double check pointer
+    ue->prach_resources[gNB_id]->ra_PreambleIndex = preamble_tx;
+    ue->prach_resources[gNB_id]->ra_TDD_map_index = 0;
+    ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10; // TBR
+    ue->prach_resources[gNB_id]->ra_RNTI = 93; // TBR NR_UE_MAC_INST_t
+  } else {
     // ask L2 for RACH transport
-    /* TBR
-    // check if these modes are active */
-    if ((mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) && (mode != no_L2_connect) ) {
-      LOG_D(PHY,"Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_tti_tx);
+    if ((runmode != rx_calib_ue) && (runmode != rx_calib_ue_med) && (runmode != rx_calib_ue_byp) && (runmode != no_L2_connect) ) {
+      LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_tti_tx);
       ue->prach_resources[gNB_id] = nr_ue_get_rach(mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
-      // LOG_D(PHY,"Got prach_resources for gNB %d address %p, RRCCommon %p\n", gNB_id, ue->prach_resources[gNB_id], UE_mac_inst[ue->Mod_id].radioResourceConfigCommon); // TBR update this
     }
   }
 
-  if (ue->prach_resources[gNB_id]!=NULL) {
+  if (ue->prach_resources[gNB_id] != NULL) {
 
     ue->generate_nr_prach = 1;
     ue->prach_cnt = 0;
+    pathloss = get_nr_PL(ue, gNB_id);
+    LOG_I(PHY,"runmode %d\n",runmode);
 
-    #ifdef SMBV // TBR
+    if ((ue->mac_enabled == 1) && (runmode != calib_prach_tx)) {
+      // todo power control as per 38.213 ch 7.4
+      ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
+      ue->tx_power_dBm[nr_tti_tx] = ue->tx_power_max_dBm;
       ue->prach_resources[gNB_id]->ra_PreambleIndex = preamble_tx;
-    #endif
+    }
 
-    #ifdef OAI_EMU // TBR
-      ue->prach_PreambleIndex=ue->prach_resources[gNB_id]->ra_PreambleIndex;
-    #endif
+    LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %d\n",
+      ue->Mod_id,
+      frame_tx,
+      nr_tti_tx,
+      ue->prach_resources[gNB_id]->ra_PreambleIndex,
+      pathloss,
+      ue->tx_power_dBm[nr_tti_tx],
+      ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+      ue->prach_resources[gNB_id]->ra_RNTI);
 
-  // if (abstraction_flag == 0) { // TBR
-
-    LOG_I(PHY,"mode %d\n",mode);
-
-      if ((ue->mac_enabled==1) && (mode != calib_prach_tx)) {
-        /* TODO TBR
-        // check if ra_PREAMBLE_RECEIVED_TARGET_POWER is filled id */
-        ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER + get_nr_PL(ue,gNB_id);
-        /* TODO TBR
-        DEBUG ONLY */
-        printf("ue->tx_power_dBm[nr_tti_tx] %d ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER %d get_nr_PL(ue,gNB_id) %d\n", ue->tx_power_dBm[nr_tti_tx], ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER, get_nr_PL(ue,gNB_id));
-      } else {
-        ue->tx_power_dBm[nr_tti_tx] = ue->tx_power_max_dBm;
-        ue->prach_resources[gNB_id]->ra_PreambleIndex = preamble_tx;  /* TODO TBR this is hardcoded */
-      }
-
-      LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, nr_tti_rx %d : Generating PRACH, preamble %d,PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n", ue->Mod_id,
-        frame_tx,
-        nr_tti_tx,
-        ue->prach_resources[gNB_id]->ra_PreambleIndex,
-        get_nr_PL(ue,gNB_id),
-        ue->tx_power_dBm[nr_tti_tx],
-        ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-        ue->prach_resources[gNB_id]->ra_TDD_map_index,
-        ue->prach_resources[gNB_id]->ra_RNTI);
-
-    ue->tx_total_RE[nr_tti_tx] = 96;  /* TODO TBR this is hardcoded */
+    ue->tx_total_RE[nr_tti_tx] = 96; /* todo TBR double check */
 
     #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-    ue->prach_vars[gNB_id]->amp = get_tx_amp(ue->tx_power_dBm[nr_tti_tx], /* TODO TBR get_tx_amp is still valid for NR ? */
-                                             ue->tx_power_max_dBm,
-                                             ue->frame_parms.N_RB_UL,
-                                             6);  /* TODO TBR why 6 ? */
+      ue->prach_vars[gNB_id]->amp = get_tx_amp_prach(ue->tx_power_dBm[nr_tti_tx],
+                                                     ue->tx_power_max_dBm,
+                                                     ue->frame_parms.N_RB_UL);
     #else
-      ue->prach_vars[gNB_id]->amp = AMP;  /* TODO TBR where does this come from ? */
+      ue->prach_vars[gNB_id]->amp = AMP;
     #endif
 
-    if ((mode == calib_prach_tx) && (((proc->frame_tx&0xfffe)%100)==0)) /* TODO TBR double check where calibration prach tx is handled */
-      LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, nr_tti_rx %d : PRACH TX power %d dBm, amp %d\n",
-        ue->Mod_id,
+    if ((runmode == calib_prach_tx) && (((proc->frame_tx&0xfffe)%100)==0))
+      LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d : PRACH TX power %d dBm, amp %d\n", ue->Mod_id,
         proc->frame_rx,
         proc->nr_tti_tx,
         ue->tx_power_dBm[nr_tti_tx],
@@ -4571,38 +4553,35 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     // start_meas(&ue->tx_prach);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_IN);
 
-    // prach_power = generate_nr_prach(ue,gNB_id,nr_tti_tx,frame_tx);
-    prach_power = generate_nr_prach(ue,0,9,0); //subframe number hardcoded according to the simulator /* TODO TBR this is hardcoded */
+    prach_power = generate_nr_prach(ue, gNB_id, nr_tti_tx);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
-    //      stop_meas(&ue->tx_prach);
-    LOG_D(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
+
+    LOG_D(PHY,"[UE %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
       ue->Mod_id,
       get_nr_PL(ue,gNB_id),
       ue->tx_power_dBm[nr_tti_tx],
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);
-    // } else {
-    //  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.prach_flag=1;
-    //  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.prach_id=ue->prach_resources[eNB_id]->ra_PreambleIndex;
-    // } // commented for compiling as abstraction flag is 0
 
     if (ue->mac_enabled == 1)
-      // nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id); TBR
+      nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
 
-
-    LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, nr_tti_rx %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
-      ue->Mod_id,frame_tx,nr_tti_tx,gNB_id,
+    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d: Generating PRACH (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
+      ue->Mod_id,
+      frame_tx,
+      nr_tti_tx,
+      gNB_id,
       ue->prach_resources[gNB_id]->ra_PreambleIndex,
-      ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_nr_PL(ue,gNB_id),
-      get_nr_PL(ue,gNB_id));
+      ue->tx_power_dBm[nr_tti_tx],
+      pathloss);
   }
 
   // if we're calibrating the PRACH kill the pointer to its resources so that the RA protocol doesn't continue
-  if (mode == calib_prach_tx)
+  if (runmode == calib_prach_tx)
     ue->prach_resources[gNB_id]=NULL;
 
-  LOG_D(PHY,"[UE %d] frame %d nr_tti_rx %d : generate_nr_prach %d, prach_cnt %d\n", ue->Mod_id,frame_tx,nr_tti_tx,ue->generate_nr_prach,ue->prach_cnt);
+  LOG_D(PHY,"[UE %d] frame %d nr_tti_rx %d : generate_nr_prach %d, prach_cnt %d\n", ue->Mod_id,frame_tx,nr_tti_tx, ue->generate_nr_prach, ue->prach_cnt);
 
   ue->prach_cnt++;
 

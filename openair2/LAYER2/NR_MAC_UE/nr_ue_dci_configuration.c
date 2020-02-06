@@ -114,7 +114,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
     if (mac->ra_state == WAIT_RAR) {
       // check for RAR
       rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15; 
-      rel15->rnti = 2;//get_RA_RNTI(mac,frame,slot);
+      rel15->rnti = 2;//get_RA_RNTI(mac,frame,slot); // TBR
       dl_config->number_pdus = dl_config->number_pdus + 1;
     }
     else if (mac->ra_state == WAIT_CONTENTION_RESOLUTION) {

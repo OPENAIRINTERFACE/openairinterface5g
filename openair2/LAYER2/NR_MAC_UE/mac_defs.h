@@ -100,10 +100,12 @@ typedef struct {
   SFN_C_TYPE type0_pdcch_ss_sfn_c;
   uint32_t type0_pdcch_ss_n_c;
   uint32_t type0_pdcch_consecutive_slots;
+  int rnti_type;
 
   /* PDUs */
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
+  ULSCH_PDU ulsch_pdu;
 
   /* Random Access parameters */
   /// state of RA procedure

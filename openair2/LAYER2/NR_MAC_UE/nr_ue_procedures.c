@@ -2752,7 +2752,9 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       LOG_D(MAC,"tb_scaling %d  (2 bits)=> %d (0x%lx)\n",dci_pdu_rel15->tb_scaling,dci_size-pos,*dci_pdu);
 #endif
       break;
-  	
+
+    mac->rnti_type = rnti_type;
+
     case NR_RNTI_C:
 	
       // indicating a DL DCI format 1bit
@@ -3279,4 +3281,170 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
 
         AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length < 0!\n");
     }
+}
+
+////////////////////////////////////////////////////////
+/////* ULSCH MAC PDU generation (6.1.2 TS 38.321) */////
+////////////////////////////////////////////////////////
+
+unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
+                                    uint8_t *pdu,
+                                    uint8_t num_sdus,
+                                    uint16_t *sdu_lengths,
+                                    uint8_t *sdu_lcids,
+                                    uint8_t power_headroom,
+                                    uint16_t crnti,
+                                    uint16_t truncated_bsr,
+                                    uint16_t short_bsr,
+                                    uint16_t long_bsr,
+                                    unsigned short post_padding) {
+
+  NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) pdu;
+  unsigned char first_element = 0, last_size = 0, i, mac_header_control_elements[16], *ce_ptr, bsr = 0;
+  int mac_ce_size, offset;
+
+  LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d\n", num_sdus);
+
+  #ifdef DEBUG_HEADER_PARSING
+
+    for (i = 0; i < num_sdus; i++)
+      LOG_D(MAC, "[UE] MAC subPDU %d (lcid %d length %d bytes \n", i, sdu_lcids[i], sdu_lengths[i]);
+
+  #endif
+
+  // Generating UL MAC subPDUs including MAC SDU and subheader
+
+  for (i = 0; i < num_sdus; i++) {
+    LOG_D(MAC, "[UE] Generating UL MAC subPDUs for SDU with lenght %d ( num_sdus %d )\n", sdu_lengths[i], num_sdus);
+
+    if (sdu_lcids[i] != UL_SCH_LCID_CCCH){
+      if (sdu_lengths[i] < 128) {
+        ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
+        ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
+        ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
+        ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
+        last_size = 2;
+      } else {
+        ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
+        ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
+        ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->LCID = sdu_lcids[i];
+        ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L1 = ((unsigned short) sdu_lengths[i] >> 8) & 0x7f;
+        ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L2 = (unsigned short) sdu_lengths[i] & 0xff;
+        last_size = 3;
+      }
+    } else { // UL CCCH SDU
+      mac_pdu_ptr->R = 0;
+      mac_pdu_ptr->LCID = sdu_lcids[i];
+    }
+
+    mac_pdu_ptr += last_size;
+
+    // cycle through SDUs, compute each relevant and place ulsch_buffer in
+    memcpy((void *) mac_pdu_ptr, (void *) sdus_payload, sdu_lengths[i]);
+    sdus_payload += sdu_lengths[i]; 
+    mac_pdu_ptr  += sdu_lengths[i];
+  }
+
+  // Generating UL MAC subPDUs including MAC CEs (MAC CE and subheader)
+
+  ce_ptr = &mac_header_control_elements[0];
+
+  if (power_headroom) {
+    // MAC CE fixed subheader
+    mac_pdu_ptr->R = 0;
+    mac_pdu_ptr->LCID = UL_SCH_LCID_SINGLE_ENTRY_PHR;
+    mac_pdu_ptr++;
+
+    // PHR MAC CE (1 octet)
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) ce_ptr)->PH = power_headroom;
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) ce_ptr)->R1 = 0;
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) ce_ptr)->PCMAX = 0; // todo
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) ce_ptr)->R2 = 0;
+
+    mac_ce_size = sizeof(NR_SINGLE_ENTRY_PHR_MAC_CE);
+
+    // Copying bytes for PHR MAC CEs to the mac pdu pointer
+    memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
+    ce_ptr += mac_ce_size;
+    mac_pdu_ptr += (unsigned char) mac_ce_size;
+  }
+
+  if (crnti) {
+    // MAC CE fixed subheader
+    mac_pdu_ptr->R = 0;
+    mac_pdu_ptr->LCID = CRNTI;
+    mac_pdu_ptr++;
+
+    // C-RNTI MAC CE (2 octets)
+    * (uint16_t *) ce_ptr = crnti;
+    mac_ce_size = sizeof(uint16_t);
+
+    // Copying bytes for CRNTI MAC CE to the mac pdu pointer
+    memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
+    ce_ptr += mac_ce_size;
+    mac_pdu_ptr += (unsigned char) mac_ce_size;
+  }
+
+  if (truncated_bsr) {
+    // MAC CE fixed subheader
+    mac_pdu_ptr->R = 0;
+    mac_pdu_ptr->LCID = UL_SCH_LCID_S_TRUNCATED_BSR;
+    mac_pdu_ptr++;
+
+    // Short truncated BSR MAC CE (1 octet)
+    ((NR_BSR_SHORT_TRUNCATED *) ce_ptr)-> Buffer_size = truncated_bsr;
+    ((NR_BSR_SHORT_TRUNCATED *) ce_ptr)-> LcgID = 0; // todo
+    mac_ce_size = sizeof(NR_BSR_SHORT_TRUNCATED);
+
+    bsr = 1 ;
+  } else if (short_bsr) {
+    // MAC CE fixed subheader
+    mac_pdu_ptr->R = 0;
+    mac_pdu_ptr->LCID = UL_SCH_LCID_S_BSR;
+    mac_pdu_ptr++;
+
+    // Short truncated BSR MAC CE (1 octet)
+    ((NR_BSR_SHORT *) ce_ptr)->Buffer_size = short_bsr;
+    ((NR_BSR_SHORT *) ce_ptr)->LcgID = 0; // todo
+    mac_ce_size = sizeof(NR_BSR_SHORT);
+
+    bsr = 1 ;
+  } else if (long_bsr) {
+    // MAC CE variable subheader
+    // todo ch 6.1.3.1. TS 38.321
+    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
+    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
+    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = UL_SCH_LCID_L_BSR;
+    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = 0;
+    // last_size = 2;
+    // mac_pdu_ptr += last_size;
+
+    // Short truncated BSR MAC CE (1 octet)
+    // ((NR_BSR_LONG *) ce_ptr)->Buffer_size0 = short_bsr;
+    // ((NR_BSR_LONG *) ce_ptr)->LCGID0 = 0;
+    // mac_ce_size = sizeof(NR_BSR_LONG); // size is variable
+  }
+
+  if (bsr){
+    // Copying bytes for BSR MAC CE to the mac pdu pointer
+    memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
+    ce_ptr += mac_ce_size;
+    mac_pdu_ptr += (unsigned char) mac_ce_size;
+  }
+
+  // Compute final offset for padding
+  if (post_padding > 0) {
+    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
+    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = UL_SCH_LCID_PADDING;
+    mac_pdu_ptr++;
+  } else {            
+    // no MAC subPDU with padding
+  }
+
+  // compute final offset
+  offset = ((unsigned char *) mac_pdu_ptr - pdu);
+
+  //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
+
+  return offset;
 }

@@ -56,7 +56,7 @@ extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 
-int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
+int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 {
 
   //lte_frame_type_t frame_type         = ue->frame_parms.frame_type;
@@ -66,13 +66,13 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   uint8_t prach_ConfigIndex  = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   uint8_t Ncs_config         = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
   uint8_t restricted_set     = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  uint8_t preamble_index     = ue->prach_resources[eNB_id]->ra_PreambleIndex;
-  //uint8_t tdd_mapindex       = ue->prach_resources[eNB_id]->ra_TDD_map_index;
-  int16_t *prachF           = ue->prach_vars[eNB_id]->prachF;
+  uint8_t preamble_index     = ue->prach_resources[gNB_id]->ra_PreambleIndex;
+  //uint8_t tdd_mapindex       = ue->prach_resources[gNB_id]->ra_TDD_map_index;
+  int16_t *prachF           = ue->prach_vars[gNB_id]->prachF;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
   int16_t *prach            = prach_tmp;
   int16_t *prach2;
-  int16_t amp               = ue->prach_vars[eNB_id]->amp;
+  int16_t amp               = ue->prach_vars[gNB_id]->amp;
   int16_t Ncp;
   uint16_t NCS=0;
   uint16_t *prach_root_sequence_map;

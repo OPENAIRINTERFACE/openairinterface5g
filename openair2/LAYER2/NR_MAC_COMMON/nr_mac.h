@@ -96,11 +96,52 @@ typedef struct {
     uint8_t R:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
+// BSR MAC CEs
+// TS 38.321 ch. 6.1.3.1
+// Short BSR for a specific logical channel group ID
+typedef struct {
+  uint8_t Buffer_size:5;   // octet 1 LSB
+  uint8_t LcgID:3;         // octet 1 MSB
+} __attribute__ ((__packed__)) NR_BSR_SHORT;
+
+typedef NR_BSR_SHORT NR_BSR_SHORT_TRUNCATED;
+
+// Long BSR for all logical channel group ID
+typedef struct {
+  uint8_t Buffer_size7:8;
+  uint8_t Buffer_size6:8;
+  uint8_t Buffer_size5:8;
+  uint8_t Buffer_size4:8;
+  uint8_t Buffer_size3:8;
+  uint8_t Buffer_size2:8;
+  uint8_t Buffer_size1:8;
+  uint8_t Buffer_size0:8;
+  uint8_t LcgID0:1;
+  uint8_t LcgID1:1;
+  uint8_t LcgID2:1;
+  uint8_t LcgID3:1;
+  uint8_t LcgID4:1;
+  uint8_t LcgID5:1;
+  uint8_t LcgID6:1;
+  uint8_t LcgID7:1;
+} __attribute__ ((__packed__)) NR_BSR_LONG;
+
+typedef NR_BSR_LONG NR_BSR_LONG_TRUNCATED;
+
 // 38.321 ch. 6.1.3.4
 typedef struct {
     uint8_t TA_COMMAND:6;   // octet 1 [5:0]
     uint8_t TAGID:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_CE_TA;
+
+// single Entry PHR MAC CE
+// TS 38.321 ch. 6.1.3.8
+typedef struct {
+  uint8_t PH:6;
+  uint8_t R1:2;
+  uint8_t PCMAX:6;
+  uint8_t R2:6;
+} __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
 
 // /*! \brief CCCH payload */ // TBR
 // typedef struct {
@@ -154,6 +195,7 @@ typedef struct {
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
 #define UL_SCH_LCID_SRB3                           0x03
+#define UL_SCH_LCID_DTCH                           0x04
 #define UL_SCH_LCID_CCCH_MSG3                      0x21
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36

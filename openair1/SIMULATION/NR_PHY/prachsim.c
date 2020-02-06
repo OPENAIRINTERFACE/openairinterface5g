@@ -514,8 +514,7 @@ int main(int argc, char **argv)
 
   /*tx_lev = generate_nr_prach(UE,
 			     0, //gNB_id,
-			     subframe,
-			     0); //Nf */ //commented for testing purpose
+			     subframe); */ //commented for testing purpose
 
   UE_nr_rxtx_proc_t proc={0};
   nr_ue_prach_procedures(UE,&proc,0,0);
