@@ -2502,7 +2502,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-	  LOG_I(PHY, "Sending data \n");
+	  LOG_D(PHY, "Sending data \n");
 	  nr_ue_pusch_common_procedures(ue,
                                 harq_pid,
                                 slot_tx,

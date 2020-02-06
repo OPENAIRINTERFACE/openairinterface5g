@@ -192,7 +192,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     			//Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
     			//and block this traffic from being forwarded to the upper layers at the gNB
     			uint16_t payload_offset = 5;
-    			LOG_E(PHY, "Random data to be tranmsitted: \n");
+    			LOG_D(PHY, "Random data to be tranmsitted: \n");
     			//Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
     			for (i = 0; i<payload_offset; i++)
     				harq_process_ul_ue->a[i] = 0;
@@ -426,7 +426,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  LOG_I(PHY, "Is data existing ?: %d \n", data_existing);
+  LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
   return data_existing;
 }
 

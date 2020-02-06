@@ -288,7 +288,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
     LOG_I(PHY, "ULSCH in error\n");
   //gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b
   else if(gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->b!=NULL){
-	  LOG_D(PHY, "ULSCH received ok \n");
+	  LOG_I(PHY, "ULSCH received ok \n");
 	  if(IS_SOFTMODEM_NOS1){ //&& gNB->ulsch[UE_id][0]->rnti == 0x1234
 		  nr_fill_crc_indication (gNB, UE_id, frame_rx, slot_rx, 0);
 		  nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);

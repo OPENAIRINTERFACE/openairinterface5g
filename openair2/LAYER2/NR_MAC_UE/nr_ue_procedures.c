@@ -36,9 +36,10 @@
 #include "assertions.h"
 #include "PHY/defs_nr_UE.h"
 #include "common/utils/LOG/log.h"
-#include "openair2/LAYER2/MAC/mac.h"
-#include "openair2/LAYER2/RLC/rlc.h"
+//#include "openair2/LAYER2/MAC/mac.h"
+//#include "openair2/LAYER2/RLC/rlc.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -2184,7 +2185,7 @@ void nr_ue_process_mac_pdu(
                 break;
 
             //  MAC SDU
-            case DL_SCH_LCID_SRB1:
+            case DL_SCH_LCID_DCCH:
                 //  check if LCID is valid at current time.
             case UL_SCH_LCID_SRB2:
                 //  check if LCID is valid at current time.
@@ -2506,8 +2507,8 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
-  for (lcid = DCCH;
-       lcid < MAX_NUM_LCID; lcid++) {
+  for (lcid = UL_SCH_LCID_SRB1;
+       lcid < NR_MAX_NUM_LCID; lcid++) {
 
       lcid_buffer_occupancy_old =
     		  //TODO: Replace static value with CRNTI

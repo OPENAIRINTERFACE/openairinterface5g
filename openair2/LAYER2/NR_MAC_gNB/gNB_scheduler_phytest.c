@@ -565,9 +565,6 @@ void nr_process_mac_pdu(
     int pdu_len = mac_pdu_len;
     uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
 
-    rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
-
-    LOG_I(MAC, "LCID received at gNB side: %d \n", rx_lcid);
 
     //  For both DL/UL-SCH
     //  Except:
@@ -600,7 +597,7 @@ void nr_process_mac_pdu(
         mac_sdu_len = 0;
         rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
 
-        LOG_I(MAC, "LCID received at gNB side: %d \n", rx_lcid);
+        LOG_D(MAC, "LCID received at gNB side: %d \n", rx_lcid);
 
         switch(rx_lcid){
             //  MAC CE
@@ -681,49 +678,17 @@ void nr_rx_sdu(module_id_t module_idP,
                     const uint8_t ul_cqi)
 {
 
-  LOG_I(MAC, "Handling PDU frame %d slot %d pdu_len: %d \n", frameP, ttiP, pdu_len);
+  LOG_D(MAC, "Handling PDU frame %d slot %d pdu_len: %d \n", frameP, ttiP, pdu_len);
 
   uint8_t * pduP = pdu;
-
-
-  /*if (opt_enabled) {
-    trace_pdu(DIRECTION_DOWNLINK, pduP, pdu_len, module_idP, WS_C_RNTI,
-    UE_mac_inst[module_idP].cs_RNTI, frameP, ttiP, 0, 0); //subframeP
-    LOG_D(OPT, "[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
-      module_idP, frameP, UE_mac_inst[module_idP].cs_RNTI, pdu_len);
-    }*/
-
-  /*
-  #ifdef DEBUG_HEADER_PARSING
-    LOG_D(MAC, "[UE %d] ue_send_sdu : Frame %d gNB_index %d : num_ce %d num_sdu %d\n",
-      module_idP, frameP, gNB_index, num_ce, num_sdu);
-  #endif
-  */
-
-  /*
-  #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
-    for (i = 0; i < 32; i++) {
-      LOG_T(MAC, "%x.", sdu[i]);
-    }
-    LOG_T(MAC, "\n");
-  #endif
-  */
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
   if (pduP != NULL){
-	  LOG_I(MAC, "Received PDU at MAC gNB \n");
+	  LOG_D(MAC, "Received PDU at MAC gNB \n");
 	  nr_process_mac_pdu(module_idP, CC_id, frameP, pduP, pdu_len);
   }
 
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_OUT);
-
-  /*
-  #if UE_TIMING_TRACE
-    stop_meas(&UE_mac_inst[module_idP].rx_dlsch_sdu);
-  #endif
-  */
 }
 
 

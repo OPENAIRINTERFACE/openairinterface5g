@@ -51,12 +51,11 @@
 #include "fapi_nr_ue_interface.h"
 #include "NR_IF_Module.h"
 #include "PHY/defs_nr_common.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 
 #define NB_NR_UE_MAC_INST 1
 /*!\brief Maximum number of logical channl group IDs */
-#define MAX_NUM_LCGID 4
-/*!\brief Maximum number of logical chanels */
-#define MAX_NUM_LCID 11
+
 
 /*!\brief value for indicating BSR Timer is not running */
 #define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
@@ -67,42 +66,24 @@ typedef enum {
     SFN_C_IMPOSSIBLE
 } SFN_C_TYPE;
 
-#define UL_SCH_LCID_CCCH                           0x00
-#define UL_SCH_LCID_SRB1                           0x01
-#define UL_SCH_LCID_SRB2                           0x02
-#define UL_SCH_LCID_DTCH						   0x03
-#define UL_SCH_LCID_SRB3                           0x04
-#define UL_SCH_LCID_CCCH_MSG3                      0x21
-#define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
-#define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
-#define UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION  0x37
-#define UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT          0x38
-#define UL_SCH_LCID_SINGLE_ENTRY_PHR               0x39
-#define UL_SCH_LCID_C_RNTI                         0x3A
-#define UL_SCH_LCID_S_TRUNCATED_BSR                0x3B
-#define UL_SCH_LCID_L_TRUNCATED_BSR                0x3C
-#define UL_SCH_LCID_S_BSR                          0x3D
-#define UL_SCH_LCID_L_BSR                          0x3E
-#define UL_SCH_LCID_PADDING                        0x3F
-
 // LTE structure, might need to be adapted for NR
 typedef struct {
   /// buffer status for each lcgid
-  uint8_t  BSR[MAX_NUM_LCGID]; // should be more for mesh topology
+  uint8_t  BSR[NR_MAX_NUM_LCGID]; // should be more for mesh topology
   /// keep the number of bytes in rlc buffer for each lcgid
-  int32_t  BSR_bytes[MAX_NUM_LCGID];
+  int32_t  BSR_bytes[NR_MAX_NUM_LCGID];
   /// after multiplexing buffer remain for each lcid
-  int32_t  LCID_buffer_remain[MAX_NUM_LCID];
+  int32_t  LCID_buffer_remain[NR_MAX_NUM_LCID];
   /// sum of all lcid buffer size
   uint16_t  All_lcid_buffer_size_lastTTI;
   /// buffer status for each lcid
-  uint8_t  LCID_status[MAX_NUM_LCID];
+  uint8_t  LCID_status[NR_MAX_NUM_LCID];
   /// SR pending as defined in 36.321
   uint8_t  SR_pending;
   /// SR_COUNTER as defined in 36.321
   uint16_t SR_COUNTER;
   /// logical channel group ide for each LCID
-  uint8_t  LCGID[MAX_NUM_LCID];
+  uint8_t  LCGID[NR_MAX_NUM_LCID];
   /// retxBSR-Timer, default value is sf2560
   uint16_t retxBSR_Timer;
   /// retxBSR_SF, number of subframe before triggering a regular BSR
@@ -142,9 +123,9 @@ typedef struct {
   uint16_t extendedPHR_r10;
 
   //Bj bucket usage per  lcid
-  int16_t Bj[MAX_NUM_LCID];
+  int16_t Bj[NR_MAX_NUM_LCID];
   // Bucket size per lcid
-  int16_t bucket_size[MAX_NUM_LCID];
+  int16_t bucket_size[NR_MAX_NUM_LCID];
 } NR_UE_SCHEDULING_INFO;
 
 
