@@ -748,7 +748,7 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
       rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
--              UE->frame_parms.nb_prefix_samples0+UE->frame_parms.
+               UE->frame_parms.nb_prefix_samples0+UE->frame_parms.
                get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)

@@ -46,6 +46,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned char aa;
   unsigned int nb_prefix_samples;
   unsigned int nb_prefix_samples0;
+  unsigned int abs_symbol;
   if (ue->is_synchronized) {
     nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
     nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
@@ -125,7 +126,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
     memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
-    rx_offset = sample_offset + slot_offset + nb_prefix_samples0 - SOFFSET;
+    rx_offset = sample_offset + slot_offset - SOFFSET;
     // Align with 256 bit
     //    rx_offset = rx_offset&0xfffffff8;
 
@@ -135,8 +136,16 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     		ue->proc.proc_rxtx[(Ns)&1].frame_rx, Ns, symbol, nb_prefix_samples, nb_prefix_samples0, slot_offset, sample_offset, rx_offset, frame_length_samples);
 #endif
 
-    if (symbol==0) {
+    abs_symbol = Ns * frame_parms->symbols_per_slot + symbol;
+    
+    for (int idx_symb = Ns*frame_parms->symbols_per_slot; idx_symb < abs_symbol; idx_symb++)
+      rx_offset += (abs_symbol%(0x7<<frame_parms->numerology_index)) ? nb_prefix_samples : nb_prefix_samples0;
 
+    rx_offset += frame_parms->ofdm_symbol_size * symbol;
+
+    if (abs_symbol%(0x7<<frame_parms->numerology_index)) {
+
+      rx_offset += nb_prefix_samples0;
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((short*) &common_vars->rxdata[aa][frame_length_samples],
                (short*) &common_vars->rxdata[aa][0],
@@ -161,9 +170,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
       }
     } else {
 
-      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol;
-      //                  + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
-
+      rx_offset += frame_parms->nb_prefix_samples;
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((void *) &common_vars->rxdata[aa][frame_length_samples],
                (void *) &common_vars->rxdata[aa][0],
