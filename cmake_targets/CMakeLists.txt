@@ -127,7 +127,7 @@ endfunction()
 
 #set(CMAKE_BUILD_TYPE "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "")
-   set(CMAKE_BUILD_TYPE "Release")
+   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." Debug Release RelWithDebInfo MinSizeRel)
@@ -2766,7 +2766,6 @@ target_link_libraries(nr_pucchsim
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
-#PUCCH ---> Prashanth
 
 add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c

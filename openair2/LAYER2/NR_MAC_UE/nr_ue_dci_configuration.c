@@ -57,7 +57,7 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot) {
 
   // check if DL slot
-  if (is_nr_DL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon,slot)==1) {
+  if (is_nr_DL_slot(mac->scc,slot)==1) {
     
     // get BWP 1, Coreset 0, SearchSpace 0  
     if (mac->DLbwp[0]==NULL) {

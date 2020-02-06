@@ -505,7 +505,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
 
   mac_rlc_status_resp_t rlc_status;
-  nfapi_nr_config_request_t *cfg = &gNB_mac->config[0];
 
   NR_UE_list_t *UE_list = &gNB_mac->UE_list;
  
