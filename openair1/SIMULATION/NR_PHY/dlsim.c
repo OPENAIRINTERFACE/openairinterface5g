@@ -524,7 +524,7 @@ int main(int argc, char **argv)
   // common configuration
   rrc_mac_config_req_gNB(0,0,1,scc,0,0,NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,1,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0,1,NULL,1,4660/*secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity*/,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   // stub to configure frame_parms
