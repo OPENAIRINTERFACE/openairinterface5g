@@ -2289,8 +2289,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   //int32_t ulsch_start=0;
   int slot_tx = proc->nr_tti_tx;
   int frame_tx = proc->frame_tx;
-  uint8_t harq_pid = 0; // TBR 
-  runmode_t mode = normal_txrx; // TBR set proper mode
+  uint8_t harq_pid = 0;
+  runmode_t mode = normal_txrx;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
@@ -2328,14 +2328,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     // check if we have PRACH opportunity
     if (is_nr_prach_subframe(&ue->frame_parms, frame_tx, slot_tx)) {
       // TBR TODO FIX this works only for TDD but it enters phy_procedures_nrUE_TX only when mode is FDD
-      printf("the value of is_nr_prach subframe is %d\n", is_nr_prach_subframe(&ue->frame_parms, frame_tx, slot_tx)); // TBR debug
+      printf(" is_nr_prach_subframe is %d\n", is_nr_prach_subframe(&ue->frame_parms, frame_tx, slot_tx)); // TBR debug
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
   }
   else {
     ue->generate_nr_prach = 0;
   }
-/* RACH */
 
   LOG_I(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
