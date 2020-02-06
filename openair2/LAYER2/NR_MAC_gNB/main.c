@@ -40,7 +40,7 @@
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "common/ran_context.h"
-#include "executables/nr-softmodem.h"
+#include "executables/softmodem-common.h"
 
 extern RAN_CONTEXT_t RC;
 

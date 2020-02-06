@@ -128,7 +128,6 @@ typedef struct xer_sprint_string_s {
 //replace LTE
 //extern unsigned char NB_eNB_INST;
 extern unsigned char NB_gNB_INST;
-extern uint8_t usim_test;
 
 extern RAN_CONTEXT_t RC;
 
