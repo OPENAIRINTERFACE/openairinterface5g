@@ -478,9 +478,9 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       }
 
       if ( b->headerMode==false ) {
-        LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
         if ( ! b->trashingPacket ) {
           b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
+          LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
         }
 
         if ( b->remainToTransfer==0) {
