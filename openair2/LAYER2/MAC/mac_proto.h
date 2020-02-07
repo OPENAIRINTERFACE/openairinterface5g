@@ -448,14 +448,6 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP, int CC_id,
 module_id_t schedule_next_ulue(module_id_t module_idP, int UE_id,
                                sub_frame_t subframe);
 
-/** \brief Round-robin scheduler for DLSCH traffic.
-@param Mod_id Instance ID for eNB
-@param subframe Subframe number on which to act
-@returns UE index that is to be scheduled if needed/room
-*/
-int schedule_next_dlue(module_id_t module_idP, int CC_id,
-                       sub_frame_t subframe);
-
 /* \brief Allocates a set of PRBS for a particular UE.  This is a simple function for the moment, later it should process frequency-domain CQI information and/or PMI information.  Currently it just returns the first PRBS that are available in the subframe based on the number requested.
 @param UE_id Index of UE on which to act
 @param nb_rb Number of PRBs allocated to UE by scheduler
@@ -1217,10 +1209,6 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
                                  int             min_rb_unit[MAX_NUM_CCs],
                                  uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
 #endif
-
-/* Slice related functions */
-uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
-int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx);
 
 /* DRX Configuration */
 /* Configure local DRX timers and thresholds in UE context, following the drx_configuration input */

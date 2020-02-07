@@ -88,31 +88,6 @@ add_ue_dlsch_info(module_id_t module_idP,
 
 //------------------------------------------------------------------------------
 int
-schedule_next_dlue(module_id_t module_idP,
-                   int CC_id,
-                   sub_frame_t subframeP)
-//------------------------------------------------------------------------------
-{
-  int next_ue;
-  UE_list_t *UE_list = &RC.mac[module_idP]->UE_info.list;
-
-  for (next_ue = UE_list->head; next_ue >= 0; next_ue = UE_list->next[next_ue]) {
-    if (eNB_dlsch_info[module_idP][CC_id][next_ue].status == S_DL_WAITING) {
-      return next_ue;
-    }
-  }
-
-  for (next_ue = UE_list->head; next_ue >= 0; next_ue = UE_list->next[next_ue]) {
-    if (eNB_dlsch_info[module_idP][CC_id][next_ue].status == S_DL_BUFFERED) {
-      eNB_dlsch_info[module_idP][CC_id][next_ue].status = S_DL_WAITING;
-    }
-  }
-
-  return (-1);        //next_ue;
-}
-
-//------------------------------------------------------------------------------
-int
 generate_dlsch_header(unsigned char *mac_header,
                       unsigned char num_sdus,
                       unsigned short *sdu_lengths,
@@ -2629,39 +2604,5 @@ schedule_PCH(module_id_t module_idP,
 
   /* this might be misleading when pcch is inactive */
   stop_meas(&eNB->schedule_pch);
-  return;
-}
-
-static int
-slice_priority_compare(const void *_a,
-                       const void *_b,
-                       void *_c) {
-  const int slice_id1 = *(const int *) _a;
-  const int slice_id2 = *(const int *) _b;
-  const module_id_t Mod_id = *(int *)  _c;
-  const slice_info_t *sli = &RC.mac[Mod_id]->slice_info;
-
-  if (sli->dl[slice_id1].prio > sli->dl[slice_id2].prio) {
-    return -1;
-  }
-
-  return 1;
-}
-
-void
-slice_priority_sort(module_id_t Mod_id,
-                    int slice_list[MAX_NUM_SLICES]) {
-  int i;
-  int n_dl = RC.mac[Mod_id]->slice_info.n_dl;
-
-  for (i = 0; i < n_dl; i++) {
-    slice_list[i] = i;
-  }
-
-  qsort_r(slice_list,
-          n_dl,
-          sizeof(int),
-          slice_priority_compare,
-          &Mod_id);
   return;
 }

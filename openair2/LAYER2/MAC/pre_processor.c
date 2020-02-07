@@ -196,12 +196,6 @@ int round_robin_dl(module_id_t Mod_id,
   return n_rbg_sched;
 }
 
-void
-sort_ue_ul(module_id_t module_idP,
-           int sched_frameP,
-           sub_frame_t sched_subframeP,
-           rnti_t *rntiTable);
-
 // This function stores the downlink buffer for all the logical channels
 void
 store_dlsch_buffer(module_id_t Mod_id,
@@ -271,31 +265,6 @@ store_dlsch_buffer(module_id_t Mod_id,
   }
 }
 
-int
-maxround_ul(module_id_t Mod_id, uint16_t rnti, int sched_frame,
-            sub_frame_t sched_subframe) {
-  uint8_t round, round_max = 0, UE_id;
-  int CC_id, harq_pid;
-  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
-  COMMON_channels_t *cc;
-
-  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
-    cc = &RC.mac[Mod_id]->common_channels[CC_id];
-    UE_id = find_UE_id(Mod_id, rnti);
-
-    if(UE_id == -1)
-      continue;
-
-    harq_pid = subframe2harqpid(cc, sched_frame, sched_subframe);
-    round = UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid];
-
-    if (round > round_max) {
-      round_max = round;
-    }
-  }
-
-  return round_max;
-}
 
 // This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
 void
@@ -433,11 +402,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_info_t *UE_info = &eNB->UE_info;
   const int N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
   uint16_t available_rbs = N_RB_UL - 2 * first_rb[CC_id]; // top and bottom // - UE_info->first_rb_offset[CC_id];
-  rnti_t rntiTable[MAX_MOBILES_PER_ENB];
 
-  // sort ues
-  LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");
-  sort_ue_ul(module_idP, sched_frameP, sched_subframeP, rntiTable);
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
   LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
   assign_max_mcs_min_rb(module_idP, CC_id, frameP, subframeP, first_rb);
@@ -474,10 +439,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       nb_allocated_rbs[UE_id] = cmin(UE_info->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul, average_rbs_per_user);
 
     total_allocated_rbs += nb_allocated_rbs[UE_id];
-    LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d\n",
+    LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d CCid %d, harq_pid %d\n",
           nb_allocated_rbs[UE_id],
           UE_id,
-          rntiTable[UE_id],
           CC_id,
           harq_pid);
   }
@@ -605,122 +569,5 @@ assign_max_mcs_min_rb(module_id_t module_idP,
         UE_template->pre_allocated_nb_rb_ul = 0;
       }
     }
-  }
-}
-
-struct sort_ue_ul_params {
-  int module_idP;
-  int sched_frameP;
-  int sched_subframeP;
-};
-
-static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
-  struct sort_ue_ul_params *params = _params;
-  UE_info_t *UE_info = &RC.mac[params->module_idP]->UE_info;
-  int UE_id1 = *(const int *) _a;
-  int UE_id2 = *(const int *) _b;
-  int rnti1 = UE_RNTI(params->module_idP, UE_id1);
-  int pCCid1 = UE_PCCID(params->module_idP, UE_id1);
-  int round1 = maxround_ul(params->module_idP, rnti1, params->sched_frameP,
-                           params->sched_subframeP);
-  int rnti2 = UE_RNTI(params->module_idP, UE_id2);
-  int pCCid2 = UE_PCCID(params->module_idP, UE_id2);
-  int round2 = maxround_ul(params->module_idP, rnti2, params->sched_frameP,
-                           params->sched_subframeP);
-
-  if (round1 > round2)
-    return -1;
-
-  if (round1 < round2)
-    return 1;
-
-  if (UE_info->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] >
-      UE_info->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
-    return -1;
-
-  if (UE_info->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] <
-      UE_info->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
-    return 1;
-
-  int bytes_to_schedule1 = UE_info->UE_template[pCCid1][UE_id1].estimated_ul_buffer - UE_info->UE_template[pCCid1][UE_id1].scheduled_ul_bytes;
-
-  if (bytes_to_schedule1 < 0) bytes_to_schedule1 = 0;
-
-  int bytes_to_schedule2 = UE_info->UE_template[pCCid2][UE_id2].estimated_ul_buffer - UE_info->UE_template[pCCid2][UE_id2].scheduled_ul_bytes;
-
-  if (bytes_to_schedule2 < 0) bytes_to_schedule2 = 0;
-
-  if (bytes_to_schedule1 > bytes_to_schedule2)
-    return -1;
-
-  if (bytes_to_schedule1 < bytes_to_schedule2)
-    return 1;
-
-  if (UE_info->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul >
-      UE_info->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
-    return -1;
-
-  if (UE_info->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul <
-      UE_info->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
-    return 1;
-
-  if (UE_info->UE_sched_ctrl[UE_id1].cqi_req_timer >
-      UE_info->UE_sched_ctrl[UE_id2].cqi_req_timer)
-    return -1;
-
-  if (UE_info->UE_sched_ctrl[UE_id1].cqi_req_timer <
-      UE_info->UE_sched_ctrl[UE_id2].cqi_req_timer)
-    return 1;
-
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-/*
- * This function sorts the UEs in order, depending on their ulsch buffer and CQI
- */
-void sort_ue_ul(module_id_t module_idP,
-                int sched_frameP,
-                sub_frame_t sched_subframeP,
-                rnti_t *rntiTable)
-//-----------------------------------------------------------------------------
-{
-  int list[MAX_MOBILES_PER_ENB];
-  int list_size = 0;
-  struct sort_ue_ul_params params = { module_idP, sched_frameP, sched_subframeP };
-  UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
-  UE_sched_ctrl_t *UE_scheduling_control = NULL;
-
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-    UE_scheduling_control = &(UE_info->UE_sched_ctrl[i]);
-
-    /* Check CDRX configuration and if UE is in active time for this subframe */
-    if (UE_scheduling_control->cdrx_configured == TRUE) {
-      if (UE_scheduling_control->in_active_time == FALSE) {
-        continue;
-      }
-    }
-
-    rntiTable[i] = UE_RNTI(module_idP, i);
-
-    // Valid element and is not the actual CC_id in the list
-    if (UE_info->active[i] == TRUE &&
-        rntiTable[i] != NOT_A_RNTI &&
-        UE_info->UE_sched_ctrl[i].ul_out_of_sync != 1) {
-      list[list_size++] = i; // Add to list
-    }
-  }
-
-  qsort_r(list, list_size, sizeof(int), ue_ul_compare, &params);
-
-  if (list_size) { // At mimimum one list element
-    for (int i = 0; i < list_size - 1; i++) {
-      UE_info->list.next[list[i]] = list[i + 1];
-    }
-
-    UE_info->list.next[list[list_size - 1]] = -1;
-    UE_info->list.head = list[0];
-  } else { // No element
-    UE_info->list.head = -1;
   }
 }
