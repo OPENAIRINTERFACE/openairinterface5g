@@ -59,7 +59,6 @@ extern unsigned short NODE_ID[1];
 
 /* Scheduler */
 extern RAN_CONTEXT_t RC;
-extern int phy_test;
 extern uint8_t nfapi_mode;
 
 /*#if defined(PRE_SCD_THREAD)

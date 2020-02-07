@@ -69,7 +69,6 @@ extern uint16_t NB_UE_INST;
 extern unsigned char NB_RN_INST;
 #endif
 
-extern unsigned int ULSCH_max_consecutive_errors;
 extern int flag_LA;
 extern double sinr_bler_map[MCS_COUNT][2][MCS_TABLE_LENGTH_MAX];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
