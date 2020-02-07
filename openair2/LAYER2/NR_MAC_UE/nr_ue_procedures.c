@@ -2319,7 +2319,7 @@ unsigned char *nr_parse_header(unsigned char *mac_header,
     return (mac_header_ptr);
 }
 
-unsigned char
+uint16_t
 nr_generate_ulsch_pdu(uint8_t *mac_pdu,
 					  uint8_t *sdus_payload,
                       uint8_t num_sdus,
@@ -2331,7 +2331,7 @@ nr_generate_ulsch_pdu(uint8_t *mac_pdu,
 	NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
 	unsigned char * ulsch_buffer_ptr = sdus_payload;
 	uint8_t last_size=0;
-	uint16_t sdu_length_total;
+	uint16_t sdu_length_total=0;
 	int i;
 	int offset=0;
 
@@ -2359,11 +2359,15 @@ nr_generate_ulsch_pdu(uint8_t *mac_pdu,
 	    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in
 	    memcpy((void *) mac_pdu_ptr, (void *) ulsch_buffer_ptr, sdu_lengths[i]);
 	    ulsch_buffer_ptr+= sdu_lengths[i];
+	    sdu_length_total+= sdu_lengths[i];
 	    mac_pdu_ptr += sdu_lengths[i];
 	  }
 
+	  offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
+
 	  // 4) Compute final offset for padding
-	  uint16_t padding_bytes = buflen - sdu_length_total;
+	  uint16_t padding_bytes = buflen - offset;
+	  LOG_D(MAC, "Number of padding bytes: %d \n", padding_bytes);
 	  if (padding_bytes > 0) {
 	    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
 	    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = UL_SCH_LCID_PADDING;
@@ -2372,9 +2376,6 @@ nr_generate_ulsch_pdu(uint8_t *mac_pdu,
 	  } else {
 	    // no MAC subPDU with padding
 	  }
-
-	  offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
-
 
   return offset;
 }
@@ -2482,11 +2483,11 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
            sub_frame_t subframe, uint8_t eNB_index,
            uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
   uint8_t total_rlc_pdu_header_len = 0, rlc_pdu_header_len_last = 0;
-  uint16_t buflen_remain = 0;
+  int16_t buflen_remain = 0;
   uint8_t lcid = 0;
   uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t sdu_lcids[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-  uint8_t payload_offset = 0, num_sdus = 0;
+  uint16_t payload_offset = 0, num_sdus = 0;
   uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
   uint16_t sdu_length_total = 0;
   unsigned short post_padding = 0, padding_len = 0;
@@ -2521,13 +2522,15 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
       if(lcid_buffer_occupancy_new){
 
         buflen_remain =
-          buflen - (total_rlc_pdu_header_len + sdu_length_total + MIN_MAC_HDR_RLC_SIZE);
+          buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
         LOG_D(MAC,
-              "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
-              "send (Transport Block size %d SDU Length Total %d , mac header len %d )\n", //BSR byte before Tx=%d
+              "[UE %d] Frame %d : Before while loop UL-DXCH -> ULSCH, RLC %d has %d bytes to "
+              "send (Transport Block size %d SDU Length Total %d , mac header len %d, buflen_remain %d )\n", //BSR byte before Tx=%d
               module_idP, frameP, lcid, lcid_buffer_occupancy_new,
               buflen, sdu_length_total,
-              total_rlc_pdu_header_len); // ,nr_ue_mac_inst->scheduling_info.BSR_bytes[nr_ue_mac_inst->scheduling_info.LCGID[lcid]]
+              total_rlc_pdu_header_len, buflen_remain); // ,nr_ue_mac_inst->scheduling_info.BSR_bytes[nr_ue_mac_inst->scheduling_info.LCGID[lcid]]
+
+        while(buflen_remain > 0 && lcid_buffer_occupancy_new){
 
         //TODO: Replace static value with CRNTI
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
@@ -2547,27 +2550,38 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         if (sdu_lengths[num_sdus]) {
           sdu_length_total += sdu_lengths[num_sdus];
           sdu_lcids[num_sdus] = lcid;
-          //LOG_I(MAC,
-          //      "[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",
-          //      module_idP, sdu_lengths[num_sdus], lcid);
+
+
+          //Update total MAC Header size for RLC PDUs
+          /*if(sdu_lengths[num_sdus]<128)
+        	  total_rlc_pdu_header_len += 2;
+          else
+        	  total_rlc_pdu_header_len += 3;*/
+
+          total_rlc_pdu_header_len += MAX_RLC_SDU_SUBHEADER_SIZE; //rlc_pdu_header_len_last;
 
           //Update number of SDU
           num_sdus++;
-          //Update total MAC Header size for RLC PDUs and save last one
-          total_rlc_pdu_header_len += rlc_pdu_header_len_last;
         }
 
         /* Get updated BO after multiplexing this PDU */
         //TODO: Replace static value with CRNTI
 
-        /*lcid_buffer_occupancy_new =
+        lcid_buffer_occupancy_new =
           mac_rlc_get_buffer_occupancy_ind(module_idP,
                                            0x1234, //nr_ue_mac_inst->crnti
                                            eNB_index, frameP,
                                            subframe, ENB_FLAG_NO,
                                            lcid);
-        is_lcid_processed = (is_lcid_processed)
-                            || (lcid_buffer_occupancy_new <= 0);*/
+        buflen_remain =
+                  buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+        LOG_D(MAC,
+                      "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
+                      "send (Transport Block size %d SDU Length Total %d , mac header len %d, buflen_remain %d )\n", //BSR byte before Tx=%d
+                      module_idP, frameP, lcid, lcid_buffer_occupancy_new,
+                      buflen, sdu_length_total,
+                      total_rlc_pdu_header_len, buflen_remain);
+        }
   }
 
 }
@@ -2592,13 +2606,13 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
   // Padding: fill remainder of ULSCH with 0
   if (buflen - payload_offset > 0){
-	  for (int j = 0; j < (buflen - payload_offset); j++)
-		  ulsch_buffer[payload_offset + j] = 0;
+  	  for (int j = payload_offset; j < buflen; j++)
+  		  ulsch_buffer[j] = 0;
   }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
   LOG_I(MAC, "Printing UL MAC payload without the header UE side, payload_offset: %d \n", payload_offset);
-  for (int i = 0; i < sdu_length_total ; i++) {
+  for (int i = 0; i < buflen ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
 	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
 	  printf("%02x ",(unsigned char)ulsch_buffer[i]);

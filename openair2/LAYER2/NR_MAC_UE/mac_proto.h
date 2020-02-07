@@ -140,7 +140,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
            sub_frame_t subframe, uint8_t eNB_index,
            uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode);
 
-unsigned char
+uint16_t
 nr_generate_ulsch_pdu(uint8_t *mac_pdu,
 					  uint8_t *sdus_payload,
                       uint8_t num_sdus,

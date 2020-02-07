@@ -135,6 +135,7 @@ typedef struct {
 
 #define NR_MAX_NUM_LCID							   32
 #define NR_MAX_NUM_LCGID							8
+#define MAX_RLC_SDU_SUBHEADER_SIZE					3
 
 
 #endif /*__LAYER2_MAC_H__ */
