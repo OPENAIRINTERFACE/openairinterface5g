@@ -256,23 +256,6 @@ unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,3
 
 #if 0
 
-unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb) // TbD
-{
-
-  int gain_dB = power_dBm - power_max_dBm;
-  double gain_lin;
-
-  gain_lin = pow(10,.1*gain_dB);
-  if ((nb_rb >0) && (nb_rb <= N_RB_UL)) {
-    return((int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)));
-  }
-  else {
-    LOG_E(PHY,"Illegal nb_rb/N_RB_UL combination (%d/%d)\n",nb_rb,N_RB_UL);
-    //mac_xface->macphy_exit("");
-  }
-  return(0);
-}
-
 void nr_dump_dlsch_ra(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t nr_tti_rx)
 {
   unsigned int coded_bits_per_codeword;
@@ -2329,8 +2312,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
     // check if we have PRACH opportunity
     if (is_nr_prach_subframe(&ue->frame_parms, frame_tx, slot_tx)) {
-      // TBR TODO FIX this works only for TDD but it enters phy_procedures_nrUE_TX only when mode is FDD
-      printf(" is_nr_prach_subframe is %d\n", is_nr_prach_subframe(&ue->frame_parms, frame_tx, slot_tx)); // TBR debug
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
   }
@@ -4579,7 +4560,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   // if we're calibrating the PRACH kill the pointer to its resources so that the RA protocol doesn't continue
   if (runmode == calib_prach_tx)
-    ue->prach_resources[gNB_id]=NULL;
+    ue->prach_resources[gNB_id] = NULL;
 
   LOG_D(PHY,"[UE %d] frame %d nr_tti_rx %d : generate_nr_prach %d, prach_cnt %d\n", ue->Mod_id,frame_tx,nr_tti_tx, ue->generate_nr_prach, ue->prach_cnt);
 

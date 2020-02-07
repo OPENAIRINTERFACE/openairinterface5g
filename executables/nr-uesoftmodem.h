@@ -4,7 +4,6 @@
 #include <executables/softmodem-common.h>
 #include "PHY/defs_nr_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include "NR_MAC_gNB/mac_proto.h"
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument

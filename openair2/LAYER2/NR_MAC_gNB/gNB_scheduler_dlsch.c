@@ -44,6 +44,9 @@
 /*TAG*/
 #include "NR_TAG-Id.h"
 
+////////////////////////////////////////////////////////
+/////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
+////////////////////////////////////////////////////////
 
 int nr_generate_dlsch_pdu(module_id_t module_idP,
                           unsigned char *sdus_payload,
@@ -106,7 +109,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
-
   // Contention resolution fixed subheader and MAC CE
   if (ue_cont_res_id) {
     mac_pdu_ptr->R = 0;
@@ -131,8 +133,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
-
-  // 2) Generation of DLSCH MAC SDU subheaders
+  // 2) Generation of DLSCH MAC subPDUs including subheaders and MAC SDUs
   for (i = 0; i < num_sdus; i++) {
     LOG_D(MAC, "[gNB] Generate DLSCH header num sdu %d len sdu %d\n", num_sdus, sdu_lengths[i]);
 
@@ -153,14 +154,14 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
 
     mac_pdu_ptr += last_size;
 
-    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in   
+    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr+= sdu_lengths[i]; 
     mac_pdu_ptr += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
-  if (post_padding > 0) {    
+  if (post_padding > 0) {
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = DL_SCH_LCID_PADDING;
     mac_pdu_ptr++;
@@ -171,7 +172,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
 
   // compute final offset
   offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
-    
+
   //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
 
   return offset;

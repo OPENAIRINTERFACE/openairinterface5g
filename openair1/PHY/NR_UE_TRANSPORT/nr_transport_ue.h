@@ -42,8 +42,6 @@
 #include "UTIL/LISTS/list.h"
 #endif
 
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-
 //#include "../LTE_TRANSPORT/transport_common.h"
 
 // structures below implement 36-211 and 36-212
