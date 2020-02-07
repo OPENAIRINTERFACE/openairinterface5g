@@ -474,100 +474,105 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   }
 }
 
+void calculate_max_mcs_min_rb(module_id_t mod_id,
+                              int CC_id,
+                              int bytes,
+                              int phr,
+                              int max_mcs,
+                              int *mcs,
+                              int max_rbs,
+                              int *rb_index,
+                              int *tx_power) {
+  const int Ncp = RC.mac[mod_id]->common_channels[CC_id].Ncp;
+  /* TODO shouldn't we consider the SRS or other quality indicators? */
+  *mcs = max_mcs;
+  *rb_index = 2;
+  int tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
+
+  // fixme: set use_srs flag
+  *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
+
+  /* find maximum MCS */
+  while ((phr - *tx_power < 0 || tbs > bytes) && *mcs > 3) {
+    mcs--;
+    tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
+    *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
+  }
+
+  /* find minimum necessary RBs */
+  while (tbs < bytes
+         && *rb_index < 32
+         && rb_table[*rb_index] < max_rbs
+         && phr - *tx_power > 0) {
+    (*rb_index)++;
+    tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
+    *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
+  }
+
+  /* Decrease if we went to far in last iteration */
+  if (rb_table[*rb_index] > max_rbs)
+    (*rb_index)--;
+
+  // 1 or 2 PRB with cqi enabled does not work well
+  if (rb_table[*rb_index] < 3) {
+    *rb_index = 2; //3PRB
+  }
+}
+
 void
 assign_max_mcs_min_rb(module_id_t module_idP,
                       int CC_id,
                       int frameP,
                       sub_frame_t subframeP,
                       uint16_t *first_rb) {
-  int mcs;
-  int rb_table_index = 0, tbs, tx_power;
-  eNB_MAC_INST *eNB = RC.mac[module_idP];
-  UE_info_t *UE_info = &eNB->UE_info;
-  slice_info_t *sli = &eNB->slice_info;
-  UE_TEMPLATE *UE_template;
-  UE_sched_ctrl_t *ue_sched_ctl;
-  int Ncp;
-  int N_RB_UL;
-  int first_rb_offset, available_rbs;
+  const int N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
+  const int available_rbs = N_RB_UL - 2 * first_rb[CC_id]; // top and bottom - UE_info->first_rb_offset[CC_id];
+  const int Ncp = RC.mac[module_idP]->common_channels[CC_id].Ncp;
+  UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    /* if we've received the power headroom information the UE, we can go to
-     * maximum mcs */
-    mcs = UE_info->UE_sched_ctrl[UE_id].phr_received == 1 ? 20 : 10;
+    UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
 
-    UE_template = &UE_info->UE_template[CC_id][UE_id];
-    UE_template->pre_assigned_mcs_ul = mcs;
-    ue_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
-    Ncp = eNB->common_channels[CC_id].Ncp;
-    N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
-    int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
+    const int B = cmax(UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes, 0);
 
-    if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+    const int UE_to_be_scheduled = UE_is_to_be_scheduled(module_idP, CC_id, UE_id);
+    if (B == 0 && !UE_to_be_scheduled)
+      continue;
 
-    int bits_to_schedule = bytes_to_schedule * 8;
-
-    // if this UE has UL traffic
-    if (bits_to_schedule > 0) {
-      tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, 3) << 3; // 1 or 2 PRB with cqi enabled does not work well!
-      rb_table_index = 2;
-      // fixme: set use_srs flag
-      tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);
-
-      while ((UE_template->phr_info - tx_power < 0 || tbs > bits_to_schedule) && UE_template->pre_assigned_mcs_ul > 3) {
-        // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
-        UE_template->pre_assigned_mcs_ul--;
-        tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, rb_table[rb_table_index]) << 3;
-        tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);   // fixme: set use_srs
-      }
-
-      first_rb_offset = UE_info->first_rb_offset[CC_id];
-      available_rbs = N_RB_UL - 2 * first_rb[CC_id];
-
-      while (tbs < bits_to_schedule &&
-             rb_table[rb_table_index] < available_rbs &&
-             UE_template->phr_info - tx_power > 0 &&
-             rb_table_index < 32) {
-        rb_table_index++;
-        tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, rb_table[rb_table_index]) << 3;
-        tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);
-      }
-
-      if (rb_table[rb_table_index] > (available_rbs - 1)) {
-        rb_table_index--;
-      }
-
-      // 1 or 2 PRB with cqi enabled does not work well
-      if (rb_table[rb_table_index] < 3) {
-        rb_table_index = 2; //3PRB
-      }
-
-      UE_template->pre_allocated_rb_table_index_ul = rb_table_index;
-      UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
-      if (UE_template->pre_allocated_nb_rb_ul > 0)
-        LOG_W(MAC, "[eNB %d] frame %d subframe %d: for UE %d CC %d: pre-assigned mcs %d, pre-allocated rb_table[%d]=%d RBs (phr %d, tx power %d)\n",
-              module_idP,
-              frameP,
-              subframeP,
-              UE_id,
-              CC_id,
-              UE_template->pre_assigned_mcs_ul,
-              UE_template->pre_allocated_rb_table_index_ul,
-              UE_template->pre_allocated_nb_rb_ul,
-              UE_template->phr_info, tx_power);
-    } else {
-      /* if UE has pending scheduling request then pre-allocate 3 RBs */
-      //if (UE_template->ul_active == 1 && UE_template->ul_SR == 1) {
-      if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id)) {
-        /* use QPSK mcs */
-        UE_template->pre_assigned_mcs_ul = 10;
-        UE_template->pre_allocated_rb_table_index_ul = 2;
-        UE_template->pre_allocated_nb_rb_ul = 3;
-      } else {
-        UE_template->pre_assigned_mcs_ul = 0;
-        UE_template->pre_allocated_rb_table_index_ul = -1;
-        UE_template->pre_allocated_nb_rb_ul = 0;
-      }
+    /* if UE has pending scheduling request then pre-allocate 3 RBs */
+    if (B == 0 && UE_to_be_scheduled) {
+      UE_template->pre_assigned_mcs_ul = 10; /* use QPSK mcs only */
+      UE_template->pre_allocated_rb_table_index_ul = 2;
+      UE_template->pre_allocated_nb_rb_ul = 3;
+      continue;
     }
+
+    int mcs;
+    int rb_table_index;
+    int tx_power;
+    calculate_max_mcs_min_rb(
+        module_idP,
+        CC_id,
+        B,
+        UE_template->phr_info,
+        UE_info->UE_sched_ctrl[UE_id].phr_received == 1 ? 20 : 10,
+        &mcs,
+        available_rbs,
+        &rb_table_index,
+        &tx_power);
+
+    UE_template->pre_assigned_mcs_ul = mcs;
+    UE_template->pre_allocated_rb_table_index_ul = rb_table_index;
+    UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
+    LOG_D(MAC, "[eNB %d] frame %d subframe %d: for UE %d CC %d: pre-assigned mcs %d, pre-allocated rb_table[%d]=%d RBs (phr %d, tx power %d)\n",
+          module_idP,
+          frameP,
+          subframeP,
+          UE_id,
+          CC_id,
+          UE_template->pre_assigned_mcs_ul,
+          UE_template->pre_allocated_rb_table_index_ul,
+          UE_template->pre_allocated_nb_rb_ul,
+          UE_template->phr_info, tx_power);
   }
 }
