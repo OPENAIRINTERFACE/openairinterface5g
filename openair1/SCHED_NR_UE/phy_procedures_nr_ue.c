@@ -1325,13 +1325,8 @@ UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_id){ // TBR gen
   return(PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[gNB_id]);
 }
 
-void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB){
-
-  // 3GPP TS 38.213 p4.2
-  // scale by the scs numerology
-  int factor_mu = 1 << mu;
+uint16_t get_bw_scaling(uint16_t bwp_ul_NB_RB){
   uint16_t bw_scaling;
-
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (bwp_ul_NB_RB) {
     case 106: bw_scaling = 16; break;
@@ -1340,25 +1335,33 @@ void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_com
     case 273: bw_scaling = 32; break;
     default: abort();
   }
+  return bw_scaling;
+}
+
+void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB){
+
+  // 3GPP TS 38.213 p4.2
+  // scale by the scs numerology
+  int factor_mu = 1 << mu;
+  uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
 
   PHY_vars_UE_g[Mod_id][CC_id]->timing_advance += (ta_command - 31) * bw_scaling / factor_mu;
 
   LOG_D(PHY, "[UE %d] Got timing advance command %u from MAC, new value is %u\n", Mod_id, ta_command, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 }
 
-void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint16_t timing_advance) {
+void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint16_t ta_command) {
 
-/* TODO TBR FIX THIS 
+  int factor_mu = 1 << ue->frame_parms.numerology_index;
+  uint16_t bwp_ul_NB_RB = ue->frame_parms.N_RB_UL;
+  uint16_t bw_scaling = get_bw_scaling(bwp_ul_NB_RB);
 
-ue->timing_advance = timing_advance*4;
+  // Transmission timing adjustment (TS 38.213 p4.2)
+  ue->timing_advance = bw_scaling / factor_mu;
 
-#ifdef DEBUG_PHY_PROC
-  // TODO: fix this log, what is 'HW timing advance'?
-  //LOG_I(PHY,"[UE %d] AbsoluteSubFrame %d.%d, received (rar) timing_advance %d, HW timing advance %d\n",ue->Mod_id,proc->frame_rx, proc->nr_tti_rx_rx, ue->timing_advance);
-  LOG_I(PHY,"[UE %d] AbsoluteSubFrame %d.%d, received (rar) timing_advance %d\n",ue->Mod_id,proc->frame_rx, proc->nr_tti_rx, ue->timing_advance);
-#endif
-  */
+  // TBR todo handle TA application as per ch 4.2 TS 38.213
 
+  LOG_D(PHY, "[UE %d] Frame %d Slot %d, Received (RAR) timing advance command %d new value is %u \n", ue->Mod_id, proc->frame_rx, proc->nr_tti_rx, ta_command, ue->timing_advance);
 }
 
 #if 0
@@ -3149,95 +3152,90 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   }
 }
 
-/*void nr_process_rar(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, runmode_t mode, int abstraction_flag) { // TBR todo
-  int frame_rx = proc->frame_rx;
-  int nr_tti_rx = proc->nr_tti_rx;
-  int timing_advance;
-  NR_UE_DLSCH_t *dlsch0 = ue->dlsch_ra[eNB_id];
-  int harq_pid = 0;
-  uint8_t *rar;
+void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
-  // uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
-  // uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
+  module_id_t module_id = dl_info->module_id;
+  int cc_id = dl_info->cc_id, frame_rx =  dl_info->proc->frame_rx, nr_tti_rx =  dl_info->proc->nr_tti_rx, ta_command, harq_pid = 0;
+  uint8_t gNB_index = dl_info->gNB_index, *rar;
+  fapi_nr_dci_indication_t *dci_ind = dl_info->dci_ind;
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
+  NR_UE_DLSCH_t *dlsch0 = ue->dlsch_ra[gNB_index];
+  UE_MODE_t UE_mode = ue->UE_mode[gNB_index];
+  NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_index];
 
-  LOG_D(PHY,"[UE  %d][RAPROC] Frame %d nr_tti_rx %d Received RAR  mode %d\n",
-	ue->Mod_id,
-	frame_rx,
-	nr_tti_rx, ue->UE_mode[eNB_id]);
+  uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1); // TBR double check
+  uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1); // TBR double check
 
+  LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Received RAR mode %d\n", module_id, frame_rx, nr_tti_rx, UE_mode);
 
   if (ue->mac_enabled == 1) {
-    if ((ue->UE_mode[eNB_id] != PUSCH) &&
-	(ue->prach_resources[eNB_id]->Msg3!=NULL)) {
-      LOG_D(PHY,"[UE  %d][RAPROC] Frame %d nr_tti_rx %d Invoking MAC for RAR (current preamble %d)\n",
-	    ue->Mod_id,frame_rx,
-	    nr_tti_rx,
-	    ue->prach_resources[eNB_id]->ra_PreambleIndex);
-      
-      // TBR restore
-      // timing_advance = nr_ue_process_rar(ue->Mod_id, ue->CC_id, frame_rx,
-	    // ue->prach_resources[eNB_id]->ra_RNTI, dlsch0->harq_processes[0]->b,
-	    // &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->crnti,
-	    // ue->prach_resources[eNB_id]->ra_PreambleIndex, dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
-      
-      // ue->pdcch_vars[next1_thread_id][eNB_id]->crnti = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->crnti;
-      // ue->pdcch_vars[next2_thread_id][eNB_id]->crnti = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->crnti;
+    if ((UE_mode != PUSCH) && (prach_resources->Msg3 != NULL)) {
 
-      if (timing_advance!=0xffff) {
+      LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n", module_id, frame_rx, nr_tti_rx, prach_resources->ra_PreambleIndex);
 
-  // TBR restore 
-  // LOG_D(PHY,"[UE  %d][RAPROC] Frame %d nr_tti_rx %d Got rnti %x and timing advance %d from RAR\n",
-  //             ue->Mod_id,
-  //             frame_rx,
-  //             nr_tti_rx,
-  //             ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->crnti,
-  //             timing_advance);
+    // TBR double check
+    // fix crnti
+    // ta_command = nr_ue_process_rar(ue->Mod_id,
+    //                                cc_id,
+    //                                frame_rx,
+    //                                prach_resources->ra_RNTI,
+    //                                dlsch0->harq_processes[0]->b,
+    //                                &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti,
+    //                                prach_resources->ra_PreambleIndex,
+    //                                dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
 
-	// remember this c-rnti is still a tc-rnti
+    // ue->pdcch_vars[next1_thread_id][gNB_index]->crnti = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti;
+    // ue->pdcch_vars[next2_thread_id][gNB_index]->crnti = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti;
 
-	ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->crnti_is_temporary = 1;
-	      
-	//timing_advance = 0;
-	nr_process_timing_advance_rar(ue,proc,timing_advance);
-	      
-	if (mode!=debug_prach) {
-	  ue->ulsch_Msg3_active[eNB_id]=1;
-    // TBR nr_get_Msg3_alloc has to be fixed
-	  // nr_get_Msg3_alloc(&ue->frame_parms,
-		// 	    nr_tti_rx,
-		// 	    frame_rx,
-		// 	    &ue->ulsch_Msg3_frame[eNB_id],
-		// 	    &ue->ulsch_Msg3_subframe[eNB_id]);
-	  
-	  LOG_D(PHY,"[UE  %d][RAPROC] Got Msg3_alloc Frame %d nr_tti_rx %d: Msg3_frame %d, Msg3_subframe %d\n",
-		ue->Mod_id,
-		frame_rx,
-		nr_tti_rx,
-		ue->ulsch_Msg3_frame[eNB_id],
-		ue->ulsch_Msg3_subframe[eNB_id]);
-	  harq_pid = nr_subframe2harq_pid(&ue->frame_parms,
-					  ue->ulsch_Msg3_frame[eNB_id],
-					  ue->ulsch_Msg3_subframe[eNB_id]);
-	  //ue->ulsch[eNB_id]->harq_processes[harq_pid]->round = 0; // TODO TBR fix this when HARQ is ready
-	  
-	  ue->UE_mode[eNB_id] = RA_RESPONSE;
-	  //      ue->Msg3_timer[eNB_id] = 10;
-	  //ue->ulsch[eNB_id]->power_offset = 6; // TODO TBR fix this
-	  ue->ulsch_no_allocation_counter[eNB_id] = 0;
-	}
+      // TBR double check
+      if (ta_command != 0xffff) {
+        // LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Got rnti %x and timing advance %d from RAR\n",
+        //   ue->Mod_id,
+        //   frame_rx,
+        //   nr_tti_rx,
+        //   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti,
+        //   ta_command);
+
+        // fix TBR : C-RNTI is still a TC-RNTI
+        // ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti_is_temporary = 1;
+        nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
+
+        if (UE_mode != debug_prach) {
+          ue->ulsch_Msg3_active[gNB_index] = 1;
+          // nr_get_Msg3_alloc(&ue->frame_parms,
+          //                   nr_tti_rx,
+          //                   frame_rx,
+          //                   &ue->ulsch_Msg3_frame[gNB_index],
+          //                   &ue->ulsch_Msg3_subframe[gNB_index]); // TBR
+          LOG_D(PHY,"[UE %d][RAPROC] Got Msg3_alloc Frame %d subframe %d: Msg3_frame %d, Msg3_subframe %d\n",
+                ue->Mod_id,
+                frame_rx,
+                nr_tti_rx,
+                ue->ulsch_Msg3_frame[gNB_index],
+                ue->ulsch_Msg3_subframe[gNB_index]);
+          // todo TBR
+          // harq_pid = subframe2harq_pid(&ue->frame_parms,
+          //                              ue->ulsch_Msg3_frame[gNB_index],
+          //                              ue->ulsch_Msg3_subframe[gNB_index]);
+          // ue->ulsch[gNB_index]->harq_processes[harq_pid]->round = 0;
+          // ue->UE_mode[gNB_index] = RA_RESPONSE;
+          // ue->Msg3_timer[gNB_index] = 10;
+          // ue->ulsch[gNB_index].power_offset = 6;
+          // ue->ulsch_no_allocation_counter[gNB_index] = 0;
+        }
       } else { // PRACH preamble doesn't match RAR
-	LOG_W(PHY,"[UE  %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n",
-	      ue->Mod_id,
-	      ue->prach_resources[eNB_id]->ra_PreambleIndex);
+        LOG_W(PHY,"[UE  %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n",
+              ue->Mod_id,
+              prach_resources->ra_PreambleIndex);
       }
     } // mode != PUSCH
-  }
-  else {
+  } else {
     rar = dlsch0->harq_processes[0]->b+1;
-    timing_advance = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
-    nr_process_timing_advance_rar(ue,proc,timing_advance);
+    ta_command = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+    nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
   }
-}*/
+}
+
 
 void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        UE_nr_rxtx_proc_t *proc,

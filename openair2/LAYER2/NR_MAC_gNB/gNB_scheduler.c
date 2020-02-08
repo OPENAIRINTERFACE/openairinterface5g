@@ -380,7 +380,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // Phytest scheduling
-  if (phy_test && slot_txP==1){ // TBR check phy_test
+  if (phy_test && slot_txP==1){
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
     // This schedules Random-Access for NR starting in subframeP
     nr_schedule_RA(module_idP, frame_txP, slot_txP);

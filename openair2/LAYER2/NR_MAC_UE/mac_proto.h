@@ -215,5 +215,7 @@ uint16_t nr_ue_process_rar(const module_id_t mod_id,
                            const uint8_t preamble_index,
                            uint8_t * selected_rar_buffer);
 
+void nr_process_rar(nr_downlink_indication_t *dl_info);
+
 #endif
 /** @}*/

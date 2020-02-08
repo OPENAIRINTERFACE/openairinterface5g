@@ -28,168 +28,113 @@
  */
 
 #include "platform_types.h"
+
+/* MAC */
 #include "nr_mac_gNB.h"
 #include "NR_MAC_gNB/mac_proto.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 
-/* Openair Packet Tracer */
+/* Utils */
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
-// void nr_add_subframe(uint16_t *frameP, uint16_t *slotP, int offset){
-//     *frameP    = (*frameP + ((*slotP + offset) / 10)) % 1024;
-//     *slotP = ((*slotP + offset) % 10);
-// } // TBR fix
+extern RAN_CONTEXT_t RC;
 
-// handles the event of MSG1 reception
-// TBR remove sub_frame_t
+void nr_add_subframe(uint16_t *frameP, uint16_t *slotP, int offset){
+    *frameP = (*frameP + ((*slotP + offset) / 10)) % 1024;
+    *slotP = ((*slotP + offset) % 10);
+}
+
+// TBR
+// handles the event of msg1 reception
+// todo:
+// - offset computation
+// - fix nr_add_subframe
 void nr_initiate_ra_proc(module_id_t module_idP,
                          int CC_id,
                          frame_t frameP,
                          sub_frame_t slotP,
                          uint16_t preamble_index,
                          int16_t timing_offset,
-                         uint16_t ra_rnti
-                         #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) // TBR
-                         , uint8_t rach_resource_type
-                         #endif
-                         ){
+                         uint16_t ra_rnti){
   uint8_t i;
   uint16_t msg2_frame = frameP, msg2_slot = slotP;
   int offset;
-  NR_COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
+  NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_RA_t *ra = &cc->ra[0];
   static uint8_t failure_cnt = 0;
 
-  /*#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    struct PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
-    PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
-  
-    static uint8_t failure_cnt = 0;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
-    if (cc->radioResourceConfigCommon_BR
-      && cc->radioResourceConfigCommon_BR->ext4) {
-      ext4_prach = cc->radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
-      prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+  LOG_D(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, slotP, preamble_index);
+
+  if (ra->state == RA_IDLE) {
+    int loop = 0;
+    LOG_D(MAC, "Frame %d, Subframe %d: Activating RA process \n", frameP, slotP);
+    ra->state = Msg2;
+    ra->timing_offset = timing_offset;
+    ra->preamble_subframe = slotP;
+
+    // if(cc->tdd_Config!=NULL){
+    //   switch(cc->tdd_Config->subframeAssignment){ // TBR missing tdd_Config
+    //     default: printf("%s:%d: TODO\n", __FILE__, __LINE__); abort();
+    //     case 1 :
+    //       offset = 6;
+    //       break;
+    //   }
+    // }else{//FDD
+    //     // DJP - this is because VNF is 2 subframes ahead of PNF and TX needs 4 subframes
+    //     if (nfapi_mode)
+    //       offset = 7;
+    //     else
+    //       offset = 5;
+    // }
+
+    nr_add_subframe(&msg2_frame, &msg2_slot, offset);
+
+    ra->Msg2_frame = msg2_frame;
+    ra->Msg2_subframe = msg2_slot;
+
+    LOG_D(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d offset:%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_subframe, frameP, slotP, offset);
+
+    ra->Msg2_subframe = (slotP + offset) % 10; // TBR this is done twice ?
+
+    do {
+      ra->rnti = taus(); // todo 5.1.3 TS 38.321
+      loop++;
     }
-  #endif // #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
-
-    LOG_D(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
-      module_idP, CC_id, frameP, slotP, preamble_index);
-   /*#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-     LOG_D(MAC,
-     "[gNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",
-     module_idP, CC_id, frameP, slotP, rach_resource_type);
-   #endif*/
-
-
-
-  /*#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-   if (prach_ParametersListCE_r13 && prach_ParametersListCE_r13->list.count < rach_resource_type) {
-     LOG_E(MAC,"[gNB %d][RAPROC] CC_id %d Received impossible PRACH resource type %d, 
-     only %d CE levels configured\n",
-     module_idP, CC_id, rach_resource_type,
-     (int) prach_ParametersListCE_r13->list.count);
-     return;
-   }
-  #endif // #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
-
-  /*VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);*/
-
-  for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-    if (ra[i].state == IDLE) {
-      int loop = 0;
-      LOG_D(MAC, "Frame %d, Subframe %d: Activating RA process %d\n", frameP, slotP, i);
-      ra[i].state = MSG2;
-      ra[i].timing_offset = timing_offset;
-      ra[i].preamble_subframe = slotP;
-      /*#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-        ra[i].rach_resource_type = rach_resource_type;
-        ra[i].msg2_mpdcch_repetition_cnt = 0;
-        ra[i].msg4_mpdcch_repetition_cnt = 0;
-      #endif*/
-
-      /* TBR CHECK Fill in other TDD config. What about nfapi_mode? */
-      // if(cc->tdd_Config!=NULL){
-      //   // switch(cc->tdd_Config->subframeAssignment){ // TBR missing tdd_Config
-      //   //   default: printf("%s:%d: TODO\n", __FILE__, __LINE__); abort();
-      //   //   case 1 :
-      //   //     offset = 6;
-      //   //     break;
-      //   // }
-      // }else{//FDD
-      //     // DJP - this is because VNF is 2 subframes ahead of PNF and TX needs 4 subframes
-      //     if (nfapi_mode)
-      //       offset = 7;
-      //     else
-      //       offset = 5;
-      // }
-
-      // nr_add_subframe(&msg2_frame, &msg2_slot, offset); // TBR
-
-      ra[i].Msg2_frame         = msg2_frame;
-      ra[i].Msg2_subframe      = msg2_slot;
-
-      LOG_D(MAC,"%s() Msg2[%04d%d] SFN/SF:%04d%d offset:%d\n", __FUNCTION__,ra[i].Msg2_frame,ra[i].Msg2_subframe,frameP,slotP,offset);
-
-      ra[i].Msg2_subframe = (slotP + offset) % 10;
-      
-      /* TBR: find better procedure to allocate RNTI */
-      do {
-        #if defined(USRP_REC_PLAY) // deterministic rnti in usrp record/playback mode
-        static int drnti[MAX_MOBILES_PER_GNB] = { 0xbda7, 0x71da, 0x9c40, 0xc350, 0x2710, 0x4e20, 0x7530, 0x1388, 0x3a98, 0x61a8, 0x88b8, 0xafc8, 0xd6d8, 0x1b58, 0x4268, 0x6978 };
-        int j = 0;
-        int nb_ue = 0;
-        for (j = 0; j < MAX_MOBILES_PER_GNB; j++) {
-          if (UE_RNTI(module_idP, j) > 0) {
-            nb_ue++;
-          } else {
-            break;
-          }
-        }
-        if (nb_ue >= MAX_MOBILES_PER_GNB) {
-          printf("No more free RNTI available, increase MAX_MOBILES_PER_GNB\n");
-          abort();
-        }
-        ra[i].rnti = drnti[nb_ue];
-        #else 
-        ra[i].rnti = taus();
-        #endif
-        loop++;
-      }
-      /* While loop  
-      ** TBR: second condition is not correct, the rnti may be in use without
-      *  being in the MAC yet. To be refined.
-      ** 1024 and 60000 arbirarily chosen, not coming from standard */
-      while (loop != 100 /*&& !(find_nrUE_id(module_idP, ra[i].rnti) == -1 && ra[i].rnti >= 1024 && ra[i].rnti < 60000)*/); 
-      // TBR nr_find_ue
-        
-      if (loop == 100) {
-        printf("%s:%d:%s: FATAL ERROR! contact the authors\n",__FILE__, __LINE__, __FUNCTION__);
-        abort();
-      }
-      
-      ra[i].RA_rnti = ra_rnti;
-      ra[i].preamble_index = preamble_index;
-      failure_cnt = 0;
-
-      LOG_D(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation in Frame %d, subframe %d for process %d, rnti %x, state %d\n", module_idP, CC_id, frameP, ra[i].Msg2_frame, ra[i].Msg2_subframe, i, ra[i].rnti, ra[i].state);
-
-      return;
+    // Range coming from 5.1.3 TS 38.321
+    while (loop != 100 && !(find_nr_UE_id(module_idP, ra->rnti) == -1 && ra->rnti >= 1 && ra->rnti <= 17920));
+    if (loop == 100) {
+      LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+      abort();
     }
+
+    ra->RA_rnti = ra_rnti;
+    ra->preamble_index = preamble_index;
+    failure_cnt = 0;
+
+    LOG_D(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d for rnti %x\n",
+      module_idP,
+      CC_id,
+      frameP,
+      ra->Msg2_frame,
+      ra->Msg2_subframe,
+      ra->state);
+
+    return;
   }
+  LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
-  LOG_E(MAC,
-  "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d Initiating RA procedure for preamble index %d\n",
-  module_idP, CC_id, frameP, preamble_index);
-  
   failure_cnt++;
   
   if(failure_cnt > 20) {
     LOG_E(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information\n", module_idP, CC_id, frameP);
     nr_clear_ra_proc(module_idP, CC_id, frameP);
   }
-  
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 }
 
 void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
@@ -201,46 +146,40 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
   start_meas(&mac->schedule_ra);
 
-  // for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-
-    for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-
-      ra = (NR_RA_t *) & cc[CC_id].ra[i];
-      LOG_D(MAC,"RA[state:%d]\n",ra->state);
-
-      switch (ra->state){
-        case MSG2:
-        nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra);
-        break;
-        case MSG4:
-        generate_Msg4(module_idP, CC_id, frameP, slotP, ra);
-        break;
-        case WAITMSG4ACK:
-        check_Msg4_retransmission(module_idP, CC_id, frameP, slotP, ra);
-        break;
-      }
-    } // for i=0 .. N_RA_PROC-1
-  // } // CC_id
+  for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+    ra = (NR_RA_t *) & cc[CC_id].ra[i];
+    LOG_D(MAC,"RA[state:%d]\n",ra->state);
+    switch (ra->state){
+      case Msg2:
+      nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra);
+      break;
+      case Msg4:
+      //generate_Msg4(module_idP, CC_id, frameP, slotP, ra); // TBR
+      break;
+      case WAIT_Msg4_ACK:
+      check_Msg4_retransmission(module_idP, CC_id, frameP, slotP, ra);
+      break;
+    }
+  }
   stop_meas(&mac->schedule_ra);
 }
 
-void nr_generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP, 
+void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, 
   sub_frame_t slotP, NR_RA_t * ra){
 
   int first_rb, N_RB_DL;
-
-  gNB_MAC_INST *mac = RC.mac[module_idP];
-  NR_COMMON_channels_t *cc = mac->common_channels;
-  uint8_t *vrb_map = cc[CC_idP].vrb_map;
+  gNB_MAC_INST *mac = RC.nrmac[module_idP];
+  NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
+  uint8_t *vrb_map = cc[CC_id].vrb_map;
 
 //  /* TBR - MIGRATE TO THE NEW NFAPI */
-//  nfapi_nr_dl_tti_request_body_t *dl_req = &mac->DL_req[CC_idP].dl_config_request_body;
+//  nfapi_nr_dl_tti_request_body_t *dl_req = &mac->DL_req[CC_id].dl_config_request_body;
 //  nfapi_nr_dl_tti_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 //  nfapi_tx_request_pdu_t *TX_req;
 //
 //  /* TBR: BW should be retrieved from
 //  // NR_ServingCellConfigCommonSIB_t -> NR_BWP_DownlinkCommon_t -> NR_BWP_t
-//  N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
+//  N_RB_DL = to_prb(cc[CC_id].mib->message.dl_Bandwidth);
 //  // Temporary hardcoded
 //  */
 //  N_RB_DL = 106;
@@ -249,7 +188,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 //    
 //    LOG_D(MAC,"[gNB %d] CC_id %d Frame %d, slotP %d: 
 //      Generating RAR DCI, state %d\n",
-//      module_idP, CC_idP, frameP, slotP, ra->state);
+//      module_idP, CC_id, frameP, slotP, ra->state);
 //
 //    // Allocate 4 PRBS starting in RB 0
 //    // commented out because preprocessor is missing
@@ -280,7 +219,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 //    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(N_RB_DL, first_rb, 4);
 //
 //    // This checks if the above DCI allocation is feasible in current subframe
-//    if (!nr_CCE_allocation_infeasible(module_idP, CC_idP, 0, slotP,
+//    if (!nr_CCE_allocation_infeasible(module_idP, CC_id, 0, slotP,
 //      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level, ra->RA_rnti)) {
 //      
 //      LOG_D(MAC, "Frame %d: Subframe %d : Adding common DCI for RA_RNTI %x\n", frameP, slotP, ra->RA_rnti);
@@ -292,7 +231,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 //      dl_config_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
 //      dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_nr_dl_config_dlsch_pdu));
 //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.tl.tag = NFAPI_NR_DL_CONFIG_REQUEST_DLSCH_PDU_REL15_TAG;
-//      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = mac->pdu_index[CC_idP];
+//      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = mac->pdu_index[CC_id];
 //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti = ra->RA_rnti;
 //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type = 2; // format 1A/1B/1D
 //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0; // localized
@@ -315,32 +254,32 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector = 1;
 //      //    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
 //      dl_req->number_pdu++;
-//      mac->DL_req[CC_idP].sfn_sf = frameP<<4 | slotP;
+//      mac->DL_req[CC_id].sfn_sf = frameP<<4 | slotP;
 //
 //      // Program UL processing for Msg3
-//      nr_get_Msg3alloc(&cc[CC_idP], slotP, frameP,&ra->Msg3_frame, &ra->Msg3_subframe);
+//      nr_get_Msg3alloc(&cc[CC_id], slotP, frameP,&ra->Msg3_frame, &ra->Msg3_subframe);
 //
 //      LOG_D(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n",
 //            frameP, slotP, ra->Msg3_frame,
 //            ra->Msg3_subframe);
 //
-//      nr_fill_rar(module_idP, CC_idP, ra, frameP, cc[CC_idP].RAR_pdu.payload, N_RB_DL, 7);
-//      nr_add_msg3(module_idP, CC_idP, ra, frameP, slotP);
+//      nr_fill_rar(module_idP, CC_id, ra, frameP, cc[CC_id].RAR_pdu.payload, N_RB_DL, 7);
+//      nr_add_msg3(module_idP, CC_id, ra, frameP, slotP);
 //      ra->state = WAITMSG3;
 //      LOG_D(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, slotP);
 //
 //      // DL request
-//      mac->TX_req[CC_idP].sfn_sf = (frameP << 4) + slotP;
-//      TX_req = &mac->TX_req[CC_idP].tx_request_body.tx_pdu_list[mac->TX_req[CC_idP].tx_request_body.number_of_pdus];
+//      mac->TX_req[CC_id].sfn_sf = (frameP << 4) + slotP;
+//      TX_req = &mac->TX_req[CC_id].tx_request_body.tx_pdu_list[mac->TX_req[CC_id].tx_request_body.number_of_pdus];
 //      TX_req->pdu_length = 7; // This should be changed if we have more than 1 preamble 
-//      TX_req->pdu_index = mac->pdu_index[CC_idP]++;
+//      TX_req->pdu_index = mac->pdu_index[CC_id]++;
 //      TX_req->num_segments = 1;
 //      TX_req->segments[0].segment_length = 7;
-//      TX_req->segments[0].segment_data = cc[CC_idP].RAR_pdu.payload;
-//      mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
+//      TX_req->segments[0].segment_data = cc[CC_id].RAR_pdu.payload;
+//      mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
 //    
 //      /*if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
-//        set_dl_ue_select_msg2(CC_idP, 4, -1, ra->rnti);
+//        set_dl_ue_select_msg2(CC_id, 4, -1, ra->rnti);
 //      }*/  
 //    } // PDCCH CCE allocation is feasible
 //  } // Msg2 frame/subframe condition
@@ -349,14 +288,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
   unsigned char i;
   NR_RA_t *ra = (NR_RA_t *) &RC.mac[module_idP]->common_channels[CC_id].ra[0];
-  for (i = 0; i < NR_NB_RA_PROC_MAX; i++){
-    LOG_D(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra[i].rnti);
-    ra[i].state = IDLE;
-    ra[i].timing_offset = 0;
-    ra[i].RRC_timer = 20;
-    ra[i].rnti = 0;
-    ra[i].msg3_round = 0;
-  }
+  LOG_D(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
+  ra->state = IDLE;
+  ra->timing_offset = 0;
+  ra->RRC_timer = 20;
+  ra->rnti = 0;
+  ra->msg3_round = 0;
 }
 
 unsigned short nr_fill_rar(const module_id_t mod_id,

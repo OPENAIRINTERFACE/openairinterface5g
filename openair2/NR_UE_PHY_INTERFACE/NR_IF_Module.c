@@ -93,12 +93,15 @@ int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_n
   */
 }
 
-int8_t handle_rar (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
+int8_t handle_rar (nr_downlink_indication_t *dl_info,
+                   uint8_t *pduP,
+                   uint32_t pdu_len,
+                   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){ // TBR not used params
 
-  if (IS_SOFTMODEM_NOS1 || IS_SOFTMODEM_RFSIM)
-    //nr_process_rar(ue,proc, gNB_index, mode); TBR
-
+  LOG_D(MAC, "handling RAR at MAC layer \n");
+  nr_process_rar (dl_info);
   return 0;
+
 }
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
@@ -260,10 +263,10 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       break;
 
       case FAPI_NR_RX_PDU_TYPE_RAR:
-      /*ret_mask |= (handle_rar(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
-                  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
-                  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length,
-                  dl_info->frame, dl_info->slot,ul_time_alignment)) << FAPI_NR_RX_PDU_TYPE_RAR;*/ //TODO TBR
+        ret_mask |= (handle_rar(dl_info,
+                    (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
+                    (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length,
+                    ul_time_alignment)) << FAPI_NR_RX_PDU_TYPE_RAR;
       break;
 
       default:

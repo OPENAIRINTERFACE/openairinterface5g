@@ -75,6 +75,14 @@
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 
+typedef enum {
+  RA_IDLE = 0,
+  Msg2 = 1,
+  WAIT_Msg3 = 2,
+  Msg4 = 3,
+  WAIT_Msg4_ACK = 4
+} RA_state_t;
+
 /*! \brief gNB template for the Random access information */
 typedef struct {
     /// Flag to indicate this process is active

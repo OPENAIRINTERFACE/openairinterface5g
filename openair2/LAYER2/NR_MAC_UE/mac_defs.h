@@ -74,6 +74,12 @@ typedef enum {
     SFN_C_IMPOSSIBLE
 } SFN_C_TYPE;
 
+typedef enum {
+  RA_IDLE = 0,
+  WAIT_RAR = 1,
+  WAIT_CONTENTION_RESOLUTION = 2
+} RA_state_t;
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
 
