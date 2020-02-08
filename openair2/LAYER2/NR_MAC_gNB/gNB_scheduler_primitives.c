@@ -497,7 +497,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     for (int i=0;i<pdcch_pdu->numDlDci;i++) {
       //pdcch-DMRS-ScramblingID
       AssertFatal(coreset0->pdcch_DMRS_ScramblingID != NULL,"coreset0->pdcch_DMRS_ScramblingID is null\n");
-      pdcch_pdu->ScramblingId[i] = *coreset0->pdcch_DMRS_ScramblingID;
+      pdcch_pdu->dci_pdu.ScramblingId[i] = *coreset0->pdcch_DMRS_ScramblingID;
     }    
     
     /// SearchSpace
@@ -559,10 +559,10 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 
-    uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->Payload[d];
-    AssertFatal(pdcch_pdu_rel15->PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
+    uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->dci_pdu.Payload[d];
+    AssertFatal(pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
 
-    int dci_size = pdcch_pdu_rel15->PayloadSizeBits[d];
+    int dci_size = pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d];
     
     /// Payload generation
     switch(dci_formats[d]) {
@@ -1365,19 +1365,21 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 }
 */
 
-/* TBR fix this
-boolean_t nr_CCE_allocation_infeasible(int module_idP, int CC_idP, int format_flag, int slot, int aggregation, int rnti){
+/* 
+boolean_t nr_CCE_allocation_infeasible(int module_idP, int CC_id, int format_flag, int slot, int aggregation, int rnti){
   
-  nfapi_dl_config_request_body_t *DL_req = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
-  nfapi_dl_config_request_pdu_t *dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
-  nfapi_hi_dci0_request_body_t *HI_DCI0_req = &RC.mac[module_idP]->HI_DCI0_req[CC_idP][slot].hi_dci0_request_body;
+  gNB_MAC_INST *mac = RC.nrmac[module_idP];
+  nfapi_nr_dl_tti_request_body_t *dl_req = &mac->DL_req[CC_id].dl_config_request_body;
+  nfapi_nr_dl_tti_request_pdu_t *dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+
+  nfapi_hi_dci0_request_body_t *HI_DCI0_req = &RC.mac[module_idP]->HI_DCI0_req[CC_id][slot].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi];
   
   int ret;
   boolean_t res = FALSE;
 
   if (format_flag != 2) { // DL DCI
-    if (DL_req->number_pdu == MAX_NUM_DL_PDU) {
+    if (dl_req->number_pdu == MAX_NUM_DL_PDU) {
       LOG_W(MAC,
       "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n",
       slot, rnti);
@@ -1387,7 +1389,7 @@ boolean_t nr_CCE_allocation_infeasible(int module_idP, int CC_idP, int format_fl
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = rnti;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = (format_flag == 0) ? 2 : 1;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
-      DL_req->number_pdu++;
+      dl_req->number_pdu++;
 
       LOG_D(MAC, "Subframe %d: Checking CCE feasibility format %d : (%x,%d) (%x,%d,%d)\n",
         slot, format_flag, rnti, aggregation,
@@ -1396,11 +1398,11 @@ boolean_t nr_CCE_allocation_infeasible(int module_idP, int CC_idP, int format_fl
         aggregation_level,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type);
       
-      // ret = nr_allocate_CCEs(module_idP, CC_idP, 0, slot, 0); // TBR
+      // ret = nr_allocate_CCEs(module_idP, CC_id, 0, slot, 0); // TBR
       
       if (ret == -1) res = TRUE;
       
-      DL_req->number_pdu--;
+      dl_req->number_pdu--;
     }
   } else {      // ue-specific UL DCI
     if (HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi == MAX_NUM_HI_DCI0_PDU) {
@@ -1411,7 +1413,7 @@ boolean_t nr_CCE_allocation_infeasible(int module_idP, int CC_idP, int format_fl
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
       HI_DCI0_req->number_of_dci++;
-      // ret = nr_allocate_CCEs(module_idP, CC_idP, 0, slot, 0); // TBR
+      // ret = nr_allocate_CCEs(module_idP, CC_id, 0, slot, 0); // TBR
       if (ret == -1) res = TRUE;
       HI_DCI0_req->number_of_dci--;
     }

@@ -373,11 +373,11 @@ int configure_fapi_dl_pdu(int Mod_idP,
 		     bwp);
   
   pdcch_pdu_rel15->numDlDci = 1;
-  pdcch_pdu_rel15->AggregationLevel[0] = 4;  
-  pdcch_pdu_rel15->RNTI[0]=UE_list->rnti[0];
-  pdcch_pdu_rel15->CceIndex[0] = CCEIndex[0];
-  pdcch_pdu_rel15->beta_PDCCH_1_0[0]=0;
-  pdcch_pdu_rel15->powerControlOffsetSS[0]=1;
+  pdcch_pdu_rel15->dci_pdu.AggregationLevel[0] = 4;
+  pdcch_pdu_rel15->dci_pdu.RNTI[0]=UE_list->rnti[0];
+  pdcch_pdu_rel15->dci_pdu.CceIndex[0] = CCEIndex[0];
+  pdcch_pdu_rel15->dci_pdu.beta_PDCCH_1_0[0]=0;
+  pdcch_pdu_rel15->dci_pdu.powerControlOffsetSS[0]=1;
   
   int dci_formats[2];
   int rnti_types[2];
@@ -385,12 +385,12 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
   rnti_types[0]   = NR_RNTI_C;
 
-  pdcch_pdu_rel15->PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
+  pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
   fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
 
   LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
-	pdcch_pdu_rel15->RNTI[0],
+	pdcch_pdu_rel15->dci_pdu.RNTI[0],
 	rnti_types[0],
 	dci_formats[0],
 	(unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
@@ -433,7 +433,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
   dci_pdu_rel15->tpc = 2;
   
   LOG_D(MAC, "[gNB scheduler phytest] ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
-	pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci],
+	pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci],
 	dci_pdu_rel15->frequency_domain_assignment,
 	dci_pdu_rel15->time_domain_assignment,
 	dci_pdu_rel15->frequency_hopping_flag,
@@ -825,13 +825,13 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
 
   AssertFatal(CCEIndex>=0,"CCEIndex is negative \n");
-  pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci] = CCEIndex;
+  pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci] = CCEIndex;
 
-  LOG_D(PHY,"CCEIndex %d\n",pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci]);
+  LOG_D(PHY,"CCEIndex %d\n",pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci]);
 
   config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
   
-  pdcch_pdu_rel15->PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
+  pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
   fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
   
 }
