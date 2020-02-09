@@ -1321,7 +1321,7 @@ void ulsch_common_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_
 
 #endif
 
-UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_id){ // TBR generate enum for NR
+UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_id){
   return(PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[gNB_id]);
 }
 
@@ -3152,19 +3152,47 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   }
 }
 
+// WIP TBR fix:
+// - time domain indication hardcoded to 0 for k2 offset
+// - extend TS 38.213 ch 8.3 Msg3 PUSCH
+// - b buffer
+// - ulsch power offset
+// - UE_mode == PUSCH case (should be handled by TA updates)
+// - harq
+// - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
 void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
   module_id_t module_id = dl_info->module_id;
-  int cc_id = dl_info->cc_id, frame_rx =  dl_info->proc->frame_rx, nr_tti_rx =  dl_info->proc->nr_tti_rx, ta_command, harq_pid = 0;
+  int cc_id = dl_info->cc_id, frame_rx = dl_info->proc->frame_rx, nr_tti_rx = dl_info->proc->nr_tti_rx, ta_command, k2, delta;
   uint8_t gNB_index = dl_info->gNB_index, *rar;
   fapi_nr_dci_indication_t *dci_ind = dl_info->dci_ind;
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
   NR_UE_DLSCH_t *dlsch0 = ue->dlsch_ra[gNB_index];
   UE_MODE_t UE_mode = ue->UE_mode[gNB_index];
   NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_index];
+  uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
 
-  uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1); // TBR double check
-  uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1); // TBR double check
+  uint8_t mu_pusch = 1;
+  // definition table j Table 6.1.2.1.1-4
+  uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
+  uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+    {j,  0,14}, // row index 1
+    {j,  0,12}, // row index 2
+    {j,  0,10}, // row index 3
+    {j,  2,10}, // row index 4
+    {j,  4,10}, // row index 5
+    {j,  4,8},  // row index 6
+    {j,  4,6},  // row index 7
+    {j+1,0,14}, // row index 8
+    {j+1,0,12}, // row index 9
+    {j+1,0,10}, // row index 10
+    {j+2,0,14}, // row index 11
+    {j+2,0,12}, // row index 12
+    {j+2,0,10}, // row index 13
+    {j,  8,6},  // row index 14
+    {j+3,0,14}, // row index 15
+    {j+3,0,10}  // row index 16
+  };
 
   LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Received RAR mode %d\n", module_id, frame_rx, nr_tti_rx, UE_mode);
 
@@ -3173,66 +3201,75 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
       LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n", module_id, frame_rx, nr_tti_rx, prach_resources->ra_PreambleIndex);
 
-    // TBR double check
-    // fix crnti
-    // ta_command = nr_ue_process_rar(ue->Mod_id,
-    //                                cc_id,
-    //                                frame_rx,
-    //                                prach_resources->ra_RNTI,
-    //                                dlsch0->harq_processes[0]->b,
-    //                                &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti,
-    //                                prach_resources->ra_PreambleIndex,
-    //                                dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
+      ta_command = nr_ue_process_rar(ue->Mod_id,
+                                     cc_id,
+                                     frame_rx,
+                                     dlsch0->harq_processes[0]->b,
+                                     &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->pdcch_config[0].rnti,
+                                     prach_resources->ra_PreambleIndex,
+                                     dlsch0->harq_processes[0]->b); // alter the 'b' buffer so it contains only the selected RAR header and RAR payload
 
-    // ue->pdcch_vars[next1_thread_id][gNB_index]->crnti = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti;
-    // ue->pdcch_vars[next2_thread_id][gNB_index]->crnti = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti;
-
-      // TBR double check
       if (ta_command != 0xffff) {
-        // LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Got rnti %x and timing advance %d from RAR\n",
-        //   ue->Mod_id,
-        //   frame_rx,
-        //   nr_tti_rx,
-        //   ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti,
-        //   ta_command);
+        LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Got Temporary C-RNTI %x and timing advance %d from RAR\n",
+          ue->Mod_id,
+          frame_rx,
+          nr_tti_rx,
+          ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->pdcch_config[0].rnti,
+          ta_command);
 
-        // fix TBR : C-RNTI is still a TC-RNTI
-        // ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->crnti_is_temporary = 1;
         nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
 
         if (UE_mode != debug_prach) {
           ue->ulsch_Msg3_active[gNB_index] = 1;
-          // nr_get_Msg3_alloc(&ue->frame_parms,
-          //                   nr_tti_rx,
-          //                   frame_rx,
-          //                   &ue->ulsch_Msg3_frame[gNB_index],
-          //                   &ue->ulsch_Msg3_subframe[gNB_index]); // TBR
+          // TS 38.213 ch 8.3 Msg3 PUSCH
+          // PUSCH time domain resource allocation A for normal CP
+          // TS 38.214 ch 6.1.2.1.1
+          k2 = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][0];
+          switch (mu_pusch) {
+            case 0:
+            delta = 2;
+            break;
+            case 1:
+            delta = 3;
+            break;
+            case 2:
+            delta = 4;
+            break;
+            case 3:
+            delta = 6;
+            break;
+          }
+
+          ue->ulsch_Msg3_subframe[gNB_index] = (nr_tti_rx + k2 + delta) % slots_per_frame;
+          if (nr_tti_rx + k2 + delta > slots_per_frame){
+            ue->ulsch_Msg3_frame[gNB_index] = (frame_rx + 1) % 1024;
+          } else {
+            ue->ulsch_Msg3_frame[gNB_index] = frame_rx;
+          }
+
           LOG_D(PHY,"[UE %d][RAPROC] Got Msg3_alloc Frame %d subframe %d: Msg3_frame %d, Msg3_subframe %d\n",
                 ue->Mod_id,
                 frame_rx,
                 nr_tti_rx,
                 ue->ulsch_Msg3_frame[gNB_index],
                 ue->ulsch_Msg3_subframe[gNB_index]);
-          // todo TBR
           // harq_pid = subframe2harq_pid(&ue->frame_parms,
           //                              ue->ulsch_Msg3_frame[gNB_index],
           //                              ue->ulsch_Msg3_subframe[gNB_index]);
           // ue->ulsch[gNB_index]->harq_processes[harq_pid]->round = 0;
-          // ue->UE_mode[gNB_index] = RA_RESPONSE;
           // ue->Msg3_timer[gNB_index] = 10;
           // ue->ulsch[gNB_index].power_offset = 6;
           // ue->ulsch_no_allocation_counter[gNB_index] = 0;
+          ue->UE_mode[gNB_index] = RA_RESPONSE;
         }
-      } else { // PRACH preamble doesn't match RAR
-        LOG_W(PHY,"[UE  %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n",
-              ue->Mod_id,
-              prach_resources->ra_PreambleIndex);
+      } else {
+        LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n", ue->Mod_id, prach_resources->ra_PreambleIndex);
       }
-    } // mode != PUSCH
+    }
   } else {
-    rar = dlsch0->harq_processes[0]->b+1;
-    ta_command = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
-    nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
+    // rar = dlsch0->harq_processes[0]->b+1;
+    // ta_command = ((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+    // nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
   }
 }
 
@@ -4468,7 +4505,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint16_t preamble_tx = 50, pathloss;
   NR_PRACH_RESOURCES_t prach_resources;
   uint8_t mod_id = ue->Mod_id;
-  NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);

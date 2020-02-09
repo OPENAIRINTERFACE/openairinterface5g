@@ -98,13 +98,6 @@ void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 
-boolean_t nr_CCE_allocation_infeasible(int module_idP,
-                                       int CC_idP,
-                                       int common_flag,
-                                       int slot,
-                                       int aggregation,
-                                       int rnti);
-
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
 void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
@@ -113,19 +106,14 @@ void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
                       frame_t *frame,
                       sub_frame_t *subframe);
 
-/* \brief Function in gNB to fill RAR pdu when requested by PHY. This provides a single RAR SDU for the moment and returns the t-CRNTI.
-@param Mod_id Instance ID of gNB
-@param dlsch_buffer Pointer to DLSCH input buffer
+/* \brief Function in gNB to fill RAR pdu when requested by PHY.
+@param ra Instance of RA resources of gNB
+@param dlsch_buffer Pointer to RAR input buffer
 @param N_RB_UL Number of UL resource blocks
-@returns t_CRNTI
 */
-unsigned short nr_fill_rar(const module_id_t module_idP,
-                           const int CC_id,
-                           NR_RA_t *ra,
-                           const frame_t frameP,
-                           uint8_t * const dlsch_buffer,
-                           const uint16_t N_RB_UL,
-                           const uint8_t input_buffer_length);
+void nr_fill_rar(NR_RA_t * ra,
+                 uint8_t * dlsch_buffer,
+                 uint16_t N_RB_UL);
 
 
 uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);

@@ -145,6 +145,8 @@ typedef struct {
   /// Preamble Power Ramping Counter
   uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
   /// Random-access backoff counter
+  int16_t RA_backoff_indicator;
+  /// Random-access backoff counter
   int16_t RA_backoff_cnt;
   /// Random-access variable for window calculation (frame of last change in window counter)
   uint32_t RA_tx_frame;
@@ -165,6 +167,8 @@ typedef struct {
   int8_t deltaPreamble_Msg3;
   /// Flag to monitor if matching RAPID was received in RAR
   uint8_t RA_RAPID_found;
+  /// Flag to monitor if BI was received in RAR
+  uint8_t RA_BI_found;
   /// UE_Mode variable should be used in the case of Phy_stub operation since we won't have access to PHY_VARS_UE
   /// where the UE_mode originally is for the full stack operation mode. The transitions between the states of the UE_Mode
   /// will be triggered within phy_stub_ue.c in this case

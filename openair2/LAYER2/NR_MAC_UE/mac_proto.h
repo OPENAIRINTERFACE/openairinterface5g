@@ -206,13 +206,12 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-uint16_t nr_ue_process_rar(const module_id_t mod_id,
-                           const int CC_id,
-                           const frame_t frameP,
-                           const rnti_t ra_rnti,
-                           uint8_t * const dlsch_buffer,
-                           rnti_t * const t_crnti,
-                           const uint8_t preamble_index,
+uint16_t nr_ue_process_rar(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frameP,
+                           uint8_t * dlsch_buffer,
+                           rnti_t * t_crnti,
+                           uint8_t preamble_index,
                            uint8_t * selected_rar_buffer);
 
 void nr_process_rar(nr_downlink_indication_t *dl_info);

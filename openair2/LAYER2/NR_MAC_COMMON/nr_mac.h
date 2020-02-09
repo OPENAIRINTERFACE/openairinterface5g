@@ -147,20 +147,40 @@ typedef struct {
 //     uint8_t payload[RAR_PAYLOAD_SIZE_MAX];
 // } __attribute__ ((__packed__)) RAR_PDU;
 
-/*!\brief MAC header of Random Access Response for Random access preamble identifier (RAPID) */
+//* RAR MAC subheader // TS 38.321 ch. 6.1.5, 6.2.2 *//
+// - E: The Extension field is a flag indicating if the MAC subPDU including this MAC subheader is the last MAC subPDU or not in the MAC PDU
+// - T: The Type field is a flag indicating whether the MAC subheader contains a Random Access Preamble ID or a Backoff Indicator (0, BI) (1, RAPID)
+// - R: Reserved bit, set to "0"
+// - BI: The Backoff Indicator field identifies the overload condition in the cell.
+// - RAPID: The Random Access Preamble IDentifier field identifies the transmitted Random Access Preamble
+
+/*!\brief RAR MAC subheader with RAPID */
 typedef struct {
     uint8_t RAPID:6;
     uint8_t T:1;
     uint8_t E:1;
 } __attribute__ ((__packed__)) NR_RA_HEADER_RAPID;
 
-/*!\brief MAC header of Random Access Response for backoff indicator (BI)*/
+/*!\brief RAR MAC subheader with Backoff Indicator */
 typedef struct {
     uint8_t BI:4;
     uint8_t R:2;
     uint8_t T:1;
     uint8_t E:1;
 } __attribute__ ((__packed__)) NR_RA_HEADER_BI;
+
+// TS 38.321 ch. 6.2.3
+typedef struct {
+    uint8_t R:1;            // octet 1 [7]
+    uint8_t TA1:7;          // octet 1 [7:0]
+    uint8_t TA2:5;          // octet 2 [7:2]
+    uint8_t UL_GRANT_1:3;   // octet 2 [2:0]
+    uint8_t UL_GRANT_2:8;   // octet 3 [7:0]
+    uint8_t UL_GRANT_3:8;   // octet 4 [7:0]
+    uint8_t UL_GRANT_4:8;   // octet 5 [7:0]
+    uint8_t TCRNTI_1:8;     // octet 6 [7:0]
+    uint8_t TCRNTI_2:8;     // octet 7 [7:0]
+} __attribute__ ((__packed__)) NR_MAC_RAR;
 
 //  38.321 ch6.2.1, 38.331
 #define DL_SCH_LCID_CCCH                           0x00

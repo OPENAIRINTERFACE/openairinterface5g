@@ -47,103 +47,91 @@
 
 #define DEBUG_RAR
 
-uint16_t nr_ue_process_rar(const module_id_t mod_id,
-                           const int CC_id,
-                           const frame_t frameP,
-                           const rnti_t ra_rnti,
-                           uint8_t * const dlsch_buffer,
-                           rnti_t * const t_crnti,
-                           const uint8_t preamble_index,
+// table 7.2-1 TS 38.321
+uint8_t table_7_2_1[16] = {
+  {5},    // row index 0
+  {10},   // row index 1
+  {20},   // row index 2
+  {30},   // row index 3
+  {40},   // row index 4
+  {60},   // row index 5
+  {80},   // row index 6
+  {120},  // row index 7
+  {160},  // row index 8
+  {240},  // row index 9
+  {320},  // row index 10
+  {480},  // row index 11
+  {960},  // row index 12
+  {1920}, // row index 13
+};
+
+// WIP todo:
+// - UL grant
+uint16_t nr_ue_process_rar(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frameP,
+                           uint8_t * dlsch_buffer,
+                           rnti_t * t_crnti,
+                           uint8_t preamble_index,
                            uint8_t * selected_rar_buffer){
 
-    NR_UE_MAC_INST_t *nrUE_mac_inst = get_mac_inst(mod_id);
-    NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
-    uint16_t ret = 0;
-    //  NR_RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
-    uint8_t *rar = (uint8_t *) (dlsch_buffer + 1);
-    // get the last RAR payload for working with CMW500
-    uint8_t n_rarpy = 0;        // number of RAR payloads
-    uint8_t n_rarh = 0;         // number of MAC RAR subheaders
-    uint8_t best_rx_rapid = -1;     // the closest RAPID receive from all RARs
+    NR_UE_MAC_INST_t *ue_mac = get_mac_inst(mod_id);
+    NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
+    NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);            // RAR subPDU pointer
+    uint8_t n_subPDUs = 0;        // number of RAR payloads
+    uint8_t n_subheaders = 0;     // number of MAC RAR subheaders
+    uint8_t best_rx_rapid = -1;   // the closest RAPID receive from all RARs
+    uint16_t ta_command = 0;
 
     AssertFatal(CC_id == 0, "RAR reception on secondary CCs is not supported yet\n");
 
     while (1) {
-      n_rarh++;
+      n_subheaders++;
       if (rarh->T == 1) {
-          n_rarpy++;
-          LOG_D(MAC, "RAPID %d\n", rarh->RAPID);
-      }
-
-      if (rarh->RAPID == preamble_index) {
-          LOG_D(PHY, "Found RAR with the intended RAPID %d\n",
-              rarh->RAPID);
-          rar = (uint8_t *) (dlsch_buffer + n_rarh + (n_rarpy - 1) * 6);
-          nrUE_mac_inst->RA_RAPID_found = 1;
-          break;
-      }
-
-      if (abs((int) rarh->RAPID - (int) preamble_index) <
-          abs((int) best_rx_rapid - (int) preamble_index)) {
-          best_rx_rapid = rarh->RAPID;
-          rar = (uint8_t *) (dlsch_buffer + n_rarh + (n_rarpy - 1) * 6);
-      }
-
-      if (rarh->E == 0) {
-          LOG_I(PHY, "No RAR found with the intended RAPID. The closest RAPID in all RARs is %d\n", best_rx_rapid);
-          break;
+        n_subPDUs++;
+        LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU %d\n", mod_id, rarh->RAPID);
       } else {
-          rarh++;
+        n_subPDUs++;
+        ue_mac->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
+        ue_mac->RA_BI_found = 1;
+        LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ue_mac->RA_backoff_indicator);
+      }
+      if (rarh->RAPID == preamble_index) {
+        LOG_D(PHY, "[UE %d][RAPROC] Found RAR with the intended RAPID %d\n", rarh->RAPID);
+        rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
+        ue_mac->RA_RAPID_found = 1;
+        break;
+      }
+      // if (abs((int) rarh->RAPID - (int) preamble_index) < abs((int) best_rx_rapid - (int) preamble_index)) {
+      //   best_rx_rapid = rarh->RAPID;
+      //   rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
+      // }
+      if (rarh->E == 0) {
+        LOG_I(PHY, "No RAR found with the intended RAPID. The closest RAPID in all RARs is %d\n", best_rx_rapid);
+        break;
+      } else {
+        rarh += sizeof(NR_MAC_RAR) + 1;
       }
     };
-    LOG_D(MAC, "number of RAR subheader %d; number of RAR pyloads %d\n",
-        n_rarh, n_rarpy);
 
-    LOG_I(MAC,
-        "[UE %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
-        mod_id, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2],
-        rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
-#ifdef DEBUG_RAR
-    LOG_D(MAC, "[UE %d][RAPROC] rarh->E %d\n", mod_id, rarh->E);
-    LOG_D(MAC, "[UE %d][RAPROC] rarh->T %d\n", mod_id, rarh->T);
-    LOG_D(MAC, "[UE %d][RAPROC] rarh->RAPID %d\n", mod_id,
-        rarh->RAPID);
+    LOG_D(MAC, "number of RAR subheader %d; number of RAR pyloads %d\n", n_subheaders, n_subPDUs);
 
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->R %d\n",mod_id,rar->R);
-    LOG_D(MAC, "[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",
-        mod_id, (((uint16_t) (rar[0] & 0x7f)) << 4) + (rar[1] >> 4));
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->hopping_flag %d\n",mod_id,rar->hopping_flag);
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->rb_alloc %d\n",mod_id,rar->rb_alloc);
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->mcs %d\n",mod_id,rar->mcs);
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->TPC %d\n",mod_id,rar->TPC);
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->UL_delay %d\n",mod_id,rar->UL_delay);
-    //  LOG_I(MAC,"[UE %d][RAPROC] rar->cqi_req %d\n",mod_id,rar->cqi_req);
-    LOG_D(MAC, "[UE %d][RAPROC] rar->t_crnti %x\n", mod_id,
-        (uint16_t) rar[5] + (rar[4] << 8));
-#endif
+    LOG_I(MAC, "[UE %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
+      mod_id, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
 
-    if (opt_enabled) {
-      LOG_D(OPT,
-            "[UE %d][RAPROC] CC_id %d RAR Frame %d trace pdu for ra-RNTI %x\n",
-            mod_id, CC_id, frameP, ra_rnti);
-      /*trace_pdu(DIRECTION_DOWNLINK, (uint8_t *) dlsch_buffer, n_rarh + n_rarpy * 6,
-              mod_id, WS_RA_RNTI, ra_rnti, nrUE_mac_inst->rxFrame,
-              nrUE_mac_inst->rxSubframe, 0, 0);*/ // TODO TBR fix rxframe and subframe
-    }
-
-    if (preamble_index == rarh->RAPID) { // TBR double check this
-      *t_crnti = (uint16_t) rar[5] + (rar[4] << 8);   //rar->t_crnti;
-      nrUE_mac_inst->crnti = *t_crnti;    //rar->t_crnti;
-      //return(rar->Timing_Advance_Command);
-      ret = ((((uint16_t) (rar[0] & 0x7f)) << 4) + (rar[1] >> 4));
+    if (ue_mac->RA_RAPID_found) {
+      *t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+      ue_mac->t_crnti = *t_crnti;
+      ue_mac->rnti_type == NR_RNTI_TC;
+      ta_command = rar->TA2 + (rar->TA1 << 5);
     } else {
-      nrUE_mac_inst->crnti = 0;
-      ret = (0xffff);
+      ue_mac->t_crnti = 0;
+      ta_command = (0xffff);
     }
 
     // move the selected RAR to the front of the RA_PDSCH buffer
-    memcpy(selected_rar_buffer + 0, (uint8_t *) rarh, 1);
-    memcpy(selected_rar_buffer + 1, (uint8_t *) rar, 6);
+    memcpy((void *) (selected_rar_buffer + 0), (void *) rarh, 1);
+    memcpy((void *) (selected_rar_buffer + 1), (void *) rar, sizeof(NR_MAC_RAR));
 
-    return ret;
+    return ta_command;
 }

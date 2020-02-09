@@ -1365,62 +1365,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 }
 */
 
-/* 
-boolean_t nr_CCE_allocation_infeasible(int module_idP, int CC_id, int format_flag, int slot, int aggregation, int rnti){
-  
-  gNB_MAC_INST *mac = RC.nrmac[module_idP];
-  nfapi_nr_dl_tti_request_body_t *dl_req = &mac->DL_req[CC_id].dl_config_request_body;
-  nfapi_nr_dl_tti_request_pdu_t *dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
-
-  nfapi_hi_dci0_request_body_t *HI_DCI0_req = &RC.mac[module_idP]->HI_DCI0_req[CC_id][slot].hi_dci0_request_body;
-  nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi];
-  
-  int ret;
-  boolean_t res = FALSE;
-
-  if (format_flag != 2) { // DL DCI
-    if (dl_req->number_pdu == MAX_NUM_DL_PDU) {
-      LOG_W(MAC,
-      "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n",
-      slot, rnti);
-    } else {
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
-      dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = rnti;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = (format_flag == 0) ? 2 : 1;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
-      dl_req->number_pdu++;
-
-      LOG_D(MAC, "Subframe %d: Checking CCE feasibility format %d : (%x,%d) (%x,%d,%d)\n",
-        slot, format_flag, rnti, aggregation,
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti,
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.
-        aggregation_level,
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type);
-      
-      // ret = nr_allocate_CCEs(module_idP, CC_id, 0, slot, 0); // TBR
-      
-      if (ret == -1) res = TRUE;
-      
-      dl_req->number_pdu--;
-    }
-  } else {      // ue-specific UL DCI
-    if (HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi == MAX_NUM_HI_DCI0_PDU) {
-      LOG_W(MAC, "Subframe %d: FAPI UL structure is full, skip scheduling UE %d\n", slot, rnti);
-    } else {
-      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
-      HI_DCI0_req->number_of_dci++;
-      // ret = nr_allocate_CCEs(module_idP, CC_id, 0, slot, 0); // TBR
-      if (ret == -1) res = TRUE;
-      HI_DCI0_req->number_of_dci--;
-    }
-  }
-
-  return res;
-}*/
 
 /* // TBR fix this
 void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
@@ -1531,11 +1475,11 @@ void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
   } // else TDD
 }*/
 
-uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs){ // TBR this is outdated
-  uint16_t RIV;
-
-  if (Lcrbs <= (1 + (N_RB_DL >> 1))) RIV = (N_RB_DL * (Lcrbs - 1)) + RBstart;
-  else RIV = (N_RB_DL * (N_RB_DL + 1 - Lcrbs)) + (N_RB_DL - 1 - RBstart);
-
-  return RIV;
-}
+// uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs){ // TBR
+//   uint16_t RIV;
+//
+//   if (Lcrbs <= (1 + (N_RB_DL >> 1))) RIV = (N_RB_DL * (Lcrbs - 1)) + RBstart;
+//   else RIV = (N_RB_DL * (N_RB_DL + 1 - Lcrbs)) + (N_RB_DL - 1 - RBstart);
+//
+//   return RIV;
+// }

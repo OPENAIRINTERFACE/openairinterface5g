@@ -90,15 +90,15 @@ typedef struct {
     /// Subframe where preamble was received
     uint8_t preamble_subframe;
     /// Subframe where Msg2 is to be sent
-    uint8_t Msg2_subframe;
+    uint8_t Msg2_slot;
     /// Frame where Msg2 is to be sent
     frame_t Msg2_frame;
     /// Subframe where Msg3 is to be sent
-    sub_frame_t Msg3_subframe;
+    sub_frame_t Msg3_slot;
     /// Frame where Msg3 is to be sent
     frame_t Msg3_frame;
     /// Subframe where Msg4 is to be sent
-    sub_frame_t Msg4_subframe;
+    sub_frame_t Msg4_slot;
     /// Frame where Msg4 is to be sent
     frame_t Msg4_frame;
     /// harq_pid used for Msg4 transmission
