@@ -131,7 +131,6 @@ extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern int rx_input_level_dBm;
-extern uint8_t exit_missed_slots;
 extern uint64_t num_missed_slots; // counter for the number of missed slots
 
 extern int oaisim_flag;

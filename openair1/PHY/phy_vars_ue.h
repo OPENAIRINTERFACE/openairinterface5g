@@ -57,7 +57,6 @@ short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
   unsigned char NB_INST=0;
 #endif
 
-unsigned int ULSCH_max_consecutive_errors = 20;
 
 int number_of_cards;
 

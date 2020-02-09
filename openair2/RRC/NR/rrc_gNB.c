@@ -77,8 +77,9 @@
 
 #   include "intertask_interface.h"
 
-
 #include "SIMULATION/TOOLS/sim.h" // for taus
+
+#include "executables/softmodem-common.h"
 
 //#define XER_PRINT
 
@@ -178,7 +179,6 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-extern int phy_test;
 
 static void init_NR_SI(gNB_RRC_INST *rrc) {
 
@@ -204,7 +204,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          );
 
 
-  if (phy_test > 0) {
+  if (get_softmodem_params()->phy_test > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     FILE *fd;
 
