@@ -750,7 +750,19 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         nextslot_type == NR_UPLINK_SLOT) {
       flags = 3; // end of burst
     }
-   
+
+    if (fp->freq_range==nr_FR2) {
+      // the beam index is written in bits 8-10 of the flags
+      // bit 11 enables the gpio programming
+      int beam=0;
+      if (slot==0 || slot==40) beam=0&8;
+      if (slot==10 || slot==50) beam=1&8;
+      if (slot==20 || slot==60) beam=2&8;
+      if (slot==30 || slot==70) beam=3&8;
+
+      flags |= beam<<8;
+    }
+    
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags ); 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
