@@ -3290,9 +3290,6 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                   mac->t_crnti = 0;
                   mac->ra_state = RA_SUCCEEDED;
                 }
-          break;
-
-
                 break;
             case DL_SCH_LCID_PADDING:
                 done = 1;

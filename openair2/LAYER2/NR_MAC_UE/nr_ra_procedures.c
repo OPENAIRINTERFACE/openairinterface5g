@@ -78,7 +78,7 @@ void nr_get_prach_resources(module_id_t mod_id,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon;
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
   int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, frequencyStart, i, deltaPreamble_Msg3;
@@ -90,15 +90,15 @@ void nr_get_prach_resources(module_id_t mod_id,
   //////////* UE Random Access Resource Selection *//////////
   ///////////////////////////////////////////////////////////
 
-  // todo: switch initialisation cases
-  // - RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
-  // -- SSB selection, set prach_resources->ra_PreambleIndex
-  // - RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000 
-  // -- TBR coming from dci_pdu_rel15[0].ra_preamble_index
-  // -- set PREAMBLE_INDEX to ra_preamble_index
-  // -- select the SSB signalled by PDCCH
-  // - RA initiated for SI request:
-  // -- SSB selection, set prach_resources->ra_PreambleIndex
+  // todo: 
+  // - switch initialisation cases
+  // -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
+  // --- SSB selection, set prach_resources->ra_PreambleIndex
+  // -- RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000 
+  // --- set PREAMBLE_INDEX to ra_preamble_index
+  // --- select the SSB signalled by PDCCH
+  // -- RA initiated for SI request:
+  // --- SSB selection, set prach_resources->ra_PreambleIndex
 
   // if (rach_ConfigDedicated) {  // This is for network controlled Mobility
   //   // operation for contention-free RA resources when:
@@ -109,11 +109,15 @@ void nr_get_prach_resources(module_id_t mod_id,
   // }
 
   //////////* Contention-based RA preamble selection *//////////
-  // todo
+  // todo:
   // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
   // - todo determine next available PRACH occasion
 
   // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
+
+  AssertFatal(mac->nr_rach_ConfigCommon != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
+
+  nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
 
   Msg3_size = mac->RA_Msg3_size;
   numberOfRA_Preambles = nr_rach_ConfigCommon->totalNumberOfRA_Preambles;
@@ -162,7 +166,6 @@ void nr_get_prach_resources(module_id_t mod_id,
     }
 
     /* Power offset for preamble selection in dB */
-    /* TBR: what value to use as default? Shall it be converted ? */
     messagePowerOffsetGroupB = -9999;
     switch (nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB){
     case 0:
@@ -237,16 +240,16 @@ void nr_get_prach_resources(module_id_t mod_id,
   // todo:
   // - condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
   // - check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
+  // - Extend RA_rnti computation (e.g. f_id selection, ul_carrier_id are hardcoded)
 
   if (mac->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
     mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
 
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
-   /* RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
+   // RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
    // 1) this does not apply to contention-free RA Preamble for beam failure recovery request
    // 2) getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
-   // 3) TBR extend this (e.g. f_id selection, ul_carrier_id are hardcoded) */
 
    switch (nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM){ // todo this is not used
     case 0:
@@ -287,6 +290,7 @@ void nr_get_prach_resources(module_id_t mod_id,
     }
    }
    prach_resources->ra_RNTI = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
+   mac->ra_rnti = prach_resources->ra_RNTI;
 
    LOG_D(MAC, "Computed ra_RNTI is %d", prach_resources->ra_RNTI);
 }
@@ -317,6 +321,18 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 /// the RA procedure on a SCell shall only be initiated by PDCCH order
 
 // WIP
+// todo TS 38.321:
+// - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX
+// - BWP operation (subclause 5.15 TS 38.321)
+// - handle initialization by beam failure recovery
+// - handle initialization by handover
+// - handle transmission on DCCH using PRACH (during handover, or sending SR for example)
+// - take into account MAC CEs in size_sdu (currently hardcoded size to 1 MAC subPDU and 1 padding subheader)
+// - fix rrc data req logic
+// - retrieve TBS
+// - add mac_rrc_nr_data_req_ue, etc ...
+// - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
+
 void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                     module_id_t mod_id,
                     int CC_id,
@@ -326,15 +342,15 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                     int nr_tti_tx){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  uint8_t lcid = CCCH, dcch_header_len = 0, mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES], * payload, ra_ResponseWindow;
+  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, dcch_header_len = 0, *mac_sdus, *payload, ra_ResponseWindow;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (struct NR_RACH_ConfigCommon_t *) NULL;
   int32_t frame_diff = 0;
 
-  uint8_t sdu_lcids[NB_RB_MAX] = {0}; // TBR
-  uint16_t sdu_lengths[NB_RB_MAX] = {0};  // TBR
-  int TBS_bytes = 848, header_length_total, num_sdus, offset, preambleTransMax; // TBR
+  uint8_t sdu_lcids[NB_RB_MAX] = {0};
+  uint16_t sdu_lengths[NB_RB_MAX] = {0};
+  int TBS_bytes = 848, header_length_total, num_sdus, offset, preambleTransMax, mac_ce_len;
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
@@ -344,7 +360,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
     AssertFatal(mac->nr_rach_ConfigCommon != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
-    if (mac->nr_rach_ConfigCommon) { // TBR check the condition
+    if (mac->nr_rach_ConfigCommon != NULL) {
       nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
     } else prach_resources = NULL;
 
@@ -375,38 +391,36 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       prach_resources->RA_SCALING_FACTOR_BI = 1;
       prach_resources->RA_PCMAX = 0; // currently hardcoded to 0
 
-      // todo:
-      // - check if carrier to use is explicitly signalled then do (1) RA CARRIER SELECTION (SUL, NUL) (2) set PCMAX
-      // - BWP operation (subclause 5.15 TS 38.321)
-      // - handle initialization by beam failure recovery
-      // - handle initialization by handover
+      payload = &mac->CCCH_pdu.payload;
+
+      mac_ce_len = 0;
+      num_sdus = 1;
+      post_padding = 1;
 
       if (!IS_SOFTMODEM_NOS1){
-        // todo mac_rrc_nr_data_req_ue
-        payload = &mac->CCCH_pdu.payload;
-        size_sdu = (uint16_t) mac_rrc_nr_data_req_ue(mod_id,
-                                                     CC_id,
-                                                     frame,
-                                                     CCCH,
-                                                     payload[sizeof(NR_MAC_SUBHEADER_SHORT) + 1]);
-
+        // initialisation by RRC
+        // CCCH PDU
+        mac_sdus = payload[sizeof(NR_MAC_SUBHEADER_SHORT)];
+        size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
+                                                  CC_id,
+                                                  frame,
+                                                  CCCH,
+                                                  1,
+                                                  mac_sdus,
+                                                  gNB_id,
+                                                  0);
         LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id,frame, size_sdu);
-
-        // todo: else triggers a transmission on DCCH using PRACH (during handover, or sending SR for example)
-
       } else {
         // fill ulsch_buffer with random data
-        payload = (uint8_t *)mac->ulsch_pdu.payload[0];
         for (int i = 0; i < TBS_bytes; i++){
           mac_sdus[i] = (unsigned char) (lrand48()&0xff);
         }
         //Sending SDUs with size 1
         //Initialize elements of sdu_lcids and sdu_lengths
-        sdu_lcids[0] = UL_SCH_LCID_DTCH;
-        sdu_lengths[0] = TBS_bytes - 3;
+        sdu_lcids[0] = lcid;
+        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
         header_length_total += 2 + (sdu_lengths[0] >= 128);
         size_sdu += sdu_lengths[0];
-        num_sdus +=1;
       }
 
       mac->RA_tx_frame = frame;
@@ -414,17 +428,15 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       mac->RA_backoff_frame = frame;
       mac->RA_backoff_subframe = nr_tti_tx;
 
-      if (size_sdu > 0) { // TBR size_sdu + MAC_Header_len + mac_ce_len
-        /* TBR initialisation by RRC
-        // PDU from CCCH */
+      if (size_sdu > 0) {
 
         LOG_I(MAC, "[UE %d] Frame %d: Initialisation Random Access Procedure\n", mod_id, frame);
 
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
         mac->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
-        mac->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // TBR size_sdu + MAC_Header_len + mac_ce_len
+        mac->RA_Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
         mac->RA_prachMaskIndex = 0;
-        // TBR todo: add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
+        // todo: add the backoff condition here
         mac->RA_backoff_cnt = 0;
         mac->RA_active = 1;
         prach_resources->Msg3 = payload;
@@ -461,7 +473,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         nr_get_prach_resources(prach_resources, mod_id, CC_id, gNB_id, nr_tti_tx, 1, NULL);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
-                                       (uint8_t *) payload,               // logical channel payload
+                                       (uint8_t *) payload,               // UL MAC pdu pointer
                                        num_sdus,                          // num sdus
                                        sdu_lengths,                       // sdu length
                                        sdu_lcids,                         // sdu lcid
@@ -470,9 +482,9 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                                        0,                                 // truncated bsr
                                        0,                                 // short bsr
                                        0,                                 // long_bsr
-                                       1);                                // post_padding
+                                       post_padding);                     // post_padding
 
-        // Padding: fill remainder of DLSCH with 0
+        // Padding: fill remainder with 0
         if (post_padding > 0){
           for (int j = 0; j < (TBS_bytes - offset); j++)
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;

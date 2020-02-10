@@ -46,11 +46,12 @@ void nr_add_subframe(uint16_t *frameP, uint16_t *slotP, int offset){
     *slotP = ((*slotP + offset) % 10);
 }
 
-// TBR
+// WIP
 // handles the event of msg1 reception
 // todo:
 // - offset computation
 // - fix nr_add_subframe
+// - msg2 time location
 void nr_initiate_ra_proc(module_id_t module_idP,
                          int CC_id,
                          frame_t frameP,
@@ -96,17 +97,15 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->Msg2_frame = msg2_frame;
     ra->Msg2_slot = msg2_slot;
+    // ra->Msg2_slot = (slotP + offset) % 10;
 
     LOG_D(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d offset:%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP, offset);
 
-    ra->Msg2_slot = (slotP + offset) % 10; // TBR this is done twice ?
-
     do {
-      ra->rnti = taus(); // todo 5.1.3 TS 38.321
+      ra->rnti = (taus() % 65518) + 1;
       loop++;
     }
-    // Range coming from 5.1.3 TS 38.321
-    while (loop != 100 && !(find_nr_UE_id(module_idP, ra->rnti) == -1 && ra->rnti >= 1 && ra->rnti <= 17920));
+    while (loop != 100 && !(find_nr_UE_id(module_idP, ra->rnti) == -1 && ra->rnti >= 1 && ra->rnti <= 65519));
     if (loop == 100) {
       LOG_E(MAC,"%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
       abort();
@@ -137,7 +136,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 }
 
-// WIP
 void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
   //uint8_t i = 0;
@@ -166,6 +164,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 }
 
 // WIP
+// todo: fix
 void nr_generate_Msg2(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
@@ -367,6 +366,7 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
   ra->msg3_round = 0;
 }
 
+// WIP
 // todo:
 // - handle MAC RAR BI subheader
 // - sending only 1 RAR subPDU
@@ -403,6 +403,7 @@ void nr_fill_rar(NR_RA_t * ra,
 }
 
 // WIP
+// todo: fix
 void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
 
   gNB_MAC_INST                                   *mac = RC.nrmac[module_idP];
@@ -439,7 +440,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
 
   LOG_D(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
-  ul_req->SFN = ra->Msg3_frame << 4 | ra->Msg3_slot; // TBR
+  ul_req->SFN = ra->Msg3_frame << 4 | ra->Msg3_slot;
   ul_req->Slot = slotP;
   ul_req->n_pdus = 1;
   ul_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
@@ -485,7 +486,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->ul_dmrs_symb_pos = 1;
   pusch_pdu->dmrs_config_type = 0;
-  pusch_pdu->ul_dmrs_scrambling_id = 0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id. // TBR
+  pusch_pdu->ul_dmrs_scrambling_id = 0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_pdu->resource_alloc = 1; //type 1
   //pusch_pdu->rb_bitmap;// for ressource alloc type 0
