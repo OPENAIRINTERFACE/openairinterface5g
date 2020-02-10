@@ -133,11 +133,6 @@ typedef struct {
     int msg4_TBsize;
     /// MCS used for Msg4
     int msg4_mcs;
-    ///
-    int32_t  crnti_rrc_mui; // TBR
-    ///
-    int8_t   crnti_harq_pid; // TBR
-
 } NR_RA_t;
 
 /*! \brief gNB common channels */

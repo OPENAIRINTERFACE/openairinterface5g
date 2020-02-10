@@ -32,7 +32,6 @@
 #ifndef __NR_MAC_EXTERN_H__
 #define __NR_MAC_EXTERN_H__
 
-#include "RRC/LTE/rrc_defs.h" // TBR
 #include "common/ran_context.h"
 #include "nr_mac.h"
 

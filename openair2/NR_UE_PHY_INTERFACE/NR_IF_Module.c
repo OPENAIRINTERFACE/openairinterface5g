@@ -93,10 +93,7 @@ int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_n
   */
 }
 
-int8_t handle_rar (nr_downlink_indication_t *dl_info,
-                   uint8_t *pduP,
-                   uint32_t pdu_len,
-                   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){ // TBR not used params
+int8_t handle_rar (nr_downlink_indication_t *dl_info){
 
   LOG_D(MAC, "handling RAR at MAC layer \n");
   nr_process_rar (dl_info);
@@ -263,10 +260,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       break;
 
       case FAPI_NR_RX_PDU_TYPE_RAR:
-        ret_mask |= (handle_rar(dl_info,
-                    (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
-                    (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length,
-                    ul_time_alignment)) << FAPI_NR_RX_PDU_TYPE_RAR;
+        ret_mask |= (handle_rar(dl_info)) << FAPI_NR_RX_PDU_TYPE_RAR;
       break;
 
       default:

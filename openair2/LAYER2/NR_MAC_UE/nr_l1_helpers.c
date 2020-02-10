@@ -29,11 +29,13 @@
 
 */
 
-#include "PHY/defs_common.h" // TBR
 #include "PHY/defs_nr_common.h"
 
 #include "mac_defs.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+
+// WIP todo:
+//- frame_type and fr are hardcoded. Retireve from fp
 
 /* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
@@ -44,8 +46,8 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
     AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
     uint8_t preambleFormat, prachConfigIndex;
-    lte_frame_type_t frame_type = TDD; // TODO TBR retrieve frame type. Currently hardcoded to TDD.
-    nr_frequency_range_e fr = nr_FR1;  // TODO TBR retrieve frame type. Currently hardcoded to FR1.
+    lte_frame_type_t frame_type = TDD;
+    nr_frequency_range_e fr = nr_FR1;
     int mu; 
 
     // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211

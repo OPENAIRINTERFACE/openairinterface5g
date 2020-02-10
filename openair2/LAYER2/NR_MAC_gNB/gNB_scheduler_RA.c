@@ -164,7 +164,9 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 }
 
 // WIP
-// todo: fix
+// todo:
+// - fix me
+// - get msg3 alloc (see nr_process_rar)
 void nr_generate_Msg2(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
@@ -333,7 +335,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dl_req->nPDUs++;
 
     // Program UL processing for Msg3
-    // nr_get_Msg3alloc(&cc[CC_id], slotP, frameP,&ra->Msg3_frame, &ra->Msg3_slot);
+    // nr_get_Msg3alloc(&cc[CC_id], slotP, frameP,&ra->Msg3_frame, &ra->Msg3_slot); // todo
     LOG_D(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
     nr_fill_rar(ra, cc[CC_id].RAR_pdu.payload, N_RB_UL);
     nr_add_msg3(module_idP, CC_id, frameP, slotP);

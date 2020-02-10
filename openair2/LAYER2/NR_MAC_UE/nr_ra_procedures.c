@@ -295,7 +295,7 @@ void nr_get_prach_resources(module_id_t mod_id,
    LOG_D(MAC, "Computed ra_RNTI is %d", prach_resources->ra_RNTI);
 }
 
-// todo: RA_attempt_number not used TBR
+// TbD: RA_attempt_number not used
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
   AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);

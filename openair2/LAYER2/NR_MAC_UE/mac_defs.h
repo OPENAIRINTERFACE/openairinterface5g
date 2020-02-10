@@ -48,7 +48,7 @@
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include "LAYER2/MAC/mac.h" // TBR
+#include "LAYER2/MAC/mac.h"
 
 /* RRC */
 #include "NR_DRX-Config.h"
@@ -116,15 +116,15 @@ typedef struct {
 
   /* Random Access parameters */
   /// state of RA procedure
-  RA_state_t ra_state; // TBR
+  RA_state_t ra_state;
   /// RACH ConfigCommon
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon;
   /// RA-rnti
-  uint16_t ra_rnti; // TBR
+  uint16_t ra_rnti;
   /// Temporary CRNTI
-  uint16_t t_crnti; // TBR
+  uint16_t t_crnti;
   /// CRNTI
-  uint16_t crnti; // TBR
+  uint16_t crnti;
   /// number of attempt for rach
   uint8_t RA_attempt_number;
   /// Random-access procedure flag

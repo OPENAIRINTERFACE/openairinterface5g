@@ -365,10 +365,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_mib(module_idP, frame_txP, slot_txP);
   }
 
-  // TBR once RACH is available, start ta_timer when UE is connected
+  // TbD once RACH is available, start ta_timer when UE is connected
   if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
 
-  if (ue_sched_ctl->ta_timer == 0) { // TBR check phy_test (see below)
+  if (ue_sched_ctl->ta_timer == 0) {
     gNB->ta_command = ue_sched_ctl->ta_update;
     /* if time is up, then set the timer to not send it for 5 frames
     // regardless of the TA value */

@@ -344,7 +344,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco);
 
-  // TBR temporary hardcoded
+  // WIP temporary hardcoded
   fp->prach_config_common.rootSequenceIndex = 22; // 0
   fp->prach_config_common.prach_Config_enabled = 1;
   fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = 1; // 13

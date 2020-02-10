@@ -199,7 +199,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          rrc->carrier.pdsch_AntennaPorts,
                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			 0,
-			 0, // TBR hardcoded rnti
+			 0, // WIP hardcoded rnti
 			 (NR_CellGroupConfig_t *)NULL
                          );
 

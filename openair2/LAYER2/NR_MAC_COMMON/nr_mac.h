@@ -137,16 +137,6 @@ typedef struct {
   uint8_t R2:6;
 } __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
 
-// /*! \brief CCCH payload */ // TBR
-// typedef struct {
-//     uint8_t payload[CCCH_PAYLOAD_SIZE_MAX];
-// } __attribute__ ((__packed__)) CCCH_PDU;
-// 
-// /*! \brief RAR payload */ // TBR
-// typedef struct {
-//     uint8_t payload[RAR_PAYLOAD_SIZE_MAX];
-// } __attribute__ ((__packed__)) RAR_PDU;
-
 //* RAR MAC subheader // TS 38.321 ch. 6.1.5, 6.2.2 *//
 // - E: The Extension field is a flag indicating if the MAC subPDU including this MAC subheader is the last MAC subPDU or not in the MAC PDU
 // - T: The Type field is a flag indicating whether the MAC subheader contains a Random Access Preamble ID or a Backoff Indicator (0, BI) (1, RAPID)

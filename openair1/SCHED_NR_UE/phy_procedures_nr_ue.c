@@ -1313,6 +1313,8 @@ void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_com
   LOG_D(PHY, "[UE %d] Got timing advance command %u from MAC, new value is %u\n", Mod_id, ta_command, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 }
 
+// WIP
+// - todo: handle TA application as per ch 4.2 TS 38.213
 void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint16_t ta_command) {
 
   int factor_mu = 1 << ue->frame_parms.numerology_index;
@@ -1321,8 +1323,6 @@ void nr_process_timing_advance_rar(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, 
 
   // Transmission timing adjustment (TS 38.213 p4.2)
   ue->timing_advance = bw_scaling / factor_mu;
-
-  // TBR todo handle TA application as per ch 4.2 TS 38.213
 
   LOG_D(PHY, "[UE %d] Frame %d Slot %d, Received (RAR) timing advance command %d new value is %u \n", ue->Mod_id, proc->frame_rx, proc->nr_tti_rx, ta_command, ue->timing_advance);
 }
@@ -3115,7 +3115,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   }
 }
 
-// WIP TBR fix:
+// WIP fix:
 // - time domain indication hardcoded to 0 for k2 offset
 // - extend TS 38.213 ch 8.3 Msg3 PUSCH
 // - b buffer
@@ -4481,30 +4481,32 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
     return(0);
 }
 
+// WIP
+// todo:
+// - set tx_total_RE
+// - power control as per 38.213 ch 7.4
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t runmode) {
-  /* TBR
-  // here params are hardcoded */
+
   int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power;
   uint16_t preamble_tx = 50, pathloss;
-  NR_PRACH_RESOURCES_t prach_resources;
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
+  NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
   ue->generate_nr_prach = 0;
   if (ue->mac_enabled == 0){
-    ue->prach_resources[gNB_id] = &prach_resources;  // TBR double check pointer
-    ue->prach_resources[gNB_id]->ra_PreambleIndex = preamble_tx;
-    ue->prach_resources[gNB_id]->ra_TDD_map_index = 0;
-    ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10; // TBR
-    ue->prach_resources[gNB_id]->ra_RNTI = 93; // TBR NR_UE_MAC_INST_t
+    prach_resources->ra_PreambleIndex = preamble_tx;
+    prach_resources->ra_TDD_map_index = 0;
+    prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
+    prach_resources->ra_RNTI = 0x1234;
   } else {
     // ask L2 for RACH transport
     if ((runmode != rx_calib_ue) && (runmode != rx_calib_ue_med) && (runmode != rx_calib_ue_byp) && (runmode != no_L2_connect) ) {
       LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_tti_tx);
       // flush Msg3 Buffer
-      if (ue->prach_resources[gNB_id]->Msg3 == NULL){
+      if (prach_resources->Msg3 == NULL){
         for(int i = 0; i<NUMBER_OF_CONNECTED_gNB_MAX; i++) {
           ue->ulsch_Msg3_active[i] = 0;
         }
@@ -4518,26 +4520,23 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     ue->generate_nr_prach = 1;
     ue->prach_cnt = 0;
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
-    LOG_I(PHY,"runmode %d\n",runmode);
+    LOG_D(PHY,"runmode %d\n",runmode);
 
     if ((ue->mac_enabled == 1) && (runmode != calib_prach_tx)) {
-      // todo power control as per 38.213 ch 7.4
-      ue->tx_power_dBm[nr_tti_tx] = ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
-      ue->tx_power_dBm[nr_tti_tx] = ue->tx_power_max_dBm;
-      ue->prach_resources[gNB_id]->ra_PreambleIndex = preamble_tx;
+      ue->tx_power_dBm[nr_tti_tx] = prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
     }
 
-    LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %d\n",
+    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %d\n",
       ue->Mod_id,
       frame_tx,
       nr_tti_tx,
-      ue->prach_resources[gNB_id]->ra_PreambleIndex,
+      prach_resources->ra_PreambleIndex,
       pathloss,
       ue->tx_power_dBm[nr_tti_tx],
-      ue->prach_resources[gNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-      ue->prach_resources[gNB_id]->ra_RNTI);
+      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER,
+      prach_resources->ra_RNTI);
 
-    ue->tx_total_RE[nr_tti_tx] = 96; /* todo TBR double check */
+    //ue->tx_total_RE[nr_tti_tx] = 96; // todo
 
     #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
       ue->prach_vars[gNB_id]->amp = get_tx_amp_prach(ue->tx_power_dBm[nr_tti_tx],
@@ -4554,7 +4553,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
         ue->tx_power_dBm[nr_tti_tx],
         ue->prach_vars[gNB_id]->amp);
 
-    // start_meas(&ue->tx_prach);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_IN);
 
     prach_power = generate_nr_prach(ue, gNB_id, nr_tti_tx);
@@ -4576,7 +4574,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       frame_tx,
       nr_tti_tx,
       gNB_id,
-      ue->prach_resources[gNB_id]->ra_PreambleIndex,
+      prach_resources->ra_PreambleIndex,
       ue->tx_power_dBm[nr_tti_tx],
       pathloss);
   }

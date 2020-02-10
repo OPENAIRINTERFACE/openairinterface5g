@@ -44,9 +44,6 @@
 #include "NR_MAC_UE/mac_extern.h"
 #include "common/utils/nr/nr_common.h"
 
-//#include "LAYER2/MAC/mac_vars.h" // TBR Note that mac_vars.h is not NR specific and this should be updated
-                                 // also, the use of the same should be updated in nr-softmodem and nr-uesoftmodem
-
 /* PHY UE */
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/defs_nr_UE.h"
