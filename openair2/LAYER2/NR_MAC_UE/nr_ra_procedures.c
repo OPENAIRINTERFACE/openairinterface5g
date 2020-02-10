@@ -302,16 +302,12 @@ void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 }
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
-  #if 0 // TBR
   AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
-
-  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Setting contention resolution timer\n", mod_id, frameP);
-
-  // start contention resolution timer  
+  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Starting contention resolution timer\n", mod_id, frameP);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  // start contention resolution timer
   mac->RA_contention_resolution_cnt = 0;
   mac->RA_contention_resolution_timer_active = 1;
-
-  #endif
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -357,15 +353,6 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
       LOG_I(MAC, "RA not active. Starting RA preamble initialization.\n");
-
-      /* TBR flush Msg3 Buffer
-      this was done like this but at PHY level
-      for(i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-        // flush Msg3 buffer
-        PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
-        ue->ulsch_Msg3_active[i] = 0;
-      }
-      */
 
       mac->RA_RAPID_found = 0;
 
