@@ -10,8 +10,8 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
-#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -19,10 +19,9 @@
 
 
 void nr_decode_pucch0(int32_t **rxdataF,
-                      uint64_t *payload,
                       NR_DL_FRAME_PARMS *frame_parms,
                       int slot,
-                      int16_t amp,
+                      nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
 
   int nr_sequences;
@@ -84,9 +83,9 @@ void nr_decode_pucch0(int32_t **rxdataF,
         printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
       #endif
       for (n=0; n<12; n++){
-        x_n_re[i][(12*l)+n] = (int16_t)((int32_t)(amp)*(int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
+        x_n_re[i][(12*l)+n] = (int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
                                   - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))>>15); // Re part of base sequence shifted by alpha
-        x_n_im[i][(12*l)+n] =(int16_t)((int32_t)(amp)* (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
+        x_n_im[i][(12*l)+n] =(int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
                                   + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)))>>15); // Im part of base sequence shifted by alpha
         #ifdef DEBUG_NR_PUCCH_RX
           printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d)\n",
@@ -97,7 +96,7 @@ void nr_decode_pucch0(int32_t **rxdataF,
   }
   int16_t r_re[24],r_im[24];
   /*
-   * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources FIXME!
+   * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources
    */
   uint32_t re_offset=0;
   uint8_t l2;
@@ -114,8 +113,8 @@ void nr_decode_pucch0(int32_t **rxdataF,
       r_re[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0];
       r_im[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1];
       #ifdef DEBUG_NR_PUCCH_RX
-        printf("\t [nr_generate_pucch0] mapping to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size)+re_offset,
+        printf("\t [nr_generate_pucch0] mapping to RE \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+                frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size)+re_offset,
                 l,n,((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0],
                 ((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1]);
       #endif
@@ -138,14 +137,35 @@ void nr_decode_pucch0(int32_t **rxdataF,
     corr[i]=corr_re[i]*corr_re[i]+corr_im[i]*corr_im[i];
   }
   float max_corr=corr[0];
-  int index=0;
+  uint8_t index=0;
   for(i=1;i<nr_sequences;i++){
     if(corr[i]>max_corr){
       index= i;
       max_corr=corr[i];
     }
   }
-  *payload=(uint64_t)index;  // payload bits 00..b3b2b0, b0 is the SR bit and b3b2 are HARQ bits
+
+  // first bit of bitmap for sr presence and second bit for acknack presence
+  uci_pdu->pdu_bit_map = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
+  uci_pdu->pucch_format = 0; // format 0
+  uci_pdu->ul_cqi = 0xff; // currently not valid
+  uci_pdu->timing_advance = 0xffff; // currently not valid
+  uci_pdu->rssi = 0xffff; // currently not valid
+  if (pucch_pdu->sr_flag) {
+  //currently not supported
+  }
+  else
+    uci_pdu->sr = NULL;
+  if (pucch_pdu->bit_len_harq>0) {
+    uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
+    uci_pdu->harq->num_harq = pucch_pdu->bit_len_harq;
+    uci_pdu->harq->harq_confidence_level = 0xff; // currently not valid
+    uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(uci_pdu->harq->num_harq);
+    for (i=0; i<uci_pdu->harq->num_harq; i++) // FIXME for non present
+      uci_pdu->harq->harq_list[i].harq_value = (index>>i)&0x01;
+  }
+  else
+    uci_pdu->harq = NULL;
 }
 
 

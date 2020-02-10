@@ -352,10 +352,10 @@ int configure_fapi_dl_Tx(int Mod_idP,
   dci_pdu_rel15[0].ndi = 1;
   dci_pdu_rel15[0].rv = 0;
   dci_pdu_rel15[0].harq_pid = 0;
-  dci_pdu_rel15[0].dai = (pucch_sched->dai_c)&3;
+  dci_pdu_rel15[0].dai = (pucch_sched->dai_c-1)&3;
   dci_pdu_rel15[0].tpc = 2;
-  dci_pdu_rel15[0].pucch_resource_indicator = 7;  //FIXME
-  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = pucch_sched->ul_slot - slotP; //FIXME put check on validity of indicator depending on type of DCI
+  dci_pdu_rel15[0].pucch_resource_indicator = 0;  //FIXME this is fixed to 0 in phy test with only one user
+  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = pucch_sched->ul_slot - slotP; //FIXME check on validity of indicator depending on type of DCI
   
   LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment,

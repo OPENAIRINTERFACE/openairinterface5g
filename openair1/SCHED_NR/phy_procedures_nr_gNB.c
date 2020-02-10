@@ -27,6 +27,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
+#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "SCHED/sched_eNB.h"
 #include "sched_nr.h"
 #include "SCHED/sched_common_extern.h"
@@ -260,7 +261,7 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
   // --------------------
   // [hna] TO BE CLEANED
   // --------------------
-
+  // [FM] This structure is not SCF fapi structure and shouldn't be used
   // nfapi_rx_indication_pdu_t *pdu;
 
   int timing_advance_update;
@@ -346,8 +347,13 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
+  nfapi_nr_ul_tti_request_t *UL_tti_req  = &gNB->UL_tti_req;
   int num_pdus = UL_tti_req->n_pdus;
+
+  nfapi_nr_uci_indication_t *uci_indication = &gNB->uci_indication;
+  uci_indication->sfn = frame_rx;
+  uci_indication->slot = slot_rx;
+  uci_indication->num_ucis = 0;
 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pdus %d\n",frame_rx,slot_rx,num_pdus);
   
@@ -356,7 +362,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
 
-	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[i].pusch_pdu;
 	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);      
 	
 	uint8_t ULSCH_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
@@ -374,6 +380,27 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
         break;
       case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE\n",frame_rx,slot_rx);
+
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[i].pucch_pdu;
+        switch (pucch_pdu->format_type) {
+          case 0:
+            uci_indication->uci_list[uci_indication->num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+            uci_indication->uci_list[uci_indication->num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+            nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &uci_indication->uci_list[uci_indication->num_ucis].pucch_pdu_format_0_1;
+
+            nr_decode_pucch0(gNB->common_vars.rxdataF,
+                             &gNB->frame_parms,
+                             slot_rx,
+                             uci_pdu_format0,
+                             pucch_pdu);
+
+            uci_indication->num_ucis += 1;
+            break;
+          case 1:
+            break;
+        default:
+          AssertFatal(1==0,"Only PUCCH format 0 and 1 are currently supported\n");
+        }
         break;
     }
   }

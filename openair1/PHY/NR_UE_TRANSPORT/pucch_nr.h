@@ -42,40 +42,7 @@
 #include "T.h"
 #define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
-void nr_decode_pucch1(  int32_t **rxdataF,
-                        pucch_GroupHopping_t pucch_GroupHopping,
-                        uint32_t n_id,       // hoppingID higher layer parameter
-                        uint64_t *payload,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit);
 
-void nr_decode_pucch0(int32_t **rxdataF,
-                      uint64_t *payload,
-                      NR_DL_FRAME_PARMS *frame_parms,
-                      int slot,
-                      int16_t amp,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu);
-
-void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
-                                uint32_t n_id,
-                                uint8_t n_hop,
-                                int nr_tti_tx,
-                                uint8_t *u,
-                                uint8_t *v);
-double nr_cyclic_shift_hopping(uint32_t n_id,
-                               uint8_t m0,
-                               uint8_t mcs,
-                               uint8_t lnormal,
-                               uint8_t lprime,
-                               int nr_tti_tx);
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
