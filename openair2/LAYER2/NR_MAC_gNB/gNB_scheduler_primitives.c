@@ -561,8 +561,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   NR_PUCCH_ResourceSet_t *pucchresset;
   NR_PUCCH_FormatConfig_t *pucchfmt;
   NR_PUCCH_ResourceId_t *resource_id = NULL;
-  NR_PUSCH_Config_t *pusch_Config = bwp->bwp_Dedicated->pusch_Config->choice.setup;
-  long *pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
+
   long *id0 = NULL;
   int n_list, n_set;
   uint16_t N2,N3;
@@ -570,38 +569,41 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
   pucch_pdu->bit_len_harq = O_ack;
 
-  if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
-    id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-  if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
-    id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
-
-  // hop flags and hopping id are valid for any BWP
-  switch (scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping){
-    case 0 :
-      // if neither, both disabled
-      pucch_pdu->group_hop_flag = 0;
-      pucch_pdu->sequence_hop_flag = 0;
-      break;
-    case 1 :
-      // if enable, group enabled
-      pucch_pdu->group_hop_flag = 1;
-      pucch_pdu->sequence_hop_flag = 0;
-      break;
-    case 2 :
-      // if disable, sequence disabled
-      pucch_pdu->group_hop_flag = 0;
-      pucch_pdu->sequence_hop_flag = 1;
-      break;
-    default:
-      AssertFatal(1==0,"msg1 FDM identifier %ld undefined (0,1,2,3) \n", scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM);
-  } 
-
-  if (scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId != NULL)
-    pucch_pdu->hopping_id = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId;
-  else
-    pucch_pdu->hopping_id = *scc->physCellId;
-
   if (bwp) { // This is not the InitialBWP
+
+    NR_PUSCH_Config_t *pusch_Config = bwp->bwp_Dedicated->pusch_Config->choice.setup;
+    long *pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
+
+    if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+      id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
+    if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+      id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
+
+    // hop flags and hopping id are valid for any BWP
+    switch (bwp->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping){
+      case 0 :
+        // if neither, both disabled
+        pucch_pdu->group_hop_flag = 0;
+        pucch_pdu->sequence_hop_flag = 0;
+        break;
+      case 1 :
+        // if enable, group enabled
+        pucch_pdu->group_hop_flag = 1;
+        pucch_pdu->sequence_hop_flag = 0;
+        break;
+      case 2 :
+        // if disable, sequence disabled
+        pucch_pdu->group_hop_flag = 0;
+        pucch_pdu->sequence_hop_flag = 1;
+        break;
+      default:
+        AssertFatal(1==0,"Group hopping flag %ld undefined (0,1,2) \n", bwp->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping);
+    }
+
+    if (bwp->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId != NULL)
+      pucch_pdu->hopping_id = *bwp->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId;
+    else
+      pucch_pdu->hopping_id = *scc->physCellId;
 
     pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
