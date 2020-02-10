@@ -709,6 +709,9 @@ int add_sharedmodules(void) {
   return ret;
 }
 
+/* autoinit functions is called by the loader when the telnet shared library is
+   dynamically loaded
+*/
 int telnetsrv_autoinit(void) {
   memset(&telnetparams,0,sizeof(telnetparams));
   config_get( telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t),"telnetsrv");
