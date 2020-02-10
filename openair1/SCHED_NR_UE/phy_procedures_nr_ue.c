@@ -4545,7 +4545,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     ue->generate_nr_prach = 1;
     ue->prach_cnt = 0;
-    pathloss = get_nr_PL(ue, gNB_id);
+    pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
     LOG_I(PHY,"runmode %d\n",runmode);
 
     if ((ue->mac_enabled == 1) && (runmode != calib_prach_tx)) {
@@ -4591,7 +4591,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     LOG_D(PHY,"[UE %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
       ue->Mod_id,
-      get_nr_PL(ue,gNB_id),
+      pathloss,
       ue->tx_power_dBm[nr_tti_tx],
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);

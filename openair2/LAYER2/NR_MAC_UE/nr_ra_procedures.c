@@ -206,9 +206,8 @@ void nr_get_prach_resources(module_id_t mod_id,
       // use Group A preamble
       prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
       mac->RA_usedGroupA = 1;
-    } else if ((Msg3_size < messageSizeGroupA) && (get_PL(mod_id, 0, gNB_id) > PLThreshold)) {
+    } else if ((Msg3_size < messageSizeGroupA) && (get_nr_PL(mod_id, CC_id, gNB_id) > PLThreshold)) {
       // Group B is configured and RA preamble Group A is used
-      // - todo TBR update get_PL to NR get_nr_PL (needs PHY_VARS_NR_UE)
       // - todo add condition on CCCH_sdu_size for initiation by CCCH
       prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
       mac->RA_usedGroupA = 1;
