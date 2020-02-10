@@ -3214,18 +3214,18 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     if (MeasObj2 == NULL) exit(1);
     MeasObj2->measObjectId = 2;
     MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
-    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 642256; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 2071241; //2071249=27525MHz (band n261) //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
-    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz30;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz120;
     MeasObj2->measObject.choice.measObjectNR_r15.quantityConfigSet_r15 = 1;
     MeasObj2->measObject.choice.measObjectNR_r15.ext1 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1));
     if (MeasObj2->measObject.choice.measObjectNR_r15.ext1 == NULL) exit(1);
     MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1__bandNR_r15));
     if (MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 == NULL) exit(1);
     MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->present = LTE_MeasObjectNR_r15__ext1__bandNR_r15_PR_setup;
-    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 78;
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 261;
 
     ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj2);
   }
@@ -4375,6 +4375,7 @@ rrc_eNB_process_MeasurementReport(
 
       case 7:
         LOG_D(RRC, "NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
+        printf("NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
         break;
 
       default:
