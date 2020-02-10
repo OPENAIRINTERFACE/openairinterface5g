@@ -606,10 +606,87 @@ void nr_process_mac_pdu(
               LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
             #endif*/
 
+        case UL_SCH_LCID_S_BSR:
+        	//38.321 section 6.1.3.1
+        	//fixed length
+        	mac_ce_len =1;
+        	/* Extract short BSR value */
+        	break;
+
+        case UL_SCH_LCID_S_TRUNCATED_BSR:
+        	//38.321 section 6.1.3.1
+        	//fixed length
+        	mac_ce_len =1;
+        	/* Extract short truncated BSR value */
+        	break;
+
+        case UL_SCH_LCID_L_BSR:
+        	//38.321 section 6.1.3.1
+        	//variable length
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        		mac_subheader_len = 3;
+        	}
+        	/* Extract long BSR value */
+        	break;
+
+        case UL_SCH_LCID_L_TRUNCATED_BSR:
+        	//38.321 section 6.1.3.1
+        	//variable length
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        		mac_subheader_len = 3;
+        	}
+        	/* Extract long truncated BSR value */
+        	break;
+
+
+        case UL_SCH_LCID_C_RNTI:
+        	//38.321 section 6.1.3.2
+        	//fixed length
+        	mac_ce_len = 2;
+        	/* Extract CRNTI value */
+        	break;
+
+        case UL_SCH_LCID_SINGLE_ENTRY_PHR:
+        	//38.321 section 6.1.3.8
+        	//fixed length
+        	mac_ce_len = 2;
+        	/* Extract SINGLE ENTRY PHR elements for PHR calculation */
+        	break;
+
+        case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
+        	//38.321 section 6.1.3.9
+        	//  varialbe length
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        		mac_subheader_len = 3;
+        	}
+        	/* Extract MULTI ENTRY PHR elements from single octet bitmap for PHR calculation */
+        	break;
+
+        case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
+        	//38.321 section 6.1.3.9
+        	//  varialbe length
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+        		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+        		mac_subheader_len = 3;
+        	}
+        	/* Extract MULTI ENTRY PHR elements from four octets bitmap for PHR calculation */
+        	break;
+
         case UL_SCH_LCID_PADDING:
-                done = 1;
-                //  end of MAC PDU, can ignore the rest.
-                break;
+        	done = 1;
+        	//  end of MAC PDU, can ignore the rest.
+        	break;
 
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
@@ -681,6 +758,17 @@ void nr_rx_sdu(module_id_t module_idP,
   LOG_D(MAC, "Handling PDU frame %d slot %d pdu_len: %d \n", frameP, ttiP, pdu_len);
 
   uint8_t * pduP = pdu;
+
+
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+  LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
+  for (int i = 0; i < pdu_len ; i++) {
+	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
+	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+	  printf("%02x ",(unsigned char)pduP[i]);
+  }
+  printf("\n");
+#endif
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
