@@ -185,7 +185,7 @@ int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
     @param Mod_id Module id of UE
     @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
 */
-int8_t nr_get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id);
+int8_t nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t module_idP, uint8_t CC_id);
 
 /** \brief Function to compute DELTA_PREAMBLE from 38.321 subclause 7.3
    (for RA power ramping procedure and Msg3 PUSCH power control policy)

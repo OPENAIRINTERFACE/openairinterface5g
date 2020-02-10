@@ -4520,7 +4520,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     // ask L2 for RACH transport
     if ((runmode != rx_calib_ue) && (runmode != rx_calib_ue_med) && (runmode != rx_calib_ue_byp) && (runmode != no_L2_connect) ) {
       LOG_D(PHY, "Getting PRACH resources. Frame %d Slot %d \n", frame_tx, nr_tti_tx);
-      ue->prach_resources[gNB_id] = nr_ue_get_rach(mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
+      nr_ue_get_rach(ue->prach_resources[gNB_id], mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
     }
   }
 

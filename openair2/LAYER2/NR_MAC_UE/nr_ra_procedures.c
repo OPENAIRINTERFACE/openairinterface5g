@@ -61,8 +61,6 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
-extern UE_MODE_t get_nrUE_mode(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id);
-
 extern int64_t table_6_3_3_2_2_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 
@@ -76,10 +74,10 @@ void nr_get_prach_resources(module_id_t mod_id,
                             uint8_t gNB_id,
                             uint8_t t_id,
                             uint8_t first_Msg3,
+                            NR_PRACH_RESOURCES_t *prach_resources,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_PRACH_RESOURCES_t *prach_resources = &mac->RA_prach_resources;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
@@ -244,7 +242,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   if (mac->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
     mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
 
-  prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(mod_id, CC_id);
+  prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
    /* RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
    // 1) this does not apply to contention-free RA Preamble for beam failure recovery request
@@ -324,19 +322,19 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 /// the RA procedure on a SCell shall only be initiated by PDCCH order
 
 // WIP
-NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
-                                     int CC_id,
-                                     UE_MODE_t UE_mode,
-                                     frame_t frame,
-                                     uint8_t gNB_id,
-                                     int nr_tti_tx){
+void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                    module_id_t mod_id,
+                    int CC_id,
+                    UE_MODE_t UE_mode,
+                    frame_t frame,
+                    uint8_t gNB_id,
+                    int nr_tti_tx){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t lcid = CCCH, dcch_header_len = 0, mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES], * payload, ra_ResponseWindow;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (struct NR_RACH_ConfigCommon_t *) NULL;
-  NR_PRACH_RESOURCES_t *prach_resources = &mac->RA_prach_resources;
   int32_t frame_diff = 0;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0}; // TBR
@@ -353,7 +351,7 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
 
     if (mac->nr_rach_ConfigCommon) { // TBR check the condition
       nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
-    } else return NULL;
+    } else prach_resources = NULL;
 
     if (mac->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
@@ -474,7 +472,7 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
         }
 
         // Fill in preamble and PRACH resources
-        nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, NULL);
+        nr_get_prach_resources(prach_resources, mod_id, CC_id, gNB_id, nr_tti_tx, 1, NULL);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // logical channel payload
@@ -494,7 +492,7 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
         }
 
-        return (prach_resources);
+        return;
       } 
     } else { // RACH is active
 
@@ -570,7 +568,7 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
           mac->RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
           mac->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
           prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP << 1; // 2 dB increment
-          prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(mod_id, CC_id);
+          prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
         }
 
         // compute backoff parameters
@@ -591,13 +589,13 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
         mac->RA_tx_frame = frame;
         mac->RA_tx_subframe = nr_tti_tx;
         // Fill in preamble and PRACH resources
-        nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, NULL);
-        return (&mac->RA_prach_resources);
+        nr_get_prach_resources(prach_resources, mod_id, CC_id, gNB_id, nr_tti_tx, 0, NULL);
+        return;
       }
     }
   } else if (UE_mode == PUSCH) {
     LOG_D(MAC, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...", mod_id);
     AssertFatal(1 == 0, "");
   }
- return NULL;
+ return prach_resources = NULL;
 }

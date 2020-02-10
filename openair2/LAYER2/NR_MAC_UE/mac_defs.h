@@ -136,8 +136,6 @@ typedef struct {
   uint8_t RA_prachMaskIndex;
   /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
   uint8_t RA_usedGroupA;
-  /// Random-access Resources
-  NR_PRACH_RESOURCES_t RA_prach_resources;
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
   /// Preamble Tx Counter
@@ -169,10 +167,6 @@ typedef struct {
   uint8_t RA_RAPID_found;
   /// Flag to monitor if BI was received in RAR
   uint8_t RA_BI_found;
-  /// UE_Mode variable should be used in the case of Phy_stub operation since we won't have access to PHY_VARS_UE
-  /// where the UE_mode originally is for the full stack operation mode. The transitions between the states of the UE_Mode
-  /// will be triggered within phy_stub_ue.c in this case
-  UE_MODE_t UE_mode[NUMBER_OF_CONNECTED_gNB_MAX];
 
   ////	FAPI-like interface message
   fapi_nr_tx_request_t tx_request;

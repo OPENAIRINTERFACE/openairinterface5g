@@ -133,11 +133,10 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
 }
 
 /* TS 38.321 subclause 5.1.3 - RA preamble transmission - ra_PREAMBLE_RECEIVED_TARGET_POWER configuration */
-int8_t nr_get_Po_NOMINAL_PUSCH(module_id_t mod_id, uint8_t CC_id){
+int8_t nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id){
   
   NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = nr_UE_mac_inst->nr_rach_ConfigCommon;
-  NR_PRACH_RESOURCES_t *prach_resources = &nr_UE_mac_inst->RA_prach_resources;
 
   AssertFatal(nr_rach_ConfigCommon != NULL, "[UE %d] CCid %d FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id, CC_id);
 

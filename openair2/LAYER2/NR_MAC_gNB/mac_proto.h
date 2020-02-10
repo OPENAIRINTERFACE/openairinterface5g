@@ -271,13 +271,14 @@ andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 
 @param frame
 @param gNB_id gNB index
 @param nr_tti_tx slot for PRACH transmission
-@returns A pointer to a PRACH_RESOURCES_t */
-NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
-                                     int CC_id,
-                                     UE_MODE_t UE_mode,
-                                     frame_t frame,
-                                     uint8_t gNB_id,
-                                     int nr_tti_tx);
+@returns void */
+void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                    module_id_t mod_id,
+                    int CC_id,
+                    UE_MODE_t UE_mode,
+                    frame_t frame,
+                    uint8_t gNB_id,
+                    int nr_tti_tx);
 
 /* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
 @param module_idP Index of UE instance
@@ -285,12 +286,13 @@ NR_PRACH_RESOURCES_t *nr_ue_get_rach(module_id_t mod_id,
 @param gNB_index gNB index
 @param t_id 
 @param rach_ConfigDedicated 
-@returns A pointer to a PRACH_RESOURCES_t */
+@returns void */
 void nr_get_prach_resources(module_id_t mod_id, 
                             int CC_id,
                             uint8_t gNB_id,
                             uint8_t t_id,
                             uint8_t first_Msg3,
+                            NR_PRACH_RESOURCES_t *prach_resources,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
 
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
