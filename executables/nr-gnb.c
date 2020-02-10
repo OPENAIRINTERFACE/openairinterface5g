@@ -104,6 +104,7 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 extern int transmission_mode;
 
 uint16_t sf_ahead=3;
+uint16_t sl_ahead;
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -398,6 +399,7 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct 
   RU_proc_t *ru_proc=&ru->proc;
   proc->frame_rx    = frame_rx;
   proc->slot_rx = slot_rx;
+  sl_ahead = sf_ahead*fp->slots_per_subframe;
 
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->slot_rx));
