@@ -243,6 +243,7 @@ class SSHConnection():
 		elif self.sshresponse == 1:
 			logging.debug('\u001B[1;37;41m Unexpected EOF \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
+			logging.debug(str(self.ssh.before))
 			sys.exit(self.sshresponse)
 		elif self.sshresponse == 2:
 			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
@@ -1139,6 +1140,11 @@ class SSHConnection():
 		# Calling twice AT to clear all buffers
 		self.command('AT', 'OK|ERROR', 5)
 		self.command('AT', 'OK', 5)
+		# Doing a power cycle
+		self.command('AT^RESET', 'SIMSTORE,READY', 15)
+		self.command('AT', 'OK|ERROR', 5)
+		self.command('AT', 'OK', 5)
+		self.command('ATE1', 'OK', 5)
 		# Disabling the Radio
 		self.command('AT+CFUN=0', 'OK', 5)
 		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
