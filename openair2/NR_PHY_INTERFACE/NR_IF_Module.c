@@ -51,6 +51,7 @@ extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
+extern uint16_t sl_ahead;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
   if (UL_info->rach_ind.rach_indication_body.number_of_preambles>0) {
@@ -261,22 +262,22 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,
-          (UL_info->frame+((UL_info->slot>(9-sf_ahead))?1:0)) % 1024,
-          (UL_info->slot+sf_ahead)%10);
+          (UL_info->frame+((UL_info->slot>(9-sl_ahead))?1:0)) % 1024,
+          (UL_info->slot+sl_ahead)%10);
       */
       nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
 				UL_info->frame,
 				UL_info->slot,
-				(UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
-				(UL_info->slot+sf_ahead)%spf);
+				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
+				(UL_info->slot+sl_ahead)%spf);
       
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
-      sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sf_ahead)) ? 1 : 0)) % 1024;
-      sched_info->slot        = (UL_info->slot+sf_ahead)%spf;
+      sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sl_ahead)) ? 1 : 0)) % 1024;
+      sched_info->slot        = (UL_info->slot+sl_ahead)%spf;
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 

@@ -132,6 +132,7 @@ int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
 
 extern uint16_t sf_ahead;
+extern uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
