@@ -728,11 +728,57 @@ NR_UE_L2_STATE_t nr_ue_scheduler(const module_id_t module_id,
     */
   }
 
+  if (mac->RA_contention_resolution_timer_active == 1) {
+    ue_contention_resolution(module_id, gNB_index, cc_id, tx_frame);
+  }
 
   mac->scheduled_response.dl_config = dl_config;
     
 
   return UE_CONNECTION_OK;
+}
+
+////////////////////////////////////////////////////////////////////////////
+/////////* Random Access Contention Resolution (5.1.35 TS 38.321) */////////
+////////////////////////////////////////////////////////////////////////////
+// Handling contention resolution timer
+// WIP todo:
+// - beam failure recovery
+// - RA completed
+
+void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame){
+  
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  NR_RACH_ConfigCommon_t *rach_ConfigCommon;
+
+  if (mac->RA_contention_resolution_timer_active == 1) {
+    if (mac->nr_rach_ConfigCommon) {
+      rach_ConfigCommon = &mac->nr_rach_ConfigCommon;
+    } else {
+      // LOG_E(MAC, "FATAL: radioResourceConfigCommon is NULL!!!\n");
+      // VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER,VCD_FUNCTION_OUT);
+      // stop_meas(&mac->ue_scheduler);
+      // AssertFatal(1 == 0, "");
+      // #if UE_TIMING_TRACE
+      //   stop_meas(&mac->ue_scheduler);
+      // #endif
+    }
+
+    LOG_I(MAC, "Frame %d: Contention resolution timer %d/%ld\n", 
+      tx_frame,
+      mac->RA_contention_resolution_cnt,
+      ((1 + rach_ConfigCommon->ra_ContentionResolutionTimer) << 3));
+      mac->RA_contention_resolution_cnt++;
+
+    if (mac->RA_contention_resolution_cnt == ((1 + rach_ConfigCommon->ra_ContentionResolutionTimer) << 3)) {
+      mac->t_crnti = 0;
+      mac->RA_active = 0;
+      mac->RA_contention_resolution_timer_active = 0;
+      // Signal PHY to quit RA procedure
+      LOG_E(MAC, "[UE %u] [RAPROC] Contention resolution timer expired, RA failed, discarded TC-RNTI\n", module_id);
+      nr_ra_failed(module_id, cc_id, gNB_index);
+    }
+  }
 }
 
 #if 0

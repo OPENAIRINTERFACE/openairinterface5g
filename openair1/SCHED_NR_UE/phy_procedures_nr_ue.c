@@ -3273,6 +3273,17 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
   }
 }
 
+// if contention resolution fails, go back to UE mode PRACH
+void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index) {
+
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+  ue->UE_mode[gNB_index] = PRACH;
+
+  for (int i=0; i <RX_NB_TH_MAX; i++ ) {
+    ue->pdcch_vars[i][gNB_index]->pdcch_config[0].rnti = 0;
+  }
+  LOG_E(PHY,"[UE %d] [RAPROC] Random-access procedure fails, going back to PRACH\n", Mod_id);
+}
 
 void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        UE_nr_rxtx_proc_t *proc,

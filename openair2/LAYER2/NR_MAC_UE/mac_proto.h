@@ -216,5 +216,9 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
 
 void nr_process_rar(nr_downlink_indication_t *dl_info);
 
+void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame);
+
+void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+
 #endif
 /** @}*/
