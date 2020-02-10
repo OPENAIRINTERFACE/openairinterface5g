@@ -3101,6 +3101,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
     uint8_t *pdu_ptr = pduP, rx_lcid, done = 0;
     int pdu_len = mac_pdu_len;
     uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
     //NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
     //uint8_t scs = UE_mac_inst->mib->subCarrierSpacingCommon;
@@ -3261,7 +3262,35 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 break;
             case DL_SCH_LCID_CON_RES_ID:
                 //  38.321 Ch6.1.3.3
+                // WIP todo: handle CCCH_pdu
                 mac_ce_len = 6;
+                
+                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, pdu_ptr[0], pdu_ptr[1], pdu_ptr[2], pdu_ptr[3], pdu_ptr[4], pdu_ptr[5]);
+
+                if (mac->RA_active == 1) {
+                  LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Clearing RA_active flag\n", module_idP, frameP);
+                  mac->RA_active = 0;
+                   // // check if RA procedure has finished completely (no contention)
+                   // tx_sdu = &mac->CCCH_pdu.payload[3];
+                   // //Note: 3 assumes sizeof(SCH_SUBHEADER_SHORT) + PADDING CE, which is when UL-Grant has TBS >= 9 (64 bits)
+                   // // (other possibility is 1 for TBS=7 (SCH_SUBHEADER_FIXED), or 2 for TBS=8 (SCH_SUBHEADER_FIXED+PADDING or //  SCH_SUBHEADER_SHORT)
+                   // for (i = 0; i < 6; i++)
+                   //   if (tx_sdu[i] != payload_ptr[i]) {
+                   //     LOG_E(MAC, "[UE %d][RAPROC] Contention detected, RA failed\n", module_idP);
+                   //     nr_ra_failed(module_idP, CC_id, eNB_index);
+                   //     mac->RA_contention_resolution_timer_active = 0;
+                   //     return;
+                   //   }
+                  LOG_I(MAC, "[UE %d][RAPROC] Frame %d : Cleared contention resolution timer. Set C-RNTI to TC-RNTI\n",
+                    module_idP,
+                    frameP);
+                  mac->RA_contention_resolution_timer_active = 0;
+                  nr_ra_succeeded(module_idP, CC_id, gNB_index);
+                  mac->crnti = mac->t_crnti;
+                  mac->t_crnti = 0;
+                }
+          break;
+
 
                 break;
             case DL_SCH_LCID_PADDING:

@@ -294,43 +294,6 @@ void nr_dump_dlsch_ra(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
   write_output("dlsch_mag2.m","dlschmag2",ue->pdsch_vars_ra[0]->dl_ch_magb0,300*nsymb,1,1);
 }
 
-void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
-{
-
-  // if contention resolution fails, go back to PRACH
-  PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[eNB_index] = PRACH;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_index]->crnti = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_index]->crnti = 0;
-  LOG_E(PHY,"[UE %d] Random-access procedure fails, going back to PRACH, setting SIStatus = 0, discard temporary C-RNTI and State RRC_IDLE\n",Mod_id);
-  //mac_xface->macphy_exit("");
-}
-
-void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
-{
-
-  int i;
-
-  LOG_I(PHY,"[UE %d][RAPROC] Random-access procedure succeeded. Set C-RNTI = Temporary C-RNTI\n",Mod_id);
-
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->ulsch_Msg3_active[eNB_index] = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[eNB_index] = PUSCH;
-
-  for (i=0; i<8; i++) {
-    if (PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]) {
-      PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]->status=IDLE;
-      PHY_vars_UE_g[Mod_id][CC_id]->dlsch[0][eNB_index][0]->harq_processes[i]->round=0;
-      PHY_vars_UE_g[Mod_id][CC_id]->dlsch[1][eNB_index][0]->harq_processes[i]->round=0;
-      PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]->subframe_scheduling_flag=0;
-    }
-  }
-
-
-}
-
 uint8_t nr_is_SR_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id)
 {
 
@@ -3283,6 +3246,15 @@ void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index) {
     ue->pdcch_vars[i][gNB_index]->pdcch_config[0].rnti = 0;
   }
   LOG_E(PHY,"[UE %d] [RAPROC] Random-access procedure fails, going back to PRACH\n", Mod_id);
+}
+
+void nr_ra_succeeded(uint8_t Mod_id,
+                     uint8_t CC_id,
+                     uint8_t gNB_index){
+  LOG_I(PHY,"[UE %d][RAPROC] RA procedure succeeded. UE set to PUSCH mode\n", Mod_id);
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
+  ue->ulsch_Msg3_active[gNB_index] = 0;
+  ue->UE_mode[gNB_index] = PUSCH;
 }
 
 void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
