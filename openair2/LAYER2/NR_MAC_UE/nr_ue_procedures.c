@@ -3288,6 +3288,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                   nr_ra_succeeded(module_idP, CC_id, gNB_index);
                   mac->crnti = mac->t_crnti;
                   mac->t_crnti = 0;
+                  mac->ra_state = RA_SUCCEEDED;
                 }
           break;
 
