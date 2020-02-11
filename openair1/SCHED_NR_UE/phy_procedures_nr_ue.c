@@ -2483,9 +2483,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 #endif
 
   uint8_t harq_pid = 0; //temporary implementation
-  uint8_t data_existing = 0;
 
-  data_existing = nr_ue_ulsch_procedures(ue,
+  nr_ue_ulsch_procedures(ue,
                          harq_pid,
                          frame_tx,
                          slot_tx,

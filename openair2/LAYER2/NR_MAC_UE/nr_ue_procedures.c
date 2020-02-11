@@ -43,6 +43,7 @@
 
 #include <stdio.h>
 #include <math.h>
+//int mbms_rab_id = 2047;
 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
@@ -2482,7 +2483,7 @@ uint8_t
 nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
            sub_frame_t subframe, uint8_t eNB_index,
            uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
-  uint8_t total_rlc_pdu_header_len = 0, rlc_pdu_header_len_last = 0;
+  uint8_t total_rlc_pdu_header_len = 0;
   int16_t buflen_remain = 0;
   uint8_t lcid = 0;
   uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -2490,8 +2491,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   uint16_t payload_offset = 0, num_sdus = 0;
   uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
   uint16_t sdu_length_total = 0;
-  unsigned short post_padding = 0, padding_len = 0;
-  int j;      // used for padding
+  unsigned short post_padding = 0;
 
   rlc_buffer_occupancy_t lcid_buffer_occupancy_old =
     0, lcid_buffer_occupancy_new = 0;
@@ -2504,7 +2504,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   start_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
 #endif
 
-  NR_UE_MAC_INST_t *nr_ue_mac_inst = get_mac_inst(0);
+  //NR_UE_MAC_INST_t *nr_ue_mac_inst = get_mac_inst(0);
 
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization

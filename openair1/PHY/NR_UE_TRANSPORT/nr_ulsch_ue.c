@@ -42,6 +42,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "executables/nr-softmodem.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define DEBUG_SCFDMA
 //#define DEBUG_PUSCH_MAPPING
@@ -88,7 +89,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 }
 
-uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
+void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint8_t frame,
                                uint8_t slot,
@@ -205,7 +206,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     	}
         //else if(uplink_counter == 0){ //if(!IS_SOFTMODEM_NOS1){
     	else{
-        	LOG_E(PHY, "Random data to be tranmsitted: \n");
+        	LOG_D(PHY, "Random data to be tranmsitted: \n");
         	for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
         		harq_process_ul_ue->a[i] = (unsigned char) rand();
         		//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
@@ -214,7 +215,7 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
     } else {
       LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
-      return 0;
+      return;
     }
 
     //-----------------------------------------------------//
@@ -427,7 +428,6 @@ uint8_t nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ////////////////////////////////////////////////////////////////////////
 
   LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
-  return data_existing;
 }
 
 

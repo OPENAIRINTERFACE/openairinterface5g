@@ -561,7 +561,7 @@ void nr_process_mac_pdu(
     // This function is adapting code from the old
     // parse_header(...) and ue_send_sdu(...) functions of OAI LTE
 
-    uint8_t *pdu_ptr = pduP, rx_lcid, done = 0, i;
+    uint8_t *pdu_ptr = pduP, rx_lcid, done = 0;
     int pdu_len = mac_pdu_len;
     uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
 
