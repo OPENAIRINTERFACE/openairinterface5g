@@ -528,8 +528,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                               UE_id,
                               0); // m
 
-  if (CCEIndex == -1) return;
-
   AssertFatal(CCEIndex>0,"CCEIndex is negative\n");
   int CCEIndices[2];
   CCEIndices[0] = CCEIndex;
