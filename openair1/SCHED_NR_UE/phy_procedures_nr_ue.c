@@ -3127,8 +3127,8 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
   module_id_t module_id = dl_info->module_id;
   int cc_id = dl_info->cc_id, frame_rx = dl_info->proc->frame_rx, nr_tti_rx = dl_info->proc->nr_tti_rx, ta_command, k2, delta;
-  uint8_t gNB_index = dl_info->gNB_index, *rar;
-  fapi_nr_dci_indication_t *dci_ind = dl_info->dci_ind;
+  uint8_t gNB_index = dl_info->gNB_index; // *rar;
+  //fapi_nr_dci_indication_t *dci_ind = dl_info->dci_ind;
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
   NR_UE_DLSCH_t *dlsch0 = ue->dlsch_ra[gNB_index];
   UE_MODE_t UE_mode = ue->UE_mode[gNB_index];
@@ -3182,7 +3182,7 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
         nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
 
-        if (UE_mode != debug_prach) {
+        if (ue->mode != debug_prach) {
           ue->ulsch_Msg3_active[gNB_index] = 1;
           // TS 38.213 ch 8.3 Msg3 PUSCH
           // PUSCH time domain resource allocation A for normal CP
@@ -3550,6 +3550,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         break;
         case PDSCH:
         rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
+        break;
+        default:
         break;
       }
 

@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
 #include "mac_defs.h"
+#include "common/utils/nr/nr_common.h"
 #include <stdio.h>
 
 #ifdef NR_PDCCH_DCI_TOOLS_DEBUG

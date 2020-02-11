@@ -33,6 +33,7 @@
 
 #include "mac_defs.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 // WIP todo:
 //- frame_type and fr are hardcoded. Retireve from fp
@@ -52,7 +53,7 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
 
     // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211
 
-    NR_SubcarrierSpacing_t scs = nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
+    NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
 
     switch (scs){
       case NR_SubcarrierSpacing_kHz15:
@@ -88,7 +89,7 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
       break;
 
       default:
-      AssertFatal(1 == 0,"Unknown msg1_SubcarrierSpacing %d\n", scs);
+      AssertFatal(1 == 0,"Unknown msg1_SubcarrierSpacing %lu\n", scs);
     }
 
     // Preamble formats given by prach_ConfigurationIndex and tables 6.3.3.2-2 and 6.3.3.2-2 in TS 38.211
@@ -131,7 +132,6 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
       default:
       AssertFatal(1 == 0, "[UE %d] ue_procedures.c: FATAL, Illegal preambleFormat %d, prachConfigIndex %d\n", mod_id, preambleFormat, prachConfigIndex);
     }
-    return;
 }
 
 /* TS 38.321 subclause 5.1.3 - RA preamble transmission - ra_PREAMBLE_RECEIVED_TARGET_POWER configuration */

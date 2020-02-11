@@ -48,21 +48,21 @@
 #define DEBUG_RAR
 
 // table 7.2-1 TS 38.321
-uint8_t table_7_2_1[16] = {
-  {5},    // row index 0
-  {10},   // row index 1
-  {20},   // row index 2
-  {30},   // row index 3
-  {40},   // row index 4
-  {60},   // row index 5
-  {80},   // row index 6
-  {120},  // row index 7
-  {160},  // row index 8
-  {240},  // row index 9
-  {320},  // row index 10
-  {480},  // row index 11
-  {960},  // row index 12
-  {1920}, // row index 13
+uint16_t table_7_2_1[16] = {
+  5,    // row index 0
+  10,   // row index 1
+  20,   // row index 2
+  30,   // row index 3
+  40,   // row index 4
+  60,   // row index 5
+  80,   // row index 6
+  120,  // row index 7
+  160,  // row index 8
+  240,  // row index 9
+  320,  // row index 10
+  480,  // row index 11
+  960,  // row index 12
+  1920, // row index 13
 };
 
 // WIP todo:
@@ -89,7 +89,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
       n_subheaders++;
       if (rarh->T == 1) {
         n_subPDUs++;
-        LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU %d\n", mod_id, rarh->RAPID);
+        LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
       } else {
         n_subPDUs++;
         ue_mac->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
@@ -97,7 +97,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
         LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ue_mac->RA_backoff_indicator);
       }
       if (rarh->RAPID == preamble_index) {
-        LOG_D(PHY, "[UE %d][RAPROC] Found RAR with the intended RAPID %d\n", rarh->RAPID);
+        LOG_D(PHY, "[UE %d][RAPROC] Found RAR with the intended RAPID %d\n", mod_id, rarh->RAPID);
         rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
         ue_mac->RA_RAPID_found = 1;
         break;
@@ -116,13 +116,13 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
 
     LOG_D(MAC, "number of RAR subheader %d; number of RAR pyloads %d\n", n_subheaders, n_subPDUs);
 
-    LOG_I(MAC, "[UE %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
-      mod_id, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
+    // LOG_I(MAC, "[UE %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
+    //   mod_id, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
 
     if (ue_mac->RA_RAPID_found) {
       *t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
       ue_mac->t_crnti = *t_crnti;
-      ue_mac->rnti_type == NR_RNTI_TC;
+      ue_mac->rnti_type = NR_RNTI_TC;
       ta_command = rar->TA2 + (rar->TA1 << 5);
     } else {
       ue_mac->t_crnti = 0;

@@ -259,44 +259,4 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t sdu_lenP,
                const uint16_t timing_advance, const uint8_t ul_cqi);
 
-/* Random Access */ 
-
-/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure. 
-If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC 
-attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB 
-index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for 
-andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
-@param mod_id Index of UE instance
-@param CC_id Component Carrier Index
-@param frame
-@param gNB_id gNB index
-@param nr_tti_tx slot for PRACH transmission
-@returns void */
-void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
-                    module_id_t mod_id,
-                    int CC_id,
-                    UE_MODE_t UE_mode,
-                    frame_t frame,
-                    uint8_t gNB_id,
-                    int nr_tti_tx);
-
-/* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
-@param module_idP Index of UE instance
-@param CC_id Component Carrier Index
-@param gNB_index gNB index
-@param t_id 
-@param rach_ConfigDedicated 
-@returns void */
-void nr_get_prach_resources(module_id_t mod_id, 
-                            int CC_id,
-                            uint8_t gNB_id,
-                            uint8_t t_id,
-                            uint8_t first_Msg3,
-                            NR_PRACH_RESOURCES_t *prach_resources,
-                            NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
-
-void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
-
-void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
-
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

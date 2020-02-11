@@ -37,6 +37,9 @@
 /* exe */
 #include "executables/nr-softmodem.h"
 
+/* RRC*/
+#include "RRC/NR_UE/rrc_proto.h"
+
 /* MAC */
 #include "mac_defs.h"
 #include "NR_MAC_COMMON/nr_mac.h"
@@ -746,11 +749,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(const module_id_t module_id,
 void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame){
   
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  NR_RACH_ConfigCommon_t *rach_ConfigCommon;
+  NR_RACH_ConfigCommon_t *rach_ConfigCommon = (NR_RACH_ConfigCommon_t *) NULL;
 
   if (mac->RA_contention_resolution_timer_active == 1) {
     if (mac->nr_rach_ConfigCommon) {
-      rach_ConfigCommon = &mac->nr_rach_ConfigCommon;
+      rach_ConfigCommon = mac->nr_rach_ConfigCommon;
     } else {
       // LOG_E(MAC, "FATAL: radioResourceConfigCommon is NULL!!!\n");
       // VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER,VCD_FUNCTION_OUT);
@@ -761,19 +764,21 @@ void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_i
       // #endif
     }
 
-    LOG_I(MAC, "Frame %d: Contention resolution timer %d/%ld\n", 
-      tx_frame,
-      mac->RA_contention_resolution_cnt,
-      ((1 + rach_ConfigCommon->ra_ContentionResolutionTimer) << 3));
-      mac->RA_contention_resolution_cnt++;
+    if (rach_ConfigCommon){
+      LOG_I(MAC, "Frame %d: Contention resolution timer %d/%ld\n",
+        tx_frame,
+        mac->RA_contention_resolution_cnt,
+        ((1 + rach_ConfigCommon->ra_ContentionResolutionTimer) << 3));
+        mac->RA_contention_resolution_cnt++;
 
-    if (mac->RA_contention_resolution_cnt == ((1 + rach_ConfigCommon->ra_ContentionResolutionTimer) << 3)) {
-      mac->t_crnti = 0;
-      mac->RA_active = 0;
-      mac->RA_contention_resolution_timer_active = 0;
-      // Signal PHY to quit RA procedure
-      LOG_E(MAC, "[UE %u] [RAPROC] Contention resolution timer expired, RA failed, discarded TC-RNTI\n", module_id);
-      nr_ra_failed(module_id, cc_id, gNB_index);
+      if (mac->RA_contention_resolution_cnt == ((1 + rach_ConfigCommon->ra_ContentionResolutionTimer) << 3)) {
+        mac->t_crnti = 0;
+        mac->RA_active = 0;
+        mac->RA_contention_resolution_timer_active = 0;
+        // Signal PHY to quit RA procedure
+        LOG_E(MAC, "[UE %u] [RAPROC] Contention resolution timer expired, RA failed, discarded TC-RNTI\n", module_id);
+        nr_ra_failed(module_id, cc_id, gNB_index);
+      }
     }
   }
 }
@@ -1958,7 +1963,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
   nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,&dci_pdu_rel15);
-  nr_ue_process_dci(module_id, cc_id, gNB_index, &dci_pdu_rel15, dci->rnti, dci->dci_format);
+  return (nr_ue_process_dci(module_id, cc_id, gNB_index, &dci_pdu_rel15, dci->rnti, dci->dci_format));
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
@@ -2718,7 +2723,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
   LOG_D(MAC, "Handling PDU frame %d slot %d\n", frameP, slotP);
 
   uint8_t * pduP = pdu;
-  NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
@@ -3370,7 +3374,7 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     unsigned short post_padding) {
 
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) pdu;
-  unsigned char first_element = 0, last_size = 0, i, mac_header_control_elements[16], *ce_ptr, bsr = 0;
+  unsigned char last_size = 0, i, mac_header_control_elements[16], *ce_ptr, bsr = 0;
   int mac_ce_size, offset;
 
   LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d\n", num_sdus);
