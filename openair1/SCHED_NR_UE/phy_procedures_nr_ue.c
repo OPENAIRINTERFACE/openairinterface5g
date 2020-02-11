@@ -216,11 +216,9 @@ void nr_dump_dlsch_SI(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
 unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 #endif
 
-  unsigned int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL)
-  {
+int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
 
-  int gain_dB = power_dBm - power_max_dBm;
-  int amp_x_100;
+  int gain_dB = power_dBm - power_max_dBm, amp_x_100 = -1;
 
   switch (N_RB_UL) {
   case 6:
@@ -242,17 +240,19 @@ unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,3
   amp_x_100 = 408*AMP;  // 408 = 100*sqrt(100/6)
   break;
   default:
-  LOG_E(PHY,"Unknown PRB size %d\n",N_RB_UL);
-  //mac_xface->macphy_exit("");
+  LOG_E(PHY, "Unknown PRB size %d\n", N_RB_UL);
+  return (amp_x_100);
   break;
   }
   if (gain_dB < -30) {
-  return(amp_x_100/3162);
-  } else if (gain_dB>0)
-  return(amp_x_100);
+    return (amp_x_100/3162);
+  } else if (gain_dB > 0)
+    return (amp_x_100);
   else
-  return(amp_x_100/gain_table[-gain_dB]);  // 245 corresponds to the factor sqrt(25/6)
-  }
+    return (amp_x_100/gain_table[-gain_dB]);  // 245 corresponds to the factor sqrt(25/6)
+
+  return (amp_x_100);
+}
 
 #if 0
 
@@ -4489,7 +4489,7 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 // - power control as per 38.213 ch 7.4
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t runmode) {
 
-  int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power;
+  int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power, tx_amp;
   uint16_t preamble_tx = 50, pathloss;
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
@@ -4541,9 +4541,9 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     //ue->tx_total_RE[nr_tti_tx] = 96; // todo
 
     #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-      ue->prach_vars[gNB_id]->amp = get_tx_amp_prach(ue->tx_power_dBm[nr_tti_tx],
-                                                     ue->tx_power_max_dBm,
-                                                     ue->frame_parms.N_RB_UL);
+      tx_amp = get_tx_amp_prach(ue->tx_power_dBm[nr_tti_tx], ue->tx_power_max_dBm, ue->frame_parms.N_RB_UL);
+      if (tx_amp != -1)
+        ue->prach_vars[gNB_id]->amp = tx_amp;
     #else
       ue->prach_vars[gNB_id]->amp = AMP;
     #endif
