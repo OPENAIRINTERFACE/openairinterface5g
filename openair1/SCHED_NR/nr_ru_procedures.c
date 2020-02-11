@@ -72,7 +72,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
   int abs_first_symbol = slot*fp->symbols_per_slot;
 
   for (uint16_t idx_sym=abs_first_symbol; idx_sym<abs_first_symbol+first_symbol; idx_sym++)
-    slot_offset += (idx_sym%(0x7<<fp->numerology_index)) ? fp->nb_prefix_samples0 : fp->nb_prefix_samples;
+    slot_offset += (idx_sym%(0x7<<fp->numerology_index)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
 
   slot_offset += fp->ofdm_symbol_size*first_symbol;
 
@@ -88,15 +88,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
   else {
     if (fp->numerology_index != 0) {
 
-      if (slot%(fp->slots_per_subframe/2)) {
-        PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
-                     (int*)&ru->common.txdata[aa][slot_offset],
-                     fp->ofdm_symbol_size,
-                     num_symbols,
-                     fp->nb_prefix_samples,
-                     CYCLIC_PREFIX);
-      }
-      else {
+      if (!(slot%(fp->slots_per_subframe/2))&&(first_symbol==0)) {
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
                      (int*)&ru->common.txdata[aa][slot_offset],
                      fp->ofdm_symbol_size,
@@ -107,6 +99,14 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      (int*)&ru->common.txdata[aa][slot_offset+fp->nb_prefix_samples0+fp->ofdm_symbol_size],
                      fp->ofdm_symbol_size,
                      num_symbols-1,
+                     fp->nb_prefix_samples,
+                     CYCLIC_PREFIX);
+      }
+      else {
+        PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
+                     (int*)&ru->common.txdata[aa][slot_offset],
+                     fp->ofdm_symbol_size,
+                     num_symbols,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       }

@@ -145,7 +145,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
     if (abs_symbol%(0x7<<frame_parms->numerology_index)) {
 
-      rx_offset += nb_prefix_samples0;
+      rx_offset += nb_prefix_samples;
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((short*) &common_vars->rxdata[aa][frame_length_samples],
                (short*) &common_vars->rxdata[aa][0],
@@ -170,7 +170,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
       }
     } else {
 
-      rx_offset += frame_parms->nb_prefix_samples;
+      rx_offset += nb_prefix_samples0;
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((void *) &common_vars->rxdata[aa][frame_length_samples],
                (void *) &common_vars->rxdata[aa][0],
