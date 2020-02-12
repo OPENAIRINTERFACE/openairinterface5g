@@ -51,8 +51,6 @@
 #include "executables/softmodem-common.h"
 /* log utils */
 #include "common/utils/LOG/log.h"
-//#include "openair2/LAYER2/MAC/mac.h"
-//#include "openair2/LAYER2/RLC/rlc.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -2426,7 +2424,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   uint16_t payload_offset = 0, num_sdus = 0;
   uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
   uint16_t sdu_length_total = 0;
-  unsigned short post_padding = 0;
+  //unsigned short post_padding = 0;
 
   rlc_buffer_occupancy_t lcid_buffer_occupancy_old =
     0, lcid_buffer_occupancy_new = 0;
@@ -2527,11 +2525,6 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   }
   else
 	  return 0;
-  LOG_D(MAC,
-        "[UE %d] Generate header :bufflen %d  sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,  total_rlc_pdu_header_len %d, post_padding %d, remainder %d \n",
-        module_idP, buflen, sdu_length_total, num_sdus, sdu_lengths[0],
-        sdu_lcids[0], payload_offset, total_rlc_pdu_header_len,
-        post_padding, buflen - sdu_length_total - payload_offset);
 
   // Padding: fill remainder of ULSCH with 0
   if (buflen - payload_offset > 0){
@@ -2540,7 +2533,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-  LOG_I(MAC, "Printing UL MAC payload without the header UE side, payload_offset: %d \n", payload_offset);
+  LOG_I(MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
   for (int i = 0; i < buflen ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
 	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
