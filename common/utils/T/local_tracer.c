@@ -15,7 +15,7 @@
 #include "T_messages.txt.h"
 #include "T_defs.h"
 #include "T_IDs.h"
-#include "softmodem-common.h"
+
 static T_cache_t *T_local_cache;
 static int T_busylist_head;
 
@@ -357,7 +357,7 @@ static void forward(void *_forwarder, char *buf, int size) {
   if (f->tail != NULL) f->tail->next = new;
 
   f->tail = new;
-  if( IS_SOFTMODEM_BASICSIM){
+#if BASIC_SIMULATOR
   /* When runnng the basic simulator, the tracer may be too slow.
    * Let's not take too much memory in the tracee and
    * wait if there is too much data to send. 200MB is
@@ -372,7 +372,7 @@ static void forward(void *_forwarder, char *buf, int size) {
 
       if (pthread_mutex_lock(&f->lock)) abort();
     }
-  }
+#endif
   f->memusage += size+4;
 
   /* warn every 100MB */
