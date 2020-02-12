@@ -1248,6 +1248,53 @@ int add_new_nr_ue(module_id_t mod_idP,
   return -1;
 }
 
+
+void get_pdsch_to_harq_feedback(int Mod_idP,
+                                int UE_id,
+                                NR_SearchSpace__searchSpaceType_PR ss_type,
+                                uint8_t *pdsch_to_harq_feedback) {
+
+  int bwp_id=1;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+
+  NR_SearchSpace_t *ss;
+
+  // common search type uses DCI format 1_0
+  if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
+    for (int i=0; i<8; i++)
+      pdsch_to_harq_feedback[i] = i+1;
+  }
+  else {
+    // searching for a ue specific search space
+    int found=0;
+
+    for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
+      ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+      AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
+      AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
+      if (ss->searchSpaceType->present == ss_type) {
+	found=1;
+	break;
+      }
+    }
+    AssertFatal(found==1,"Couldn't find a ue specific searchspace\n");
+    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
+      for (int i=0; i<8; i++)
+        pdsch_to_harq_feedback[i] = i+1;
+    }
+    else {
+      if(ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK != NULL)
+        pdsch_to_harq_feedback = (uint8_t *)ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK;
+      else
+        AssertFatal(found==1,"There is no allocated dl_DataToUL_ACK for pdsch to harq feedback\n");
+    }
+  }
+}
+
+
 // function to update pucch scheduling parameters in UE list when a USS DL is scheduled
 void nr_update_pucch_scheduling(int Mod_idP,
                                 int UE_id,
@@ -1258,50 +1305,111 @@ void nr_update_pucch_scheduling(int Mod_idP,
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  int first_ul_slot_tdd,next_slot;
+  int first_ul_slot_tdd,k;
   NR_sched_pucch *curr_pucch;
+  uint8_t pdsch_to_harq_feedback[8];
+  int found = 0;
+  int i = 0;
+  int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
+    nr_ulmix_slots++;
+
+  // this is hardcoded for now as ue specific
+  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  get_pdsch_to_harq_feedback(Mod_idP,UE_id,ss_type,pdsch_to_harq_feedback);
 
   // if the list of pucch to be scheduled is empty
   if (UE_list->UE_sched_ctrl[UE_id].sched_pucch == NULL) {
     sched_pucch->frame = frameP;
     sched_pucch->next_sched_pucch = NULL;
     sched_pucch->dai_c = 1;
-    if ( (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots!=0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)) {
+    sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+    if ( nr_ulmix_slots > 0 ) {
       // first pucch occasion in first UL or MIXED slot
       first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-      // computing slot in which pucch is scheduled
-      sched_pucch->ul_slot = first_ul_slot_tdd + slotP - (slotP % slots_per_tdd);
+      for (k=0; k<nr_ulmix_slots; k++) { // for each possible UL or mixed slot
+        while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+          if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
+            found = 1;
+          if (found == 0) i++;
+        }
+        if (found == 1) break;
+      }
+      if (found == 1) {
+        // computing slot in which pucch is scheduled
+        sched_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
+        sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+      }
+      else
+        AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
     }
     else
       AssertFatal(1==0,"No Uplink Slots in this Frame\n");
 
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = sched_pucch;
   }
-  else {
+  else {  // to be tested
     curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
-    while (curr_pucch->next_sched_pucch != NULL)
-      curr_pucch = curr_pucch->next_sched_pucch;
-    // we are scheduling at most 11 ack nacks in the same pucch
-    if (curr_pucch->dai_c==11) {
-      next_slot = curr_pucch->ul_slot + 1;
-      if (next_slot == slots_per_tdd)
-        AssertFatal(1==0,"No more slots in this TDD period\n");
-      else {
-        // generating a new item in the list
-        sched_pucch->frame = frameP;
-        sched_pucch->next_sched_pucch = NULL;
-        sched_pucch->dai_c = 1;
-        sched_pucch->ul_slot = next_slot;
-        curr_pucch->next_sched_pucch = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
-        curr_pucch->next_sched_pucch = sched_pucch;
+    if (curr_pucch->dai_c<11) {     // we are scheduling at most 11 harq-ack in the same pucch
+      while (i<8 && found == 0)  {  // look if timing indicator is among allowed values for current pucch
+        if (pdsch_to_harq_feedback[i]==(curr_pucch->ul_slot % slots_per_tdd)-(slotP % slots_per_tdd))
+          found = 1;
+        if (found == 0) i++;
+      }
+      if (found == 1) {  // scheduling this harq-ack in current pucch
+        sched_pucch = curr_pucch;
+        sched_pucch->dai_c = 1 + sched_pucch->dai_c;
+        sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
       }
     }
-    else {
-      sched_pucch = curr_pucch;
-      sched_pucch->dai_c = 1 + sched_pucch->dai_c;
+    if (curr_pucch->dai_c==11 || found == 0) { // if current pucch is full or no timing indicator allowed
+      // look for pucch occasions in other UL of mixed slots
+      for (k=scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots; k<slots_per_tdd; k++) { // for each possible UL or mixed slot
+        if (k!=(curr_pucch->ul_slot % slots_per_tdd)) { // skip current scheduled slot (already checked)
+          i = 0;
+          while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+            if (pdsch_to_harq_feedback[i]==k-(slotP % slots_per_tdd))
+              found = 1;
+            if (found == 0) i++;
+          }
+          if (found == 1) {
+            if (k<(curr_pucch->ul_slot % slots_per_tdd)) { // we need to add a pucch occasion before current pucch
+              sched_pucch->frame = frameP;
+              sched_pucch->ul_slot =  k + (slotP - (slotP % slots_per_tdd));
+              sched_pucch->next_sched_pucch = curr_pucch;
+              sched_pucch->dai_c = 1;
+              sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+              sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+              UE_list->UE_sched_ctrl[UE_id].sched_pucch = sched_pucch;
+            }
+            else {
+              while (curr_pucch->next_sched_pucch != NULL && k!=(curr_pucch->ul_slot % slots_per_tdd))
+                curr_pucch = curr_pucch->next_sched_pucch;
+              if (curr_pucch == NULL) {  // creating a new item in the list
+                sched_pucch->frame = frameP;
+                sched_pucch->next_sched_pucch = NULL;
+                sched_pucch->dai_c = 1;
+                sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+                sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+                sched_pucch->ul_slot = k + (slotP - (slotP % slots_per_tdd));
+                curr_pucch->next_sched_pucch = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
+                curr_pucch->next_sched_pucch = sched_pucch;
+              }
+              else {
+                if (curr_pucch->dai_c==11)
+                  found = 0; // if pucch at index k is already full we have to find a new one in a following occasion
+                else { // scheduling this harq-ack in current pucch
+                  sched_pucch = curr_pucch;
+                  sched_pucch->dai_c = 1 + sched_pucch->dai_c;
+                  sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
-
 }
 
 

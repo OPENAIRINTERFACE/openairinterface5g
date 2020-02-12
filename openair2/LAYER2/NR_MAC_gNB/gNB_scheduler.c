@@ -318,7 +318,6 @@ void nr_schedule_pucch(int Mod_idP,
   uint16_t O_uci;
   uint16_t O_ack;
   uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
-  uint8_t pucch_resource = 0; // in PHY test only one UE -> only one PUCCH resource used
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
@@ -340,15 +339,14 @@ void nr_schedule_pucch(int Mod_idP,
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
       nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
       memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
-      UL_tti_req->n_pdus+=1;  
-
+      UL_tti_req->n_pdus+=1;
       O_ack = curr_pucch->dai_c;
       O_uci = O_ack; // for now we are just sending acknacks in pucch
 
       nr_configure_pucch(pucch_pdu,
 			 scc,
 			 ubwp,
-                         pucch_resource,
+                         curr_pucch->resource_indicator,
                          O_uci,
                          O_ack,
                          SR_flag);

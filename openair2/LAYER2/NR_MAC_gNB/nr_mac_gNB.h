@@ -104,7 +104,8 @@ typedef struct NR_sched_pucch {
   int frame;
   int ul_slot;
   uint8_t dai_c;
-  uint8_t dai_t;
+  uint8_t timing_indicator;
+  uint8_t resource_indicator;
   struct NR_sched_pucch *next_sched_pucch;
 } NR_sched_pucch;
 

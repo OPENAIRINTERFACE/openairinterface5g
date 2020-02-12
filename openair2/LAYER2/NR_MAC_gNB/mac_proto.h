@@ -94,6 +94,11 @@ void nr_update_pucch_scheduling(int Mod_idP,
                                 sub_frame_t slotP,
                                 int slots_per_tdd,
                                 NR_sched_pucch *sched_pucch);
+
+void get_pdsch_to_harq_feedback(int Mod_idP,
+                                int UE_id,
+                                NR_SearchSpace__searchSpaceType_PR ss_type,
+                                uint8_t *pdsch_to_harq_feedback);
   
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                                   nr_scs_e scs_common,

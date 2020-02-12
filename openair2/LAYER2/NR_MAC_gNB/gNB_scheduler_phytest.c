@@ -261,8 +261,6 @@ int configure_fapi_dl_Tx(int Mod_idP,
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
-  int pucch_fb_timing = pucch_sched->ul_slot - slotP;
-
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
   int TBS;
@@ -356,8 +354,8 @@ int configure_fapi_dl_Tx(int Mod_idP,
   dci_pdu_rel15[0].harq_pid = 0;
   dci_pdu_rel15[0].dai = (pucch_sched->dai_c-1)&3;
   dci_pdu_rel15[0].tpc = 2;
-  dci_pdu_rel15[0].pucch_resource_indicator = 0;  //FIXME this is fixed to 0 in phy test with only one user
-  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = pucch_fb_timing-1; //FIXME valid only for format 1_0
+  dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
+  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = pucch_sched->timing_indicator;
   
   LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment,
