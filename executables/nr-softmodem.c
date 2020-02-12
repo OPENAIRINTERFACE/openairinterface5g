@@ -71,9 +71,7 @@ unsigned short config_frames[4] = {2,9,11,13};
   #include "UTIL/OTG/otg_vars.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "PHY/INIT/phy_init.h"
 
@@ -101,9 +99,7 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
-#if defined(ENABLE_ITTI)
-  volatile int             start_gNB = 0;
-#endif
+volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
 
 static int wait_for_sync = 0;
@@ -119,9 +115,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-#if defined(ENABLE_ITTI)
-  static char                    *itti_dump_file = NULL;
-#endif
+static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -302,7 +296,7 @@ void exit_function(const char *file, const char *function, const int line, const
   exit(1);
 }
 
-#if defined(ENABLE_ITTI)
+
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -375,7 +369,6 @@ void *l2l1_task(void *arg) {
   */
   return NULL;
 }
-#endif
 
 int create_gNB_tasks(uint32_t gnb_nb) {
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
@@ -638,7 +631,6 @@ void wait_gNBs(void) {
   printf("gNB L1 are configured\n");
 }
 
-#if defined(ENABLE_ITTI)
 /*
  * helper function to terminate a certain ITTI task
  */
@@ -756,7 +748,6 @@ int restart_L1L2(module_id_t gnb_id) {
   pthread_mutex_unlock(&sync_mutex);
   return 0;
 }
-#endif
 
 static  void wait_nfapi_init(char *thread_name) {
   printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
@@ -814,7 +805,7 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
-  get_common_options();
+  get_common_options(SOFTMODEM_GNB_BIT );
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -835,11 +826,10 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-#if defined(ENABLE_ITTI)
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-#endif
+
 
 init_opt();
 
@@ -859,8 +849,6 @@ init_opt();
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
 
-#if defined(ENABLE_ITTI)
-
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
@@ -869,7 +857,6 @@ init_opt();
     RCconfig_L1();
   }
 
-#endif
   /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_nr_flexran();
 
@@ -1004,19 +991,12 @@ init_opt();
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-#if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
-#else
 
-  while (oai_exit==0)
-    sleep(1);
-
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
   // stop threads
 /*#ifdef XFORMS
 

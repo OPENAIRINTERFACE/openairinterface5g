@@ -45,9 +45,7 @@
 
 #include <time.h>
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 extern uint8_t nfapi_mode;
 /*

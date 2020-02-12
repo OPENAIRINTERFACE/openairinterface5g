@@ -99,9 +99,7 @@
   #include "gnb_config.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "common/ran_context.h"
 
@@ -289,23 +287,18 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
 }
 
 
-uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
-#if defined(ENABLE_ITTI)
-  , gNB_RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, 
+	               gNB_RrcConfigurationReq *configuration
                   ) {
   asn_enc_rval_t enc_rval;
   NR_BCCH_DL_SCH_Message_t *sib1_message ;
   struct NR_SIB1 *sib1 ;
   int i;
   struct NR_PLMN_IdentityInfo nr_plmn_info;
-#if defined(ENABLE_ITTI)
+
   // TODO : Add support for more than one PLMN
   //int num_plmn = configuration->num_plmn;
   int num_plmn = 1;
-#else
-  int num_plmn = 1;
-#endif
   struct NR_PLMN_Identity nr_plmn[num_plmn];
   NR_MCC_MNC_Digit_t nr_mcc_digit[num_plmn][3];
   NR_MCC_MNC_Digit_t nr_mnc_digit[num_plmn][3];
@@ -329,30 +322,18 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
   memset(nr_plmn,0,num_plmn*sizeof(struct NR_PLMN_Identity));
 
   for (i = 0; i < num_plmn; ++i) {
-#ifdef ENABLE_ITTI
     nr_mcc_digit[i][0] = (configuration->mcc[i]/100)%10;
     nr_mcc_digit[i][1] = (configuration->mcc[i]/10)%10;
     nr_mcc_digit[i][2] = (configuration->mcc[i])%10;
-#else
-    nr_mcc_digit[i][0] = 0;
-    nr_mcc_digit[i][1] = 0;
-    nr_mcc_digit[i][2] = 1;
-#endif
     nr_plmn[i].mcc = CALLOC(1,sizeof(struct NR_MCC));
     memset(nr_plmn[i].mcc,0,sizeof(struct NR_MCC));
     asn_set_empty(&nr_plmn[i].mcc->list);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][0]);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][1]);
     ASN_SEQUENCE_ADD(&nr_plmn[i].mcc->list, &nr_mcc_digit[i][2]);
-#ifdef ENABLE_ITTI
     nr_mnc_digit[i][0] = (configuration->mnc[i]/100)%10;
     nr_mnc_digit[i][1] = (configuration->mnc[i]/10)%10;
     nr_mnc_digit[i][2] = (configuration->mnc[i])%10;
-#else
-    nr_mnc_digit[i][0] = 0;
-    nr_mnc_digit[i][1] = 0;
-    nr_mnc_digit[i][2] = 1;
-#endif
     memset(&nr_plmn[i].mnc,0,sizeof(NR_MNC_t));
     nr_plmn[i].mnc.list.size=0;
     nr_plmn[i].mnc.list.count=0;
@@ -364,17 +345,10 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
 
   nr_plmn_info.cellIdentity.buf = MALLOC(8);
   memset(nr_plmn_info.cellIdentity.buf,0,8);
-#ifdef ENABLE_ITTI
   nr_plmn_info.cellIdentity.buf[0]= (configuration->cell_identity >> 20) & 0xff;
   nr_plmn_info.cellIdentity.buf[1]= (configuration->cell_identity >> 12) & 0xff;
   nr_plmn_info.cellIdentity.buf[2]= (configuration->cell_identity >> 4) & 0xff;
   nr_plmn_info.cellIdentity.buf[3]= (configuration->cell_identity << 4) & 0xff;
-#else
-  nr_plmn_info.cellIdentity.buf[0]= 0x00;
-  nr_plmn_info.cellIdentity.buf[1]= 0x00;
-  nr_plmn_info.cellIdentity.buf[2]= 0x00;
-  nr_plmn_info.cellIdentity.buf[3]= 0x10;
-#endif
   nr_plmn_info.cellIdentity.size= 4;
   nr_plmn_info.cellIdentity.bits_unused= 4;
   nr_plmn_info.cellReservedForOperatorUse = 0;
@@ -410,9 +384,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier
 
 void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
                                 int     CC_id,
-#if defined(ENABLE_ITTI)
-  gNB_RrcConfigurationReq *configuration,
-#endif
+                                gNB_RrcConfigurationReq *configuration,
                                 int initial_flag
                                ) {
   NR_ServingCellConfigCommon_t                   **servingcellconfigcommon = &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon;
@@ -1143,17 +1115,13 @@ void do_SpCellConfig(uint8_t Mod_id,
   common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
   //Fill servingcellconfigcommon config value
   rrc_config_servingcellconfigcommon(Mod_id,
-                                     CC_id
-#if defined(ENABLE_ITTI)
-                                     ,common_configuration
-#endif
+                                     CC_id,
+                                     common_configuration
                                     );
   //Fill common config to structure
   do_SERVINGCELLCONFIGCOMMON(Mod_id,
                              CC_id,
-#if defined(ENABLE_ITTI)
                              common_configuration,
-#endif
                              0
                             );
   spconfig->reconfigurationWithSync = CALLOC(1,sizeof(struct NR_ReconfigurationWithSync));

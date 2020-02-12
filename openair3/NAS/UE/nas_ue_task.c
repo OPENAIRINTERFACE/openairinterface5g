@@ -20,7 +20,6 @@
  */
 
 #include "utils.h"
-#if defined(ENABLE_ITTI)
 # include "assertions.h"
 # include "intertask_interface.h"
 # include "nas_ue_task.h"
@@ -301,4 +300,3 @@ char *make_port_str_from_ueid(const char *base_port_str, int ueid) {
 
   return itoa(port);
 }
-#endif
