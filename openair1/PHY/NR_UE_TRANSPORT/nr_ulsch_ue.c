@@ -42,6 +42,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "executables/nr-softmodem.h"
+#include "executables/softmodem-common.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define DEBUG_SCFDMA

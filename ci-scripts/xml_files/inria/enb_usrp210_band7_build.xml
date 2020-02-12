@@ -26,13 +26,24 @@
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
  010101
+ 010102
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010101">
 		<class>Build_eNB</class>
-		<desc>Build eNB (USRP)</desc>
+		<desc>Build eNB #0 (USRP)</desc>
 		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="010102">
+		<class>Build_eNB</class>
+		<desc>Build eNB #1 (USRP)</desc>
+		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
 </testCaseList>

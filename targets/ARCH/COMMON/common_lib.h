@@ -400,10 +400,6 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   void (*configure_rru)(int idx, void *arg);
-
-  /*! \brief set UHD thread priority
-   */
-  void (*uhd_set_thread_priority)(void);
 };
 
 /* type of device init function, implemented in shared lib */

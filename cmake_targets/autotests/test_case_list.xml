@@ -1045,7 +1045,7 @@
       <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
       <main_exec_args>-q -s-10 -f0
                       -q -s-10 -f0 -m1</main_exec_args>
-      <tags>polartest.test1</tags>
+      <tags>polartest.test1 polartest.test2</tags>
       <search_expr_true>BLER= 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1107,8 +1107,7 @@
                   -n100 -R217 -a80
                   -n100 -R217 -a110 -b100
                   -n100 -e28</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7
-      nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11</tags>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

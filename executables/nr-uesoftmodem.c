@@ -164,11 +164,9 @@ double bw = 10.0e6;
 
 static int  tx_max_power[MAX_NUM_CCs] = {0};
 
-char rf_config_file[1024];
 
 int chain_offset=0;
-int phy_test = 0;
-uint8_t usim_test = 0;
+
 
 uint8_t dci_Format = 0;
 uint8_t agregation_Level =0xFF;
@@ -179,7 +177,6 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
@@ -198,7 +195,6 @@ int16_t node_synch_ref[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
@@ -274,7 +270,7 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-  itti_terminate_tasks (TASK_UNKNOWN);
+  exit(1);
 }
 
 
@@ -387,28 +383,12 @@ static void get_options(void) {
   int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
-  uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
-  uint32_t start_telnetsrv=0;
+
   //uint32_t noS1;
   //uint32_t nokrnmod;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
-  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
-  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-    set_glog_onlinelog(online_log_messages);
-  }
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-    set_glog(glog_level);
-  }
-
-  if (start_telnetsrv) {
-    load_module_shlib("telnetsrv",NULL,0,NULL);
-  }
 
   paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
   paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
@@ -477,10 +457,6 @@ static void get_options(void) {
     tx_gain[0][CC_id] = tx_gain[0][0];
   }
 
-#if T_TRACER
-  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
-  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);
-#endif
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
     // Here the configuration file is the XER encoded UE capabilities
@@ -491,11 +467,6 @@ static void get_options(void) {
   } /* UE with config file  */
 }
 
-#if T_TRACER
-  int T_nowait = 0;       /* by default we wait for the tracer */
-  int T_port = 2021;    /* default port to listen to to wait for the tracer */
-  int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
-#endif
 
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
@@ -627,7 +598,7 @@ void init_openair0(void) {
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
-      openair0_cfg[card].configFilename = rf_config_file;
+      openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
@@ -670,7 +641,7 @@ int main( int argc, char **argv ) {
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+  set_softmodem_sighandler();
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   set_default_frame_parms(frame_parms);
   mode = normal_txrx;
@@ -742,7 +713,7 @@ int main( int argc, char **argv ) {
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
 
 
-    if (phy_test==1)
+    if (get_softmodem_params()->phy_test==1)
       UE[CC_id]->mac_enabled = 0;
     else
       UE[CC_id]->mac_enabled = 1;

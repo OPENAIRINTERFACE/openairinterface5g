@@ -36,13 +36,9 @@
 #include "gnb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
-#   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-# endif
-#endif
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
@@ -225,11 +221,10 @@ void RCconfig_nr_flexran()
     /* gNB ID from configuration, as read in by RCconfig_RRC() */
     if (!GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr) {
       // Calculate a default gNB ID
-# if defined(ENABLE_USE_MME)
+    if (EPC_MODE_ENABLED) 
       gnb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
-# else
+    else
       gnb_id = i;
-# endif
     } else {
         gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
@@ -379,8 +374,6 @@ void RCconfig_nr_macrlc() {
 
     for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
       RC.nb_nr_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
-      //RC.nrmac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
-      //printf("PHY_TEST = %d,%d\n", RC.nrmac[j]->phy_test, j);
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
   // check number of instances is same as RRC/PDCP
@@ -648,7 +641,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   AssertFatal (i<num_gnbs,"Failed to parse config file no %ith element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
 
   /*
-  #if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
     if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
       asn_debug      = 0;
       asn1_xer_print = 0;
@@ -662,7 +655,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       asn_debug      = 0;
       asn1_xer_print = 0;
     }
-  #endif
+  }
   */
 
   if (num_gnbs>0) {
@@ -671,13 +664,13 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
     if (GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr == NULL) {
     // Calculate a default gNB ID
-      # if defined(ENABLE_USE_MME)
+      if (EPC_MODE_ENABLED) { 
         uint32_t hash;
         hash = s1ap_generate_eNB_id ();
         gnb_id = i + (hash & 0xFFFF8);
-      # else
+      } else {
         gnb_id = i;
-      # endif
+      }
     } else {
         gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
@@ -2739,7 +2732,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
 
   /*
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
     if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
       asn_debug      = 0;
       asn1_xer_print = 0;
@@ -2753,7 +2746,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
       asn_debug      = 0;
       asn1_xer_print = 0;
     }
-#endif
+  }
   */
   
     AssertFatal (i<GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,

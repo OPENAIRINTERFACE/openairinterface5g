@@ -29,6 +29,10 @@
 
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "PHY/sse_intrin.h"
 
@@ -427,5 +431,9 @@ void idft8192(int16_t *x,int16_t *y,int scale);
 double interp(double x, double *xs, double *ys, int count);
 
 int write_output(const char *fname,const char *vname,void *data,int length,int dec,char format);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__PHY_TOOLS_DEFS__H__

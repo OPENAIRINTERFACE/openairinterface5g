@@ -509,7 +509,7 @@ function report_build {
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
     sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
 
-    summary_table_header "OAI Build eNB -- USRP option" ./archives/enb_usrp
+    summary_table_header "OAI Build: 4G LTE eNB -- USRP option" ./archives/enb_usrp
     summary_table_row "LTE SoftModem - Release 15" ./archives/enb_usrp/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_usrp_row1.html
     summary_table_row "Coding - Release 15" ./archives/enb_usrp/coding.Rel15.txt "Built target coding" ./enb_usrp_row2.html
     summary_table_row "OAI USRP device if - Release 15" ./archives/enb_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
@@ -521,7 +521,7 @@ function report_build {
     summary_table_row "TCP Bridge - Release 15" ./archives/enb_usrp/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_usrp_row9.html
     summary_table_footer
 
-    summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
+    summary_table_header "OAI Build: 4G LTE basic simulator option" ./archives/basic_sim
     summary_table_row "LTE SoftModem - Release 15" ./archives/basic_sim/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./basic_sim_row1.html
     summary_table_row "LTE UE SoftModem - Release 15" ./archives/basic_sim/lte-uesoftmodem.Rel15.txt "Built target lte-uesoftmodem" ./basic_sim_row2.htm
     summary_table_row "Coding - Release 15" ./archives/basic_sim/coding.Rel15.txt "Built target coding" ./basic_sim_row3.html
@@ -537,7 +537,7 @@ function report_build {
     summary_table_row "NVRAM - Release 15" ./archives/basic_sim/nvram.Rel15.txt "Built target nvram" ./basic_sim_row13.html
     summary_table_footer
 
-    summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
+    summary_table_header "OAI Build: 4G LTE / 5G NR Physical simulators option" ./archives/phy_sim
     summary_table_row "LTE DL Simulator - Release 15" ./archives/phy_sim/dlsim.Rel15.txt "Built target dlsim" ./phy_sim_row1.html
     summary_table_row "LTE UL Simulator - Release 15" ./archives/phy_sim/ulsim.Rel15.txt "Built target ulsim" ./phy_sim_row2.html
     summary_table_row "Coding - Release 15" ./archives/phy_sim/coding.Rel15.txt "Built target coding" ./phy_sim_row3.html
@@ -581,7 +581,7 @@ function report_build {
 
     if [ -f archives/gnb_usrp/nr-softmodem.Rel15.txt ]
     then
-        summary_table_header "OAI Build gNB -- USRP option" ./archives/gnb_usrp
+        summary_table_header "OAI Build: 5G NR gNB -- USRP option" ./archives/gnb_usrp
         summary_table_row "5G NR SoftModem - Release 15" ./archives/gnb_usrp/nr-softmodem.Rel15.txt "Built target nr-softmodem" ./gnb_usrp_row1.html
         summary_table_row "Coding - Release 15" ./archives/gnb_usrp/coding.Rel15.txt "Built target coding" ./gnb_usrp_row2.html
         summary_table_row "OAI USRP device if - Release 15" ./archives/gnb_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./gnb_usrp_row3.html
@@ -592,20 +592,20 @@ function report_build {
         summary_table_footer
     fi
 
-    if [ -f archives/nrue_usrp/nr-uesoftmodem.Rel15.txt ]
+    if [ -f archives/nr_ue_usrp/nr-uesoftmodem.Rel15.txt ]
     then
-        summary_table_header "OAI Build 5G NR UE -- USRP option" ./archives/nrue_usrp
-        summary_table_row "5G NR UE SoftModem - Release 15" ./archives/nrue_usrp/nr-uesoftmodem.Rel15.txt "Built target nr-uesoftmodem" ./nrue_usrp_row1.html
-        summary_table_row "Coding - Release 15" ./archives/nrue_usrp/coding.Rel15.txt "Built target coding" ./nrue_usrp_row2.html
-        summary_table_row "OAI USRP device if - Release 15" ./archives/nrue_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./nrue_usrp_row3.html
-        summary_table_row "OAI ETHERNET transport - Release 15" ./archives/nrue_usrp/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./nrue_usrp_row4.html
-        summary_table_row "NASMESH - Release 15" ./archives/nrue_usrp/nasmesh.Rel15.txt "Built target nasmesh" ./nrue_usrp_row5.html
-        summary_table_row "Parameters Lib Config - Release 15" ./archives/nrue_usrp/params_libconfig.Rel15.txt "Built target params_libconfig" ./nrue_usrp_row6.html
-        summary_table_row "RB Tool - Release 15" ./archives/nrue_usrp/rb_tool.Rel15.txt "Built target rb_tool" ./nrue_usrp_row7.html
+        summary_table_header "OAI Build: 5G NR UE -- USRP option" ./archives/nr_ue_usrp
+        summary_table_row "5G NR UE SoftModem - Release 15" ./archives/nr_ue_usrp/nr-uesoftmodem.Rel15.txt "Built target nr-uesoftmodem" ./nr_ue_usrp_row1.html
+        summary_table_row "Coding - Release 15" ./archives/nr_ue_usrp/coding.Rel15.txt "Built target coding" ./nr_ue_usrp_row2.html
+        summary_table_row "OAI USRP device if - Release 15" ./archives/nr_ue_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./nr_ue_usrp_row3.html
+        summary_table_row "OAI ETHERNET transport - Release 15" ./archives/nr_ue_usrp/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./nr_ue_usrp_row4.html
+        summary_table_row "NASMESH - Release 15" ./archives/nr_ue_usrp/nasmesh.Rel15.txt "Built target nasmesh" ./nr_ue_usrp_row5.html
+        summary_table_row "Parameters Lib Config - Release 15" ./archives/nr_ue_usrp/params_libconfig.Rel15.txt "Built target params_libconfig" ./nr_ue_usrp_row6.html
+        summary_table_row "RB Tool - Release 15" ./archives/nr_ue_usrp/rb_tool.Rel15.txt "Built target rb_tool" ./nr_ue_usrp_row7.html
         summary_table_footer
     fi
 
-    summary_table_header "OAI Build eNB -- ETHERNET transport option" ./archives/enb_eth
+    summary_table_header "OAI Build: 4G LTE eNB -- ETHERNET transport option" ./archives/enb_eth
     summary_table_row "LTE SoftModem - Release 15" ./archives/enb_eth/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_eth_row1.html
     summary_table_row "Coding - Release 15" ./archives/enb_eth/coding.Rel15.txt "Built target coding" ./enb_eth_row2.html
     summary_table_row "OAI ETHERNET transport - Release 15" ./archives/enb_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
@@ -614,7 +614,7 @@ function report_build {
     summary_table_row "TCP OAI Bridge - Release 15" ./archives/enb_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_eth_row6.html
     summary_table_footer
 
-    summary_table_header "OAI Build UE -- ETHERNET transport option" ./archives/ue_eth
+    summary_table_header "OAI Build: 4G LTE UE -- ETHERNET transport option" ./archives/ue_eth
     summary_table_row "LTE UE SoftModem - Release 15" ./archives/ue_eth/lte-uesoftmodem.Rel15.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
     summary_table_row "Coding - Release 15" ./archives/ue_eth/coding.Rel15.txt "Built target coding" ./ue_eth_row2.html
     summary_table_row "OAI ETHERNET transport - Release 15" ./archives/ue_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
@@ -631,7 +631,7 @@ function report_build {
     then
         echo "   <h2>Red Hat Enterprise Linux Server release 7.6) -- Summary</h2>" >> ./build_results.html
 
-        summary_table_header "Red Hat -- OAI Build eNB -- USRP option" ./archives/red_hat
+        summary_table_header "OAI Build: 4G LTE eNB -- USRP option (RHEL)" ./archives/red_hat
         summary_table_row "LTE SoftModem - Release 15" ./archives/red_hat/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
         summary_table_row "Coding - Release 15" ./archives/red_hat/coding.Rel15.txt "Built target coding" ./enb_usrp_rh_row2.html
         summary_table_row "OAI USRP device if - Release 15" ./archives/red_hat/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
@@ -671,9 +671,9 @@ function report_build {
             cat $DETAILS_TABLE >> ./build_results.html
         done
     fi
-    if [ -f ./nrue_usrp_row1.html ] || [ -f ./nrue_usrp_row2.html ] || [ -f ./nrue_usrp_row3.html ] || [ -f ./nrue_usrp_row4.html ]
+    if [ -f ./nr_ue_usrp_row1.html ] || [ -f ./nr_ue_usrp_row2.html ] || [ -f ./nr_ue_usrp_row3.html ] || [ -f ./nr_ue_usrp_row4.html ]
     then
-        for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
+        for DETAILS_TABLE in `ls ./nr_ue_usrp_row*.html`
         do
             cat $DETAILS_TABLE >> ./build_results.html
         done

@@ -40,6 +40,7 @@
 #include "PHY/MODULATION/nr_modulation.h"
 #include "T.h"
 #include "executables/nr-softmodem.h"
+#include "executables/softmodem-common.h"
 
 #include "assertions.h"
 #include "msc.h"
@@ -290,7 +291,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int UE_id
   else if(gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->b!=NULL){
 	  LOG_I(PHY, "ULSCH received ok \n");
 	  if(IS_SOFTMODEM_NOS1){ //&& gNB->ulsch[UE_id][0]->rnti == 0x1234
-		  nr_fill_crc_indication (gNB, UE_id, frame_rx, slot_rx, 0);
+		  nr_fill_crc_indication (gNB,frame_rx, slot_rx, UE_id, 0);
 		  nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);
 	  }
   }
@@ -312,6 +313,8 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
 
+  uint16_t mu = gNB->gNB_config.subframe_config.numerology_index_mu.value;
+
  pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
  gNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| slot_rx;
@@ -331,14 +334,15 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
   timing_advance_update                  = sync_pos; // - gNB->frame_parms.nb_prefix_samples/4; //to check
   // printf("\x1B[33m" "timing_advance_update = %d\n" "\x1B[0m", timing_advance_update);
 
+  //pdu->data                              = gNB->ulsch[UE_id+1][0]->harq_processes[harq_pid]->b;
+  sync_pos                               = nr_est_timing_advance_pusch(gNB, UE_id); // estimate timing advance for MAC
+  timing_advance_update                  = sync_pos * (1 << mu);                    // scale by the used scs numerology
+
+  // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (gNB->frame_parms.N_RB_DL) {
-    // case 6:   /* nothing to do */          break;
-    // case 15:  timing_advance_update /= 2;  break;
-    // case 25:  timing_advance_update /= 4;  break;
-    // case 50:  timing_advance_update /= 8;  break;
-    // case 75:  timing_advance_update /= 12; break;
     case 106: timing_advance_update /= 16; break;
     case 217: timing_advance_update /= 32; break;
+    case 245: timing_advance_update /= 32; break;
     case 273: timing_advance_update /= 32; break;
     default: abort();
   }
@@ -348,6 +352,8 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
 
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
+
+  LOG_D(PHY, "Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", sync_pos,timing_advance_update);
 
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
 
@@ -368,7 +374,7 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
 
-void nr_fill_crc_indication (PHY_VARS_gNB *gNB, int UE_id, int frame, int slot_rx, uint8_t crc_flag) {
+void nr_fill_crc_indication (PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id,  uint8_t crc_flag) {
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   nfapi_crc_indication_pdu_t *pdu =   &gNB->UL_INFO. crc_ind.crc_indication_body.crc_pdu_list[gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs];
   gNB->UL_INFO.crc_ind.sfn_sf                         = frame<<4 | slot_rx;
@@ -384,7 +390,6 @@ void nr_fill_crc_indication (PHY_VARS_gNB *gNB, int UE_id, int frame, int slot_r
   //LOG_D(PHY, "%s() rnti:%04x crcs:%d crc_flag:%d\n", __FUNCTION__, pdu->rx_ue_information.rnti, eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs, crc_flag);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
-
 
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
@@ -412,9 +417,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   int num_pusch_pdu = UL_tti_req->n_pdus;
 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pusch_pdu %d\n",frame_rx,slot_rx,num_pusch_pdu);
-  
-  for (int i = 0; i < num_pusch_pdu; i++) {
 
+  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus  = 0;
+
+  for (int i = 0; i < num_pusch_pdu; i++) {
     switch (UL_tti_req->pdus_list[i].pdu_type) {
     case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
       {
@@ -434,8 +440,6 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	//LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[UE_id]->rxdataF_comp[0],6900,1,1);
 	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[UE_id]->rxdataF_ext[0],6900,1,1);
 	nr_ulsch_procedures(gNB, frame_rx, slot_rx, UE_id, harq_pid);
-	/*nr_fill_crc_indication (gNB, UE_id, frame_rx, slot_rx, 1);
-	nr_fill_rx_indication(gNB, frame_rx, slot_rx, UE_id, harq_pid);  // indicate SDU to MAC*/
       }
     }
   }

@@ -72,7 +72,7 @@
 #include "SCHED_NR/sched_nr.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
@@ -81,7 +81,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "enb_config.h"
-#include <executables/nr-softmodem.h>
+#include <executables/softmodem-common.h>
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -104,14 +104,10 @@ static int DEFBFW[] = {0x00007fff};
   #include "UTIL/OTG/otg_extern.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #ifdef PDCP_USE_NETLINK
-      #include "SIMULATION/ETH_TRANSPORT/proto.h"
-    #endif
-  #endif
-#endif
+#include "s1ap_eNB.h"
+#include "SIMULATION/ETH_TRANSPORT/proto.h"
+
+
 
 #include "T.h"
 #include "nfapi_interface.h"
@@ -1250,13 +1246,6 @@ static void *ru_thread_tx( void *param ) {
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   printf( "ru_thread_tx ready\n");
 
-  
-  if(ru->rfdevice.uhd_set_thread_priority != NULL)
-  {
-    LOG_I(PHY,"set ru_thread_tx uhd priority \n");
-    ru->rfdevice.uhd_set_thread_priority();
-  }
-
   while (!oai_exit) {
 
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
@@ -1354,11 +1343,11 @@ static void *ru_thread_tx( void *param ) {
         ret = pthread_mutex_lock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_lock returns %d\n",ret);
         // the thread can now be woken up
-        //if (L1_proc->instance_cnt_RUs == -1) {
+        if (L1_proc->instance_cnt_RUs == -1) {
           L1_proc->instance_cnt_RUs = 0;
           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
                        "ERROR pthread_cond_signal for gNB_L1_thread\n");
-        //} //else AssertFatal(1==0,"gNB TX thread is not ready\n");
+        } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         ret = pthread_mutex_unlock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);

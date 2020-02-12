@@ -37,10 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NR_BCCH_DL_SCH 3            // SI
-
-#define NR_BCCH_BCH 5           // MIB
-
 /*!\brief UE layer 2 status */
 typedef enum {
     UE_CONNECTION_OK = 0,
@@ -49,4 +45,4 @@ typedef enum {
     UE_PHY_HO_PRACH
 } NR_UE_L2_STATE_t;
 
-#endif /*__LAYER2_MAC_DEFS_H__ */
+#endif /*__LAYER2_NR_UE_MAC_DEFS_H__ */

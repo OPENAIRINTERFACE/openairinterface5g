@@ -38,7 +38,7 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"

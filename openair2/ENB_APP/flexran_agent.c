@@ -33,27 +33,14 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
-void *receive_thread(void *args);
-Protocol__FlexranMessage *flexran_agent_timeout(void* args);
-
-
 int agent_task_created = 0;
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
  * and can interact with other itti tasks
 */
 void *flexran_agent_task(void *args){
-
-  //flexran_agent_info_t         *d = (flexran_agent_info_t *) args;
-  Protocol__FlexranMessage *msg;
-  void *data;
-  int size;
-  err_code_t err_code=0;
-  int                   priority = 0;
-
-  MessageDef                     *msg_p           = NULL;
-  int                             result;
-  struct flexran_agent_timer_element_s * elem = NULL;
+  MessageDef *msg_p = NULL;
+  int         result;
 
   itti_mark_task_ready(TASK_FLEXRAN_AGENT);
 
@@ -71,20 +58,6 @@ void *flexran_agent_task(void *args){
     case MESSAGE_TEST:
       LOG_I(FLEXRAN_AGENT, "Received %s\n", ITTI_MSG_NAME(msg_p));
       break;
-    
-    case TIMER_HAS_EXPIRED:
-      msg = flexran_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
-      if (msg != NULL){
-	data=flexran_agent_pack_message(msg,&size);
-	elem = get_timer_entry(msg_p->ittiMsg.timer_has_expired.timer_id);
-	if (flexran_agent_msg_send(elem->agent_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
-	  err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
-	  goto error;
-	}
-
-	LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
-      }
-      break;
 
     default:
       LOG_E(FLEXRAN_AGENT, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
@@ -93,10 +66,6 @@ void *flexran_agent_task(void *args){
 
     result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    continue;
-  error:
-    if (err_code != 0)
-      LOG_E(FLEXRAN_AGENT,"flexran_agent_task: error %d occured\n",err_code);
   } while (1);
 
   return NULL;
@@ -202,16 +171,14 @@ int flexran_agent_start(mid_t mod_id)
    *flexran_agent_register_channel(mod_id, channel, FLEXRAN_AGENT_MAC);
    */
 
-  /*Initialize the continuous stats update mechanism*/
-  flexran_agent_init_cont_stats_update(mod_id);
   pthread_t t; 
   threadCreate(&t, receive_thread, flexran, "flexran", -1, OAI_PRIORITY_RT);
 
   /* Register and initialize the control modules depending on capabilities.
    * After registering, calling flexran_agent_get_*_xface() tells whether a
    * control module is operational */
-  uint16_t caps = flexran_get_capabilities_mask(mod_id);
-  LOG_I(FLEXRAN_AGENT, "Agent handles BS ID %ld, capabilities=0x%x => handling%s%s%s%s%s%s%s%s\n",
+  uint32_t caps = flexran_get_capabilities_mask(mod_id);
+  LOG_I(FLEXRAN_AGENT, "Agent handles BS ID %ld, capabilities=0x%x => handling%s%s%s%s%s%s%s%s%s\n",
         flexran_get_bs_id(mod_id), caps,
         FLEXRAN_CAP_LOPHY(caps) ? " LOPHY" : "",
         FLEXRAN_CAP_HIPHY(caps) ? " HIPHY" : "",
@@ -220,7 +187,8 @@ int flexran_agent_start(mid_t mod_id)
         FLEXRAN_CAP_RLC(caps)   ? " RLC"   : "",
         FLEXRAN_CAP_PDCP(caps)  ? " PDCP"  : "",
         FLEXRAN_CAP_SDAP(caps)  ? " SDAP"  : "",
-        FLEXRAN_CAP_RRC(caps)   ? " RRC"   : "");
+        FLEXRAN_CAP_RRC(caps)   ? " RRC"   : "",
+        FLEXRAN_CAP_S1AP(caps)  ? " S1AP"  : "");
 
   if (FLEXRAN_CAP_LOPHY(caps) || FLEXRAN_CAP_HIPHY(caps)) {
     flexran_agent_register_phy_xface(mod_id);
@@ -243,11 +211,16 @@ int flexran_agent_start(mid_t mod_id)
     LOG_I(FLEXRAN_AGENT, "registered PDCP interface/CM for eNB %d\n", mod_id);
   }
 
+  if (FLEXRAN_CAP_S1AP(caps)) {
+    flexran_agent_register_s1ap_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered S1AP interface/CM for eNB %d\n", mod_id);
+  }
+
   /* 
    * initilize a timer 
    */ 
   
-  flexran_agent_init_timer();
+  flexran_agent_timer_init(mod_id);
 
   /* 
    * start the enb agent task for tx and interaction with the underlying network function
@@ -287,17 +260,4 @@ error:
   LOG_E(FLEXRAN_AGENT, "%s(): there was an error\n", __func__);
   return 1;
 
-}
-
-Protocol__FlexranMessage *flexran_agent_timeout(void* args){
-
-  //  flexran_agent_timer_args_t *timer_args = calloc(1, sizeof(*timer_args));
-  //memcpy (timer_args, args, sizeof(*timer_args));
-  flexran_agent_timer_args_t *timer_args = (flexran_agent_timer_args_t *) args;
-  
-  LOG_UI(FLEXRAN_AGENT, "flexran_agent %d timeout\n", timer_args->mod_id);
-  //LOG_I(FLEXRAN_AGENT, "eNB action %d ENB flags %d \n", timer_args->cc_actions,timer_args->cc_report_flags);
-  //LOG_I(FLEXRAN_AGENT, "UE action %d UE flags %d \n", timer_args->ue_actions,timer_args->ue_report_flags);
-  
-  return NULL;
 }

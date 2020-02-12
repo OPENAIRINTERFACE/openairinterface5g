@@ -148,11 +148,9 @@ double bw = 10.0e6;
 
 static int tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
-char rf_config_file[1024]="/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
 int chain_offset=0;
-int phy_test = 0;
-uint8_t usim_test = 0;
+
 
 uint8_t dci_Format = 0;
 uint8_t agregation_Level =0xFF;
@@ -176,7 +174,6 @@ int otg_enabled;
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
@@ -189,7 +186,6 @@ int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
 
-static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
@@ -270,39 +266,13 @@ unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
   return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
 }
 
-#if !defined(ENABLE_ITTI)
-void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
 
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    printf("trying to exit gracefully...\n");
-    oai_exit = 1;
-  }
-}
-#endif
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-#if defined(ENABLE_ITTI)
-void signal_handler_itti(int sig) {
-  // Call exit function
-  char msg[256];
-  memset(msg, 0, 256);
-  sprintf(msg, "caught signal %s\n", strsignal(sig));
-  exit_function(__FILE__, __FUNCTION__, __LINE__, msg);
-}
-#endif
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int ru_id;
@@ -329,9 +299,6 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-#if defined(ENABLE_ITTI)
-  itti_terminate_tasks (TASK_UNKNOWN);
-#endif
   exit(1);
 }
 
@@ -428,7 +395,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
   /*
-  #   if defined(ENABLE_USE_MME)
+    if (EPC_MODE_ENABLED) {
         if (gnb_nb > 0) {
           if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
             LOG_E(SCTP, "Create task for SCTP failed\n");
@@ -452,7 +419,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
           }
         }
 
-  #      endif
+    }
   */
 
   if (gnb_nb > 0) {
@@ -469,36 +436,13 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
 
 static void get_options(void) {
-  int tddflag, nonbiotflag;
-  uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
-  uint32_t start_telnetsrv = 0;
-  uint32_t noS1;
-  uint32_t nokrnmod;
+
+
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
-  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC_NR ;
+
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
 
-
-  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-    set_glog_onlinelog(online_log_messages);
-  }
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-    set_glog(glog_level);
-  }
-
-  if (start_telnetsrv) {
-    load_module_shlib("telnetsrv",NULL,0,NULL);
-  }
-
-#if T_TRACER
-  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
-  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);
-#endif
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
     memset((void *)&RC,0,sizeof(RC));
@@ -514,14 +458,6 @@ static void get_options(void) {
   if(worker_config != NULL) set_worker_conf(worker_config);
 
 }
-
-
-#if T_TRACER
-  int T_nowait = 0;     /* by default we wait for the tracer */
-  int T_port = 2021;    /* default port to listen to to wait for the tracer */
-  int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
-#endif
-
 
 
 void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
@@ -653,7 +589,7 @@ void init_openair0(void) {
       openair0_cfg[card].rx_gain[i] = RC.gNB[0][0]->rx_total_gain_dB;
 
 
-      openair0_cfg[card].configFilename = rf_config_file;
+      openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
        card,i, openair0_cfg[card].tx_gain[i],
        openair0_cfg[card].rx_gain[i],
@@ -866,7 +802,7 @@ int main( int argc, char **argv )
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+  set_softmodem_sighandler();
 #ifdef DEBUG_CONSOLE
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -915,11 +851,7 @@ if(!IS_SOFTMODEM_NOS1)
   pdcp_netlink_init();
 #endif
 #endif
-#if !defined(ENABLE_ITTI)
-  // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-#endif
+
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
@@ -1032,7 +964,7 @@ if(!IS_SOFTMODEM_NOS1)
 
   if (RC.nb_RU >0) {
     printf("Initializing RU threads\n");
-    init_NR_RU(rf_config_file);
+    init_NR_RU(get_softmodem_params()->rf_config_file);
 
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;

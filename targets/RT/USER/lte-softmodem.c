@@ -150,7 +150,6 @@ char channels[128] = "0";
 int rx_input_level_dBm;
 int otg_enabled;
 
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
@@ -232,24 +231,6 @@ unsigned int build_rflocal(int txi, int txq, int rxi, int rxq) {
 }
 unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
   return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
-}
-
-
-void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
-
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    printf("Linux signal %s...\n",strsignal(sig));
-    exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
-  }
 }
 
 
@@ -537,9 +518,6 @@ int main ( int argc, char **argv )
   printf("Reading in command-line options\n");
   get_options ();
 
-  if (is_nos1exec(argv[0]) )
-    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
-
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
@@ -570,10 +548,7 @@ int main ( int argc, char **argv )
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
   // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
+  set_softmodem_sighandler();
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
@@ -585,9 +560,22 @@ int main ( int argc, char **argv )
   /* Read configuration */
   if (RC.nb_inst > 0) {
     read_config_and_init();
-    /* Start the agent. If it is turned off in the configuration, it won't start */
-    RCconfig_flexran();
+  } else {
+    printf("RC.nb_inst = 0, Initializing L1\n");
+    RCconfig_L1();
+  }
 
+  /* We need to read RU configuration before FlexRAN starts so it knows what
+   * splits to report. Actual RU start comes later. */
+  if (RC.nb_RU > 0 && NFAPI_MODE != NFAPI_MODE_VNF) {
+    RCconfig_RU();
+    LOG_I(PHY,
+          "number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
+          RC.nb_L1_inst, RC.nb_RU, get_nprocs());
+  }
+
+  if (RC.nb_inst > 0) {
+    /* Start the agent. If it is turned off in the configuration, it won't start */
     for (i = 0; i < RC.nb_inst; i++) {
       flexran_agent_start(i);
     }
@@ -607,9 +595,6 @@ int main ( int argc, char **argv )
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
     node_type = RC.rrc[0]->node_type;
-  } else {
-    printf("RC.nb_inst = 0, Initializing L1\n");
-    RCconfig_L1();
   }
 
   if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
