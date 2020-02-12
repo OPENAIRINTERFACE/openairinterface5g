@@ -1260,7 +1260,7 @@ function start_rf_sim_nr_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --numerology 1 -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --phy-test --rcc_config_path /home/ubuntu/tmp/ci-scripts/rcc-files --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --numerology 1 -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/ci-scripts/rrc-files --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
     echo "cat ./my-nr-softmodem-run.sh" >> $1

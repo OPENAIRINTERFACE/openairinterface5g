@@ -61,7 +61,7 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
     sco = cfg->ssb_table.ssb_subcarrier_offset.value;
 
   fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + sco);
-  LOG_I(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
+  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
 }
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
@@ -95,8 +95,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
       
       ssb_index = i + SSB_Table[rel_slot]; // computing the ssb_index
 
-      if ((ssb_index<64) && ((fp->L_ssb >> ssb_index) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
-
+      if ((ssb_index<64) && ((fp->L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
         fp->ssb_index = ssb_index;
         int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
 	ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
@@ -279,9 +278,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                     0);
         
   if (ret > gNB->ulsch[ULSCH_id][0]->max_ldpc_iterations)
-    LOG_I(PHY, "ULSCH in error\n");
+    LOG_I(PHY, "ULSCH %d in error\n",ULSCH_id);
   else
-    LOG_I(PHY, "ULSCH received ok\n");
+    LOG_I(PHY, "ULSCH %d received ok\n",ULSCH_id);
 
 }
 

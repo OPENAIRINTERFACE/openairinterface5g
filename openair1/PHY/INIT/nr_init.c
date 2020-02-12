@@ -360,12 +360,16 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   nfapi_nr_config_request_scf_t *gNB_config               = &gNB->gNB_config;
   //overwrite for new NR parameters
 
+  uint64_t rev_burst=0;
+  for (int i=0; i<64; i++)
+    rev_burst |= (((position_in_burst>>(63-i))&0x01)<<i);
+
   gNB_config->cell_config.phy_cell_id.value             = Nid_cell;
   gNB_config->ssb_config.scs_common.value               = mu;
   gNB_config->ssb_table.ssb_subcarrier_offset.value     = 0;
   gNB_config->ssb_table.ssb_offset_point_a.value        = (N_RB_DL-20)>>1;
-  gNB_config->ssb_table.ssb_mask_list[0].ssb_mask.value = position_in_burst;
-  gNB_config->ssb_table.ssb_mask_list[1].ssb_mask.value = position_in_burst>>32;
+  gNB_config->ssb_table.ssb_mask_list[1].ssb_mask.value = (rev_burst)&(0xFFFFFFFF);
+  gNB_config->ssb_table.ssb_mask_list[0].ssb_mask.value = (rev_burst>>32)&(0xFFFFFFFF);
   gNB_config->cell_config.frame_duplex_type.value       = TDD;
   gNB_config->ssb_table.ssb_period.value		= 1; //10ms
   gNB_config->carrier_config.dl_grid_size[mu].value     = N_RB_DL;
@@ -381,6 +385,9 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->nr_band = 78;
   fp->threequarter_fs= 0;
+
+  gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
+
   nr_init_frame_parms(gNB_config, fp);
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");

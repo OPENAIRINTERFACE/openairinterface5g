@@ -224,21 +224,22 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
   cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
+
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
-      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0];
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0]<<24;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       break;
     case 2 :
-      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0]<<24;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       break;
     case 3 :
       cfg->ssb_table.ssb_mask_list[0].ssb_mask = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       for (i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
       }
       break;
     default:

@@ -684,7 +684,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     }
 
     harq_process->handled  = 1;
-    return (ulsch->max_ldpc_iterations + 1);
+    ret = ulsch->max_ldpc_iterations + 1;
 
   } else {
 
@@ -705,29 +705,28 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d (pid %d, round %d, TBS %d)\n",phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->round,harq_process->TBS);
     }
-  }
 
-  // Reassembly of Transport block here
-  offset = 0;
-  Kr = harq_process->K;
-  Kr_bytes = Kr>>3;
-
-  for (r=0; r<harq_process->C; r++) {
-
-    memcpy(harq_process->b+offset,
-           harq_process->c[r],
-           Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
-
-    offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
-
+    // Reassembly of Transport block here
+    offset = 0;
+    Kr = harq_process->K;
+    Kr_bytes = Kr>>3;
+    
+    for (r=0; r<harq_process->C; r++) {
+      
+      memcpy(harq_process->b+offset,
+	     harq_process->c[r],
+	     Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
+      
+      offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
+      
 #ifdef DEBUG_ULSCH_DECODING
-    printf("Segment %u : Kr = %u bytes\n", r, Kr_bytes);
-    printf("copied %d bytes to b sequence (harq_pid %d)\n", (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)), harq_pid);
-    printf("b[0] = %x, c[%d] = %x\n", harq_process->b[offset], harq_process->F>>3, harq_process->c[r]);
+      printf("Segment %u : Kr = %u bytes\n", r, Kr_bytes);
+      printf("copied %d bytes to b sequence (harq_pid %d)\n", (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)), harq_pid);
+      printf("b[0] = %x, c[%d] = %x\n", harq_process->b[offset], harq_process->F>>3, harq_process->c[r]);
 #endif
-
+      
+    }
   }
-
   ulsch->last_iteration_cnt = ret;
 
   return(ret);

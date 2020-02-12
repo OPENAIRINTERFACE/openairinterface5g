@@ -480,8 +480,6 @@ int wakeup_txfh(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc,int frame_tx,int slot
     }
     AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_gNBs))==0,"ERROR pthread_mutex_lock failed on mutex_gNBs L1_thread_tx with ret=%d\n",ret);
 
-    AssertFatal((ret=pthread_mutex_lock(&ru_proc->mutex_gNBs))==0,"mutex_lock returned %d\n",ret);
-
     ru_proc->instance_cnt_gNBs = 0;
     ru_proc->timestamp_tx = timestamp_tx;
     ru_proc->tti_tx       = slot_tx;

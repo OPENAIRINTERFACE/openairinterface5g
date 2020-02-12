@@ -1089,25 +1089,29 @@
                                  (Test8: 217 PRB 100 PDSCH-PRBs),
                                  (Test9: 217 PRB 80 PDSCH-Offset),
                                  (Test10: 217 PRB 100 PDSCH-PRBs 110 PDSCH-Offset),
-                                 (Test11: 106 PRBs 50 PDSCH-PRBs MCS Index 28</desc>
+                                 (Test11: 106 PRBs 50 PDSCH-PRBs MCS Index 28)
+                                 (Test12: 106 PRBs 50 PDSCH-PRBs MCS Index 16)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
-      <main_exec_args>-n100 -R106 -b106
-		              -n100 -R217 -b217
-		              -n100 -R273 -b273
-                  -n100 -R106 -o12
-                  -n100 -R217 -o48
-                  -n100 -R106 -a25
-                  -n100 -R106 -a51
-                  -n100 -R217 -b100
-                  -n100 -R217 -a80
-                  -n100 -R217 -a110 -b100
-                  -n100 -e28</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11</tags>
+      <main_exec_args>
+	          -n100 -R106 -b106 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+		  -n100 -R217 -b217 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+		  -n100 -R273 -b273 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R106 -o12 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R217 -o48 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R106 -a25 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R106 -a51 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R217 -b100 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R217 -a80 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -R217 -a110 -s5 -b100 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -e28 -s20 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                  -n100 -e16 -s10 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+      </main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1249,11 +1253,11 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_ulsim.Rel15</main_exec>
-      <main_exec_args>-f100 -m9 -r106 -s10
-                      -f100 -m16 -s20
-                      -f100 -m28 -s30
-                      -f100 -m9 -R217 -r217 -s10
-                      -f100 -m9 -R273 -r273 -s10</main_exec_args>
+      <main_exec_args>-n100 -m9 -r106 -s0 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m16 -s10 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m28 -s20 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m9 -R217 -r217 -s0 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+                      -n100 -m9 -R273 -r273 -s0 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>

@@ -112,7 +112,7 @@ typedef struct {
 
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
-  NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
+  UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   int next[MAX_MOBILES_PER_GNB];
   int head;
   int next_ul[MAX_MOBILES_PER_GNB];
