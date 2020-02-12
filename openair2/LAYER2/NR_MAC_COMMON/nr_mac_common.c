@@ -32,6 +32,897 @@
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+// Table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
+// the column 5, (SFN_nbr is a bitmap where we set bit to '1' in the position of the subframe where the RACH can be sent.
+// E.g. in row 4, and column 5 we have set value 512 ('1000000000') which means RACH can be sent at subframe 9.
+// E.g. in row 20 and column 5 we have set value 66  ('0001000010') which means RACH can be sent at subframe 1 or 6
+int64_t table_6_3_3_2_2_prachConfig_Index [256][9] = {
+//format,   format,       x,          y,        SFN_nbr,   star_symb,   slots_sfn,    occ_slot,  duration
+{0,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{0,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{0,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{0,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{0,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{0,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{0,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{0,          -1,          8,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{0,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{0,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{0,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{0,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{0,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{0,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{0,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{0,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{0,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{0,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{0,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{0,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
+{0,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
+{0,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
+{0,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
+{0,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
+{0,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3, 6, 9
+{0,          -1,          1,          0,          341,        0,         -1,         -1,          0},          // (subframe number)           0,2,4,6,8
+{0,          -1,          1,          0,          682,        0,         -1,         -1,          0},          // (subframe number)           1,3,5,7,9
+{0,          -1,          1,          0,          1023,       0,         -1,         -1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{1,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{1,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{1,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{1,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{1,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{1,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{1,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{1,          -1,          8,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{1,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{1,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{1,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{1,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{1,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{1,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{1,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{1,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{1,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{1,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{1,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{1,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
+{1,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
+{1,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
+{1,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
+{1,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
+{1,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3,6,9
+{2,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{2,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{2,          -1,          4,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{2,          -1,          2,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{2,          -1,          2,          0,          32,         0,         -1,         -1,          0},          // (subframe number)           5
+{2,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{2,          -1,          1,          0,          32,         0,         -1,         -1,          0},          // (subframe number)           5
+{3,          -1,          16,         1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{3,          -1,          16,         1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{3,          -1,          16,         1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{3,          -1,          16,         1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{3,          -1,          8,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{3,          -1,          8,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{3,          -1,          8,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{3,          -1,          4,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{3,          -1,          4,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{3,          -1,          4,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{3,          -1,          4,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{3,          -1,          2,          1,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{3,          -1,          2,          1,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{3,          -1,          2,          1,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{3,          -1,          2,          1,          512,        0,         -1,         -1,          0},          // (subframe number)           9
+{3,          -1,          1,          0,          2,          0,         -1,         -1,          0},          // (subframe number)           1
+{3,          -1,          1,          0,          16,         0,         -1,         -1,          0},          // (subframe number)           4
+{3,          -1,          1,          0,          128,        0,         -1,         -1,          0},          // (subframe number)           7
+{3,          -1,          1,          0,          66,         0,         -1,         -1,          0},          // (subframe number)           1,6
+{3,          -1,          1,          0,          132,        0,         -1,         -1,          0},          // (subframe number)           2,7
+{3,          -1,          1,          0,          264,        0,         -1,         -1,          0},          // (subframe number)           3,8
+{3,          -1,          1,          0,          146,        0,         -1,         -1,          0},          // (subframe number)           1,4,7
+{3,          -1,          1,          0,          292,        0,         -1,         -1,          0},          // (subframe number)           2,5,8
+{3,          -1,          1,          0,          584,        0,         -1,         -1,          0},          // (subframe number)           3, 6, 9
+{3,          -1,          1,          0,          341,        0,         -1,         -1,          0},          // (subframe number)           0,2,4,6,8
+{3,          -1,          1,          0,          682,        0,         -1,         -1,          0},          // (subframe number)           1,3,5,7,9
+{3,          -1,          1,          0,          1023,       0,         -1,         -1,          0},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xa1,       -1,          16,         0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
+{0xa1,       -1,          16,         1,          16,         0,          2,          6,          2},          // (subframe number)           4
+{0xa1,       -1,          8,          0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
+{0xa1,       -1,          8,          1,          16,         0,          2,          6,          2},          // (subframe number)           4
+{0xa1,       -1,          4,          0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
+{0xa1,       -1,          4,          1,          528,        0,          1,          6,          2},          // (subframe number)           4,9
+{0xa1,       -1,          4,          0,          16,         0,          2,          6,          2},          // (subframe number)           4
+{0xa1,       -1,          2,          0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
+{0xa1,       -1,          2,          0,          2,          0,          2,          6,          2},          // (subframe number)           1
+{0xa1,       -1,          2,          0,          16,         0,          2,          6,          2},          // (subframe number)           4
+{0xa1,       -1,          2,          0,          128,        0,          2,          6,          2},          // (subframe number)           7
+{0xa1,       -1,          1,          0,          16,         0,          1,          6,          2},          // (subframe number)           4
+{0xa1,       -1,          1,          0,          66,         0,          1,          6,          2},          // (subframe number)           1,6
+{0xa1,       -1,          1,          0,          528,        0,          1,          6,          2},          // (subframe number)           4,9
+{0xa1,       -1,          1,          0,          2,          0,          2,          6,          2},          // (subframe number)           1
+{0xa1,       -1,          1,          0,          128,        0,          2,          6,          2},          // (subframe number)           7
+{0xa1,       -1,          1,          0,          132,        0,          2,          6,          2},          // (subframe number)           2,7
+{0xa1,       -1,          1,          0,          146,        0,          2,          6,          2},          // (subframe number)           1,4,7
+{0xa1,       -1,          1,          0,          341,        0,          2,          6,          2},          // (subframe number)           0,2,4,6,8
+{0xa1,       -1,          1,          0,          1023,       0,          2,          6,          2},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xa1,       -1,          1,          0,          682,        0,          2,          6,          2},          // (subframe number)           1,3,5,7,9
+{0xa1,       0xb1,        2,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xa1,       0xb1,        2,          0,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xa1,       0xb1,        1,          0,          16,         0,          1,          7,          2},          // (subframe number)           4
+{0xa1,       0xb1,        1,          0,          66,         0,          1,          7,          2},          // (subframe number)           1,6
+{0xa1,       0xb1,        1,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xa1,       0xb1,        1,          0,          2,          0,          2,          7,          2},          // (subframe number)           1
+{0xa1,       0xb1,        1,          0,          128,        0,          2,          7,          2},          // (subframe number)           7
+{0xa1,       0xb1,        1,          0,          146,        0,          2,          7,          2},          // (subframe number)           1,4,7
+{0xa1,       0xb1,        1,          0,          341,        0,          2,          7,          2},          // (subframe number)           0,2,4,6,8
+{0xa2,       -1,          16,         1,          580,        0,          1,          3,          4},          // (subframe number)           2,6,9
+{0xa2,       -1,          16,         1,          16,         0,          2,          3,          4},          // (subframe number)           4
+{0xa2,       -1,          8,          1,          580,        0,          1,          3,          4},          // (subframe number)           2,6,9
+{0xa2,       -1,          8,          1,          16,         0,          2,          3,          4},          // (subframe number)           4
+{0xa2,       -1,          4,          0,          580,        0,          1,          3,          4},          // (subframe number)           2,6,9
+{0xa2,       -1,          4,          0,          16,         0,          2,          3,          4},          // (subframe number)           4
+{0xa2,       -1,          2,          1,          580,        0,          1,          3,          4},          // (subframe number)           2,6,9
+{0xa2,       -1,          2,          0,          2,          0,          2,          3,          4},          // (subframe number)           1
+{0xa2,       -1,          2,          0,          16,         0,          2,          3,          4},          // (subframe number)           4
+{0xa2,       -1,          2,          0,          128,        0,          2,          3,          4},          // (subframe number)           7
+{0xa2,       -1,          1,          0,          16,         0,          1,          3,          4},          // (subframe number)           4
+{0xa2,       -1,          1,          0,          66,         0,          1,          3,          4},          // (subframe number)           1,6
+{0xa2,       -1,          1,          0,          528,        0,          1,          3,          4},          // (subframe number)           4,9
+{0xa2,       -1,          1,          0,          2,          0,          2,          3,          4},          // (subframe number)           1
+{0xa2,       -1,          1,          0,          128,        0,          2,          3,          4},          // (subframe number)           7
+{0xa2,       -1,          1,          0,          132,        0,          2,          3,          4},          // (subframe number)           2,7
+{0xa2,       -1,          1,          0,          146,        0,          2,          3,          4},          // (subframe number)           1,4,7
+{0xa2,       -1,          1,          0,          341,        0,          2,          3,          4},          // (subframe number)           0,2,4,6,8
+{0xa2,       -1,          1,          0,          1023,       0,          2,          3,          4},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xa2,       -1,          1,          0,          682,        0,          2,          3,          4},          // (subframe number)           1,3,5,7,9
+{0xa2,       0xb2,        2,          1,          580,        0,          1,          3,          4},          // (subframe number)           2,6,9
+{0xa2,       0xb2,        2,          0,          16,         0,          2,          3,          4},          // (subframe number)           4
+{0xa2,       0xb2,        1,          0,          16,         0,          1,          3,          4},          // (subframe number)           4
+{0xa2,       0xb2,        1,          0,          66,         0,          1,          3,          4},          // (subframe number)           1,6
+{0xa2,       0xb2,        1,          0,          528,        0,          1,          3,          4},          // (subframe number)           4,9
+{0xa2,       0xb2,        1,          0,          2,          0,          2,          3,          4},          // (subframe number)           1
+{0xa2,       0xb2,        1,          0,          128,        0,          2,          3,          4},          // (subframe number)           7
+{0xa2,       0xb2,        1,          0,          146,        0,          2,          3,          4},          // (subframe number)           1,4,7
+{0xa2,       0xb2,        1,          0,          341,        0,          2,          3,          4},          // (subframe number)           0,2,4,6,8
+{0xa2,       0xb2,        1,          0,          1023,       0,          2,          3,          4},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xa3,       -1,          16,         1,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xa3,       -1,          16,         1,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xa3,       -1,          8,          1,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xa3,       -1,          8,          1,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xa3,       -1,          4,          0,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xa3,       -1,          4,          0,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xa3,       -1,          2,          1,          580,        0,          2,          2,          6},          // (subframe number)           2,6,9
+{0xa3,       -1,          2,          0,          2,          0,          2,          2,          6},          // (subframe number)           1
+{0xa3,       -1,          2,          0,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xa3,       -1,          2,          0,          128,        0,          2,          2,          6},          // (subframe number)           7
+{0xa3,       -1,          1,          0,          16,         0,          1,          2,          6},          // (subframe number)           4
+{0xa3,       -1,          1,          0,          66,         0,          1,          2,          6},          // (subframe number)           1,6
+{0xa3,       -1,          1,          0,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xa3,       -1,          1,          0,          2,          0,          2,          2,          6},          // (subframe number)           1
+{0xa3,       -1,          1,          0,          128,        0,          2,          2,          6},          // (subframe number)           7
+{0xa3,       -1,          1,          0,          132,        0,          2,          2,          6},          // (subframe number)           2,7
+{0xa3,       -1,          1,          0,          146,        0,          2,          2,          6},          // (subframe number)           1,4,7
+{0xa3,       -1,          1,          0,          341,        0,          2,          2,          6},          // (subframe number)           0,2,4,6,8
+{0xa3,       -1,          1,          0,          1023,       0,          2,          2,          6},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xa3,       -1,          1,          0,          682,        0,          2,          2,          6},          // (subframe number)           1,3,5,7,9
+{0xa3,       0xb3,        2,          1,          580,        0,          2,          2,          6},          // (subframe number)           2,6,9
+{0xa3,       0xb3,        2,          0,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xa3,       0xb3,        1,          0,          16,         0,          1,          2,          6},          // (subframe number)           4
+{0xa3,       0xb3,        1,          0,          66,         0,          1,          2,          6},          // (subframe number)           1,6
+{0xa3,       0xb3,        1,          0,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xa3,       0xb3,        1,          0,          2,          0,          2,          2,          6},          // (subframe number)           1
+{0xa3,       0xb3,        1,          0,          128,        0,          2,          2,          6},          // (subframe number)           7
+{0xa3,       0xb3,        1,          0,          146,        0,          2,          2,          6},          // (subframe number)           1,4,7
+{0xa3,       0xb3,        1,          0,          341,        0,          2,          2,          6},          // (subframe number)           0,2,4,6,8
+{0xa3,       0xb3,        1,          0,          1023,       0,          2,          2,          6},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xb1,       -1,          16,         0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xb1,       -1,          16,         1,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xb1,       -1,          8,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xb1,       -1,          8,          1,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xb1,       -1,          4,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xb1,       -1,          4,          1,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xb1,       -1,          4,          0,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xb1,       -1,          2,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xb1,       -1,          2,          0,          2,          0,          2,          7,          2},          // (subframe number)           1
+{0xb1,       -1,          2,          0,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xb1,       -1,          2,          0,          128,        0,          2,          7,          2},          // (subframe number)           7
+{0xb1,       -1,          1,          0,          16,         0,          1,          7,          2},          // (subframe number)           4
+{0xb1,       -1,          1,          0,          66,         0,          1,          7,          2},          // (subframe number)           1,6
+{0xb1,       -1,          1,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xb1,       -1,          1,          0,          2,          0,          2,          7,          2},          // (subframe number)           1
+{0xb1,       -1,          1,          0,          128,        0,          2,          7,          2},          // (subframe number)           7
+{0xb1,       -1,          1,          0,          132,        0,          2,          7,          2},          // (subframe number)           2,7
+{0xb1,       -1,          1,          0,          146,        0,          2,          7,          2},          // (subframe number)           1,4,7
+{0xb1,       -1,          1,          0,          341,        0,          2,          7,          2},          // (subframe number)           0,2,4,6,8
+{0xb1,       -1,          1,          0,          1023,       0,          2,          7,          2},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xb1,       -1,          1,          0,          682,        0,          2,          7,          2},          // (subframe number)           1,3,5,7,9
+{0xb4,       -1,          16,         0,          528,        0,          2,          1,          12},         // (subframe number)           4,9
+{0xb4,       -1,          16,         1,          16,         0,          2,          1,          12},         // (subframe number)           4
+{0xb4,       -1,          8,          0,          528,        0,          2,          1,          12},         // (subframe number)           4,9
+{0xb4,       -1,          8,          1,          16,         0,          2,          1,          12},         // (subframe number)           4
+{0xb4,       -1,          4,          0,          528,        0,          2,          1,          12},         // (subframe number)           4,9
+{0xb4,       -1,          4,          0,          16,         0,          2,          1,          12},         // (subframe number)           4
+{0xb4,       -1,          4,          1,          528,        0,          2,          1,          12},         // (subframe number)           4,9
+{0xb4,       -1,          2,          0,          528,        0,          2,          1,          12},         // (subframe number)           4,9
+{0xb4,       -1,          2,          0,          2,          0,          2,          1,          12},         // (subframe number)           1
+{0xb4,       -1,          2,          0,          16,         0,          2,          1,          12},         // (subframe number)           4
+{0xb4,       -1,          2,          0,          128,        0,          2,          1,          12},         // (subframe number)           7
+{0xb4,       -1,          1,          0,          2,          0,          2,          1,          12},         // (subframe number)           1
+{0xb4,       -1,          1,          0,          16,         0,          2,          1,          12},         // (subframe number)           4
+{0xb4,       -1,          1,          0,          128,        0,          2,          1,          12},         // (subframe number)           7
+{0xb4,       -1,          1,          0,          66,         0,          2,          1,          12},         // (subframe number)           1,6
+{0xb4,       -1,          1,          0,          132,        0,          2,          1,          12},         // (subframe number)           2,7
+{0xb4,       -1,          1,          0,          528,        0,          2,          1,          12},         // (subframe number)           4,9
+{0xb4,       -1,          1,          0,          146,        0,          2,          1,          12},         // (subframe number)           1,4,7
+{0xb4,       -1,          1,          0,          341,        0,          2,          1,          12},         // (subframe number)           0,2,4,6,8
+{0xb4,       -1,          1,          0,          1023,       0,          2,          1,          12},         // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xb4,       -1,          1,          0,          682,        0,          2,          1,          12},         // (subframe number)           1,3,5,7,9
+{0xc0,       -1,          8,          1,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xc0,       -1,          4,          1,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xc0,       -1,          4,          0,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xc0,       -1,          2,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xc0,       -1,          2,          0,          2,          0,          2,          7,          2},          // (subframe number)           1
+{0xc0,       -1,          2,          0,          16,         0,          2,          7,          2},          // (subframe number)           4
+{0xc0,       -1,          2,          0,          128,        0,          2,          7,          2},          // (subframe number)           7
+{0xc0,       -1,          1,          0,          16,         0,          1,          7,          2},          // (subframe number)           4
+{0xc0,       -1,          1,          0,          66,         0,          1,          7,          2},          // (subframe number)           1,6
+{0xc0,       -1,          1,          0,          528,        0,          1,          7,          2},          // (subframe number)           4,9
+{0xc0,       -1,          1,          0,          2,          0,          2,          7,          2},          // (subframe number)           1
+{0xc0,       -1,          1,          0,          128,        0,          2,          7,          2},          // (subframe number)           7
+{0xc0,       -1,          1,          0,          132,        0,          2,          7,          2},          // (subframe number)           2,7
+{0xc0,       -1,          1,          0,          146,        0,          2,          7,          2},          // (subframe number)           1,4,7
+{0xc0,       -1,          1,          0,          341,        0,          2,          7,          2},          // (subframe number)           0,2,4,6,8
+{0xc0,       -1,          1,          0,          1023,       0,          2,          7,          2},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xc0,       -1,          1,          0,          682,        0,          2,          7,          2},          // (subframe number)           1,3,5,7,9
+{0xc2,       -1,          16,         1,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xc2,       -1,          16,         1,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xc2,       -1,          8,          1,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xc2,       -1,          8,          1,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xc2,       -1,          4,          0,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xc2,       -1,          4,          0,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xc2,       -1,          2,          1,          580,        0,          2,          2,          6},          // (subframe number)           2,6,9
+{0xc2,       -1,          2,          0,          2,          0,          2,          2,          6},          // (subframe number)           1
+{0xc2,       -1,          2,          0,          16,         0,          2,          2,          6},          // (subframe number)           4
+{0xc2,       -1,          2,          0,          128,        0,          2,          2,          6},          // (subframe number)           7
+{0xc2,       -1,          1,          0,          16,         0,          1,          2,          6},          // (subframe number)           4
+{0xc2,       -1,          1,          0,          66,         0,          1,          2,          6},          // (subframe number)           1,6
+{0xc2,       -1,          1,          0,          528,        0,          1,          2,          6},          // (subframe number)           4,9
+{0xc2,       -1,          1,          0,          2,          0,          2,          2,          6},          // (subframe number)           1
+{0xc2,       -1,          1,          0,          128,        0,          2,          2,          6},          // (subframe number)           7
+{0xc2,       -1,          1,          0,          132,        0,          2,          2,          6},          // (subframe number)           2,7
+{0xc2,       -1,          1,          0,          146,        0,          2,          2,          6},          // (subframe number)           1,4,7
+{0xc2,       -1,          1,          0,          341,        0,          2,          2,          6},          // (subframe number)           0,2,4,6,8
+{0xc2,       -1,          1,          0,          1023,       0,          2,          2,          6},          // (subframe number)           0,1,2,3,4,5,6,7,8,9
+{0xc2,       -1,          1,          0,          682,        0,          2,          2,          6}                    // (subframe number)           1,3,5,7,9
+};
+// Table 6.3.3.2-3: Random access configurations for FR1 and unpaired spectrum
+int64_t table_6_3_3_2_3_prachConfig_Index [256][9] = {
+//format,     format,      x,         y,     SFN_nbr,   star_symb,   slots_sfn,  occ_slot,  duration
+{0,            -1,         16,        1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{0,            -1,         8,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{0,            -1,         4,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{0,            -1,         2,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{0,            -1,         2,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{0,            -1,         2,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
+{0,            -1,         2,         1,         16,          0,        -1,        -1,         0},         // (subrame number 4)
+{0,            -1,         1,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{0,            -1,         1,         0,         256,         0,        -1,        -1,         0},         // (subrame number 8)
+{0,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{0,            -1,         1,         0,         64,          0,        -1,        -1,         0},         // (subrame number 6)
+{0,            -1,         1,         0,         32,          0,        -1,        -1,         0},         // (subrame number 5)
+{0,            -1,         1,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
+{0,            -1,         1,         0,         8,           0,        -1,        -1,         0},         // (subrame number 3)
+{0,            -1,         1,         0,         4,           0,        -1,        -1,         0},         // (subrame number 2)
+{0,            -1,         1,         0,         66,          0,        -1,        -1,         0},         // (subrame number 1,6)
+{0,            -1,         1,         0,         66,          7,        -1,        -1,         0},         // (subrame number 1,6)
+{0,            -1,         1,         0,         528,         0,        -1,        -1,         0},         // (subrame number 4,9)
+{0,            -1,         1,         0,         264,         0,        -1,        -1,         0},         // (subrame number 3,8)
+{0,            -1,         1,         0,         132,         0,        -1,        -1,         0},         // (subrame number 2,7)
+{0,            -1,         1,         0,         768,         0,        -1,        -1,         0},         // (subrame number 8,9)
+{0,            -1,         1,         0,         784,         0,        -1,        -1,         0},         // (subrame number 4,8,9)
+{0,            -1,         1,         0,         536,         0,        -1,        -1,         0},         // (subrame number 3,4,9)
+{0,            -1,         1,         0,         896,         0,        -1,        -1,         0},         // (subrame number 7,8,9)
+{0,            -1,         1,         0,         792,         0,        -1,        -1,         0},         // (subrame number 3,4,8,9)
+{0,            -1,         1,         0,         960,         0,        -1,        -1,         0},         // (subrame number 6,7,8,9)
+{0,            -1,         1,         0,         594,         0,        -1,        -1,         0},         // (subrame number 1,4,6,9)
+{0,            -1,         1,         0,         682,         0,        -1,        -1,         0},         // (subrame number 1,3,5,7,9)
+{1,            -1,         16,        1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{1,            -1,         8,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{1,            -1,         4,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{1,            -1,         2,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{1,            -1,         2,         1,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{1,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{2,            -1,         16,        1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
+{2,            -1,         8,         1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
+{2,            -1,         4,         1,         64,          0,        -1,        -1,         0},         // (subrame number 6)
+{2,            -1,         2,         0,         64,          7,        -1,        -1,         0},         // (subrame number 6)
+{2,            -1,         2,         1,         64,          7,        -1,        -1,         0},         // (subrame number 6)
+{2,            -1,         1,         0,         64,          7,        -1,        -1,         0},         // (subrame number 6)
+{3,            -1,         16,        1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{3,            -1,         8,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{3,            -1,         4,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{3,            -1,         2,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{3,            -1,         2,         1,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{3,            -1,         2,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
+{3,            -1,         2,         1,         16,          0,        -1,        -1,         0},         // (subrame number 4)
+{3,            -1,         1,         0,         512,         0,        -1,        -1,         0},         // (subrame number 9)
+{3,            -1,         1,         0,         256,         0,        -1,        -1,         0},         // (subrame number 8)
+{3,            -1,         1,         0,         128,         0,        -1,        -1,         0},         // (subrame number 7)
+{3,            -1,         1,         0,         64,          0,        -1,        -1,         0},         // (subrame number 6)
+{3,            -1,         1,         0,         32,          0,        -1,        -1,         0},         // (subrame number 5)
+{3,            -1,         1,         0,         16,          0,        -1,        -1,         0},         // (subrame number 4)
+{3,            -1,         1,         0,         8,           0,        -1,        -1,         0},         // (subrame number 3)
+{3,            -1,         1,         0,         4,           0,        -1,        -1,         0},         // (subrame number 2)
+{3,            -1,         1,         0,         66,          0,        -1,        -1,         0},         // (subrame number 1,6)
+{3,            -1,         1,         0,         66,          7,        -1,        -1,         0},         // (subrame number 1,6)
+{3,            -1,         1,         0,         528,         0,        -1,        -1,         0},         // (subrame number 4,9)
+{3,            -1,         1,         0,         264,         0,        -1,        -1,         0},         // (subrame number 3,8)
+{3,            -1,         1,         0,         132,         0,        -1,        -1,         0},         // (subrame number 2,7)
+{3,            -1,         1,         0,         768,         0,        -1,        -1,         0},         // (subrame number 8,9)
+{3,            -1,         1,         0,         784,         0,        -1,        -1,         0},         // (subrame number 4,8,9)
+{3,            -1,         1,         0,         536,         0,        -1,        -1,         0},         // (subrame number 3,4,9)
+{3,            -1,         1,         0,         896,         0,        -1,        -1,         0},         // (subrame number 7,8,9)
+{3,            -1,         1,         0,         792,         0,        -1,        -1,         0},         // (subrame number 3,4,8,9)
+{3,            -1,         1,         0,         594,         0,        -1,        -1,         0},         // (subrame number 1,4,6,9)
+{3,            -1,         1,         0,         682,         0,        -1,        -1,         0},         // (subrame number 1,3,5,7,9)
+{0xa1,         -1,         16,        1,         512,         0,         2,         6,         2},         // (subrame number 9)
+{0xa1,         -1,         8,         1,         512,         0,         2,         6,         2},         // (subrame number 9)
+{0xa1,         -1,         4,         1,         512,         0,         1,         6,         2},         // (subrame number 9)
+{0xa1,         -1,         2,         1,         512,         0,         1,         6,         2},         // (subrame number 9)
+{0xa1,         -1,         2,         1,         528,         7,         1,         3,         2},         // (subrame number 4,9)
+{0xa1,         -1,         2,         1,         640,         7,         1,         3,         2},         // (subrame number 7,9)
+{0xa1,         -1,         2,         1,         640,         0,         1,         6,         2},         // (subrame number 7,9)
+{0xa1,         -1,         2,         1,         768,         0,         2,         6,         2},         // (subrame number 8,9)
+{0xa1,         -1,         2,         1,         528,         0,         2,         6,         2},         // (subrame number 4,9)
+{0xa1,         -1,         2,         1,         924,         0,         1,         6,         2},         // (subrame number 2,3,4,7,8,9)
+{0xa1,         -1,         1,         0,         512,         0,         2,         6,         2},         // (subrame number 9)
+{0xa1,         -1,         1,         0,         512,         7,         1,         3,         2},         // (subrame number 9)
+{0xa1,         -1,         1,         0,         512,         0,         1,         6,         2},         // (subrame number 9)
+{0xa1,         -1,         1,         0,         768,         0,         2,         6,         2},         // (subrame number 8,9)
+{0xa1,         -1,         1,         0,         528,         0,         1,         6,         2},         // (subrame number 4,9)
+{0xa1,         -1,         1,         0,         640,         7,         1,         3,         2},         // (subrame number 7,9)
+{0xa1,         -1,         1,         0,         792,         0,         1,         6,         2},         // (subrame number 3,4,8,9)
+{0xa1,         -1,         1,         0,         792,         0,         2,         6,         2},         // (subrame number 3,4,8,9)
+{0xa1,         -1,         1,         0,         682,         0,         1,         6,         2},         // (subrame number 1,3,5,7,9)
+{0xa1,         -1,         1,         0,         1023,        7,         1,         3,         2},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xa2,         -1,         16,        1,         512,         0,         2,         3,         4},         // (subrame number 9)
+{0xa2,         -1,         8,         1,         512,         0,         2,         3,         4},         // (subrame number 9)
+{0xa2,         -1,         4,         1,         512,         0,         1,         3,         4},         // (subrame number 9)
+{0xa2,         -1,         2,         1,         640,         0,         1,         3,         4},         // (subrame number 7,9)
+{0xa2,         -1,         2,         1,         768,         0,         2,         3,         4},         // (subrame number 8,9)
+{0xa2,         -1,         2,         1,         640,         9,         1,         1,         4},         // (subrame number 7,9)
+{0xa2,         -1,         2,         1,         528,         9,         1,         1,         4},         // (subrame number 4,9)
+{0xa2,         -1,         2,         1,         528,         0,         2,         3,         4},         // (subrame number 4,9)
+{0xa2,         -1,         16,        1,         924,         0,         1,         3,         4},         // (subrame number 2,3,4,7,8,9)
+{0xa2,         -1,         1,         0,         4,           0,         1,         3,         4},         // (subrame number 2)
+{0xa2,         -1,         1,         0,         128,         0,         1,         3,         4},         // (subrame number 7)
+{0xa2,         -1,         2,         1,         512,         0,         1,         3,         4},         // (subrame number 9)
+{0xa2,         -1,         1,         0,         512,         0,         2,         3,         4},         // (subrame number 9)
+{0xa2,         -1,         1,         0,         512,         9,         1,         1,         4},         // (subrame number 9)
+{0xa2,         -1,         1,         0,         512,         0,         1,         3,         4},         // (subrame number 9)
+{0xa2,         -1,         1,         0,         132,         0,         1,         3,         4},         // (subrame number 2,7)
+{0xa2,         -1,         1,         0,         768,         0,         2,         3,         4},         // (subrame number 8,9)
+{0xa2,         -1,         1,         0,         528,         0,         1,         3,         4},         // (subrame number 4,9)
+{0xa2,         -1,         1,         0,         640,         9,         1,         1,         4},         // (subrame number 7,9)
+{0xa2,         -1,         1,         0,         792,         0,         1,         3,         4},         // (subrame number 3,4,8,9)
+{0xa2,         -1,         1,         0,         792,         0,         2,         3,         4},         // (subrame number 3,4,8,9)
+{0xa2,         -1,         1,         0,         682,         0,         1,         3,         4},         // (subrame number 1,3,5,7,9)
+{0xa2,         -1,         1,         0,         1023,        9,         1,         1,         4},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xa3,         -1,         16,        1,         512,         0,         2,         2,         6},         // (subrame number 9)
+{0xa3,         -1,         8,         1,         512,         0,         2,         2,         6},         // (subrame number 9)
+{0xa3,         -1,         4,         1,         512,         0,         1,         2,         6},         // (subrame number 9)
+{0xa3,         -1,         2,         1,         528,         7,         1,         1,         6},         // (subrame number 4,9)
+{0xa3,         -1,         2,         1,         640,         7,         1,         1,         6},         // (subrame number 7,9)
+{0xa3,         -1,         2,         1,         640,         0,         1,         2,         6},         // (subrame number 7,9)
+{0xa3,         -1,         2,         1,         528,         0,         2,         2,         6},         // (subrame number 4,9)
+{0xa3,         -1,         2,         1,         768,         0,         2,         2,         6},         // (subrame number 8,9)
+{0xa3,         -1,         2,         1,         924,         0,         1,         2,         6},         // (subrame number 2,3,4,7,8,9)
+{0xa3,         -1,         1,         0,         4,           0,         1,         2,         6},         // (subrame number 2)
+{0xa3,         -1,         1,         0,         128,         0,         1,         2,         6},         // (subrame number 7)
+{0xa3,         -1,         2,         1,         512,         0,         1,         2,         6},         // (subrame number 9)
+{0xa3,         -1,         1,         0,         512,         0,         2,         2,         6},         // (subrame number 9)
+{0xa3,         -1,         1,         0,         512,         7,         1,         1,         6},         // (subrame number 9)
+{0xa3,         -1,         1,         0,         512,         0,         1,         2,         6},         // (subrame number 9)
+{0xa3,         -1,         1,         0,         132,         0,         1,         2,         6},         // (subrame number 2,7)
+{0xa3,         -1,         1,         0,         768,         0,         2,         2,         6},         // (subrame number 8,9)
+{0xa3,         -1,         1,         0,         528,         0,         1,         2,         6},         // (subrame number 4,9)
+{0xa3,         -1,         1,         0,         640,         7,         1,         1,         6},         // (subrame number 7,9)
+{0xa3,         -1,         1,         0,         792,         0,         1,         2,         6},         // (subrame number 3,4,8,9)
+{0xa3,         -1,         1,         0,         792,         0,         2,         2,         6},         // (subrame number 3,4,8,9)
+{0xa3,         -1,         1,         0,         682,         0,         1,         2,         6},         // (subrame number 1,3,5,7,9)
+{0xa3,         -1,         1,         0,         1023,        7,         1,         1,         6},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xb1,         -1,         4,         1,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xb1,         -1,         2,         1,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xb1,         -1,         2,         1,         640,         2,         1,         6,         2},         // (subrame number 7,9)
+{0xb1,         -1,         2,         1,         528,         8,         1,         3,         2},         // (subrame number 4,9)
+{0xb1,         -1,         2,         1,         528,         2,         2,         6,         2},         // (subrame number 4,9)
+{0xb1,         -1,         1,         0,         512,         2,         2,         6,         2},         // (subrame number 9)
+{0xb1,         -1,         1,         0,         512,         8,         1,         3,         2},         // (subrame number 9)
+{0xb1,         -1,         1,         0,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xb1,         -1,         1,         0,         768,         2,         2,         6,         2},         // (subrame number 8,9)
+{0xb1,         -1,         1,         0,         528,         2,         1,         6,         2},         // (subrame number 4,9)
+{0xb1,         -1,         1,         0,         640,         8,         1,         3,         2},         // (subrame number 7,9)
+{0xb1,         -1,         1,         0,         682,         2,         1,         6,         2},         // (subrame number 1,3,5,7,9)
+{0xb4,         -1,         16,        1,         512,         0,         2,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         8,         1,         512,         0,         2,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         4,         1,         512,         2,         1,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         2,         1,         512,         0,         1,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         2,         1,         512,         2,         1,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         2,         1,         640,         2,         1,         1,         12},        // (subrame number 7,9)
+{0xb4,         -1,         2,         1,         528,         2,         1,         1,         12},        // (subrame number 4,9)
+{0xb4,         -1,         2,         1,         528,         0,         2,         1,         12},        // (subrame number 4,9)
+{0xb4,         -1,         2,         1,         768,         0,         2,         1,         12},        // (subrame number 8,9)
+{0xb4,         -1,         2,         1,         924,         0,         1,         1,         12},        // (subrame number 2,3,4,7,8,9)
+{0xb4,         -1,         1,         0,         2,           0,         1,         1,         12},        // (subrame number 1)
+{0xb4,         -1,         1,         0,         4,           0,         1,         1,         12},        // (subrame number 2)
+{0xb4,         -1,         1,         0,         16,          0,         1,         1,         12},        // (subrame number 4)
+{0xb4,         -1,         1,         0,         128,         0,         1,         1,         12},        // (subrame number 7)
+{0xb4,         -1,         1,         0,         512,         0,         1,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         1,         0,         512,         2,         1,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         1,         0,         512,         0,         2,         1,         12},        // (subrame number 9)
+{0xb4,         -1,         1,         0,         528,         2,         1,         1,         12},        // (subrame number 4,9)
+{0xb4,         -1,         1,         0,         640,         2,         1,         1,         12},        // (subrame number 7,9)
+{0xb4,         -1,         1,         0,         768,         0,         2,         1,         12},        // (subrame number 8,9)
+{0xb4,         -1,         1,         0,         792,         2,         1,         1,         12},        // (subrame number 3,4,8,9)
+{0xb4,         -1,         1,         0,         682,         2,         1,         1,         12},        // (subrame number 1,3,5,7,9)
+{0xb4,         -1,         1,         0,         1023,        0,         2,         1,         12},        // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xb4,         -1,         1,         0,         1023,        2,         1,         1,         12},        // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xc0,         -1,         16,        1,         512,         2,         2,         6,         2},         // (subrame number 9)
+{0xc0,         -1,         8,         1,         512,         2,         2,         6,         2},         // (subrame number 9)
+{0xc0,         -1,         4,         1,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xc0,         -1,         2,         1,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xc0,         -1,         2,         1,         768,         2,         2,         6,         2},         // (subrame number 8,9)
+{0xc0,         -1,         2,         1,         640,         2,         1,         6,         2},         // (subrame number 7,9)
+{0xc0,         -1,         2,         1,         640,         8,         1,         3,         2},         // (subrame number 7,9)
+{0xc0,         -1,         2,         1,         528,         8,         1,         3,         2},         // (subrame number 4,9)
+{0xc0,         -1,         2,         1,         528,         2,         2,         6,         2},         // (subrame number 4,9)
+{0xc0,         -1,         2,         1,         924,         2,         1,         6,         2},         // (subrame number 2,3,4,7,8,9)
+{0xc0,         -1,         1,         0,         512,         2,         2,         6,         2},         // (subrame number 9)
+{0xc0,         -1,         1,         0,         512,         8,         1,         3,         2},         // (subrame number 9)
+{0xc0,         -1,         1,         0,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xc0,         -1,         1,         0,         768,         2,         2,         6,         2},         // (subrame number 8,9)
+{0xc0,         -1,         1,         0,         528,         2,         1,         6,         2},         // (subrame number 4,9)
+{0xc0,         -1,         1,         0,         640,         8,         1,         3,         2},         // (subrame number 7,9)
+{0xc0,         -1,         1,         0,         792,         2,         1,         6,         2},         // (subrame number 3,4,8,9)
+{0xc0,         -1,         1,         0,         792,         2,         2,         6,         2},         // (subrame number 3,4,8,9)
+{0xc0,         -1,         1,         0,         682,         2,         1,         6,         2},         // (subrame number 1,3,5,7,9)
+{0xc0,         -1,         1,         0,         1023,        8,         1,         3,         2},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xc2,         -1,         16,        1,         512,         2,         2,         2,         6},         // (subrame number 9)
+{0xc2,         -1,         8,         1,         512,         2,         2,         2,         6},         // (subrame number 9)
+{0xc2,         -1,         4,         1,         512,         2,         1,         2,         6},         // (subrame number 9)
+{0xc2,         -1,         2,         1,         512,         2,         1,         2,         6},         // (subrame number 9)
+{0xc2,         -1,         2,         1,         768,         2,         2,         2,         6},         // (subrame number 8,9)
+{0xc2,         -1,         2,         1,         640,         2,         1,         2,         6},         // (subrame number 7,9)
+{0xc2,         -1,         2,         1,         640,         8,         1,         1,         6},         // (subrame number 7,9)
+{0xc2,         -1,         2,         1,         528,         8,         1,         1,         6},         // (subrame number 4,9)
+{0xc2,         -1,         2,         1,         528,         2,         2,         2,         6},         // (subrame number 4,9)
+{0xc2,         -1,         2,         1,         924,         2,         1,         2,         6},         // (subrame number 2,3,4,7,8,9)
+{0xc2,         -1,         8,         1,         512,         8,         2,         1,         6},         // (subrame number 9)
+{0xc2,         -1,         4,         1,         512,         8,         1,         1,         6},         // (subrame number 9)
+{0xc2,         -1,         1,         0,         512,         2,         2,         2,         6},         // (subrame number 9)
+{0xc2,         -1,         1,         0,         512,         8,         1,         1,         6},         // (subrame number 9)
+{0xc2,         -1,         1,         0,         512,         2,         1,         2,         6},         // (subrame number 9)
+{0xc2,         -1,         1,         0,         768,         2,         2,         2,         6},         // (subrame number 8,9)
+{0xc2,         -1,         1,         0,         528,         2,         1,         2,         6},         // (subrame number 4,9)
+{0xc2,         -1,         1,         0,         640,         8,         1,         1,         6},         // (subrame number 7,9)
+{0xc2,         -1,         1,         0,         792,         2,         1,         2,         6},         // (subrame number 3,4,8,9)
+{0xc2,         -1,         1,         0,         792,         2,         2,         2,         6},         // (subrame number 3,4,8,9)
+{0xc2,         -1,         1,         0,         682,         2,         1,         2,         6},         // (subrame number 1,3,5,7,9)
+{0xc2,         -1,         1,         0,         1023,        8,         1,         1,         6},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xa1,         0xb1,       2,         1,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xa1,         0xb1,       2,         1,         528,         8,         1,         3,         2},         // (subrame number 4,9)
+{0xa1,         0xb1,       2,         1,         640,         8,         1,         3,         2},         // (subrame number 7,9)
+{0xa1,         0xb1,       2,         1,         640,         2,         1,         6,         2},         // (subrame number 7,9)
+{0xa1,         0xb1,       2,         1,         528,         2,         2,         6,         2},         // (subrame number 4,9)
+{0xa1,         0xb1,       2,         1,         768,         2,         2,         6,         2},         // (subrame number 8,9)
+{0xa1,         0xb1,       1,         0,         512,         2,         2,         6,         2},         // (subrame number 9)
+{0xa1,         0xb1,       1,         0,         512,         8,         1,         3,         2},         // (subrame number 9)
+{0xa1,         0xb1,       1,         0,         512,         2,         1,         6,         2},         // (subrame number 9)
+{0xa1,         0xb1,       1,         0,         768,         2,         2,         6,         2},         // (subrame number 8,9)
+{0xa1,         0xb1,       1,         0,         528,         2,         1,         6,         2},         // (subrame number 4,9)
+{0xa1,         0xb1,       1,         0,         640,         8,         1,         3,         2},         // (subrame number 7,9)
+{0xa1,         0xb1,       1,         0,         792,         2,         2,         6,         2},         // (subrame number 3,4,8,9)
+{0xa1,         0xb1,       1,         0,         682,         2,         1,         6,         2},         // (subrame number 1,3,5,7,9)
+{0xa1,         0xb1,       1,         0,         1023,        8,         1,         3,         2},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xa2,         0xb2,       2,         1,         512,         0,         1,         3,         4},         // (subrame number 9)
+{0xa2,         0xb2,       2,         1,         528,         6,         1,         2,         4},         // (subrame number 4,9)
+{0xa2,         0xb2,       2,         1,         640,         6,         1,         2,         4},         // (subrame number 7,9)
+{0xa2,         0xb2,       2,         1,         528,         0,         2,         3,         4},         // (subrame number 4,9)
+{0xa2,         0xb2,       2,         1,         768,         0,         2,         3,         4},         // (subrame number 8,9)
+{0xa2,         0xb2,       1,         0,         512,         0,         2,         3,         4},         // (subrame number 9)
+{0xa2,         0xb2,       1,         0,         512,         6,         1,         2,         4},         // (subrame number 9)
+{0xa2,         0xb2,       1,         0,         512,         0,         1,         3,         4},         // (subrame number 9)
+{0xa2,         0xb2,       1,         0,         768,         0,         2,         3,         4},         // (subrame number 8,9)
+{0xa2,         0xb2,       1,         0,         528,         0,         1,         3,         4},         // (subrame number 4,9)
+{0xa2,         0xb2,       1,         0,         640,         6,         1,         2,         4},         // (subrame number 7,9)
+{0xa2,         0xb2,       1,         0,         792,         0,         1,         3,         4},         // (subrame number 3,4,8,9)
+{0xa2,         0xb2,       1,         0,         792,         0,         2,         3,         4},         // (subrame number 3,4,8,9)
+{0xa2,         0xb2,       1,         0,         682,         0,         1,         3,         4},         // (subrame number 1,3,5,7,9)
+{0xa2,         0xb2,       1,         0,         1023,        6,         1,         2,         4},         // (subrame number 0,1,2,3,4,5,6,7,8,9)
+{0xa3,         0xb3,       2,         1,         512,         0,         1,         2,         6},         // (subrame number 9)
+{0xa3,         0xb3,       2,         1,         528,         2,         1,         2,         6},         // (subrame number 4,9)
+{0xa3,         0xb3,       2,         1,         640,         0,         1,         2,         6},         // (subrame number 7,9)
+{0xa3,         0xb3,       2,         1,         640,         2,         1,         2,         6},         // (subrame number 7,9)
+{0xa3,         0xb3,       2,         1,         528,         0,         2,         2,         6},         // (subrame number 4,9)
+{0xa3,         0xb3,       2,         1,         768,         0,         2,         2,         6},         // (subrame number 8,9)
+{0xa3,         0xb3,       1,         0,         512,         0,         2,         2,         6},         // (subrame number 9)
+{0xa3,         0xb3,       1,         0,         512,         2,         1,         2,         6},         // (subrame number 9)
+{0xa3,         0xb3,       1,         0,         512,         0,         1,         2,         6},         // (subrame number 9)
+{0xa3,         0xb3,       1,         0,         768,         0,         2,         2,         6},         // (subrame number 8,9)
+{0xa3,         0xb3,       1,         0,         528,         0,         1,         2,         6},         // (subrame number 4,9)
+{0xa3,         0xb3,       1,         0,         640,         2,         1,         2,         6},         // (subrame number 7,9)
+{0xa3,         0xb3,       1,         0,         792,         0,         2,         2,         6},         // (subrame number 3,4,8,9)
+{0xa3,         0xb3,       1,         0,         682,         0,         1,         2,         6},         // (subrame number 1,3,5,7,9)
+{0xa3,         0xb3,       1,         0,         1023,        2,         1,         2,         6}          // (subrame number 0,1,2,3,4,5,6,7,8,9)
+};
+// Table 6.3.3.2-4: Random access configurations for FR2 and unpaired spectrum
+int64_t table_6_3_3_2_4_prachConfig_Index [256][10] = {
+//format,      format,       x,          y,           y,              SFN_nbr,       star_symb,   slots_sfn,  occ_slot,  duration
+{0xa1,          -1,          16,         1,          -1,          567489872400,          0,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          16,         1,          -1,          586406201480,          0,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          -1,          8,          1,           2,          550293209600,          0,          2,          6,          2},          // (subframe number :9,19,29,39)
+{0xa1,          -1,          8,          1,          -1,          567489872400,          0,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          8,          1,          -1,          586406201480,          0,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          -1,          4,          1,          -1,          567489872400,          0,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          4,          1,          -1,          567489872400,          0,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          4,          1,          -1,          586406201480,          0,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          -1,          2,          1,          -1,          551911719040,          0,          2,          6,          2},          // (subframe number :7,15,23,31,39)
+{0xa1,          -1,          2,          1,          -1,          567489872400,          0,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          2,          1,          -1,          567489872400,          0,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          2,          1,          -1,          586406201480,          0,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          -1,          1,          0,          -1,          549756338176,          7,          1,          3,          2},          // (subframe number :19,39)
+{0xa1,          -1,          1,          0,          -1,          168,                   0,          1,          6,          2},          // (subframe number :3,5,7)
+{0xa1,          -1,          1,          0,          -1,          567489331200,          7,          1,          3,          2},          // (subframe number :24,29,34,39)
+{0xa1,          -1,          1,          0,          -1,          550293209600,          7,          2,          3,          2},          // (subframe number :9,19,29,39)
+{0xa1,          -1,          1,          0,          -1,          687195422720,          0,          1,          6,          2},          // (subframe number :17,19,37,39)
+{0xa1,          -1,          1,          0,          -1,          550293209600,          0,          2,          6,          2},          // (subframe number :9,19,29,39)
+{0xa1,          -1,          1,          0,          -1,          567489872400,          0,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          1,          0,          -1,          567489872400,          7,          1,          3,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          -1,          1,          0,          -1,          10920,                 7,          1,          3,          2},          // (subframe number :3,5,7,9,11,13)
+{0xa1,          -1,          1,          0,          -1,          586405642240,          7,          1,          3,          2},          // (subframe number :23,27,31,35,39)
+{0xa1,          -1,          1,          0,          -1,          551911719040,          0,          1,          6,          2},          // (subframe number :7,15,23,31,39)
+{0xa1,          -1,          1,          0,          -1,          586405642240,          0,          1,          6,          2},          // (subframe number :23,27,31,35,39)
+{0xa1,          -1,          1,          0,          -1,          965830828032,          7,          2,          3,          2},          // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xa1,          -1,          1,          0,          -1,          586406201480,          7,          1,          3,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          -1,          1,          0,          -1,          586406201480,          0,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          -1,          1,          0,          -1,          733007751850,          0,          1,          6,          2},          // (subframe number :1,3,5,7,…,37,39)
+{0xa1,          -1,          1,          0,          -1,          1099511627775,         7,          1,          3,          2},          // (subframe number :0,1,2,…,39)
+{0xa2,          -1,          16,         1,          -1,          567489872400,          0,          2,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          16,         1,          -1,          586406201480,          0,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          -1,          8,          1,          -1,          567489872400,          0,          2,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          8,          1,          -1,          586406201480,          0,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          -1,          8,          1,           2,          550293209600,          0,          2,          3,          4},          // (subframe number :9,19,29,39)
+{0xa2,          -1,          4,          1,          -1,          567489872400,          0,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          4,          1,          -1,          567489872400,          0,          2,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          4,          1,          -1,          586406201480,          0,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          -1,          2,          1,          -1,          551911719040,          0,          2,          3,          4},          // (subframe number :7,15,23,31,39)
+{0xa2,          -1,          2,          1,          -1,          567489872400,          0,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          2,          1,          -1,          567489872400,          0,          2,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          2,          1,          -1,          586406201480,          0,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          -1,          1,          0,          -1,          549756338176,          5,          1,          2,          4},          // (subframe number :19,39)
+{0xa2,          -1,          1,          0,          -1,          168,                   0,          1,          3,          4},          // (subframe number :3,5,7)
+{0xa2,          -1,          1,          0,          -1,          567489331200,          5,          1,          2,          4},          // (subframe number :24,29,34,39)
+{0xa2,          -1,          1,          0,          -1,          550293209600,          5,          2,          2,          4},          // (subframe number :9,19,29,39)
+{0xa2,          -1,          1,          0,          -1,          687195422720,          0,          1,          3,          4},          // (subframe number :17,19,37,39)
+{0xa2,          -1,          1,          0,          -1,          550293209600,          0,          2,          3,          4},          // (subframe number :9, 19, 29, 39)
+{0xa2,          -1,          1,          0,          -1,          551911719040,          0,          1,          3,          4},          // (subframe number :7,15,23,31,39)
+{0xa2,          -1,          1,          0,          -1,          586405642240,          5,          1,          2,          4},          // (subframe number :23,27,31,35,39)
+{0xa2,          -1,          1,          0,          -1,          586405642240,          0,          1,          3,          4},          // (subframe number :23,27,31,35,39)
+{0xa2,          -1,          1,          0,          -1,          10920,                 5,          1,          2,          4},          // (subframe number :3,5,7,9,11,13)
+{0xa2,          -1,          1,          0,          -1,          10920,                 0,          1,          3,          4},          // (subframe number :3,5,7,9,11,13)
+{0xa2,          -1,          1,          0,          -1,          567489872400,          5,          1,          2,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          1,          0,          -1,          567489872400,          0,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          -1,          1,          0,          -1,          965830828032,          5,          2,          2,          4},          // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xa2,          -1,          1,          0,          -1,          586406201480,          5,          1,          2,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          -1,          1,          0,          -1,          586406201480,          0,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          -1,          1,          0,          -1,          733007751850,          0,          1,          3,          4},          // (subframe number :1,3,5,7,…,37,39)
+{0xa2,          -1,          1,          0,          -1,          1099511627775,         5,          1,          2,          4},          // (subframe number :0,1,2,…,39)
+{0xa3,          -1,          16,         1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          16,         1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          -1,          8,          1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          8,          1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          -1,          8,          1,           2,          550293209600,          0,          2,          2,          6},          // (subframe number :9,19,29,39)
+{0xa3,          -1,          4,          1,          -1,          567489872400,          0,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          4,          1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          4,          1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          -1,          2,          1,          -1,          567489872400,          0,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          2,          1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          2,          1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          -1,          1,          0,          -1,          549756338176,          7,          1,          1,          6},          // (subframe number :19,39)
+{0xa3,          -1,          1,          0,          -1,          168,                   0,          1,          2,          6},          // (subframe number :3,5,7)
+{0xa3,          -1,          1,          0,          -1,          10752,                 2,          1,          2,          6},          // (subframe number :9,11,13)
+{0xa3,          -1,          1,          0,          -1,          567489331200,          7,          1,          1,          6},          // (subframe number :24,29,34,39)
+{0xa3,          -1,          1,          0,          -1,          550293209600,          7,          2,          1,          6},          // (subframe number :9,19,29,39)
+{0xa3,          -1,          1,          0,          -1,          687195422720,          0,          1,          2,          6},          // (subframe number :17,19,37,39)
+{0xa3,          -1,          1,          0,          -1,          550293209600,          0,          2,          2,          6},          // (subframe number :9,19,29,39)
+{0xa3,          -1,          1,          0,          -1,          551911719040,          0,          1,          2,          6},          // (subframe number :7,15,23,31,39)
+{0xa3,          -1,          1,          0,          -1,          586405642240,          7,          1,          1,          6},          // (subframe number :23,27,31,35,39)
+{0xa3,          -1,          1,          0,          -1,          586405642240,          0,          1,          2,          6},          // (subframe number :23,27,31,35,39)
+{0xa3,          -1,          1,          0,          -1,          10920,                 0,          1,          2,          6},          // (subframe number :3,5,7,9,11,13)
+{0xa3,          -1,          1,          0,          -1,          10920,                 7,          1,          1,          6},          // (subframe number :3,5,7,9,11,13)
+{0xa3,          -1,          1,          0,          -1,          567489872400,          0,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          1,          0,          -1,          567489872400,          7,          1,          1,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          -1,          1,          0,          -1,          965830828032,          7,          2,          1,          6},          // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xa3,          -1,          1,          0,          -1,          586406201480,          7,          1,          1,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          -1,          1,          0,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          -1,          1,          0,          -1,          733007751850,          0,          1,          2,          6},          // (subframe number :1,3,5,7,…,37,39)
+{0xa3,          -1,          1,          0,          -1,          1099511627775,         7,          1,          1,          6},          // (subframe number :0,1,2,…,39)
+{0xb1,          -1,          16,         1,          -1,          567489872400,          2,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xb1,          -1,          8,          1,          -1,          567489872400,          2,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xb1,          -1,          8,          1,           2,          550293209600,          2,          2,          6,          2},          // (subframe number :9,19,29,39)
+{0xb1,          -1,          4,          1,          -1,          567489872400,          2,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xb1,          -1,          2,          1,          -1,          567489872400,          2,          2,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xb1,          -1,          2,          1,          -1,          586406201480,          2,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb1,          -1,          1,          0,          -1,          549756338176,          8,          1,          3,          2},          // (subframe number :19,39)
+{0xb1,          -1,          1,          0,          -1,          168,                   2,          1,          6,          2},          // (subframe number :3,5,7)
+{0xb1,          -1,          1,          0,          -1,          567489331200,          8,          1,          3,          2},          // (subframe number :24,29,34,39)
+{0xb1,          -1,          1,          0,          -1,          550293209600,          8,          2,          3,          2},          // (subframe number :9,19,29,39)
+{0xb1,          -1,          1,          0,          -1,          687195422720,          2,          1,          6,          2},          // (subframe number :17,19,37,39)
+{0xb1,          -1,          1,          0,          -1,          550293209600,          2,          2,          6,          2},          // (subframe number :9,19,29,39)
+{0xb1,          -1,          1,          0,          -1,          551911719040,          2,          1,          6,          2},          // (subframe number :7,15,23,31,39)
+{0xb1,          -1,          1,          0,          -1,          586405642240,          8,          1,          3,          2},          // (subframe number :23,27,31,35,39)
+{0xb1,          -1,          1,          0,          -1,          586405642240,          2,          1,          6,          2},          // (subframe number :23,27,31,35,39)
+{0xb1,          -1,          1,          0,          -1,          10920,                 8,          1,          3,          2},          // (subframe number :3,5,7,9,11,13)
+{0xb1,          -1,          1,          0,          -1,          567489872400,          8,          1,          3,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xb1,          -1,          1,          0,          -1,          567489872400,          2,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xb1,          -1,          1,          0,          -1,          586406201480,          8,          1,          3,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb1,          -1,          1,          0,          -1,          965830828032,          8,          2,          3,          2},          // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xb1,          -1,          1,          0,          -1,          586406201480,          2,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb1,          -1,          1,          0,          -1,          733007751850,          2,          1,          6,          2},          // (subframe number :1,3,5,7,…,37,39)
+{0xb1,          -1,          1,          0,          -1,          1099511627775,         8,          1,          3,          2},          // (subframe number :0,1,2,…,39)
+{0xb4,          -1,          16,         1,           2,          567489872400,          0,          2,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          16,         1,           2,          586406201480,          0,          1,          1,          12},         // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb4,          -1,          8,          1,           2,          567489872400,          0,          2,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          8,          1,           2,          586406201480,          0,          1,          1,          12},         // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb4,          -1,          8,          1,           2,          550293209600,          0,          2,          1,          12},         // (subframe number :9,19,29,39)
+{0xb4,          -1,          4,          1,          -1,          567489872400,          0,          1,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          4,          1,          -1,          567489872400,          0,          2,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          4,          1,           2,          586406201480,          0,          1,          1,          12},         // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb4,          -1,          2,          1,          -1,          551911719040,          2,          2,          1,          12},         // (subframe number :7,15,23,31,39)
+{0xb4,          -1,          2,          1,          -1,          567489872400,          0,          1,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          2,          1,          -1,          567489872400,          0,          2,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          2,          1,          -1,          586406201480,          0,          1,          1,          12},         // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb4,          -1,          1,          0,          -1,          549756338176,          2,          2,          1,          12},         // (subframe number :19, 39)
+{0xb4,          -1,          1,          0,          -1,          687195422720,          0,          1,          1,          12},         // (subframe number :17, 19, 37, 39)
+{0xb4,          -1,          1,          0,          -1,          567489331200,          2,          1,          1,          12},         // (subframe number :24,29,34,39)
+{0xb4,          -1,          1,          0,          -1,          550293209600,          2,          2,          1,          12},         // (subframe number :9,19,29,39)
+{0xb4,          -1,          1,          0,          -1,          550293209600,          0,          2,          1,          12},         // (subframe number :9,19,29,39)
+{0xb4,          -1,          1,          0,          -1,          551911719040,          0,          1,          1,          12},         // (subframe number :7,15,23,31,39)
+{0xb4,          -1,          1,          0,          -1,          551911719040,          0,          2,          1,          12},         // (subframe number :7,15,23,31,39)
+{0xb4,          -1,          1,          0,          -1,          586405642240,          0,          1,          1,          12},         // (subframe number :23,27,31,35,39)
+{0xb4,          -1,          1,          0,          -1,          586405642240,          2,          2,          1,          12},         // (subframe number :23,27,31,35,39)
+{0xb4,          -1,          1,          0,          -1,          698880,                0,          1,          1,          12},         // (subframe number :9,11,13,15,17,19)
+{0xb4,          -1,          1,          0,          -1,          10920,                 2,          1,          1,          12},         // (subframe number :3,5,7,9,11,13)
+{0xb4,          -1,          1,          0,          -1,          567489872400,          0,          1,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          1,          0,          -1,          567489872400,          2,          2,          1,          12},         // (subframe number :4,9,14,19,24,29,34,39)
+{0xb4,          -1,          1,          0,          -1,          965830828032,          2,          2,          1,          12},         // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xb4,          -1,          1,          0,          -1,          586406201480,          0,          1,          1,          12},         // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb4,          -1,          1,          0,          -1,          586406201480,          2,          1,          1,          12},         // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xb4,          -1,          1,          0,          -1,          44739240,              2,          1,          1,          12},         // (subframe number :3, 5, 7, …, 23,25)
+{0xb4,          -1,          1,          0,          -1,          44739240,              0,          2,          1,          12},         // (subframe number :3, 5, 7, …, 23,25)
+{0xb4,          -1,          1,          0,          -1,          733007751850,          0,          1,          1,          12},         // (subframe number :1,3,5,7,…,37,39)
+{0xb4,          -1,          1,          0,          -1,          1099511627775,         2,          1,          1,          12},         // (subframe number :0, 1, 2,…, 39)
+{0xc0,          -1,          16,         1,          -1,          567489872400,          0,          2,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          16,         1,          -1,          586406201480,          0,          1,          7,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc0,          -1,          8,          1,          -1,          567489872400,          0,          1,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          8,          1,          -1,          586406201480,          0,          1,          7,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc0,          -1,          8,          1,           2,          550293209600,          0,          2,          7,          2},          // (subframe number :9,19,29,39)
+{0xc0,          -1,          4,          1,          -1,          567489872400,          0,          1,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          4,          1,          -1,          567489872400,          0,          2,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          4,          1,          -1,          586406201480,          0,          1,          7,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc0,          -1,          2,          1,          -1,          551911719040,          0,          2,          7,          2},          // (subframe number :7,15,23,31,39)
+{0xc0,          -1,          2,          1,          -1,          567489872400,          0,          1,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          2,          1,          -1,          567489872400,          0,          2,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          2,          1,          -1,          586406201480,          0,          1,          7,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc0,          -1,          1,          0,          -1,          549756338176,          8,          1,          3,          2},          // (subframe number :19,39)
+{0xc0,          -1,          1,          0,          -1,          168,                   0,          1,          7,          2},          // (subframe number :3,5,7)
+{0xc0,          -1,          1,          0,          -1,          567489331200,          8,          1,          3,          2},          // (subframe number :24,29,34,39)
+{0xc0,          -1,          1,          0,          -1,          550293209600,          8,          2,          3,          2},          // (subframe number :9,19,29,39)
+{0xc0,          -1,          1,          0,          -1,          687195422720,          0,          1,          7,          2},          // (subframe number :17,19,37,39)
+{0xc0,          -1,          1,          0,          -1,          550293209600,          0,          2,          7,          2},          // (subframe number :9,19,29,39)
+{0xc0,          -1,          1,          0,          -1,          586405642240,          8,          1,          3,          2},          // (subframe number :23,27,31,35,39)
+{0xc0,          -1,          1,          0,          -1,          551911719040,          0,          1,          7,          2},          // (subframe number :7,15,23,31,39)
+{0xc0,          -1,          1,          0,          -1,          586405642240,          0,          1,          7,          2},          // (subframe number :23,27,31,35,39)
+{0xc0,          -1,          1,          0,          -1,          10920,                 8,          1,          3,          2},          // (subframe number :3,5,7,9,11,13)
+{0xc0,          -1,          1,          0,          -1,          567489872400,          8,          1,          3,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          1,          0,          -1,          567489872400,          0,          1,          7,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc0,          -1,          1,          0,          -1,          965830828032,          8,          2,          3,          2},          // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xc0,          -1,          1,          0,          -1,          586406201480,          8,          1,          3,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc0,          -1,          1,          0,          -1,          586406201480,          0,          1,          7,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc0,          -1,          1,          0,          -1,          733007751850,          0,          1,          7,          2},          // (subframe number :1,3,5,7,…,37,39)
+{0xc0,          -1,          1,          0,          -1,          1099511627775,         8,          1,          3,          2},          // (subframe number :0,1,2,…,39)
+{0xc2,          -1,          16,         1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          16,         1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc2,          -1,          8,          1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          8,          1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc2,          -1,          8,          1,           2,          550293209600,          0,          2,          2,          6},          // (subframe number :9,19,29,39)
+{0xc2,          -1,          4,          1,          -1,          567489872400,          0,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          4,          1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          4,          1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc2,          -1,          2,          1,          -1,          551911719040,          2,          2,          2,          6},          // (subframe number :7,15,23,31,39)
+{0xc2,          -1,          2,          1,          -1,          567489872400,          0,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          2,          1,          -1,          567489872400,          0,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          2,          1,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc2,          -1,          1,          0,          -1,          549756338176,          2,          1,          2,          6},          // (subframe number :19,39)
+{0xc2,          -1,          1,          0,          -1,          168,                   0,          1,          2,          6},          // (subframe number :3,5,7)
+{0xc2,          -1,          1,          0,          -1,          567489331200,          7,          1,          1,          6},          // (subframe number :24,29,34,39)
+{0xc2,          -1,          1,          0,          -1,          550293209600,          7,          2,          1,          6},          // (subframe number :9,19,29,39)
+{0xc2,          -1,          1,          0,          -1,          687195422720,          0,          1,          2,          6},          // (subframe number :17,19,37,39)
+{0xc2,          -1,          1,          0,          -1,          550293209600,          2,          2,          2,          6},          // (subframe number :9,19,29,39)
+{0xc2,          -1,          1,          0,          -1,          551911719040,          2,          1,          2,          6},          // (subframe number :7,15,23,31,39)
+{0xc2,          -1,          1,          0,          -1,          10920,                 7,          1,          1,          6},          // (subframe number :3,5,7,9,11,13)
+{0xc2,          -1,          1,          0,          -1,          586405642240,          7,          2,          1,          6},          // (subframe number :23,27,31,35,39)
+{0xc2,          -1,          1,          0,          -1,          586405642240,          0,          1,          2,          6},          // (subframe number :23,27,31,35,39)
+{0xc2,          -1,          1,          0,          -1,          567489872400,          7,          2,          1,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          1,          0,          -1,          567489872400,          2,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xc2,          -1,          1,          0,          -1,          965830828032,          7,          2,          1,          6},          // (subframe number :13,14,15, 29,30,31,37,38,39)
+{0xc2,          -1,          1,          0,          -1,          586406201480,          7,          1,          1,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc2,          -1,          1,          0,          -1,          586406201480,          0,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xc2,          -1,          1,          0,          -1,          733007751850,          0,          1,          2,          6},          // (subframe number :1,3,5,7,…,37,39)
+{0xc2,          -1,          1,          0,          -1,          1099511627775,         7,          1,          1,          6},          // (subframe number :0,1,2,…,39)
+{0xa1,          0xb1,        16,         1,          -1,          567489872400,          2,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          0xb1,        16,         1,          -1,          586406201480,          2,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          0xb1,        8,          1,          -1,          567489872400,          2,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          0xb1,        8,          1,          -1,          586406201480,          2,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          0xb1,        4,          1,          -1,          567489872400,          2,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          0xb1,        4,          1,          -1,          586406201480,          2,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          0xb1,        2,          1,          -1,          567489872400,          2,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          0xb1,        1,          0,          -1,          549756338176,          8,          1,          3,          2},          // (subframe number :19,39)
+{0xa1,          0xb1,        1,          0,          -1,          550293209600,          8,          1,          3,          2},          // (subframe number :9,19,29,39)
+{0xa1,          0xb1,        1,          0,          -1,          687195422720,          2,          1,          6,          2},          // (subframe number :17,19,37,39)
+{0xa1,          0xb1,        1,          0,          -1,          550293209600,          2,          2,          6,          2},          // (subframe number :9,19,29,39)
+{0xa1,          0xb1,        1,          0,          -1,          586405642240,          8,          1,          3,          2},          // (subframe number :23,27,31,35,39)
+{0xa1,          0xb1,        1,          0,          -1,          551911719040,          2,          1,          6,          2},          // (subframe number :7,15,23,31,39)
+{0xa1,          0xb1,        1,          0,          -1,          586405642240,          2,          1,          6,          2},          // (subframe number :23,27,31,35,39)
+{0xa1,          0xb1,        1,          0,          -1,          567489872400,          8,          1,          3,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          0xb1,        1,          0,          -1,          567489872400,          2,          1,          6,          2},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa1,          0xb1,        1,          0,          -1,          586406201480,          2,          1,          6,          2},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa1,          0xb1,        1,          0,          -1,          733007751850,          2,          1,          6,          2},          // (subframe number :1,3,5,7,…,37,39)
+{0xa2,          0xb2,        16,         1,          -1,          567489872400,          2,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          0xb2,        16,         1,          -1,          586406201480,          2,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          0xb2,        8,          1,          -1,          567489872400,          2,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          0xb2,        8,          1,          -1,          586406201480,          2,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          0xb2,        4,          1,          -1,          567489872400,          2,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          0xb2,        4,          1,          -1,          586406201480,          2,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          0xb2,        2,          1,          -1,          567489872400,          2,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          0xb2,        1,          0,          -1,          549756338176,          6,          1,          2,          4},          // (subframe number :19,39)
+{0xa2,          0xb2,        1,          0,          -1,          550293209600,          6,          1,          2,          4},          // (subframe number :9,19,29,39)
+{0xa2,          0xb2,        1,          0,          -1,          687195422720,          2,          1,          3,          4},          // (subframe number :17,19,37,39)
+{0xa2,          0xb2,        1,          0,          -1,          550293209600,          2,          2,          3,          4},          // (subframe number :9,19,29,39)
+{0xa2,          0xb2,        1,          0,          -1,          586405642240,          6,          1,          2,          4},          // (subframe number :23,27,31,35,39)
+{0xa2,          0xb2,        1,          0,          -1,          551911719040,          2,          1,          3,          4},          // (subframe number :7,15,23,31,39)
+{0xa2,          0xb2,        1,          0,          -1,          586405642240,          2,          1,          3,          4},          // (subframe number :23,27,31,35,39)
+{0xa2,          0xb2,        1,          0,          -1,          567489872400,          6,          1,          2,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          0xb2,        1,          0,          -1,          567489872400,          2,          1,          3,          4},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa2,          0xb2,        1,          0,          -1,          586406201480,          2,          1,          3,          4},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa2,          0xb2,        1,          0,          -1,          733007751850,          2,          1,          3,          4},          // (subframe number :1,3,5,7,…,37,39)
+{0xa3,          0xb3,        16,         1,          -1,          567489872400,          2,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          0xb3,        16,         1,          -1,          586406201480,          2,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          0xb3,        8,          1,          -1,          567489872400,          2,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          0xb3,        8,          1,          -1,          586406201480,          2,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          0xb3,        4,          1,          -1,          567489872400,          2,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          0xb3,        4,          1,          -1,          586406201480,          2,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          0xb3,        2,          1,          -1,          567489872400,          2,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          0xb3,        1,          0,          -1,          549756338176,          2,          1,          2,          6},          // (subframe number :19,39)
+{0xa3,          0xb3,        1,          0,          -1,          550293209600,          2,          1,          2,          6},          // (subframe number :9,19,29,39)
+{0xa3,          0xb3,        1,          0,          -1,          687195422720,          2,          1,          2,          6},          // (subframe number :17,19,37,39)
+{0xa3,          0xb3,        1,          0,          -1,          550293209600,          2,          2,          2,          6},          // (subframe number :9,19,29,39)
+{0xa3,          0xb3,        1,          0,          -1,          551911719040,          2,          1,          2,          6},          // (subframe number :7,15,23,31,39)
+{0xa3,          0xb3,        1,          0,          -1,          586405642240,          2,          1,          2,          6},          // (subframe number :23,27,31,35,39)
+{0xa3,          0xb3,        1,          0,          -1,          586405642240,          2,          2,          2,          6},          // (subframe number :23,27,31,35,39)
+{0xa3,          0xb3,        1,          0,          -1,          567489872400,          2,          1,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          0xb3,        1,          0,          -1,          567489872400,          2,          2,          2,          6},          // (subframe number :4,9,14,19,24,29,34,39)
+{0xa3,          0xb3,        1,          0,          -1,          586406201480,          2,          1,          2,          6},          // (subframe number :3,7,11,15,19,23,27,31,35,39)
+{0xa3,          0xb3,        1,          0,          -1,          733007751850,          2,          1,          2,          6}           // (subframe number :1,3,5,7,…,37,39)
+};
+
+
+int get_nr_prach_info_from_index(uint8_t index,
+                                 int frame,
+                                 int slot,
+                                 uint64_t frequency,
+                                 uint8_t mu,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur) {
+  uint16_t band = 0;
+  int32_t offset = 0;
+  lte_frame_type_t unpaired = 0;
+  int x,y;
+  int64_t s_map;
+  uint8_t format2 = 0xff;
+
+  get_band(frequency,
+           &band,
+           &offset,
+           &unpaired);
+
+  if (band > 200) { //FR2
+    int y2;
+    uint8_t slot_60khz;
+    x = table_6_3_3_2_4_prachConfig_Index[index][2];
+    y = table_6_3_3_2_4_prachConfig_Index[index][3];
+    y2 = table_6_3_3_2_4_prachConfig_Index[index][4];
+    // checking n_sfn mod x = y
+    if ( (frame%x)==y || (frame%x)==y2 ) {
+      slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
+      s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
+      if ( (s_map>>slot_60khz)&0x01 ) {
+        if (mu == 3) {
+          if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 1) )
+            return 0; // no prach in odd slots @ 120kHz for 1 prach per 60khz slot
+        }
+        *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];
+        *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
+        *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
+        if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
+          format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
+        *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
+        return 1;
+      }
+      else
+        return 0; // no prach in current slot
+    }
+    else
+      return 0; // no prach in current frame
+  }
+  else {
+    uint8_t subframe;
+    if (unpaired) {
+      x = table_6_3_3_2_3_prachConfig_Index[index][2];
+      y = table_6_3_3_2_3_prachConfig_Index[index][3];
+      if ( (frame%x)==y ) {
+        subframe = slot >> mu;
+        s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
+        if ( (s_map>>subframe)&0x01 ) {
+          if (mu == 1) {
+            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] == 1) && (slot%2 == 1) )
+              return 0; // no prach in odd slots @ 30kHz for 1 prach per subframe
+          }
+          *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
+          *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
+          *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
+          if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
+            format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
+          *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
+          return 1;
+        }
+        else
+          return 0; // no prach in current slot
+      }
+      else
+        return 0; // no prach in current frame
+    }
+    else { // FDD
+      x = table_6_3_3_2_2_prachConfig_Index[index][2];
+      y = table_6_3_3_2_2_prachConfig_Index[index][3];
+      if ( (frame%x)==y ) {
+        subframe = slot >> mu;
+        s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+        if ( (s_map>>subframe)&0x01 ) {
+          if (mu == 1) {
+            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] == 1) && (slot%2 == 1) )
+              return 0; // no prach in odd slots @ 30kHz for 1 prach per subframe
+          }
+          *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
+          *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
+          *N_dur = table_6_3_3_2_2_prachConfig_Index[index][8];
+          if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
+            format2 = (uint8_t) table_6_3_3_2_2_prachConfig_Index[index][1];
+          *format = ((uint8_t) table_6_3_3_2_2_prachConfig_Index[index][0]) | (format2<<8);
+          return 1;
+        }
+        else
+          return 0; // no prach in current slot
+      }
+      else
+        return 0; // no prach in current frame
+    }
+  }
+}
+
+
 nr_bandentry_t nr_bandtable[] = {
   {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
   {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},

@@ -43,9 +43,6 @@ extern uint16_t NCS_restricted_TypeB_delta_f_RA_5[14];
 extern uint16_t NCS_unrestricted_delta_f_RA_15[16];
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
-extern int64_t table_6_3_3_2_2_prachConfig_Index [256][9];
-extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 

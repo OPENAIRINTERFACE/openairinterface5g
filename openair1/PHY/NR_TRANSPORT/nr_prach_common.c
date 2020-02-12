@@ -111,7 +111,7 @@ int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t 
 
   uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
 
-  // For FR1 paired
+/*  // For FR1 paired
   if (frame_parms->frame_type == FDD && frame_parms->freq_range == nr_FR1){
     if (((frame%table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][3]) &&
     ((table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
@@ -130,7 +130,7 @@ int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t 
       return 0;
     }
   }
-  /*
+  
   // For FR2: FIXME
   if ((((frame%table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][3]) ||
   ((frame%table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][4]))
@@ -157,9 +157,9 @@ int do_prach_rx(NR_DL_FRAME_PARMS *fp,int frame,int slot) {
 uint16_t get_nr_prach_fmt(int prach_ConfigIndex,lte_frame_type_t frame_type, nr_frequency_range_e fr)
 {
 
-  if (frame_type==FDD) return (table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][0]); // if using table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
+ /* if (frame_type==FDD) return (table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][0]); // if using table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
   else if (fr==nr_FR1) return (table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][0]); // if using table 6.3.3.2-3: Random access configurations for FR1 and unpaired spectrum
-  else AssertFatal(1==0,"FR2 prach configuration not supported yet\n");
+  else AssertFatal(1==0,"FR2 prach configuration not supported yet\n");*/
   // For FR2 not implemented. FIXME
 }
 
