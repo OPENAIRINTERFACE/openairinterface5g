@@ -68,7 +68,8 @@ class SSHConnection():
 		elif self.sshresponse == 1:
 			logging.debug('\u001B[1;37;41m Unexpected EOF \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
-			sys.exit(self.sshresponse)
+			logging.debug(str(self.ssh.before))
+                        sys.exit(self.sshresponse)
 		elif self.sshresponse == 2:
 			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)

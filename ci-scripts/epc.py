@@ -66,8 +66,8 @@ class EPCManagement():
 			mySSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			logging.debug('\u001B[1m Launching tshark on all interfaces \u001B[0m')
 			EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
-			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + EPC_PcapFileName, '\$', 5)
-			mySSH.command('echo $USER; nohup sudo tshark -f "tcp port not 22 and port not 53" -i any -w ' + self.EPCSourceCodePath + '/scripts/' + EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + self.EPC_PcapFileName, '\$', 5)
+			mySSH.command('echo $USER; nohup sudo tshark -f "tcp port not 22 and port not 53" -i any -w ' + self.EPCSourceCodePath + '/scripts/' + self.EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss_' + self.testCase_id + '.log logs/hss*.*', '\$', 5)
 			mySSH.command('echo "oai_hss -j /usr/local/etc/oai/hss_rel14.json" > ./my-hss.sh', '\$', 5)
