@@ -60,6 +60,7 @@ uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+uint64_t get_softmodem_optmask(void) {return 0;}
 
 int main(int argc, char **argv)
 {
