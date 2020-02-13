@@ -113,7 +113,6 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char *ue_cont_res_id,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
-uint64_t get_softmodem_optmask(void) {return 0;}
 int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}

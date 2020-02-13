@@ -109,7 +109,6 @@ void config_common(int Mod_idP,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
-uint64_t get_softmodem_optmask(void) {return 0;}
 mac_rlc_status_resp_t mac_rlc_status_ind(const module_id_t       module_idP,
                                          const rnti_t            rntiP,
                                          const eNB_index_t       eNB_index,
