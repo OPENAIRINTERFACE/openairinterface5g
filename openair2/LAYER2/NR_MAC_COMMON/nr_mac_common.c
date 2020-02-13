@@ -820,25 +820,19 @@ int64_t table_6_3_3_2_4_prachConfig_Index [256][10] = {
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
                                  int slot,
-                                 uint64_t frequency,
+                                 uint32_t pointa,
                                  uint8_t mu,
+                                 uint8_t unpaired,
                                  uint16_t *format,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
                                  uint8_t *N_dur) {
-  uint16_t band = 0;
-  int32_t offset = 0;
-  lte_frame_type_t unpaired = 0;
+
   int x,y;
   int64_t s_map;
   uint8_t format2 = 0xff;
 
-  get_band(frequency,
-           &band,
-           &offset,
-           &unpaired);
-
-  if (band > 200) { //FR2
+  if (pointa > 2016666) { //FR2
     int y2;
     uint8_t slot_60khz;
     x = table_6_3_3_2_4_prachConfig_Index[index][2];
@@ -850,8 +844,8 @@ int get_nr_prach_info_from_index(uint8_t index,
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
       if ( (s_map>>slot_60khz)&0x01 ) {
         if (mu == 3) {
-          if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 1) )
-            return 0; // no prach in odd slots @ 120kHz for 1 prach per 60khz slot
+          if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 0) )
+            return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
         }
         *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];
         *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
@@ -877,8 +871,8 @@ int get_nr_prach_info_from_index(uint8_t index,
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
           if (mu == 1) {
-            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] == 1) && (slot%2 == 1) )
-              return 0; // no prach in odd slots @ 30kHz for 1 prach per subframe
+            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] == 1) && (slot%2 == 0) )
+              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
           }
           *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
           *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
@@ -902,8 +896,8 @@ int get_nr_prach_info_from_index(uint8_t index,
         s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
           if (mu == 1) {
-            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] == 1) && (slot%2 == 1) )
-              return 0; // no prach in odd slots @ 30kHz for 1 prach per subframe
+            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] == 1) && (slot%2 == 0) )
+              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
           }
           *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
           *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
