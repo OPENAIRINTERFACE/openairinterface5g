@@ -76,7 +76,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 
-int sf_ahead=4, phy_test = 0;
+int sf_ahead=4 ;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
@@ -447,6 +447,8 @@ int main(int argc, char **argv)
   set_glog(loglvl);
   T_stdout = 1;
 
+  get_softmodem_params()->phy_test = 1;
+  
   if (snr1set==0)
     snr1 = snr0+10;
 
