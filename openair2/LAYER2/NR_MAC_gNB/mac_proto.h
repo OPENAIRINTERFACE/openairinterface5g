@@ -34,6 +34,8 @@
 #include "nr_mac_gNB.h"
 #include "PHY/defs_gNB.h"
 
+#define MAX_ACK_BITS 2 //only format 0 is available for now
+
 void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
