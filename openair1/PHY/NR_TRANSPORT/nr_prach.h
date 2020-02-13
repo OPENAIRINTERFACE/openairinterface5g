@@ -37,18 +37,6 @@ uint16_t nr_du[838];
 /*************************************
 * The following tables defined for NR
 **************************************/
-// Table 6.3.3.1-5 (38.211) NCS for preamble formats with delta_f_RA = 1.25 KHz
-uint16_t NCS_unrestricted_delta_f_RA_125[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
-uint16_t NCS_restricted_TypeA_delta_f_RA_125[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case set Type A
-uint16_t NCS_restricted_TypeB_delta_f_RA_125[13]   = {15,18,22,26,32,38,46,55,68,82,100,118,137}; // high-speed case set Type B
-
-// Table 6.3.3.1-6 (38.211) NCS for preamble formats with delta_f_RA = 5 KHz
-uint16_t NCS_unrestricted_delta_f_RA_5[16] = {0,13,26,33,38,41,49,55,64,76,93,119,139,209,279,419};
-uint16_t NCS_restricted_TypeA_delta_f_RA_5[16]   = {36,57,72,81,89,94,103,112,121,132,137,152,173,195,216,237}; // high-speed case set Type A
-uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,85,97,109,122,137}; // high-speed case set Type B
-
-// Table 6.3.3.1-7 (38.211) NCS for preamble formats with delta_f_RA = 15 * 2mu KHz where mu = {0,1,2,3}
-uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
 
 //Table 6.3.3.1-3: Mapping from logical index i to sequence number u for preamble formats with L_RA = 839
 uint16_t prach_root_sequence_map_0_3[838] = {

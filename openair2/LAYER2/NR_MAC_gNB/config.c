@@ -122,13 +122,23 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     }
   }
 
+  lte_frame_type_t frame_type;
+  uint16_t band;
+  int32_t offset;
+
+  get_band((cfg->carrier_config.dl_frequency.value)*1000,
+           &band,
+           &offset,
+           &frame_type);
+
+  RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
 
   // Cell configuration
   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
   cfg->cell_config.phy_cell_id.tl.tag = NFAPI_NR_CONFIG_PHY_CELL_ID_TAG;
   cfg->num_tlv++;
 
-  cfg->cell_config.frame_duplex_type.value = 1;
+  cfg->cell_config.frame_duplex_type.value = frame_type;
   cfg->cell_config.frame_duplex_type.tl.tag = NFAPI_NR_CONFIG_FRAME_DUPLEX_TYPE_TAG;
   cfg->num_tlv++;
 

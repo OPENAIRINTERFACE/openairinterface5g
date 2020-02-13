@@ -218,9 +218,9 @@ void compute_nr_prach_seq(uint16_t rootSequenceIndex,
     
     AssertFatal(zeroCorrelationZoneConfig<=15,
 		"FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
-    if (prach_fmt<3)  NCS = NCS_unrestricted_delta_f_RA_125[zeroCorrelationZoneConfig];
+   /* if (prach_fmt<3)  NCS = NCS_unrestricted_delta_f_RA_125[zeroCorrelationZoneConfig];
     if (prach_fmt==3) NCS = NCS_unrestricted_delta_f_RA_5[zeroCorrelationZoneConfig];
-    if (prach_fmt>3)  NCS = NCS_unrestricted_delta_f_RA_15[zeroCorrelationZoneConfig];
+    if (prach_fmt>3)  NCS = NCS_unrestricted_delta_f_RA_15[zeroCorrelationZoneConfig];*/
     
     num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
 
@@ -235,7 +235,7 @@ void compute_nr_prach_seq(uint16_t rootSequenceIndex,
 
     AssertFatal(zeroCorrelationZoneConfig<=14,
 		"FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
-    if (prach_fmt<3){
+ /*   if (prach_fmt<3){
       if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_125[zeroCorrelationZoneConfig]; // for TypeA, this is hardcoded. FIXME
       if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_125[zeroCorrelationZoneConfig]; // for TypeB, this is hardcoded. FIXME
     }
@@ -245,7 +245,7 @@ void compute_nr_prach_seq(uint16_t rootSequenceIndex,
     }
     if (prach_fmt>3){
 
-    }
+    }*/
 
     nr_fill_du(prach_fmt);
 

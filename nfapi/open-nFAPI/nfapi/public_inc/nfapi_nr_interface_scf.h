@@ -1028,10 +1028,12 @@ typedef struct
 {
   uint16_t phys_cell_id;
   uint8_t  num_prach_ocas;
+  // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
+  // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
   uint8_t  prach_format;
   uint8_t  num_ra;
   uint8_t  prach_start_symbol;
-  uint16_t num_cs;//
+  uint16_t num_cs;
   nfapi_nr_ul_beamforming_t beamforming;
 
 } nfapi_nr_prach_pdu_t;

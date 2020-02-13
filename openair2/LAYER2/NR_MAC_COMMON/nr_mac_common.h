@@ -53,6 +53,8 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint8_t *N_t_slot,
                                  uint8_t *N_dur);
 
+uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
+
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
   NR_DL_DCI_FORMAT_1_1,
