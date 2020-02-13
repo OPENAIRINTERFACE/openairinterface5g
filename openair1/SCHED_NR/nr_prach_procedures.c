@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
-#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "nfapi_nr_interface_scf.h"
 #include "fapi_nr_l1.h"
 #include "nfapi_pnf.h"
@@ -47,7 +47,7 @@
 
 #include "intertask_interface.h"
 
-extern uint32_t nfapi_mode;
+extern uint8_t nfapi_mode;
 
 extern int oai_nfapi_nr_rach_ind(nfapi_rach_indication_t *rach_ind);
 

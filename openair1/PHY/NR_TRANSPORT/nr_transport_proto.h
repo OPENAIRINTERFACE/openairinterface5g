@@ -212,11 +212,3 @@ uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
 uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
-
-void rx_nr_prach(PHY_VARS_gNB *gNB,
-		 int frame,
-		 int subframe,
-		 uint16_t *max_preamble,
-		 uint16_t *max_preamble_energy,
-		 uint16_t *max_preamble_delay
-		 );
