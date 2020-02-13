@@ -296,8 +296,8 @@ check_install_usrp_uhd_driver(){
             x=$((x + 1))
         done
         $SUDO apt-get update
-        $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
+        $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
+        $SUDO apt-get -y install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
         $SUDO -H pip install requests
@@ -367,9 +367,9 @@ check_install_bladerf_driver(){
             $SUDO add-apt-repository -y ppa:bladerf/bladerf
             $SUDO apt-get update
         fi
-        $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40
+        $SUDO apt-get install -y  bladerf libbladerf-dev
+        $SUDO apt-get install -y bladerf-firmware-fx3
+        $SUDO apt-get install -y bladerf-fpga-hostedx40
    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         install_bladerf_driver_from_source
    else
