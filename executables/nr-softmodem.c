@@ -778,7 +778,6 @@ int stop_L1L2(module_id_t gnb_id) {
  */
 int restart_L1L2(module_id_t gnb_id) {
   RU_t *ru = RC.ru[gnb_id];
-  int cc_id;
   MessageDef *msg_p = NULL;
   LOG_W(GNB_APP, "restarting nr-softmodem\n");
   /* block threads */

@@ -42,6 +42,19 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, ui
 
 int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
 
+int get_nr_prach_info_from_index(uint8_t index,
+                                 int frame,
+                                 int slot,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur);
+
+uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
+
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
   NR_DL_DCI_FORMAT_1_1,

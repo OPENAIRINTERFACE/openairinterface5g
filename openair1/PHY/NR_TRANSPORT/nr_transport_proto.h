@@ -221,3 +221,4 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 uint16_t *max_preamble_energy,
 		 uint16_t *max_preamble_delay
 		 );
+

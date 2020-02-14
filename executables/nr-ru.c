@@ -2154,7 +2154,6 @@ void init_NR_RU(char *rf_config_file)
   PHY_VARS_gNB *gNB0= (PHY_VARS_gNB *)NULL;
   NR_DL_FRAME_PARMS *fp = (NR_DL_FRAME_PARMS *)NULL;
   int i;
-  int CC_id;
   // create status mask
   RC.ru_mask = 0;
   pthread_mutex_init(&RC.ru_mutex,NULL);
