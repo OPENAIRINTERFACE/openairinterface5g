@@ -730,8 +730,8 @@ function report_test {
                 IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_iperf_dl*client*txt 2> /dev/null`
                 analyzeIperfFiles
 
-                #IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_iperf_ul*client*txt 2> /dev/null`
-                #analyzeIperfFiles
+                IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_iperf_ul*client*txt 2> /dev/null`
+                analyzeIperfFiles
             done
           done
         done
