@@ -34,13 +34,6 @@
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
 
-extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
-extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
-extern uint16_t NCS_restricted_TypeB_delta_f_RA_125[13];
-extern uint16_t NCS_unrestricted_delta_f_RA_5[16];
-extern uint16_t NCS_restricted_TypeA_delta_f_RA_5[16];
-extern uint16_t NCS_restricted_TypeB_delta_f_RA_5[14];
-extern uint16_t NCS_unrestricted_delta_f_RA_15[16];
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];

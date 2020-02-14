@@ -53,6 +53,12 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint8_t *N_t_slot,
                                  uint8_t *N_dur);
 
+uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
+                            uint8_t nb_preambles,
+                            uint8_t unpaired);
+
+int get_format0(uint8_t index, uint8_t unpaired);
+
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
 typedef enum {

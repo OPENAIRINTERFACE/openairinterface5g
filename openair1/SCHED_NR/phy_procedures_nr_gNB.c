@@ -208,8 +208,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
 
-
-  if (do_prach_rx(fp,frame,slot)) L1_nr_prach_procedures(gNB,frame,slot/fp->slots_per_subframe);
 */
 
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)

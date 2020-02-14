@@ -213,6 +213,11 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
 
+void nr_fill_prach(PHY_VARS_gNB *gNB,
+		   int SFN,
+		   int Slot,
+		   nfapi_nr_prach_pdu_t *prach_pdu);
+
 void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 nfapi_nr_prach_pdu_t *prach_pdu,
 		 int frame,
