@@ -77,6 +77,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 double cpuf;
 
 int sf_ahead=4, phy_test = 0;
+int sl_ahead=0;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
