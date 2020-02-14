@@ -112,6 +112,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint16_t N_RB);
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
+		 nfapi_nr_prach_pdu_t *prach_pdu,
 		 int frame,
 		 int subframe,
 		 uint16_t *max_preamble,
@@ -120,6 +121,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 );
 
 void rx_nr_prach_ru(RU_t *ru,
+		    nfapi_nr_prach_pdu_t *prach_pdu,
 		    int frame,
 		    int subframe);
 

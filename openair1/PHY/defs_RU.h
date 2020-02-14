@@ -38,7 +38,7 @@
 #include "openairinterface5g_limits.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "defs_common.h"
-
+#include "nfapi_nr_interface_scf.h"
 
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
@@ -480,6 +480,8 @@ typedef struct RU_t_s {
   int att_tx;
   /// flag to indicate precoding operation in RU
   int do_precoding;
+  /// FAPI confiuration
+  nfapi_nr_config_request_scf_t  config;
   /// Frame parameters
   struct LTE_DL_FRAME_PARMS *frame_parms;
   struct NR_DL_FRAME_PARMS *nr_frame_parms;

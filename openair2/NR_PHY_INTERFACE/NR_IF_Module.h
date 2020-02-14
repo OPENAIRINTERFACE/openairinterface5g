@@ -74,10 +74,7 @@ typedef struct {
   nfapi_cqi_indication_body_t cqi_ind;
 
   /// RACH indication list
-  nfapi_rach_indication_t rach_ind;
-
-  /// RACH indication list for BR UEs
-  nfapi_rach_indication_t rach_ind_br;
+  nfapi_nr_rach_indication_t rach_ind;
 
   /// SRS indication list
   nfapi_srs_indication_body_t srs_ind;

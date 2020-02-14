@@ -90,11 +90,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 @param rach_resource type (0=non BL/CE,1 CE level 0,2 CE level 1, 3 CE level 2,4 CE level 3)
 */
 void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, 
-  uint16_t preamble_index, int16_t timing_offset, uint16_t rnti
-  #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  , uint8_t rach_resource_type
-  #endif
-  );
+			 uint16_t preamble_index, int16_t timing_offset);
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 

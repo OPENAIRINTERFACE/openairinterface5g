@@ -57,8 +57,9 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                          frame_t frameP,
                          sub_frame_t slotP,
                          uint16_t preamble_index,
-                         int16_t timing_offset,
-                         uint16_t ra_rnti){
+                         int16_t timing_offset){
+
+  uint16_t ra_rnti=157;
   uint8_t i;
   uint16_t msg2_frame = frameP, msg2_slot = slotP;
   int offset;
@@ -185,14 +186,6 @@ void nr_generate_Msg2(module_id_t module_idP,
   // uint8_t *vrb_map = cc[CC_id].vrb_map, CC_id;
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
-
-    // todo
-    // Allocate 4 PRBS starting in RB 0
-    // first_rb = 0;
-    // vrb_map[first_rb] = 1;
-    // vrb_map[first_rb + 1] = 1;
-    // vrb_map[first_rb + 2] = 1;
-    // vrb_map[first_rb + 3] = 1;
 
     nfapi_nr_dl_tti_request_body_t *dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
     nfapi_nr_dl_tti_request_pdu_t *dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
