@@ -46,6 +46,40 @@ extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type) {
+
+  uint16_t i;
+  int16_t first_free_index=-1;
+
+  AssertFatal(gNB!=NULL,"gNB is null\n");
+  for (i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) {
+    LOG_D(PHY,"searching for PRACH in %d.%d with numRA %d: prach_index %d=> %d.%d numRA %d\n", frame,slot,numRA,i,
+	  gNB->prach_vars.list[i].frame,gNB->prach_vars.list[i].slot,gNB->prach_vars.list[i].pdu.num_ra);
+    if ((gNB->prach_vars.list[i].frame == frame) &&
+        (gNB->prach_vars.list[i].slot  == slot) &&
+	(gNB->prach_vars.list[i].pdu.num_ra == numRA))       return i;
+    else if ((gNB->prach_vars.list[i].frame == -1) && (first_free_index==-1)) first_free_index=i;
+  }
+  if (type == SEARCH_EXIST) return -1;
+
+  return first_free_index;
+}
+
+void nr_fill_prach(PHY_VARS_gNB *gNB,
+		   int SFN,
+		   int Slot,
+		   nfapi_nr_prach_pdu_t *prach_pdu) {
+
+  int prach_id = find_nr_prach(gNB,SFN,Slot,prach_pdu->num_ra,SEARCH_EXIST);
+  AssertFatal( (prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX),
+              "illegal or no prach_id found!!! numRA %d dlsch_id %d\n",prach_pdu->num_ra,prach_id);
+
+  gNB->prach_vars.list[prach_id].frame=SFN;
+  gNB->prach_vars.list[prach_id].slot=Slot;
+  memcpy((void*)&gNB->prach_vars.list[prach_id].pdu,(void*)prach_pdu,sizeof(*prach_pdu));
+
+}
+
 void rx_nr_prach_ru(RU_t *ru,
 		    nfapi_nr_prach_pdu_t *prach_pdu,
 		    int frame,

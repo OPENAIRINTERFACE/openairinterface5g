@@ -43,6 +43,8 @@
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
+#include "nfapi_nr_interface_scf.h"
+
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 
 typedef struct {
@@ -149,6 +151,14 @@ typedef struct {
 } NR_gNB_DLSCH_t;
 
 typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_prach_pdu_t pdu;  
+} gNB_PRACH_list_t;
+
+#define NUMBER_OF_NR_PRACH_MAX 8
+
+typedef struct {
   /// \brief ?.
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
@@ -158,6 +168,7 @@ typedef struct {
   int16_t **rxsigF;
   /// \brief local buffer to compute prach_ifft
   int32_t *prach_ifft;
+  gNB_PRACH_list_t list[NUMBER_OF_NR_PRACH_MAX];
 } NR_gNB_PRACH;
 
 typedef struct {

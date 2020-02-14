@@ -390,41 +390,24 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
-  int num_pdus = UL_tti_req->n_pdus;
+  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
-  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pdus %d\n",frame_rx,slot_rx,num_pdus);
+  for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
+    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id];
 
-  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus  = 0;
-
-  for (int i = 0; i < num_pdus; i++) {
-    switch (UL_tti_req->pdus_list[i].pdu_type) {
-      case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
-        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
-
-        nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
-        nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);
-
-        uint8_t ULSCH_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
-        uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;
-        uint8_t symbol_start = pusch_pdu->start_symbol_index;
-        uint8_t symbol_end = symbol_start + pusch_pdu->nr_of_symbols;
+    if (ulsch->rnti > 0) {
+      uint8_t harq_pid = ulsch->harq_process_id[slot_rx];
+      uint8_t symbol_start = ulsch->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15.start_symbol;
+      uint8_t symbol_end = symbol_start + ulsch->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15.number_symbols;
       
-        for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-          nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-        }
-        //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
-        //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
-        nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
-        nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
-        nr_fill_crc_indication(gNB, frame_rx, slot_rx, ULSCH_id, 0);
-        break;
-      case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
-	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE\n",frame_rx,slot_rx);
-        break;
-      case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
-	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE\n",frame_rx,slot_rx);
-        break;
+      for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+	nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+      }
+      //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
+      //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
+      nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+      nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
+      nr_fill_crc_indication(gNB, frame_rx, slot_rx, ULSCH_id, 0);
     }
   }
 }

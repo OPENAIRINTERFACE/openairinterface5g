@@ -145,10 +145,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB         = RC.gNB[Mod_id];
 
   uint8_t number_dl_pdu             = DL_req->dl_tti_request_body.nPDUs;
-  //  uint8_t number_ul_pdu             = 0;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
-
-  //  if (UL_tti_req != NULL) number_ul_pdu = UL_tti_req->n_pdus;
+  uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
 
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
         frame,slot,
@@ -194,12 +192,29 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     }
   }
 
-  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
+  //  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
   for (int i=0;i<number_ul_dci_pdu;i++) {
     handle_nfapi_nr_ul_dci_pdu(gNB,
 			      frame, slot,
 			      &UL_dci_req->ul_dci_pdu_list[i]);
+  }
+
+  for (int i = 0; i < number_ul_tti_pdu; i++) {
+    switch (UL_tti_req->pdus_list[i].pdu_type) {
+      case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE for %d.%d\n",frame,slot,UL_tti_req->SFN,UL_tti_req->Slot);
+        nr_fill_ulsch(gNB,frame,slot,&UL_tti_req->pdus_list[i].pusch_pdu);
+        break;
+      case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
+	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE for %d.%d\n",frame,slot,UL_tti_req->SFN,UL_tti_req->Slot);
+	//        handle_nfapi_nr_pucch_pdu(gNB,frame,slot,UL_tti_req->pdus_list[i].pucch_pdu);
+        break;
+      case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
+	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE for %d.%d\n",frame,slot,UL_tti_req->SFN,UL_tti_req->Slot);
+        nr_fill_prach(gNB,UL_tti_req->SFN,UL_tti_req->Slot,UL_tti_req->pdus_list[i].prach_pdu);
+        break;
+    }
   }
 
 
