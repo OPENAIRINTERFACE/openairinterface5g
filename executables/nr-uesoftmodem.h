@@ -61,10 +61,6 @@
 /*   optname                helpstr                 paramflags      XXXptr                                 defXXXval              type         numelt */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_UE {  \
-  {"rf-config-file",        CONFIG_HLP_RFCFGF,      0,              strptr:(char **)&rf_config_file,       defstrval:NULL,        TYPE_STRING, sizeof(rf_config_file)},\
-  {"ulsch-max-errors",      CONFIG_HLP_ULMAXE,      0,              uptr:&ULSCH_max_consecutive_errors,    defuintval:0,          TYPE_UINT,   0}, \
-  {"phy-test",              CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL, iptr:&phy_test,                        defintval:0,           TYPE_INT,    0}, \
-  {"usim-test",             CONFIG_HLP_USIM,        PARAMFLAG_BOOL, u8ptr:&usim_test,                      defintval:0,           TYPE_UINT8,  0}, \
   {"clock-source",          CONFIG_HLP_EXCCLK,      0,              iptr:&clock_source,                    defintval:0,           TYPE_INT,    0}, \
   {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,              defintval:1,           TYPE_INT,    0}, \
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
@@ -76,7 +72,6 @@
   {"m" ,                    CONFIG_HLP_DLMCS,       0,              uptr:&target_dl_mcs,                   defintval:0,           TYPE_UINT,   0}, \
   {"t" ,                    CONFIG_HLP_ULMCS,       0,              uptr:&target_ul_mcs,                   defintval:0,           TYPE_UINT,   0}, \
   {"q" ,                    CONFIG_HLP_STMON,       PARAMFLAG_BOOL, iptr:&opp_enabled,                     defintval:0,           TYPE_INT,    0}, \
-  {"S" ,                    CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL, u8ptr:&exit_missed_slots,              defintval:1,           TYPE_UINT8,  0}, \
   {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
   {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
   {"numerology" ,           CONFIG_HLP_NUMEROLOGY,  0,              iptr:&numerology,                      defintval:0,           TYPE_INT,    0}, \

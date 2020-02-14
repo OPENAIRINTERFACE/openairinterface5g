@@ -62,7 +62,7 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-int sf_ahead=4, phy_test = 0;
+int sf_ahead=4 ;
 double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
@@ -113,7 +113,6 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char *ue_cont_res_id,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
-uint64_t get_softmodem_optmask(void) {return 0;}
 int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
@@ -373,6 +372,8 @@ int main(int argc, char **argv)
   set_glog(loglvl);
   T_stdout = 1;
 
+  get_softmodem_params()->phy_test = 1;
+    
   if (snr1set == 0)
     snr1 = snr0 + 10;
 

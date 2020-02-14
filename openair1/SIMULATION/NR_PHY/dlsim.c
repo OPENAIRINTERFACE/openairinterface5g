@@ -76,8 +76,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 
-int sf_ahead=4, phy_test = 0;
-int sl_ahead=0;
+int sf_ahead=4 ;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
@@ -110,7 +109,6 @@ void config_common(int Mod_idP,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
-uint64_t get_softmodem_optmask(void) {return 0;}
 mac_rlc_status_resp_t mac_rlc_status_ind(const module_id_t       module_idP,
                                          const rnti_t            rntiP,
                                          const eNB_index_t       eNB_index,
@@ -449,6 +447,8 @@ int main(int argc, char **argv)
   set_glog(loglvl);
   T_stdout = 1;
 
+  get_softmodem_params()->phy_test = 1;
+  
   if (snr1set==0)
     snr1 = snr0+10;
 

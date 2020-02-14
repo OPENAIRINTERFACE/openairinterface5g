@@ -34,8 +34,7 @@
 #include "nr_mac_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
-#include "executables/nr-softmodem.h"
-#include "common/utils/nr/nr_common.h"
+#include "executables/softmodem-common.h"
 
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"

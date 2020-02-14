@@ -36,7 +36,7 @@
 #include "assertions.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
-#include "executables/nr-softmodem.h"
+#include "executables/softmodem-common.h"
 
 #include <stdio.h>
 

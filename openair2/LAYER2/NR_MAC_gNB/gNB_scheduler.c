@@ -59,11 +59,7 @@
 #include "intertask_interface.h"
 #endif
 
-#include "assertions.h"
-#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
-
-#define ENABLE_MAC_PAYLOAD_DEBUG
-#define DEBUG_eNB_SCHEDULER 1
+#include "executables/softmodem-common.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -380,7 +376,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // Phytest scheduling
-  if (phy_test && slot_txP==1){
+  if (get_softmodem_params()->phy_test && slot_txP==1){
     nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
     // resetting ta flag
     gNB->ta_len = 0;
@@ -395,7 +391,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   } //is_nr_DL_slot
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
-    if (phy_test && slot_rxP==8){
+    if (get_softmodem_params()->phy_test && slot_rxP==8){
       nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
     }
   }

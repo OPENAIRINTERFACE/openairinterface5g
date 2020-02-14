@@ -30,7 +30,6 @@
  * \warning
  */
 
-#include "executables/nr-softmodem.h"
 
 /* MAC related headers */
 #include "mac_proto.h"
@@ -52,7 +51,7 @@
 /*Openair Packet Tracer */
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
-
+#include "executables/softmodem-common.h"
 /* log utils */
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -2678,6 +2677,25 @@ void nr_ue_send_sdu(module_id_t module_idP,
   NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
+
+  //LOG_D(MAC,"sdu: %x.%x.%x\n",sdu[0],sdu[1],sdu[2]);
+
+  /*
+  #ifdef DEBUG_HEADER_PARSING
+    LOG_D(MAC, "[UE %d] ue_send_sdu : Frame %d gNB_index %d : num_ce %d num_sdu %d\n",
+      module_idP, frameP, gNB_index, num_ce, num_sdu);
+  #endif
+  */
+
+  /*
+  #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+    for (i = 0; i < 32; i++) {
+      LOG_T(MAC, "%x.", sdu[i]);
+    }
+    LOG_T(MAC, "\n");
+  #endif
+  */
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs

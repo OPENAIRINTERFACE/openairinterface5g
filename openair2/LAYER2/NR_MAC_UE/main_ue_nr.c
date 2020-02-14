@@ -32,7 +32,14 @@
 
 //#include "defs.h"
 #include "mac_proto.h"
-#include "executables/nr-softmodem.h"
+#include "../../ARCH/COMMON/common_lib.h"
+//#undef MALLOC
+#include "assertions.h"
+#include "PHY/types.h"
+#include "PHY/defs_UE.h"
+#include "openair2/LAYER2/RLC/rlc.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "executables/softmodem-common.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
