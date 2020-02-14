@@ -3192,6 +3192,17 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
           UE_template->mcs_UL[harq_pid]=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
           rb_table_index=5; // for PHR
         }
+        if( (UE_sched_ctrl->ul_scheduled | (1<<harq_pid))>0 ){
+          UE_template->scheduled_ul_bytes -= UE_template->TBS_UL[harq_pid];
+
+          if (UE_template->scheduled_ul_bytes < 0) {
+            UE_template->scheduled_ul_bytes = 0;
+          }
+          UE_template->estimated_ul_buffer -= UE_template->TBS_UL[harq_pid];
+          if (UE_template->estimated_ul_buffer < 0) {
+            UE_template->estimated_ul_buffer = 0;
+          }
+        }
 
         UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=UE_template->mcs_UL[harq_pid];
         UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]);

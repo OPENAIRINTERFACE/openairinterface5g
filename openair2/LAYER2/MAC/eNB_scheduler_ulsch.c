@@ -200,6 +200,10 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_template_ptr->scheduled_ul_bytes < 0) {
         UE_template_ptr->scheduled_ul_bytes = 0;
       }
+      UE_template_ptr->estimated_ul_buffer -= UE_template_ptr->TBS_UL[harq_pid];
+      if (UE_template_ptr->estimated_ul_buffer < 0) {
+        UE_template_ptr->estimated_ul_buffer = 0;
+      }
     } else {  // sduP == NULL => error
       UE_scheduling_control->pusch_rx_error_num[CC_idP]++;
       LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x (len %d)\n",
@@ -232,6 +236,10 @@ rx_sdu(const module_id_t enb_mod_idP,
 
         if (UE_template_ptr->scheduled_ul_bytes < 0) {
           UE_template_ptr->scheduled_ul_bytes = 0;
+        }
+        UE_template_ptr->estimated_ul_buffer -= UE_template_ptr->TBS_UL[harq_pid];
+        if (UE_template_ptr->estimated_ul_buffer < 0) {
+          UE_template_ptr->estimated_ul_buffer = 0;
         }
 
         if (find_RA_id(enb_mod_idP, CC_idP, current_rnti) != -1) {
