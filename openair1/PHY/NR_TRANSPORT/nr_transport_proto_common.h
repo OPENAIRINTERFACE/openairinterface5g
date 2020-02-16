@@ -1672,8 +1672,8 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
 		       uint32_t X_u[64][839]);
 
 void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
-			  uint8_t highSpeedFlag,
-			  uint32_t **X_u);
+			  uint8_t fd_occasion,
+			  uint32_t X_u[64][839]);
 
 
 void init_prach_tables(int N_ZC);

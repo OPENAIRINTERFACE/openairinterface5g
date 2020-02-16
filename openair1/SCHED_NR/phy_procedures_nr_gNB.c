@@ -373,6 +373,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
   for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
     // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
+
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
       nr_slot_fep_ul(&gNB->frame_parms,
                      gNB->common_vars.rxdata[aa],
@@ -391,21 +392,36 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
   for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
-    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id];
+    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
+    int harq_pid;
+    NR_UL_gNB_HARQ_t *ulsch_harq;
 
-    if (ulsch->rnti > 0) {
-      uint8_t harq_pid = ulsch->harq_process_id[slot_rx];
-      uint8_t symbol_start = ulsch->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15.start_symbol;
-      uint8_t symbol_end = symbol_start + ulsch->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15.number_symbols;
+    if ((ulsch) &&
+	(ulsch->rnti > 0)) {
+      // for for an active HARQ process
+      for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
+	ulsch_harq = ulsch->harq_processes[harq_pid];
+	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+	if ((ulsch_harq->status == NR_ACTIVE) &&
+	    (ulsch_harq->frame == frame_rx) &&
+	    (ulsch_harq->slot == slot_rx) &&
+	    (ulsch_harq->handled == 0)){
+
+
+	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.ulsch_pdu_rel15.start_symbol;
+	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.ulsch_pdu_rel15.number_symbols;
       
-      for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+	    nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+	  }
+	  //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
+	  //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
+	  nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+	  nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
+	  nr_fill_crc_indication(gNB, frame_rx, slot_rx, ULSCH_id, 0);
+	  break;
+	}
       }
-      //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
-      //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
-      nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
-      nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
-      nr_fill_crc_indication(gNB, frame_rx, slot_rx, ULSCH_id, 0);
     }
   }
 }

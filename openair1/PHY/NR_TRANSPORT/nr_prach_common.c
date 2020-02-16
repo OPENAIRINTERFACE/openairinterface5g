@@ -100,7 +100,7 @@ void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)
 
 void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
 			  uint8_t fd_occasion,
-			  uint32_t **X_u)
+			  uint32_t X_u[64][839])
 {
   // Compute DFT of x_u => X_u[k] = x_u(inv(u)*k)^* X_u[k] = exp(j\pi u*inv(u)*k*(inv(u)*k+1)/N_ZC)
   nfapi_nr_prach_config_t prach_config = config->prach_config;
@@ -115,9 +115,9 @@ void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);
 
-#ifdef NR_PRACH_DEBUG
-  LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach short sequence? %x\n",zeroCorrelationZoneConfig, prach_c);
-#endif
+
+  LOG_D(PHY,"compute_prach_seq: NCS_config %d, prach short sequence %x, num_Seqeuences %d, rootSequenceIndex %d\n",prach_config.num_prach_fd_occasions_list[fd_occasion].prach_zero_corr_conf.value, short_sequence, num_sequences, rootSequenceIndex);
+
 
 
   N_ZC = (short_sequence) ? 139 : 839;
@@ -133,9 +133,9 @@ void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
   }
 
 
-#ifdef PRACH_DEBUG
-  LOG_I( PHY, "compute_prach_seq: done init prach_tables\n" );
-#endif
+
+  LOG_D( PHY, "compute_prach_seq: done init prach_tables\n" );
+
 
   for (i=0; i<num_sequences; i++) {
     int index = (rootSequenceIndex+i) % (N_ZC-1);

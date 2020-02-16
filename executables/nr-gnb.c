@@ -47,7 +47,7 @@
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR/fapi_nr_l1.h"
-#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -205,6 +205,13 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
+
+    // Do PRACH RU processing
+    int prach_id=find_nr_prach(gNB,frame_rx,slot_rx,0,SEARCH_EXIST);
+    if (prach_id>=0) {
+      L1_nr_prach_procedures(gNB,frame_rx,slot_rx,&gNB->prach_vars.list[prach_id].pdu);
+      gNB->prach_vars.list[prach_id].frame=-1;
+    }
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 

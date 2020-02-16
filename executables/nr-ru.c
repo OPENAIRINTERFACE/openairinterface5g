@@ -67,6 +67,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/INIT/phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
@@ -1529,6 +1530,13 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
+
+      // Do PRACH RU processing
+      int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
+      if (prach_id>=0) {
+	rx_nr_prach_ru(ru,ru->prach_list[prach_id].fmt,proc->frame_rx,proc->tti_rx);
+	free_nr_ru_prach_entry(ru,prach_id);
+      }
     }
 
     // At this point, all information for subframe has been received on FH interface

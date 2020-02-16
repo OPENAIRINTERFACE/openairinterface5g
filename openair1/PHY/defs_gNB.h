@@ -47,6 +47,7 @@
 
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 
+
 typedef struct {
   uint32_t pbch_a;
   uint32_t pbch_a_interleaved;
@@ -176,8 +177,8 @@ typedef struct {
   nfapi_nr_ul_config_ulsch_pdu ulsch_pdu;
   /// Frame where current HARQ round was sent
   uint32_t frame;
-  /// Subframe where current HARQ round was sent
-  uint32_t subframe;
+  /// Slot where current HARQ round was sent
+  uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// Last TPC command

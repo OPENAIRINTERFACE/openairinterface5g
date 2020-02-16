@@ -39,6 +39,12 @@ extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 
+void init_prach_list(PHY_VARS_gNB *gNB) {
+
+  AssertFatal(gNB!=NULL,"gNB is null\n");
+  for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) gNB->prach_vars.list[i].frame=-1;
+}
+
 int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type) {
 
   uint16_t i;
@@ -63,9 +69,9 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 		   int Slot,
 		   nfapi_nr_prach_pdu_t *prach_pdu) {
 
-  int prach_id = find_nr_prach(gNB,SFN,Slot,prach_pdu->num_ra,SEARCH_EXIST);
+  int prach_id = find_nr_prach(gNB,SFN,Slot,prach_pdu->num_ra,SEARCH_EXIST_OR_FREE);
   AssertFatal( (prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX),
-              "illegal or no prach_id found!!! numRA %d dlsch_id %d\n",prach_pdu->num_ra,prach_id);
+              "illegal or no prach_id found!!! numRA %d prach_id %d\n",prach_pdu->num_ra,prach_id);
 
   gNB->prach_vars.list[prach_id].frame=SFN;
   gNB->prach_vars.list[prach_id].slot=Slot;
@@ -73,20 +79,76 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 
 }
 
+void init_prach_ru_list(RU_t *ru) {
+
+  AssertFatal(ru!=NULL,"ruis null\n");
+  for (int i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) ru->prach_list[i].frame=-1;
+  pthread_mutex_init(&ru->prach_list_mutex,NULL);
+  
+}
+
+int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type) {
+
+  uint16_t i;
+  int16_t first_free_index=-1;
+
+  AssertFatal(ru!=NULL,"ru is null\n");
+  pthread_mutex_lock(&ru->prach_list_mutex);
+  for (i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
+    LOG_D(PHY,"searching for PRACH in %d.%d : prach_index %d=> %d.%d\n", frame,slot,i,
+	  ru->prach_list[i].frame,ru->prach_list[i].slot);
+    if ((ru->prach_list[i].frame == frame) &&
+        (ru->prach_list[i].slot  == slot)) {
+      pthread_mutex_unlock(&ru->prach_list_mutex);
+      return i;
+    }
+    else if ((ru->prach_list[i].frame == -1) && (first_free_index==-1)) first_free_index=i;
+  }
+  pthread_mutex_unlock(&ru->prach_list_mutex);
+  if (type == SEARCH_EXIST) return -1;
+
+  return first_free_index;
+}
+
+void nr_fill_prach_ru(RU_t *ru,
+		      int SFN,
+		      int Slot,
+		      nfapi_nr_prach_pdu_t *prach_pdu) {
+
+  int prach_id = find_nr_prach_ru(ru,SFN,Slot,SEARCH_EXIST_OR_FREE);
+  AssertFatal( (prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX),
+              "illegal or no prach_id found!!! prach_id %d\n",prach_id);
+
+  pthread_mutex_lock(&ru->prach_list_mutex);
+  ru->prach_list[prach_id].frame = SFN;
+  ru->prach_list[prach_id].slot  = Slot;
+  ru->prach_list[prach_id].fmt   = prach_pdu->prach_format;
+  pthread_mutex_unlock(&ru->prach_list_mutex);  
+
+}
+
+void free_nr_ru_prach_entry(RU_t *ru,
+			    int prach_id) {
+
+  pthread_mutex_lock(&ru->prach_list_mutex);
+  ru->prach_list[prach_id].frame=-1;
+  pthread_mutex_unlock(&ru->prach_list_mutex);
+
+}
+
+const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
+
 void rx_nr_prach_ru(RU_t *ru,
-		    nfapi_nr_prach_pdu_t *prach_pdu,
+		    int prach_fmt,
 		    int frame,
 		    int slot) {
 
   AssertFatal(ru!=NULL,"ru is null\n");
 
   int16_t            **rxsigF=NULL;
-  NR_DL_FRAME_PARMS *fp=&ru->frame_parms;
-
-  int frame_type          = ru->config.cell_config.frame_duplex_type.value;
+  NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
 
   int16_t *prach[ru->nb_rx];
-  uint8_t prach_fmt = prach_pdu->prach_format;
   int prach_sequence_length = ru->config.prach_config.prach_sequence_length.value;
 
   int msg1_frequencystart   = ru->config.prach_config.num_prach_fd_occasions_list[0].k1.value;
@@ -104,6 +166,9 @@ void rx_nr_prach_ru(RU_t *ru,
   int16_t *prach2;
 
   if (prach_sequence_length == 0) {
+    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d, msg1_frequencyStart %d\n",
+	  ru->idx,frame,slot,prach_fmt,msg1_frequencystart);
+    AssertFatal(prach_fmt<4,"Illegal prach format %d for length 839\n",prach_fmt);
     switch (prach_fmt) {
     case 0:
       Ncp = 3168;
@@ -124,7 +189,11 @@ void rx_nr_prach_ru(RU_t *ru,
     }
   }
   else {
+    LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %s, msg1_frequencyStart %d\n",
+	  ru->idx,frame,slot,prachfmt[prach_fmt],msg1_frequencystart);
+
     switch (prach_fmt) {
+    AssertFatal(prach_fmt<4,"Illegal prach format %d for length 139 (combined formats not supported yet)\n",prach_fmt);
     case 0: //A1
       Ncp = 288/(1<<mu);
       break;
@@ -416,7 +485,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   nfapi_nr_prach_config_t *cfg=&gNB->gNB_config.prach_config;
   NR_DL_FRAME_PARMS *fp;
 
-  lte_frame_type_t   frame_type;
   uint16_t           rootSequenceIndex;  
   int                numrootSequenceIndex;
   uint8_t            restricted_set;      
@@ -455,10 +523,9 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   nb_rx = gNB->gNB_config.carrier_config.num_rx_ant.value;
   
-  frame_type          = gNB->gNB_config.cell_config.frame_duplex_type.value;
   rootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].prach_root_sequence_index.value;
   numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].num_root_sequences.value;
-  NCS          = cfg->num_prach_fd_occasions_list[0].prach_zero_corr_conf.value;
+  NCS          = prach_pdu->num_cs;//cfg->num_prach_fd_occasions_list[0].prach_zero_corr_conf.value;
   int prach_sequence_length = cfg->prach_sequence_length.value;
 
   int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[0].k1.value;
@@ -473,7 +540,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint8_t prach_fmt = prach_pdu->prach_format;
   uint16_t N_ZC = (prach_sequence_length==0)?839:139;
 
-
+  LOG_D(PHY,"L1 PRACH RX: rooSequenceIndex %d, numRootSeqeuences %d, NCS %d, N_ZC %d \n",  rootSequenceIndex,numrootSequenceIndex,NCS,N_ZC);
 
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;
@@ -501,6 +568,9 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   
   *max_preamble_energy=0;
+  *max_preamble_delay=0;
+  *max_preamble=0;
+
   for (preamble_index=0 ; preamble_index<64 ; preamble_index++) {
 
     if (LOG_DEBUGFLAG(PRACH)){
@@ -510,7 +580,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     if (restricted_set == 0) {
       // This is the relative offset in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
       preamble_offset = ((NCS==0)? preamble_index : (preamble_index/(N_ZC/NCS)));
-      
+   
       if (preamble_offset != preamble_offset_old) {
         preamble_offset_old = preamble_offset;
         new_dft = 1;
@@ -540,13 +610,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
           // current root depending on rootSequenceIndex
           int index = (rootSequenceIndex + preamble_offset) % N_ZC;
 
-	  if (prach_fmt<4) {
-	    // prach_root_sequence_map points to prach_root_sequence_map0_3
-	    DevAssert( index < sizeof(prach_root_sequence_map_0_3) / sizeof(prach_root_sequence_map_0_3[0]) );
-	  } else {
-	    // prach_root_sequence_map points to prach_root_sequence_map4
-	    DevAssert( index < sizeof(prach_root_sequence_map_abc) / sizeof(prach_root_sequence_map_abc[0]) );
-	  }
 	  u = prach_root_sequence_map[index];
 	  
 	  uint16_t n_group_ra = 0;
@@ -595,10 +658,17 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 		       frame,subframe,preamble_index,NCS,N_ZC/NCS,preamble_offset,preamble_shift,en);
     }
 
+    LOG_D(PHY,"PRACH RX preamble_index %d, preamble_offset %d\n",preamble_index,preamble_offset);
+
+
     if (new_dft == 1) {
       new_dft = 0;
 
       Xu=(int16_t*)gNB->X_u[preamble_offset-first_nonzero_root_idx];
+
+      LOG_D(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_index,preamble_offset-first_nonzero_root_idx);
+
+
       memset(prach_ifft,0,((N_ZC==839) ? 2048 : 256)*sizeof(int32_t));
     
 

@@ -26,6 +26,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
@@ -164,6 +165,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
   }
 
+  // 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
@@ -217,6 +219,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
   */
   prach_vars->prach_ifft       = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
+
+  init_prach_list(gNB);
 
   int N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
@@ -457,6 +461,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
     LOG_E(PHY,"Already gNB already configured, do nothing\n");
     return;
   }
+
+  compute_nr_prach_seq(gNB_config,0,RC.gNB[Mod_id]->X_u);
 
   RC.gNB[Mod_id]->configured     = 1;
   LOG_I(PHY,"gNB %d configured\n",Mod_id);

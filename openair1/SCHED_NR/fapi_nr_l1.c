@@ -31,6 +31,7 @@
  */
 #include "fapi_nr_l1.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
@@ -148,10 +149,11 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
   uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
 
-  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;\n",
+  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d%d DL_req:SFN/SLO:%04d%d:dl_pdu:%d tx_req:SFN/SLOT:%04d%d:pdus:%d;ul_dci %d ul_tti %d\n",
         frame,slot,
         DL_req->SFN,DL_req->Slot,number_dl_pdu,
-        TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs);
+        TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs,
+	number_ul_dci_pdu,number_ul_tti_pdu);
 
   int pdcch_received=0;
   gNB->num_pdsch_rnti=0;
@@ -204,7 +206,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     switch (UL_tti_req->pdus_list[i].pdu_type) {
       case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
         LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE for %d.%d\n",frame,slot,UL_tti_req->SFN,UL_tti_req->Slot);
-        nr_fill_ulsch(gNB,frame,slot,&UL_tti_req->pdus_list[i].pusch_pdu);
+        nr_fill_ulsch(gNB,UL_tti_req->SFN,UL_tti_req->Slot,&UL_tti_req->pdus_list[i].pusch_pdu);
         break;
       case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE for %d.%d\n",frame,slot,UL_tti_req->SFN,UL_tti_req->Slot);
@@ -214,6 +216,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE for %d.%d\n",frame,slot,UL_tti_req->SFN,UL_tti_req->Slot);
         nfapi_nr_prach_pdu_t *prach_pdu = &UL_tti_req->pdus_list[i].prach_pdu;
         nr_fill_prach(gNB,UL_tti_req->SFN,UL_tti_req->Slot,prach_pdu);
+	nr_fill_prach_ru(gNB->RU_list[0],UL_tti_req->SFN,UL_tti_req->Slot,prach_pdu);
         break;
     }
   }

@@ -220,13 +220,13 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         /// Nfapi ULSCH PDU
         //nfapi_nr_ul_config_ulsch_pdu ulsch_pdu;
         ulsch->harq_processes[i]->frame=0;
-        ulsch->harq_processes[i]->subframe=0;
+        ulsch->harq_processes[i]->slot=0;
         ulsch->harq_processes[i]->round=0;
         ulsch->harq_processes[i]->TPC=0;
         ulsch->harq_processes[i]->mimo_mode=0;
         ulsch->harq_processes[i]->dci_alloc=0;
         ulsch->harq_processes[i]->rar_alloc=0;
-        ulsch->harq_processes[i]->status=0;
+        ulsch->harq_processes[i]->status=NR_SCH_IDLE;
         ulsch->harq_processes[i]->subframe_scheduling_flag=0;
         ulsch->harq_processes[i]->subframe_cba_scheduling_flag=0;
         ulsch->harq_processes[i]->phich_active=0;

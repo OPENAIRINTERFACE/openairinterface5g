@@ -72,6 +72,10 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   ulsch->harq_mask |= 1<<harq_pid;
   ulsch->harq_process_id[slot] = harq_pid;
 
+  ulsch->harq_processes[harq_pid]->frame=frame;
+  ulsch->harq_processes[harq_pid]->slot=slot;
+  ulsch->harq_processes[harq_pid]->handled= 0;
+  ulsch->harq_processes[harq_pid]->status= NR_ACTIVE;
   nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
 
   LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
