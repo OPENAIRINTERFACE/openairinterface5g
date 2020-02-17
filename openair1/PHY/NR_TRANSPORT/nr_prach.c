@@ -278,8 +278,10 @@ void rx_nr_prach_ru(RU_t *ru,
 	//50 MHz @ 61.44 Ms/s
 	prach2 = prach[aa] + (Ncp<<2);
 	if (prach_sequence_length == 0) {
-	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2)
+	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2) {
+            dftlen=49152;
 	    dft49152(prach2,rxsigF[aa],1);
+          }
 	  if (prach_fmt == 1 || prach_fmt == 2) {
 	    dft49152(prach2+98304,rxsigF[aa]+98304,1);
 	    reps++;
@@ -290,11 +292,13 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps+=2;
 	  }
 	  if (prach_fmt == 3) { 
+            dftlen=12288;
 	    for (int i=0;i<4;i++) dft12288(prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
 	    reps=4;
 	  }
 	}
 	else {
+          dftlen=2048;
 	  dft2048(prach2,rxsigF[aa],1);
 	  if (prach_fmt != 7) { // !=C0
 	    dft2048(prach2+4096,rxsigF[aa]+4096,1);
@@ -321,6 +325,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	  prach2 = prach[aa] + (3*Ncp);
 	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
 	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2) {
+            dftlen=36864;
 	    dft36864(prach2,rxsigF[aa],1);
 	    reps++;
 	  }
@@ -334,10 +339,12 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps+=2;
 	  }
 	  if (prach_fmt == 3) {
+            dftlen=9216;
 	    for (int i=0;i<4;i++) dft9216(prach2+(i*9216*2),rxsigF[aa]+(i*9216*2),1);
 	    reps=4;
 	  }
 	} else {
+          dftlen=1536;
 	  dft1536(prach2,rxsigF[aa],1);
 	  if (prach_fmt != 0xc0) {
 	    dft1536(prach2+3072,rxsigF[aa]+3072,1);
@@ -364,12 +371,13 @@ void rx_nr_prach_ru(RU_t *ru,
     else if (fp->N_RB_UL <= 273) {
       if (fp->threequarter_fs==0) {
 	prach2 = prach[aa] + (Ncp<<3); 
-	dftlen=98304;
 	//80,90,100 MHz @ 122.88 Ms/s 
 
 	if (prach_sequence_length == 0) {	
-	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2)
+	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2) {
+	    dftlen=98304;
 	    dft98304(prach2,rxsigF[aa],1);
+          }
 	  if (prach_fmt == 1 || prach_fmt == 2) {
 	    dft98304(prach2+196608,rxsigF[aa]+196608,1);
 	    reps++;
@@ -380,9 +388,9 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps+=2;
 	  }
 	  if (prach_fmt == 3) {
+            dftlen=24576;
 	    for (int i=0;i<4;i++) dft24576(prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
 	    reps=4;
-	    dftlen=24576;
 	  }
 	}
 	else {
@@ -412,9 +420,9 @@ void rx_nr_prach_ru(RU_t *ru,
 	AssertFatal(fp->N_RB_UL <= 217,"cannot do more than 217 PRBs with 3/4 sampling\n");
 	prach2 = prach[aa] + (6*Ncp);
 	//	80 MHz @ 92.16 Ms/s
-	dftlen=73728;
 	if (prach_sequence_length == 0) {
 	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2) {
+	    dftlen=73728;
 	    dft73728(prach2,rxsigF[aa],1);
 	    reps++;
 	  }
@@ -423,9 +431,9 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps++;
 	  }
 	  if (prach_fmt == 3) {
+	    dftlen=18432;
 	    for (int i=0;i<4;i++) dft18432(prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
 	    reps=4;
-	    dftlen=18432;
 	  }
 	} else {
 	  dftlen=3072;
