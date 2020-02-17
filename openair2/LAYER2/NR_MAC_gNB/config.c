@@ -213,10 +213,10 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = ???
   }
 
-  cfg->prach_config.ssb_per_rach.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
+  cfg->prach_config.ssb_per_rach.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
   cfg->prach_config.ssb_per_rach.tl.tag = NFAPI_NR_CONFIG_SSB_PER_RACH_TAG;
   cfg->num_tlv++;
- 
+
   // SSB Table Configuration
   int scs_scaling = 1<<(cfg->ssb_config.scs_common.value);
   if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
