@@ -321,8 +321,8 @@ void rx_nr_prach_ru(RU_t *ru,
 	}
       } else {
 	//	40 MHz @ 46.08 Ms/s
+        prach2 = prach[aa] + (3*Ncp);
 	if (prach_sequence_length == 0) {
-	  prach2 = prach[aa] + (3*Ncp);
 	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
 	  if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2) {
             dftlen=36864;
