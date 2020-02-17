@@ -63,6 +63,7 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int sf_ahead=4 ;
+int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
