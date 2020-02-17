@@ -700,13 +700,13 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	  idft1024(prachF,prach_ifft_tmp,1);
 	  // compute energy and accumulate over receive antennas
 	  for (i=0;i<2048;i++)
-	    prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>10;
+	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[i<<1] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
 	} else {
 	  idft256(prachF,prach_ifft_tmp,1);
 	  log2_ifft_size = 8;
 	  // compute energy and accumulate over receive antennas and repetitions for BR
 	  for (i=0;i<256;i++)
-	    prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[(i<<1)] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>10;
+	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
 	}
 
         if (LOG_DUMPFLAG(PRACH)) {	
