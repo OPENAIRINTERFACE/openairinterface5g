@@ -349,7 +349,6 @@ int main(int argc, char **argv)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
-  frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
   frame_parms->nushift = Nid_cell%4;
   frame_parms->ssb_type = nr_ssb_type_C;
@@ -475,7 +474,7 @@ int main(int argc, char **argv)
     		memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
       
     	nr_common_signal_procedures (gNB,frame,slot);
-      
+
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     		if (cyclic_prefix_type == 1) {
     			PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
@@ -576,7 +575,7 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_frame,1,1);
       }
-
+      UE->frame_parms.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier; 
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
 	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
@@ -618,7 +617,7 @@ int main(int argc, char **argv)
 	  uint8_t gNB_xtra_byte=0;
 	  for (int i=0; i<8; i++)
 	    gNB_xtra_byte |= ((gNB->pbch.pbch_a>>(31-i))&1)<<(7-i);
-
+ 
 	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
 	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)));
