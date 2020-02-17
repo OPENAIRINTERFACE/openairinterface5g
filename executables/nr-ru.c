@@ -764,11 +764,13 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
       int beam=0;
+      if (slot==0) beam = 11; //3 for boresight & 8 to enable
+      /*
       if (slot==0 || slot==40) beam=0&8;
       if (slot==10 || slot==50) beam=1&8;
       if (slot==20 || slot==60) beam=2&8;
       if (slot==30 || slot==70) beam=3&8;
-
+      */
       flags |= beam<<8;
     }
     
@@ -2371,7 +2373,7 @@ void RCconfig_RU(void)
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
-      RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].uptr);
+      RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;
