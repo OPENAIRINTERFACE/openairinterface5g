@@ -355,6 +355,7 @@ int main(int argc, char **argv)
 
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
+  nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
 
   uint8_t n_hf = 0;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
@@ -575,7 +576,6 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_frame,1,1);
       }
-      UE->frame_parms.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier; 
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
 	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
