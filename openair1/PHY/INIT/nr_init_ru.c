@@ -22,6 +22,7 @@
 #include "phy_init.h"
 #include "SCHED/sched_common.h"
 #include "PHY/phy_extern.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "SIMULATION/TOOLS/sim.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
