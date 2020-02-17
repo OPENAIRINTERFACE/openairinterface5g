@@ -107,7 +107,8 @@ void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
 @param dlsch_buffer Pointer to RAR input buffer
 @param N_RB_UL Number of UL resource blocks
 */
-void nr_fill_rar(NR_RA_t * ra,
+void nr_fill_rar(uint8_t Mod_idP,
+                 NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
                  uint16_t N_RB_UL);
 

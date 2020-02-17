@@ -186,23 +186,6 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
 
   AssertFatal(ra->state != RA_IDLE, "RA is not active for RA %X\n", ra->rnti);
 
-  // if(N_RB_UL == 25) {
-  //   ra->msg3_first_rb = 1;
-  // } else {
-  //   if (cc->tdd_Config && N_RB_UL == 100) {
-  //     ra->msg3_first_rb = 3;
-  //   } else {
-  //     ra->msg3_first_rb = 2;
-  //   }
-  // }
-  // ra->msg3_nb_rb = 1;
-  // /* UL Grant */
-  // ra->msg3_mcs = 10;
-  // ra->msg3_TPC = 3;
-  // ra->msg3_ULdelay = 0;
-  // ra->msg3_cqireq = 0;
-  // ra->msg3_round = 0;
-
   LOG_D(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
   ul_req->SFN = ra->Msg3_frame << 4 | ra->Msg3_slot;
@@ -456,7 +439,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     // Program UL processing for Msg3
     // nr_get_Msg3alloc(&cc[CC_id], slotP, frameP,&ra->Msg3_frame, &ra->Msg3_slot); // todo
     LOG_D(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
-    nr_fill_rar(ra, cc[CC_id].RAR_pdu.payload, N_RB_UL);
+    nr_fill_rar(module_idP, ra, cc[CC_id].RAR_pdu.payload, N_RB_UL);
     nr_add_msg3(module_idP, CC_id, frameP, slotP);
     ra->state = WAIT_Msg3;
     LOG_D(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
@@ -486,40 +469,89 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
   ra->msg3_round = 0;
 }
 
+
+/////////////////////////////////////
+//    Random Access Response PDU   //
+//         TS 38.213 ch 8.2        //
+//        TS 38.321 ch 6.2.3       //
+/////////////////////////////////////
+//| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |// bit-wise
+//| E | T |       R A P I D       |//
+//| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |//
+//| R |           T A             |//
+//|       T A         |  UL grant |//
+//|            UL grant           |//
+//|            UL grant           |//
+//|            UL grant           |//
+//|         T C - R N T I         |//
+//|         T C - R N T I         |//
+/////////////////////////////////////
+//       UL grant  (27 bits)       //
+/////////////////////////////////////
+//| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |// bit-wise
+//|-------------------|FHF|F_alloc|//
+//|        Freq allocation        |//
+//|    F_alloc    |Time allocation|//
+//|      MCS      |     TPC   |CSI|//
+/////////////////////////////////////
 // WIP
 // todo:
 // - handle MAC RAR BI subheader
 // - sending only 1 RAR subPDU
-// - UL Grant
+// - UL Grant: hardcoded CSI, TPC, time alloc
 // - padding
-void nr_fill_rar(NR_RA_t * ra,
+void nr_fill_rar(uint8_t Mod_idP,
+                 NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
                  uint16_t N_RB_UL){
 
-    LOG_D(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d ", ra->Msg2_frame, ra-> Msg2_slot);
-    NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
-    NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
+  LOG_D(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d ", ra->Msg2_frame, ra-> Msg2_slot);
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+  NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
+  NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
+  unsigned char frequency_hopping_flag = 0, csi_req = 0, tpc_command = 0, mcs = 9, t_alloc = 0;
+  uint8_t N_UL_Hop;
+  uint16_t ul_grant, f_alloc, prb_alloc;
+  int bwp_size;
 
-    // E/T/RAPID subheader
-    // E = 0, one only RAR, first and last
-    // T = 1, RAPID
-    rarh->E = 0;
-    rarh->T = 1;
-    rarh->RAPID = ra->preamble_index;
+  /// E/T/RAPID subheader ///
+  // E = 0, one only RAR, first and last
+  // T = 1, RAPID
+  rarh->E = 0;
+  rarh->T = 1;
+  rarh->RAPID = ra->preamble_index;
 
-    // RAR MAC payload
-    rar->R = 0;
-    rar->TA1 = (uint8_t) (ra->timing_offset >> 5);    // 7 MSBs of timing advance
-    rar->TA2 = (uint8_t) (ra->timing_offset & 0x1f);  // 5 LSBs of timing advance
-    rar->TCRNTI_1 = (uint8_t) (ra->rnti >> 8);        // 8 MSBs of rnti
-    rar->TCRNTI_2 = (uint8_t) (ra->rnti & 0xff);      // 8 LSBs of rnti
+  /// RAR MAC payload ///
+  rar->R = 0;
 
-    // uint16_t rballoc = nr_mac_compute_RIV(N_RB_UL, ra->msg3_first_rb, ra->msg3_nb_rb);  // first PRB only for UL Grant
-    // uint32_t buffer = 0;
-    // rar->UL_GRANT_1 = (uint8_t) (buffer >> 24) & 0x7;
-    // rar->UL_GRANT_2 = (uint8_t) (buffer >> 16) & 0xFF;
-    // rar->UL_GRANT_3 = (uint8_t) (buffer >> 8) & 0xFF;
-    // rar->UL_GRANT_4 = (uint8_t) buffer & 0xff;
+  // TA command
+  rar->TA1 = (uint8_t) (ra->timing_offset >> 5);    // 7 MSBs of timing advance
+  rar->TA2 = (uint8_t) (ra->timing_offset & 0x1f);  // 5 LSBs of timing advance
+
+  // TC-RNTI
+  rar->TCRNTI_1 = (uint8_t) (ra->rnti >> 8);        // 8 MSBs of rnti
+  rar->TCRNTI_2 = (uint8_t) (ra->rnti & 0xff);      // 8 LSBs of rnti
+
+  // UL grant
+
+  ra->msg3_mcs = mcs;
+  ra->msg3_TPC = tpc_command;
+
+  bwp_size = pusch_pdu->bwp_size;
+  prb_alloc = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bwp_size);
+  if (frequency_hopping_flag){
+    // PUSCH with frequency hopping
+  } else {
+    N_UL_Hop = 0;
+  }
+
+  f_alloc = (prb_alloc & 0xfff) | (N_UL_Hop << 12);
+  ul_grant = csi_req | (tpc_command << 1) | (mcs << 4) | (t_alloc << 8) | (f_alloc << 12) | (frequency_hopping_flag << 26);
+
+  rar->UL_GRANT_1 = (uint8_t) (ul_grant >> 24) & 0x07;
+  rar->UL_GRANT_2 = (uint8_t) (ul_grant >> 16) & 0xff;
+  rar->UL_GRANT_3 = (uint8_t) (ul_grant >> 8) & 0xff;
+  rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
 }
-

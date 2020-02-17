@@ -65,8 +65,33 @@ uint16_t table_7_2_1[16] = {
   1920, // row index 13
 };
 
+/////////////////////////////////////
+//    Random Access Response PDU   //
+//         TS 38.213 ch 8.2        //
+//        TS 38.321 ch 6.2.3       //
+/////////////////////////////////////
+//| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |// bit-wise
+//| E | T |       R A P I D       |//
+//| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |//
+//| R |           T A             |//
+//|       T A         |  UL grant |//
+//|            UL grant           |//
+//|            UL grant           |//
+//|            UL grant           |//
+//|         T C - R N T I         |//
+//|         T C - R N T I         |//
+/////////////////////////////////////
+//       UL grant  (27 bits)       //
+/////////////////////////////////////
+//| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |// bit-wise
+//|-------------------|FHF|F_alloc|//
+//|        Freq allocation        |//
+//|    F_alloc    |Time allocation|//
+//|      MCS      |     TPC   |CSI|//
+/////////////////////////////////////
 // WIP todo:
-// - UL grant
+// - apply UL grant freq alloc & time alloc as per 8.2 TS 38.213
+// - apply tpc command, csi req, mcs
 uint16_t nr_ue_process_rar(module_id_t mod_id,
                            int CC_id,
                            frame_t frameP,
@@ -81,7 +106,9 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
     uint8_t n_subPDUs = 0;        // number of RAR payloads
     uint8_t n_subheaders = 0;     // number of MAC RAR subheaders
     uint8_t best_rx_rapid = -1;   // the closest RAPID receive from all RARs
-    uint16_t ta_command = 0;
+    unsigned char freq_hopping, msg3_t_alloc, mcs, tpc_command, csi_req;
+    uint16_t ta_command = 0, msg3_f_alloc, bwp_size;
+    int f_alloc, mask;
 
     AssertFatal(CC_id == 0, "RAR reception on secondary CCs is not supported yet\n");
 
@@ -102,12 +129,8 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
         ue_mac->RA_RAPID_found = 1;
         break;
       }
-      // if (abs((int) rarh->RAPID - (int) preamble_index) < abs((int) best_rx_rapid - (int) preamble_index)) {
-      //   best_rx_rapid = rarh->RAPID;
-      //   rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
-      // }
       if (rarh->E == 0) {
-        LOG_I(PHY, "No RAR found with the intended RAPID. The closest RAPID in all RARs is %d\n", best_rx_rapid);
+        LOG_I(PHY, "No RAR found with the intended RAPID. \n");
         break;
       } else {
         rarh += sizeof(NR_MAC_RAR) + 1;
@@ -120,10 +143,58 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
     //   mod_id, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
 
     if (ue_mac->RA_RAPID_found) {
+      // TC-RNTI
       *t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
       ue_mac->t_crnti = *t_crnti;
       ue_mac->rnti_type = NR_RNTI_TC;
+      // TA command
       ta_command = rar->TA2 + (rar->TA1 << 5);
+      // CSI
+      csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
+      // TPC
+      tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
+      switch (tpc_command){
+        case 0:
+          ue_mac->Msg3_TPC = -6;
+          break;
+        case 1:
+          ue_mac->Msg3_TPC = -4;
+          break;
+        case 2:
+          ue_mac->Msg3_TPC = -2;
+          break;
+        case 3:
+          ue_mac->Msg3_TPC = 0;
+          break;
+        case 4:
+          ue_mac->Msg3_TPC = 2;
+          break;
+        case 5:
+          ue_mac->Msg3_TPC = 4;
+          break;
+        case 6:
+          ue_mac->Msg3_TPC = 6;
+          break;
+        case 7:
+          ue_mac->Msg3_TPC = 8;
+          break;
+      }
+      //MCS
+      mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
+      // time and frequency alloc
+      bwp_size = NRRIV2BW(ue_mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+      msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x07);
+      msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
+
+      if (bwp_size < 180)
+        mask = (1 << ((int) ceil(log2((bwp_size*(bwp_size+1))>>1)))) - 1;
+      else
+        mask = (1 << (28 - (int)(ceil(log2((bwp_size*(bwp_size+1))>>1))))) - 1;
+
+      f_alloc = msg3_f_alloc & mask;
+
+      // frequency hopping flag
+      freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
     } else {
       ue_mac->t_crnti = 0;
       ta_command = (0xffff);
