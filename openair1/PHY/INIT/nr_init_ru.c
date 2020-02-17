@@ -47,11 +47,10 @@ int nr_phy_init_RU(RU_t *ru) {
   nfapi_nr_config_request_scf_t *cfg;
   ru->nb_log_antennas=0;
   for (int n=0;n<RC.nb_nr_L1_inst;n++) {
-    cfg = &RC.gNB[n]->gNB_config;
+    cfg = &ru->config;
     if (cfg->carrier_config.num_tx_ant.value > ru->nb_log_antennas) ru->nb_log_antennas = cfg->carrier_config.num_tx_ant.value;   
   }
   // copy configuration from gNB[0] in to RU, assume that all gNB instances sharing RU use the same configuration (at least the parts that are needed by the RU, numerology and PRACH)
-  memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
 
   AssertFatal(ru->nb_log_antennas > 0 && ru->nb_log_antennas < 13, "ru->nb_log_antennas %d ! \n",ru->nb_log_antennas);
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals 
