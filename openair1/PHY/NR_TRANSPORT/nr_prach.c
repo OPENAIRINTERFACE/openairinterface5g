@@ -256,7 +256,7 @@ void rx_nr_prach_ru(RU_t *ru,
   int n_ra_prb            = msg1_frequencystart;
   int k                   = (12*n_ra_prb) - 6*fp->N_RB_UL;
 
-  int N_ZC = (prach_fmt<4)?839:139;
+  int N_ZC = (prach_sequence_length==0)?839:139;
 
   if (k<0) k+=(fp->ofdm_symbol_size);
   
@@ -315,7 +315,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps+=2;
 	  } 
 	  if (prach_fmt == 6) {
-	    for (int i=6;i<11;i++) dft2048(prach2+(4096*i),rxsigF[aa]+(4096*i),1);
+	    for (int i=6;i<12;i++) dft2048(prach2+(4096*i),rxsigF[aa]+(4096*i),1);
 	  reps+=6;
 	  }
 	}
@@ -346,23 +346,23 @@ void rx_nr_prach_ru(RU_t *ru,
 	} else {
           dftlen=1536;
 	  dft1536(prach2,rxsigF[aa],1);
-	  if (prach_fmt != 0xc0) {
+	  if (prach_fmt != 7) {
 	    dft1536(prach2+3072,rxsigF[aa]+3072,1);
 	    reps++;
 	  }
 	  
-	  if (prach_fmt == 0xa2 || prach_fmt == 0xa3 || prach_fmt == 0xb2 || prach_fmt == 0xb3 || prach_fmt == 0xb4 || prach_fmt == 0xc2) {     
+	  if (prach_fmt == 1 || prach_fmt == 2 || prach_fmt == 4 || prach_fmt == 5 || prach_fmt == 6 || prach_fmt == 8) {     
 	    dft1536(prach2+3072*2,rxsigF[aa]+3072*2,1);
 	    dft1536(prach2+3072*3,rxsigF[aa]+3072*3,1);
 	    reps+=2;
 	  } 
-	  if (prach_fmt == 0xa3 || prach_fmt == 0xb3 || prach_fmt == 0xB4) {     
+	  if (prach_fmt == 2 || prach_fmt == 5 || prach_fmt == 6) {     
 	    dft1536(prach2+3072*4,rxsigF[aa]+3072*4,1);
 	    dft1536(prach2+3072*5,rxsigF[aa]+3072*5,1);
 	    reps+=2;
 	  } 
-	  if (prach_fmt == 0xB4) {
-	    for (int i=6;i<11;i++) dft1536(prach2+(3072*i),rxsigF[aa]+(3072*i),1);
+	  if (prach_fmt == 6) {
+	    for (int i=6;i<12;i++) dft1536(prach2+(3072*i),rxsigF[aa]+(3072*i),1);
 	    reps+=6;
 	  }
 	} // short format
@@ -412,7 +412,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps+=2;
 	  } 
 	  if (prach_fmt == 6) {
-	    for (int i=6;i<11;i++) dft4096(prach2+(8192*i),rxsigF[aa]+(8192*i),1);
+	    for (int i=6;i<12;i++) dft4096(prach2+(8192*i),rxsigF[aa]+(8192*i),1);
 	    reps+=6;
 	  }
 	}
@@ -454,7 +454,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps+=2;
 	  } 
 	  if (prach_fmt == 6) {
-	    for (int i=6;i<11;i++) dft3072(prach2+(6144*i),rxsigF[aa]+(6144*i),1);
+	    for (int i=6;i<12;i++) dft3072(prach2+(6144*i),rxsigF[aa]+(6144*i),1);
 	    reps+=6;
 	  }
 	}
