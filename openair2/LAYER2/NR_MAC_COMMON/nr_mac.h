@@ -161,10 +161,10 @@ typedef struct {
 
 // TS 38.321 ch. 6.2.3
 typedef struct {
+    uint8_t TA1:7;          // octet 1 [6:0]
     uint8_t R:1;            // octet 1 [7]
-    uint8_t TA1:7;          // octet 1 [7:0]
-    uint8_t TA2:5;          // octet 2 [7:2]
     uint8_t UL_GRANT_1:3;   // octet 2 [2:0]
+    uint8_t TA2:5;          // octet 2 [7:3]
     uint8_t UL_GRANT_2:8;   // octet 3 [7:0]
     uint8_t UL_GRANT_3:8;   // octet 4 [7:0]
     uint8_t UL_GRANT_4:8;   // octet 5 [7:0]
