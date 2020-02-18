@@ -1097,8 +1097,7 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
-      <main_exec_args>
-	          -n100 -R106 -b106 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
+      <main_exec_args>-n100 -R106 -b106 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
 		  -n100 -R217 -b217 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
 		  -n100 -R273 -b273 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
                   -n100 -R106 -o12 -s5 -f $OPENAIR_DIR/ci-scripts/rrc-files/reconfig.raw
