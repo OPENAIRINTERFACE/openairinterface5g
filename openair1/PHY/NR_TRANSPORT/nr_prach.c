@@ -470,7 +470,7 @@ void rx_nr_prach_ru(RU_t *ru,
     for (int j=0;j<N_ZC<<1;j++,k2++) {
       if (k2==(dftlen<<1)) k2=0;
       rxsigF_tmp[j] = rxsigF2[k2];
-      for (int i=1;i<reps;i++) rxsigF_tmp[j] += rxsigF2[k2+(i*N_ZC<<1)];
+      for (int i=1;i<reps;i++) rxsigF_tmp[j] += rxsigF2[k2+(i*dftlen<<1)];
     }
     memcpy((void*)rxsigF2,(void *)rxsigF_tmp,N_ZC<<2);
 
