@@ -1271,7 +1271,7 @@ function start_rf_sim_nr_ue {
     rm $1
 
     local i="0"
-    echo "egrep -c \"rfsimulator: Success\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    echo "egrep -c \"Initial sync: pbch decoded sucessfully\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
