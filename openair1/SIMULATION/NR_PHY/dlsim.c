@@ -733,9 +733,11 @@ int main(int argc, char **argv)
       Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
       nr_schedule_response(&Sched_INFO);
       
-      phy_procedures_gNB_TX(gNB,frame,slot,0);
+      if (run_initial_sync)
+        nr_common_signal_procedures(gNB,frame,slot);
+      else
+        phy_procedures_gNB_TX(gNB,frame,slot,0);
           
-      //nr_common_signal_procedures (gNB,frame,subframe);
       int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
       
       if (n_trials==1) {

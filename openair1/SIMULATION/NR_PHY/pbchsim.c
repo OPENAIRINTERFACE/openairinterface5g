@@ -61,6 +61,50 @@ uint16_t NB_UE_INST = 1;
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
+                               int N_RB_DL,
+                               int N_RB_UL,
+                               int mu,
+                               int Nid_cell,
+                               uint64_t position_in_burst)
+{
+  NR_DL_FRAME_PARMS *fp                                   = &gNB->frame_parms;
+  nfapi_nr_config_request_scf_t *gNB_config               = &gNB->gNB_config;
+  //overwrite for new NR parameters
+
+  uint64_t rev_burst=0;
+  for (int i=0; i<64; i++)
+    rev_burst |= (((position_in_burst>>(63-i))&0x01)<<i);
+
+  gNB_config->cell_config.phy_cell_id.value             = Nid_cell;
+  gNB_config->ssb_config.scs_common.value               = mu;
+  gNB_config->ssb_table.ssb_subcarrier_offset.value     = 0;
+  gNB_config->ssb_table.ssb_offset_point_a.value        = (N_RB_DL-20)>>1;
+  gNB_config->ssb_table.ssb_mask_list[1].ssb_mask.value = (rev_burst)&(0xFFFFFFFF);
+  gNB_config->ssb_table.ssb_mask_list[0].ssb_mask.value = (rev_burst>>32)&(0xFFFFFFFF);
+  gNB_config->cell_config.frame_duplex_type.value       = TDD;
+  gNB_config->ssb_table.ssb_period.value		= 1; //10ms
+  gNB_config->carrier_config.dl_grid_size[mu].value     = N_RB_DL;
+  gNB_config->carrier_config.ul_grid_size[mu].value     = N_RB_UL;
+  gNB_config->carrier_config.num_tx_ant.value           = fp->nb_antennas_tx;
+  gNB_config->carrier_config.num_rx_ant.value           = fp->nb_antennas_rx;
+
+  gNB_config->tdd_table.tdd_period.value = 0;
+  //gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
+
+  gNB->mac_enabled   = 1;
+  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  if (mu>2) fp->nr_band = 257;
+  else fp->nr_band = 78;
+  fp->threequarter_fs= 0;
+
+  gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
+
+  nr_init_frame_parms(gNB_config, fp);
+  gNB->configured    = 1;
+  LOG_I(PHY,"gNB configured\n");
+}
 int main(int argc, char **argv)
 {
   char c;
@@ -127,7 +171,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:M:N:F:GR:dP:IL:m:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -302,6 +346,10 @@ int main(int argc, char **argv)
       loglvl = atoi(optarg);
       break;
 
+    case 'm':
+      mu = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -310,6 +358,7 @@ int main(int argc, char **argv)
       //printf("-p Use extended prefix mode\n");
       //printf("-d Use TDD\n");
       printf("-n Number of frames to simulate\n");
+      printf("-m Numerology index\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-t Delay spread for multipath channel\n");
@@ -353,7 +402,7 @@ int main(int argc, char **argv)
   frame_parms->nushift = Nid_cell%4;
   frame_parms->ssb_type = nr_ssb_type_C;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
+  nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
   nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
 
@@ -384,8 +433,17 @@ int main(int argc, char **argv)
 	}
 	else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
 	break;
-  }
+  
 
+    case 3:
+      scs = 120000;
+      if (N_RB_DL == 66) {
+        fs = 122.88e6;
+        bw = 100e6;
+      }
+      else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+      break;
+  }
   // cfo with respect to sub-carrier spacing
   eps = cfo/scs;
 
