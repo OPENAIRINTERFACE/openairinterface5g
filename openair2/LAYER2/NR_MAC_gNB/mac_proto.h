@@ -206,10 +206,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
 int get_num_dmrs(uint16_t dmrs_mask );
 
-uint16_t nr_dci_size(nr_dci_format_t format,
-                         nr_rnti_type_t rnti_type,
-                         uint16_t N_RB);
-
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int bwp_id,
                      int coreset_id,
@@ -218,9 +214,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int UE_id,
                      int m
                      );
-
-int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 

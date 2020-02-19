@@ -33,35 +33,7 @@
 #define __LAYER2_NR_MAC_COMMON_H__
 
 #include "NR_PDSCH-Config.h"
-
-uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
-
-void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
-
-uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
-
-uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
-
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
-
-int get_nr_prach_info_from_index(uint8_t index,
-                                 int frame,
-                                 int slot,
-                                 uint32_t pointa,
-                                 uint8_t mu,
-                                 uint8_t unpaired,
-                                 uint16_t *format,
-                                 uint8_t *start_symbol,
-                                 uint8_t *N_t_slot,
-                                 uint8_t *N_dur);
-
-uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
-                            uint8_t nb_preambles,
-                            uint8_t unpaired);
-
-int get_format0(uint8_t index, uint8_t unpaired);
-
-uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
+#include "NR_ServingCellConfigCommon.h"
 
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
@@ -89,5 +61,40 @@ typedef enum {
   NR_RNTI_TPC_PUCCH,
   NR_RNTI_TPC_SRS
 } nr_rnti_type_t;
+
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
+
+void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
+
+uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
+
+uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
+
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols);
+
+int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+
+uint16_t nr_dci_size(nr_dci_format_t format, nr_rnti_type_t rnti_type, uint16_t N_RB);
+
+int get_nr_prach_info_from_index(uint8_t index,
+                                 int frame,
+                                 int slot,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur);
+
+uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
+                            uint8_t nb_preambles,
+                            uint8_t unpaired);
+
+int get_format0(uint8_t index, uint8_t unpaired);
+
+uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
 #endif
