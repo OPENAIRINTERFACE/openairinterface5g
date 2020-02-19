@@ -107,7 +107,8 @@ void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
 @param dlsch_buffer Pointer to RAR input buffer
 @param N_RB_UL Number of UL resource blocks
 */
-void nr_fill_rar(NR_RA_t * ra,
+void nr_fill_rar(uint8_t Mod_idP,
+                 NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
                  uint16_t N_RB_UL);
 
@@ -178,8 +179,6 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
 int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
-
-void get_band(uint64_t downlink_frequency, uint16_t *current_band, int32_t *current_offset, lte_frame_type_t *current_type);
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead);

@@ -941,7 +941,6 @@ int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot) {
 
 }
 
-
 int extract_startSymbol(int startSymbolAndLength) {
   int tmp = startSymbolAndLength/14;
   int tmp2 = startSymbolAndLength%14;

@@ -164,6 +164,8 @@ typedef struct {
   uint8_t RA_contention_resolution_cnt;
   /// Msg3 Delta Preamble
   int8_t deltaPreamble_Msg3;
+  /// Received TPC command (in dB) from RAR
+  int8_t Msg3_TPC;
   /// Flag to monitor if matching RAPID was received in RAR
   uint8_t RA_RAPID_found;
   /// Flag to monitor if BI was received in RAR

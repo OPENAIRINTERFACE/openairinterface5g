@@ -3133,7 +3133,7 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
   NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_index];
   uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
 
-  uint8_t mu_pusch = 1;
+  uint8_t mu_pusch = 1, sliv_S, sliv_L;
   // definition table j Table 6.1.2.1.1-4
   uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
   uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
@@ -3186,6 +3186,9 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
           // PUSCH time domain resource allocation A for normal CP
           // TS 38.214 ch 6.1.2.1.1
           k2 = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][0];
+          sliv_S = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][1];
+          sliv_L = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][2];
+
           switch (mu_pusch) {
             case 0:
             delta = 2;
@@ -3201,6 +3204,8 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
             break;
           }
 
+          ue->Msg3_startSymbol[gNB_index] = sliv_S;
+          ue->Msg3_Length[gNB_index] = sliv_L;
           ue->ulsch_Msg3_subframe[gNB_index] = (nr_tti_rx + k2 + delta) % slots_per_frame;
           if (nr_tti_rx + k2 + delta > slots_per_frame){
             ue->ulsch_Msg3_frame[gNB_index] = (frame_rx + 1) % 1024;
