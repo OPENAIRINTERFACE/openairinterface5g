@@ -41,6 +41,8 @@
 
 #include "T.h"
 
+#define NR_PRACH_DEBUG 1
+
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
 extern uint16_t NCS_restricted_TypeB_delta_f_RA_125[13];
@@ -111,7 +113,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 
 #else //normal case (simulation)
   prach_start = subframe*(fp->samples_per_slot<<1)-ue->N_TA_offset;
-  LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
+  LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
     prach_start,
     ue->rx_offset,
     ue->hw_timing_advance,
@@ -222,7 +224,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 #ifdef NR_PRACH_DEBUG
 
   if (NCS>0)
-    LOG_D(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %x, prach_ConfigIndex %d, NCS %d (NCS_config %d, N_ZC/NCS %d): Preamble_offset %d, Preamble_shift %d\n",
+    LOG_I(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %x, prach_ConfigIndex %d, NCS %d (NCS_config %d, N_ZC/NCS %d): Preamble_offset %d, Preamble_shift %d\n",
           rootSequenceIndex,preamble_index,prach_fmt,prach_ConfigIndex,NCS,Ncs_config,N_ZC/NCS,
           preamble_offset,preamble_shift);
 
@@ -251,7 +253,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
   k*=K;
   k+=kbar;
 
-  LOG_D(PHY,"placing prach in position %d\n",k);
+  LOG_I(PHY,"placing prach in position %d\n",k);
   k*=2;
 
   Xu = (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx];
@@ -427,6 +429,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	dftlen=12288;
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
+	Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
 	prach2 = prach+(Ncp<<1);
 	idft2048(prachF,prach2,1);
 	dftlen=2048;
@@ -440,6 +443,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	// here we have |Prefix | Prach2048 | Prach2048 (if ! 0xc0)  | 
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 6x2048
+	Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft2048(prachF,prach2,1);
 	dftlen=2048;
 	// here we have |empty | Prach2048 |
@@ -452,6 +457,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (2048*4)+Ncp; 
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x2048
+	Ncp+=32;
 	prach2 = prach+(Ncp<<1);
 	idft2048(prachF,prach2,1);
 	dftlen=2048;
@@ -467,6 +473,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (2048*6)+Ncp; 
       }
       else if (prach_fmt == 0xb4) { // 12x2048
+	Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft2048(prachF,prach2,1);
 	dftlen=2048;
 	// here we have |empty | Prach2048 |
@@ -527,19 +535,23 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (9216*4)+Ncp;
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
+	Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft1536(prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
 	if (prach_fmt != 0xc0) {
-    memmove(prach2+(1536<<1),prach2,(1536<<2));
-    prach_len = (1536*2)+Ncp;
-  }
-  else prach_len = (1536*1)+Ncp;
+	  memmove(prach2+(1536<<1),prach2,(1536<<2));
+	  prach_len = (1536*2)+Ncp;
+	}
+	else prach_len = (1536*1)+Ncp;
 	memmove(prach,prach+(1536<<1),(Ncp<<2));
 	// here we have |Prefix | Prach1536 | Prach1536 (if ! 0xc0)  | 
 	
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 6x1536
+	Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft1536(prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
@@ -552,6 +564,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (1536*4)+Ncp; 
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x1536
+	Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft1536(prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
@@ -566,6 +580,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (1536*6)+Ncp; 
       }
       else if (prach_fmt == 0xb4) { // 12x1536
+	Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft1536(prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
@@ -627,6 +643,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (24576*4)+Ncp;
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
+	Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft4096(prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
@@ -640,6 +658,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 4x4096
+	Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft4096(prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
@@ -652,6 +672,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (4096*4)+Ncp;  
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x4096
+	Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft4096(prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
@@ -666,6 +688,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (4096*6)+Ncp; 
       }
       else if (prach_fmt == 0xb4) { // 12x4096
+	Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft4096(prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
@@ -725,6 +749,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (18432*4)+Ncp;
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
+	Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft3072(prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
@@ -737,6 +763,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	// here we have |Prefix | Prach3072 | Prach3072 (if ! 0xc0)  | 
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x3072
+	Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft3072(prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
@@ -751,6 +779,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (3072*6)+Ncp;
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 4x3072
+	Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft3072(prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
@@ -763,6 +793,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 	prach_len = (3072*4)+Ncp;
       }
       else if (prach_fmt == 0xb4) { // 12x3072
+	Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+	prach2 = prach+(Ncp<<1);
 	idft3072(prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |

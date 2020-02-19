@@ -122,6 +122,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
 void rx_nr_prach_ru(RU_t *ru,
 		    int prach_fmt,
+		    int numRA,
+		    int prachStartSymbol,
 		    int frame,
 		    int subframe);
 

@@ -387,7 +387,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->nr_band = 78;
-  fp->threequarter_fs= 0;
+//  fp->threequarter_fs= 0;
 
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 

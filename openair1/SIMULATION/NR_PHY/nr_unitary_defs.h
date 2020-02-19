@@ -55,4 +55,15 @@ signed char quantize(double D, double x, unsigned char B) {
   return ((char) qxd);
 }
 
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe) {
+  AssertFatal(1==0,"Shouldn't be here ...\n");
+  return 0;
+}
+
+int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {return(0);}
+NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
+int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
+
+
+
 #endif

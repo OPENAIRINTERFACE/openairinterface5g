@@ -1578,7 +1578,11 @@ void *ru_thread( void *param ) {
       // Do PRACH RU processing
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       if (prach_id>=0) {
-	rx_nr_prach_ru(ru,ru->prach_list[prach_id].fmt,proc->frame_rx,proc->tti_rx);
+	rx_nr_prach_ru(ru,
+		       ru->prach_list[prach_id].fmt,
+		       ru->prach_list[prach_id].numRA,
+		       ru->prach_list[prach_id].prachStartSymbol,
+		       proc->frame_rx,proc->tti_rx);
 	free_nr_ru_prach_entry(ru,prach_id);
       }
     }

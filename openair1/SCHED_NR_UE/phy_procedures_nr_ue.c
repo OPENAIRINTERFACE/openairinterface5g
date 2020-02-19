@@ -212,9 +212,7 @@ void nr_dump_dlsch_SI(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
 
 #endif
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
-#endif
 
 int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
 
@@ -4490,7 +4488,7 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t runmode) {
 
   int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power, tx_amp;
-  uint16_t preamble_tx = 50, pathloss;
+  uint16_t /*preamble_tx = 50,*/ pathloss;
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
@@ -4499,7 +4497,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   ue->generate_nr_prach = 0;
   if (ue->mac_enabled == 0){
-    prach_resources->ra_PreambleIndex = preamble_tx;
+    //    prach_resources->ra_PreambleIndex = preamble_tx;
     prach_resources->ra_TDD_map_index = 0;
     prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
     prach_resources->ra_RNTI = 0x1234;
