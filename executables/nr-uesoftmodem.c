@@ -513,6 +513,14 @@ void init_openair0(void) {
           LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
           exit(-1);
         }
+    }else if(frame_parms[0]->N_RB_DL == 32) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=61.44e6;
+          openair0_cfg[card].samples_per_frame = 614400;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
     }else if(frame_parms[0]->N_RB_DL == 217) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
