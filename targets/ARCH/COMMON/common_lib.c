@@ -41,49 +41,22 @@
 #include "common/utils/LOG/log.h"
 #include "targets/RT/USER/lte-softmodem.h"
 
+char *get_devname(int devtype) {
+char *devnames[MAX_RF_DEV_TYPE]=DEVTYPE_NAMES;
+  if (devtype < MAX_RF_DEV_TYPE && devtype !=MIN_RF_DEV_TYPE )
+  	  return devnames[devtype];
+  return "none";
+}
+
 int set_device(openair0_device *device)
 {
-  switch (device->type) {
-    case EXMIMO_DEV:
-      LOG_I(HW,"[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case USRP_B200_DEV:
-      LOG_I(HW,"[%s] has loaded USRP B200 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case USRP_X300_DEV:
-      LOG_I(HW,"[%s] has loaded USRP X300 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case BLADERF_DEV:
-      LOG_I(HW,"[%s] has loaded BLADERF device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case LMSSDR_DEV:
-      LOG_I(HW,"[%s] has loaded LMSSDR device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case IRIS_DEV:
-	  LOG_I(HW,"[%s] has loaded Iris device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case ADRV9371_ZC706_DEV:
-      LOG_I(HW,"[%s] has loaded ADRV9371_ZC706 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case UEDv2_DEV:
-      LOG_I(HW,"[%s] has loaded UEDv2 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    case NONE_DEV:
-      LOG_I(HW,"[%s] has not loaded a HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
-      break;
-
-    default:
+  char *devname = get_devname(device->type);
+    if (strcmp(devname,"none") != 0) {
+      LOG_I(HW,"[%s] has loaded %s device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),devname);
+    } else {
       LOG_E(HW,"[%s] invalid HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
       return -1;
-  }
+    }
   return 0;
 }
 
@@ -108,7 +81,7 @@ int set_transport(openair0_device *device)
 }
 
 typedef int(*devfunc_t)(openair0_device *, openair0_config_t *, eth_params_t *);
-//loader_shlibfunc_t shlib_fdesc[2];
+
 
 /* look for the interface library and load it */
 int load_lib(openair0_device *device,
@@ -119,7 +92,14 @@ int load_lib(openair0_device *device,
   loader_shlibfunc_t shlib_fdesc[1];
   int ret=0;
   char *libname;
-  if ( IS_SOFTMODEM_BASICSIM ) {
+  
+  openair0_cfg->recplay_mode = read_recplayconfig(&(openair0_cfg->recplay_conf),&(device->recplay_state));
+
+  if ( openair0_cfg->recplay_mode == RECPLAY_REPLAYMODE ) {
+  	  libname=OAI_IQPLAYER_LIBNAME;
+  	  shlib_fdesc[0].fname="device_init";
+  	  set_softmodem_optmask(SOFTMODEM_RECPLAY_BIT);  // softmodem has to know we use the iqplayer to workaround randomized algorithms
+  } else  if ( IS_SOFTMODEM_BASICSIM ) {
 	  libname=OAI_BASICSIM_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
   } else if (IS_SOFTMODEM_RFSIM && flag == RAU_LOCAL_RADIO_HEAD) {

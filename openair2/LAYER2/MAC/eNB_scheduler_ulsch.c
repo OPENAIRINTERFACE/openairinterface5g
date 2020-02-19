@@ -48,9 +48,7 @@
 #include "assertions.h"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "ENB_APP/flexran_agent_defs.h"
 #include "flexran_agent_ran_api.h"

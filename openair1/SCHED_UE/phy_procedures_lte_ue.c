@@ -53,11 +53,7 @@
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
-
+#include "intertask_interface.h"
 #include "PHY/defs_UE.h"
 
 #include "PHY/CODING/coding_extern.h"
@@ -4885,10 +4881,8 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,
                            uint8_t abstraction_flag,
                            uint8_t do_pdcch_flag,
                            runmode_t mode) {
-#if defined(ENABLE_ITTI)
   MessageDef   *msg_p;
   int           result;
-#endif
   int           frame_rx = proc->frame_rx;
   int           frame_tx = proc->frame_tx;
   int           subframe_rx = proc->subframe_rx;
@@ -4905,9 +4899,6 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,
   if ( LOG_DEBUGFLAG(UE_TIMING)) {
     start_meas(&ue->phy_proc[ue->current_thread_id[subframe_rx]]);
   }
-
-#if defined(ENABLE_ITTI)
-
   do {
     // Checks if a message has been sent to PHY sub-task
     itti_poll_msg (TASK_PHY_UE, &msg_p);
@@ -4928,8 +4919,6 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,
       AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     }
   } while(msg_p != NULL);
-
-#endif
 
   for (slot=0; slot<2; slot++) {
     if ((subframe_select(&ue->frame_parms,subframe_tx)==SF_UL)||

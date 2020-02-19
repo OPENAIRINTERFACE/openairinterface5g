@@ -45,10 +45,8 @@
 #define GNB_CONF_STRING_OTG_APP_TYPE              "app_type"
 #define GNB_CONF_STRING_OTG_BG_TRAFFIC            "bg_traffic"
 
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
 extern int asn_debug;
 extern int asn1_xer_print;
-#endif
 
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long

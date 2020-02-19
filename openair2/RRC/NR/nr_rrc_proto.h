@@ -58,9 +58,7 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      );
 
 
-#if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_gnb_task(void *args_p);
 
-#endif

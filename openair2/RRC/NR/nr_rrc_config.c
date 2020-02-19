@@ -31,10 +31,8 @@
 #include "nr_rrc_config.h"
 
 void rrc_config_servingcellconfigcommon(uint8_t Mod_id,
-                                        int CC_id
-                                        #if defined(ENABLE_ITTI)
-                                        ,gNB_RrcConfigurationReq *common_configuration
-                                        #endif
+                                        int CC_id,
+                                        gNB_RrcConfigurationReq *common_configuration
                                        ){
 
   common_configuration->MIB_subCarrierSpacingCommon[CC_id]                                = 0;

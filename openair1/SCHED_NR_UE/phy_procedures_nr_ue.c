@@ -74,15 +74,7 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
-
-//#include "PHY/defs.h"
-
-//#include "PHY/CODING/extern.h"
-
+#include "intertask_interface.h"
 #include "T.h"
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)

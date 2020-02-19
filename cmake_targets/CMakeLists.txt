@@ -247,22 +247,18 @@ add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
-add_boolean_option(USRP_REC_PLAY       False "Enable USRP record playback mode")
-add_boolean_option(BASIC_SIMULATOR     False "Has to be True when building the basic simulator, False otherwise")
 add_boolean_option(DEBUG_CONSOLE       False "makes debugging easier, disables stdout/stderr buffering")
 
-add_boolean_option(ENABLE_ITTI True "ITTI is internal messaging, should remain enabled for most targets")
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
-if (${ENABLE_ITTI})
-  add_library(ITTI
-    ${OCP_ITTI}/intertask_interface.cpp
-    ${OPENAIR_DIR}/common/utils/backtrace.c
-    ${OPENAIR_DIR}/common/utils/memory_pools.c
-    )
+add_library(ITTI
+  ${OCP_ITTI}/intertask_interface.cpp
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/memory_pools.c
+  )
 add_dependencies(ITTI rrc_flag)
   set(ITTI_LIB ITTI)
   set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
-endif (${ENABLE_ITTI})
+
 
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
@@ -660,7 +656,6 @@ set (SHLIB_LOADER_SOURCES
 include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
 set(HWLIB_USRP_SOURCE
   ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp
-  ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib_config.c
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
 target_link_libraries(oai_usrpdevif uhd)
@@ -2368,6 +2363,9 @@ add_library(rfsimulator MODULE
 	)
 target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
 
+add_library(oai_iqplayer MODULE 
+	${OPENAIR_TARGETS}/ARCH/iqplayer/iqplayer_lib.c
+	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
 #include T directory even if the T is off because T macros are in the code
@@ -2447,6 +2445,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_mbms.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2461,7 +2460,7 @@ add_executable(lte-softmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag)
+add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag oai_iqplayer)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
@@ -2516,6 +2515,7 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/rfsim.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2562,6 +2562,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2601,6 +2602,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2863,7 +2865,7 @@ if (${T_TRACER})
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP 
-        params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
+        params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass tcp_bridge tcp_bridge_oai
         coding FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL

@@ -48,10 +48,8 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
-
+#include "intertask_interface.h"
+#include "executables/softmodem-common.h"
 #include "T.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
@@ -2184,9 +2182,8 @@ add_new_ue(module_id_t mod_idP,
     UE_list->ordered_ULCCids[0][UE_id] = cc_idP;
     UE_list->num_UEs++;
     UE_list->active[UE_id] = TRUE;
-#if defined(USRP_REC_PLAY) // not specific to record/playback ?
-    UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
-#endif
+    if (IS_SOFTMODEM_IQPLAYER)// not specific to record/playback ?
+      UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
     UE_list->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type;
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
