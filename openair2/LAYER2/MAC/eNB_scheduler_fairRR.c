@@ -1998,8 +1998,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           // this is the snr
           eNB_UE_stats =  &UE_info->eNB_UE_stats[CC_id][UE_id];
           /* Unit is not dBm, it's special from nfapi */
-          snr = (5 * ue_sched_ctl->pucch1_snr[CC_id] - 640) / 10;
-          target_snr = eNB->puCch10xSnr / 10;
+          snr = ue_sched_ctl->pucch1_snr[CC_id];
+          target_snr = eNB->puCch10xSnr/10;
           // this assumes accumulated tpc
           // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
           int32_t framex10psubframe = UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame*10+UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;
@@ -2669,7 +2669,7 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
         UE_template = &UE_info->UE_template[CC_id][UE_id];
 
         int32_t framex10psubframe = UE_template->pusch_bler_calc_frame*10+UE_template->pusch_bler_calc_subframe;
-        int pusch_bler_interval=100;
+        int pusch_bler_interval=50;
         double total_bler;
         
         if(UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[CC_id] == 0 && UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[CC_id] == 0) {
@@ -2711,21 +2711,11 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
           }
         }
 
-        if ( UE_info->UE_sched_ctrl[UE_id].phr_received == 1 ) {
-          snr = (5 * UE_info->UE_sched_ctrl[UE_id].pusch_snr_amc[CC_id] - 640) / 10;
-          mcs = snr - snr2mcs_offset;
-          if(mcs > 20) {
-            mcs = 20;
-          }
-
-          if(mcs - UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id] < 6) {
-            mcs = 6;
-          }
-          else { 
-            mcs = mcs - UE_list->UE_sched_ctrl[UE_id].mcs_offset[CC_id];
-          }
-        } else {
-          mcs = 10;
+        snr = UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[CC_id];
+ 
+        mcs = 20 - UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id];
+        if(mcs < 6) {
+          mcs = 6;
         }
 
         if ( ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority  == SCH_UL_FIRST ) {
@@ -2773,9 +2763,9 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
               UE_info->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = mcs;
             }
             
-            LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d snr %d mcs %d mcs_offset %d bler %lf total_bler %lf ( %d %d ) rb_num %d phr_info %d tx_power %d bsr %d\n",
-                  module_idP,frameP,subframeP,UE_id,UE_RNTI(CC_id,UE_id),CC_id, snr, mcs, UE_list->UE_sched_ctrl[UE_id].mcs_offset[CC_id], UE_list->UE_sched_ctrl[UE_id].pusch_bler[CC_id], 
-                  total_bler, UE_list->UE_sched_ctrl[UE_id].pusch_rx_num[CC_id], UE_list->UE_sched_ctrl[UE_id].pusch_rx_error_num[CC_id], rb_table[rb_table_index-1], UE_template->phr_info, tx_power, bytes_to_schedule);
+            LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d snr %d snr_inst %d mcs %d mcs_offset %d bler %lf total_bler %lf ( %d %d ) rb_num %d phr_info %d tx_power %d bsr %d estimated_ul_buffer %d scheduled_ul_bytes %d\n",
+                  module_idP,frameP,subframeP,UE_id,UE_RNTI(CC_id,UE_id),CC_id, snr, UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_id], mcs, UE_list->UE_sched_ctrl[UE_id].mcs_offset[CC_id], UE_list->UE_sched_ctrl[UE_id].pusch_bler[CC_id], 
+                  total_bler, UE_list->UE_sched_ctrl[UE_id].pusch_rx_num[CC_id], UE_list->UE_sched_ctrl[UE_id].pusch_rx_error_num[CC_id], rb_table[rb_table_index-1], UE_template->phr_info, tx_power, bytes_to_schedule, UE_template->estimated_ul_buffer, UE_template->scheduled_ul_bytes);
             
           } else {
             if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) {
@@ -3140,7 +3130,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
       //power control
       //compute the expected ULSCH RX power (for the stats)
       // this is the normalized RX power and this should be constant (regardless of mcs
-      snr = (5 * UE_sched_ctrl->pusch_snr_avg[CC_id] - 640) / 10;
+      snr = UE_sched_ctrl->pusch_snr_avg[CC_id];
       target_snr = eNB->puSch10xSnr / 10;
       // this assumes accumulated tpc
       // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -3265,7 +3255,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         nfapi_hi_dci0_req->sfn_sf = frameP<<4|subframeP; // sfnsf_add_subframe(sched_frame, sched_subframeP, 0); // sunday!
         nfapi_hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
         LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d mcs %d first_rb %d num_rb %d round %d mcs %d sinr %d bler %lf\n",
-              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP,UE_template->mcs_UL[harq_pid],first_rb[CC_id],rb_table[rb_table_index],0,UE_template->mcs_UL[harq_pid],(5 * UE_sched_ctrl->pusch_snr_amc[CC_id] - 640) / 10,UE_sched_ctrl->pusch_bler[CC_id]);
+              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP,UE_template->mcs_UL[harq_pid],first_rb[CC_id],rb_table[rb_table_index],0,UE_template->mcs_UL[harq_pid],UE_sched_ctrl->pusch_snr_avg[CC_id],UE_sched_ctrl->pusch_bler[CC_id]);
         ul_req_index = 0;
         dlsch_flag = 0;
 
@@ -3415,7 +3405,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         hi_dci0_req->number_of_dci++;
         // Add UL_config PDUs
         LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d mcs %d first_rb %d num_rb %d round %d mcs %d sinr %d bler %lf\n",
-              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP,mcs_rv,ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb,ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb,UE_sched_ctrl->round_UL[CC_id][harq_pid],UE_template->mcs_UL[harq_pid],(5 * UE_sched_ctrl->pusch_snr_amc[CC_id] - 640) / 10,UE_sched_ctrl->pusch_bler[CC_id]);
+              harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP,mcs_rv,ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb,ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb,UE_sched_ctrl->round_UL[CC_id][harq_pid],UE_template->mcs_UL[harq_pid],UE_sched_ctrl->pusch_snr_avg[CC_id],UE_sched_ctrl->pusch_bler[CC_id]);
 
         ul_req_index = 0;
         dlsch_flag = 0;

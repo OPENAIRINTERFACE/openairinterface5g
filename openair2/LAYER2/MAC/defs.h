@@ -834,9 +834,9 @@ typedef struct {
   uint8_t       pucch2_snr[NFAPI_CC_MAX];
   uint8_t       pucch3_cqi_update[NFAPI_CC_MAX];
   uint8_t       pucch3_snr[NFAPI_CC_MAX];
+  uint8_t       pusch_cqi[NFAPI_CC_MAX];
   uint8_t       pusch_snr[NFAPI_CC_MAX];
   uint8_t       pusch_snr_avg[NFAPI_CC_MAX];
-  uint8_t       pusch_snr_amc[NFAPI_CC_MAX];
   uint64_t      pusch_rx_num[NFAPI_CC_MAX];
   uint64_t      pusch_rx_num_old[NFAPI_CC_MAX];
   uint64_t      pusch_rx_error_num[NFAPI_CC_MAX];

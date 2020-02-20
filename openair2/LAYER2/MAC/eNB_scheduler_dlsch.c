@@ -1050,7 +1050,7 @@ schedule_ue_spec(module_id_t module_idP,
         // this is the snr
         // unit is not dBm, it's special from nfapi
         // converting to dBm
-        int snr = (5 * ue_sched_ctrl->pucch1_snr[CC_id] - 640) / 10;
+        int snr = ue_sched_ctrl->pucch1_snr[CC_id];
         int target_snr = eNB->puCch10xSnr / 10;
         // this assumes accumulated tpc
         // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1684,7 +1684,7 @@ schedule_ue_spec_br(module_id_t module_idP,
           /* Do PUCCH power control */
           /* This is the snr */
           /* unit is not dBm, it's special from nfapi, convert to dBm */
-          snr = (5 * ue_sched_ctl->pucch1_snr[CC_id] - 640) / 10;
+          snr = ue_sched_ctl->pucch1_snr[CC_id];
           target_snr = mac->puCch10xSnr / 10;
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */

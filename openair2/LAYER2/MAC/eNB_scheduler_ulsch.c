@@ -168,22 +168,16 @@ rx_sdu(const module_id_t enb_mod_idP,
        * maybe it's even not correct at all?
        */
       UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
-      UE_scheduling_control->pusch_snr[CC_idP] = ul_cqi;
+      UE_scheduling_control->pusch_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
       
-      double snr_filter_tpc=0.75;
-      if(UE_scheduling_control->pusch_snr_avg[CC_idP] == 0) {
-        UE_scheduling_control->pusch_snr_avg[CC_idP] = ul_cqi;
-      }
-      else {
-        UE_scheduling_control->pusch_snr_avg[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr_avg[CC_idP] * snr_filter_tpc + (double)ul_cqi * (1-snr_filter_tpc));
-      }
-
-      double snr_filter_amc=0.5;
-      if(UE_scheduling_control->pusch_snr_amc[CC_idP] == 0) {
-        UE_scheduling_control->pusch_snr_amc[CC_idP] = ul_cqi;
-      }
-      else {
-        UE_scheduling_control->pusch_snr_amc[CC_idP] = (int)((double)UE_scheduling_control->pusch_snr_amc[CC_idP] * snr_filter_amc + (double)ul_cqi * (1-snr_filter_amc));
+      if(UE_scheduling_control->pusch_snr[CC_idP] > 0 || UE_scheduling_control->pusch_snr[CC_idP] < 63) {
+        double snr_filter_tpc=0.9;
+        int snr_thres_tpc=30;
+        int diff = UE_scheduling_control->pusch_snr_avg[CC_idP] - UE_scheduling_control->pusch_snr[CC_idP];
+        if(abs(diff) < snr_thres_tpc) {
+          UE_scheduling_control->pusch_cqi[CC_idP] = (int)((double)UE_scheduling_control->pusch_cqi[CC_idP] * snr_filter_tpc + (double)ul_cqi * (1-snr_filter_tpc));
+          UE_scheduling_control->pusch_snr_avg[CC_idP] = (5 * UE_scheduling_control->pusch_cqi[CC_idP] - 640) / 10;
+        }
       }
 
       UE_scheduling_control->ul_consecutive_errors = 0;
@@ -2013,7 +2007,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           cqi_req = 0;
           /* Power control: compute the expected ULSCH RX snr (for the stats) */
           /* This is the normalized snr and this should be constant (regardless of mcs) */
-          snr = (5 * UE_sched_ctrl->pusch_snr_avg[CC_id] - 640) / 10;
+          snr = UE_sched_ctrl->pusch_snr_avg[CC_id];
           target_snr = eNB->puSch10xSnr / 10; /* TODO: target_rx_power was 178, what to put? */
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */

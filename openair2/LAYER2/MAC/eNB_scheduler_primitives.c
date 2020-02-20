@@ -2217,8 +2217,8 @@ add_new_ue(module_id_t mod_idP,
     UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
     UE_info->UE_sched_ctrl[UE_id].pusch_snr[cc_idP] = 0;
-    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = 0;
-    UE_info->UE_sched_ctrl[UE_id].pusch_snr_amc[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_cqi[cc_idP]     = (eNB->puSch10xSnr+640)/5;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = eNB->puSch10xSnr/10;
     UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[cc_idP] = 0;
     UE_info->UE_sched_ctrl[UE_id].pusch_rx_num_old[cc_idP] = 0;
     UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[cc_idP] = 0;
@@ -5173,7 +5173,7 @@ harq_indication(module_id_t mod_idP,
   /* don't care about cqi reporting if NACK/DTX is there */
   if (channel == 0 && !nack_or_dtx_reported(cc,
       harq_pdu)) {
-    sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
+    sched_ctl->pucch1_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
     sched_ctl->pucch1_cqi_update[CC_idP] = 1;
   }
 
