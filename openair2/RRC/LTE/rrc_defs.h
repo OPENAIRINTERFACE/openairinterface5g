@@ -647,6 +647,7 @@ typedef struct eNB_RRC_UE_s {
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
   int                                does_nr;
+  int                                nr_capabilities_requested;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

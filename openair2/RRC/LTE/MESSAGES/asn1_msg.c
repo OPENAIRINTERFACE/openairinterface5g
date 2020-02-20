@@ -3510,8 +3510,6 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 {
   LTE_DL_DCCH_Message_t dl_dcch_msg;
   LTE_RAT_Type_t rat=LTE_RAT_Type_eutra;
-  LTE_RAT_Type_t rat_nr=LTE_RAT_Type_nr;
-  LTE_RAT_Type_t rat_eutra_nr=LTE_RAT_Type_eutra_nr;
   asn_enc_rval_t enc_rval;
   memset(&dl_dcch_msg,0,sizeof(LTE_DL_DCCH_Message_t));
   dl_dcch_msg.message.present           = LTE_DL_DCCH_MessageType_PR_c1;
@@ -3523,6 +3521,57 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat);
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message, (void *)&dl_dcch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message,
+                                   NULL,
+                                   (void *)&dl_dcch_msg,
+                                   buffer,
+                                   100);
+
+  if(enc_rval.encoded == -1) {
+    LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+          enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
+
+  LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
+        ctxt_pP->module_id,
+        ctxt_pP->rnti,
+        enc_rval.encoded,
+        (enc_rval.encoded+7)/8);
+
+  if (enc_rval.encoded==-1) {
+    LOG_E(RRC,"[eNB %d] ASN1 : UECapabilityRequest encoding failed for UE %x\n",
+          ctxt_pP->module_id,
+          ctxt_pP->rnti);
+    return(-1);
+  }
+
+  return((enc_rval.encoded+7)/8);
+}
+
+//------------------------------------------------------------------------------
+uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
+                                   uint8_t               *const buffer,
+                                   const uint8_t                Transaction_id)
+//------------------------------------------------------------------------------
+{
+  LTE_DL_DCCH_Message_t dl_dcch_msg;
+  LTE_RAT_Type_t rat_nr=LTE_RAT_Type_nr;
+  LTE_RAT_Type_t rat_eutra_nr=LTE_RAT_Type_eutra_nr;
+  asn_enc_rval_t enc_rval;
+  memset(&dl_dcch_msg,0,sizeof(LTE_DL_DCCH_Message_t));
+  dl_dcch_msg.message.present           = LTE_DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1.present = LTE_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry;
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.rrc_TransactionIdentifier = Transaction_id;
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.present = LTE_UECapabilityEnquiry__criticalExtensions_PR_c1;
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.present =
+    LTE_UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8;
+  dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat_nr);
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
@@ -3547,6 +3596,8 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   r11_80.nonCriticalExtension = &r13_10;
   r13_10.nonCriticalExtension = &r14_30;
   r14_30.nonCriticalExtension = &r15_10;
+
+  /* TODO: no hardcoded values here */
 
   OCTET_STRING_t req_freq;
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
@@ -3579,14 +3630,14 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
     return -1;
   }
 
-  LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
+  LOG_D(RRC,"[eNB %d] NR UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
         ctxt_pP->module_id,
         ctxt_pP->rnti,
         enc_rval.encoded,
         (enc_rval.encoded+7)/8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[eNB %d] ASN1 : UECapabilityRequest encoding failed for UE %x\n",
+    LOG_E(RRC,"[eNB %d] ASN1 : NR UECapabilityRequest encoding failed for UE %x\n",
           ctxt_pP->module_id,
           ctxt_pP->rnti);
     return(-1);
