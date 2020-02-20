@@ -156,22 +156,18 @@ typedef struct {
   fapi_nr_tx_request_body_t *tx_request_body;
 } fapi_nr_tx_request_t;
 
-    typedef struct {
-        uint8_t preamble_index;
-        uint8_t prach_configuration_index;
-        uint16_t preamble_length;
-        uint8_t power_ramping_step;
-        uint16_t preamble_received_target_power;
-        uint8_t msg1_fdm;
-        uint8_t msg1_frequency_start;
-        uint8_t zero_correlation_zone_config;
-        uint8_t subcarrier_spacing;
-        uint8_t restrictedset_config;
-        uint16_t root_sequence_index;
-        uint16_t rsrp_threshold_ssb;
-        uint16_t rsrp_threshold_sul;
-        uint16_t prach_freq_offset;
-    } fapi_nr_ul_config_prach_pdu;
+typedef struct {
+  uint16_t phys_cell_id;
+  uint8_t  num_prach_ocas;
+  uint8_t  prach_format;
+  uint8_t  num_ra;
+  uint8_t  prach_start_symbol;
+  uint16_t num_cs;
+  uint16_t root_seq_id;
+  uint8_t restricted_set;
+  uint16_t freq_msg1;
+  //nfapi_nr_ul_beamforming_t beamforming;
+} fapi_nr_ul_config_prach_pdu;
 
 typedef struct {
 

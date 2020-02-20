@@ -165,16 +165,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
 				 pucch_config_common->hoppingId = pucch_config_pdu->hoppingId;
 				 pucch_config_common->p0_nominal = pucch_config_pdu->p0_nominal;*/
 	}
-	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PRACH){
-	  // prach config pdu
-	  fapi_nr_ul_config_prach_pdu *prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-	  /*frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
-	  frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = prach_config_pdu->prach_configuration_index;
-	  frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->zero_correlation_zone_config;
-	  frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restrictedset_config;
-	  frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;*/
-	  prach_resources->ra_PreambleIndex = prach_config_pdu->preamble_index;
-	}
+  if (ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PRACH) {
+    // prach config pdu
+    fapi_nr_ul_config_prach_pdu *prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
+    /*frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
+    frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = prach_config_pdu->prach_configuration_index;
+    frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->zero_correlation_zone_config;
+    frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restrictedset_config;
+    frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;*/
+    ////prach_resources->ra_PreambleIndex = prach_config_pdu->preamble_index;
+  }
       }
     }else{
             

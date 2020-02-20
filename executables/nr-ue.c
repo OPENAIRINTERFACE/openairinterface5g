@@ -359,6 +359,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   uint32_t nb_rb, start_rb;
   uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
   uint16_t n_rnti;
+  module_id_t mod_id;
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
@@ -366,7 +367,9 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
   if (proc->nr_tti_tx == 8 || UE->frame_parms.frame_type == FDD){
 
-    dcireq.module_id = UE->Mod_id;
+    mod_id = UE->Mod_id;
+
+    dcireq.module_id = mod_id;
     dcireq.gNB_index = 0;
     dcireq.cc_id     = 0;
     dcireq.frame     = proc->frame_rx;
@@ -375,7 +378,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.dl_config = NULL;
     scheduled_response.ul_config = &dcireq.ul_config_req;
     scheduled_response.tx_request = NULL;
-    scheduled_response.module_id = UE->Mod_id;
+    scheduled_response.module_id = mod_id;
     scheduled_response.CC_id     = 0;
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
@@ -405,8 +408,10 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
 
+    //nr_ue_prach_scheduler(mod_id, proc->frame_rx, proc->nr_tti_rx);
+
     nr_ue_scheduled_response(&scheduled_response);
-    
+
     if (UE->mode != loop_through_memory) {
       uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
