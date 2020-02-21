@@ -1444,6 +1444,9 @@ static void *ru_thread( void *param ) {
 
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
+
+    // start trx write thread
+    start_write_thread(ru);
   }
 
   pthread_mutex_lock(&proc->mutex_FH1);
@@ -1651,6 +1654,9 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
+int start_write_thread(RU_t *ru) {
+  return(ru->rfdevice.trx_write_init(&ru->rfdevice));
+}
 
 void init_RU_proc(RU_t *ru) {
   int i=0;

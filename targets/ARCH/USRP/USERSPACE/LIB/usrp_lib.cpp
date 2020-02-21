@@ -406,37 +406,9 @@ static int trx_usrp_write_recplay(openair0_device *device, openair0_timestamp ti
 */
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
   int ret=0;
-  usrp_state_t *s = (usrp_state_t *)device->priv;
-  int nsamps2;  // aligned to upper 32 or 16 byte boundary
-#if defined(__x86_64) || defined(__i386__)
-  #ifdef __AVX2__
-      nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[8][nsamps2];
-  #else
-    nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[8][nsamps2];
-  #endif
-#elif defined(__arm__)
-    nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[8][nsamps2];
-#else
-#error Unsupported CPU architecture, USRP device cannot be built
-#endif
-
-  // bring RX data into 12 LSBs for softmodem RX
-  for (int i=0; i<cc; i++) {
-    for (int j=0; j<nsamps2; j++) {
-#if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
-      buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
-#else
-      buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
-#endif
-#elif defined(__arm__)
-      buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
-#endif
-    }
-  }
+  int end;
+  openair0_thread_t *write_thread = &device->write_thread;
+  openair0_write_package_t *write_package = write_thread->write_package;
 
 
     boolean_t first_packet_state=false,last_packet_state=false;
@@ -469,9 +441,98 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       last_packet_state  = true;
     }
 
+  pthread_mutex_lock(&write_thread->mutex_write);
+  write_thread->end = (write_thread->end + 1)% write_thread->num_package;
+  end = write_thread->end;
+  write_package[end].timestamp    = timestamp;
+  write_package[end].nsamps       = nsamps;
+  write_package[end].cc           = cc;
+  write_package[end].first_packet = first_packet_state;
+  write_package[end].last_packet  = last_packet_state;
+  write_package[end].buff         = buff;
+  write_thread->instance_cnt_write = 0;
+  pthread_cond_signal(&write_thread->cond_write);
+  printf("trx_usrp_write signal end\n");
+  pthread_mutex_unlock(&write_thread->mutex_write);
+
+
+  return ret;
+}
+
+//-----------------------start--------------------------
+/*! \brief Called to send samples to the USRP RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at which the first sample MUST be sent
+      @param buff Buffer which holds the samples
+      @param nsamps number of samples to be sent
+      @param antenna_id index of the antenna if the device has multiple antennas
+      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+*/
+void *trx_usrp_write_thread(void * arg){ 
+  int ret=0;
+  openair0_device *device=(openair0_device *)arg;
+  openair0_thread_t *write_thread = &device->write_thread;
+  openair0_write_package_t *write_package = write_thread->write_package;
+
+
+
+  while(1){
+    pthread_mutex_lock(&write_thread->mutex_write);
+    printf("waiting for signal \n");
+    while (write_thread->instance_cnt_write < 0) {
+      pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
+    }
+    printf("signal unlock\n");
+    int start = write_thread->start;
+    printf("start = %d, end = %d\n", start, write_thread->end);
+    openair0_timestamp timestamp    = write_package[start].timestamp;
+    void               **buff       = write_package[start].buff;
+    int                nsamps       = write_package[start].nsamps;
+    int                cc           = write_package[start].cc;
+    bool               first_packet = write_package[start].first_packet;
+    bool               last_packet  = write_package[start].last_packet;
+    if(write_thread->end == (write_thread->start + 1)% write_thread->num_package){
+      write_thread->instance_cnt_write = -1;
+    }
+    write_thread->start = (write_thread->start + 1)% write_thread->num_package;
+    pthread_mutex_unlock(&write_thread->mutex_write);
+    printf("end of write thread signal getting \n");
+
+    usrp_state_t *s = (usrp_state_t *)device->priv;
+    int nsamps2;  // aligned to upper 32 or 16 byte boundary
+    #if defined(__x86_64) || defined(__i386__)
+      #ifdef __AVX2__
+        nsamps2 = (nsamps+7)>>3;
+        __m256i buff_tx[8][nsamps2];
+      #else
+        nsamps2 = (nsamps+3)>>2;
+        __m128i buff_tx[8][nsamps2];
+      #endif
+    #elif defined(__arm__)
+      nsamps2 = (nsamps+3)>>2;
+      int16x8_t buff_tx[8][nsamps2];
+    #else
+    #error Unsupported CPU architecture, USRP device cannot be built
+    #endif
+
+    // bring RX data into 12 LSBs for softmodem RX
+    for (int i=0; i<cc; i++) {
+      for (int j=0; j<nsamps2; j++) {
+        #if defined(__x86_64__) || defined(__i386__)
+          #ifdef __AVX2__
+            buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+          #else
+            buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
+          #endif
+        #elif defined(__arm__)
+          buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
+        #endif
+      }
+    }
+
     s->tx_md.has_time_spec  = true;
-    s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state;
-    s->tx_md.end_of_burst   = last_packet_state;
+    s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet;
+    s->tx_md.end_of_burst   = last_packet;
     s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
     s->tx_count++;
 
@@ -483,10 +544,32 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 
       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
     } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
-  if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+    if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
 
-  return ret;
+    if(0) break;
+  }
+
+  return NULL;
 }
+
+int trx_write_init(openair0_device *device){
+
+  uhd::set_thread_priority_safe(1.0);
+  openair0_thread_t *write_thread = &device->write_thread;
+  printf("initializing tx write thread\n");
+
+  write_thread->num_package        = 10;
+  write_thread->start              = 0;
+  write_thread->end                = 0;
+  write_thread->instance_cnt_write = -1;
+  printf("end of tx write thread\n");
+
+  pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
+
+  return(0);
+}
+
+//---------------------end-------------------------
 
 /*! \brief Receive samples from iq file.
  * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
@@ -917,6 +1000,7 @@ extern "C" {
     device->trx_stop_func  = trx_usrp_stop;
     device->trx_set_freq_func = trx_usrp_set_freq;
     device->trx_set_gains_func   = trx_usrp_set_gains;
+    device->trx_write_init = trx_write_init;
 
     if ( s->recplay_mode == RECPLAY_REPLAYMODE) {
       // Replay subframes from from file
