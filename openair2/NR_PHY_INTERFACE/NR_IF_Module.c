@@ -68,6 +68,8 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
                         UL_info->rach_ind.sfn,
                         UL_info->rach_ind.slot,
                         UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
+                        UL_info->rach_ind.pdu_list[0].freq_index,
+                        UL_info->rach_ind.pdu_list[0].symbol_index,
                         UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);
     
   }

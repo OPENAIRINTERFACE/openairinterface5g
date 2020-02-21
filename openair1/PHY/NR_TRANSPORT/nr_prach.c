@@ -197,7 +197,6 @@ void rx_nr_prach_ru(RU_t *ru,
 	  ru->idx,frame,slot,prachfmt[prachFormat],msg1_frequencystart,prachStartSymbol);
 
     switch (prachFormat) {
-    AssertFatal(prachFormat<4,"Illegal prach format %d for length 139 (combined formats not supported yet)\n",prachFormat);
     case 0: //A1
       Ncp = 288/(1<<mu);
       break;
@@ -717,7 +716,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
       Xu=(int16_t*)gNB->X_u[preamble_offset-first_nonzero_root_idx];
 
-      LOG_D(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_index,preamble_offset-first_nonzero_root_idx);
+      LOG_D(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_offset-first_nonzero_root_idx);
 
 
       memset(prach_ifft,0,((N_ZC==839) ? 2048 : 256)*sizeof(int32_t));

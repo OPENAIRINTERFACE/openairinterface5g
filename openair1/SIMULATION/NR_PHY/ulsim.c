@@ -570,7 +570,7 @@ int main(int argc, char **argv)
   nb_re_dmrs     = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
+  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, precod_nbr_layers);
 
   printf("\n");
 

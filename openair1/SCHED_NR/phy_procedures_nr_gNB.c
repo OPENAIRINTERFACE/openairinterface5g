@@ -160,7 +160,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 
   if (gNB->pdcch_pdu || gNB->ul_dci_pdu) {
-    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+    LOG_I(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
 	  gNB->ul_dci_pdu==NULL?0:gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci,
 	  gNB->pdcch_pdu==NULL?0:gNB->pdcch_pdu->pdcch_pdu_rel15.numDlDci);
@@ -176,9 +176,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
   }
  
-  LOG_D(PHY, "PDSCH generation started (%d)\n", gNB->num_pdsch_rnti);
   for (int i=0; i<gNB->num_pdsch_rnti; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
+    LOG_I(PHY, "PDSCH generation started (%d)\n", gNB->num_pdsch_rnti);
     nr_generate_pdsch(gNB->dlsch[i][0],
 		      gNB->nr_gold_pdsch_dmrs[slot],
 		      gNB->common_vars.txdataF,

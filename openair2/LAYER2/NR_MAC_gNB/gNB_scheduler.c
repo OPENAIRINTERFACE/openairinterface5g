@@ -264,122 +264,6 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 */
 
 
-void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
-
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = gNB->common_channels;
-  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
-
-  uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint8_t mu,N_dur,N_t_slot,start_symbol;
-  uint16_t format;
-
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
-    mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
-  else
-    mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-
-  // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
-  if ( get_nr_prach_info_from_index(config_index,
-                                    (int)frameP,
-                                    (int)slotP,
-                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-                                    mu,
-                                    cc->frame_type,
-                                    &format,
-                                    &start_symbol,
-                                    &N_t_slot,
-                                    &N_dur) ) {
-
-    int fdm = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;
-    uint16_t format0 = format&0xff;      // first column of format from table
-    uint16_t format1 = (format>>8)&0xff; // second column of format from table
-
-    UL_tti_req->SFN = frameP;
-    UL_tti_req->Slot = slotP;
-    for (int n=0; n<(1<<fdm); n++) { // one structure per frequency domain occasion
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
-      nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
-      memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
-      UL_tti_req->n_pdus+=1;
-
-      // filling the prach fapi structure
-      prach_pdu->phys_cell_id = *scc->physCellId;
-      prach_pdu->num_prach_ocas = N_t_slot;
-      prach_pdu->prach_start_symbol = start_symbol;
-      prach_pdu->num_ra = n;
-      prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
-                                  format0,
-                                  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
-      // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
-      // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
-      if (format1!=0xff) {
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 9;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 10;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 10;
-            break;
-        default:
-          AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
-        }
-      }
-      else{
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 0;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 1;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 2;
-            break;
-          case 0xb1:
-            prach_pdu->prach_format = 3;
-            break;
-          case 0xb2:
-            prach_pdu->prach_format = 4;
-            break;
-          case 0xb3:
-            prach_pdu->prach_format = 5;
-            break;
-          case 0xb4:
-            prach_pdu->prach_format = 6;
-            break;
-          case 0xc0:
-            prach_pdu->prach_format = 7;
-            break;
-          case 0xc2:
-            prach_pdu->prach_format = 8;
-            break;
-          case 0:
-            // long formats are handled @ PHY
-            break;
-          case 1:
-            // long formats are handled @ PHY
-            break;
-          case 2:
-            // long formats are handled @ PHY
-            break;
-          case 3:
-            // long formats are handled @ PHY
-            break;
-        default:
-          AssertFatal(1==0,"Invalid PRACH format");
-        }
-      }
-    }
-  }
-}
-
-
 /*
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 {
@@ -483,10 +367,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     gNB->ta_len = 2;
   }
 
+  if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_rxP))
+    nr_schedule_RA(module_idP, frame_txP, slot_txP);
+
   // Phytest scheduling
   if (phy_test && slot_txP==1){
-    nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
-    //nr_schedule_RA(module_idP, frame_txP, slot_txP);
+    //nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
     // resetting ta flag
     gNB->ta_len = 0;
   }
@@ -504,7 +390,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
 
     if (phy_test && slot_rxP==8){
-      nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
+      //nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
     }
   }
 

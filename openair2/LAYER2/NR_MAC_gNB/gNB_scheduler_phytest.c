@@ -272,6 +272,13 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
 
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+              "searchPsacesToAddModList is empty\n");
+  NR_SearchSpace_t *ss;
+  // TO BE FIXED we are just selecting the first search space here (only one is configured)
+  ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[0];
+
 
   dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -369,6 +376,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
     
   nr_configure_pdcch(pdcch_pdu_rel15,
 		     1, // ue-specific
+                     ss,
 		     scc,
 		     bwp);
   
@@ -398,7 +406,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	pdcch_pdu_rel15->DurationSymbols);
 
   int x_Overhead = 0; // should be 0 for initialBWP
-  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead);
+  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead,0);
 
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
@@ -710,6 +718,12 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
   nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[Mod_idP]->UL_dci_req[0];
 
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+              "searchPsacesToAddModList is empty\n");
+  NR_SearchSpace_t *ss;
+  // TO BE FIXED we are just selecting the first search space here (only one is configured)
+  ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[0];
 
   uint16_t rnti = UE_list->rnti[UE_id];
   nfapi_nr_ul_dci_request_pdus_t  *ul_dci_request_pdu;
@@ -784,6 +798,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 						 pusch_pdu->nr_of_symbols,
 						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
+                                                 0,
 						 pusch_pdu->nrOfLayers = 1);
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;
@@ -816,6 +831,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
   nr_configure_pdcch(pdcch_pdu_rel15,
 		     1, // ue-specific,
+                     ss,
 		     scc,
 		     bwp);
 

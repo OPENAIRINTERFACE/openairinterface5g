@@ -87,8 +87,8 @@ typedef enum {
 typedef struct {
     /// Flag to indicate this process is active
     RA_state_t state;
-    /// Subframe where preamble was received
-    uint8_t preamble_subframe;
+    /// Slot where preamble was received
+    uint8_t preamble_slot;
     /// Subframe where Msg2 is to be sent
     uint8_t Msg2_slot;
     /// Frame where Msg2 is to be sent
@@ -133,6 +133,8 @@ typedef struct {
     int msg4_TBsize;
     /// MCS used for Msg4
     int msg4_mcs;
+    /// RA search space
+    NR_SearchSpace_t *ra_ss;
 } NR_RA_t;
 
 /*! \brief gNB common channels */

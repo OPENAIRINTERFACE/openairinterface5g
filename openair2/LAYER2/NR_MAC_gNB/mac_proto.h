@@ -89,18 +89,17 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 @param rnti RA rnti corresponding to this PRACH preamble
 @param rach_resource type (0=non BL/CE,1 CE level 0,2 CE level 1, 3 CE level 2,4 CE level 3)
 */
-void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, 
-			 uint16_t preamble_index, int16_t timing_offset);
+void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP,
+                         uint16_t preamble_index, uint8_t freq_index, uint8_t symbol, int16_t timing_offset);
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
-void nr_get_Msg3alloc(NR_COMMON_channels_t *cc,
+void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
                       sub_frame_t current_subframe,
-                      frame_t current_frame, 
-                      frame_t *frame,
-                      sub_frame_t *subframe);
+                      frame_t current_frame,
+                      NR_RA_t *ra);
 
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB
@@ -112,6 +111,8 @@ void nr_fill_rar(uint8_t Mod_idP,
                  uint8_t * dlsch_buffer,
                  uint16_t N_RB_UL);
 
+
+void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
 uint16_t nr_mac_compute_RIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 
@@ -168,6 +169,7 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
 
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                         int ss_type,
+                        NR_SearchSpace_t *ss,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp);
 
@@ -181,7 +183,8 @@ int get_spf(nfapi_nr_config_request_scf_t *cfg);
 int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
-		   int x_overhead);
+		   int x_overhead,
+                   uint8_t tb_scaling);
 /** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
 uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
@@ -235,6 +238,17 @@ void config_nr_mib(int Mod_idP,
                    uint32_t pdcch_ConfigSIB1,
                    int cellBarred,
                    int intraFreqReselection);
+
+void nr_generate_Msg2(module_id_t module_idP,
+                      int CC_id,
+                      frame_t frameP,
+                      sub_frame_t slotP);
+
+int find_aggregation_level (NR_SearchSpace_t *ss);
+
+void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
+                                               uint16_t *slot_period,
+                                               uint16_t *offset);
 
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of gNB

@@ -1381,7 +1381,8 @@ int32_t get_nr_uldl_offset(int nr_bandP)
 
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
-		   int x_overhead) {
+		   int x_overhead,
+                   uint8_t tb_scaling) {
 
   LOG_D(MAC, "TBS calculation\n");
 
@@ -1411,6 +1412,7 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		       N_sh_symb,
 		       N_PRB_DMRS,
 		       N_PRB_oh,
+                       tb_scaling,
 		       pdsch_rel15->nrOfLayers)>>3;
 
   pdsch_rel15->targetCodeRate[0] = R;

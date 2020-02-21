@@ -116,9 +116,9 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
     gNB->UL_INFO.rach_ind.slot            = slot;
     
     gNB->prach_pdu_indication_list[0].phy_cell_id  = gNB->gNB_config.cell_config.phy_cell_id.value;
-    gNB->prach_pdu_indication_list[0].symbol_index = prach_pdu->prach_start_symbol;
+    gNB->prach_pdu_indication_list[0].symbol_index = prach_pdu->prach_start_symbol;  // FIXME to be changed for multi-ssb (this is only the start symbol of first occasion)
     gNB->prach_pdu_indication_list[0].slot_index   = slot;
-    gNB->prach_pdu_indication_list[0].freq_index   = 0; // single frequency for now
+    gNB->prach_pdu_indication_list[0].freq_index   = prach_pdu->num_ra;
     gNB->prach_pdu_indication_list[0].avg_rssi     = (max_preamble_energy[0]<631) ? (128+(max_preamble_energy[0]/5)) : 254;
     gNB->prach_pdu_indication_list[0].avg_snr      = 0xff; // invalid for now
 

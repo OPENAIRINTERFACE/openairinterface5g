@@ -131,14 +131,33 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 } 
 
+int find_aggregation_level (NR_SearchSpace_t *ss){
+
+  int level = 0;
+
+  if( ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0)
+    level = 1;
+  if( ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0)
+    level = 2;
+  if( ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0)
+    level = 4;
+  if( ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0)
+    level = 8;
+  if( ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0)
+    level = 16;
+
+  AssertFatal(level!=0,"Unable to find aggregation level");
+  return level;
+
+}
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 		     int bwp_id,
 		     int coreset_id,
 		     int aggregation,
 		     int search_space, // 0 common, 1 ue-specific
 		     int UE_id,
-		     int m
-		     ) {
+		     int m) {
   // uncomment these when we allocate for common search space
   //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -150,14 +169,15 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
   NR_ControlResourceSet_t *coreset;
 
+  AssertFatal(UE_list->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
+  secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+
   if (search_space == 1) {
-    AssertFatal(UE_list->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
-    secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
     coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[coreset_id];
   }
   else {
-    AssertFatal(1==0,"Add code for common search space\n");
+    coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
   }
 
   int *cce_list = nr_mac->cce_list[bwp_id][coreset_id];
@@ -413,63 +433,75 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 			int ss_type,
+                        NR_SearchSpace_t *ss,
 			NR_ServingCellConfigCommon_t *scc,
 			NR_BWP_Downlink_t *bwp){
   
+  NR_ControlResourceSet_t *coreset = NULL;
+
   if (bwp) { // This is not the InitialBWP
-    /// coreset
-    
-    //ControlResourceSetId
-    //  pdcch_pdu->config_type = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList!=NULL,
-		"controlResourceSetToAddModList is null\n");
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count>0,
-		"controlResourceSetToAddModList is empty\n");
-    NR_ControlResourceSet_t *coreset0 = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0];
-    
+    NR_ControlResourceSet_t *temp_coreset;
+    NR_ControlResourceSetId_t coresetid = *ss->controlResourceSetId;
+    if (ss_type == 0) { // common search space
+      if (coresetid == 0){
+        AssertFatal(1==0,"coreset0 currently not supported\n");
+      }
+      else {
+        coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+        AssertFatal(coresetid==coreset->controlResourceSetId,"ID of common ss coreset does not correspond to id set in the search space\n");
+      }
+    }
+    else {
+      int n_list = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
+      for (int i=0; i<n_list; i++) {
+        temp_coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
+        if (coresetid==temp_coreset->controlResourceSetId) {
+          coreset = temp_coreset;
+          break;
+        }
+      }
+      if(coreset==NULL)
+        AssertFatal(1==0,"Couldn't find coreset with id %ld\n",coresetid);
+    }
     
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
     
-    pdcch_pdu->DurationSymbols  = coreset0->duration;
+
+    // first symbol
+    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
+    int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+
+    AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
+    AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
     
-    //frequencyDomainResources
-    /*    uint8_t count=0, start=0, start_set=0;
-    // find coreset descriptor
+    // for SPS=14 8 MSBs in positions 13 downto 6
+    uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) |
+      (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+
+    for (int i=0; i<sps; i++) {
+      if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
+	pdcch_pdu->StartSymbolIndex=i;
+	break;
+      }
+    }
+
+    pdcch_pdu->DurationSymbols  = coreset->duration;
     
-    uint64_t bitmap = (((uint64_t)coreset0->frequencyDomainResources.buf[0])<<37)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[1])<<29)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[2])<<21)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[3])<<13)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[4])<<5)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[5])>>3);
-	
-	for (int i=0; i<45; i++)
-	if ((bitmap>>(44-i))&1) {
-	count++;
-	if (!start_set) {
-        start = i;
-        start_set = 1;
-	}
-	}
-	pdcch_pdu->rb_offset = 6*start;
-	pdcch_pdu->n_rb = 6*count;
-    */
     for (int i=0;i<6;i++)
-      pdcch_pdu->FreqDomainResource[i] = coreset0->frequencyDomainResources.buf[i];
-    //duration
-    
+      pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
     
     //cce-REG-MappingType
-    pdcch_pdu->CceRegMappingType = coreset0->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
+    pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
       NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
+
     if (pdcch_pdu->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-      pdcch_pdu->RegBundleSize = (coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
-      pdcch_pdu->InterleaverSize = (coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize);
+      pdcch_pdu->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
+      pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
       AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
-      pdcch_pdu->ShiftIndex = coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
+      pdcch_pdu->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
     }
     else {
       pdcch_pdu->RegBundleSize = 0;
@@ -480,65 +512,16 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     pdcch_pdu->CoreSetType = 1; 
     
     //precoderGranularity
-    pdcch_pdu->precoderGranularity = coreset0->precoderGranularity;
+    pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
     
-    //TCI states
-    // 
-    /*
-    //TCI present
-    if (coreset0->tci_PresentInDCI != NULL) {
-    AssertFatal(coreset0->tci_StatesPDCCH_ToAddList != NULL,"tci_StatesPDCCH_ToAddList is null\n");
-    AssertFatal(coreset0->tci_StatesPDCCH_ToAddList->list.count>0,"TCI state list is empty\n");
-    for (int i=0;i<coreset0->tci_StatesPDCCH_ToAddList->list.count;i++) {
-    
-    }
-    */
-    
-    for (int i=0;i<pdcch_pdu->numDlDci;i++) {
-      //pdcch-DMRS-ScramblingID
-      AssertFatal(coreset0->pdcch_DMRS_ScramblingID != NULL,"coreset0->pdcch_DMRS_ScramblingID is null\n");
-      pdcch_pdu->dci_pdu.ScramblingId[i] = *coreset0->pdcch_DMRS_ScramblingID;
-    }    
-    
-    /// SearchSpace
-    
-    // first symbol
-    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
-    
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
-		"searchPsacesToAddModList is empty\n");
-    NR_SearchSpace_t *ss;
-    int found=0;
-    int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-    if (ss_type == 1) { 
-      target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    } 
-    
-    for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
-      ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
-      AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
-      AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
-      if (*ss->controlResourceSetId == coreset0->controlResourceSetId && 
-	  ss->searchSpaceType->present == target_ss) {
-	found=1;
-	break;
+    if (ss_type) {
+      for (int i=0;i<pdcch_pdu->numDlDci;i++) {
+        //pdcch-DMRS-ScramblingID
+        AssertFatal(coreset->pdcch_DMRS_ScramblingID != NULL,"coreset0->pdcch_DMRS_ScramblingID is null\n");
+        pdcch_pdu->dci_pdu.ScramblingId[i] = *coreset->pdcch_DMRS_ScramblingID;
       }
     }
-    AssertFatal(found==1,"Couldn't find a searchspace corresponding to coreset0\n");
-    AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
-    AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
-    
-    // for SPS=14 8 MSBs in positions 13 downto 6,  
-    uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | 
-      (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-    
-    for (int i=0; i<sps; i++)
-      if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
-	pdcch_pdu->StartSymbolIndex=i;
-	break;
-      }
+
   }
 
   else { // this is for InitialBWP
@@ -1059,6 +1042,81 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 		  0);
   return -1;
 }
+
+
+void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
+                                               uint16_t *slot_period,
+                                               uint16_t *offset) {
+
+
+  switch(ss->monitoringSlotPeriodicityAndOffset->present) {
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
+      *slot_period = 1;
+      *offset = 0;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
+      *slot_period = 2;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
+      *slot_period = 4;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl4;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
+      *slot_period = 5;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl5;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
+      *slot_period = 8;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl8;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
+      *slot_period = 10;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl10;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
+      *slot_period = 16;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl16;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
+      *slot_period = 20;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl20;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
+      *slot_period = 40;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl40;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
+      *slot_period = 80;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl80;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
+      *slot_period = 160;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl160;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
+      *slot_period = 320;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl320;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
+      *slot_period = 640;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl640;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
+      *slot_period = 1280;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl1280;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
+      *slot_period = 2560;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2560;
+      break;
+  default:
+    AssertFatal(1==0,"Invalid monitoring slot periodicity and offset value\n");
+    break;
+  }
+}
+
+
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
