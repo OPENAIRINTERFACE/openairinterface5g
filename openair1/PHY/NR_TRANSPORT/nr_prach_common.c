@@ -157,8 +157,8 @@ void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
 
     for (k=0; k<N_ZC; k++) {
-      // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
-      X_u[i][k] = ((uint32_t*)nr_ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
+      // multiply by inverse of 2 (required since ru is exp[j 2\pi n])
+      X_u[i][k] = ((uint32_t*)nr_ru)[(((k*(1+(inv_u*k)))%N_ZC)*nr_ZC_inv[2])%N_ZC];
     }
   }
 

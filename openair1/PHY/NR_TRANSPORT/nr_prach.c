@@ -359,7 +359,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	} else {
 	  if ((mu==0 && 
 	       (prachStartSymbol == 0 || prachStartSymbol == 7)) ||
-	      (mu==1 && prachStartSymbol == 0)) prach2+=48; // 24 samples @ 43.08 Ms/s in first symbol of each half subframe (15/30 kHz only) 
+	      (mu==1 && prachStartSymbol == 0)) prach2+=48; // 24 samples @ 46.08 Ms/s in first symbol of each half subframe (15/30 kHz only)
 	  if (mu==0) AssertFatal(1==0,"Shouldn't get here\n");
 	  else if (mu==1) {
 	    dftlen=1536;
