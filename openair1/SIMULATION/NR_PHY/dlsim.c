@@ -142,6 +142,7 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 void nr_ip_over_LTE_DRB_preconfiguration(void){}
+
 void mac_rlc_data_ind     (
   const module_id_t         module_idP,
   const rnti_t              rntiP,
@@ -158,6 +159,8 @@ void mac_rlc_data_ind     (
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+
 
 
 int main(int argc, char **argv)
@@ -474,6 +477,7 @@ int main(int argc, char **argv)
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
+  /*
   // read in SCGroupConfig
   AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");
   char buffer[1024];
@@ -511,15 +515,28 @@ int main(int argc, char **argv)
     SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, secondaryCellGroup, 1 );
     exit(-1);
   }      
-
-  NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+  NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+  */
 
-  rrc.carrier.servingcellconfigcommon = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  printf("%p,%p\n",
-	 secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon,
-	 rrc.carrier.servingcellconfigcommon);
+
+  rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
+
+  NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
+  prepare_scc(rrc.carrier.servingcellconfigcommon);
+  uint64_t ssb_bitmap;
+  fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
+
+  fill_default_secondaryCellGroup(scc,
+				  secondaryCellGroup,
+				  0,
+				  1,
+				  n_tx,
+				  0);
+  fix_scc(scc,ssb_bitmap);
+
+  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
@@ -661,9 +678,9 @@ int main(int argc, char **argv)
   gNB->ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
   
   if (mcsIndex_set==0) dlsch_config.mcsIndex[0]=9;
-  if (rbSize_set==0) dlsch_config.rbSize=N_RB_DL;
+  
   if (rbStart_set==0) dlsch_config.rbStart=0;
-
+  if (rbSize_set==0) dlsch_config.rbSize=N_RB_DL-dlsch_config.rbStart;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);

@@ -413,52 +413,23 @@ int main(int argc, char **argv)
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
-  // read in SCGroupConfig
-  AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");
-  char buffer[1024];
-  int msg_len=fread(buffer,1,1024,scg_fd);
-  NR_RRCReconfiguration_t *NR_RRCReconfiguration;
+  rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
 
-  printf("Decoding NR_RRCReconfiguration (%d bytes)\n",msg_len);
-  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-						  &asn_DEF_NR_RRCReconfiguration,
-						  (void **)&NR_RRCReconfiguration,
-						  (uint8_t *)buffer,
-						  msg_len); 
-  
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    AssertFatal(1==0,"NR_RRCReConfiguration decode error\n");
-    // free the memory
-    SEQUENCE_free( &asn_DEF_NR_RRCReconfiguration, NR_RRCReconfiguration, 1 );
-    exit(-1);
-  }      
-  fclose(scg_fd);
+  NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
+  prepare_scc(rrc.carrier.servingcellconfigcommon);
+  uint64_t ssb_bitmap;
+  fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
 
-  AssertFatal(NR_RRCReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration,"wrong NR_RRCReconfiguration->criticalExstions.present type\n");
+  fill_default_secondaryCellGroup(scc,
+				  secondaryCellGroup,
+				  0,
+				  1,
+				  n_tx,
+				  0);
+  fix_scc(scc,ssb_bitmap);
 
-  NR_RRCReconfiguration_IEs_t *reconfig_ies = NR_RRCReconfiguration->criticalExtensions.choice.rrcReconfiguration;
-  NR_CellGroupConfig_t *secondaryCellGroup;
-  dec_rval = uper_decode_complete( NULL,
-				   &asn_DEF_NR_CellGroupConfig,
-				   (void **)&secondaryCellGroup,
-				   (uint8_t *)reconfig_ies->secondaryCellGroup->buf,
-				   reconfig_ies->secondaryCellGroup->size); 
-  
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    AssertFatal(1==0,"NR_CellGroupConfig decode error\n");
-    // free the memory
-    SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, secondaryCellGroup, 1 );
-    exit(-1);
-  }      
-
-  NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
-
-  rrc.carrier.servingcellconfigcommon = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  printf("%p,%p\n",
-	 secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon,
-	 rrc.carrier.servingcellconfigcommon);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;

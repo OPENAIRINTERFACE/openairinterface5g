@@ -298,7 +298,7 @@ uint64_t from_nrarfcn(int nr_bandP,
   
   AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
   for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL %llu\n",dl_nrarfcn, (long long unsigned int)nr_bandtable[i].N_OFFs_DL);
+  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL[%d] %llu\n",dl_nrarfcn, nr_bandtable[i].band,(long long unsigned int)nr_bandtable[i].N_OFFs_DL);
  
   // selection of correct Deltaf raster according to SCS
   if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))

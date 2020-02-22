@@ -1685,7 +1685,6 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(fapi_nr_ul_config_pusch_pd
     /*
      * TS 38.214 subclause 5.1.2.2.2 Downlink resource allocation type 1
      */
-    
     dlsch_config_pdu->number_rbs = NRRIV2BW(riv,n_RB_DLBWP);
     dlsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_DLBWP);
 
