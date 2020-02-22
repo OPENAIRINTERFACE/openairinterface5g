@@ -169,7 +169,6 @@ int                      rx_input_level_dBm;
 
 static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 // prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include file.
@@ -261,26 +260,6 @@ unsigned int build_rflocal(int txi, int txq, int rxi, int rxq) {
 }
 unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
   return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
-}
-
-
-
-void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
-
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    char msg[64];
-    sprintf(msg,"Received linux signal %s...\n",strsignal(sig));
-    exit_function(__FILE__, __FUNCTION__, __LINE__,msg);
-  }
 }
 
 
@@ -601,9 +580,6 @@ int main( int argc, char **argv ) {
 
   get_options ();
 
-  if (is_nos1exec(argv[0]) )
-    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
-
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
 
@@ -651,10 +627,7 @@ int main( int argc, char **argv ) {
   printf ("PDCP PC5S socket\n");
   pdcp_pc5_socket_init();
   // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
+  set_softmodem_sighandler();
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"

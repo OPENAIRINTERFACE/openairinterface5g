@@ -1019,11 +1019,11 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
 
 /*Dummy functions*/
 
-int memcpy_dl_config_req (nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
+int memcpy_dl_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
   return 0;
 }
 
-int memcpy_ul_config_req (nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
   return 0;
 }
 

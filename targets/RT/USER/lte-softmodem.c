@@ -150,7 +150,6 @@ char channels[128] = "0";
 int rx_input_level_dBm;
 int otg_enabled;
 
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
@@ -232,24 +231,6 @@ unsigned int build_rflocal(int txi, int txq, int rxi, int rxq) {
 }
 unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
   return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
-}
-
-
-void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
-
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    printf("Linux signal %s...\n",strsignal(sig));
-    exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
-  }
 }
 
 
@@ -496,7 +477,8 @@ void init_pdcp(void) {
 
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
 
-    pdcp_module_init(pdcp_initmask);
+    if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 )
+	    pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
       pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
@@ -536,9 +518,6 @@ int main ( int argc, char **argv )
   logInit();
   printf("Reading in command-line options\n");
   get_options ();
-  
-  if (is_nos1exec(argv[0]) )
-    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
@@ -569,11 +548,6 @@ int main ( int argc, char **argv )
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
-
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"

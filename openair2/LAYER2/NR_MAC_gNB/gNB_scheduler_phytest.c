@@ -33,7 +33,7 @@
 #include "mac_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
-#include "executables/nr-softmodem.h"
+#include "executables/softmodem-common.h"
 extern RAN_CONTEXT_t RC;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 

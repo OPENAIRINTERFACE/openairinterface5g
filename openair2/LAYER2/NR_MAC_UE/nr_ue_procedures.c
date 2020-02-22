@@ -30,7 +30,6 @@
  * \warning
  */
 
-#include "executables/nr-softmodem.h"
 
 /* MAC related headers */
 #include "mac_proto.h"
@@ -49,7 +48,7 @@
 /*Openair Packet Tracer */
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
-
+#include "executables/softmodem-common.h"
 /* log utils */
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

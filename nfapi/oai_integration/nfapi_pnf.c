@@ -698,6 +698,8 @@ int pnf_phy_hi_dci0_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfa
 
   //phy_info* phy = (phy_info*)(pnf_p7->user_data);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
+  if (proc ==NULL) 
+    proc = &eNB->proc.L1_proc;
 
   for (int i=0; i<req->hi_dci0_request_body.number_of_dci + req->hi_dci0_request_body.number_of_hi; i++) {
     //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
@@ -739,6 +741,8 @@ int pnf_phy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, n
   int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   int sf = NFAPI_SFNSF2SF(req->sfn_sf);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
+  if (proc==NULL)
+     proc = &eNB->proc.L1_proc;
   nfapi_dl_config_request_pdu_t *dl_config_pdu_list = req->dl_config_request_body.dl_config_pdu_list;
   LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[sf&1];
   pdcch_vars->num_pdcch_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
@@ -864,6 +868,8 @@ int pnf_phy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, n
   uint16_t curr_sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   uint16_t curr_sf = NFAPI_SFNSF2SF(req->sfn_sf);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
+  if (proc==NULL)
+     proc = &eNB->proc.L1_proc;
   nfapi_ul_config_request_pdu_t *ul_config_pdu_list = req->ul_config_request_body.ul_config_pdu_list;
 
   for (int i=0; i<req->ul_config_request_body.number_of_pdus; i++) {
