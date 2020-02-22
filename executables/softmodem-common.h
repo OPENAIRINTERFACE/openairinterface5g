@@ -100,7 +100,7 @@ extern "C"
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
-#define DEFAULT_DLF 0
+#define DEFAULT_DLF 2680000000
 
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, sizeof(RF_CONFIG_FILE)},\

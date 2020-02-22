@@ -362,6 +362,13 @@ do_UECapabilityEnquiry(
   const uint8_t                Transaction_id
 );
 
+uint8_t
+do_NR_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t               *const buffer,
+  const uint8_t                Transaction_id
+);
+
 uint8_t do_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *const buffer,

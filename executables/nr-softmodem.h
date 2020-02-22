@@ -7,7 +7,7 @@
 #include "PHY/defs_gNB.h"
 #include "proto_agent.h"
 
-#define DEFAULT_DLF 0
+#define DEFAULT_DLF 2680000000
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
