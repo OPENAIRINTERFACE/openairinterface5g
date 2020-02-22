@@ -3379,7 +3379,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
           mcs_rv = 31;
         }
 
-        UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb);
         UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=UE_template->TBS_UL[harq_pid];
 
         if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
