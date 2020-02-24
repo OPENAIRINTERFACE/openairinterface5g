@@ -230,6 +230,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
     uint16_t n_RNTI = pdcch_pdu_rel15->dci_pdu.RNTI[d];
     uint16_t Nid    = pdcch_pdu_rel15->dci_pdu.ScramblingId[d];
+    uint16_t scrambing_RNTI = pdcch_pdu_rel15->dci_pdu.ScramblingRNTI[numDlDci];
     
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
 						   pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d], 
@@ -249,7 +250,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 #endif
     /// Scrambling
     uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD]= {0};
-    nr_pdcch_scrambling(encoder_output, encoded_length, Nid, n_RNTI, scrambled_output);
+    nr_pdcch_scrambling(encoder_output, encoded_length, Nid, scrambling_RNTI, scrambled_output);
 #ifdef DEBUG_CHANNEL_CODING
     printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\t [4]->0x%08x\t [5]->0x%08x\t \
 [6]->0x%08x \t [7]->0x%08x \t [8]->0x%08x \t [9]->0x%08x\t [10]->0x%08x\t [11]->0x%08x\n",
