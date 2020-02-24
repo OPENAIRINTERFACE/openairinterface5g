@@ -176,7 +176,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
-                        int *rnti_types);
+                        int *rnti_types,
+			int N_RB);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 

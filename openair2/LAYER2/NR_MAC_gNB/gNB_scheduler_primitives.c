@@ -534,10 +534,11 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			dci_pdu_rel15_t *dci_pdu_rel15,
 			int *dci_formats,
-			int *rnti_types
+			int *rnti_types,
+			int N_RB
 			) {
   
-  uint16_t N_RB = pdcch_pdu_rel15->BWPSize;
+
   uint8_t fsize=0, pos=0;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
@@ -546,7 +547,9 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
     AssertFatal(pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
 
     int dci_size = pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d];
-    
+
+    *dci_pdu=0;
+
     /// Payload generation
     switch(dci_formats[d]) {
     case NR_DL_DCI_FORMAT_1_0:
@@ -563,7 +566,7 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 	pos+=4;
 	*dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment&0xf) << (dci_size-pos));
 #ifdef DEBUG_FILL_DCI
-	LOG_D(MAC,"time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment,dci_size-pos,*dci_pdu);
 #endif
 	// VRB to PRB mapping
 	

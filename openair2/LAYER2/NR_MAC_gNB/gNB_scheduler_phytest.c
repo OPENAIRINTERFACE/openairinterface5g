@@ -394,7 +394,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   rnti_types[0]   = NR_RNTI_C;
 
   pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
-  fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
+  fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,pdcch_pdu_rel15->BWPSize);
 
   LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
@@ -846,6 +846,6 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
   
   pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
-  fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
+  fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,pdcch_pdu_rel15->BWPSize);
   
 }
