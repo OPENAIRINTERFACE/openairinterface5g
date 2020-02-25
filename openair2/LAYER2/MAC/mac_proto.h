@@ -237,13 +237,8 @@ void dlsch_scheduler_pre_processor(module_id_t module_idP,
                                    sub_frame_t subframe);
 
 void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
-                                         int slice_idx,
-                                         frame_t frameP,
-                                         sub_frame_t subframeP,
-                                         int min_rb_unit[NFAPI_CC_MAX],
-                                         uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                         uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                         uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+                                         int CC_id,
+                                         uint8_t rballoc_sub[N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
     int slice_idx,

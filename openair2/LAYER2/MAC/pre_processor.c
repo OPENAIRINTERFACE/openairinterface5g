@@ -886,6 +886,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   uint16_t i, j;
   int slice_idx = 0;
   int min_rb_unit[NFAPI_CC_MAX];
+  min_rb_unit[CC_id] = get_min_rb_unit(Mod_id, CC_id);
+  // TODO: remove NFAPI_CC_MAX, here for compatibility for the moment
   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
   memset(rballoc_sub, 0, sizeof(rballoc_sub));
 
@@ -894,21 +896,18 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   uint16_t (*nb_rbs_required)[MAX_MOBILES_PER_ENB]  = sli->pre_processor_results[slice_idx].nb_rbs_required;
   uint16_t (*nb_rbs_accounted)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_idx].nb_rbs_accounted;
   uint16_t (*nb_rbs_remaining)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_idx].nb_rbs_remaining;
-  uint8_t  (*MIMO_mode_indicator)[N_RBG_MAX]     = sli->pre_processor_results[slice_idx].MIMO_mode_indicator;
+  // TODO remove this
+  uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX];
+  memset(MIMO_mode_indicator, 0, sizeof(MIMO_mode_indicator));
+
   UE_list_t *UE_list = &eNB->UE_list;
   UE_sched_ctrl_t *ue_sched_ctl;
-  //  int rrc_status = RRC_IDLE;
+
   // Initialize scheduling information for all active UEs
   memset(&sli->pre_processor_results[slice_idx], 0, sizeof(sli->pre_processor_results[slice_idx]));
-  // FIXME: After the memset above, some of the resets in reset() are redundant
   dlsch_scheduler_pre_processor_reset(Mod_id,
-                                      slice_idx,
-                                      frameP,
-                                      subframeP,
-                                      min_rb_unit,
-                                      nb_rbs_required,
-                                      rballoc_sub,
-                                      MIMO_mode_indicator);
+                                      CC_id,
+                                      rballoc_sub[CC_id]);
   // STATUS
   // Store the DLSCH buffer for each logical channel
   store_dlsch_buffer(Mod_id,
@@ -999,173 +998,41 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
 void
 dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
-                                    int slice_idx,
-                                    frame_t frameP,
-                                    sub_frame_t subframeP,
-                                    int min_rb_unit[NFAPI_CC_MAX],
-                                    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]) {
-  int UE_id;
-  uint8_t CC_id;
-  int i, j;
-  UE_list_t *UE_list;
-  UE_sched_ctrl_t *ue_sched_ctl;
-  int N_RB_DL, RBGsize, RBGsize_last;
-  int N_RBG[NFAPI_CC_MAX];
-  rnti_t rnti;
-  uint8_t *vrb_map;
-  COMMON_channels_t *cc;
+                                    int CC_id,
+                                    uint8_t rballoc_sub[N_RBG_MAX]) {
+  UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
 
-  //
-  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
+  for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; ++UE_id) {
+    UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+    const rnti_t rnti = UE_RNTI(module_idP, UE_id);
+
+    if (rnti == NOT_A_RNTI)
+      continue;
+
+    if (UE_list->active[UE_id] != TRUE)
+      continue;
+
     // initialize harq_pid and round
-    cc = &RC.mac[module_idP]->common_channels[CC_id];
-    N_RBG[CC_id] = to_rbg(cc->mib->message.dl_Bandwidth);
-    min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
+    if (ue_sched_ctl->ta_timer)
+      ue_sched_ctl->ta_timer--;
 
-    for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; ++UE_id) {
-      UE_list = &RC.mac[module_idP]->UE_list;
-      ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-      rnti = UE_RNTI(module_idP, UE_id);
+    ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
+    ue_sched_ctl->dl_pow_off[CC_id] = 2;
 
-      if (rnti == NOT_A_RNTI)
-        continue;
-
-      if (UE_list->active[UE_id] != TRUE)
-        continue;
-
-      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idx))
-        continue;
-
-      LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id, rnti);
-
-      // initialize harq_pid and round
-      if (ue_sched_ctl->ta_timer)
-        ue_sched_ctl->ta_timer--;
-
-      /*
-         eNB_UE_stats *eNB_UE_stats;
-
-         if (eNB_UE_stats == NULL)
-         return;
-
-
-         mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
-         frameP,subframeP,
-         &ue_sched_ctl->harq_pid[CC_id],
-         &ue_sched_ctl->round[CC_id],
-         openair_harq_DL);
-
-
-         if (ue_sched_ctl->ta_timer == 0) {
-
-         // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
-
-         ue_sched_ctl->ta_timer = 20;  // wait 20 subframes before taking TA measurement from PHY
-         switch (N_RB_DL) {
-         case 6:
-         ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update;
-         break;
-
-         case 15:
-         ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/2;
-         break;
-
-         case 25:
-         ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/4;
-         break;
-
-         case 50:
-         ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/8;
-         break;
-
-         case 75:
-         ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/12;
-         break;
-
-         case 100:
-         ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/16;
-         break;
-         }
-         // clear the update in case PHY does not have a new measurement after timer expiry
-         eNB_UE_stats->timing_advance_update =  0;
-         }
-         else {
-         ue_sched_ctl->ta_timer--;
-         ue_sched_ctl->ta_update =0; // don't trigger a timing advance command
-         }
-
-
-         if (UE_id==0) {
-         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_TIMING_ADVANCE,ue_sched_ctl->ta_update);
-         }
-       */
-      nb_rbs_required[CC_id][UE_id] = 0;
-      ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
-      ue_sched_ctl->dl_pow_off[CC_id] = 2;
-
-      for (i = 0; i < N_RBG[CC_id]; i++) {
-        ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
-      }
+    for (int i = 0; i < sizeof(ue_sched_ctl->rballoc_sub_UE[CC_id])/sizeof(unsigned char); i++) {
+      ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
     }
+  }
 
-    N_RB_DL = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  const int N_RB_DL = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  const int RBGsize = get_min_rb_unit(module_idP, CC_id);
+  const uint8_t *vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
 
-    switch (N_RB_DL) {
-      case 6:
-        RBGsize = 1;
-        RBGsize_last = 1;
-        break;
-
-      case 15:
-        RBGsize = 2;
-        RBGsize_last = 1;
-        break;
-
-      case 25:
-        RBGsize = 2;
-        RBGsize_last = 1;
-        break;
-
-      case 50:
-        RBGsize = 3;
-        RBGsize_last = 2;
-        break;
-
-      case 75:
-        RBGsize = 4;
-        RBGsize_last = 3;
-        break;
-
-      case 100:
-        RBGsize = 4;
-        RBGsize_last = 4;
-        break;
-
-      default:
-        AssertFatal(1 == 0, "unsupported RBs (%d)\n", N_RB_DL);
-    }
-
-    vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
-
-    // Initialize Subbands according to VRB map
-    for (i = 0; i < N_RBG[CC_id]; i++) {
-      int rb_size = i == N_RBG[CC_id] - 1 ? RBGsize_last : RBGsize;
-
-      // for SI-RNTI,RA-RNTI and P-RNTI allocations
-      for (j = 0; j < rb_size; j++) {
-        if (vrb_map[j + (i*RBGsize)] != 0) {
-          rballoc_sub[CC_id][i] = 1;
-          LOG_D(MAC, "Frame %d, subframe %d : vrb %d allocated\n", frameP, subframeP, j + (i*RBGsize));
-          break;
-        }
-      }
-
-      //LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",
-      //frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
-      MIMO_mode_indicator[CC_id][i] = 2;
-    }
+  // Check for SI-RNTI, RA-RNTI or P-RNTI allocations in VRB map and
+  // initialize subbands accordly
+  for (int i = 0; i < N_RB_DL; i++) {
+    if (vrb_map[i] != 0)
+      rballoc_sub[i/RBGsize] = 1;
   }
 }
 
