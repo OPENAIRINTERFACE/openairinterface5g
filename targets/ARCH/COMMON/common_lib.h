@@ -48,6 +48,9 @@
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
 
+#define WRITE_THREAD_PACKAGE     10
+#define WRITE_THREAD_BUFFER_SIZE 8
+
 #ifndef MAX_CARDS
   #define MAX_CARDS 8
 #endif
@@ -278,7 +281,7 @@ typedef struct {
 
 typedef struct {
   openair0_timestamp timestamp;
-  void *buff[8];// buffer to be write;
+  void *buff[WRITE_THREAD_BUFFER_SIZE];// buffer to be write;
   int nsamps;
   int cc;
   signed char first_packet;
@@ -286,9 +289,7 @@ typedef struct {
 } openair0_write_package_t;
 
 typedef struct {
-  openair0_write_package_t write_package[10];
-  /// write package number
-  int num_package;
+  openair0_write_package_t write_package[WRITE_THREAD_PACKAGE];
   int start;
   int end;
   /// \internal This variable is protected by \ref mutex_write

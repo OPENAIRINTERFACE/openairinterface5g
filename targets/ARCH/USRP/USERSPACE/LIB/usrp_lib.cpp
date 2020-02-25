@@ -405,11 +405,11 @@ static int trx_usrp_write_recplay(openair0_device *device, openair0_timestamp ti
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
 */
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
-  int ret=0;
   int end;
   openair0_thread_t *write_thread = &device->write_thread;
   openair0_write_package_t *write_package = write_thread->write_package;
 
+  AssertFatal( WRITE_THREAD_BUFFER_SIZE >= cc,"Do not support more than %d cc number\n", WRITE_THREAD_BUFFER_SIZE);
 
     boolean_t first_packet_state=false,last_packet_state=false;
 
@@ -440,10 +440,15 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       first_packet_state = false;
       last_packet_state  = true;
     }
-printf("~~~1 buff in usrp write = %p\n", buff[0]);
   pthread_mutex_lock(&write_thread->mutex_write);
+
+  if(write_thread->instance_cnt_write >= WRITE_THREAD_PACKAGE){
+    LOG_W(HW,"Buffer overflow, resetting write package\n");
+    write_thread->end = write_thread->start;
+    write_thread->instance_cnt_write = 0;
+  }
+
   end = write_thread->end;
-printf("package being write is %d\n", end);
   write_package[end].timestamp    = timestamp;
   write_package[end].nsamps       = nsamps;
   write_package[end].cc           = cc;
@@ -451,11 +456,9 @@ printf("package being write is %d\n", end);
   write_package[end].last_packet  = last_packet_state;
   for (int i = 0; i < cc; i++)
     write_package[end].buff[i]    = buff[i];
-printf("~~~2 write_package buff in usrp write = %p\n", write_package[end].buff[0]);
-  write_thread->instance_cnt_write = 0;
-  write_thread->end = (write_thread->end + 1)% write_thread->num_package;
+  ++write_thread->instance_cnt_write;
+  write_thread->end = (write_thread->end + 1)% WRITE_THREAD_PACKAGE;
   pthread_cond_signal(&write_thread->cond_write);
-  printf("trx_usrp_write signal end\n");
   pthread_mutex_unlock(&write_thread->mutex_write);
 
 
@@ -489,28 +492,20 @@ void *trx_usrp_write_thread(void * arg){
 
   while(1){
     pthread_mutex_lock(&write_thread->mutex_write);
-    printf("waiting for signal \n");
-    while (write_thread->instance_cnt_write < 0) {
+    while (write_thread->instance_cnt_write == 0) {
       pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
     }
-    printf("signal unlock\n");
     s = (usrp_state_t *)device->priv;
     start = write_thread->start;
-    printf("package bing use is start = %d, end = %d\n", start, write_thread->end);
     timestamp    = write_package[start].timestamp;
     buff         = write_package[start].buff;
     nsamps       = write_package[start].nsamps;
     cc           = write_package[start].cc;
     first_packet = write_package[start].first_packet;
     last_packet  = write_package[start].last_packet;
-    write_thread->start = (write_thread->start + 1)% write_thread->num_package;
-    if(write_thread->end == write_thread->start){
-      write_thread->instance_cnt_write = -1;
-    }
+    write_thread->start = (write_thread->start + 1)% WRITE_THREAD_PACKAGE;
+    --write_thread->instance_cnt_write;
     pthread_mutex_unlock(&write_thread->mutex_write);
-    printf("end of write thread signal getting \n");
-printf("~~~2.5 write_package buff in thread = %p\n", write_package[start].buff[0]);
-printf("~~~3 buff in tx write thread= %p\n", buff[0]);
 
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
@@ -557,7 +552,6 @@ printf("~~~3 buff in tx write thread= %p\n", buff[0]);
       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
     } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
     if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
-printf("end of sending buffer in trx write thread\n");
 
     if(0) break;
   }
@@ -571,10 +565,9 @@ int trx_write_init(openair0_device *device){
   openair0_thread_t *write_thread = &device->write_thread;
   printf("initializing tx write thread\n");
 
-  write_thread->num_package        = 10;
   write_thread->start              = 0;
   write_thread->end                = 0;
-  write_thread->instance_cnt_write = -1;
+  write_thread->instance_cnt_write = 0;
   printf("end of tx write thread\n");
 
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);

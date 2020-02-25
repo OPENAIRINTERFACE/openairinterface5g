@@ -717,7 +717,6 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   //nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx];
-  char *print_test[ru->nb_tx];
   unsigned int txs;
   int i;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
@@ -762,27 +761,23 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     for (i=0; i<ru->nb_tx; i++){
       txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
     }
-print_test[0] = (char *)&ru->common.txdata[0][(slot*fp->samples_per_slot)-sf_extension];
-printf("txdata[0] = %p\n", print_test[0]);
 
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
     start_meas(&ru->tx_fhaul);
-printf("sending trx write from tx_rf\n");
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
                                       timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
                                       txp,
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);
-//printf("txp = %s\n", (char*)txp[0]);
     stop_meas(&ru->tx_fhaul);
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
           (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-    //AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
+    AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
 }
 
