@@ -1,4 +1,4 @@
-#I/Q record-playback
+# I/Q record-playback
 ## using the iq recorder or iq player
 
 This feature provides I/Q record-playback as presented in the 4th OAI workshop. Tests have only been performed with a eNB, but the implementation should allow any softmodem executable to use the iq's record/player.
@@ -8,14 +8,16 @@ The I/Q record/playback feature is briefly described hereafter, it allows you to
 
 The record/replay  are activated and configured using oai configuration parameters
 
-###Record mode
+### Record mode
 options for record mode are:
 * `subframes-record` Activate record mode
 * `subframes-file` Path of the file used for subframes recording (default is `/tmp/iqfile`)
 * `subframes-max` Maximum count of subframes to be recorded in subframe file (default is 120000)
 
-Note that the value of --subframes-max parameter needs to be tuned according to your RAM capabilities. The default value is 120000, which allows for 120 seconds of record/replay but will require ~3.6GB of RAM and disk space. If RAM does not allow for the parameter value, an error message will be displayed and the run will be aborted. In record mode, subframes are copied in specific memory records not to disrupt regular behavior. When you estimate the recorded sequence is achieved, you should terminate the eNB/RRU by typing `CTRL-C`. At that time, up to the value of --subframes-max parameter will be written on disk. The eNB/RRU will indicate the exact count of subframes written to disk, which may be less (but not higher) that the value of --subframes-max parameter (120000 by default). The number of subframes written to disk is rounded to an integral number of frames. When replaying a file you should always specify the exact number of subframes, and thus use the exact number of subframes written during recording. You might experiment unexpected behavior if the number of subframes to be replayed does not match the number of subframes recorded. This might be improved in the future.
-Although it is possible to perform recording with a fronthaul setup, it is suggested to perform recording in full eNB mode and then replay in either full or split eNB.
+Note that the value of `--subframes-max` parameter needs to be tuned according to your RAM capabilities. The default value is 120000, which allows for 120 seconds of record/replay but will require ~3.6GB of RAM and disk space. 
+If RAM does not allow for the parameter value, an error message will be displayed and the run will be aborted. In record mode, to minimize pzerformance impact, 
+subframes are saved into memory and written to disk when the process is terminating . When you estimate the recorded sequence is achieved, you should terminate the eNB/RRU by typing `CTRL-C`. At that time, up to the value of `--subframes-max` subframes will be written on disk. The eNB/RRU will indicate the exact count of subframes written to disk, which may be less (but not higher) that the value of `--subframes-max` parameter (120000 by default). The number of subframes written to disk is rounded to an integral number of frames. 
+Although it is possible to perform recording with a fronthaul setup, it is suggested to perform recording in full eNB mode and then replay in either monolithic or split eNB.
 The option can be used while operating full eNB or RCC/RRU linked by NGFI IF5/IF4p5 fronthaul techniques. One of the advantage of the record/replay technique is that you can replay on a fronthauling setup a file that has been recorded in full eNB mode. This can easily asserts that the fronthauling underlying set up or technique is correct.
 
 >recording session example:
@@ -72,7 +74,7 @@ U[HW]I ru thread Writing file header to /tmp/iqfile
 [PHY]I ru thread RU 0 rf device stopped
 ```
 
-###Playback/replay mode
+### Playback/replay mode
 The option works only for 5MHz bandwidth because the information stored in the iq's file header regarding bandwidth is not yet properly processed. 
  In this version,  mismatch between file content and run time parameters might lead to unpredictable results. In addition a file recorded on a AVX2-capable processor cannot be replayed on a non-AVX2-capable processor (this is to be further investigated).
 options for replay mode are:
@@ -136,7 +138,7 @@ options for replay mode are:
 
 ## iq recorder and iq player implementation overview
 
-###configuration
+### configuration
 The iq's record/player is using the [configuration module](../../../../common/config/DOC/config.md). Configuration parameters supported by the record player are defined in the [record_player.h](../../COMMON/record_player.h) include file.
  There are no specific sections for the recorder or the replayer, parameters are defined under the `device.recplay`section and the `read_recplayconfig` function is common to both the recorder and the player. `device.recplay` configuration section is read from oai code common to all devices:
 Implemented in [record_player.c](../../COMMON/record_player.c), the `read_recplayconfig` function is called from `load_lib` and reads the configuration parameters, saving them in a `recplay_conf_t` sub-structure of the oai device. It also allocates a `recplay_state_t` structure which will save the recorder or player data. 
