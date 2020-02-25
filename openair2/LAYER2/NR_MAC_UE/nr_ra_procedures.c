@@ -79,11 +79,14 @@ void nr_get_prach_resources(module_id_t mod_id,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon;
+  NR_RACH_ConfigGeneric_t *rach_ConfigGeneric;
+
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
   int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3;
-  uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, msg1_FDM, prach_ConfigIndex, SFN_nbr, Msg3_size;
+  uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, prach_ConfigIndex, SFN_nbr, Msg3_size;
 
   // NR_RSRP_Range_t rsrp_ThresholdSSB; // todo
 
@@ -116,9 +119,10 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
 
-  AssertFatal(mac->nr_rach_ConfigCommon != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
+  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
-  nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
+  nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
 
   Msg3_size = mac->RA_Msg3_size;
   numberOfRA_Preambles = *nr_rach_ConfigCommon->totalNumberOfRA_Preambles;
@@ -202,7 +206,7 @@ void nr_get_prach_resources(module_id_t mod_id,
     deltaPreamble_Msg3 = mac->deltaPreamble_Msg3;
   }
 
-  PLThreshold = prach_resources->RA_PCMAX - nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
+  PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
 
   /* Msg3 has not been transmitted yet */
   if (first_Msg3 == 1) {
@@ -254,24 +258,7 @@ void nr_get_prach_resources(module_id_t mod_id,
    // 1) this does not apply to contention-free RA Preamble for beam failure recovery request
    // 2) getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
 
-   switch (nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM){ // todo this is not used
-    case 0:
-    msg1_FDM = 1;
-    break;
-    case 1:
-    msg1_FDM = 2;
-    break;
-    case 2:
-    msg1_FDM = 4;
-    break;
-    case 3:
-    msg1_FDM = 8;
-    break;
-    default:
-    AssertFatal(1 == 0,"Unknown msg1_FDM %lu\n", nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM);
-   }
-
-   prach_ConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+   prach_ConfigIndex = rach_ConfigGeneric->prach_ConfigurationIndex;
 
    // ra_RNTI computation
    // - todo: this is for TDD FR1 only
@@ -281,7 +268,7 @@ void nr_get_prach_resources(module_id_t mod_id,
    // - t_id is the first slot of the PRACH occasion in a system frame [0...80]
 
    ul_carrier_id = 0; // NUL
-   f_id = nr_rach_ConfigCommon->rach_ConfigGeneric.msg1_FrequencyStart;
+   f_id = rach_ConfigGeneric->msg1_FrequencyStart;
    SFN_nbr = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]; 
    s_id = table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][5];
 
@@ -348,7 +335,9 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *mac_sdus, *payload, ra_ResponseWindow;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (NR_RACH_ConfigCommon_t *) NULL;
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
+  NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   // int32_t frame_diff = 0;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -361,11 +350,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
 
-    AssertFatal(mac->nr_rach_ConfigCommon != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
-
-    if (mac->nr_rach_ConfigCommon != NULL) {
-      nr_rach_ConfigCommon = mac->nr_rach_ConfigCommon;
-    } else prach_resources = NULL;
+    AssertFatal(setup != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
     if (mac->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
@@ -375,7 +360,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       mac->RA_RAPID_found = 0;
 
       /* Set RA_PREAMBLE_POWER_RAMPING_STEP */
-      switch (nr_rach_ConfigCommon->rach_ConfigGeneric.powerRampingStep){ // in dB
+      switch (rach_ConfigGeneric->powerRampingStep){ // in dB
        case 0:
        prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP = 0;
        break;
@@ -444,7 +429,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_active = 1;
         prach_resources->Msg3 = payload;
 
-        ra_ResponseWindow = nr_rach_ConfigCommon->rach_ConfigGeneric.ra_ResponseWindow;
+        ra_ResponseWindow = rach_ConfigGeneric->ra_ResponseWindow;
         switch (ra_ResponseWindow) {
           case 0:
             mac->RA_window_cnt = 1;
@@ -528,38 +513,38 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
 
         preambleTransMax = -1;
-        switch (nr_rach_ConfigCommon->rach_ConfigGeneric.preambleTransMax) {
-        case NR_RACH_ConfigGeneric__preambleTransMax_n3:
+        switch (rach_ConfigGeneric->preambleTransMax) {
+        case 0:
           preambleTransMax = 3;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n4:
+        case 1:
           preambleTransMax = 4;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n5:
+        case 2:
           preambleTransMax = 5;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n6:
+        case 3:
           preambleTransMax = 6;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n7:
+        case 4:
           preambleTransMax = 7;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n8:
+        case 5:
           preambleTransMax = 8;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n10:
+        case 6:
           preambleTransMax = 10;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n20:
+        case 7:
           preambleTransMax = 20;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n50:
+        case 8:
           preambleTransMax = 50;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n100:
+        case 9:
           preambleTransMax = 100;
           break;
-        case NR_RACH_ConfigGeneric__preambleTransMax_n200:
+        case 10:
           preambleTransMax = 200;
           break;
         }

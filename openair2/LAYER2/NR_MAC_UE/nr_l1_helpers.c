@@ -35,21 +35,16 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
-// WIP todo:
-//- frame_type and fr are hardcoded. Retireve from fp
-
 /* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
-int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
+int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format){
 
-    NR_UE_MAC_INST_t *nrUE_mac_inst = get_mac_inst(mod_id);
-    NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = nrUE_mac_inst->nr_rach_ConfigCommon;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+    NR_ServingCellConfigCommon_t *scc = mac->scc;
+    NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
 
     AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
-    uint8_t preambleFormat, prachConfigIndex;
-    lte_frame_type_t frame_type = TDD;
-    nr_frequency_range_e fr = nr_FR1;
-    int mu; 
+    uint8_t prachConfigIndex, mu;
 
     // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211
 
@@ -95,9 +90,8 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
     // Preamble formats given by prach_ConfigurationIndex and tables 6.3.3.2-2 and 6.3.3.2-2 in TS 38.211
 
     prachConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
-    preambleFormat = get_nr_prach_fmt(prachConfigIndex,frame_type,fr);
 
-    switch (preambleFormat) {
+    switch (prach_format) {
       // long preamble formats
       case 0:
       case 3:
@@ -130,19 +124,25 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id){
       return 5 + 3*mu;
 
       default:
-      AssertFatal(1 == 0, "[UE %d] ue_procedures.c: FATAL, Illegal preambleFormat %d, prachConfigIndex %d\n", mod_id, preambleFormat, prachConfigIndex);
+      AssertFatal(1 == 0, "[UE %d] ue_procedures.c: FATAL, Illegal preambleFormat %d, prachConfigIndex %d\n", mod_id, prach_format, prachConfigIndex);
     }
 }
 
 /* TS 38.321 subclause 5.1.3 - RA preamble transmission - ra_PREAMBLE_RECEIVED_TARGET_POWER configuration */
-int8_t nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id){
+int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id){
   
-  NR_UE_MAC_INST_t *nr_UE_mac_inst = get_mac_inst(mod_id);
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = nr_UE_mac_inst->nr_rach_ConfigCommon;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  int8_t receivedTargerPower, delta_preamble;
+  long preambleReceivedTargetPower;
 
   AssertFatal(nr_rach_ConfigCommon != NULL, "[UE %d] CCid %d FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id, CC_id);
 
-  int8_t receivedTargerPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower + nr_get_DELTA_PREAMBLE(mod_id, CC_id) + (nr_UE_mac_inst->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP;
+  preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
+  delta_preamble = nr_get_DELTA_PREAMBLE(mod_id, CC_id, prach_resources->prach_format);
+
+  receivedTargerPower = preambleReceivedTargetPower + delta_preamble + (mac->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP;
 
   return receivedTargerPower;
 }

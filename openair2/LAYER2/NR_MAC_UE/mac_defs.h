@@ -117,8 +117,6 @@ typedef struct {
   /* Random Access parameters */
   /// state of RA procedure
   RA_state_t ra_state;
-  /// RACH ConfigCommon
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon;
   /// RA-rnti
   uint16_t ra_rnti;
   /// Temporary CRNTI

@@ -224,12 +224,14 @@ typedef struct {
 } NR_PRACH_CONFIG_COMMON;
 
 typedef struct {
+  /// PRACH format retrieved from prach_ConfigIndex
+  uint16_t prach_format;
   /// Preamble index for PRACH (0-63)
   uint8_t ra_PreambleIndex;
   /// RACH MaskIndex
   uint8_t ra_RACH_MaskIndex;
-  /// Target received power at eNB (-120 ... -82 dBm)
-  uint32_t ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
+  int ra_PREAMBLE_RECEIVED_TARGET_POWER;
   /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
   uint8_t ra_TDD_map_index;
   /// RA Preamble Power Ramping Step in dB

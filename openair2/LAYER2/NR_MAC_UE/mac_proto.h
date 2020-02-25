@@ -185,16 +185,25 @@ int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
     @param Mod_id Module id of UE
     @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
 */
-int8_t nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t module_idP, uint8_t CC_id);
+int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t module_idP, uint8_t CC_id);
 
 /** \brief Function to compute DELTA_PREAMBLE from 38.321 subclause 7.3
    (for RA power ramping procedure and Msg3 PUSCH power control policy)
     @param Mod_id Module id of UE
     @returns DELTA_PREAMBLE
 */
-int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id);
+int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format);
 
 /* Random Access */
+
+/* \brief This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211 tables 6.3.3.2.x
+and fills the PRACH PDU per each FD occasion.
+@param module_idP Index of UE instance
+@param frameP Frame index
+@param slotP Slot index
+@returns void
+*/
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
