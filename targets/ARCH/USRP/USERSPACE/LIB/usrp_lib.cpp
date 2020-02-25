@@ -440,23 +440,25 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       first_packet_state = false;
       last_packet_state  = true;
     }
-
+printf("~~~1 buff in usrp write = %d\n", buff[0]);
   pthread_mutex_lock(&write_thread->mutex_write);
-  write_thread->end = (write_thread->end + 1)% write_thread->num_package;
   end = write_thread->end;
+printf("package being write is %d\n", end);
   write_package[end].timestamp    = timestamp;
   write_package[end].nsamps       = nsamps;
   write_package[end].cc           = cc;
   write_package[end].first_packet = first_packet_state;
   write_package[end].last_packet  = last_packet_state;
   write_package[end].buff         = buff;
+printf("~~~2 write_package buff in usrp write = %d\n", write_package[end].buff[0]);
   write_thread->instance_cnt_write = 0;
+  write_thread->end = (write_thread->end + 1)% write_thread->num_package;
   pthread_cond_signal(&write_thread->cond_write);
   printf("trx_usrp_write signal end\n");
   pthread_mutex_unlock(&write_thread->mutex_write);
 
 
-  return ret;
+  return 0;
 }
 
 //-----------------------start--------------------------
@@ -474,7 +476,15 @@ void *trx_usrp_write_thread(void * arg){
   openair0_thread_t *write_thread = &device->write_thread;
   openair0_write_package_t *write_package = write_thread->write_package;
 
-
+    usrp_state_t *s;
+    int nsamps2;  // aligned to upper 32 or 16 byte boundary
+    int start;
+    openair0_timestamp timestamp;
+    void               **buff;
+    int                nsamps;
+    int                cc;
+    signed char        first_packet;
+    signed char        last_packet;
 
   while(1){
     pthread_mutex_lock(&write_thread->mutex_write);
@@ -483,23 +493,24 @@ void *trx_usrp_write_thread(void * arg){
       pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
     }
     printf("signal unlock\n");
-    int start = write_thread->start;
-    printf("start = %d, end = %d\n", start, write_thread->end);
-    openair0_timestamp timestamp    = write_package[start].timestamp;
-    void               **buff       = write_package[start].buff;
-    int                nsamps       = write_package[start].nsamps;
-    int                cc           = write_package[start].cc;
-    bool               first_packet = write_package[start].first_packet;
-    bool               last_packet  = write_package[start].last_packet;
-    if(write_thread->end == (write_thread->start + 1)% write_thread->num_package){
+    s = (usrp_state_t *)device->priv;
+    start = write_thread->start;
+    printf("package bing use is start = %d, end = %d\n", start, write_thread->end);
+    timestamp    = write_package[start].timestamp;
+    buff         = write_package[start].buff;
+    nsamps       = write_package[start].nsamps;
+    cc           = write_package[start].cc;
+    first_packet = write_package[start].first_packet;
+    last_packet  = write_package[start].last_packet;
+    write_thread->start = (write_thread->start + 1)% write_thread->num_package;
+    if(write_thread->end == write_thread->start){
       write_thread->instance_cnt_write = -1;
     }
-    write_thread->start = (write_thread->start + 1)% write_thread->num_package;
     pthread_mutex_unlock(&write_thread->mutex_write);
     printf("end of write thread signal getting \n");
+printf("~~~2.5 write_package buff in thread = %d\n", write_package[start].buff[0]);
+printf("~~~3 buff in tx write thread= %d\n", buff[0]);
 
-    usrp_state_t *s = (usrp_state_t *)device->priv;
-    int nsamps2;  // aligned to upper 32 or 16 byte boundary
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
         nsamps2 = (nsamps+7)>>3;
@@ -545,6 +556,7 @@ void *trx_usrp_write_thread(void * arg){
       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
     } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
     if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+printf("end of sending buffer in trx write thread\n");
 
     if(0) break;
   }
