@@ -763,7 +763,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
     }
 print_test[0] = (char *)&ru->common.txdata[0][(slot*fp->samples_per_slot)-sf_extension];
-printf("txdata[0] = %d\n", print_test[0]);
+printf("txdata[0] = %p\n", print_test[0]);
 
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );

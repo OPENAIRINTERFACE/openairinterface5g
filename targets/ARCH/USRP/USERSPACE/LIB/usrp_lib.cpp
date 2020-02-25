@@ -440,7 +440,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
       first_packet_state = false;
       last_packet_state  = true;
     }
-printf("~~~1 buff in usrp write = %d\n", buff[0]);
+printf("~~~1 buff in usrp write = %p\n", buff[0]);
   pthread_mutex_lock(&write_thread->mutex_write);
   end = write_thread->end;
 printf("package being write is %d\n", end);
@@ -449,8 +449,9 @@ printf("package being write is %d\n", end);
   write_package[end].cc           = cc;
   write_package[end].first_packet = first_packet_state;
   write_package[end].last_packet  = last_packet_state;
-  write_package[end].buff         = buff;
-printf("~~~2 write_package buff in usrp write = %d\n", write_package[end].buff[0]);
+  for (int i = 0; i < cc; i++)
+    write_package[end].buff[i]    = buff[i];
+printf("~~~2 write_package buff in usrp write = %p\n", write_package[end].buff[0]);
   write_thread->instance_cnt_write = 0;
   write_thread->end = (write_thread->end + 1)% write_thread->num_package;
   pthread_cond_signal(&write_thread->cond_write);
@@ -508,8 +509,8 @@ void *trx_usrp_write_thread(void * arg){
     }
     pthread_mutex_unlock(&write_thread->mutex_write);
     printf("end of write thread signal getting \n");
-printf("~~~2.5 write_package buff in thread = %d\n", write_package[start].buff[0]);
-printf("~~~3 buff in tx write thread= %d\n", buff[0]);
+printf("~~~2.5 write_package buff in thread = %p\n", write_package[start].buff[0]);
+printf("~~~3 buff in tx write thread= %p\n", buff[0]);
 
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__

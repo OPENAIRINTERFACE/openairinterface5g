@@ -278,7 +278,7 @@ typedef struct {
 
 typedef struct {
   openair0_timestamp timestamp;
-  void **buff;// buffer to be write;
+  void *buff[8];// buffer to be write;
   int nsamps;
   int cc;
   signed char first_packet;
