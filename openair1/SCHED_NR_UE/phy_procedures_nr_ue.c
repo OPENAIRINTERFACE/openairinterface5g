@@ -2273,11 +2273,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   /* RACH */
   if ((ue->UE_mode[gNB_id] == PRACH) && (ue->frame_parms.prach_config_common.prach_Config_enabled == 1)) {
-
-    // check if we have PRACH opportunity
-    if (is_nr_prach_subframe(&ue->frame_parms, frame_tx, slot_tx)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
-    }
   }
   else {
     ue->generate_nr_prach = 0;

@@ -54,8 +54,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
-    //NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
-    //NR_PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
@@ -112,10 +110,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
       for (i = 0; i < ul_config->number_pdus; ++i){
 
-        uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format;
-        fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu;
-        fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
+        uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
+        /* PRACH */
+        NR_DL_FRAME_PARMS *fp;
+        NR_PRACH_RESOURCES_t *prach_resources;
+        NR_PRACH_CONFIG_COMMON *prach_config_common;
         fapi_nr_ul_config_prach_pdu *prach_config_pdu;
+        /* PUSCH */
+        fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu;
+        /* PUCCH */
+        fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
         PUCCH_ConfigCommon_nr_t *pucch_config_common_nr;
         PUCCH_Config_t *pucch_config_dedicated_nr;
         PUCCH_format_t *format_params;
@@ -183,13 +187,19 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
+          fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
+          prach_resources = &PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
+          prach_config_common = &fp->prach_config_common;
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-          /*frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
-          frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = prach_config_pdu->prach_configuration_index;
-          frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->zero_correlation_zone_config;
-          frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restrictedset_config;
-          frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;*/
-          ////prach_resources->ra_PreambleIndex = prach_config_pdu->preamble_index;
+
+          prach_config_common->prach_Config_enabled = 1;
+          prach_config_common->rootSequenceIndex = prach_config_pdu->root_seq_id;
+          prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->num_cs;
+          prach_config_common->prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restricted_set;
+          prach_config_common->prach_ConfigInfo.msg1_frequencystart = prach_config_pdu->freq_msg1;
+
+          prach_resources->prach_format = prach_config_pdu->prach_format;
+
         break;
 
         default:

@@ -65,9 +65,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
   //uint8_t tdd_config         = ue->frame_parms.tdd_config;
   NR_DL_FRAME_PARMS *fp=&ue->frame_parms;
   uint16_t rootSequenceIndex = fp->prach_config_common.rootSequenceIndex;
-  uint8_t prach_ConfigIndex  = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   uint8_t Ncs_config         = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
   uint8_t restricted_set     = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
+  uint16_t prach_fmt         = ue->prach_resources[gNB_id]->prach_format;
   uint8_t preamble_index     = ue->prach_resources[gNB_id]->ra_PreambleIndex;
   //uint8_t tdd_mapindex       = ue->prach_resources[gNB_id]->ra_TDD_map_index;
   int16_t *prachF           = ue->prach_vars[gNB_id]->prachF;
@@ -82,7 +82,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
   uint16_t preamble_index0,n_shift_ra,n_shift_ra_bar;
   uint16_t d_start,numshift;
 
-  uint16_t prach_fmt = get_nr_prach_fmt(prach_ConfigIndex,fp->frame_type,fp->freq_range);
   //uint8_t Nsp=2;
   //uint8_t f_ra,t1_ra;
   uint16_t N_ZC = (prach_fmt<4)?839:139;
@@ -224,9 +223,15 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe)
 #ifdef NR_PRACH_DEBUG
 
   if (NCS>0)
-    LOG_I(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %x, prach_ConfigIndex %d, NCS %d (NCS_config %d, N_ZC/NCS %d): Preamble_offset %d, Preamble_shift %d\n",
-          rootSequenceIndex,preamble_index,prach_fmt,prach_ConfigIndex,NCS,Ncs_config,N_ZC/NCS,
-          preamble_offset,preamble_shift);
+    LOG_I(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %x, NCS %d (NCS_config %d, N_ZC/NCS %d): Preamble_offset %d, Preamble_shift %d\n",
+      rootSequenceIndex,
+      preamble_index,
+      prach_fmt,
+      NCS,
+      Ncs_config,
+      N_ZC/NCS,
+      preamble_offset,
+      preamble_shift);
 
 #endif
 
