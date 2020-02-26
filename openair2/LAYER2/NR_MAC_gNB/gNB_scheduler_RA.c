@@ -584,7 +584,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dci_pdu_rel15[0].time_domain_assignment = time_domain_assignment;
     dci_pdu_rel15[0].vrb_to_prb_mapping = 0;
     dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
-    dci_pdu_rel15[0].tb_scaling = 1;
+    dci_pdu_rel15[0].tb_scaling = 0;
 
     LOG_D(MAC, "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
 	  dci_pdu_rel15[0].frequency_domain_assignment,
@@ -598,7 +598,7 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     nr_configure_pdcch(pdcch_pdu_rel15, 0, ss, scc, bwp);
 
-    LOG_D(MAC, "Frame %d: Subframe %d : Adding common DL DCI for RA_RNTI %x CCEIndex %d\n", frameP, slotP, RA_rnti, CCEIndex);
+    LOG_I(MAC, "Frame %d: Subframe %d : Adding common DL DCI for RA_RNTI %x CCEIndex %d\n", frameP, slotP, RA_rnti, CCEIndex);
 
     dci_pdu->RNTI[numDlDci] = RA_rnti;
     dci_pdu->ScramblingId[numDlDci] = *scc->physCellId;
@@ -608,7 +608,6 @@ void nr_generate_Msg2(module_id_t module_idP,
     dci_pdu->CceIndex[numDlDci] = CCEIndex;
     dci_pdu->beta_PDCCH_1_0[numDlDci] = 0;
     dci_pdu->powerControlOffsetSS[numDlDci] = 1;
-
     dci_formats[0] = NR_DL_DCI_FORMAT_1_0;
     rnti_types[0] = NR_RNTI_RA;
 
@@ -620,9 +619,9 @@ void nr_generate_Msg2(module_id_t module_idP,
       pdcch_pdu_rel15->StartSymbolIndex,
       pdcch_pdu_rel15->DurationSymbols);
 
+    pdcch_pdu_rel15->numDlDci++;
     dci_pdu->PayloadSizeBits[0] = nr_dci_size(dci_formats[0], rnti_types[0], dci10_bw);
     fill_dci_pdu_rel15(pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types,dci10_bw);
-    pdcch_pdu_rel15->numDlDci++;
 
     dl_req->nPDUs+=2;
 
