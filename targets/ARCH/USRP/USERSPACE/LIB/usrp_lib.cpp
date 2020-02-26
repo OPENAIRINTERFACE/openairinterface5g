@@ -409,7 +409,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   openair0_thread_t *write_thread = &device->write_thread;
   openair0_write_package_t *write_package = write_thread->write_package;
 
-  AssertFatal( WRITE_THREAD_BUFFER_SIZE >= cc,"Do not support more than %d cc number\n", WRITE_THREAD_BUFFER_SIZE);
+  AssertFatal( MAX_WRITE_THREAD_BUFFER_SIZE >= cc,"Do not support more than %d cc number\n", MAX_WRITE_THREAD_BUFFER_SIZE);
 
     boolean_t first_packet_state=false,last_packet_state=false;
 
@@ -442,10 +442,10 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
     }
   pthread_mutex_lock(&write_thread->mutex_write);
 
-  if(write_thread->instance_cnt_write >= WRITE_THREAD_PACKAGE){
+  if(write_thread->count_write >= MAX_WRITE_THREAD_PACKAGE){
     LOG_W(HW,"Buffer overflow, resetting write package\n");
     write_thread->end = write_thread->start;
-    write_thread->instance_cnt_write = 0;
+    write_thread->count_write = 0;
   }
 
   end = write_thread->end;
@@ -456,8 +456,8 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   write_package[end].last_packet  = last_packet_state;
   for (int i = 0; i < cc; i++)
     write_package[end].buff[i]    = buff[i];
-  ++write_thread->instance_cnt_write;
-  write_thread->end = (write_thread->end + 1)% WRITE_THREAD_PACKAGE;
+  write_thread->count_write++;
+  write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
   pthread_cond_signal(&write_thread->cond_write);
   pthread_mutex_unlock(&write_thread->mutex_write);
 
@@ -492,7 +492,7 @@ void *trx_usrp_write_thread(void * arg){
 
   while(1){
     pthread_mutex_lock(&write_thread->mutex_write);
-    while (write_thread->instance_cnt_write == 0) {
+    while (write_thread->count_write == 0) {
       pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
     }
     s = (usrp_state_t *)device->priv;
@@ -503,8 +503,8 @@ void *trx_usrp_write_thread(void * arg){
     cc           = write_package[start].cc;
     first_packet = write_package[start].first_packet;
     last_packet  = write_package[start].last_packet;
-    write_thread->start = (write_thread->start + 1)% WRITE_THREAD_PACKAGE;
-    --write_thread->instance_cnt_write;
+    write_thread->start = (write_thread->start + 1)% MAX_WRITE_THREAD_PACKAGE;
+    write_thread->count_write--;
     pthread_mutex_unlock(&write_thread->mutex_write);
 
     #if defined(__x86_64) || defined(__i386__)
@@ -567,7 +567,7 @@ int trx_write_init(openair0_device *device){
 
   write_thread->start              = 0;
   write_thread->end                = 0;
-  write_thread->instance_cnt_write = 0;
+  write_thread->count_write = 0;
   printf("end of tx write thread\n");
 
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
