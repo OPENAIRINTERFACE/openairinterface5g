@@ -408,8 +408,6 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
 
-    //nr_ue_prach_scheduler(mod_id, proc->frame_rx, proc->nr_tti_rx);
-
     nr_ue_scheduled_response(&scheduled_response);
 
     if (UE->mode != loop_through_memory) {
@@ -474,23 +472,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       pdcp_fifo_flush_sdus(&ctxt);
     }
   }
-
-  
-  // no UL for now
-  /*
-  if (UE->mac_enabled==1) {
-    //  trigger L2 to run ue_scheduler thru IF module
-    //  [TODO] mapping right after NR initial sync
-    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
-      UE->ul_indication.module_id = 0;
-      UE->ul_indication.gNB_index = 0;
-      UE->ul_indication.cc_id = 0;
-      UE->ul_indication.frame = proc->frame_rx;
-      UE->ul_indication.slot = proc->nr_tti_rx;
-      UE->if_inst->ul_indication(&UE->ul_indication);
-    }
-  }
-  */
 }
 
 /*!
@@ -507,11 +488,15 @@ typedef struct processingData_s {
 }  processingData_t;
 
 void UE_processing(void *arg) {
-  processingData_t *rxtxD=(processingData_t *) arg;
+  processingData_t *rxtxD = (processingData_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
 
-  uint8_t gNB_id = 0;
+  uint8_t gNB_id = 0, CC_id = 0;
+  module_id_t mod_id = 0;
+
+  nr_uplink_indication_t ul_indication;
+  memset((void*)&ul_indication, 0, sizeof(ul_indication));
 
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
@@ -537,6 +522,19 @@ void UE_processing(void *arg) {
   }
 
   processSlotRX(UE, proc);
+
+  if (UE->mac_enabled == 1) {
+    // trigger L2 to run ue_scheduler thru IF module
+    // [TODO] mapping right after NR initial sync
+    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
+      ul_indication.module_id = mod_id;
+      ul_indication.gNB_index = gNB_id;
+      ul_indication.cc_id     = CC_id;
+      ul_indication.frame     = proc->frame_rx;
+      ul_indication.slot      = proc->nr_tti_rx;
+      UE->if_inst->ul_indication(&ul_indication);
+    }
+  }
 
   processSlotTX(UE, proc);
 

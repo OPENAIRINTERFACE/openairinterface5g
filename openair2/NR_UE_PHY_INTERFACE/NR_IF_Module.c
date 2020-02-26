@@ -122,6 +122,9 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 			ul_info->ssb_index, 
 			0, 0); //  TODO check tx/rx frame/slot is need for NR version
 
+  /*if (is_nr_UL_slot(mac->scc, ul_info->slot))
+    nr_ue_prach_scheduler(module_id, ul_info->frame, ul_info->slot);*/ // WIP TbD set tx frame/slot
+
   switch(ret){
   case UE_CONNECTION_OK:
     break;
@@ -134,7 +137,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   default:
     break;
   }
-
 
   mac->if_module->scheduled_response(&mac->scheduled_response);
 

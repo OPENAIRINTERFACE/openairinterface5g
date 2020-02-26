@@ -766,9 +766,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
-  ////nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
-
-  if (is_nr_DL_slot(scc, slotP) == 1) {
+  if (is_nr_UL_slot(scc, slotP)) {
 
     if (setup->msg1_SubcarrierSpacing)
       mu = *setup->msg1_SubcarrierSpacing;
@@ -810,7 +808,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
         ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PRACH;
         prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-        memset(prach_config_pdu,0,sizeof(fapi_nr_ul_config_prach_pdu));
+        memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
         ul_config->number_pdus += 1;
 
         ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
@@ -886,6 +884,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         }
       }
     }
+    mac->scheduled_response.ul_config = ul_config;
   }
 }
 
