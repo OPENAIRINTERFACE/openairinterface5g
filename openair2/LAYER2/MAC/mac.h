@@ -825,6 +825,8 @@ typedef struct {
 
   /// Number of Allocated RBs by the ulsch preprocessor
   uint8_t pre_allocated_nb_rb_ul;
+  /// Start of Allocated RBs by the USLCH preprocessor
+  uint8_t pre_first_nb_rb_ul;
 
   /// index of Allocated RBs by the ulsch preprocessor
   int8_t pre_allocated_rb_table_index_ul;
@@ -1147,7 +1149,6 @@ typedef struct {
 
   /// Sorting criteria for the UE list in the MAC preprocessor
   uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
-  uint16_t first_rb_offset[NFAPI_CC_MAX];
 } UE_info_t;
 
 /*! \brief deleting control information*/

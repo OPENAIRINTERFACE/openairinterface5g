@@ -1099,14 +1099,12 @@ schedule_ulsch(module_id_t module_idP,
                sub_frame_t subframeP)
 //-----------------------------------------------------------------------------
 {
-  uint16_t first_rb[NFAPI_CC_MAX];
   eNB_MAC_INST *mac = NULL;
   COMMON_channels_t *cc = NULL;
   int sched_subframe;
   int sched_frame;
   /* Init */
   mac = RC.mac[module_idP];
-  memset(first_rb, 0, NFAPI_CC_MAX * sizeof(uint16_t));
   start_meas(&(mac->schedule_ulsch));
   sched_subframe = (subframeP + 4) % 10;
   sched_frame = frameP;
@@ -1213,9 +1211,6 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
-    first_rb[CC_id] = (emtc_active[CC_id] == 1) ? 7 : 1;
-    RA_t *ra_ptr = cc->ra;
-
     /* From Louis-Adrien to François:
      * The comment bloc below is to configure with a command line.
      * I took it from the equivalent part in the fairRR scheduler (around line 2578 in eNB_scheduler_fairRR.c).
@@ -1226,6 +1221,7 @@ schedule_ulsch(module_id_t module_idP,
      * I think it should be sched_frame instead. This parameter has only impacts in case TDD and preamble format 4.
      * To confirm.
      */
+    /* TODO: update vrb_map_UL here? */
     /*
     int start_rb = 0;
     int nb_rb = 6;
@@ -1242,27 +1238,41 @@ schedule_ulsch(module_id_t module_idP,
     }
     */
 
-    /*
-     * Check if RA (Msg3) is active in this subframeP, if so skip the PRB used for Msg3
-     * Msg3 is using 1 PRB so we need to increase first_rb accordingly
-     * Not sure about the break (can there be more than 1 active RA procedure per CC_id and per subframe?)
+    /* HACK: let's remove the PUCCH from available RBs
+     * we suppose PUCCH size is:
+     * - for 25 RBs: 1 RB (top and bottom of ressource grid)
+     * - for 50:     2 RBs
+     * - for 100:    3 RBs
+     * This is totally arbitrary and might even be wrong.
      */
-    for (int ra_index = 0; ra_index < NB_RA_PROC_MAX; ra_index++, ra_ptr++) {
-      if ((ra_ptr->state == WAITMSG3) && (ra_ptr->Msg3_subframe == sched_subframe)) {
-        if (first_rb[CC_id] < ra_ptr->msg3_first_rb + ra_ptr->msg3_nb_rb) {
-          first_rb[CC_id] = ra_ptr->msg3_first_rb + ra_ptr->msg3_nb_rb;
-        }
+    switch (to_prb(cc[CC_id].ul_Bandwidth)) {
+      case 25:
+        cc[CC_id].vrb_map_UL[0] = 1;
+        cc[CC_id].vrb_map_UL[24] = 1;
+        break;
 
-        /* Louis-Adrien: I couldn't find an interdiction of multiple Msg3 scheduling
-         * on the same time resources. Also the performance improvement of breaking is low,
-         * since we will loop until the end, most of the time.
-         * I'm letting the break as a reminder, in case of misunderstanding the spec.
-         */
-        // break;
-      }
+      case 50:
+        cc[CC_id].vrb_map_UL[0] = 1;
+        cc[CC_id].vrb_map_UL[1] = 1;
+        cc[CC_id].vrb_map_UL[48] = 1;
+        cc[CC_id].vrb_map_UL[49] = 1;
+        break;
+
+      case 100:
+        cc[CC_id].vrb_map_UL[0] = 1;
+        cc[CC_id].vrb_map_UL[1] = 1;
+        cc[CC_id].vrb_map_UL[2] = 1;
+        cc[CC_id].vrb_map_UL[97] = 1;
+        cc[CC_id].vrb_map_UL[98] = 1;
+        cc[CC_id].vrb_map_UL[99] = 1;
+        break;
+
+      default:
+        LOG_E(MAC, "RBs setting not handled. Todo.\n");
+        exit(1);
     }
 
-    schedule_ulsch_rnti(module_idP, CC_id, frameP, subframeP, sched_subframe, first_rb);
+    schedule_ulsch_rnti(module_idP, CC_id, frameP, subframeP, sched_subframe);
   }
 
   stop_meas(&mac->schedule_ulsch);
@@ -1277,8 +1287,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                     int           CC_id,
                     frame_t       frameP,
                     sub_frame_t   subframeP,
-                    unsigned char sched_subframeP,
-                    uint16_t      *first_rb) {
+                    unsigned char sched_subframeP) {
   const uint8_t aggregation = 2;
   /* TODO: does this need to be static? */
   static int32_t tpc_accumulated = 0;
@@ -1306,43 +1315,13 @@ schedule_ulsch_rnti(module_id_t   module_idP,
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information;
   hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
 
-  int n_rb_ul_tab = to_prb(cc[CC_id].ul_Bandwidth);
-  /* HACK: let's remove the PUCCH from available RBs
-   * we suppose PUCCH size is:
-   * - for 25 RBs: 1 RB (top and bottom of ressource grid)
-   * - for 50:     2 RBs
-   * - for 100:    3 RBs
-   * This is totally arbitrary and might even be wrong.
-   * We suppose 'first_rb[]' has been correctly populated by the caller,
-   * so we only remove the top part of the resource grid.
-   */
-  switch (n_rb_ul_tab) {
-    case 25:
-      n_rb_ul_tab -= 1;
-      break;
-
-    case 50:
-      n_rb_ul_tab -= 2;
-      break;
-
-    case 100:
-      n_rb_ul_tab -= 3;
-      break;
-
-    default:
-      LOG_E(MAC, "RBs setting not handled. Todo.\n");
-      exit(1);
-  }
-
-  UE_info->first_rb_offset[CC_id] = n_rb_ul_tab;
-
   /*
    * ULSCH preprocessor: set UE_template->
    * pre_allocated_nb_rb_ul[slice_idx]
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
    */
-  ulsch_scheduler_pre_processor(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP, first_rb);
+  ulsch_scheduler_pre_processor(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP);
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     if (UE_info->UE_template[CC_id][UE_id].rach_resource_type > 0)
@@ -1382,9 +1361,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                 UE_id,
                 rnti);
     LOG_D(MAC,
-          "[eNB %d] %d.%d (sched_frame %d, sched_subframe %d), "
-          "Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, "
-          "N_RB_UL %d\n",
+          "[eNB %d] %d.%d (sched %d.%d), "
+          "Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d\n",
           module_idP,
           frameP,
           subframeP,
@@ -1394,8 +1372,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           UE_id,
           rnti,
           CC_id,
-          aggregation,
-          n_rb_ul_tab);
+          aggregation);
     /* Seems unused, only for debug */
     RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP] =
         UE_template_ptr->estimated_ul_buffer;
@@ -1570,11 +1547,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
       UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
 
-      while (((rb_table[rb_table_index] > (n_rb_ul_tab - first_rb[CC_id]))
-              || (rb_table[rb_table_index] > 45))
-             && (rb_table_index > 0)) {
+      while (rb_table[rb_table_index] > 45 && rb_table_index > 0)
         rb_table_index--;
-      }
 
       UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]);
       UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
@@ -1588,13 +1562,12 @@ schedule_ulsch_rnti(module_id_t   module_idP,
         T_INT(subframeP),
         T_INT(harq_pid),
         T_INT(UE_template_ptr->mcs_UL[harq_pid]),
-        T_INT(first_rb[CC_id]),
         T_INT(rb_table[rb_table_index]),
         T_INT(UE_template_ptr->TBS_UL[harq_pid]),
         T_INT(ndi));
       /* Store information for possible retransmission */
       UE_template_ptr->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
-      UE_template_ptr->first_rb_ul[harq_pid] = first_rb[CC_id];
+      UE_template_ptr->first_rb_ul[harq_pid] = UE_template_ptr->pre_first_nb_rb_ul;
       UE_template_ptr->cqi_req[harq_pid] = cqi_req;
       UE_sched_ctrl_ptr->ul_scheduled |= (1 << harq_pid);
 
@@ -1632,7 +1605,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb[CC_id];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = UE_template_ptr->pre_first_nb_rb_ul;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block =
           rb_table[rb_table_index];
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 =
@@ -1688,7 +1661,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           get_tmode(module_idP, CC_id, UE_id),
           mac->ul_handle,
           rnti,
-          first_rb[CC_id], // resource_block_start
+          UE_template_ptr->pre_first_nb_rb_ul, // resource_block_start
           rb_table[rb_table_index], // number_of_resource_blocks
           UE_template_ptr->mcs_UL[harq_pid],
           cshift, // cyclic_shift_2_for_drms
@@ -1757,8 +1730,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           cqi_req,
           UE_id,
           rnti);
-      /* Increment first rb for next UE allocation */
-      first_rb[CC_id] += rb_table[rb_table_index];
     } else { // round_index > 0 => retransmission
       T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION,
         T_INT(module_idP),
@@ -1868,20 +1839,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
             sched_frame,
             sched_subframeP,
             cqi_req);
-
-      /* HACK: RBs used by retransmission have to be reserved.
-       * The current mechanism uses the notion of 'first_rb', so
-       * we skip all RBs below the ones retransmitted. This is
-       * not correct. Imagine only RB 23 is retransmitted, then all
-       * RBs < 23 will be marked unusable for new transmissions (case where
-       * round == 0). Note also that this code works only if the preprocessor
-       * orders UEs with retransmission with higher priority than UEs with new
-       * transmission.
-       * All this should be cleaned up properly.
-       */
-      if (first_rb[CC_id] < UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid])
-        first_rb[CC_id] = UE_template_ptr->first_rb_ul[harq_pid]
-                    + UE_template_ptr->nb_rb_ul[harq_pid];
     } // end of round > 0
   } // loop over UE_ids
 }
@@ -2018,6 +1975,12 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                 UE_sched_ctrl->cqi_req_timer);
           /* Reset the scheduling request */
           emtc_active[CC_id] = 1;
+          cc[CC_id].vrb_map_UL[1] = 1;
+          cc[CC_id].vrb_map_UL[2] = 1;
+          cc[CC_id].vrb_map_UL[3] = 1;
+          cc[CC_id].vrb_map_UL[4] = 1;
+          cc[CC_id].vrb_map_UL[5] = 1;
+          cc[CC_id].vrb_map_UL[6] = 1;
           UE_template->ul_SR = 0;
           status = mac_eNB_get_rrc_status(module_idP,rnti);
           cqi_req = 0;

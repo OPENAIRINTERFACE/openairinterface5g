@@ -391,21 +391,30 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int frameP,
                                    sub_frame_t subframeP,
                                    int sched_frameP,
-                                   unsigned char sched_subframeP,
-                                   uint16_t *first_rb) {
+                                   unsigned char sched_subframeP) {
   uint16_t nb_allocated_rbs[MAX_MOBILES_PER_ENB];
   uint16_t total_allocated_rbs = 0;
   uint16_t average_rbs_per_user = 0;
   int16_t total_remaining_rbs = 0;
   uint16_t total_ue_count = 0;
-  eNB_MAC_INST *eNB = RC.mac[module_idP];
-  UE_info_t *UE_info = &eNB->UE_info;
-  const int N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
-  uint16_t available_rbs = N_RB_UL - 2 * first_rb[CC_id]; // top and bottom // - UE_info->first_rb_offset[CC_id];
 
-  // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
+  UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
+  const int N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
+  const COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
+  int available_rbs = 0;
+  int first_rb = -1;
+  for (int i = 0; i < N_RB_UL; ++i) {
+    if (cc->vrb_map_UL[i] == 0) {
+      available_rbs++;
+      if (first_rb < 0)
+        first_rb = i;
+    }
+  }
+
+  // maximize MCS and then allocate required RB according to the buffer
+  // occupancy with the limit of max available UL RB
   LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
-  assign_max_mcs_min_rb(module_idP, CC_id, frameP, subframeP, first_rb);
+  assign_max_mcs_min_rb(module_idP, CC_id, frameP, subframeP, available_rbs);
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     if (UE_info->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul > 0) {
@@ -462,7 +471,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       total_allocated_rbs++;
     }
 
+    UE_template->pre_first_nb_rb_ul = first_rb;
     UE_template->pre_allocated_nb_rb_ul = nb_allocated_rbs[UE_id];
+    first_rb += nb_allocated_rbs[UE_id];
     LOG_D(MAC, "******************UL Scheduling Information for UE%d CC_id %d ************************\n",
           UE_id,
           CC_id);
@@ -524,9 +535,7 @@ assign_max_mcs_min_rb(module_id_t module_idP,
                       int CC_id,
                       int frameP,
                       sub_frame_t subframeP,
-                      uint16_t *first_rb) {
-  const int N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
-  const int available_rbs = N_RB_UL - 2 * first_rb[CC_id]; // top and bottom - UE_info->first_rb_offset[CC_id];
+                      int available_rbs) {
   const int Ncp = RC.mac[module_idP]->common_channels[CC_id].Ncp;
   UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
 
