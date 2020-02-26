@@ -880,7 +880,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
           /* perform correlation of rx data and pss sequence ie it is a dot product */
           result  = dot_product64((short*)primary_synchro_time_nr[pss_index], 
-				  (short*) &(rxdata[ar][n])+(is*frame_parms->samples_per_frame), 
+				  (short*) &(rxdata[ar][n+is*frame_parms->samples_per_frame]), 
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);
@@ -914,13 +914,13 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 	  int64_t result1,result2;
 	  // Computing cross-correlation at peak on half the symbol size for first half of data
 	  result1  = dot_product64((short*)primary_synchro_time_nr[pss_source], 
-				  (short*) &(rxdata[0][peak_position])+(is*frame_parms->samples_per_frame), 
+				  (short*) &(rxdata[0][peak_position+is*frame_parms->samples_per_frame]), 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 	  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
 	  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
 	  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
-				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size+(is*frame_parms->samples_per_frame)), 
+				  (short*) &(rxdata[0][peak_position+frame_parms->ofdm_symbol_size+(is*frame_parms->samples_per_frame)]), 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 
