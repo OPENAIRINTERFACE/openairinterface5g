@@ -1104,6 +1104,9 @@ class SSHConnection():
 				if result is not None:
 					self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT -r *-uesoftmodem', '\$', 4)
 					time.sleep(3)
+				outterLoopCounter = outterLoopCounter - 1
+				if (outterLoopCounter == 0):
+					doOutterLoop = False
 				continue
 			if self.air_interface == 'nr':
 				fullSyncStatus = True
