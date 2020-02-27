@@ -674,15 +674,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    sub_frame_t subframeP,
                                    int sched_frameP,
                                    unsigned char sched_subframeP);
-void store_ulsch_buffer(module_id_t module_idP, int frameP,
-                        sub_frame_t subframeP);
-void assign_max_mcs_min_rb(module_id_t module_idP,
-                           int CC_id,
-                           int frameP,
-                           sub_frame_t subframeP,
-                           int available_rbs);
-void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
-                     UE_TEMPLATE *UE_template);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
 

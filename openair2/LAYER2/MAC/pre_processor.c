@@ -380,110 +380,11 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     }
   }
   if (print)
-    LOG_I(MAC, "%4d.%d DL scheduler allocation list: %s\n", frameP, subframeP, t);
+    LOG_D(MAC, "%4d.%d DL scheduler allocation list: %s\n", frameP, subframeP, t);
 #endif
 }
 
 /// ULSCH PRE_PROCESSOR
-
-void ulsch_scheduler_pre_processor(module_id_t module_idP,
-                                   int CC_id,
-                                   int frameP,
-                                   sub_frame_t subframeP,
-                                   int sched_frameP,
-                                   unsigned char sched_subframeP) {
-  uint16_t nb_allocated_rbs[MAX_MOBILES_PER_ENB];
-  uint16_t total_allocated_rbs = 0;
-  uint16_t average_rbs_per_user = 0;
-  int16_t total_remaining_rbs = 0;
-  uint16_t total_ue_count = 0;
-
-  UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
-  const int N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
-  const COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
-  int available_rbs = 0;
-  int first_rb = -1;
-  for (int i = 0; i < N_RB_UL; ++i) {
-    if (cc->vrb_map_UL[i] == 0) {
-      available_rbs++;
-      if (first_rb < 0)
-        first_rb = i;
-    }
-  }
-
-  // maximize MCS and then allocate required RB according to the buffer
-  // occupancy with the limit of max available UL RB
-  LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
-  assign_max_mcs_min_rb(module_idP, CC_id, frameP, subframeP, available_rbs);
-
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    if (UE_info->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul > 0) {
-      total_ue_count++;
-    }
-  }
-
-  if (total_ue_count == 0)
-    average_rbs_per_user = 0;
-  else if (total_ue_count == 1)
-    average_rbs_per_user = available_rbs + 1;
-  else if (total_ue_count <= available_rbs)
-    average_rbs_per_user = (uint16_t) floor(available_rbs / total_ue_count);
-  else
-    average_rbs_per_user = 1;
-
-  if (total_ue_count > 0)
-    LOG_D(MAC, "[eNB %d] Frame %d subframe %d: total ue to be scheduled %d\n",
-          module_idP,
-          frameP,
-          subframeP,
-          total_ue_count);
-
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    uint8_t harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],
-                                        sched_frameP, sched_subframeP);
-
-    if (UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0)
-      nb_allocated_rbs[UE_id] = UE_info->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
-    else
-      nb_allocated_rbs[UE_id] = cmin(UE_info->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul, average_rbs_per_user);
-
-    total_allocated_rbs += nb_allocated_rbs[UE_id];
-    LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d CCid %d, harq_pid %d\n",
-          nb_allocated_rbs[UE_id],
-          UE_id,
-          CC_id,
-          harq_pid);
-  }
-
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
-    total_remaining_rbs = available_rbs - total_allocated_rbs;
-
-    /* TODO this has already been accounted for - do we need it again? */
-    //if (total_ue_count == 1)
-    //  total_remaining_rbs++;
-
-    while (UE_template->pre_allocated_nb_rb_ul > 0 &&
-           nb_allocated_rbs[UE_id] < UE_template->pre_allocated_nb_rb_ul &&
-           total_remaining_rbs > 0) {
-      nb_allocated_rbs[UE_id] = cmin(nb_allocated_rbs[UE_id] + 1, UE_template->pre_allocated_nb_rb_ul);
-      total_remaining_rbs--;
-      total_allocated_rbs++;
-    }
-
-    UE_template->pre_first_nb_rb_ul = first_rb;
-    UE_template->pre_allocated_nb_rb_ul = nb_allocated_rbs[UE_id];
-    first_rb += nb_allocated_rbs[UE_id];
-    LOG_D(MAC, "******************UL Scheduling Information for UE%d CC_id %d ************************\n",
-          UE_id,
-          CC_id);
-    LOG_D(MAC, "[eNB %d] total RB allocated for UE%d CC_id %d  = %d\n",
-          module_idP,
-          UE_id,
-          CC_id,
-          UE_template->pre_allocated_nb_rb_ul);
-  }
-}
 
 void calculate_max_mcs_min_rb(module_id_t mod_id,
                               int CC_id,
@@ -530,29 +431,106 @@ void calculate_max_mcs_min_rb(module_id_t mod_id,
   }
 }
 
-void
-assign_max_mcs_min_rb(module_id_t module_idP,
-                      int CC_id,
-                      int frameP,
-                      sub_frame_t subframeP,
-                      int available_rbs) {
-  const int Ncp = RC.mac[module_idP]->common_channels[CC_id].Ncp;
-  UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
+int pp_find_rb_table_index(int approximate) {
+  int lo = 2;
+  if (approximate <= rb_table[lo])
+    return lo;
+  int hi = sizeof(rb_table) - 1;
+  if (approximate >= rb_table[hi])
+    return hi;
+  int p = (hi + lo) / 2;
+  for (; lo + 1 != hi; p = (hi + lo) / 2) {
+    if (approximate <= rb_table[p])
+      hi = p;
+    else
+      lo = p;
+  }
+  return p + 1;
+}
 
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+int g_start_ue_ul = -1;
+int round_robin_ul(module_id_t Mod_id,
+                   int CC_id,
+                   int frame,
+                   int subframe,
+                   int sched_frame,
+                   int sched_subframe,
+                   UE_list_t *UE_list,
+                   int max_num_ue,
+                   int num_contig_rb,
+                   contig_rbs_t *rbs) {
+  AssertFatal(num_contig_rb <= 2, "cannot handle more than two contiguous RB regions\n");
+  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
+  const int max_rb = num_contig_rb > 1 ? MAX(rbs[0].length, rbs[1].length) : rbs[0].length;
+
+  /* for every UE: check whether we have to handle a retransmission (and
+   * allocate, if so). If not, compute how much RBs this UE would need */
+  int rb_idx_required[MAX_MOBILES_PER_ENB];
+  memset(rb_idx_required, 0, sizeof(rb_idx_required));
+  int num_ue_req = 0;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
+    uint8_t harq_pid = subframe2harqpid(&RC.mac[Mod_id]->common_channels[CC_id],
+                                        sched_frame, sched_subframe);
+    if (UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0) {
+      /* this UE has a retransmission, allocate it right away */
+      const int nb_rb = UE_template->nb_rb_ul[harq_pid];
+      if (nb_rb == 0) {
+        LOG_E(MAC,
+              "%4d.%d UE %d retransmission of 0 RBs in round %d, ignoring\n",
+              sched_frame, sched_subframe, UE_id,
+              UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid]);
+        continue;
+      }
+      if (rbs[0].length >= nb_rb) { // fits in first contiguous region
+        UE_template->pre_first_nb_rb_ul = rbs[0].start;
+        rbs[0].length -= nb_rb;
+        rbs[0].start += nb_rb;
+      } else if (num_contig_rb == 2 && rbs[1].length >= nb_rb) { // in second
+        UE_template->pre_first_nb_rb_ul = rbs[1].start;
+        rbs[1].length -= nb_rb;
+        rbs[1].start += nb_rb;
+      } else if (num_contig_rb == 2
+          && rbs[1].start + rbs[1].length - rbs[0].start >= nb_rb) { // overlapping the middle
+        UE_template->pre_first_nb_rb_ul = rbs[0].start;
+        rbs[0].length = 0;
+        int ol = nb_rb - (rbs[1].start - rbs[0].start); // how much overlap in second region
+        if (ol > 0) {
+          rbs[1].length -= ol;
+          rbs[1].start += ol;
+        }
+      } else {
+        LOG_W(MAC,
+              "cannot allocate UL retransmission for UE %d (nb_rb %d)\n",
+              UE_id,
+              nb_rb);
+        continue;
+      }
+      LOG_D(MAC, "%4d.%d UE %d retx %d RBs at start %d\n",
+            sched_frame,
+            sched_subframe,
+            UE_id,
+            UE_template->pre_allocated_nb_rb_ul,
+            UE_template->pre_first_nb_rb_ul);
+      UE_template->pre_allocated_nb_rb_ul = nb_rb;
+      max_num_ue--;
+      if (max_num_ue == 0) /* in this case, cannot allocate any other UE anymore */
+        return rbs[0].length + (num_contig_rb > 1 ? rbs[1].length : 0);
+      continue;
+    }
 
     const int B = cmax(UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes, 0);
-
-    const int UE_to_be_scheduled = UE_is_to_be_scheduled(module_idP, CC_id, UE_id);
+    const int UE_to_be_scheduled = UE_is_to_be_scheduled(Mod_id, CC_id, UE_id);
     if (B == 0 && !UE_to_be_scheduled)
       continue;
+
+    num_ue_req++;
 
     /* if UE has pending scheduling request then pre-allocate 3 RBs */
     if (B == 0 && UE_to_be_scheduled) {
       UE_template->pre_assigned_mcs_ul = 10; /* use QPSK mcs only */
-      UE_template->pre_allocated_rb_table_index_ul = 2;
-      UE_template->pre_allocated_nb_rb_ul = 3;
+      rb_idx_required[UE_id] = 2;
+      //UE_template->pre_allocated_nb_rb_ul = 3;
       continue;
     }
 
@@ -560,28 +538,271 @@ assign_max_mcs_min_rb(module_id_t module_idP,
     int rb_table_index;
     int tx_power;
     calculate_max_mcs_min_rb(
-        module_idP,
+        Mod_id,
         CC_id,
         B,
         UE_template->phr_info,
         UE_info->UE_sched_ctrl[UE_id].phr_received == 1 ? 20 : 10,
         &mcs,
-        available_rbs,
+        max_rb,
         &rb_table_index,
         &tx_power);
 
     UE_template->pre_assigned_mcs_ul = mcs;
-    UE_template->pre_allocated_rb_table_index_ul = rb_table_index;
-    UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
-    LOG_D(MAC, "[eNB %d] frame %d subframe %d: for UE %d CC %d: pre-assigned mcs %d, pre-allocated rb_table[%d]=%d RBs (phr %d, tx power %d)\n",
-          module_idP,
+    rb_idx_required[UE_id] = rb_table_index;
+    //UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
+    /* only print log when PHR changed */
+    static int phr = 0;
+    if (phr != UE_template->phr_info) {
+      phr = UE_template->phr_info;
+      LOG_D(MAC, "%d.%d UE %d CC %d: pre mcs %d, pre rb_table[%d]=%d RBs (phr %d, tx power %d, bytes %d)\n",
+            frame,
+            subframe,
+            UE_id,
+            CC_id,
+            UE_template->pre_assigned_mcs_ul,
+            UE_template->pre_allocated_rb_table_index_ul,
+            UE_template->pre_allocated_nb_rb_ul,
+            UE_template->phr_info,
+            tx_power,
+            B);
+    }
+  }
+
+  if (num_ue_req == 0)
+    return rbs[0].length + (num_contig_rb > 1 ? rbs[1].length : 0);
+
+  // calculate how many users should be in both regions, and to maximize usage,
+  // go from the larger to the smaller one which at least will handle a single
+  // full load case better.
+  const int n = min(num_ue_req, max_num_ue);
+  int nr[2] = {n, 0};
+  int step = 1; // the order if we have two regions
+  int start = 0;
+  int end = 1;
+  if (num_contig_rb > 1) {
+    // proportionally divide between both regions
+    int la = rbs[0].length > 0 ? rbs[0].length : 1;
+    int lb = rbs[1].length > 0 ? rbs[1].length : 1;
+    nr[1] = min(max(n/(la/lb + 1), 1), n - 1);
+    nr[0] = n - nr[1];
+    step = la > lb ? 1 : -1; // 1: from 0 to 1, -1: from 1 to 0
+    start = la > lb ? 0 : 1;
+    end = la > lb ? 2 : -1;
+  }
+
+  if (g_start_ue_ul == -1)
+    g_start_ue_ul = UE_list->head;
+  int sUE_id = g_start_ue_ul;
+  int rb_idx_given[MAX_MOBILES_PER_ENB];
+  memset(rb_idx_given, 0, sizeof(rb_idx_given));
+
+  for (int r = start; r != end; r += step) {
+    // don't allocate if we have too little RBs
+    if (rbs[r].length < 3)
+      continue;
+    if (nr[r] <= 0)
+      continue;
+
+    UE_list_t UE_sched;
+    // average RB index: just below the index that fits all UEs
+    int start_idx = pp_find_rb_table_index(rbs[r].length / nr[r]) - 1;
+    int num_ue_sched = 0;
+    int rb_required_add = 0;
+    int *cur_UE = &UE_sched.head;
+    while (num_ue_sched < nr[r]) {
+      while (rb_idx_required[sUE_id] == 0)
+        sUE_id = next_ue_list_looped(UE_list, sUE_id);
+      /* TODO: check that CCE allocated is feasible. If it is not, reduce
+       * nr[r] by one as this would been one opportunity */
+      *cur_UE = sUE_id;
+      cur_UE = &UE_sched.next[sUE_id];
+      rb_idx_given[sUE_id] = min(start_idx, rb_idx_required[sUE_id]);
+      rb_required_add += rb_table[rb_idx_required[sUE_id]] - rb_table[rb_idx_given[sUE_id]];
+      rbs[r].length -= rb_table[rb_idx_given[sUE_id]];
+      num_ue_sched++;
+      sUE_id = next_ue_list_looped(UE_list, sUE_id);
+    }
+    *cur_UE = -1;
+
+    /* give remaining RBs in RR fashion. Since we don't know in advance the
+     * amount of RBs we can give (the "step size" in rb_table is non-linear), go
+     * through all UEs and try to give a bit more. Continue until no UE can be
+     * given a higher index because the remaining RBs do not suffice to increase */
+    int UE_id = UE_sched.head;
+    int rb_required_add_old;
+    do {
+      rb_required_add_old = rb_required_add;
+      for (int UE_id = UE_sched.head; UE_id >= 0; UE_id = UE_sched.next[UE_id]) {
+        if (rb_idx_given[UE_id] >= rb_idx_required[UE_id])
+          continue; // this UE does not need more
+        const int new_idx = rb_idx_given[UE_id] + 1;
+        const int rb_inc = rb_table[new_idx] - rb_table[rb_idx_given[UE_id]];
+        if (rbs[r].length < rb_inc)
+          continue;
+        rb_idx_given[UE_id] = new_idx;
+        rbs[r].length -= rb_inc;
+        rb_required_add -= rb_inc;
+      }
+    } while (rb_required_add != rb_required_add_old);
+
+    for (UE_id = UE_sched.head; UE_id >= 0; UE_id = UE_sched.next[UE_id]) {
+      UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
+
+      /* MCS has been allocated previously */
+      UE_template->pre_first_nb_rb_ul = rbs[r].start;
+      UE_template->pre_allocated_rb_table_index_ul = rb_idx_given[UE_id];
+      UE_template->pre_allocated_nb_rb_ul = rb_table[rb_idx_given[UE_id]];
+      rbs[r].start += rb_table[rb_idx_given[UE_id]];
+      LOG_D(MAC, "%4d.%d UE %d allocated %d RBs start %d new start %d\n",
+            sched_frame,
+            sched_subframe,
+            UE_id,
+            UE_template->pre_allocated_nb_rb_ul,
+            UE_template->pre_first_nb_rb_ul,
+            rbs[r].start);
+    }
+  }
+
+  /* if not all UEs could be allocated in this round */
+  if (num_ue_req > max_num_ue) {
+    /* go to the first one we missed */
+    for (int i = 0; i < max_num_ue; ++i)
+      g_start_ue_ul = next_ue_list_looped(UE_list, g_start_ue_ul);
+  } else {
+    /* else, just start with the next UE next time */
+    g_start_ue_ul = next_ue_list_looped(UE_list, g_start_ue_ul);
+  }
+
+  return rbs[0].length + (num_contig_rb > 1 ? rbs[1].length : 0);
+}
+
+void ulsch_scheduler_pre_processor(module_id_t Mod_id,
+                                   int CC_id,
+                                   int frameP,
+                                   sub_frame_t subframeP,
+                                   int sched_frameP,
+                                   unsigned char sched_subframeP) {
+  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
+  const int N_RB_UL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].ul_Bandwidth);
+  COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
+
+  UE_list_t UE_to_sched;
+  UE_to_sched.head = -1;
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
+    UE_to_sched.next[i] = -1;
+
+  int last_UE_id = -1;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
+    UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    /* initialize per-UE scheduling information */
+    UE_template->pre_assigned_mcs_ul = 0;
+    UE_template->pre_allocated_nb_rb_ul = 0;
+    UE_template->pre_allocated_rb_table_index_ul = -1;
+    UE_template->pre_first_nb_rb_ul = 0;
+
+    const rnti_t rnti = UE_RNTI(Mod_id, UE_id);
+    if (rnti == NOT_A_RNTI) {
+      LOG_E(MAC, "UE %d has RNTI NOT_A_RNTI!\n", UE_id);
+      continue;
+    }
+    if (ue_sched_ctrl->cdrx_configured && !ue_sched_ctrl->in_active_time)
+      continue;
+    if (UE_info->UE_template[CC_id][UE_id].rach_resource_type > 0)
+      continue;
+
+    /* define UEs to schedule */
+    if (UE_to_sched.head < 0)
+      UE_to_sched.head = UE_id;
+    else
+      UE_to_sched.next[last_UE_id] = UE_id;
+    UE_to_sched.next[UE_id] = -1;
+    last_UE_id = UE_id;
+  }
+
+  if (UE_to_sched.head < 0)
+    return;
+
+  int last_rb_blocked = 1;
+  int n_contig = 0;
+  contig_rbs_t rbs[2]; // up to two contig RBs for PRACH in between
+  for (int i = 0; i < N_RB_UL; ++i) {
+    if (cc->vrb_map_UL[i] == 0 && last_rb_blocked == 1) {
+      last_rb_blocked = 0;
+      n_contig++;
+      AssertFatal(n_contig <= 2, "cannot handle more than two contiguous RB regions\n");
+      rbs[n_contig - 1].start = i;
+    }
+    if (cc->vrb_map_UL[i] == 1 && last_rb_blocked == 0) {
+      last_rb_blocked = 1;
+      rbs[n_contig - 1].length = i - rbs[n_contig - 1].start;
+    }
+  }
+
+  round_robin_ul(Mod_id,
+                 CC_id,
+                 frameP,
+                 subframeP,
+                 sched_frameP,
+                 sched_subframeP,
+                 &UE_to_sched,
+                 3, // max_num_ue
+                 n_contig,
+                 rbs);
+
+  // the following block is meant for validation of the pre-processor to check
+  // whether all UE allocations are non-overlapping and is not necessary for
+  // scheduling functionality
+#ifdef DEBUG_eNB_SCHEDULER
+  char t[101] = "__________________________________________________"
+                "__________________________________________________";
+  t[N_RB_UL] = 0;
+  for (int j = 0; j < N_RB_UL; j++)
+    if (cc->vrb_map_UL[j] != 0)
+      t[j] = 'x';
+  int print = 0;
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
+    if (UE_template->pre_allocated_nb_rb_ul == 0)
+      continue;
+
+    print = 1;
+    uint8_t harq_pid = subframe2harqpid(&RC.mac[Mod_id]->common_channels[CC_id],
+                                        sched_frameP, sched_subframeP);
+    LOG_D(MAC, "%4d.%d UE%d %d RBs (index %d) at start %d, pre MCS %d %s\n",
           frameP,
           subframeP,
           UE_id,
-          CC_id,
-          UE_template->pre_assigned_mcs_ul,
-          UE_template->pre_allocated_rb_table_index_ul,
           UE_template->pre_allocated_nb_rb_ul,
-          UE_template->phr_info, tx_power);
+          UE_template->pre_allocated_rb_table_index_ul,
+          UE_template->pre_first_nb_rb_ul,
+          UE_template->pre_assigned_mcs_ul,
+          UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0 ? "(retx)" : "");
+
+    for (int i = 0; i < UE_template->pre_allocated_nb_rb_ul; ++i) {
+      /* only check if this is not a retransmission */
+      if (UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] == 0
+          && cc->vrb_map_UL[UE_template->pre_first_nb_rb_ul + i] == 1) {
+
+        LOG_I(MAC, "%4d.%d UL scheduler allocation list: %s\n", frameP, subframeP, t);
+        LOG_E(MAC,
+              "%4d.%d: UE %d allocated at locked RB %d (is: allocated start "
+              "%d/length %d)\n",
+              frameP, subframeP, UE_id, UE_template->pre_first_nb_rb_ul + i,
+              UE_template->pre_first_nb_rb_ul,
+              UE_template->pre_allocated_nb_rb_ul);
+      }
+      cc->vrb_map_UL[UE_template->pre_first_nb_rb_ul + i] = 1;
+      t[UE_template->pre_first_nb_rb_ul + i] = UE_id + '0';
+    }
   }
+  if (print)
+    LOG_D(MAC,
+          "%4d.%d UL scheduler allocation list: %s\n",
+          sched_frameP,
+          sched_subframeP,
+          t);
+#endif
 }

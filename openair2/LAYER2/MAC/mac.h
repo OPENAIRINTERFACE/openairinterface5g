@@ -1262,6 +1262,14 @@ typedef struct {
   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
 } slice_info_t;
 
+/**
+ * describes contiguous RBs
+ */
+typedef struct {
+  int start;
+  int length;
+} contig_rbs_t;
+
 /*! \brief eNB common channels */
 typedef struct {
   int physCellId;
