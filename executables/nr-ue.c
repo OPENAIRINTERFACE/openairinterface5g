@@ -634,6 +634,22 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   return 0;
 }
 
+inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+  if (fp->numerology_index == 0)
+    return fp->nb_prefix_samples0 + fp->ofdm_symbol_size;
+  int num_samples = (slot%(fp->slots_per_subframe/2)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
+  num_samples += fp->ofdm_symbol_size;
+  return num_samples;
+}
+
+inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+  int rem_samples = fp->get_samples_per_slot(slot, fp) - get_firstSymSamp(slot, fp);
+  int next_slot_first_symbol = 0;
+  if (slot < (fp->slots_per_frame-1))
+    next_slot_first_symbol = get_firstSymSamp(slot+1, fp);
+  return rem_samples + next_slot_first_symbol;
+}
+
 void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
@@ -743,9 +759,9 @@ void *UE_thread(void *arg) {
     }*/
 #endif
 
+    int firstSymSamp = get_firstSymSamp(slot_nr, &UE->frame_parms);
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-      rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
-               UE->frame_parms.nb_prefix_samples0+UE->frame_parms.
+      rxp[i] = (void *)&UE->common_vars.rxdata[i][firstSymSamp+
                get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -755,13 +771,11 @@ void *UE_thread(void *arg) {
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
-      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
+      readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
       writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
-      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
-                    UE->frame_parms.ofdm_symbol_size -
-                    UE->frame_parms.nb_prefix_samples0 -
+      readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
       writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
                      UE->rx_offset_diff;
@@ -778,8 +792,7 @@ void *UE_thread(void *arg) {
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
                      UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX) -
-                     UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+                     &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp -
                      openair0_cfg[0].tx_sample_advance,
                      txp,
                      writeBlockSize,
@@ -788,7 +801,7 @@ void *UE_thread(void *arg) {
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
-      int first_symbols=writeBlockSize-readBlockSize;
+      int first_symbols=UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0; // first symbol of every frames
 
       if ( first_symbols > 0 )
         AssertFatal(first_symbols ==
@@ -803,8 +816,8 @@ void *UE_thread(void *arg) {
 
     curMsg->proc.timestamp_tx = timestamp+
                                 UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                                &UE->frame_parms,DURATION_RX_TO_TX) -
-                                UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
+                                &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp;
+
     notifiedFIFO_elt_t *res;
 
     while (nbSlotProcessing >= RX_NB_TH) {

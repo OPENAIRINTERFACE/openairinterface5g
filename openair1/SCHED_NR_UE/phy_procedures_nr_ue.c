@@ -1409,6 +1409,8 @@ void nr_process_timing_advance(module_id_t Mod_id, uint8_t CC_id, uint8_t ta_com
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (bwp_ul_NB_RB) {
+    case 32:  bw_scaling =  4; break;
+    case 66:  bw_scaling =  8; break;
     case 106: bw_scaling = 16; break;
     case 217: bw_scaling = 32; break;
     case 245: bw_scaling = 32; break;
@@ -3782,6 +3784,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
         switch (ue->frame_parms.N_RB_DL) {
+          case 32:  bw_scaling =  4; break;
+          case 66:  bw_scaling =  8; break;
           case 106: bw_scaling = 16; break;
           case 217: bw_scaling = 32; break;
           case 245: bw_scaling = 32; break;
