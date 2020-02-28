@@ -112,7 +112,7 @@ function analyzeIperfFiles {
                 echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
             fi
         else
-            EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+            EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "bits/sec" | sed -e "s#^.*Bytes *##" -e "s#sec.*#sec#"`
             if [[ $EFFECTIVE_BITRATE =~ .*Kbits/sec.* ]]
             then
                 EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Kbits/sec.*##"`
@@ -136,9 +136,9 @@ function analyzeIperfFiles {
             else
                 echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
             fi
-            EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            JITTER=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*Mbits/sec *##" -e "s#ms.*#ms#"`
-            PACKETLOSS=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*(##" -e "s#).*##"`
+            EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "bits/sec" | sed -e "s#^.*Bytes *##" -e "s#sec.*#sec#"`
+            JITTER=`tail -n3 $IPERF_CASE | egrep "bits/sec" | sed -e "s#^.*bits/sec *##" -e "s#ms.*#ms#"`
+            PACKETLOSS=`tail -n3 $IPERF_CASE | egrep "bits/sec" | sed -e "s#^.*(##" -e "s#).*##"`
         fi
         echo "        <td>" >> ./test_simulator_results.html
         echo "            <pre>" >> ./test_simulator_results.html
