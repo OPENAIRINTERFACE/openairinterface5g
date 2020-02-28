@@ -488,7 +488,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
   tx_req->num_TLV = 1;
   tx_req->TLVs[0].length = tbs_bytes +2;
 
-  memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0], tbs_bytes);;
+  memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0], tbs_bytes);
 
   nr_mac->TX_req[CC_id].Number_of_PDUs++;
   nr_mac->TX_req[CC_id].SFN = frameP;
@@ -618,7 +618,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       //mac_sdus[i] = (unsigned char) rand(); 
       ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
     }
-
     //Sending SDUs with size 1
     //Initialize elements of sdu_lcids and sdu_lengths
     sdu_lcids[0] = 0x05; // DRB

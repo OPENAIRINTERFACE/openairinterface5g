@@ -64,7 +64,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   unsigned char * dlsch_buffer_ptr = sdus_payload;
   uint8_t last_size = 0;
   int offset = 0, mac_ce_size, i, timing_advance_cmd, tag_id = 0;
-
   // MAC CEs 
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];

@@ -468,7 +468,7 @@ void nr_generate_Msg2(module_id_t module_idP,
   NR_UE_list_t                     *UE_list = &nr_mac->UE_list;
   NR_SearchSpace_t *ss = ra->ra_ss;
 
-  uint16_t rnti = ra->rnti, RA_rnti = ra->RA_rnti, numDlDci;
+  uint16_t RA_rnti = ra->RA_rnti, numDlDci;
   long locationAndBandwidth;
   // uint8_t *vrb_map = cc[CC_id].vrb_map, CC_id;
 
@@ -537,6 +537,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->rnti = RA_rnti;
     pdsch_pdu_rel15->pduIndex = 0;
 
+
     pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
@@ -558,7 +559,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = 0;
-    pdsch_pdu_rel15->rbSize = 6;
+    pdsch_pdu_rel15->rbSize = 7;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0; // non interleaved
 
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
@@ -586,7 +587,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
     dci_pdu_rel15[0].tb_scaling = 0;
 
-    LOG_D(MAC, "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
+    LOG_I(MAC, "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
 	  dci_pdu_rel15[0].frequency_domain_assignment,
 	  pdsch_pdu_rel15->rbStart,
 	  pdsch_pdu_rel15->rbSize,
@@ -710,6 +711,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   rarh->E = 0;
   rarh->T = 1;
   rarh->RAPID = ra->preamble_index;
+
 
   /// RAR MAC payload ///
   rar->R = 0;
