@@ -666,6 +666,8 @@ void *UE_thread(void *arg) {
   int thread_idx=0;
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+
 
   for (int i=0; i<RX_NB_TH+1; i++)  // RX_NB_TH working + 1 we are making to be pushed
     pushNotifiedFIFO_nothreadSafe(&freeBlocks,
@@ -683,11 +685,12 @@ void *UE_thread(void *arg) {
         syncRunning=false;
         syncData_t *tmp=(syncData_t *)NotifiedFifoData(res);
         // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-        decoded_frame_rx=(tmp->proc.decoded_frame_rx+trashed_frames) % MAX_FRAME_NUMBER;
+        decoded_frame_rx=((((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx) +
+                         (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
         delNotifiedFIFO_elt(res);
       } else {
         readFrame(UE, &timestamp, true);
-        trashed_frames++;
+        trashed_frames+=2;
         continue;
       }
     }
@@ -722,7 +725,7 @@ void *UE_thread(void *arg) {
       // and we shifted above to the first slot of next frame
       decoded_frame_rx++;
       // we do ++ first in the regular processing, so it will be begin of frame;
-      absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
+      absolute_slot=decoded_frame_rx*nb_slot_frame -1;
       continue;
     }
 
