@@ -1043,6 +1043,12 @@ class SSHConnection():
 			logging.debug('Found a N3xx device --> resetting it')
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
+		# in case of NR-UE, we may have rrc_config_path (Temporary?)
+		modifiedUeOptions = str(self.Initialize_OAI_UE_args)
+		if self.air_interface == 'nr':
+			result = re.search('--rrc_config_path ', modifiedUeOptions)
+			if result is not None:
+				modifiedUeOptions = modifiedUeOptions.replace('rrc_config_path ', 'rrc_config_path ' + self.UESourceCodePath + '/')
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets/ran_build/build', '\$', 5)
 		if self.air_interface == 'lte':
@@ -1057,7 +1063,7 @@ class SSHConnection():
 					self.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				self.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
-		self.command('echo "ulimit -c unlimited && ./'+ self.air_interface +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./'+ self.air_interface +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
