@@ -35,6 +35,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 
 #include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -43,6 +44,7 @@
 #include "OCG_extern.h"
 
 #include "RRC/LTE/rrc_extern.h"
+#include "RRC/NR/nr_rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -126,11 +128,11 @@ void schedule_SRS(module_id_t module_idP,
             continue;
           }
 
-	      if(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated == NULL) {
-	        LOG_E(MAC,"physicalConfigDedicated is null for UE %d\n",UE_id);
-	        printf("physicalConfigDedicated is null for UE %d\n",UE_id);
-	        return;
-	      }
+          if(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated == NULL) {
+            LOG_E(MAC,"physicalConfigDedicated is null for UE %d\n",UE_id);
+            printf("physicalConfigDedicated is null for UE %d\n",UE_id);
+            return;
+          }
 
           /* CDRX condition on Active Time and SRS type-0 report (36.321 5.7) */
           UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
@@ -168,7 +170,6 @@ void schedule_SRS(module_id_t module_idP,
                 ul_config_pdu->srs_pdu.srs_pdu_rel8.transmission_comb = soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
                 ul_config_pdu->srs_pdu.srs_pdu_rel8.i_srs = soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
                 ul_config_pdu->srs_pdu.srs_pdu_rel8.sounding_reference_cyclic_shift = soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
-
                 eNB->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
                 eNB->UL_req[CC_id].header.message_id = NFAPI_UL_CONFIG_REQUEST;
                 ul_req->number_of_pdus++;
@@ -257,32 +258,26 @@ void schedule_CSI(module_id_t module_idP,
 
             if ((((frameP * 10) + subframeP) % Npd) == N_OFFSET_CQI) {  // CQI periodic opportunity
               UE_scheduling_control->feedback_cnt[CC_id] = (((frameP * 10) + subframeP) / Npd) % H;
-
               // Program CQI
               nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
               memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
-
               ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
               ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
               ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
               ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
               ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
               ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
-              ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = get_rel8_dl_cqi_pmi_size(&UE_list->UE_sched_ctrl[UE_id], CC_id, cc, get_tmode(module_idP, CC_id, UE_id), cqi_ReportPeriodic);
+              ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = get_rel8_dl_cqi_pmi_size(&UE_list->UE_sched_ctrl[UE_id], CC_id, cc, get_tmode(module_idP, CC_id, UE_id),
+                  cqi_ReportPeriodic);
               ul_req->number_of_pdus++;
               ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
               // PUT rel10-13 UCI options here
-#endif
             } else if (cqi_ReportPeriodic->choice.setup.ri_ConfigIndex != NULL) {
               if ((((frameP * 10) + subframeP) % ((H * Npd) << (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex / 161))) ==
                   N_OFFSET_CQI + (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex % 161)) {  // RI opportunity
-
                 // Program RI
                 nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
                 memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
-
                 ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
                 ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
                 ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
@@ -386,22 +381,16 @@ schedule_SR (module_id_t module_idP,
             is_harq);
 
       /* Check Rel10 or Rel8 SR */
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       if ((UE_list-> UE_template[CC_id][UE_id].physicalConfigDedicated->ext2) &&
           (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020) &&
           (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)) {
         sr.sr_information_rel10.tl.tag                    = NFAPI_UL_CONFIG_REQUEST_SR_INFORMATION_REL10_TAG;
         sr.sr_information_rel10.number_of_pucch_resources = 1;
         sr.sr_information_rel10.pucch_index_p1            = *UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020->sr_PUCCH_ResourceIndexP1_r10;
-
         LOG_D(MAC, "REL10 PUCCH INDEX P1:%d \n", sr.sr_information_rel10.pucch_index_p1);
-
-      } else
-#endif
-      {
+      } else {
         sr.sr_information_rel8.tl.tag      = NFAPI_UL_CONFIG_REQUEST_SR_INFORMATION_REL8_TAG;
         sr.sr_information_rel8.pucch_index = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
-
         LOG_D(MAC, "REL8 PUCCH INDEX:%d\n", sr.sr_information_rel8.pucch_index);
       }
 
@@ -422,7 +411,6 @@ schedule_SR (module_id_t module_idP,
       }  // if (is_harq)
 
       ul_req_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-
     }  // for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++)
   }  // for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
 }
@@ -509,12 +497,13 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
     }
   }       // ul_failure_timer>0
-  
+
   UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
-  if((U_PLANE_INACTIVITY_VALUE != 0) && (UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE * 10))){
-     LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti); 
-     mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
-     UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
+
+  if((U_PLANE_INACTIVITY_VALUE != 0) && (UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE * 10))) {
+    LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti);
+    mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
+    UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
   }// time > 60s
 }
 
@@ -571,8 +560,7 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
 void
 eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                           frame_t frameP,
-                          sub_frame_t subframeP)
-{
+                          sub_frame_t subframeP) {
   int               mbsfn_status[MAX_NUM_CCs];
   protocol_ctxt_t   ctxt;
   rnti_t            rnti  = 0;
@@ -582,24 +570,17 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   UE_list_t         *UE_list                = &(eNB->UE_list);
   COMMON_channels_t *cc                     = eNB->common_channels;
   UE_sched_ctrl_t     *UE_scheduling_control  = NULL;
-
   start_meas(&(eNB->eNB_scheduler));
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, VCD_FUNCTION_IN);
-
   eNB->frame    = frameP;
   eNB->subframe = subframeP;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     mbsfn_status[CC_id] = 0;
-
     /* Clear vrb_maps */
     memset(cc[CC_id].vrb_map, 0, 100);
     memset(cc[CC_id].vrb_map_UL, 0, 100);
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     cc[CC_id].mcch_active = 0;
-#endif
     clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
   }
 
@@ -608,7 +589,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     if (UE_list->active[UE_id]) {
       rnti = UE_RNTI(module_idP, UE_id);
       CC_id = UE_PCCID(module_idP, UE_id);
-
       UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
 
       if (((frameP & 127) == 0) && (subframeP == 0)) {
@@ -631,7 +611,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       if (UE_scheduling_control->cdrx_configured == TRUE) {
         boolean_t harq_active_time_condition = FALSE;
         UE_TEMPLATE *UE_template = NULL;
-
         unsigned long active_time_condition = 0; // variable used only for tracing purpose
 
         /* (UL and DL) HARQ RTT timers and DRX retransmission timers */
@@ -660,7 +639,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             UE_scheduling_control->ul_harq_rtt_timer[CC_id][harq_process_id]++;
 
             if (UE_scheduling_control->ul_harq_rtt_timer[CC_id][harq_process_id] > 4) {
-              /* 
+              /*
                * TODO: implement the handling of UL asynchronous HARQ
                * drx_ULRetransmissionTimer should be (re)started here
                */
@@ -744,13 +723,11 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         if (UE_scheduling_control->in_short_drx_cycle == TRUE && UE_scheduling_control->on_duration_timer == 0) {
           if (((frameP * 10) + subframeP) % (UE_scheduling_control->short_drx_cycle_duration) ==
               (UE_scheduling_control->drx_start_offset) % (UE_scheduling_control->short_drx_cycle_duration)) {
-
             UE_scheduling_control->on_duration_timer = 1;
           }
         } else if (UE_scheduling_control->in_long_drx_cycle == TRUE && UE_scheduling_control->on_duration_timer == 0) {
           if (((frameP * 10) + subframeP) % (UE_scheduling_control->drx_longCycle_timer_thres) ==
               (UE_scheduling_control->drx_start_offset)) {
-
             UE_scheduling_control->on_duration_timer = 1;
           }
         }
@@ -761,6 +738,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
          * ONLY here. The variable can then be used for testing the actual state of the UE for scheduling purpose.
          */
         UE_template = &(UE_list->UE_template[CC_id][UE_id]);
+
         /* (a)synchronous HARQ processes handling for Active Time */
         for (int harq_process_id = 0; harq_process_id < 8; harq_process_id++) {
           if (UE_scheduling_control->drx_retransmission_timer[harq_process_id] > 0) {
@@ -775,9 +753,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             UE_scheduling_control->drx_inactivity_timer > 1 ||
             harq_active_time_condition ||
             UE_template->ul_SR > 0) {
-
           UE_scheduling_control->in_active_time = TRUE;
-
         } else {
           UE_scheduling_control->in_active_time = FALSE;
         }
@@ -802,17 +778,17 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_ACTIVE_TIME_CONDITION, (unsigned long) active_time_condition);
         }
+
         /* END VCD */
 
         /* DCI0 ongoing timer */
         if (UE_scheduling_control->dci0_ongoing_timer > 0) {
-            if (UE_scheduling_control->dci0_ongoing_timer > 7) {
-              UE_scheduling_control->dci0_ongoing_timer = 0;
-            } else {
-              UE_scheduling_control->dci0_ongoing_timer++;
-            }
+          if (UE_scheduling_control->dci0_ongoing_timer > 7) {
+            UE_scheduling_control->dci0_ongoing_timer = 0;
+          } else {
+            UE_scheduling_control->dci0_ongoing_timer++;
+          }
         }
-
       } else { // else: CDRX not configured
         /* Note: (UL) HARQ RTT timers processing is done here and can be used by other features than CDRX */
         /* HARQ RTT timers */
@@ -838,13 +814,11 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       /* Increment these timers, they are cleared when we receive an sdu */
       UE_scheduling_control->ul_inactivity_timer++;
       UE_scheduling_control->cqi_req_timer++;
-      
       LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n",
             UE_id,
             rnti,
             UE_scheduling_control->ul_inactivity_timer,
             UE_scheduling_control->cqi_req_timer);
-
       check_ul_failure(module_idP, CC_id, UE_id, frameP, subframeP);
 
       if (UE_scheduling_control->ue_reestablishment_reject_timer > 0) {
@@ -875,9 +849,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
             if((ulsch != NULL) && (ulsch->rnti == rnti)) {
               void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
-
               LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
-
               clean_eNb_ulsch(ulsch);
             }
           }
@@ -887,9 +859,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
             if((dlsch != NULL) && (dlsch->rnti == rnti)) {
               void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
-
               LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
-
               clean_eNb_dlsch(dlsch);
             }
           }
@@ -911,7 +881,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                   if (pdu_index < pdu_number -1) {
                     memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index],
                            &ul_req_tmp->ul_config_pdu_list[pdu_index+1],
-                          (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+                           (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
                   }
 
                   ul_req_tmp->number_of_pdus--;
@@ -921,30 +891,31 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           } // end for j
 
           rrc_mac_remove_ue(module_idP,rnti);
-
         } // end if (UE_scheduling_control->ue_reestablishment_reject_timer >= UE_scheduling_control->ue_reestablishment_reject_timer_thres)
       } // end if (UE_scheduling_control->ue_reestablishment_reject_timer > 0)
     } // end if UE active
   } // end for loop on UE_id
 
 #if (!defined(PRE_SCD_THREAD))
-
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
-  pdcp_run(&ctxt);
-  rrc_rx_tx(&ctxt, CC_id);
-
+  if (!NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
+    pdcp_run(&ctxt);
+    pdcp_mbms_run(&ctxt);
+    rrc_rx_tx(&ctxt, CC_id);
+  }
 #endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].MBMS_flag > 0) {
       start_meas(&RC.mac[module_idP]->schedule_mch);
-      mbsfn_status[CC_id] = schedule_MBMS(module_idP, CC_id, frameP, subframeP);
+      int(*schedule_mch)(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframe) = NULL;
+      schedule_mch = schedule_MBMS_NFAPI;
+      if(schedule_mch){
+      	mbsfn_status[CC_id] = schedule_mch(module_idP, CC_id, frameP, subframeP);
+      }
       stop_meas(&RC.mac[module_idP]->schedule_mch);
     }
   }
-
-#endif
 
   static int debug_flag = 0;
   void (*schedule_ulsch_p)(module_id_t module_idP, frame_t frameP, sub_frame_t subframe) = NULL;
@@ -959,13 +930,13 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_ue_spec_p = schedule_ue_spec_fairRR;
   }
 
-  if(debug_flag == 0){
+  if(debug_flag == 0) {
     LOG_E(MAC,"SCHED_MODE = %d\n", eNB->scheduler_mode);
     debug_flag = 1;
   }
 
   /* This schedules MIB */
-  if ((subframeP == 0) && (frameP & 3) == 0) 
+  if ((subframeP == 0) && (frameP & 3) == 0)
     schedule_mib(module_idP, frameP, subframeP);
 
   if (get_softmodem_params()->phy_test == 0) {
@@ -993,10 +964,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_SR(module_idP, frameP, subframeP);
     /* This schedules UCI_CSI in subframeP */
     schedule_CSI(module_idP, frameP, subframeP);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     /* This schedules DLSCH in subframeP for BR UE*/
     schedule_ue_spec_br(module_idP, frameP, subframeP);
-#endif
+
     /* This schedules DLSCH in subframeP */
     if (schedule_ue_spec_p != NULL) {
       schedule_ue_spec_p(module_idP, frameP, subframeP, mbsfn_status);
@@ -1005,7 +975,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             __FILE__,
             __LINE__);
     }
-
   } else {
     schedule_ulsch_phy_test(module_idP,frameP,subframeP);
     schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
@@ -1021,8 +990,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (flexran_agent_get_mac_xface(module_idP) && subframeP == 9) {
     flexran_agent_slice_update(module_idP);
   }
+  if (flexran_agent_get_mac_xface(module_idP))
+    flexran_agent_get_mac_xface(module_idP)->flexran_agent_notify_tick(module_idP);
 
   stop_meas(&(eNB->eNB_scheduler));
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, VCD_FUNCTION_OUT);
 }

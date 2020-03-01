@@ -104,7 +104,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
   UE->frame_parms = *frame_parms;
   UE->frame_parms.nb_antennas_rx=N_rx_ue;
   //  eNB->frame_parms = *frame_parms;
-  ru->frame_parms = *frame_parms;
+  ru->frame_parms = frame_parms;
   ru->nb_tx = N_tx_phy;
   ru->nb_rx = N_rx_ru;
   ru->if_south = LOCAL_RF;

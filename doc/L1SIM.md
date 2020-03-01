@@ -42,7 +42,7 @@ Run lte-softmodem as usual with this configuration.
 $ source oaienv
 $ cd cmake_targets/tools
 $ sudo -E ./init_nas_nos1 eNB
-$ cd ../lte_build_oai/build
+$ cd ../ran_build/build
 $ sudo -E ./lte-softmodem -O YYY.conf --noS1 --nokrnmod 0
 ```
 
@@ -56,7 +56,7 @@ Run it like:
 $ source oaienv
 $ cd cmake_targets/tools
 $ sudo -E ./init_nas_nos1 UE
-$ cd ../lte_build_oai/build
+$ cd ../ran_build/build
 $ sudo ./lte-uesoftmodem -O XXX.conf -r 25 --siml1 --noS1 --nokrnmod 0
 ```
 

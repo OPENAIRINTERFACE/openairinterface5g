@@ -107,36 +107,6 @@ typedef uint8_t lcid_t;
 typedef int32_t  err_code_t; 
 
 
-/*---------Timer Enums --------- */
-
-typedef enum {
-  /* oneshot timer:  */
-  FLEXRAN_AGENT_TIMER_TYPE_ONESHOT = 0,
-
-  /* periodic timer  */
-  FLEXRAN_AGENT_TIMER_TYPE_PERIODIC = 1,
-
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_TYPE_EVENT_DRIVEN = 2,
-  
-  /* Max number of states available */
-  FLEXRAN_AGENT_TIMER_TYPE_MAX,
-} flexran_agent_timer_type_t;
-
-
-typedef enum {
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_STATE_INACTIVE = 0x0,
-
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_STATE_ACTIVE = 0x1,
-
-  /* Inactive state: initial state for any timer. */
-  FLEXRAN_AGENT_TIMER_STATE_STOPPED = 0x2,
-  
-  /* Max number of states available */
-  FLEXRAN_AGENT_TIMER_STATE_MAX,
-} flexran_agent_timer_state_t;
 
 #define FLEXRAN_CAP_LOPHY(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)) > 0)
 #define FLEXRAN_CAP_HIPHY(cApS) (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)) > 0)
@@ -146,6 +116,7 @@ typedef enum {
 #define FLEXRAN_CAP_PDCP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP))  > 0)
 #define FLEXRAN_CAP_SDAP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP))  > 0)
 #define FLEXRAN_CAP_RRC(cApS)   (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC))   > 0)
+#define FLEXRAN_CAP_S1AP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__S1AP))  > 0)
 
 typedef enum {
   ENB_NORMAL_OPERATION = 0x0,
@@ -162,6 +133,8 @@ typedef struct {
   char    *cache_name;
 
   mid_t    mod_id;
+  uint64_t agent_id;
+  uint16_t capability_mask;
 
   /* lock for waiting before starting or soft-restart */
   pthread_cond_t      cond_node_ctrl;
@@ -190,39 +163,5 @@ typedef struct {
    uint32_t report_amount;
 
 } agent_reconf_rrc;
-
-
-/* These structs will be used to give
-   instructions for the type of stats reports
-   we need to create */
-
-
-typedef struct {
-  uint16_t ue_rnti;
-  uint32_t ue_report_flags; /* Indicates the report elements
-             required for this UE id. See
-             FlexRAN specification 1.2.4.2 */
-} ue_report_type_t;
-
-typedef struct {
-  uint16_t cc_id;
-  uint32_t cc_report_flags; /* Indicates the report elements
-            required for this CC index. See
-            FlexRAN specification 1.2.4.3 */
-} cc_report_type_t;
-
-typedef struct {
-  int nr_ue;
-  ue_report_type_t *ue_report_type;
-  int nr_cc;
-  cc_report_type_t *cc_report_type;
-} report_config_t;
-
-typedef struct stats_request_config_s{
-  uint8_t report_type;
-  uint8_t report_frequency;
-  uint16_t period; /*In number of subframes*/
-  report_config_t *config;
-} stats_request_config_t;
 
 #endif 

@@ -51,6 +51,7 @@ message flex_ue_stats_report {
         optional flex_pdcp_stats pdcp_stats = 11;
         optional flex_mac_stats mac_stats = 12;
     repeated flex_gtp_stats gtp_stats = 13;
+    optional flex_s1ap_ue s1ap_stats = 14;
 }
 
 //
@@ -91,6 +92,7 @@ enum flex_ue_stats_type {
 
      FLUST_PDCP_STATS = 1024;     
      FLUST_GTP_STATS = 2048;
+     FLUST_S1AP_STATS = 4096;
      FLUST_RRC_MEASUREMENTS = 65536;
      // To be extended with more types of stats
 

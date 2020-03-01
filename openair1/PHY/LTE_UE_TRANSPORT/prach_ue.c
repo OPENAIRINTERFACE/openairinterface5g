@@ -80,7 +80,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
   int i, prach_len;
   uint16_t first_nonzero_root_idx=0;
 
-  if ( !(IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ) {
+  if ( !(IS_SOFTMODEM_BASICSIM ) ) {
     prach_start =  (ue->rx_offset+subframe*ue->frame_parms.samples_per_tti-ue->hw_timing_advance-ue->N_TA_offset);
 #ifdef PRACH_DEBUG
     LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
@@ -473,7 +473,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
   AssertFatal(prach_fmt<4,
               "prach_fmt4 not fully implemented" );
 
-  if (!(IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) ) {
+  if (!(IS_SOFTMODEM_BASICSIM ) ) {
     int j;
     int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*ue->frame_parms.samples_per_tti;
     LOG_I( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );

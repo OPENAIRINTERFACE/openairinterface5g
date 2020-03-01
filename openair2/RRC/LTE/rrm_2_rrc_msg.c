@@ -117,7 +117,7 @@ void  fn_rrc (void) {
 
       case RRCI_CX_ESTABLISH_RESP: {
         rrci_cx_establish_resp_t *p = (rrci_cx_establish_resp_t *) Data;
-        unsigned char CH_index,i;
+        unsigned char i, CH_index = 0;
         msg( "[RRCI]>[RRC][Inst %d]:RRCI_CX_ESTABLISH_RESP\n",Header->inst);
 
         for(i=0; i<NB_SIG_CNX_UE; i++)
@@ -185,6 +185,3 @@ void  fn_rrc (void) {
     }
   }
 }
-
-
-

@@ -24,6 +24,8 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/defs_nr_UE.h"
 
 #include "LTE_SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
@@ -32,12 +34,9 @@
 #include "LTE_PHICH-Config.h"
 #include "LTE_MBSFN-SubframeConfigList.h"
 #include "LTE_MobilityControlInfo.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "LTE_SCellToAddMod-r10.h"
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #include "LTE_NonMBSFN-SubframeConfig-r14.h"
-#endif
+
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */
@@ -57,6 +56,8 @@ int l1_north_init_eNB(void);
  */
 int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 
+void phy_init_nr_top(PHY_VARS_NR_UE *ue);
+
 
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE ue signal buffers.
@@ -69,8 +70,8 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 @note The current implementation will never return -1, but segfault.
  */
 int init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
-			   int          nb_connected_eNB,
-			   uint8_t         abstraction_flag);
+                       int          nb_connected_eNB,
+                       uint8_t         abstraction_flag);
 
 /*!
 \brief Allocate and initialize the PHY variables releated to the transport channel buffers (UL/DL)
@@ -110,15 +111,15 @@ void phy_free_lte_eNB(PHY_VARS_eNB *phy_vars_eNb);
 @param phich_config Pointer to PHICH_CONFIG_COMMON
  */
 void phy_config_mib_eNB(int                    Mod_id,
-			int                    CC_id,
-			int                    eutra_band,
-			int                    N_RB_DL,
-			LTE_PHICH_Config_t    *phich_config,
-			int                    Nid_cell,
-			int                    Ncp,
-			int                    p_eNB,
-			uint32_t               dl_CarrierFreq,
-			uint32_t               ul_CarrierFreq);
+                        int                    CC_id,
+                        int                    eutra_band,
+                        int                    N_RB_DL,
+                        LTE_PHICH_Config_t    *phich_config,
+                        int                    Nid_cell,
+                        int                    Ncp,
+                        int                    p_eNB,
+                        uint32_t               dl_CarrierFreq,
+                        uint32_t               ul_CarrierFreq);
 
 
 
@@ -175,6 +176,18 @@ void phy_config_sib2_ue(module_id_t                          Mod_id,
                         LTE_ARFCN_ValueEUTRA_t              *ul_CArrierFreq,
                         long                                *ul_Bandwidth,
                         LTE_AdditionalSpectrumEmission_t    *additionalSpectrumEmission,
+                        struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
+
+ /*!
+  \fn void phy_config_mbsfn_list_ue(module_id_t Mod_id,uint8_t CC_id
+      struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList)
+  \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of MBSFN config list from SIB2 (at UE).
+  @param Mod_id Instance id
+  @param CC_id
+  @param mbsfn_SubframeConfigList MBSFN subframe configuration
+ */
+void phy_config_mbsfn_list_ue(module_id_t                          Mod_id,
+                        int                                  CC_id,
                         struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
 
 
@@ -245,7 +258,7 @@ void phy_config_dedicated_ue(module_id_t Mod_id,
 
  */
 void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t CH_index,
-                           uint16_t max_harq_tx);
+                        uint16_t max_harq_tx);
 /**
 \brief Configure UE MBSFN common parameters.
 \details Invoked upon reception of SIB13 from eNB.
@@ -261,8 +274,8 @@ void phy_config_sib13_ue(module_id_t Mod_id,
                          long mbsfn_AreaId_r9);
 
 void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
-                        uint8_t eNB_id,
-			struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig);
+                               uint8_t eNB_id,
+                               struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig);
 
 /**
 \brief Configure eNB MBSFN common parameters.
@@ -337,25 +350,24 @@ void init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
 void lte_param_init(PHY_VARS_eNB **eNBp,
-		    PHY_VARS_UE **UEp,
-		    RU_t **rup,
-		    unsigned char N_tx_port_eNB,
+                    PHY_VARS_UE **UEp,
+                    RU_t **rup,
+                    unsigned char N_tx_port_eNB,
                     unsigned char N_tx_phy,
-		    unsigned char N_rx_ru,
-		    unsigned char N_rx_ue,
-		    unsigned char transmission_mode,
-		    uint8_t extended_prefix_flag,
-		    frame_t frame_type,
-		    uint16_t Nid_cell,
-		    uint8_t tdd_config,
-		    uint8_t N_RB_DL,
-		    uint8_t pa,
-		    uint8_t threequarter_fs,
+                    unsigned char N_rx_ru,
+                    unsigned char N_rx_ue,
+                    unsigned char transmission_mode,
+                    uint8_t extended_prefix_flag,
+                    frame_t frame_type,
+                    uint16_t Nid_cell,
+                    uint8_t tdd_config,
+                    uint8_t N_RB_DL,
+                    uint8_t pa,
+                    uint8_t threequarter_fs,
                     uint8_t osf,
-		    uint32_t perfect_ce);
+                    uint32_t perfect_ce);
 
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -366,7 +378,6 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                                     int CC_id);
 
-#endif
 
 
 
@@ -375,11 +386,28 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 void phy_cleanup(void);
 
 void phy_config_request(PHY_Config_t *phy_config);
+void phy_config_update_sib2_request(PHY_Config_t *phy_config);
+void phy_config_update_sib13_request(PHY_Config_t *phy_config);
+
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_frame_index);
+int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame);
+int nr_init_frame_parms(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
+int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *frame_parms,int mu,int Ncp,int N_RB_DL,int n_ssb_crb,int ssb_subcarrier_offset);
+int init_nr_ue_signal(PHY_VARS_NR_UE *ue,int nb_connected_eNB,uint8_t abstraction_flag);
+void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag);
+void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms);
+int phy_init_nr_gNB(PHY_VARS_gNB *gNB, unsigned char is_secondary_gNB, unsigned char abstraction_flag);
+void nr_phy_config_request(NR_PHY_Config_t *gNB);
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst);
+void phy_free_nr_gNB(PHY_VARS_gNB *gNB);
+int l1_north_init_gNB(void);
+void init_nr_transport(PHY_VARS_gNB *gNB);
 
 void init_dfts(void);
+
 
 /** @} */
 #endif

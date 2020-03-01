@@ -2,22 +2,8 @@
   Author: Laurent THOMAS, Open Cells
   copyleft: OpenAirInterface Software Alliance and it's licence
 */
+#include <common/utils/simple_executable.h>
 
-#define __USE_GNU
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <pthread.h>
-#include <sched.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/time.h>
-#include <stdint.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "thread-pool.h"
 
 #define SEP "\t"
@@ -26,7 +12,7 @@ uint64_t cpuCyclesMicroSec;
 
 int main(int argc, char *argv[]) {
   if(argc != 2) {
-    printf("Need one paramter: the trace Linux pipe (fifo)");
+    printf("Need one parameter: the trace Linux pipe (fifo)");
     exit(1);
   }
 

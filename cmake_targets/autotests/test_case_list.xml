@@ -182,8 +182,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w USRP -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_usrpdevif.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_usrpdevif.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -200,10 +200,10 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w EXMIMO -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/CMakeFiles/openair_rf/openair_rf.ko
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/updatefw
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/oarf_config_exmimo.oct</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/CMakeFiles/openair_rf/openair_rf.ko
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/updatefw
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/oarf_config_exmimo.oct</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -220,8 +220,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w BLADERF -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_bladerfdevif.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_bladerfdevif.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -238,8 +238,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w None -t ETHERNET -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -256,8 +256,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w LMSSDR -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_lmssdrdevif.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_lmssdrdevif.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -376,9 +376,9 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w USRP -t ETHERNET  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_usrpdevif.so
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_usrpdevif.so
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -395,12 +395,12 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w EXMIMO -t ETHERNET  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/CMakeFiles/openair_rf/openair_rf.ko
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/updatefw
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/oarf_config_exmimo.oct
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_exmimodevif.so
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/CMakeFiles/openair_rf/openair_rf.ko
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/updatefw
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/oarf_config_exmimo.oct
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_exmimodevif.so
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -417,9 +417,9 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w BLADERF -t ETHERNET  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_bladerfdevif.so
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_bladerfdevif.so
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -436,9 +436,9 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w LMSSDR -t ETHERNET  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_lmssdrdevif.so
-                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_lmssdrdevif.so
+                       $OPENAIR_DIR/cmake_targets/ran_build/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -933,44 +933,41 @@
 
     <testCase id="015100">
       <class>execution</class>
-      <desc>dlsim test cases (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB), 
+      <desc>dlsim Test cases. (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB),
       (Test 5: 1.4 MHz, R4.FDD (MCS 4), EVA5, 0dB (70%)),
-      (Test 6, 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
-      (Test 6b, 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (70%)),
-      (Test 7, 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (30%)),
-      (Test 7b, 5 MHz, R3-1.FDD (MCS 15), ETU70, 1.4 dB (30%)),
-      (Test 10, 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
-      (Test 10b, 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
-      (Test 11, 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%)),
-      (Test 11b, 10 MHz, R7-1.FDD (MCS 25), EVA5, 16.7dB (70%)),
-      (Test 15, 20 MHz, R.9 FDD	(MCS 26), EVA5, 17.6dB (70%)),
-      (Test 15b, 20 MHz, R.9-2 FDD (MCS 26, 17PRB), EVA5, 17.3dB (70%)),
-      (Test 15c, 20 MHz, R.9-1 FDD (MCS 26, 83 PRB), EVA5, 16.6dB (70%)),
-
-      (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
-      (TM2 Test 1b 5 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
-       </desc>
+      (Test 6: 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
+      (Test 6b: 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (70%)),
+      (Test 7: 10 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (30%)),
+      (Test 7b: 5 MHz, R3-1.FDD (MCS 15), ETU70, 1.4 dB (30%)),
+      (Test 10: 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
+      (Test 10b: 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
+      (Test 11: 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%)),
+      (Test 15: 20 MHz, R.9 FDD	(MCS 26), EVA5, 17.6dB (70%)),
+      (Test 15b: 20 MHz, R.9-2 FDD (MCS 26, 17PRB), EVA5, 17.3dB (70%)),
+      (Test 15c: 20 MHz, R.9-1 FDD (MCS 26, 83 PRB), EVA5, 16.6dB (70%)),
+      (TM2 Test 1: 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
+      (TM2 Test 1b: 5 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%))</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel14</main_exec>
-      <main_exec_args> -m=5 -g=F -s=-1= -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
-                        -m=4 -g=F -s=0 -w=1.0 -f=.2 -n=500 -B=6 -c=4 -z=2 -O=60
-                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
-                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=60
-                        -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=25
-                        -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=25
-                        -m=25 -g=F -s=17.4 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -O=60
-                        -m=25 -g=F -s=17.5 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -r=1022 -O=60
-                        -m=26 -g=F -s=17.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
-                        -m=26 -g=F -s=17.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -O=60
-                        -m=26 -g=F -s=17.3 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1600 -O=60
-                        -m=26 -g=F -s=16.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1899 -O=60
-                        -m=14 -g=F -s=6.8  -w=1.0 -f=.2 -n=500 -B=50 -c=2 -x=2 -y=2 -z=2 -O=60
-                        -m=13 -g=F -s=5.9  -w=1.0 -f=.2 -n=500 -B=25 -c=3 -x=2 -y=2 -z=2 -O=60</main_exec_args>
-      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
+      <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel15</main_exec>
+      <main_exec_args> -m=5 -g=F -s=-1 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                       -m=4 -g=F -s=0 -w=1.0 -f=.2 -n=500 -B=6 -c=4 -z=2 -O=60
+                       -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                       -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=60
+                       -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=25
+                       -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=25
+                       -m=25 -g=F -s=17.4 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -O=60
+                       -m=25 -g=F -s=17.5 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -r=1022 -O=60
+                       -m=26 -g=F -s=17.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                       -m=26 -g=F -s=17.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -O=60
+                       -m=26 -g=F -s=17.3 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1600 -O=60
+                       -m=26 -g=F -s=16.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1899 -O=60
+                       -m=14 -g=F -s=6.8  -w=1.0 -f=.2 -n=500 -B=50 -c=2 -x=2 -y=2 -z=2 -O=60
+                       -m=13 -g=F -s=5.9  -w=1.0 -f=.2 -n=500 -B=25 -c=3 -x=2 -y=2 -z=2 -O=60</main_exec_args>
+      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.test11a dlsim.test11b dlsim.test11c dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -978,29 +975,229 @@
 
     <testCase id="015101">
       <class>execution</class>
-      <desc>ulsim Test cases. (Test 1, 5 MHz, FDD (MCS 5), AWGN, 6dB), 
-             (Test 2, 5 MHz, FDD (MCS 16), AWGN , 12dB (70%)),
-             (Test 3, 10 MHz, R3.FDD (MCS 5), AWGN, 6dB (70%)),
-             (Test 4, 10 MHz, R3-1.FDD (MCS 16), AWGN, 12dB (70%)),
-             (Test 5, 20 MHz, FDD (MCS 5), AWGN, 6dB (70%)),
-             (Test 6, 20 MHz, FDD (MCS 16), AWGN, 12 dB (70%))</desc>
+      <desc>ulsim Test cases. (Test 1: 5 MHz, FDD (MCS 5), AWGN, 6dB),
+             (Test 2: 5 MHz, FDD (MCS 16), AWGN , 12dB (70%)),
+             (Test 3: 10 MHz, R3.FDD (MCS 5), AWGN, 6dB (70%)),
+             (Test 4: 10 MHz, R3-1.FDD (MCS 16), AWGN, 12dB (70%)),
+             (Test 5: 20 MHz, FDD (MCS 5), AWGN, 6dB (70%)),
+             (Test 6: 20 MHz, FDD (MCS 16), AWGN, 12 dB (70%))</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel14</main_exec>
-      <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70
-                       -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70
-                        -BnbRBs=50 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70
-                       -BnbRBs=50 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70
-                        -BnbRBs=100 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70
+      <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel15</main_exec>
+      <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=50 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70  
+                       -BnbRBs=50 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=100 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
                        -BnbRBs=100 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 </main_exec_args>
      <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>
+
+    <testCase id="015102">
+      <class>execution</class>
+      <desc>ldpc Test cases. (Test1: block length = 3872),
+             (Test2: block length = 4224),
+             (Test3: block length = 4576),
+             (Test4: block length = 4928),
+             (Test5: block length = 5280),
+             (Test6: block length = 5632),
+             (Test7: block length = 6336),
+             (Test8: block length = 7040),
+             (Test9: block length = 7744),
+             (Test10: block length = 8448)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/ldpctest.Rel15</main_exec>
+      <main_exec_args>-l3872 -s10 -n100
+                      -l4224 -s10 -n100
+		              -l4576 -s10 -n100
+	        	      -l4928 -s10 -n100
+	        	      -l5280 -s10 -n100
+	        	      -l5632 -s10 -n100
+	        	      -l6336 -s10 -n100
+	        	      -l7040 -s10 -n100
+	        	      -l7744 -s10 -n100
+	        	      -l8448 -s10 -n100</main_exec_args>
+      <tags>ldpctest.test1 ldpctest.test2 ldpctest.test3 ldpctest.test4 ldpctest.test5 ldpctest.test6 ldpctest.test7 ldpctest.test8 ldpctest.test9 ldpctest.test10</tags>
+      <search_expr_true>BLER 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+    <testCase id="015103">
+      <class>execution</class>
+      <desc>polartest Test cases. (Test1: PBCH polar test),
+                                  (Test2: DCI polar test)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
+      <main_exec_args>-q -s-10 -f0
+                      -q -s-10 -f0 -m1</main_exec_args>
+      <tags>polartest.test1 polartest.test2</tags>
+      <search_expr_true>BLER= 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+     <testCase id="015104">
+      <class>execution</class>
+      <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 106 PRB),
+                                   (Test2: PBCH and synchronization, 106PBR),
+                                   (Test3: PBCH-only, 217 PRB),
+                                   (Test4: PBCH and synchronization, 217 RPB),
+                                   (Test5: PBCH-only, 273 PRB),
+                                   (Test6: PBCH and synchronization, 273 PRB)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
+      <main_exec_args>-s0 -S1 -n1000 -R106
+                      -s0 -S1 -n10 -I -R106
+		              -s0 -S1 -n1000 -R217
+                      -s0 -S1 -n10 -I -R217
+		              -s0 -S1 -n1000 -R273
+                      -s0 -S1 -n10 -I -R273</main_exec_args>
+      <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
+      <search_expr_true>PBCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
+
+     <testCase id="015105">
+      <class>execution</class>
+      <desc>nr_dlsim Test cases. (Test1: 106 PRB),
+                                 (Test2: 217 PRB),
+                                 (Test3: 273 PRB),
+                                 (Test4: 106 PRB 12 CSET-Offset),
+                                 (Test5: 217 PRB 48 CSET-Offset),
+                                 (Test6: 106 PRB 25 PDSCH-Offset),
+                                 (Test7: 106 PRB 51 PDSCH-Offset),
+                                 (Test8: 217 PRB 100 PDSCH-PRBs),
+                                 (Test9: 217 PRB 80 PDSCH-Offset),
+                                 (Test10: 217 PRB 100 PDSCH-PRBs 110 PDSCH-Offset),
+                                 (Test11: 106 PRBs 50 PDSCH-PRBs MCS Index 28</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
+      <main_exec_args>-n100 -R106 -b106
+		              -n100 -R217 -b217
+		              -n100 -R273 -b273
+                  -n100 -R106 -o12
+                  -n100 -R217 -o48
+                  -n100 -R106 -a25
+                  -n100 -R106 -a51
+                  -n100 -R217 -b100
+                  -n100 -R217 -a80
+                  -n100 -R217 -a110 -b100
+                  -n100 -e28</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11</tags>
+      <search_expr_true>PDSCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
+ 
+     <testCase id="015106">
+      <class>execution</class>
+      <desc>nr_dlschsim Test cases. (Test1: 106 PRB),
+                                    (Test2: 217 PRB),
+                                    (Test3: 273 PRB)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlschsim.Rel15</main_exec>
+      <main_exec_args>-R 106 -m9 -s13 -n100
+                      -R 217 -m15 -s15 -n100
+                      -R 273 -m19 -s20 -n100</main_exec_args>
+      <tags>nr_dlschsim.test1 nr_dlschsim.test2 nr_dlschsim.test3</tags>
+      <search_expr_true>PDSCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
+
+    <testCase id="015107">
+      <class>execution</class>
+      <desc>shortblocktest Test cases. (Test1: 3 bits),
+      (Test2: 6 bits),
+      (Test3: 7 bits),
+      (Test4: 11 bits)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/smallblocktest.Rel15</main_exec>
+      <main_exec_args>-l 3 -s -4 -d 1 -i 10000
+                      -l 6 -s -4 -d 1 -i 10000
+                      -l 7 -s -4 -d 1 -i 10000
+                      -l 11 -s -4 -d 1 -i 10000</main_exec_args>
+      <tags>smallblocktest.test1 smallblocktest.test2 smallblocktest.test3 smallblocktest.test4</tags>
+      <search_expr_true>BLER= 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+    
+    <testCase id="015108">
+      <class>execution</class>
+      <desc>nr_ulschsim Test cases. (Test1: 106 PRB),
+                                    (Test2: 217 PRB),
+                                    (Test3: 273 PRB)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_ulschsim.Rel15</main_exec>
+      <main_exec_args>-R 106 -m9 -s13 -n100
+                      -R 217 -m15 -s15 -n100
+                      -R 273 -m19 -s20 -n100</main_exec_args>
+      <tags>nr_ulschsim.test1 nr_ulschsim.test2 nr_ulschsim.test3</tags>
+      <search_expr_true>PUSCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+    <testCase id="015109">
+      <class>execution</class>
+      <desc>nr_pucchsim Test cases. (Test1: Format 0 ACK miss 106 PRB),
+                                    (Test2: Format 1 ACK miss 106 PRB),
+				                    (Test3: Format 1 ACK miss 273 PRB),
+			                        (Test4: Format 1 NACKtoACK 106 PRB)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_pucchsim.Rel15</main_exec>
+      <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s3 -n100
+	                  -R 106 -i 14 -P 1 -b 1 -s-6 -n100
+                      -R 273 -i 14 -P 1 -b 1 -s-6 -n100
+                      -R 106 -i 14 -P 1 -b 1 -s-6 -T 0.001 -n1000</main_exec_args>
+      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4</tags>
+      <search_expr_true>PUCCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
 
     <testCase id="015110">
       <class>execution</class>
@@ -1022,19 +1219,43 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim_tm4</main_exec>
-      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
-                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
-                       -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
-                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
-                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
-                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
+      <main_exec_args>-m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                      -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
+                      -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                      -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
+                      -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
+                      -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
+                      -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
+                      -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
+                      -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
+                      -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
+                      -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
       <tags>dlsim_tm4.test1 dlsim_tm4.test5 dlsim_tm4.test6 dlsim_tm4.test6b dlsim_tm4.test7 dlsim_tm4.test7b dlsim_tm4.test10 dlsim_tm4.test10b dlsim_tm4.test11 dlsim_tm4.TM2_test1 dlsim_tm4.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+    <testCase id="015111">
+      <class>execution</class>
+      <desc>nr_ulsim Test cases. (Test1: MCS 9 106 PRBs),
+                                 (Test2: MCS 16 50 PRBs),
+                                 (Test3: MCS 28 50 PRBs),
+                                 (Test4: MCS 9 217 PRBs),
+                                 (Test5: MCS 9 273 PRBs)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_ulsim.Rel15</main_exec>
+      <main_exec_args>-f100 -m9 -r106 -s10
+                      -f100 -m16 -s20
+                      -f100 -m28 -s30
+                      -f100 -m9 -R217 -r217 -s10
+                      -f100 -m9 -R273 -r273 -s10</main_exec_args>
+      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
+      <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>
@@ -1068,7 +1289,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1143,7 +1364,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1218,7 +1439,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1292,7 +1513,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1365,7 +1586,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf           </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1439,7 +1660,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1516,7 +1737,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1593,7 +1814,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1669,7 +1890,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf        -E  </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1745,7 +1966,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1821,7 +2042,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1898,7 +2119,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf       -E   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1972,7 +2193,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2047,7 +2268,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2122,7 +2343,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2196,7 +2417,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2269,7 +2490,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf           </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2343,7 +2564,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2422,7 +2643,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2499,7 +2720,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2575,7 +2796,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf        -E  </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2651,7 +2872,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2727,7 +2948,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2804,7 +3025,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf       -E   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2882,7 +3103,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2966,7 +3187,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3050,7 +3271,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3134,7 +3355,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3218,7 +3439,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3302,7 +3523,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3386,7 +3607,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3485,7 +3706,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3584,7 +3805,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3683,7 +3904,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3782,7 +4003,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3882,7 +4103,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -3980,7 +4201,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf        </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4052,7 +4273,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4124,7 +4345,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4196,7 +4417,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4267,7 +4488,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4339,7 +4560,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4410,7 +4631,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4482,7 +4703,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4554,7 +4775,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4626,7 +4847,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4697,7 +4918,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4769,7 +4990,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4842,7 +5063,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4916,7 +5137,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4990,7 +5211,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5064,7 +5285,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5137,7 +5358,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5211,7 +5432,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5284,7 +5505,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5358,7 +5579,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5432,7 +5653,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5506,7 +5727,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5579,7 +5800,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c  --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5653,7 +5874,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_usrpb210.py --stop-usrpb210 ; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpx310.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5726,7 +5947,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5809,7 +6030,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5891,7 +6112,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -5972,7 +6193,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6053,7 +6274,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15;$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6135,7 +6356,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpx310.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6216,7 +6437,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; dmesg|tail </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf        </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6288,7 +6509,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6361,7 +6582,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6433,7 +6654,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf        </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6504,7 +6725,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c --disable-cpu-affinity</eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf        </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6575,7 +6796,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c --disable-cpu-affinity </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf        </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6648,7 +6869,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15;$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6732,7 +6953,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6813,7 +7034,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15;$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6894,7 +7115,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15;$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -6975,7 +7196,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15;$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ;  sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7056,7 +7277,7 @@ c
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7141,7 +7362,7 @@ c
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7217,7 +7438,7 @@ c
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7292,7 +7513,7 @@ c
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7367,7 +7588,7 @@ c
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7441,7 +7662,7 @@ c
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7515,7 +7736,7 @@ c
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7590,7 +7811,7 @@ c
     <eNB_compile_prog_args>--eNB -w LMSSDR -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_5MHz_rx19dB_txfull.ini   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7666,7 +7887,7 @@ c
     <eNB_compile_prog_args>--eNB -w LMSSDR -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf  --rf-config-file    $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_10MHz_rx19dB_txfull.ini   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7741,7 +7962,7 @@ c
     <eNB_compile_prog_args>--eNB -w LMSSDR -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf     --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_20MHz_rx19dB_txfull.ini </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7816,7 +8037,7 @@ c
     <eNB_compile_prog_args>--eNB -w LMSSDR -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf    --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_5MHz_rx19dB_txfull.ini </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7890,7 +8111,7 @@ c
     <eNB_compile_prog_args>--eNB -w LMSSDR -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf    --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_10MHz_rx19dB_txfull.ini</eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -7964,7 +8185,7 @@ c
     <eNB_compile_prog_args>--eNB -w LMSSDR -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf     --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_20MHz_rx19dB_txfull.ini</eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8047,7 +8268,7 @@ c
     <eNB_compile_prog_args>--eNB -w None -t ETHERNET -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band7.tm1.usrpb210.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8078,7 +8299,7 @@ c
     <RRH_compile_prog_args>--eNB -w USRP -t ETHERNET -c -x </RRH_compile_prog_args>
     <RRH_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</RRH_pre_exec>
     <RRH_pre_exec_args></RRH_pre_exec_args>
-    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</RRH_main_exec>
+    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</RRH_main_exec>
     <RRH_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rru.band7.tm1.usrpb210.conf </RRH_main_exec_args>
     <RRH_terminate_missing_procs>False</RRH_terminate_missing_procs>
 
@@ -8158,7 +8379,7 @@ c
     <eNB_compile_prog_args>--eNB -w None -t ETHERNET -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band7.tm1.usrpb210.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8189,7 +8410,7 @@ c
     <RRH_compile_prog_args>--eNB -w USRP -t ETHERNET -c -x </RRH_compile_prog_args>
     <RRH_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</RRH_pre_exec>
     <RRH_pre_exec_args></RRH_pre_exec_args>
-    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</RRH_main_exec>
+    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</RRH_main_exec>
     <RRH_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rru.band7.tm1.usrpb210.conf </RRH_main_exec_args>
     <RRH_terminate_missing_procs>False</RRH_terminate_missing_procs>
 
@@ -8269,7 +8490,7 @@ c
     <eNB_compile_prog_args>--eNB -w None -t ETHERNET -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band7.tm1.usrpb210.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8300,7 +8521,7 @@ c
     <RRH_compile_prog_args>--eNB -w USRP -t ETHERNET -c -x </RRH_compile_prog_args>
     <RRH_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</RRH_pre_exec>
     <RRH_pre_exec_args></RRH_pre_exec_args>
-    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</RRH_main_exec>
+    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</RRH_main_exec>
     <RRH_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rru.band7.tm1.usrpb210.conf </RRH_main_exec_args>
     <RRH_terminate_missing_procs>False</RRH_terminate_missing_procs>
 
@@ -8379,7 +8600,7 @@ c
     <eNB_compile_prog_args>--eNB -w None -t ETHERNET -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band7.tm1.usrpb210.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8410,7 +8631,7 @@ c
     <RRH_compile_prog_args>--eNB -w USRP -t ETHERNET -c -x </RRH_compile_prog_args>
     <RRH_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</RRH_pre_exec>
     <RRH_pre_exec_args></RRH_pre_exec_args>
-    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</RRH_main_exec>
+    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</RRH_main_exec>
     <RRH_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rru.band7.tm1.usrpb210.conf </RRH_main_exec_args>
     <RRH_terminate_missing_procs>False</RRH_terminate_missing_procs>
 
@@ -8490,7 +8711,7 @@ c
     <eNB_compile_prog_args>--eNB -w None -t ETHERNET -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band7.tm1.usrpb210.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8521,7 +8742,7 @@ c
     <RRH_compile_prog_args>--eNB -w USRP -t ETHERNET -c -x </RRH_compile_prog_args>
     <RRH_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</RRH_pre_exec>
     <RRH_pre_exec_args></RRH_pre_exec_args>
-    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</RRH_main_exec>
+    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</RRH_main_exec>
     <RRH_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rru.band7.tm1.usrpb210.conf </RRH_main_exec_args>
     <RRH_terminate_missing_procs>False</RRH_terminate_missing_procs>
 
@@ -8600,7 +8821,7 @@ c
     <eNB_compile_prog_args>--eNB -w None -t ETHERNET -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 30; sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rcc.band7.tm1.usrpb210.conf   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8631,7 +8852,7 @@ c
     <RRH_compile_prog_args>--eNB -w USRP -t ETHERNET -c -x </RRH_compile_prog_args>
     <RRH_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</RRH_pre_exec>
     <RRH_pre_exec_args></RRH_pre_exec_args>
-    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</RRH_main_exec>
+    <RRH_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</RRH_main_exec>
     <RRH_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/rru.band7.tm1.usrpb210.conf </RRH_main_exec_args>
     <RRH_terminate_missing_procs>False</RRH_terminate_missing_procs>
 
@@ -8739,7 +8960,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8814,7 +9035,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8889,7 +9110,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -8963,7 +9184,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9037,7 +9258,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9112,7 +9333,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9186,7 +9407,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9261,7 +9482,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9336,7 +9557,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9410,7 +9631,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9484,7 +9705,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -E -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf         </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9559,7 +9780,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9636,7 +9857,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9713,7 +9934,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9790,7 +10011,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf         -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9866,7 +10087,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -9942,7 +10163,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10019,7 +10240,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf         -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10095,7 +10316,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10172,7 +10393,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10249,7 +10470,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf         -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10325,7 +10546,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10401,7 +10622,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf          </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10478,7 +10699,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/run_gdb $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm2.usrpb210.conf         -E </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10554,7 +10775,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10569,7 +10790,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/ran_build/build ; sudo -E $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 oai0 -u -c  192.172.0.1 -b 7Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -10654,7 +10875,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10669,7 +10890,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/ran_build/build ; sudo -E $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 oai0 -u -c  192.172.0.1 -b 14Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -10754,7 +10975,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10769,7 +10990,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/ran_build/build ; sudo -E $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 oai0 -u -c  192.172.0.1 -b 28Mbits/s      </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -10854,7 +11075,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10870,7 +11091,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/ran_build/build ; sudo -E $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem  -U -C2660000000 -r25 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u       </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -10955,7 +11176,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -10970,7 +11191,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/ran_build/build ; sudo -E $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem  -U -C2660000000 -r50 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u       </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
@@ -11057,7 +11278,7 @@ c
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sleep 15; $OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf    </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -11072,7 +11293,7 @@ c
     <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash ; sudo rmmod nasmesh ; sudo rmmod ue_ip</UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/lte_build_oai/build ; sudo -E $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
+    <UE_main_exec>sleep 50; cd $OPENAIR_DIR/cmake_targets/ran_build/build ; sudo -E $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem  -U -C2660000000 -r100 --ue-scan-carrier --ue-txgain 90 --ue-rxgain 125 </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 lo -s -i 1 -f m -u       </UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>

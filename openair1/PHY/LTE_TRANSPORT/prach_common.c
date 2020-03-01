@@ -326,11 +326,8 @@ uint16_t prach_root_sequence_map4[138] = {  1,138,2,137,3,136,4,135,5,134,6,133,
                                             61,78,62,77,63,76,64,75,65,74,66,73,67,72,68,71,69,70
                                          };
 
-void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
-{
-
+void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
   FILE *fd;
-
   fd = fopen("prach_config.txt","w");
   fprintf(fd,"prach_config: subframe          = %d\n",subframe);
   fprintf(fd,"prach_config: N_RB_UL           = %d\n",frame_parms->N_RB_UL);
@@ -344,13 +341,10 @@ void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)
   fprintf(fd,"prach_config: highSpeedFlag     = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag);
   fprintf(fd,"prach_config: n_ra_prboffset    = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset);
   fclose(fd);
-
 }
 
 // This function computes the du
-void fill_du(uint8_t prach_fmt)
-{
-
+void fill_du(uint8_t prach_fmt) {
   uint16_t iu,u,p;
   uint16_t N_ZC;
   uint16_t *prach_root_sequence_map;
@@ -364,7 +358,6 @@ void fill_du(uint8_t prach_fmt)
   }
 
   for (iu=0; iu<(N_ZC-1); iu++) {
-
     u=prach_root_sequence_map[iu];
     p=1;
 
@@ -373,27 +366,21 @@ void fill_du(uint8_t prach_fmt)
 
     du[u] = ((p<(N_ZC>>1)) ? p : (N_ZC-p));
   }
-
 }
 
-uint8_t get_num_prach_tdd(module_id_t Mod_id)
-{
+uint8_t get_num_prach_tdd(module_id_t Mod_id) {
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][0]->frame_parms;
   return(tdd_preamble_map[fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][fp->tdd_config].num_prach);
 }
 
-uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index)
-{
+uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index) {
   LTE_DL_FRAME_PARMS *fp = &PHY_vars_UE_g[Mod_id][0]->frame_parms;
   return(tdd_preamble_map[fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][fp->tdd_config].map[tdd_map_index].f_ra);
 }
 
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type)
-{
-
+uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type) {
   if (frame_type == FDD) // FDD
     return(prach_ConfigIndex>>4);
-
   else {
     if (prach_ConfigIndex < 20)
       return (0);
@@ -411,21 +398,18 @@ uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type)
   }
 }
 
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, 
-			     uint8_t prach_ConfigIndex, 
-			     uint8_t n_ra_prboffset,
-			     uint8_t tdd_mapindex, uint16_t Nf) 
-{
+uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
+                             uint8_t prach_ConfigIndex,
+                             uint8_t n_ra_prboffset,
+                             uint8_t tdd_mapindex, uint16_t Nf) {
   lte_frame_type_t frame_type         = frame_parms->frame_type;
   uint8_t tdd_config         = frame_parms->tdd_config;
-
   uint8_t n_ra_prb;
   uint8_t f_ra,t1_ra;
   uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
   uint8_t Nsp=2;
 
   if (frame_type == TDD) { // TDD
-
     if (tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach==0) {
       LOG_E(PHY, "Illegal prach_ConfigIndex %"PRIu8"", prach_ConfigIndex);
       return(-1);
@@ -452,21 +436,19 @@ uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
         n_ra_prb = frame_parms->N_RB_UL - 6*(f_ra+1);
       }
     }
-  }
-  else { //FDD
+  } else { //FDD
     n_ra_prb = n_ra_prboffset;
   }
+
   return(n_ra_prb);
 }
 
-int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex,uint32_t frame, uint8_t subframe)
-{
+int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex,uint32_t frame, uint8_t subframe) {
   //  uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   uint8_t tdd_config         = frame_parms->tdd_config;
   uint8_t t0_ra;
   uint8_t t1_ra;
   uint8_t t2_ra;
-
   int prach_mask = 0;
 
   if (frame_parms->frame_type == FDD) { //FDD
@@ -479,68 +461,78 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
         return(0);
 
     switch (prach_ConfigIndex&0x1f) {
-    case 0:
-    case 3:
-      if (subframe==1) prach_mask = 1;
-      break;
+      case 0:
+      case 3:
+        if (subframe==1) prach_mask = 1;
 
-    case 1:
-    case 4:
-      if (subframe==4) prach_mask = 1;
-      break;
+        break;
 
-    case 2:
-    case 5:
-      if (subframe==7) prach_mask = 1;
-      break;
+      case 1:
+      case 4:
+        if (subframe==4) prach_mask = 1;
 
-    case 6:
-      if ((subframe==1) || (subframe==6)) prach_mask=1;
-      break;
+        break;
 
-    case 7:
-      if ((subframe==2) || (subframe==7)) prach_mask=1;
-      break;
+      case 2:
+      case 5:
+        if (subframe==7) prach_mask = 1;
 
-    case 8:
-      if ((subframe==3) || (subframe==8)) prach_mask=1;
-      break;
+        break;
 
-    case 9:
-      if ((subframe==1) || (subframe==4) || (subframe==7)) prach_mask=1;
-      break;
+      case 6:
+        if ((subframe==1) || (subframe==6)) prach_mask=1;
 
-    case 10:
-      if ((subframe==2) || (subframe==5) || (subframe==8)) prach_mask=1;
-      break;
+        break;
 
-    case 11:
-      if ((subframe==3) || (subframe==6) || (subframe==9)) prach_mask=1;
-      break;
+      case 7:
+        if ((subframe==2) || (subframe==7)) prach_mask=1;
 
-    case 12:
-      if ((subframe&1)==0) prach_mask=1;
-      break;
+        break;
 
-    case 13:
-      if ((subframe&1)==1) prach_mask=1;
-      break;
+      case 8:
+        if ((subframe==3) || (subframe==8)) prach_mask=1;
 
-    case 14:
-      prach_mask=1;
-      break;
+        break;
 
-    case 15:
-      if (subframe==9) prach_mask=1;
-      break;
+      case 9:
+        if ((subframe==1) || (subframe==4) || (subframe==7)) prach_mask=1;
+
+        break;
+
+      case 10:
+        if ((subframe==2) || (subframe==5) || (subframe==8)) prach_mask=1;
+
+        break;
+
+      case 11:
+        if ((subframe==3) || (subframe==6) || (subframe==9)) prach_mask=1;
+
+        break;
+
+      case 12:
+        if ((subframe&1)==0) prach_mask=1;
+
+        break;
+
+      case 13:
+        if ((subframe&1)==1) prach_mask=1;
+
+        break;
+
+      case 14:
+        prach_mask=1;
+        break;
+
+      case 15:
+        if (subframe==9) prach_mask=1;
+
+        break;
     }
   } else { // TDD
-
     AssertFatal(prach_ConfigIndex<64,
-		"Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
+                "Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
     AssertFatal(tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach>0,
-		"Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
-
+                "Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
     t0_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t0_ra;
     t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
     t2_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t2_ra;
@@ -557,7 +549,7 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
         (((subframe<5)&&(t1_ra==0)) ||                   // PRACH is in 1st half-frame
          (((subframe>4)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame
       if ((prach_ConfigIndex<48) &&                          // PRACH only in normal UL subframe
-	  (((subframe%5)-2)==t2_ra)) prach_mask=1;
+          (((subframe%5)-2)==t2_ra)) prach_mask=1;
       else if ((prach_ConfigIndex>47) && (((subframe%5)-1)==t2_ra)) prach_mask=1;      // PRACH can be in UpPTS
     }
   }
@@ -566,29 +558,25 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
 }
 
 int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe) {
-  
   uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   int prach_mask             = is_prach_subframe0(frame_parms, prach_ConfigIndex, frame, subframe);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   for (int i=0; i<4; i++) {
-    if (frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] == 1) 
+    if (frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] == 1)
       prach_mask |= (is_prach_subframe0(frame_parms, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i],
                                         frame, subframe) << (i+1));
   }
-#endif
+
   return(prach_mask);
 }
 
 
 void compute_prach_seq(uint16_t rootSequenceIndex,
-		       uint8_t prach_ConfigIndex,
-		       uint8_t zeroCorrelationZoneConfig,
-		       uint8_t highSpeedFlag,
-		       lte_frame_type_t frame_type,
-		       uint32_t X_u[64][839])
-{
-
+                       uint8_t prach_ConfigIndex,
+                       uint8_t zeroCorrelationZoneConfig,
+                       uint8_t highSpeedFlag,
+                       lte_frame_type_t frame_type,
+                       uint32_t X_u[64][839]) {
   // Compute DFT of x_u => X_u[k] = x_u(inv(u)*k)^* X_u[k] = exp(j\pi u*inv(u)*k*(inv(u)*k+1)/N_ZC)
   unsigned int k,inv_u,i,NCS=0,num_preambles;
   int N_ZC;
@@ -597,15 +585,12 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
   uint16_t u, preamble_offset;
   uint16_t n_shift_ra,n_shift_ra_bar, d_start,numshift;
   uint8_t not_found;
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);
-
 #ifdef PRACH_DEBUG
   LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach_fmt %d\n",zeroCorrelationZoneConfig, prach_fmt);
 #endif
-
   AssertFatal(prach_fmt<4,
-	      "PRACH sequence is only precomputed for prach_fmt<4 (have %"PRIu8")\n", prach_fmt );
+              "PRACH sequence is only precomputed for prach_fmt<4 (have %"PRIu8")\n", prach_fmt );
   N_ZC = (prach_fmt < 4) ? 839 : 139;
   //init_prach_tables(N_ZC); //moved to phy_init_lte_ue/eNB, since it takes to long in real-time
 
@@ -616,37 +601,30 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
     prach_root_sequence_map = prach_root_sequence_map4;
   }
 
-
 #ifdef PRACH_DEBUG
   LOG_I( PHY, "compute_prach_seq: done init prach_tables\n" );
 #endif
 
   if (highSpeedFlag== 0) {
-
 #ifdef PRACH_DEBUG
     LOG_I(PHY,"Low speed prach : NCS_config %d\n",zeroCorrelationZoneConfig);
 #endif
-
     AssertFatal(zeroCorrelationZoneConfig<=15,
-		"FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
+                "FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
     NCS = NCS_unrestricted[zeroCorrelationZoneConfig];
-
     num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
 
     if (NCS>0) num_preambles++;
 
     preamble_offset = 0;
   } else {
-
 #ifdef PRACH_DEBUG
     LOG_I( PHY, "high speed prach : NCS_config %"PRIu8"\n", zeroCorrelationZoneConfig );
 #endif
-
     AssertFatal(zeroCorrelationZoneConfig<=14,
-		"FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
+                "FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
     NCS = NCS_restricted[zeroCorrelationZoneConfig];
     fill_du(prach_fmt);
-
     num_preambles = 64; // compute ZC sequence for 64 possible roots
     // find first non-zero shift root (stored in preamble_offset)
     not_found = 1;
@@ -665,7 +643,6 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
       }
 
       u = prach_root_sequence_map[index];
-
       uint16_t n_group_ra = 0;
 
       if ( (du[u]<(N_ZC/3)) && (du[u]>=NCS) ) {
@@ -714,28 +691,22 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
     }
 
     u = prach_root_sequence_map[index];
-
     inv_u = ZC_inv[u]; // multiplicative inverse of u
-
 
     // X_u[0] stores the first ZC sequence where the root u has a non-zero number of shifts
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
 
     for (k=0; k<N_ZC; k++) {
       // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
-      X_u[i][k] = ((uint32_t*)ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
+      X_u[i][k] = ((uint32_t *)ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
     }
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_OUT);
-
 }
 
-void init_prach_tables(int N_ZC)
-{
-
+void init_prach_tables(int N_ZC) {
   int i,m;
-
   // Compute the modular multiplicative inverse 'iu' of u s.t. iu*u = 1 mod N_ZC
   ZC_inv[0] = 0;
   ZC_inv[1] = 1;

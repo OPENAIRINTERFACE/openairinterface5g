@@ -255,17 +255,11 @@ Msg1_transmitted(module_id_t module_idP, uint8_t CC_id,
               "Transmission on secondary CCs is not supported yet\n");
   // start contention resolution timer
   UE_mac_inst[module_idP].RA_attempt_number++;
-
-  if (opt_enabled) {
-    trace_pdu(DIRECTION_UPLINK, NULL, 0, module_idP, WS_NO_RNTI,
-              UE_mac_inst[module_idP].RA_prach_resources.
-              ra_PreambleIndex, UE_mac_inst[module_idP].txFrame,
-              UE_mac_inst[module_idP].txSubframe, 0,
-              UE_mac_inst[module_idP].RA_attempt_number);
-    LOG_D(OPT,
-          "[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n",
-          module_idP, frameP, 1, UE_mac_inst[module_idP].RA_Msg3_size);
-  }
+  trace_pdu(DIRECTION_UPLINK, NULL, 0, module_idP, WS_NO_RNTI,
+            UE_mac_inst[module_idP].RA_prach_resources.
+            ra_PreambleIndex, UE_mac_inst[module_idP].txFrame,
+            UE_mac_inst[module_idP].txSubframe, 0,
+            UE_mac_inst[module_idP].RA_attempt_number);
 }
 
 
@@ -280,19 +274,11 @@ Msg3_transmitted(module_id_t module_idP, uint8_t CC_id,
         module_idP, frameP);
   UE_mac_inst[module_idP].RA_contention_resolution_cnt = 0;
   UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 1;
-
-  if (opt_enabled) {    // msg3
-    trace_pdu(DIRECTION_UPLINK, &UE_mac_inst[module_idP].CCCH_pdu.payload[0],
-              UE_mac_inst[module_idP].RA_Msg3_size, module_idP, WS_C_RNTI,
-              UE_mac_inst[module_idP].crnti,
-              UE_mac_inst[module_idP].txFrame,
-              UE_mac_inst[module_idP].txSubframe, 0, 0);
-    LOG_D(OPT,
-          "[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n",
-          module_idP, frameP, UE_mac_inst[module_idP].crnti
-          /*UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex */
-          , UE_mac_inst[module_idP].RA_Msg3_size);
-  }
+  trace_pdu(DIRECTION_UPLINK, &UE_mac_inst[module_idP].CCCH_pdu.payload[0],
+            UE_mac_inst[module_idP].RA_Msg3_size, module_idP, WS_C_RNTI,
+            UE_mac_inst[module_idP].crnti,
+            UE_mac_inst[module_idP].txFrame,
+            UE_mac_inst[module_idP].txSubframe, 0, 0);
 }
 
 
@@ -404,10 +390,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
         LOG_USEDINLOG_VAR(mac_rlc_status_resp_t,rlc_status)=mac_rlc_status_ind(module_idP,
             UE_mac_inst[module_idP].crnti,
             eNB_indexP, frameP, subframeP,
-            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-            ,0, 0
-#endif
+            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,0, 0
                                                                               );
 
         if (UE_mac_inst[module_idP].crnti_before_ho)
@@ -424,11 +407,8 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                 dcch_header_len);
 
         sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6, //not used
-                                       (char *) &ulsch_buff[0]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                       ,0,
+                                       (char *) &ulsch_buff[0],0,
                                        0
-#endif
                                       );
 
         if(sdu_lengths > 0)

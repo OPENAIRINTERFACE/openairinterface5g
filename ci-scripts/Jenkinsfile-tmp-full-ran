@@ -54,6 +54,10 @@ def eNB_CommitID
 def eNB_AllowMergeRequestProcess = false
 def eNB_TargetBranch
 
+def doEpcLogCollection = true
+
+
+
 pipeline {
     agent {
         label pythonExecutor
@@ -61,7 +65,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock(extra: [[resource: ciSmartPhoneResource]], resource: ciSmartPhoneResource)
+        lock(extra: [[resource: oaiUEResource]], resource: ciSmartPhoneResource)
     }
 
     stages {
@@ -139,6 +143,11 @@ pipeline {
 
                     if (params.EPC_IPAddress == null) {
                         allParametersPresent = false
+                    } else {
+                        if (params.EPC_IPAddress == "none") {
+                            doEpcLogCollection = false
+                            echo "No EPC collections (ping/iperf/hss/mme/spgw)"
+                        }
                     }
                     if (params.EPC_Type == null) {
                         allParametersPresent = false
@@ -167,8 +176,8 @@ pipeline {
                             sh "git checkout -f ${eNB_CommitID}"
                         }
                     } else {
-                        echo "Some parameters are missing"
-                        sh "./ci-scripts/fail.sh"
+                        currentBuild.result = 'ABORTED'
+                        error('Stopping early because some parameters are missing')
                     }
                 }
             }
@@ -199,12 +208,12 @@ pipeline {
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                         ]) {
-                            sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
+                            sh "python3 main.py --mode=InitiateHtml --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
                             String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                             for (xmlFile in myXmlTestSuite) {
                             if (fileExists(xmlFile)) {
                                 try {
-                                    sh "python3 main.py --mode=TesteNB --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                                    sh "python3 main.py --mode=TesteNB --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
                                 } catch (Exception e) {
                                     currentBuild.result = 'FAILURE'
                                     buildStageStatus = false
@@ -299,6 +308,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (Ping)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -317,6 +329,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (Iperf)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -335,6 +350,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (SPGW)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -353,6 +371,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (MME)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -371,6 +392,9 @@ pipeline {
                     }
                 }
                 stage('Log Collection (HSS)') {
+                    when {
+                       expression {doEpcLogCollection}
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']

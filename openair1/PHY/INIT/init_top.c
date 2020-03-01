@@ -19,7 +19,7 @@
         contact@openairinterface.org
 */
 
-/*!\brief Initilization and reconfiguration routines for LTE PHY */
+/*!\brief Initialization and reconfiguration routines for LTE PHY */
 #include "phy_init.h"
 #include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_extern.h"

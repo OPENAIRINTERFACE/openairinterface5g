@@ -36,7 +36,7 @@
 #include "otg_externs.h"
 
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 
 
 // char string for payload gen
@@ -224,9 +224,9 @@ int size_dist(
   return size_data;
 }
 
+
 int adjust_size(int size)
 {
-
   if (size<PAYLOAD_MIN) {
     LOG_W(OTG,"Packet Size=%d out of range, size=%d \n", size, PAYLOAD_MIN);
     size=PAYLOAD_MIN;
@@ -237,9 +237,6 @@ int adjust_size(int size)
 
   return(size);
 }
-
-
-
 
 
 unsigned char *packet_gen(
@@ -391,22 +388,20 @@ unsigned char *packet_gen(
 }
 
 
-
 unsigned char *packet_gen_multicast(
   const int src_instance,
   const int dst_instance,
   const int ctime,
   unsigned int * const pkt_size)
 {
-
-  *pkt_size =0;
-  unsigned int size=0;
-  unsigned int buffer_size =0;
+  *pkt_size = 0;
+  unsigned int size = 0;
+  unsigned int buffer_size = 0;
   char *payload=NULL;
   char *header=NULL;
-  unsigned int flag;
-  int app,seq_num=0;
-  int otg_hdr_size= sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
+  unsigned int flag = 0;
+  int app, seq_num = 0;
+  int otg_hdr_size = sizeof(otg_hdr_info_t) + sizeof(otg_hdr_t);
 
   set_ctime(ctime); // fixme: this should be done separetly from packet_gen and packet_gen_multicast
 
@@ -488,7 +483,9 @@ unsigned char *packet_gen_multicast(
              payload,
              buffer_size,
              0/*g_otg_multicast->application_type[src_instance][dst][app]*/,
-             flag, 0, ctime,
+             flag,
+             0,
+             ctime,
              seq_num,
              0,
              HDR_IP_v4_MIN+HDR_UDP,

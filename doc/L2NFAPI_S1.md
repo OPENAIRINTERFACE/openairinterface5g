@@ -246,7 +246,7 @@ In the first terminal (the one you used to build the eNB):
 ```bash
 $ ssh sudousername@machineB
 $ cd enb_folder/cmake_targets
-$ sudo -E ./lte_build_oai/build/lte-softmodem -O ../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf > enb.log 2>&1
+$ sudo -E ./ran_build/build/lte-softmodem -O ../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf > enb.log 2>&1
 ```
 
 If you don't use redirection, you can test but many logs are printed on the console and this may affect performance of the L2-nFAPI simulator.
@@ -261,9 +261,9 @@ In the second terminal (the one you used to build the UE):
 $ ssh sudousername@machineB
 $ cd ue_folder/cmake_targets
 # Test 64 UEs, 64 threads in FDD mode
-$ sudo -E ./lte_build_oai/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums-ue-thread 64 > ue.log 2>&1
+$ sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums-ue-thread 64 > ue.log 2>&1
 # Test 64 UEs, 64 threads in TDD mode
-$ sudo -E ./lte_build_oai/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums-ue-thread 64 -T 1 > ue.log 2>&1
+$ sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums-ue-thread 64 -T 1 > ue.log 2>&1
 # The "-T 1" option means TDD config
 ```
 

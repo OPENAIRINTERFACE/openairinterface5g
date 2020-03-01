@@ -94,7 +94,7 @@ function patch_rrc()
   case "$version" in
     Rel14 )
       echo "patching RRC files release 14"
-      apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
+      #apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
       ;;
     Rel10 )
       echo "patching RRC files release 10"
@@ -109,12 +109,31 @@ function patch_rrc()
   esac
 }
 
+function patch_nr_rrc()
+{
+  local directory="$1"
+  local version="$2"
+
+  case "$version" in
+    NR_Rel15 )
+      echo "patching NR_RRC files release 15"
+      apply_patches "$directory" NR_RRC_Rel15 ${#NR_RRC_Rel15[*]}
+      ;;
+    * )
+      error unknwon/unhandled NR_RRC version \'"$version"\'
+      ;;
+  esac
+}
+
+
 function patch_x2ap()
 {
   local directory="$1"
   local version="$2"
 
   case "$version" in
+    R14 )
+      ;;
     R11 )
       echo "patching X2AP files release 11.2"
       apply_patches "$directory" X2AP_Rel11_2 ${#X2AP_Rel11_2[*]}
@@ -131,6 +150,8 @@ function patch_s1ap()
   local version="$2"
 
   case "$version" in
+    R14 )
+      ;;
     R10 )
       #nothing to do anymore (fixes went to asn1c)
       ;;
@@ -176,6 +197,9 @@ function main()
   case "$module" in
     RRC )
       patch_rrc "$directory" "$version"
+      ;;
+    NR_RRC )
+      patch_nr_rrc "$directory" "$version"
       ;;
     X2AP )
       patch_x2ap "$directory" "$version"

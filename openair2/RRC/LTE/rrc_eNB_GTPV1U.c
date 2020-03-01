@@ -112,7 +112,7 @@ gtpv_data_req(
     LOG_I(GTPU,"gtpv_data_req sdu_sizeP == 0");
     return FALSE;
   }
-  LOG_D(GTPU,"gtpv_data_req ue rnti %x sdu_sizeP %d rb id %d", ctxt_pP->rnti, sdu_sizeP, rb_idP);
+  LOG_D(GTPU,"gtpv_data_req ue rnti %x sdu_sizeP %d rb id %ld", ctxt_pP->rnti, sdu_sizeP, rb_idP);
 #if defined(ENABLE_ITTI)
   {
     MessageDef *message_p;

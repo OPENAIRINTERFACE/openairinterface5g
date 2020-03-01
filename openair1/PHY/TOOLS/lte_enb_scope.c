@@ -40,11 +40,11 @@
 // at eNB 0, an UL scope for every UE
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
-char title[255];
-unsigned char                   scope_enb_num_ue = 2;
-static pthread_t                forms_thread; //xforms
-int otg_enabled=0;
+FD_stats_form        *form_stats=NULL,*form_stats_l2=NULL;
+char                 title[255];
+unsigned char        scope_enb_num_ue = 2;
+static pthread_t     forms_thread; //xforms
+int                  otg_enabled=0;
 
 void reset_stats(FL_OBJECT *button, long arg) {
   int i,j,k;
@@ -67,9 +67,6 @@ void reset_stats(FL_OBJECT *button, long arg) {
     }
   }
 }
-
-
-
 
 
 static void *scope_thread_eNB(void *arg) {

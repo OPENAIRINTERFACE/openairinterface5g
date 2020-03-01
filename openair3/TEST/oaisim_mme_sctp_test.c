@@ -44,9 +44,7 @@ int recv_callback(uint32_t  assocId,
                   uint8_t  *buffer,
                   uint32_t  length)
 {
-
   free(buffer);
-
   return 0;
 }
 
@@ -55,14 +53,12 @@ int sctp_connected(void     *args,
                    uint32_t  instreams,
                    uint32_t  outstreams)
 {
-
   return 0;
 }
 
 int main(int argc, char *argv[])
 {
   asn_enc_rval_t retVal;
-
   int i;
 
   for (i = 0; i < nb_eNB; i++) {
@@ -74,6 +70,5 @@ int main(int argc, char *argv[])
   }
 
   sctp_terminate();
-
   return(0);
 }

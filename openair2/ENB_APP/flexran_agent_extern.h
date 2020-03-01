@@ -35,6 +35,7 @@
 #include "flexran_agent_mac_defs.h"
 #include "flexran_agent_rrc_defs.h"
 #include "flexran_agent_pdcp_defs.h"
+#include "flexran_agent_s1ap_defs.h"
 
 /* Control module interface for the communication of the PHY control module with the agent */
 AGENT_PHY_xface *flexran_agent_get_phy_xface(mid_t mod_id);
@@ -47,6 +48,9 @@ AGENT_RRC_xface *flexran_agent_get_rrc_xface(mid_t mod_id);
 
 /* Control module interface for the communication of the RRC Control Module with the agent */
 AGENT_PDCP_xface *flexran_agent_get_pdcp_xface(mid_t mod_id);
+
+/* Control module interface for the communication of the S1AP Control Module with the agent */
+AGENT_S1AP_xface *flexran_agent_get_s1ap_xface(mid_t mod_id);
 
 /* Requried to know which UEs had a harq updated over some subframe */
 extern int harq_pid_updated[NUM_MAX_UE][8];

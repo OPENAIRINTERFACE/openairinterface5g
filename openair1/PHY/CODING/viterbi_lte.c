@@ -43,15 +43,12 @@
 
 extern uint8_t ccodelte_table[128],ccodelte_table_rev[128];
 
-
-
-
 static int8_t m0_table[64*16*16*16] __attribute__ ((aligned(16)));
 static int8_t m1_table[64*16*16*16] __attribute__ ((aligned(16)));
 
 
 // Set up Viterbi tables for SSE2 implementation
-void phy_generate_viterbi_tables_lte()
+void phy_generate_viterbi_tables_lte( void )
 {
 
   int8_t w[8],in0,in1,in2;
@@ -474,5 +471,3 @@ int main(int argc, char **argv)
 }
 
 #endif // TEST_DEBUG
-
-

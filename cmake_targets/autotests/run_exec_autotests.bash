@@ -303,8 +303,9 @@ function test_compile_and_run() {
       do
         global_result=1
         result_string=""
-        PROPER_DESC=`echo ${desc_array[$tags_array_index]} | sed -e "s@^.*lsim.*est case.*(Test@Test@" -e "s@^ *(@@" -e "s/),$//"`
-        
+        PROPER_DESC=`echo ${desc_array[$tags_array_index]} | sed -e "s@^.*Test cases.*(Test@Test@" -e "s@^ *(@@" -e"s/)$//" -e "s/),$//"`
+        echo_info "$PROPER_DESC"
+
        for (( run_index=1; run_index <= $nruns; run_index++ ))
         do
           temp_exec_log=$log_dir/test.$test_case_name.${tags_array[$tags_array_index]}.run_$run_index

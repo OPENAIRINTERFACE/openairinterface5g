@@ -149,13 +149,11 @@ s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* eNBConfigurationTransfer */
   { 0, 0, 0 }, /* MMEConfigurationTransfer */
   { 0, 0, 0 }, /* CellTrafficTrace */
-#if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0))
   { 0, 0, 0 }, /* Kill */
   { 0, 0, 0 }, /* DownlinkUEAssociatedLPPaTransport  */
   { 0, 0, 0 }, /* UplinkUEAssociatedLPPaTransport */
   { 0, 0, 0 }, /* DownlinkNonUEAssociatedLPPaTransport */
   { 0, 0, 0 }, /* UplinkNonUEAssociatedLPPaTransport */
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0)) */
 };
 char *s1ap_direction2String(int s1ap_dir) {
   static char *s1ap_direction_String[] = {
@@ -592,12 +590,9 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
           case S1AP_CauseRadioNetwork_not_supported_QCI_value:
             S1AP_WARN("Received S1 Error indication S1AP_CauseRadioNetwork_not_supported_QCI_value\n");
             break;
-#if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0))
-
           case S1AP_CauseRadioNetwork_invalid_CSG_Id:
             S1AP_WARN("Received S1 Error indication S1AP_CauseRadioNetwork_invals1ap_id_CSG_Id\n");
             break;
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0)) */
 
           default:
             S1AP_WARN("Received S1 Error indication cause radio network case not handled\n");
@@ -638,12 +633,9 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
           case S1AP_CauseNas_unspecified:
             S1AP_WARN("Received S1 Error indication S1AP_CauseNas_unspecified\n");
             break;
-#if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0))
-
           case S1AP_CauseNas_csg_subscription_expiry:
             S1AP_WARN("Received S1 Error indication S1AP_CauseNas_csg_subscription_expiry\n");
             break;
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0)) */
 
           default:
             S1AP_WARN("Received S1 Error indication cause nas case not handled\n");
@@ -1414,6 +1406,7 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
     S1AP_ERROR("[SCTP %d] Received E-RAB release command for non existing MME context\n", assoc_id);
     return -1;
   }
+
 
   /* id-MME-UE-S1AP-ID */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_E_RABReleaseCommandIEs_t, ie, container,

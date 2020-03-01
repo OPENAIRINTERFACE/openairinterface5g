@@ -6,7 +6,6 @@ import "header.proto";
 import "time_common.proto";
 import "config_messages.proto";
 import "controller_commands.proto";
-import "control_delegation.proto";
 import "config_common.proto";
 
 message flexran_message {
@@ -75,12 +74,22 @@ enum flex_bs_capability {
     PDCP  = 5;
     SDAP  = 6;
     RRC   = 7;
+    S1AP  = 8;
+}
+
+enum flex_bs_split {
+  F1    = 0;
+  nFAPI = 1;
+  IF4   = 2;
+  IF4p5 = 3;
+  IF5   = 4;
 }
 
 message flex_hello {
     optional flex_header header = 1;
     optional uint64 bs_id = 2;        // Unique id to distinguish the eNB
     repeated flex_bs_capability capabilities = 3;
+    repeated flex_bs_split splits = 4;
 }
 
 message flex_echo_request {
@@ -147,6 +156,7 @@ message flex_enb_config_reply {
 	optional flex_header header = 1;
 	repeated flex_cell_config cell_config = 3;
         optional uint32 device_spec = 4;
+        optional flex_s1ap_config s1ap = 5;
 }
 
 message flex_ue_config_request {

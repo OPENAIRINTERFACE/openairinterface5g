@@ -31,9 +31,8 @@
 //#include <netinet/in.h>
 #include <netdb.h>
 #ifndef CONFIG_SMBV
-#include "../impl_defs_lte.h"
 #include "../impl_defs_top.h"
-#include "../defs.h"
+#include "../defs_eNB.h"
 #include "../LTE_TRANSPORT/defs.h"
 #else
 #define msg printf

@@ -110,13 +110,12 @@ void nas_COMMON_receive(uint16_t dlen,
 #ifdef NAS_ADDRESS_FIX
       // Make the third byte of both the source and destination equal to the fourth of the destination
 
-
       unsigned char * ifaddr, *saddr, daddr;
+      uint32_t odaddr = 0, osaddr;
       daddr = (unsigned char *)&((struct iphdr *)skb->data)->daddr;
       odaddr = ((struct iphdr *)skb->data)->daddr;
-      //    sn = addr[3];
+      //sn = addr[3];
       saddr = (unsigned char *)&((struct iphdr *)skb->data)->saddr;
-      uint32_t odaddr,osaddr;
       osaddr = ((struct iphdr *)skb->data)->saddr;
 
       if (daddr[0] == saddr[0]) {// same network
@@ -387,6 +386,9 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   pdcph.data_size  = skb->len;
   pdcph.rb_id      = (gc->rb)->rab_id;
   pdcph.inst       = inst;
+  pdcph.sourceL2Id = 0;
+  pdcph.destinationL2Id = 0;
+
 
 
 #ifdef PDCP_USE_NETLINK
@@ -405,7 +407,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 
   if (bytes_wrote != NAS_PDCPH_SIZE) {
     printk("NAS_COMMON_QOS_SEND: problem while writing PDCP's header (bytes wrote = %d )\n",bytes_wrote);
-    printk("rb_id %d, Wrote %d, Header Size %lu\n", pdcph.rb_id , bytes_wrote, NAS_PDCPH_SIZE);
+    printk("rb_id %ld, Wrote %d, Header Size %lu\n", pdcph.rb_id , bytes_wrote, NAS_PDCPH_SIZE);
 #ifndef PDCP_USE_NETLINK
     rtf_reset(NAS2PDCP_FIFO);
 #endif //PDCP_USE_NETLINK
@@ -419,7 +421,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 #endif //PDCP_USE_NETLINK
 
   if (bytes_wrote != skb->len+NAS_PDCPH_SIZE) {
-    printk("NAS_COMMON_QOS_SEND: Inst %d, RB_ID %d: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %lu\n",
+    printk("NAS_COMMON_QOS_SEND: Inst %d, RB_ID %ld: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %lu\n",
            inst,
            pdcph.rb_id,
            bytes_wrote,

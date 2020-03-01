@@ -37,9 +37,9 @@
 //#define DEBUG_DRS
 
 int generate_drs_pusch(PHY_VARS_UE *ue,
-		       UE_rxtx_proc_t *proc,
-		       LTE_DL_FRAME_PARMS *frame_parms,
-		       int32_t **txdataF,
+                       UE_rxtx_proc_t *proc,
+                       LTE_DL_FRAME_PARMS *frame_parms,
+                       int32_t **txdataF,
                        uint8_t eNB_id,
                        short amp,
                        unsigned int subframe,
@@ -62,11 +62,10 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   LTE_DL_FRAME_PARMS *fp = (ue==NULL) ? frame_parms : &ue->frame_parms;
   int32_t *txF = (ue==NULL) ? txdataF[ant] : ue->common_vars.txdataF[ant];
   uint32_t u,v,alpha_ind;
-  uint32_t u0 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-  uint32_t u1 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
-  uint32_t v0 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-  uint32_t v1 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
-
+  uint32_t  u0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
+  uint32_t  u1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  uint32_t  v0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  uint32_t  v1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   int32_t ref_re,ref_im;
   uint8_t harq_pid = (proc == NULL) ? 0: subframe2harq_pid(fp,proc->frame_tx,subframe);
 
@@ -82,10 +81,6 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 		     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
 		     ((ue->ulsch[0]->cooperation_flag==2)?10:0)+
 		     ant*6) % 12;
-    u0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-    u1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
-    v0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-    v1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   }
 
   
@@ -181,4 +176,3 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
   return(0);
 }
-

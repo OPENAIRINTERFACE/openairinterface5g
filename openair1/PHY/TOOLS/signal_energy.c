@@ -20,7 +20,7 @@
  */
 
 #include "tools_defs.h"
-
+#include "PHY/impl_defs_top.h"
 #include "PHY/sse_intrin.h"
 
 // Compute Energy of a complex signal vector, removing the DC component!
@@ -97,6 +97,7 @@ int32_t signal_energy(int32_t *input,uint32_t length)
   temp/=length;
   temp<<=shift;   // this is the average of x^2
 
+
   // now remove the DC component
 
 
@@ -106,6 +107,52 @@ int32_t signal_energy(int32_t *input,uint32_t length)
   temp2 = _m_to_int(mm2);
   temp2/=(length*length);
   //  temp2<<=(2*shift_DC);
+  temp -= temp2;
+
+  _mm_empty();
+  _m_empty();
+
+  return((temp>0)?temp:1);
+}
+
+int32_t signal_energy_amp_shift(int32_t *input,uint32_t length)
+{
+
+  int32_t i;
+  int32_t temp,temp2;
+  register __m64 mm0,mm1,mm2,mm3;
+  __m64 *in = (__m64 *)input;
+
+  mm0 = _mm_setzero_si64();
+  mm3 = _mm_setzero_si64();
+
+  for (i=0; i<length>>1; i++) {
+
+    mm1 = in[i];
+    mm2 = mm1;
+    mm1 = _m_pmaddwd(mm1,mm1);
+    mm1 = _m_psradi(mm1,AMP_SHIFT);// shift any 32 bits blocs of the word by the value shift_p9
+    mm0 = _m_paddd(mm0,mm1);// add the two 64 bits words 4 bytes by 4 bytes
+    mm3 = _m_paddw(mm3,mm2);// add the two 64 bits words 2 bytes by 2 bytes
+  }
+
+  mm1 = mm0;
+  mm0 = _m_psrlqi(mm0,32);
+  mm0 = _m_paddd(mm0,mm1);
+  temp = _m_to_int(mm0);
+  temp/=length; // this is the average of x^2
+
+
+  // now remove the DC component
+
+
+  mm2 = _m_psrlqi(mm3,32);
+  mm2 = _m_paddw(mm2,mm3);
+  mm2 = _m_pmaddwd(mm2,mm2);
+  mm2 = _m_psradi(mm2,AMP_SHIFT); // fixed point representation of elements
+  temp2 = _m_to_int(mm2);
+  temp2/=(length*length);
+
   temp -= temp2;
 
   _mm_empty();

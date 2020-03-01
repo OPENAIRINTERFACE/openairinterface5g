@@ -1,0 +1,376 @@
+#!/bin/groovy
+/*
+* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The OpenAirInterface Software Alliance licenses this file to You under
+* the OAI Public License, Version 1.1  (the "License"); you may not use this file
+* except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.openairinterface.org/?page_id=698
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*-------------------------------------------------------------------------------
+* For more information about the OpenAirInterface (OAI) Software Alliance:
+*      contact@openairinterface.org
+*/
+
+
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+    if (params.pipelineUsesSlack != null) {
+        if (params.pipelineUsesSlack) {
+            slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
+        }
+    }
+}
+
+// Location of the test XML file to be run
+def testXMLFile = params.pythonTestXmlFile
+def mainPythonAllXmlFiles = ""
+def buildStageStatus = true
+
+// Name of the phone resource
+def ciUSRPsResource = params.USRPsResource
+
+// Terminate Status
+def termUE = 0
+def termENB = 1
+def termStatusArray = new Boolean[2]
+termStatusArray[termUE] = false
+termStatusArray[termENB] = false
+
+// Global Parameters.
+def eNB_Repository
+def eNB_Branch
+def eNB_CommitID
+def eNB_AllowMergeRequestProcess = false
+def eNB_TargetBranch = "develop-nr"
+def GIT_COMMIT_AUTHOR
+def GIT_COMMIT_EMAIL
+def testStageName
+// Global Parameters not to break the main.py command line and code.
+def ADB_IPAddress = "none"
+def ADB_Username = "none"
+def ADB_Password = "none"
+def EPC_IPAddress = "none"
+def EPC_Username = "none"
+def EPC_Password = "none"
+
+
+
+pipeline {
+    agent {
+        label pythonExecutor 
+    }
+    options {
+        disableConcurrentBuilds()
+        gitLabConnection('OAI GitLab')
+        ansiColor('xterm')
+	lock (ciUSRPsResource)
+    }
+
+    stages {
+        stage ('Retrieve latest from branch') {
+            steps {
+	        script {
+	            checkout([$class: 'GitSCM', branches: [[name: "${params.Branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://gitlab.eurecom.fr/oai/openairinterface5g.git']]])
+	            sh "git clean -x -d -ff"
+	            sh "git log -n1"
+	        }
+            }
+        }
+        stage ("print latest commit info") {
+            steps {
+        	    script {
+        	        echo "Building on: "
+        	        echo "  Repository -- ${GIT_URL}"
+        	        echo "  Branch -- ${GIT_BRANCH}"
+        	        echo "  Commit -- ${GIT_COMMIT}"
+        	    }
+            }
+        }
+        stage ("Verify Parameters") {
+            steps {
+                script {
+                    JOB_TIMESTAMP = sh returnStdout: true, script: 'date --utc --rfc-3339=seconds | sed -e "s#+00:00##"'
+                    JOB_TIMESTAMP = JOB_TIMESTAMP.trim()
+
+                    echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+                    def allParametersPresent = true
+
+                    // It is already too late to check it
+                    if (params.pythonExecutor != null) {
+                       echo "eNB CI executor node  :   ${pythonExecutor}"
+                    }
+                    if (params.eNB_Repository == null) {
+                        eNB_Repository = GIT_URL 
+                    } else {
+                        eNB_Repository = params.eNB_Repository
+                    }
+                    echo "eNB_Repository = ${eNB_Repository}"
+                    if (params.eNB_Branch== null) {
+                        eNB_Branch = GIT_BRANCH
+                    } else {
+                        eNB_Branch = params.eNB_Branch
+                    }
+                    echo "eNB_Branch = ${eNB_Branch}"
+                    if (params.eNB_CommitID == null) {
+                        eNB_CommitID = GIT_COMMIT 
+                    } else {
+                        eNB_CommitID = params.eNB_CommitID
+                    }
+                    echo "eNB_CommitID = ${eNB_CommitID}"
+                    // If not present picking a default Stage Name
+                    if (params.pipelineTestStageName == null) {
+                        // picking default
+                        testStageName = 'Template Test Stage'
+                    } else {
+			testStageName = params.pipelineTestStageName
+	            }
+
+                    if (params.USRPsResource == null) {
+                        allParametersPresent = false
+                    }
+	
+                    if (params.eNB_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.UE_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.eNB_SourceCodePath == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.eNB_Credentials == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.UE_Credentials == null) {
+                        allParametersPresent = false
+                    }
+                    GIT_COMMIT_AUTHOR = sh (
+                        script: 'git show -s --pretty=%an',
+                        returnStdout: true
+                    ).trim()
+                    echo "The author of the commit is: ${GIT_COMMIT_AUTHOR}"
+                    GIT_COMMIT_EMAIL = sh (
+                        script: 'git show -s --pretty=%ae',
+                        returnStdout: true
+                    ).trim()
+                    echo "The email of the author is: ${GIT_COMMIT_EMAIL}"
+                    if (allParametersPresent) {
+                        echo "All parameters are present"
+                    } else {
+                        echo "Some parameters are missing"
+                        sh "./ci-scripts/fail.sh"
+                    }
+                }
+            }
+        }
+
+        stage ("Build and Test") {
+            steps {
+        	    script {
+        	        dir ('ci-scripts') {
+                        // If not present picking a default XML file
+                        if (params.pythonTestXmlFile == null) {
+                            // picking default
+                            testXMLFile = 'xml_files/gnb_usrp_build.xml'
+                            echo "Test XML file(default):   ${testXMLFile}"
+                            mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
+                        } else {
+                            String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                            for (xmlFile in myXmlTestSuite) {
+                                if (fileExists(xmlFile)) {
+                            	mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                            	echo "Test XML file         :   ${xmlFile}"
+                                }
+                            }
+                        }
+        	    	withCredentials([
+        	    	    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+        	    	    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
+        	    	]) {
+        	    	    sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} ${mainPythonAllXmlFiles}"
+        	    	    String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+        	    	    for (xmlFile in myXmlTestSuite) {
+        	    	    if (fileExists(xmlFile)) {
+        	    	        try {
+        	    	            sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --UEIPAddress=${params.eNB_IPAddress} --UEUserName=${eNB_Username} --UEPassword=${eNB_Password} --UESourceCodePath=${params.eNB_SourceCodePath} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --EPCIPAddress=${EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=/tmp/${EPC_Username} --EPCType=ltebox --XMLTestFile=${xmlFile}"
+        	    	        } catch (Exception e) {
+        	    	            currentBuild.result = 'FAILURE'
+        	    	            buildStageStatus = false
+        	    	        }
+        	    	    }
+        	    	    }
+                            sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
+        	        }
+        	    }
+                }
+            }
+	}	
+	
+        stage ("Terminate") {
+            parallel {
+        	stage('Terminate NR UE') {
+        	    steps {
+        		echo '\u2705 \u001B[32mTerminate NR UE\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateOAIUE --UEIPAddress=${params.eNB_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password}"
+                        }
+        	    }
+        	    post {
+        		success {
+        		    script {
+        			termStatusArray[termUE] = true
+        		    }
+        		}
+        	    }
+        	}
+       	    stage('Terminate NR eNB') {
+       	        steps {
+		    echo '\u2705 \u001B[32mTerminate NR eNB\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateeNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
+                        }
+        	      }
+                    post {
+        	        success {
+                            script {
+        		        termStatusArray[termENB] = true
+        		    }
+                        }
+        	    }
+                }
+            }
+        }
+
+        stage('Log Collection') {
+            parallel {
+        	stage('Log Collection (gNB and NR UE - Build)') {
+        	    steps {
+        		withCredentials([
+        		     [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+        		]) {
+        		    echo '\u2705 \u001B[32mLog Collection (gNB and NR UE - Build)\u001B[0m'
+        		    sh "python3 ci-scripts/main.py --mode=LogCollectBuild --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+        
+        		    echo '\u2705 \u001B[32mLog Transfer (gNB and NR UE - Build)\u001B[0m'
+        		    sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+        		}
+        		script {
+        		    if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+        			archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+        		    }
+        		}
+        	    }
+        	}
+        	stage('Log Collection (gNB - Run)') {
+        	    steps {
+        		withCredentials([
+        		     [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+        		]) {
+        		    echo '\u2705 \u001B[32mLog Collection (gNB - Run)\u001B[0m'
+        		    sh "python3 ci-scripts/main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+        
+        		    echo '\u2705 \u001B[32mLog Transfer (gNB - Run)\u001B[0m'
+        		    sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/enb.log.zip ./enb.log.${env.BUILD_ID}.zip || true"
+        		}
+        		script {
+        		    if(fileExists("enb.log.${env.BUILD_ID}.zip")) {
+        			archiveArtifacts "enb.log.${env.BUILD_ID}.zip"
+        		    }
+        		    if(fileExists("ci-scripts/test_results.html")) {
+        			sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
+        			sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' test_results-${JOB_NAME}.html"
+        			archiveArtifacts "test_results-${JOB_NAME}.html"
+        		    }
+        		}
+        	    }
+        	}
+        	stage('Log Collection (NR UE - Run)') {
+        	    steps {
+        		withCredentials([
+        		     [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+        		]) {
+        		    echo '\u2705 \u001B[32mLog Collection (gNB - Run)\u001B[0m'
+        		    sh "python3 ci-scripts/main.py --mode=LogCollectOAIUE --UEIPAddress=${params.eNB_IPAddress} --UEUserName=${eNB_Username} --UEPassword=${eNB_Password} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --UESourceCodePath=${params.eNB_SourceCodePath}"
+        
+        		    echo '\u2705 \u001B[32mLog Transfer (gNB - Run)\u001B[0m'
+        		    sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/ue.log.zip ./ue.log.${env.BUILD_ID}.zip || true"
+        		}
+        		script {
+        		    if(fileExists("ue.log.${env.BUILD_ID}.zip")) {
+        			archiveArtifacts "ue.log.${env.BUILD_ID}.zip"
+        		    }
+        		}
+        	    }
+        	}
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                if ("MERGE".equals(env.gitlabActionType)) {
+                    echo "This is a MERGE event"
+                } else {
+                    gitlabCommitStatus(name: "Test-gNB-nrUE") {
+                        if ((currentBuild.result == null) || (currentBuild.result == 'SUCCESS')) {
+                            echo "Setting the gitlab commit status to pass"
+                        } else {
+                            sh "./ci-scripts/fail.sh"
+                        }
+                    }
+                }
+                emailext attachmentsPattern: '*results*.html',
+                     body: '''Hi,
+Here are attached HTML report files for $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!
+
+Regards,
+OAI CI Team''',
+                     replyTo: 'no-reply@openairinterface.org',
+                     subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
+                     to: GIT_COMMIT_EMAIL
+	    }
+        }
+        success {
+            script {
+                def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
+                if ("MERGE".equals(env.gitlabActionType)) {
+                    echo "This is a MERGE event"
+                    //addGitLabMRComment comment: message
+                    def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+                    sendSocialMediaMessage('ci-test', 'good', message2)
+                } else {
+                    sendSocialMediaMessage('ci-test', 'good', message)
+                }
+            }
+        }
+        failure {
+            script {
+                def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
+                if ("MERGE".equals(env.gitlabActionType)) {
+                    echo "This is a MERGE event"
+                    //addGitLabMRComment comment: message
+                    def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+                    sendSocialMediaMessage('ci-test', 'danger', message2)
+                } else {
+                    sendSocialMediaMessage('ci-test', 'danger', message)
+                }
+            }
+        }
+    }
+}
+

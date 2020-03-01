@@ -103,7 +103,7 @@ int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_ord
 
 
 #ifndef modOrder
-#define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
+  #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
 #endif
 
 /** \fn uint8_t I_TBS2I_MCS(uint8_t I_TBS);
@@ -132,10 +132,10 @@ uint8_t SE2I_TBS(float SE,
     @returns 0 on success*/
 
 int generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
-		 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-		 int *txdataF,
-		 int16_t amp,
-		 uint32_t subframe);
+                 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
+                 int *txdataF,
+                 int16_t amp,
+                 uint32_t subframe);
 
 
 /*!
@@ -149,7 +149,7 @@ int generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
 void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 
 
-int32_t compareints (const void * a, const void * b);
+int32_t compareints (const void *a, const void *b);
 
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 
@@ -240,11 +240,11 @@ uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
   @param Xu DFT output
 */
 void compute_prach_seq(uint16_t rootSequenceIndex,
-		       uint8_t prach_ConfigIndex,
-		       uint8_t zeroCorrelationZoneConfig,
-		       uint8_t highSpeedFlag,
-		       lte_frame_type_t frame_type,
-		       uint32_t X_u[64][839]);
+                       uint8_t prach_ConfigIndex,
+                       uint8_t zeroCorrelationZoneConfig,
+                       uint8_t highSpeedFlag,
+                       lte_frame_type_t frame_type,
+                       uint32_t X_u[64][839]);
 
 
 void init_prach_tables(int N_ZC);
@@ -258,7 +258,7 @@ void init_prach_tables(int N_ZC);
 */
 int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 /*!
   \brief Return the status of CAS in this frame/subframe
   @param frame Frame index
@@ -276,7 +276,7 @@ int is_fembms_cas_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *fram
   @returns 1 if subframe is for MBSFN
 */
 int is_fembms_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
-#endif
+
 
 
 
@@ -302,10 +302,10 @@ void init_scrambling_lut(void);
 void init_unscrambling_lut(void);
 
 
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, 
-			     uint8_t prach_ConfigIndex, 
-			     uint8_t n_ra_prboffset,
-			     uint8_t tdd_mapindex, uint16_t Nf);
+uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
+                             uint8_t prach_ConfigIndex,
+                             uint8_t n_ra_prboffset,
+                             uint8_t tdd_mapindex, uint16_t Nf);
 
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);

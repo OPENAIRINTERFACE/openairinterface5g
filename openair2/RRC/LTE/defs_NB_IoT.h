@@ -42,7 +42,7 @@
 #include "rrc_types_NB_IoT.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "openairinterface5g_limits.h"
 
 #include "COMMON/mac_rrc_primitives.h"
 
@@ -110,9 +110,7 @@ typedef struct UE_RRC_INFO_NB_IoT_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
-#endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t handoverTarget;
   //HO_STATE_t ho_state;
@@ -475,79 +473,10 @@ typedef struct UE_RRC_INST_NB_IoT_s {
   SRB_INFO_TABLE_ENTRY_NB_IoT     Srb1[NB_CNX_UE];
   SRB_INFO_TABLE_ENTRY_NB_IoT     Srb2[NB_CNX_UE];
   HANDOVER_INFO_UE_NB_IoT         HandoverInfoUe;
-  /*
-  uint8_t *SIB1[NB_CNX_UE];
-  uint8_t sizeof_SIB1[NB_CNX_UE];
-  uint8_t *SI[NB_CNX_UE];
-  uint8_t sizeof_SI[NB_CNX_UE];
-  uint8_t SIB1Status[NB_CNX_UE];
-  uint8_t SIStatus[NB_CNX_UE];
-  SystemInformationBlockType1_t *sib1[NB_CNX_UE];
-  SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
-  */
   LTE_SystemInformationBlockType2_t *sib2[NB_CNX_UE];
-  /*
-  SystemInformationBlockType3_t *sib3[NB_CNX_UE];
-  SystemInformationBlockType4_t *sib4[NB_CNX_UE];
-  SystemInformationBlockType5_t *sib5[NB_CNX_UE];
-  SystemInformationBlockType6_t *sib6[NB_CNX_UE];
-  SystemInformationBlockType7_t *sib7[NB_CNX_UE];
-  SystemInformationBlockType8_t *sib8[NB_CNX_UE];
-  SystemInformationBlockType9_t *sib9[NB_CNX_UE];
-  SystemInformationBlockType10_t *sib10[NB_CNX_UE];
-  SystemInformationBlockType11_t *sib11[NB_CNX_UE];
 
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  uint8_t                           MBMS_flag;
-  uint8_t *MCCH_MESSAGE[NB_CNX_UE];
-  uint8_t sizeof_MCCH_MESSAGE[NB_CNX_UE];
-  uint8_t MCCH_MESSAGEStatus[NB_CNX_UE];
-  MBSFNAreaConfiguration_r9_t       *mcch_message[NB_CNX_UE];
-  SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
-  SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
-  #endif
-  #ifdef CBA
-  uint8_t                         num_active_cba_groups;
-  uint16_t                        cba_rnti[NUM_MAX_CBA_GROUP];
-  #endif
-  uint8_t                         num_srb;
-  struct SRB_ToAddMod             *SRB1_config[NB_CNX_UE];
-  struct SRB_ToAddMod             *SRB2_config[NB_CNX_UE];
-  struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
-  rb_id_t                         *defaultDRB; // remember the ID of the default DRB
-  MeasObjectToAddMod_t            *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
-  struct ReportConfigToAddMod     *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
-  */
   struct QuantityConfig           *QuantityConfig[NB_CNX_UE];
-  /*
-  struct MeasIdToAddMod           *MeasId[NB_CNX_UE][MAX_MEAS_ID];
-  MEAS_REPORT_LIST      *measReportList[NB_CNX_UE][MAX_MEAS_ID];
-  uint32_t           measTimer[NB_CNX_UE][MAX_MEAS_ID][6]; // 6 neighboring cells
-  RSRP_Range_t                    s_measure;
-  struct MeasConfig__speedStatePars *speedStatePars;
-  struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
-  struct SPS_Config               *sps_Config[NB_CNX_UE];
-  MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
-  MeasGapConfig_t                 *measGapConfig[NB_CNX_UE];
-  double                          filter_coeff_rsrp; // [7] ???
-  double                          filter_coeff_rsrq; // [7] ???
-  float                           rsrp_db[7];
-  float                           rsrq_db[7];
-  float                           rsrp_db_filtered[7];
-  float                           rsrq_db_filtered[7];
-  #if ENABLE_RAL
-  obj_hash_table_t               *ral_meas_thresholds;
-  ral_transaction_id_t            scan_transaction_id;
-  #endif
-  #if defined(ENABLE_SECURITY)
-  // KeNB as computed from parameters within USIM card //
-  uint8_t kenb[32];
-  #endif
 
-  // Used integrity/ciphering algorithms //
-  CipheringAlgorithm_r12_t                          ciphering_algorithm;
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
-  */
 } UE_RRC_INST_NB_IoT;
 
 

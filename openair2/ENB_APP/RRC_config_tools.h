@@ -30,7 +30,7 @@
 #define RRC_CONFIG_TOOLS_H_
 
 #define KHz (1000UL)
-#define MHz (1000 * KHz)
+#define MHz (1000*KHz)
 
 typedef struct eutra_band_s {
   int16_t             band;

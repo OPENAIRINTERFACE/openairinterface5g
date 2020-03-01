@@ -92,6 +92,7 @@ what about the implementation
 #include <stdint.h>
 #include "common/config/config_userapi.h"
 #include "opt.h"
+#include "common/utils/system.h"
 
 int opt_enabled=0;
 
@@ -196,15 +197,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port) {
     return -1;
   }
 
-  ret = pthread_create(&opt_listener.thread, NULL, opt_listener_thread, NULL);
-
-  if (ret != 0) {
-    LOG_E(OPT, "Failed to create thread for server socket: %s\n", strerror(errno));
-    opt_type = OPT_NONE;
-    close(opt_listener.sd);
-    opt_listener.sd = -1;
-    return -1;
-  }
+  threadCreate(&opt_listener.thread, opt_listener_thread, NULL, "flexran", -1, OAI_PRIORITY_RT_LOW);
 
   return 0;
 }
@@ -341,7 +334,9 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
 /* Write an individual PDU (PCAP packet header + mac-context + mac-pdu) */
 static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
-                                 const uint8_t *PDU, unsigned int length) {
+                                 const uint8_t *PDU,
+                                 unsigned int length)
+{
   pcaprec_hdr_t packet_header;
   uint8_t context_header[256];
   int offset = 0;
@@ -386,21 +381,27 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
   fwrite(PDU, 1, length, file_fd);
   return 1;
 }
+
 #include <common/ran_context.h>
 extern RAN_CONTEXT_t RC;
 #include <openair1/PHY/phy_extern_ue.h>
 /* Remote serveraddress (where Wireshark is running) */
-void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
-               int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
-               int oob_event_value) {
+void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+                              int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
+                              int oob_event_value) {
   MAC_Context_Info_t pdu_context;
   int radioType=FDD_RADIO;
+  LOG_D(OPT,"sending packet to wireshark: direction=%s, size: %d, ueid: %d, rnti: %x, frame/sf: %d.%d\n",
+        direction?"DL":"UL", pdu_buffer_size, ueid, rnti, sysFrameNumber,subFrameNumber);
 
-  if (RC.eNB[0][0]!=NULL)
+  if (RC.eNB && RC.eNB[0][0]!=NULL)
     radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
-
-  if (PHY_vars_UE_g[0][0] != NULL)
+  else if (PHY_vars_UE_g && PHY_vars_UE_g[0][0] != NULL)
     radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+  else {
+    LOG_E(OPT,"not a eNB neither a UE!!! \n");
+    return;
+  }
 
   switch (opt_type) {
     case OPT_WIRESHARK :
@@ -441,14 +442,14 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
   }
 }
 /*---------------------------------------------------*/
-int init_opt(void) {
+int init_opt(void)
+{
   char *in_type=NULL;
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
   uint16_t in_port;
-  config_set_checkfunctions(opt_params, opt_checkParams,
-                            sizeof(opt_params)/sizeof(paramdef_t));
-  config_get( opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
+  config_set_checkfunctions(opt_params, opt_checkParams, sizeof(opt_params)/sizeof(paramdef_t));
+  config_get(opt_params, sizeof(opt_params)/sizeof(paramdef_t), OPT_CONFIGPREFIX);
   subframesSinceCaptureStart = 0;
   int tmptype = config_get_processedint( &(opt_params[OPTTYPE_IDX]));
 
@@ -528,6 +529,7 @@ int init_opt(void) {
   // memset(mac_info, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
   return (1);
 }
+
 void terminate_opt(void) {
   /* Close local socket */
   //  free(mac_info);

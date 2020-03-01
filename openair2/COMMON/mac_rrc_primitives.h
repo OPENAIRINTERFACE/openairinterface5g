@@ -20,26 +20,22 @@
  */
 
 #ifndef __MAC_RRC_PRIMITIVES_H__
-#    define __MAC_RRC_PRIMITIVES_H__
-
-
+#define __MAC_RRC_PRIMITIVES_H__
 
 #ifndef OPENAIR2_IN
-#include "LAYER2/RLC/rlc.h"
+  #include "LAYER2/RLC/rlc.h"
 #endif
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
+#include "openair2/RRC/LTE/rrc_defs.h"
 
 #include "LTE_RadioResourceConfigCommonSIB.h"
 #include "LTE_RadioResourceConfigDedicated.h"
 #include "LTE_MeasGapConfig.h"
 #include "LTE_TDD-Config.h"
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "LTE_MBSFN-AreaInfoList-r9.h"
 #include "LTE_MBSFN-SubframeConfigList.h"
-#endif
-//#include "rrm_config_structs.h"
-//#include "platform_types.h"
+
 /** @defgroup _mac_rrc_primitives_ MAC Layer Primitives for Communications with RRC
  * @ingroup _openair_mac_layer_specs_
  * @{
@@ -324,9 +320,9 @@ typedef struct {  //RRC_INTERFACE_FUNCTIONS
   RRC_status_t (*rrc_rx_tx)(uint8_t,uint32_t,uint8_t,uint8_t);
   uint8_t (*mac_rrc_data_ind)(uint8_t,uint32_t,uint16_t,uint8_t *,uint16_t,eNB_flag_t eNB_flag, uint8_t eNB_index);
   uint8_t (*mac_rrc_data_req)(uint8_t,uint32_t,uint16_t,uint8_t,uint8_t *,eNB_flag_t eNB_flag, uint8_t eNB_index);
-  void (*mac_rrc_meas_ind)(uint8_t,MAC_MEAS_REQ_ENTRY*);
+  void (*mac_rrc_meas_ind)(uint8_t,MAC_MEAS_REQ_ENTRY *);
   void  (*def_meas_ind)(uint8_t, uint8_t);
-  void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*);
+  void (*rrc_data_indP)  (module_id_t, rb_id_t, sdu_size_t, char *);
   void (*fn_rrc)  (void);
   uint8_t (*get_rrc_status)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t eNB_index);
   double (*rrc_get_estimated_ue_distance) (module_id_t Mod_id, uint8_t UE_id, uint8_t CC_id, uint8_t loc_type);
@@ -339,12 +335,12 @@ typedef struct {
   unsigned short Node_id[NB_MODULES_MAX];
   char Is_cluster_head[NB_MODULES_MAX];
   void (*macphy_exit)(const char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
-  unsigned short (*mac_config_req)(uint8_t,uint8_t,MAC_CONFIG_REQ*);
-  MAC_MEAS_REQ_ENTRY* (*mac_meas_req)(uint8_t ,  MAC_MEAS_REQ*);
+  unsigned short (*mac_config_req)(uint8_t,uint8_t,MAC_CONFIG_REQ *);
+  MAC_MEAS_REQ_ENTRY *(*mac_meas_req)(uint8_t,  MAC_MEAS_REQ *);
   void (*mac_out_of_sync_ind)(uint8_t,uint32_t,unsigned short);
   //RLC_INTERFACE_FUNCTIONS
   void (*pdcp_run)(void);
-  void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);
+  void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char *);
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
   int (*rrc_mac_config_req)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t UE_id,uint8_t eNB_index,
                             LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
@@ -355,32 +351,25 @@ typedef struct {
                             LTE_MeasGapConfig_t *measGapConfig,
                             LTE_TDD_Config_t *tdd_Config,
                             uint8_t *SIwindowsize,
-                            uint16_t *SIperiod
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                            ,
+                            uint16_t *SIperiod,
                             MBMS_flag_t MBMS_Flag,
                             struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
                             LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
                             struct LTE_PMCH_InfoList_r9 *pmch_InfoList
-#endif
                            );
-  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char*
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                  ,uint32_t
-                                  ,uint32_t
-#endif
-                                   );
-  void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
+  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char *
+                                   ,uint32_t
+                                   ,uint32_t
+                                  );
+  void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char *, tb_size_t, num_tb_t, crc_t * );
   mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, sub_frame_t subframeP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
       logical_chan_id_t channel_idP, tb_size_t tb_sizeP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       ,uint32_t sourceL2Id
       ,uint32_t destinationL2Id
-#endif
-      );
+                                                  );
   signed int (*rrc_rlc_data_req)(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
-  void (*rrc_rlc_register_rrc) (void (*rrc_data_indP)(module_id_t , rb_id_t , sdu_size_t , char* ),
-                                void  (*rrc_data_confP) (module_id_t , rb_id_t , mui_t ) ) ;
+  void (*rrc_rlc_register_rrc) (void (*rrc_data_indP)(module_id_t, rb_id_t, sdu_size_t, char * ),
+                                void  (*rrc_data_confP) (module_id_t, rb_id_t, mui_t ) ) ;
   void (*mrbch_phy_sync_failure) (uint8_t Mod_id, frame_t frame, uint8_t Free_ch_index);
   void (*dl_phy_sync_success) (uint8_t Mod_id, frame_t frame, uint8_t eNB_index);
 } MAC_RLC_XFACE;
@@ -408,5 +397,3 @@ typedef struct {
 #define REMOVE_LC 1
 
 #endif
-
-

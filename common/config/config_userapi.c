@@ -81,7 +81,7 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
   }
 
   if (*ptr == NULL) {
-    *ptr = malloc(length);
+    *ptr = malloc(length>40?length:40); // LTS: dummy fix, waiting Francois full fix in 4G branch
 
     if ( *ptr != NULL) {
       memset(*ptr,0,length);
@@ -184,7 +184,7 @@ void config_printhelp(paramdef_t *params,int numparams, char *prefix) {
   printf("--------------------------------------------------------------------\n\n");
 }
 
-int config_execcheck(paramdef_t *params,int numparams, char *prefix) {
+int config_execcheck(paramdef_t *params, int numparams, char *prefix) {
   int st=0;
 
   for (int i=0 ; i<numparams ; i++) {
@@ -204,7 +204,7 @@ int config_execcheck(paramdef_t *params,int numparams, char *prefix) {
   return st;
 }
 
-int config_paramidx_fromname(paramdef_t *params,int numparams, char *name) {
+int config_paramidx_fromname(paramdef_t *params, int numparams, char *name) {
   for (int i=0; i<numparams ; i++) {
     if (strcmp(name,params[i].optname) == 0)
       return i;
@@ -214,7 +214,7 @@ int config_paramidx_fromname(paramdef_t *params,int numparams, char *name) {
   return -1;
 }
 
-int config_get(paramdef_t *params,int numparams, char *prefix) {
+int config_get(paramdef_t *params, int numparams, char *prefix) {
   int ret= -1;
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
@@ -225,11 +225,11 @@ int config_get(paramdef_t *params,int numparams, char *prefix) {
   configmodule_interface_t *cfgif = config_get_if();
 
   if (cfgif != NULL) {
-    ret = config_get_if()->get(params, numparams,prefix);
+    ret = config_get_if()->get(params, numparams, prefix);
 
     if (ret >= 0) {
-      config_process_cmdline(params,numparams,prefix);
-      config_execcheck(params,numparams,prefix);
+      config_process_cmdline(params, numparams, prefix);
+      config_execcheck(params, numparams, prefix);
     }
 
     return ret;
@@ -386,13 +386,12 @@ int config_setdefault_string(paramdef_t *cfgoptions, char *prefix) {
     status=1;
 
     if (cfgoptions->numelt == 0 ) {
-      config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
       config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(cfgoptions->defstrval)+1);
       sprintf(*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
       printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *(cfgoptions->strptr));
     } else {
-      sprintf((char *)*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
-      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)*(cfgoptions->strptr));
+      sprintf((char *)(cfgoptions->strptr), "%s",cfgoptions->defstrval);
+      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)(cfgoptions->strptr));
     }
   }
 

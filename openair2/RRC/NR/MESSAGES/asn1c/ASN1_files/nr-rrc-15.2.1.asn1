@@ -1,0 +1,4469 @@
+-- TAG-NR-RRC-DEFINITIONS-START
+
+NR-RRC-Definitions DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+-- TAG-NR-RRC-DEFINITIONS-STOP
+-- TAG-BCCH-BCH-MESSAGE-START
+
+BCCH-BCH-Message ::= SEQUENCE {
+	message											BCCH-BCH-MessageType
+}
+
+BCCH-BCH-MessageType ::= CHOICE {
+	mib												MIB,
+	messageClassExtension	SEQUENCE {}
+}
+
+-- TAG-BCCH-BCH-MESSAGE-STOP
+-- TAG-DL-DCCH-MESSAGE-START
+
+DL-DCCH-Message ::= SEQUENCE {
+	message											DL-DCCH-MessageType
+}
+
+DL-DCCH-MessageType ::= CHOICE {
+	c1						CHOICE {
+		rrcReconfiguration							RRCReconfiguration,
+		spare15 NULL, spare14 NULL, spare13 NULL,
+		spare12 NULL, spare11 NULL, spare10 NULL,
+		spare9 NULL, spare8 NULL, spare7 NULL,
+		spare6 NULL, spare5 NULL, spare4 NULL,
+		spare3 NULL, spare2 NULL, spare1 NULL
+	},
+	messageClassExtension	SEQUENCE {}
+}
+
+-- TAG-DL-DCCH-MESSAGE-STOP
+-- TAG-UL-DCCH-MESSAGE-START
+
+UL-DCCH-Message ::= SEQUENCE {
+	message											UL-DCCH-MessageType
+}
+
+UL-DCCH-MessageType ::= CHOICE {
+	c1						CHOICE {
+		measurementReport							MeasurementReport,
+		rrcReconfigurationComplete					RRCReconfigurationComplete,
+		spare14 NULL, spare13 NULL, spare12 NULL,
+		spare11 NULL, spare10 NULL, spare9 NULL,
+		spare8 NULL, spare7 NULL, spare6 NULL,
+		spare5 NULL, spare4 NULL, spare3 NULL,
+		spare2 NULL, spare1 NULL
+	},
+	messageClassExtension	SEQUENCE {}
+}
+
+-- TAG-UL-DCCH-MESSAGE-STOP
+-- TAG-MIB-START
+
+MIB ::= 							SEQUENCE {
+	systemFrameNumber					BIT STRING (SIZE (6)),
+	subCarrierSpacingCommon				ENUMERATED {scs15or60, scs30or120},
+	ssb-SubcarrierOffset				INTEGER (0..15),
+	dmrs-TypeA-Position					ENUMERATED {pos2, pos3},
+	pdcch-ConfigSIB1					INTEGER (0..255), 
+	cellBarred							ENUMERATED {barred, notBarred}, 
+	intraFreqReselection				ENUMERATED {allowed, notAllowed},
+	spare								BIT STRING (SIZE (1))
+}
+
+-- TAG-MIB-STOP
+-- TAG-MEASUREMENTREPORT-START
+
+MeasurementReport ::=				SEQUENCE {
+	criticalExtensions					CHOICE {
+		measurementReport					MeasurementReport-IEs,
+		criticalExtensionsFuture			SEQUENCE {}
+	}
+}
+
+MeasurementReport-IEs ::=			SEQUENCE {
+	measResults							MeasResults,
+
+	lateNonCriticalExtension				OCTET STRING															OPTIONAL,
+	nonCriticalExtension					SEQUENCE{}																OPTIONAL
+}
+
+-- TAG-MEASUREMENTREPORT-STOP
+-- TAG-RRCRECONFIGURATION-START
+
+RRCReconfiguration ::= 				SEQUENCE {
+	rrc-TransactionIdentifier			RRC-TransactionIdentifier,
+	criticalExtensions					CHOICE {
+		rrcReconfiguration					RRCReconfiguration-IEs,
+		criticalExtensionsFuture			SEQUENCE {}
+	}
+}
+
+RRCReconfiguration-IEs ::= 			SEQUENCE {
+	radioBearerConfig						RadioBearerConfig 														OPTIONAL, -- Need M
+	secondaryCellGroup						OCTET STRING (CONTAINING CellGroupConfig)								OPTIONAL, -- Need M
+	measConfig								MeasConfig																OPTIONAL, -- Need M
+
+	lateNonCriticalExtension				OCTET STRING															OPTIONAL,
+	nonCriticalExtension					SEQUENCE {}																OPTIONAL 
+}
+
+-- TAG-RRCRECONFIGURATION-STOP
+-- TAG-RRCRECONFIGURATIONCOMPLETE-START
+
+RRCReconfigurationComplete ::= 			SEQUENCE {
+	rrc-TransactionIdentifier				RRC-TransactionIdentifier,
+	criticalExtensions						CHOICE {
+		rrcReconfigurationComplete				RRCReconfigurationComplete-IEs,
+		criticalExtensionsFuture				SEQUENCE {}
+	}
+}
+
+RRCReconfigurationComplete-IEs ::= SEQUENCE {
+	lateNonCriticalExtension				OCTET STRING															OPTIONAL,
+	nonCriticalExtension					SEQUENCE {}																OPTIONAL 
+}
+
+-- TAG-RRCRECONFIGURATIONCOMPLETE-STOP
+-- TAG-SIB1-START
+
+SIB1 ::=		SEQUENCE {
+
+	-- FFS / TODO: Add other parameters. 
+	frequencyOffsetSSB				ENUMERATED {khz-5, khz5}													OPTIONAL,	-- Need R
+	ssb-PositionsInBurst				SEQUENCE {
+		inOneGroup							BIT STRING (SIZE (8)),
+		groupPresence						BIT STRING (SIZE (8))												OPTIONAL -- Cond above6GHzOnly
+	},
+	ssb-PeriodicityServingCell			ENUMERATED {ms5, ms10, ms20, ms40, ms80, ms160, spare1, spare2},
+	ss-PBCH-BlockPower					INTEGER (-60..50),
+
+	uplinkConfigCommon					UplinkConfigCommon														OPTIONAL,
+	supplementaryUplink					SEQUENCE {
+		uplinkConfigCommon					UplinkConfigCommon													OPTIONAL 
+		-- FFS: Add additional (selection) criteria determining when/whether the UE shall use the SUL frequency 
+	}																											OPTIONAL, -- Cond SUL
+
+	tdd-UL-DL-Configuration				TDD-UL-DL-ConfigCommon													OPTIONAL, -- Cond TDD
+	tdd-UL-DL-configurationCommon2		TDD-UL-DL-ConfigCommon													OPTIONAL, -- Cond TDD
+
+	pdcch-ConfigCommon					PDCCH-ConfigCommon														OPTIONAL,
+	pucch-ConfigCommon					PUCCH-ConfigCommon														OPTIONAL,
+
+	lateNonCriticalExtension			OCTET STRING															OPTIONAL,
+	nonCriticalExtension				SEQUENCE{}																OPTIONAL 
+}
+
+-- TAG-SIB1-STOP
+-- TAG-SETUP-RELEASE-START
+
+SetupRelease { ElementTypeParam } ::= CHOICE {
+	release			NULL,
+	setup			ElementTypeParam
+}
+
+-- TAG-SETUP-RELEASE-STOP
+-- TAG-ADDITIONALSPECTRUMEMISSION-START
+
+AdditionalSpectrumEmission ::=				INTEGER (0..7)
+
+-- TAG-ADDITIONALSPECTRUMEMISSION-STOP
+-- TAG-ALPHA-START
+
+Alpha ::=						ENUMERATED {alpha0, alpha04, alpha05, alpha06, alpha07, alpha08, alpha09, alpha1}
+
+-- TAG-ALPHA-STOP
+-- TAG-ARFCN-VALUE-NR-START
+
+ARFCN-ValueNR ::=				INTEGER (0..3279165)
+
+-- TAG-ARFCN-VALUE-NR-STOP
+-- TAG-BANDWIDTH-PART-START
+
+BWP ::= 							SEQUENCE {
+	locationAndBandwidth				INTEGER (0..37949),
+	subcarrierSpacing					SubcarrierSpacing,
+	cyclicPrefix						ENUMERATED { extended }													OPTIONAL	-- Need R
+}
+
+BWP-Uplink ::= 						SEQUENCE {
+	bwp-Id								BWP-Id,
+	bwp-Common							BWP-UplinkCommon														OPTIONAL,	-- Need M
+	bwp-Dedicated						BWP-UplinkDedicated														OPTIONAL,	-- Need M
+	...
+}
+
+BWP-UplinkCommon ::=				SEQUENCE {
+	genericParameters					BWP,
+	rach-ConfigCommon					SetupRelease { RACH-ConfigCommon }										OPTIONAL, 	-- Need M
+	pusch-ConfigCommon					SetupRelease { PUSCH-ConfigCommon }										OPTIONAL, 	-- Need M
+	pucch-ConfigCommon					SetupRelease { PUCCH-ConfigCommon }										OPTIONAL, 	-- Need M
+	...
+}
+
+BWP-UplinkDedicated ::= 			SEQUENCE {
+	pucch-Config						SetupRelease { PUCCH-Config }											OPTIONAL, 	-- Need M
+	pusch-Config						SetupRelease { PUSCH-Config }											OPTIONAL, 	-- Cond SetupOnly
+	configuredGrantConfig				SetupRelease { ConfiguredGrantConfig }									OPTIONAL, 	-- Need M
+	srs-Config							SetupRelease { SRS-Config }												OPTIONAL, 	-- Need M
+	beamFailureRecoveryConfig			SetupRelease { BeamFailureRecoveryConfig }								OPTIONAL,	-- Cond SpCellOnly
+	...
+}
+
+BWP-Downlink ::= 					SEQUENCE {
+	bwp-Id								BWP-Id,
+	bwp-Common							BWP-DownlinkCommon														OPTIONAL,	-- Need M
+	bwp-Dedicated						BWP-DownlinkDedicated													OPTIONAL,	-- Need M
+	...
+}
+
+BWP-DownlinkCommon ::=				SEQUENCE {
+	genericParameters					BWP,
+	pdcch-ConfigCommon					SetupRelease { PDCCH-ConfigCommon }										OPTIONAL,	-- Need M
+	pdsch-ConfigCommon					SetupRelease { PDSCH-ConfigCommon }										OPTIONAL,	-- Need M
+	...
+}
+
+BWP-DownlinkDedicated ::= 			SEQUENCE {
+	pdcch-Config						SetupRelease { PDCCH-Config }											OPTIONAL,	-- Need M
+	pdsch-Config						SetupRelease { PDSCH-Config }											OPTIONAL,	-- Need M 
+	sps-Config							SetupRelease { SPS-Config }												OPTIONAL, 	-- Need M
+	radioLinkMonitoringConfig			SetupRelease { RadioLinkMonitoringConfig }								OPTIONAL,	-- Need M
+	...
+}
+
+-- TAG-BANDWIDTH-PART-STOP 
+-- TAG-BWP-ID-START
+
+BWP-Id ::=							INTEGER (0..maxNrofBWPs)
+
+-- TAG-BWP-ID-STOP
+-- TAG-BEAM-FAILURE-RECOVERY-CONFIG-START
+
+BeamFailureRecoveryConfig ::= 		SEQUENCE {
+	rootSequenceIndex-BFR				INTEGER (0..137)															OPTIONAL,	-- Need M
+	rach-ConfigBFR						RACH-ConfigGeneric															OPTIONAL,	-- Need M
+	rsrp-ThresholdSSB				RSRP-Range																	OPTIONAL,	-- Need M
+	candidateBeamRSList					SEQUENCE (SIZE(1..maxNrofCandidateBeams)) OF PRACH-ResourceDedicatedBFR		OPTIONAL,	-- Need M
+	ssb-perRACH-Occasion				ENUMERATED {oneEighth, oneFourth, oneHalf, one, two, four, eight, sixteen} 	OPTIONAL,	-- Need M
+	ra-ssb-OccasionMaskIndex			INTEGER (0..15)																OPTIONAL, 	-- Need M
+	recoverySearchSpaceId				SearchSpaceId																OPTIONAL,	-- Cond CF-BFR
+	ra-Prioritization					RA-Prioritization															OPTIONAL,	-- Need R
+	beamFailureRecoveryTimer			ENUMERATED {ms10, ms20, ms40, ms60, ms80, ms100, ms150, ms200}			OPTIONAL,	-- Need M
+	...
+}
+
+PRACH-ResourceDedicatedBFR ::= 		CHOICE {
+	ssb									BFR-SSB-Resource,
+	csi-RS								BFR-CSIRS-Resource
+}
+
+BFR-SSB-Resource ::= 			SEQUENCE {
+	ssb								SSB-Index,
+	ra-PreambleIndex				INTEGER (0..63),
+	...
+}
+
+BFR-CSIRS-Resource ::=			SEQUENCE {
+	csi-RS							NZP-CSI-RS-ResourceId,
+	ra-OccasionList					SEQUENCE (SIZE(1..maxRA-OccasionsPerCSIRS)) OF INTEGER (0..maxRA-Occasions-1)	OPTIONAL,	-- Need R
+	ra-PreambleIndex				INTEGER (0..63)																	OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-BEAM-FAILURE-RECOVERY-CONFIG-STOP
+-- TAG-CELL-GROUP-CONFIG-START
+
+-- Configuration of one Cell-Group:
+CellGroupConfig	::= 						SEQUENCE {
+	cellGroupId									CellGroupId,
+
+	rlc-BearerToAddModList 						SEQUENCE (SIZE(1..maxLC-ID)) OF RLC-BearerConfig				OPTIONAL,   -- Need N
+	rlc-BearerToReleaseList						SEQUENCE (SIZE(1..maxLC-ID)) OF LogicalChannelIdentity			OPTIONAL,   -- Need N
+
+	mac-CellGroupConfig							MAC-CellGroupConfig												OPTIONAL,	-- Need M
+
+	physicalCellGroupConfig						PhysicalCellGroupConfig											OPTIONAL,	-- Need M
+
+	spCellConfig								SpCellConfig													OPTIONAL, 	-- Need M
+	sCellToAddModList							SEQUENCE (SIZE (1..maxNrofSCells)) OF SCellConfig				OPTIONAL,	-- Need N
+	sCellToReleaseList							SEQUENCE (SIZE (1..maxNrofSCells)) OF SCellIndex				OPTIONAL,	-- Need N
+	...
+}
+
+
+
+-- Serving cell specific MAC and PHY parameters for a SpCell:
+SpCellConfig ::=						SEQUENCE {
+	servCellIndex						ServCellIndex															OPTIONAL,	-- Cond SCG
+	reconfigurationWithSync 			ReconfigurationWithSync 												OPTIONAL,	-- Cond ReconfWithSync
+	rlf-TimersAndConstants				SetupRelease { RLF-TimersAndConstants }									OPTIONAL,	-- Need M
+	rlmInSyncOutOfSyncThreshold         ENUMERATED {n1}                         								OPTIONAL,	-- Need S
+	spCellConfigDedicated				ServingCellConfig														OPTIONAL,	-- Need M
+	...
+}
+
+ReconfigurationWithSync ::=			SEQUENCE {
+	spCellConfigCommon					ServingCellConfigCommon													OPTIONAL,	-- Need M
+	newUE-Identity						RNTI-Value,
+	t304								ENUMERATED {ms50, ms100, ms150, ms200, ms500, ms1000, ms2000, ms10000},
+		rach-ConfigDedicated				CHOICE {
+			uplink								RACH-ConfigDedicated,
+			supplementaryUplink				RACH-ConfigDedicated
+	}																											OPTIONAL,	-- Need N
+	...
+}			
+
+SCellConfig ::=						SEQUENCE {
+	sCellIndex							SCellIndex,
+	sCellConfigCommon					ServingCellConfigCommon													OPTIONAL,	-- Cond SCellAdd
+	sCellConfigDedicated				ServingCellConfig														OPTIONAL,	-- Cond SCellAddMod
+	...
+}
+
+-- TAG-CELL-GROUP-CONFIG-STOP 
+-- TAG-CELLGROUPID-START
+
+CellGroupId ::=								INTEGER (0.. maxSecondaryCellGroups)
+
+-- TAG-CELLGROUPID-STOP
+-- TAG-CODEBOOKCONFIG-START
+CodebookConfig ::= 									SEQUENCE {
+	codebookType 										CHOICE {
+		type1 												SEQUENCE {
+			subType										CHOICE {
+				typeI-SinglePanel									SEQUENCE {
+					nrOfAntennaPorts									CHOICE {
+						two													SEQUENCE {
+							twoTX-CodebookSubsetRestriction						BIT STRING (SIZE (6))
+						},
+						moreThanTwo											SEQUENCE {
+							n1-n2												CHOICE {
+								two-one-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (8)),
+								two-two-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (64)),
+								four-one-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (16)),
+								three-two-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (96)),
+								six-one-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (24)),
+								four-two-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (128)),
+								eight-one-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (32)),
+								four-three-TypeI-SinglePanel-Restriction			BIT STRING (SIZE (192)),
+								six-two-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (192)),
+								twelve-one-TypeI-SinglePanel-Restriction			BIT STRING (SIZE (48)),
+								four-four-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (256)),
+								eight-two-TypeI-SinglePanel-Restriction				BIT STRING (SIZE (256)),
+								sixteen-one-TypeI-SinglePanel-Restriction			BIT STRING (SIZE (64))
+							},
+							typeI-SinglePanel-codebookSubsetRestriction-i2		BIT STRING (SIZE (16))	OPTIONAL
+						}
+					},
+					typeI-SinglePanel-ri-Restriction					BIT STRING (SIZE (8))
+				}, 
+				typeI-MultiPanel									SEQUENCE {
+					ng-n1-n2												CHOICE {
+						two-two-one-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (8)),
+						two-four-one-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (16)),
+						four-two-one-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (8)),
+						two-two-two-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (64)),
+						two-eight-one-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (32)),
+						four-four-one-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (16)),
+						two-four-two-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (128)),
+						four-two-two-TypeI-MultiPanel-Restriction				BIT STRING (SIZE (64))
+					},
+					ri-Restriction							BIT STRING (SIZE (4))
+				}
+			},
+			codebookMode										INTEGER (1..2)
+
+		},
+		type2									SEQUENCE {
+			subType									CHOICE {
+				typeII									SEQUENCE {
+					n1-n2-codebookSubsetRestriction			CHOICE {
+						two-one									BIT STRING (SIZE (16)),
+						two-two									BIT STRING (SIZE (43)),
+						four-one								BIT STRING (SIZE (32)),
+						three-two								BIT STRING (SIZE (59)),
+						six-one									BIT STRING (SIZE (48)),
+						four-two								BIT STRING (SIZE (75)),
+						eight-one								BIT STRING (SIZE (64)),
+						four-three								BIT STRING (SIZE (107)),
+						six-two									BIT STRING (SIZE (107)),
+						twelve-one								BIT STRING (SIZE (96)),
+						four-four								BIT STRING (SIZE (139)),
+						eight-two								BIT STRING (SIZE (139)),
+						sixteen-one								BIT STRING (SIZE (128))
+					},
+					typeII-RI-Restriction					BIT STRING (SIZE (2))
+				}, 
+				typeII-PortSelection					SEQUENCE {
+					portSelectionSamplingSize				ENUMERATED {n1, n2, n3, n4}					OPTIONAL,		-- Cond TypeII-PortSelection
+					typeII-PortSelectionRI-Restriction		BIT STRING (SIZE (2))
+				}
+			},
+			phaseAlphabetSize						ENUMERATED {n4, n8},
+			subbandAmplitude						BOOLEAN,
+			numberOfBeams							ENUMERATED {two, three, four}
+		}
+	}
+}
+
+-- TAG-CODEBOOKCONFIG-STOP
+-- TAG-CONFIGUREDGRANTCONFIG-START
+
+ConfiguredGrantConfig ::=				SEQUENCE {
+	frequencyHopping             			ENUMERATED {mode1, mode2} 									OPTIONAL,	-- Need S,
+	cg-DMRS-Configuration					DMRS-UplinkConfig,
+	mcs-Table								ENUMERATED {qam256, spare1}							OPTIONAL, 	-- Need S
+	mcs-TableTransformPrecoder				ENUMERATED {qam256, spare1}									OPTIONAL,	-- Need S
+	uci-OnPUSCH								SetupRelease { CG-UCI-OnPUSCH },
+	resourceAllocation						ENUMERATED { resourceAllocationType0, resourceAllocationType1, dynamicSwitch },
+	rbg-Size								ENUMERATED {config2}										OPTIONAL,	-- Need S
+	powerControlLoopToUse					ENUMERATED {n0, n1},
+	p0-PUSCH-Alpha							P0-PUSCH-AlphaSetId,
+	transformPrecoder						ENUMERATED {enabled}										OPTIONAL,	-- Need S
+	nrofHARQ-Processes						INTEGER(1..16),
+	repK									ENUMERATED {n1, n2, n4, n8},
+	repK-RV									ENUMERATED {s1-0231, s2-0303, s3-0000}						OPTIONAL,	-- Cond RepK
+	periodicity								ENUMERATED {
+												sym2, sym7, sym1x14, sym2x14, sym4x14, sym5x14, sym8x14, sym10x14, sym16x14, sym20x14,
+												sym32x14, sym40x14, sym64x14, sym80x14, sym128x14, sym160x14, sym256x14, sym320x14, sym512x14,
+												sym640x14, sym1024x14, sym1280x14, sym2560x14, sym5120x14,
+												sym6, sym1x12, sym2x12, sym4x12, sym5x12, sym8x12, sym10x12, sym16x12, sym20x12, sym32x12,
+												sym40x12, sym64x12, sym80x12, sym128x12, sym160x12, sym256x12, sym320x12, sym512x12, sym640x12,
+												sym1280x12, sym2560x12
+											},
+	configuredGrantTimer					INTEGER (1..64)												OPTIONAL,	-- Need R
+	rrc-ConfiguredUplinkGrant				SEQUENCE {
+			timeDomainOffset					INTEGER  (0..5119),
+			timeDomainAllocation				INTEGER  (0..15), 
+			frequencyDomainAllocation			BIT STRING (SIZE(18)),
+            antennaPort							INTEGER   (0..31),
+            dmrs-SeqInitialization				INTEGER   (0..1)          								OPTIONAL,  -- Cond NoTransformPrecoder
+            precodingAndNumberOfLayers			INTEGER   (0..63),
+            srs-ResourceIndicator				INTEGER   (0..15),
+			mcsAndTBS							INTEGER (0..31),
+			frequencyHoppingOffset				INTEGER (1.. maxNrofPhysicalResourceBlocks-1) 			OPTIONAL, 	-- Need M
+			pathlossReferenceIndex				INTEGER (0..maxNrofPUSCH-PathlossReferenceRSs-1),
+			...
+	}																									OPTIONAL  -- Need R
+}
+
+CG-UCI-OnPUSCH ::= CHOICE {
+	dynamic									SEQUENCE (SIZE (1..4)) OF BetaOffsets,
+	semiStatic								BetaOffsets
+}
+
+-- TAG-CONFIGUREDGRANTCONFIG-STOP
+-- TAG-CONTROLRESOURCESET-START
+
+ControlResourceSet ::= 					SEQUENCE {
+	controlResourceSetId					ControlResourceSetId,
+
+	frequencyDomainResources				BIT STRING (SIZE (45)),
+	duration								INTEGER (1..maxCoReSetDuration),
+	cce-REG-MappingType						CHOICE { 
+		interleaved								SEQUENCE {
+			reg-BundleSize							ENUMERATED {n2, n3, n6},
+			interleaverSize							ENUMERATED {n2, n3, n6}, 
+			shiftIndex								INTEGER(0..maxNrofPhysicalResourceBlocks-1) 						 OPTIONAL 	-- Need S
+		}, 
+		nonInterleaved 							NULL
+	},
+	precoderGranularity						ENUMERATED {sameAsREG-bundle, allContiguousRBs},
+	tci-StatesPDCCH-ToAddList					SEQUENCE(SIZE (1..maxNrofTCI-StatesPDCCH)) OF TCI-StateId				OPTIONAL,	-- Need N
+		tci-StatesPDCCH-ToReleaseList			SEQUENCE(SIZE (1..maxNrofTCI-StatesPDCCH)) OF TCI-StateId				OPTIONAL,	-- Need N
+tci-PresentInDCI						ENUMERATED {enabled}													OPTIONAL, 	-- Need S
+	pdcch-DMRS-ScramblingID					INTEGER (0..65535)													OPTIONAL, 	-- Need S
+	...
+}
+
+-- TAG-CONTROLRESOURCESET-STOP
+-- TAG-CONTROL-RESOURCE-SET-ID-START
+
+ControlResourceSetId ::=				INTEGER (0..maxNrofControlResourceSets-1)
+
+-- TAG-CONTROL-RESOURCE-SET-ID-STOP
+
+CrossCarrierSchedulingConfig ::=		SEQUENCE {
+	schedulingCellInfo						CHOICE {
+		own										SEQUENCE {					-- No cross carrier scheduling
+			cif-Presence							BOOLEAN
+		},
+		other									SEQUENCE {					-- Cross carrier scheduling
+			schedulingCellId						ServCellIndex,
+			cif-InSchedulingCell					INTEGER (1..7)
+		}																	-- Cond SCellOnly
+	},
+	...
+}
+
+-- TAG-CSI-APERIODICTRIGGERSTATELIST-START
+
+CSI-AperiodicTriggerStateList ::=	SEQUENCE (SIZE (1..maxNrOfCSI-AperiodicTriggers)) OF CSI-AperiodicTriggerState 
+
+CSI-AperiodicTriggerState ::=		SEQUENCE {
+	associatedReportConfigInfoList		SEQUENCE (SIZE(1..maxNrofReportConfigPerAperiodicTrigger)) OF CSI-AssociatedReportConfigInfo,
+	...	
+}
+
+CSI-AssociatedReportConfigInfo ::=		SEQUENCE {
+	reportConfigId						CSI-ReportConfigId,
+	resourcesForChannel					CHOICE {
+		nzp-CSI-RS							SEQUENCE {
+			resourceSet							INTEGER (1..maxNrofNZP-CSI-RS-ResourceSetsPerConfig),
+			qcl-info							SEQUENCE (SIZE(1..maxNrofAP-CSI-RS-ResourcesPerSet)) OF TCI-StateId	OPTIONAL -- Cond Aperiodic
+		},
+		csi-SSB-ResourceSet					INTEGER (1..maxNrofCSI-SSB-ResourceSetsPerConfig)
+	},
+	csi-IM-ResourcesforInteference		INTEGER(1..maxNrofCSI-IM-ResourceSetsPerConfig)			OPTIONAL, -- Cond CSI-IM-forInterference
+	nzp-CSI-RS-ResourcesforInterference	INTEGER (1..maxNrofNZP-CSI-RS-ResourceSetsPerConfig)	OPTIONAL, -- Cond NZP-CSI-RS-forInterference
+	...
+}
+
+-- TAG-CSI-APERIODICTRIGGERSTATELIST-STOP 
+-- TAG-CSI-FREQUENCYOCCUPATION-START
+
+CSI-FrequencyOccupation ::=			SEQUENCE {
+	startingRB							INTEGER (0..maxNrofPhysicalResourceBlocks-1),
+	nrofRBs								INTEGER (24..maxNrofPhysicalResourceBlocksPlus1),
+	...
+}
+
+-- TAG-CSI-FREQUENCYOCCUPATION-STOP
+-- TAG-CSI-IM-RESOURCE-START
+
+CSI-IM-Resource ::= 				SEQUENCE {
+	csi-IM-ResourceId					CSI-IM-ResourceId,
+	csi-IM-ResourceElementPattern			CHOICE {
+		pattern0								SEQUENCE {
+			subcarrierLocation-p0					ENUMERATED { s0, s2, s4, s6, s8, s10 },
+			symbolLocation-p0						INTEGER (0..12)
+		},
+		pattern1								SEQUENCE {
+			subcarrierLocation-p1					ENUMERATED { s0, s4, s8 },
+			symbolLocation-p1						INTEGER (0..13)
+		}
+	}																									OPTIONAL,	-- Need M
+	freqBand							CSI-FrequencyOccupation											OPTIONAL,	-- Need M
+	periodicityAndOffset				CSI-ResourcePeriodicityAndOffset								OPTIONAL,	-- Cond PeriodicOrSemiPersistent
+	...
+}
+
+-- TAG-CSI-IM-RESOURCE-STOP
+-- TAG-CSI-IM-RESOURCEID-START
+
+CSI-IM-ResourceId ::= 				INTEGER (0..maxNrofCSI-IM-Resources-1) 
+
+-- TAG-CSI-IM-RESOURCEID-STOP
+-- TAG-CSI-IM-RESOURCESET-START
+
+CSI-IM-ResourceSet ::=				SEQUENCE {
+	csi-IM-ResourceSetId				CSI-IM-ResourceSetId,
+	csi-IM-Resources					SEQUENCE (SIZE(1..maxNrofCSI-IM-ResourcesPerSet)) OF CSI-IM-ResourceId,
+	...
+}
+-- TAG-CSI-IM-RESOURCESET-STOP
+-- TAG-CSI-IM-RESOURCESETID-START
+
+CSI-IM-ResourceSetId ::=			INTEGER (0..maxNrofCSI-IM-ResourceSets-1)
+
+-- TAG-CSI-IM-RESOURCESETID-STOP
+-- TAG-CSI-MEAS-CONFIG-START
+
+CSI-MeasConfig ::=					SEQUENCE {
+    nzp-CSI-RS-ResourceToAddModList		SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-Resources)) OF NZP-CSI-RS-Resource					OPTIONAL, -- Need N
+	nzp-CSI-RS-ResourceToReleaseList	SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-Resources)) OF NZP-CSI-RS-ResourceId				OPTIONAL, -- Need N
+	nzp-CSI-RS-ResourceSetToAddModList	SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-ResourceSets)) OF NZP-CSI-RS-ResourceSet			OPTIONAL, -- Need N
+	nzp-CSI-RS-ResourceSetToReleaseList	SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-ResourceSets)) OF NZP-CSI-RS-ResourceSetId			OPTIONAL, -- Need N
+	csi-IM-ResourceToAddModList			SEQUENCE (SIZE (1..maxNrofCSI-IM-Resources)) OF CSI-IM-Resource							OPTIONAL, -- Need N
+	csi-IM-ResourceToReleaseList		SEQUENCE (SIZE (1..maxNrofCSI-IM-Resources)) OF CSI-IM-ResourceId						OPTIONAL, -- Need N
+	csi-IM-ResourceSetToAddModList		SEQUENCE (SIZE (1..maxNrofCSI-IM-ResourceSets)) OF CSI-IM-ResourceSet					OPTIONAL, -- Need N
+	csi-IM-ResourceSetToReleaseList		SEQUENCE (SIZE (1..maxNrofCSI-IM-ResourceSets)) OF CSI-IM-ResourceSetId					OPTIONAL, -- Need N
+	csi-SSB-ResourceSetToAddModList		SEQUENCE (SIZE (1..maxNrofCSI-SSB-ResourceSets)) OF CSI-SSB-ResourceSet					OPTIONAL, -- Need N
+	csi-SSB-ResourceSetToAddReleaseList	SEQUENCE (SIZE (1..maxNrofCSI-SSB-ResourceSets)) OF CSI-SSB-ResourceSetId				OPTIONAL, -- Need N
+	csi-ResourceConfigToAddModList 		SEQUENCE (SIZE (1..maxNrofCSI-ResourceConfigurations)) OF CSI-ResourceConfig			OPTIONAL, -- Need N
+	csi-ResourceConfigToReleaseList 	SEQUENCE (SIZE (1..maxNrofCSI-ResourceConfigurations)) OF CSI-ResourceConfigId			OPTIONAL, -- Need N
+	csi-ReportConfigToAddModList		SEQUENCE (SIZE (1..maxNrofCSI-ReportConfigurations)) OF CSI-ReportConfig				OPTIONAL, -- Need N
+	csi-ReportConfigToReleaseList		SEQUENCE (SIZE (1..maxNrofCSI-ReportConfigurations)) OF CSI-ReportConfigId				OPTIONAL, -- Need N
+	
+	reportTriggerSize					INTEGER (0..6)																			OPTIONAL,
+	aperiodicTriggerStateList			SetupRelease { CSI-AperiodicTriggerStateList }											OPTIONAL, -- Need M
+	semiPersistentOnPUSCH-TriggerStateList			SetupRelease { CSI-SemiPersistentOnPUSCH-TriggerStateList }					OPTIONAL, -- Need M
+	...
+}
+
+-- TAG-CSI-MEAS-CONFIG-STOP 
+-- TAG-CSI-REPORTCONFIG-START
+
+CSI-ReportConfig ::=				SEQUENCE {
+	reportConfigId							CSI-ReportConfigId,
+	carrier									ServCellIndex					OPTIONAL,	-- Need S
+	resourcesForChannelMeasurement			CSI-ResourceConfigId,
+	csi-IM-ResourcesForInterference			CSI-ResourceConfigId		OPTIONAL,	-- Need R
+	nzp-CSI-RS-ResourcesForInterference		CSI-ResourceConfigId		OPTIONAL, 	-- Need R
+	reportConfigType						CHOICE {
+		periodic								SEQUENCE {
+			reportSlotConfig						CSI-ReportPeriodicityAndOffset,
+			pucch-CSI-ResourceList					SEQUENCE (SIZE (1..maxNrofBWPs)) OF PUCCH-CSI-Resource
+		},
+		semiPersistentOnPUCCH					SEQUENCE {
+			reportSlotConfig						CSI-ReportPeriodicityAndOffset,
+			pucch-CSI-ResourceList					SEQUENCE (SIZE (1..maxNrofBWPs)) OF PUCCH-CSI-Resource
+		},
+		semiPersistentOnPUSCH					SEQUENCE {
+			reportSlotConfig						ENUMERATED {sl5, sl10, sl20, sl40, sl80, sl160, sl320},
+			reportSlotOffsetList				SEQUENCE (SIZE (1.. maxNrofUL-Allocations)) OF INTEGER(0..32),
+			p0alpha									P0-PUSCH-AlphaSetId
+		},
+		aperiodic								SEQUENCE {
+			reportSlotOffsetList				SEQUENCE (SIZE (1..maxNrofUL-Allocations)) OF INTEGER(0..32)
+		}
+	},
+	reportQuantity							CHOICE {
+		none									NULL,
+		cri-RI-PMI-CQI							NULL, 
+		cri-RI-i1								NULL, 
+		cri-RI-i1-CQI							SEQUENCE {
+			pdsch-BundleSizeForCSI					ENUMERATED {n2, n4}		OPTIONAL
+		}, 
+		cri-RI-CQI								NULL, 
+		cri-RSRP								NULL, 
+		ssb-Index-RSRP							NULL,
+		cri-RI-LI-PMI-CQI						NULL
+	},
+	reportFreqConfiguration					 SEQUENCE {
+		cqi-FormatIndicator						ENUMERATED { widebandCQI, subbandCQI }										OPTIONAL, 	-- Need R
+		pmi-FormatIndicator						ENUMERATED { widebandPMI, subbandPMI }										OPTIONAL, 	-- Need R
+		csi-ReportingBand						CHOICE {
+			subbands3								BIT STRING(SIZE(3)),
+			subbands4								BIT STRING(SIZE(4)),
+			subbands5								BIT STRING(SIZE(5)),
+			subbands6								BIT STRING(SIZE(6)),
+			subbands7								BIT STRING(SIZE(7)),
+			subbands8								BIT STRING(SIZE(8)),
+			subbands9								BIT STRING(SIZE(9)),
+			subbands10								BIT STRING(SIZE(10)),
+			subbands11								BIT STRING(SIZE(11)),
+			subbands12								BIT STRING(SIZE(12)),
+			subbands13								BIT STRING(SIZE(13)),
+			subbands14								BIT STRING(SIZE(14)),
+			subbands15								BIT STRING(SIZE(15)),
+			subbands16								BIT STRING(SIZE(16)),
+			subbands17								BIT STRING(SIZE(17)),
+			subbands18								BIT STRING(SIZE(18)),
+			...
+		}	OPTIONAL	-- Need S
+
+	}																														OPTIONAL, 	-- Need R
+	timeRestrictionForChannelMeasurements				ENUMERATED {configured, notConfigured},
+	timeRestrictionForInterferenceMeasurements			ENUMERATED {configured, notConfigured},
+	codebookConfig								CodebookConfig																OPTIONAL, 	-- Need R
+	nrofCQIsPerReport							ENUMERATED {n1, n2}															OPTIONAL, 	-- Need R
+	groupBasedBeamReporting						CHOICE {
+		enabled										NULL,
+		disabled 									SEQUENCE {
+			nrofReportedRS							ENUMERATED {n1, n2, n3, n4}											OPTIONAL	-- Need S
+		}
+	},
+	cqi-Table								ENUMERATED {table1, table2, spare2, spare1}									OPTIONAL, 	-- Need R
+	subbandSize								ENUMERATED {value1, value2},
+	non-PMI-PortIndication					SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-ResourcesPerConfig)) OF PortIndexFor8Ranks	OPTIONAL,	-- Need R
+	...
+}
+
+CSI-ReportPeriodicityAndOffset ::=	CHOICE {
+	slots4								INTEGER(0..3),
+	slots5								INTEGER(0..4),
+	slots8								INTEGER(0..7),
+	slots10								INTEGER(0..9),
+	slots16								INTEGER(0..15),
+	slots20								INTEGER(0..19),
+	slots40								INTEGER(0..39),
+	slots80								INTEGER(0..79),
+	slots160							INTEGER(0..159),
+	slots320							INTEGER(0..319)
+}
+
+PUCCH-CSI-Resource ::= 				SEQUENCE {
+	uplinkBandwidthPartId				BWP-Id,
+	pucch-Resource						PUCCH-ResourceId
+}
+
+PortIndexFor8Ranks ::=				CHOICE {
+	portIndex8							SEQUENCE{
+		rank1-8								PortIndex8															OPTIONAL,	-- Need R
+		rank2-8								SEQUENCE(SIZE(2)) OF PortIndex8									OPTIONAL, 	-- Need R
+		rank3-8								SEQUENCE(SIZE(3)) OF PortIndex8									OPTIONAL, 	-- Need R
+		rank4-8								SEQUENCE(SIZE(4)) OF PortIndex8									OPTIONAL, 	-- Need R
+		rank5-8								SEQUENCE(SIZE(5)) OF PortIndex8									OPTIONAL, 	-- Need R
+		rank6-8								SEQUENCE(SIZE(6)) OF PortIndex8									OPTIONAL, 	-- Need R
+		rank7-8								SEQUENCE(SIZE(7)) OF PortIndex8									OPTIONAL, 	-- Need R
+		rank8-8								SEQUENCE(SIZE(8)) OF PortIndex8									OPTIONAL	-- Need R
+	},
+	portIndex4							SEQUENCE{
+		rank1-4								PortIndex4															OPTIONAL, 	-- Need R
+		rank2-4								SEQUENCE(SIZE(2)) OF PortIndex4									OPTIONAL, 	-- Need R
+		rank3-4								SEQUENCE(SIZE(3)) OF PortIndex4									OPTIONAL, 	-- Need R
+		rank4-4								SEQUENCE(SIZE(4)) OF PortIndex4									OPTIONAL	-- Need R
+	},
+	portIndex2							SEQUENCE{
+		rank1-2								PortIndex2															OPTIONAL, 	-- Need R
+		rank2-2								SEQUENCE(SIZE(2)) OF PortIndex2									OPTIONAL	-- Need R
+	},
+	portIndex1							NULL
+}
+
+PortIndex8::=						INTEGER (0..7)
+PortIndex4::=						INTEGER (0..3)
+PortIndex2::=						INTEGER (0..1)
+
+-- TAG-CSI-REPORTCONFIG-STOP
+-- TAG-CSI-REPORTCONFIGID-START
+
+CSI-ReportConfigId ::= 				INTEGER (0..maxNrofCSI-ReportConfigurations-1)
+
+-- TAG-CSI-REPORTCONFIGID-STOP
+-- TAG-CSI-RESOURCECONFIG-START
+
+CSI-ResourceConfig ::= 				SEQUENCE {
+	csi-ResourceConfigId				CSI-ResourceConfigId,
+	csi-RS-ResourceSetList 	 			CHOICE {
+		nzp-CSI-RS-SSB 						SEQUENCE {
+			nzp-CSI-RS-ResourceSetList			SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-ResourceSetsPerConfig)) OF NZP-CSI-RS-ResourceSetId OPTIONAL,
+			csi-SSB-ResourceSetList				SEQUENCE (SIZE (1..maxNrofCSI-SSB-ResourceSetsPerConfig)) OF CSI-SSB-ResourceSetId	OPTIONAL
+		},			
+		csi-IM-ResourceSetList				SEQUENCE (SIZE (1..maxNrofCSI-IM-ResourceSetsPerConfig)) OF CSI-IM-ResourceSetId
+	},
+
+	bwp-Id								BWP-Id,
+	resourceType						ENUMERATED { aperiodic, semiPersistent, periodic },
+	...
+}
+
+-- TAG-CSI-RESOURCECONFIGTOADDMOD-STOP
+-- TAG-CSI-RESOURCECONFIGID-START
+
+CSI-ResourceConfigId ::= 			INTEGER (0..maxNrofCSI-ResourceConfigurations-1)
+
+-- TAG-CSI-RESOURCECONFIGID-STOP
+-- TAG-CSI-RESOURCEPERIODICITYANDOFFSET-START
+
+CSI-ResourcePeriodicityAndOffset ::=	CHOICE {
+	slots4								INTEGER (0..3), 
+	slots5								INTEGER (0..4), 
+	slots8								INTEGER (0..7), 
+	slots10								INTEGER (0..9), 
+	slots16								INTEGER (0..15), 
+	slots20								INTEGER (0..19), 
+	slots32								INTEGER (0..31), 
+	slots40								INTEGER (0..39), 
+	slots64								INTEGER (0..63), 
+	slots80								INTEGER (0..79), 
+	slots160							INTEGER (0..159), 
+	slots320							INTEGER (0..319), 
+	slots640							INTEGER (0..639)
+}
+
+-- TAG-CSI-RESIYRCEPERIODICITYANDOFFSET-STOP
+-- TAG-CSI-RS-RESOURCECONFIGMOBILITY-START
+
+CSI-RS-ResourceConfigMobility ::= 	SEQUENCE {
+	subcarrierSpacing					SubcarrierSpacing,
+	csi-RS-CellList-Mobility 			SEQUENCE (SIZE (1..maxNrofCSI-RS-CellsRRM))	OF CSI-RS-CellMobility,
+	...
+}
+
+CSI-RS-CellMobility ::=				SEQUENCE {
+	cellId								PhysCellId,
+	csi-rs-MeasurementBW				SEQUENCE {
+		nrofPRBs							ENUMERATED { size24, size48, size96, size192, size264},
+		startPRB							INTEGER(0..2169)
+	},
+	density								ENUMERATED {d1,d3}												OPTIONAL,
+	csi-rs-ResourceList-Mobility 		SEQUENCE (SIZE (1..maxNrofCSI-RS-ResourcesRRM))	OF CSI-RS-Resource-Mobility
+}
+
+CSI-RS-Resource-Mobility ::=		SEQUENCE {
+	csi-RS-Index						CSI-RS-Index,
+	slotConfig							CHOICE {
+		ms4									INTEGER (0..31),
+		ms5									INTEGER (0..39),
+		ms10								INTEGER (0..79),
+		ms20								INTEGER (0..159),
+		ms40								INTEGER (0..319)
+	},
+	associatedSSB						SEQUENCE {
+		ssb-Index							SSB-Index,
+		isQuasiColocated					BOOLEAN
+	}																										OPTIONAL, -- Need R
+	frequencyDomainAllocation			CHOICE {
+		row1								BIT STRING (SIZE (4)),
+		row2								BIT STRING (SIZE (12))
+	},
+	firstOFDMSymbolInTimeDomain			INTEGER (0..13),	
+	sequenceGenerationConfig			INTEGER (0..1023),
+	...
+}
+
+CSI-RS-Index ::= 					INTEGER (0..maxNrofCSI-RS-ResourcesRRM-1)
+
+-- TAG-CSI-RS-RESOURCECONFIGMOBILITY-STOP
+-- TAG-CSI-RS-RESOURCEMAPPING-START
+
+CSI-RS-ResourceMapping ::= 			SEQUENCE {
+	frequencyDomainAllocation			CHOICE {
+		row1								BIT STRING (SIZE (4)),
+		row2								BIT STRING (SIZE (12)),
+		row4								BIT STRING (SIZE (3)),
+		other								BIT STRING (SIZE (6))
+	},
+	nrofPorts							ENUMERATED {p1,p2,p4,p8,p12,p16,p24,p32},
+	firstOFDMSymbolInTimeDomain			INTEGER (0..13),
+	firstOFDMSymbolInTimeDomain2		INTEGER (2..12)																OPTIONAL,	-- Need R
+	cdm-Type							ENUMERATED {noCDM, fd-CDM2, cdm4-FD2-TD2, cdm8-FD2-TD4},
+	density								CHOICE {
+		dot5								ENUMERATED {evenPRBs, oddPRBs}, 
+		one									NULL, 
+		three								NULL, 
+		spare								NULL
+	},
+	freqBand							CSI-FrequencyOccupation,
+	...
+}
+
+-- TAG-CSI-RS-RESOURCEMAPPING-STOP
+-- TAG-CSI-SEMIPERSISTENTONPUSCHTRIGGERSTATELIST-START
+
+CSI-SemiPersistentOnPUSCH-TriggerStateList ::=	SEQUENCE(SIZE (1..maxNrOfSemiPersistentPUSCH-Triggers)) OF CSI-SemiPersistentOnPUSCH-TriggerState
+
+CSI-SemiPersistentOnPUSCH-TriggerState ::=		SEQUENCE {
+	associatedReportConfigInfo						CSI-ReportConfigId,
+	...
+}
+
+
+-- TAG-CSI-SEMIPERSISTENTONPUSCHTRIGGERSTATELIST-STOP 
+-- TAG-CSI-SSB-RESOURCESETID-START
+
+CSI-SSB-ResourceSetId ::=			INTEGER (0..maxNrofCSI-SSB-ResourceSets-1)
+
+-- TAG-CSI-SSB-RESOURCESETID-STOP
+-- TAG-CSI-SSB-RESOURCESET-START
+
+CSI-SSB-ResourceSet ::=				SEQUENCE {
+	csi-SSB-ResourceSetId				CSI-SSB-ResourceSetId,
+	csi-SSB-ResourceList				SEQUENCE (SIZE(1..maxNrofCSI-SSB-ResourcePerSet)) OF SSB-Index,
+	...
+}
+
+-- TAG-CSI-SSB-RESOURCESET-STOP
+-- TAG-DMRS-DOWNLINKCONFIG-START
+
+DMRS-DownlinkConfig ::=				SEQUENCE {
+	dmrs-Type							ENUMERATED {type2}														OPTIONAL,	-- Need S
+	dmrs-AdditionalPosition				ENUMERATED {pos0, pos1, pos3}											OPTIONAL,	-- Need R
+	maxLength							ENUMERATED {len2}														OPTIONAL, 	-- Need S
+	scramblingID0						INTEGER (0..65535)														OPTIONAL, 	-- Need S
+	scramblingID1						INTEGER (0..65535)														OPTIONAL, 	-- Need S
+	phaseTrackingRS						SetupRelease { PTRS-DownlinkConfig	}									OPTIONAL,	-- Need M
+	...
+}
+
+-- TAG-DMRS-DOWNLINKCONFIG-STOP
+-- TAG-DMRS-UPLINKCONFIG-START
+
+DMRS-UplinkConfig ::=				SEQUENCE {
+	dmrs-Type							ENUMERATED {type2} 													OPTIONAL,	-- Need S
+	dmrs-AdditionalPosition				ENUMERATED {pos0, pos1, pos3}										OPTIONAL,	-- Need R
+	phaseTrackingRS						SetupRelease { PTRS-UplinkConfig }									OPTIONAL,	-- Need M
+	maxLength							ENUMERATED {len2}													OPTIONAL, 	-- Need S
+
+	transformPrecodingDisabled							SEQUENCE {
+		scramblingID0						INTEGER (0..65535)												OPTIONAL,	-- Need S
+		scramblingID1						INTEGER (0..65535)												OPTIONAL,	-- Need S
+		...
+	}																										OPTIONAL, 	-- Need R
+	transformPrecodingEnabled								SEQUENCE {
+		nPUSCH-Identity						INTEGER(0..1007)												OPTIONAL,	-- Need S
+		disableSequenceGroupHopping			ENUMERATED {disabled}											OPTIONAL,	-- Need S
+		sequenceHoppingEnabled				ENUMERATED {enabled}											OPTIONAL,	-- Need S
+		...
+	}																										OPTIONAL, 	-- Need R
+	...
+}
+
+-- TAG-DMRS-UPLINKCONFIG-STOP
+-- TAG-DOWNLINK-CONFIG-COMMON-START
+
+DownlinkConfigCommon ::=		SEQUENCE {
+	frequencyInfoDL					FrequencyInfoDL									OPTIONAL,	-- Cond InterFreqHOAndServCellAdd
+	initialDownlinkBWP				BWP-DownlinkCommon								OPTIONAL,	-- Cond ServCellAdd
+	...
+}
+
+-- TAG-DOWNLINK-CONFIG-COMMON-STOP
+-- TAG-DOWNLINKPREEMPTION-START
+
+DownlinkPreemption ::=				SEQUENCE {
+	int-RNTI							RNTI-Value,
+	timeFrequencySet					ENUMERATED {set0, set1},
+	dci-PayloadSize						INTEGER (0..maxINT-DCI-PayloadSize),
+	int-ConfigurationPerServingCell		SEQUENCE (SIZE (1..maxNrofServingCells)) OF INT-ConfigurationPerServingCell,
+	...
+}
+
+INT-ConfigurationPerServingCell ::= SEQUENCE {
+	servingCellId						ServCellIndex,
+	positionInDCI						INTEGER (0..maxINT-DCI-PayloadSize-1)
+}
+
+-- TAG-DOWNLINKPREEMPTION-STOP
+-- TAG-DRB-IDENTITY-START
+
+DRB-Identity ::=					INTEGER (1..32)
+
+-- TAG-DRB-IDENTITY-STOP
+-- TAG-EUTRA-MBSFN-SUBFRAMECONFIGLIST-START
+
+EUTRA-MBSFN-SubframeConfigList ::= 	SEQUENCE (SIZE (1..maxMBSFN-Allocations)) OF EUTRA-MBSFN-SubframeConfig
+
+EUTRA-MBSFN-SubframeConfig ::=		SEQUENCE {
+	radioframeAllocationPeriod			ENUMERATED {n1, n2, n4, n8, n16, n32},
+	radioframeAllocationOffset			INTEGER (0..7),
+	subframeAllocation					CHOICE {
+		oneFrame							BIT STRING (SIZE(6)),
+		fourFrames							BIT STRING (SIZE(24))
+	},
+	subframeAllocation-v1430			CHOICE {
+		oneFrame-v1430						BIT STRING (SIZE(2)),
+		fourFrames-v1430					BIT STRING (SIZE(8))
+	}																														OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-EUTRA-MBSFN-SUBFRAMECONFIGLIST-STOP
+-- TAG-FILTERCOEFFICIENT-START
+
+FilterCoefficient ::=				ENUMERATED { fc0, fc1, fc2, fc3, fc4, fc5, fc6, fc7, fc8, fc9, fc11, fc13, fc15, fc17, fc19, spare1, ...}
+
+-- TAG-FILTERCOEFFICIENT-STOP
+-- TAG-FREQBANDINDICATORNR-START
+
+FreqBandIndicatorNR ::=     		INTEGER (1..1024)
+
+-- TAG-FREQBANDINDICATORNR-STOP
+-- TAG-FREQUENCY-INFO-DL-START
+
+FrequencyInfoDL ::= 				SEQUENCE {
+	absoluteFrequencySSB				ARFCN-ValueNR																OPTIONAL,	-- Cond SpCellAdd
+	frequencyBandList					MultiFrequencyBandListNR,
+	absoluteFrequencyPointA				ARFCN-ValueNR,
+	scs-SpecificCarrierList				SEQUENCE (SIZE (1..maxSCSs)) OF SCS-SpecificCarrier,
+	...
+}
+
+-- TAG-FREQUENCY-INFO-UL-STOP
+-- TAG-FREQUENCY-INFO-UL-START
+
+FrequencyInfoUL ::= 				SEQUENCE {
+	frequencyBandList					MultiFrequencyBandListNR										OPTIONAL,	-- Cond FDD-OrSUL
+	absoluteFrequencyPointA				ARFCN-ValueNR													OPTIONAL,	-- Cond FDD-OrSUL
+	scs-SpecificCarrierList				SEQUENCE (SIZE (1..maxSCSs)) OF SCS-SpecificCarrier,
+	additionalSpectrumEmission			AdditionalSpectrumEmission										OPTIONAL,	-- Need S
+	p-Max								P-Max															OPTIONAL,	-- Need S
+	frequencyShift7p5khz				ENUMERATED {true}												OPTIONAL,	-- Cond FDD-OrSUL-Optional
+	...
+}
+
+-- TAG-FREQUENCY-INFO-UL-STOP
+
+Hysteresis ::=						INTEGER (0..30)
+
+-- TAG-LOGICAL-CHANNEL-CONFIG-START
+
+LogicalChannelConfig ::=			SEQUENCE {
+	ul-SpecificParameters				SEQUENCE {
+		priority							INTEGER (1..16),
+		prioritisedBitRate					ENUMERATED {kBps0, kBps8, kBps16, kBps32, kBps64, kBps128, kBps256, kBps512, 
+											kBps1024, kBps2048, kBps4096, kBps8192, kBps16384, kBps32768, kBps65536, infinity},
+		bucketSizeDuration					ENUMERATED {ms5, ms10, ms20, ms50, ms100, ms150, ms300, ms500, ms1000, 
+															spare7, spare6, spare5, spare4, spare3,spare2, spare1},
+
+		allowedServingCells					SEQUENCE (SIZE (1..maxNrofServingCells-1)) OF ServCellIndex					OPTIONAL,	-- Need R
+		allowedSCS-List						SEQUENCE (SIZE (1..maxSCSs)) OF SubcarrierSpacing							OPTIONAL,	-- Need R
+		maxPUSCH-Duration					ENUMERATED { ms0p02, ms0p04, ms0p0625, ms0p125, ms0p25, ms0p5, spare2, spare1 }
+																														OPTIONAL,	-- Need R
+		configuredGrantType1Allowed			ENUMERATED {true}															OPTIONAL,	-- Need R
+
+		logicalChannelGroup					INTEGER (0..maxLCG-ID)														OPTIONAL, 	-- Need R
+		schedulingRequestID					SchedulingRequestId															OPTIONAL,	-- Need R
+		logicalChannelSR-Mask				BOOLEAN,
+		logicalChannelSR-DelayTimerApplied	BOOLEAN,
+		...
+	}																													OPTIONAL,	-- Cond UL
+
+	...
+}
+
+-- TAG-LOGICAL-CHANNEL-CONFIG-STOP
+-- TAG-LOGICALCHANNELIDENTITY-START
+
+LogicalChannelIdentity ::= 			INTEGER (1..maxLC-ID)
+
+-- TAG-LOGICALCHANNELIDENTITY-STOP
+-- TAG-MAC-CELL-GROUP-CONFIG-START
+
+MAC-CellGroupConfig ::= 			SEQUENCE {
+	drx-Config							SetupRelease { DRX-Config }													OPTIONAL, -- Need M
+	schedulingRequestConfig				SchedulingRequestConfig														OPTIONAL, -- Need M
+	bsr-Config							BSR-Config																	OPTIONAL, -- Need M
+	tag-Config							TAG-Config																	OPTIONAL, -- Need M	
+	phr-Config							SetupRelease { PHR-Config }													OPTIONAL, -- Need M
+	skipUplinkTxDynamic				BOOLEAN,
+	...
+}
+
+DRX-Config ::=						SEQUENCE {
+	drx-onDurationTimer					CHOICE {
+											subMilliSeconds	INTEGER (1..31),
+											milliSeconds	ENUMERATED {
+												ms1, ms2, ms3, ms4, ms5, ms6, ms8, ms10, ms20, ms30, ms40, ms50, ms60, 
+												ms80, ms100, ms200, ms300, ms400, ms500, ms600, ms800, ms1000, ms1200, 
+												ms1600, spare8, spare7, spare6, spare5, spare4, spare3, spare2, spare1 }
+											},
+	drx-InactivityTimer					ENUMERATED { 
+											ms0, ms1, ms2, ms3, ms4, ms5, ms6, ms8, ms10, ms20, ms30, ms40, ms50, ms60, ms80, 
+											ms100, ms200, ms300, ms500, ms750, ms1280, ms1920, ms2560, spare9, spare8, 
+											spare7, spare6, spare5, spare4, spare3, spare2, spare1},
+	drx-HARQ-RTT-TimerDL				INTEGER (0..56),
+	drx-HARQ-RTT-TimerUL				INTEGER (0..56),
+	drx-RetransmissionTimerDL			ENUMERATED { 
+											sl0, sl1, sl2, sl4, sl6, sl8, sl16, sl24, sl33, sl40, sl64, sl80, sl96, sl112, sl128, 
+											sl160, sl320, spare15, spare14, spare13, spare12, spare11, spare10, spare9, 
+											spare8, spare7, spare6, spare5, spare4, spare3, spare2, spare1},
+	drx-RetransmissionTimerUL			ENUMERATED {
+											sl0, sl1, sl2, sl4, sl6, sl8, sl16, sl24, sl33, sl40, sl64, sl80, sl96, sl112, sl128, 
+											sl160, sl320, spare15, spare14, spare13, spare12, spare11, spare10, spare9, 
+											spare8, spare7, spare6, spare5, spare4, spare3, spare2, spare1 },
+	drx-LongCycleStartOffset			CHOICE {
+		ms10								INTEGER(0..9),
+		ms20								INTEGER(0..19),
+		ms32								INTEGER(0..31),
+		ms40								INTEGER(0..39),
+		ms60								INTEGER(0..59),
+		ms64								INTEGER(0..63),
+		ms70								INTEGER(0..69),
+		ms80								INTEGER(0..79),
+		ms128								INTEGER(0..127),
+		ms160								INTEGER(0..159),
+		ms256								INTEGER(0..255),
+		ms320								INTEGER(0..319),
+		ms512								INTEGER(0..511),
+		ms640								INTEGER(0..639),
+		ms1024								INTEGER(0..1023),
+		ms1280								INTEGER(0..1279),
+		ms2048								INTEGER(0..2047),
+		ms2560								INTEGER(0..2559),
+		ms5120								INTEGER(0..5119),
+		ms10240								INTEGER(0..10239)
+	},
+	-- FFS need for finer offset granulary
+	-- FFS need for shorter values for long and short cycles
+	shortDRX							SEQUENCE {
+		drx-ShortCycle						ENUMERATED	{
+												ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms10, ms14, ms16, ms20, ms30, ms32,
+												ms35, ms40, ms64, ms80, ms128, ms160, ms256, ms320, ms512, ms640, spare9,
+												spare8, spare7, spare6, spare5, spare4, spare3, spare2, spare1 },
+		drx-ShortCycleTimer					INTEGER (1..16)
+	}																													OPTIONAL,	-- Need R
+	drx-SlotOffset						INTEGER (0..31)
+
+}
+
+PHR-Config ::=						SEQUENCE {
+	phr-PeriodicTimer					ENUMERATED {sf10, sf20, sf50, sf100, sf200,sf500, sf1000, infinity},
+	phr-ProhibitTimer					ENUMERATED {sf0, sf10, sf20, sf50, sf100,sf200, sf500, sf1000},
+	phr-Tx-PowerFactorChange			ENUMERATED {dB1, dB3, dB6, infinity},
+	multiplePHR							BOOLEAN,
+	phr-Type2SpCell						BOOLEAN,
+	phr-Type2OtherCell					BOOLEAN,
+	phr-ModeOtherCG						ENUMERATED {real, virtual},
+	...
+}
+
+
+TAG-Config ::=						SEQUENCE {
+	tag-ToReleaseList					SEQUENCE (SIZE (1..maxNrofTAGs)) OF TAG-Id										OPTIONAL,	-- Need N
+	tag-ToAddModList					SEQUENCE (SIZE (1..maxNrofTAGs)) OF TAG								OPTIONAL	-- Need N
+}
+
+TAG ::= 					SEQUENCE {
+	tag-Id								TAG-Id,
+	timeAlignmentTimer					TimeAlignmentTimer,
+	...
+}
+
+TAG-Id ::=							INTEGER (0..maxNrofTAGs-1)
+
+TimeAlignmentTimer ::= 				ENUMERATED {ms500, ms750, ms1280, ms1920, ms2560, ms5120, ms10240, infinity}
+
+BSR-Config ::=						SEQUENCE {
+	periodicBSR-Timer					ENUMERATED { sf1, sf5, sf10, sf16, sf20, sf32, sf40, sf64, 
+														sf80, sf128, sf160, sf320, sf640, sf1280, sf2560, infinity },
+	retxBSR-Timer						ENUMERATED { sf10, sf20, sf40, sf80, sf160, sf320, sf640, sf1280, sf2560, 
+														sf5120, sf10240, spare5, spare4, spare3, spare2, spare1},
+	logicalChannelSR-DelayTimer			ENUMERATED { sf20, sf40, sf64, sf128, sf512, sf1024, sf2560, spare1}			OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-MAC-CELL-GROUP-CONFIG-STOP
+-- TAG-MEAS-CONFIG-START
+
+MeasConfig ::=						SEQUENCE {
+	measObjectToRemoveList				MeasObjectToRemoveList												OPTIONAL,	-- Need N
+	measObjectToAddModList				MeasObjectToAddModList												OPTIONAL,	-- Need N
+
+	reportConfigToRemoveList			ReportConfigToRemoveList											OPTIONAL,	-- Need N
+	reportConfigToAddModList			ReportConfigToAddModList											OPTIONAL,	-- Need N
+
+	measIdToRemoveList					MeasIdToRemoveList													OPTIONAL,	-- Need N
+	measIdToAddModList					MeasIdToAddModList													OPTIONAL,	-- Need N
+
+	s-MeasureConfig						CHOICE {
+		ssb-RSRP							RSRP-Range,						
+		csi-RSRP							RSRP-Range						
+	} 																										OPTIONAL,	-- Need M
+
+	quantityConfig						QuantityConfig														OPTIONAL,	-- Need M
+
+	measGapConfig						MeasGapConfig														OPTIONAL,	-- Need M
+	measGapSharingConfig					MeasGapSharingConfig												OPTIONAL,	-- Need M
+	...
+}
+
+MeasObjectToRemoveList ::=				SEQUENCE (SIZE (1..maxNrofObjectId)) OF MeasObjectId
+
+MeasIdToRemoveList ::=					SEQUENCE (SIZE (1..maxNrofMeasId)) OF MeasId
+
+ReportConfigToRemoveList ::=			SEQUENCE (SIZE (1..maxReportConfigId)) OF ReportConfigId
+
+-- TAG-MEAS-CONFIG-STOP
+--TAG-MEAS-GAP-CONFIG-START
+
+MeasGapConfig ::=					SEQUENCE {
+	gapFR2 								SetupRelease { GapConfig }														OPTIONAL,	-- Need M
+	...
+}
+
+GapConfig ::=						SEQUENCE {
+	gapOffset 							INTEGER (0..159),
+	mgl 								ENUMERATED {ms1dot5, ms3, ms3dot5, ms4, ms5dot5, ms6},
+	mgrp 								ENUMERATED {ms20, ms40, ms80, ms160},
+	mgta								ENUMERATED {ms0, ms0dot25, ms0dot5},
+	...
+}
+
+-- TAG-MEAS-GAP-CONFIG-STOP
+--TAG-MEAS-GAP-SHARING-CONFIG-START
+
+MeasGapSharingConfig ::=		SEQUENCE {
+	gapSharingFR2 				SetupRelease { MeasGapSharingScheme }		OPTIONAL,	-- Need M
+	...
+}
+
+MeasGapSharingScheme ::=		ENUMERATED { scheme00, scheme01, scheme10, scheme11 }
+
+--TAG-MEAS-GAP-SHARING-CONFIG-STOP
+-- TAG-MEAS-ID-START
+
+MeasId ::=							INTEGER (1..maxNrofMeasId)
+
+-- TAG-MEAS-ID-STOP
+-- TAG-MEAS-ID-TO-ADD-MOD-LIST-START
+
+MeasIdToAddModList ::=				SEQUENCE (SIZE (1..maxNrofMeasId)) OF MeasIdToAddMod
+
+MeasIdToAddMod ::=					SEQUENCE {
+	measId								MeasId,
+	measObjectId						MeasObjectId,
+	reportConfigId						ReportConfigId
+}
+
+-- TAG-MEAS-ID-TO-ADD-MOD-LIST-STOP
+-- TAG-MEAS-OBJECT-ID-START
+
+MeasObjectId ::=					INTEGER (1..maxNrofObjectId)
+
+-- TAG-MEAS-OBJECT-ID-STOP
+-- TAG-MEAS-OBJECT-NR-START
+
+MeasObjectNR ::=					SEQUENCE {
+	ssbFrequency						ARFCN-ValueNR													OPTIONAL,	-- Cond SSBorAssociatedSSB
+    ssbSubcarrierSpacing					SubcarrierSpacing											OPTIONAL,	-- Cond SSBorAssociatedSSB
+	smtc1								SSB-MTC                                                			OPTIONAL,   -- Cond SSBorAssociatedSSB
+	smtc2								SSB-MTC2														OPTIONAL,	-- Cond IntraFreqConnected
+
+	refFreqCSI-RS						ARFCN-ValueNR															OPTIONAL,
+	referenceSignalConfig				ReferenceSignalConfig,													
+
+	absThreshSS-BlocksConsolidation		ThresholdNR																OPTIONAL,	-- Need R
+	absThreshCSI-RS-Consolidation		ThresholdNR																OPTIONAL,	-- Need R
+																													
+	nrofSS-BlocksToAverage				INTEGER (2..maxNrofSS-BlocksToAverage)									OPTIONAL,	-- Need R
+	nrofCSI-RS-ResourcesToAverage		INTEGER (2..maxNrofCSI-RS-ResourcesToAverage)							OPTIONAL,	-- Need R
+																															
+	quantityConfigIndex					INTEGER (1..maxNrofQuantityConfig),
+
+	offsetMO							Q-OffsetRangeList,
+
+	cellsToRemoveList					PCI-List																OPTIONAL,	-- Need N
+	cellsToAddModList					CellsToAddModList														OPTIONAL,	-- Need N
+
+	blackCellsToRemoveList				PCI-RangeIndexList														OPTIONAL,	-- Need N
+	blackCellsToAddModList				SEQUENCE (SIZE (1..maxNrofPCI-Ranges)) OF PCI-RangeElement			OPTIONAL,	-- Need N
+
+	whiteCellsToRemoveList				PCI-RangeIndexList														OPTIONAL,	-- Need N
+	whiteCellsToAddModList				SEQUENCE (SIZE (1..maxNrofPCI-Ranges)) OF PCI-RangeElement		OPTIONAL,	-- Need N
+	...
+}
+
+ReferenceSignalConfig::=     		SEQUENCE {
+	ssb-ConfigMobility					SSB-ConfigMobility														OPTIONAL,	-- Need M
+	csi-rs-ResourceConfigMobility		SetupRelease { CSI-RS-ResourceConfigMobility } 							OPTIONAL	-- Need M		
+}
+
+SSB-ConfigMobility ::= 				SEQUENCE {
+	ssb-ToMeasure							SetupRelease { SSB-ToMeasure }										OPTIONAL,	-- Need M
+	useServingCellTimingForSync				BOOLEAN,
+	ss-RSSI-Measurement							SS-RSSI-Measurement											OPTIONAL,	-- Need M
+	...
+}
+
+
+Q-OffsetRangeList ::=				SEQUENCE {
+	rsrpOffsetSSB						Q-OffsetRange				DEFAULT dB0,
+	rsrqOffsetSSB						Q-OffsetRange				DEFAULT dB0,
+	sinrOffsetSSB						Q-OffsetRange				DEFAULT dB0,
+	rsrpOffsetCSI-RS					Q-OffsetRange				DEFAULT dB0,
+	rsrqOffsetCSI-RS					Q-OffsetRange				DEFAULT dB0,
+	sinrOffsetCSI-RS					Q-OffsetRange				DEFAULT dB0
+}
+
+SSB-ToMeasure ::=					CHOICE {
+	shortBitmap							BIT STRING (SIZE (4)),
+	mediumBitmap						BIT STRING (SIZE (8)),
+	longBitmap							BIT STRING (SIZE (64))
+}
+
+ThresholdNR ::=						SEQUENCE{
+	thresholdRSRP						RSRP-Range					OPTIONAL,
+	thresholdRSRQ						RSRQ-Range					OPTIONAL,
+	thresholdSINR						SINR-Range					OPTIONAL
+}
+
+CellsToAddModList ::=				SEQUENCE (SIZE (1..maxNrofCellMeas)) OF CellsToAddMod
+
+CellsToAddMod ::=					SEQUENCE {
+	physCellId							PhysCellId,
+	cellIndividualOffset				Q-OffsetRangeList
+}
+
+
+
+
+-- TAG-MEAS-OBJECT-NR-STOP
+-- TAG-MEAS-OBJECT-TO-ADD-MOD-LIST-START
+
+MeasObjectToAddModList ::=					SEQUENCE (SIZE (1..maxNrofObjectId)) OF MeasObjectToAddMod
+
+MeasObjectToAddMod ::=						SEQUENCE {
+	measObjectId								MeasObjectId,
+	measObject									CHOICE {
+		measObjectNR								MeasObjectNR,
+		...
+	}
+}
+
+-- TAG-MEAS-OBJECT-TO-ADD-MOD-LIST-STOP 
+-- TAG-MEAS-RESULTS-START
+
+MeasResults ::=								SEQUENCE {
+	measId										MeasId,
+	measResultServingMOList					MeasResultServMOList,
+	measResultNeighCells						CHOICE {
+		measResultListNR							MeasResultListNR,
+		...
+	}																														OPTIONAL,
+	...
+}
+
+MeasResultServMOList ::=					SEQUENCE (SIZE (1..maxNrofServingCells)) OF MeasResultServMO
+
+MeasResultServMO ::=						SEQUENCE {
+	servCellId									ServCellIndex,																
+	measResultServingCell						MeasResultNR,
+	measResultBestNeighCell						MeasResultNR															OPTIONAL,
+	...															
+}
+
+MeasResultListNR ::=						SEQUENCE (SIZE (1..maxCellReport)) OF MeasResultNR
+
+MeasResultNR ::=							SEQUENCE {
+	physCellId									PhysCellId																	OPTIONAL,
+	--FFS: Details of cgi info 
+	measResult									SEQUENCE {
+		cellResults									SEQUENCE{
+			resultsSSB-Cell								MeasQuantityResults													OPTIONAL,
+			resultsCSI-RS-Cell							MeasQuantityResults													OPTIONAL
+		},
+		rsIndexResults								SEQUENCE{
+			resultsSSB-Indexes							ResultsPerSSB-IndexList												OPTIONAL, 
+			resultsCSI-RS-Indexes						ResultsPerCSI-RS-IndexList											OPTIONAL
+		}																													OPTIONAL
+	},
+	...
+}
+
+
+MeasQuantityResults ::= 			SEQUENCE {
+	rsrp								RSRP-Range													OPTIONAL,
+	rsrq								RSRQ-Range													OPTIONAL,
+	sinr								SINR-Range													OPTIONAL
+}
+
+ResultsPerSSB-IndexList::= 				SEQUENCE (SIZE (1..maxNrofSSBs)) OF ResultsPerSSB-Index
+
+ResultsPerSSB-Index ::= 					SEQUENCE {
+	ssb-Index									SSB-Index,
+	ssb-Results									MeasQuantityResults							OPTIONAL
+}
+
+ResultsPerCSI-RS-IndexList::= 				SEQUENCE (SIZE (1..maxNrofCSI-RS)) OF ResultsPerCSI-RS-Index
+
+ResultsPerCSI-RS-Index ::= 					SEQUENCE {
+	csi-RS-Index								CSI-RS-Index,
+	csi-RS-Results								MeasQuantityResults							OPTIONAL
+}
+
+-- TAG-MEAS-RESULTS-STOP
+-- TAG-MEAS-RESULT-SCG-FAILURE-START
+
+MeasResultSCG-Failure ::= 			SEQUENCE {
+	measResultPerMOList						MeasResultList2NR,
+	...
+}
+
+
+MeasResultList2NR ::=				SEQUENCE (SIZE (1..maxFreq)) OF MeasResult2NR
+
+MeasResult2NR ::=					SEQUENCE {	
+	ssbFrequency						ARFCN-ValueNR							OPTIONAL,
+	refFreqCSI-RS						ARFCN-ValueNR							OPTIONAL,
+	measResultServingCell				MeasResultNR							OPTIONAL,
+	measResultNeighCellListNR			MeasResultListNR
+}
+
+-- TAG-MEAS-RESULT-SCG-FAILURE-STOP
+-- TAG-MEASRESULT-CELL-LIST-SFTD-START
+
+MeasResultCellListSFTD ::=			SEQUENCE (SIZE (1..maxCellSFTD)) OF MeasResultCellSFTD
+
+MeasResultCellSFTD ::=				SEQUENCE {
+	physCellId							PhysCellId,
+	sfn-OffsetResult					INTEGER (0..1023),
+	frameBoundaryOffsetResult			INTEGER (-30720..30719),
+	rsrp-Result							RSRP-Range						OPTIONAL
+}
+
+-- TAG-MEASRESULT-CELL-LIST-SFTD-STOP
+-- TAG-MULTIFREQUENCYBANDLISTNR-START
+
+MultiFrequencyBandListNR ::=		SEQUENCE (SIZE (1..maxNrofMultiBands)) OF FreqBandIndicatorNR
+
+-- TAG-MULTIFREQUENCYBANDLISTNR-STOP
+-- TAG-NZP-CSI-RS-RESOURCE-START
+
+NZP-CSI-RS-Resource ::=				SEQUENCE {
+	nzp-CSI-RS-ResourceId				NZP-CSI-RS-ResourceId,
+	resourceMapping						CSI-RS-ResourceMapping,
+	powerControlOffset					INTEGER(-8..15),
+	powerControlOffsetSS				ENUMERATED {db-3, db0, db3, db6}							OPTIONAL,	-- Need R
+	scramblingID						ScramblingId,
+	periodicityAndOffset				CSI-ResourcePeriodicityAndOffset							OPTIONAL,	-- Cond PeriodicOrSemiPersistent
+	qcl-InfoPeriodicCSI-RS				TCI-StateId													OPTIONAL,	-- Cond Periodic
+	...
+}
+
+-- TAG-NZP-CSI-RS-RESOURCE-STOP
+-- TAG-NZP-CSI-RS-RESOURCEID-START
+
+NZP-CSI-RS-ResourceId ::= 			INTEGER (0..maxNrofNZP-CSI-RS-Resources-1)
+
+-- TAG-NZP-CSI-RS-RESOURCEID-STOP
+-- TAG-NZP-CSI-RS-RESOURCESET-START
+NZP-CSI-RS-ResourceSet ::= 			SEQUENCE {
+	nzp-CSI-ResourceSetId				NZP-CSI-RS-ResourceSetId,	
+	nzp-CSI-RS-Resources				SEQUENCE (SIZE (1..maxNrofNZP-CSI-RS-ResourcesPerSet)) OF NZP-CSI-RS-ResourceId,
+	repetition							ENUMERATED { on, off }															OPTIONAL,
+	aperiodicTriggeringOffset			INTEGER(0..4)																	OPTIONAL,	-- Need S
+	trs-Info							ENUMERATED {true}																OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-NZP-CSI-RS-RESOURCESET-STOP
+-- TAG-NZP-CSI-RS-RESOURCESETID-START
+
+NZP-CSI-RS-ResourceSetId ::=		INTEGER (0..maxNrofNZP-CSI-RS-ResourceSets-1)
+
+-- TAG-NZP-CSI-RS-RESOURCESETID-STOP
+-- TAG-P-MAX-START
+
+P-Max ::=							INTEGER (-30..33)
+
+-- TAG-P-MAX-STOP
+-- TAG-PCI-LIST-START
+
+PCI-List ::=						SEQUENCE (SIZE (1..maxNrofCellMeas)) OF PhysCellId
+
+-- TAG-PCI-LIST-STOP
+-- TAG-PCI-RANGE-START
+
+PCI-Range ::=						SEQUENCE {
+	start								PhysCellId,
+	range								ENUMERATED { n4, n8, n12, n16, n24, n32, n48, n64, n84, 
+													 n96, n128, n168, n252, n504, n1008, spare1} 					OPTIONAL	 -- Need S
+}
+
+-- TAG-PCI-RANGE-STOP
+-- TAG-PCI-RANGEELEMENT-START
+
+PCI-RangeElement ::=				SEQUENCE {
+	pci-RangeIndex						PCI-RangeIndex,	
+	pci-Range							PCI-Range
+}
+
+-- TAG-PCI-RANGEELEMENT-STOP
+-- TAG-PCI-RANGE-INDEX-START
+
+PCI-RangeIndex ::=					INTEGER (1..maxNrofPCI-Ranges)
+
+-- TAG-PCI-RANGE-INDEX-STOP
+-- TAG-PCI-RANGE-INDEX-LIST-START
+
+PCI-RangeIndexList ::=				SEQUENCE (SIZE (1..maxNrofPCI-Ranges)) OF PCI-RangeIndex
+
+-- TAG-PCI-Range-INDEX-LIST-STOP
+-- TAG-PDCCH-CONFIG-START
+
+PDCCH-Config ::= 					SEQUENCE {
+	controlResourceSetToAddModList		SEQUENCE(SIZE (1..3)) OF ControlResourceSet 						OPTIONAL,	-- Need N
+	controlResourceSetToReleaseList		SEQUENCE(SIZE (1..3)) OF ControlResourceSetId						OPTIONAL, 	-- Need N
+	searchSpacesToAddModList			SEQUENCE(SIZE (1..10)) OF SearchSpace								OPTIONAL, 	-- Need N
+	searchSpacesToReleaseList			SEQUENCE(SIZE (1..10)) OF SearchSpaceId								OPTIONAL, 	-- Need N
+	downlinkPreemption					SetupRelease { DownlinkPreemption }									OPTIONAL,	-- Need M
+	tpc-PUSCH							SetupRelease { PUSCH-TPC-CommandConfig }							OPTIONAL,   -- Need M
+	tpc-PUCCH							SetupRelease { PUCCH-TPC-CommandConfig }							OPTIONAL,   -- Cond PUCCH-CellOnly
+	tpc-SRS								SetupRelease { SRS-TPC-CommandConfig}								OPTIONAL,	-- Need M
+	...
+}
+
+-- TAG-PDCCH-CONFIG-STOP 
+-- TAG-PDCCH-CONFIGCOMMON-START
+
+PDCCH-ConfigCommon ::=				SEQUENCE {
+	controlResourceSetZero				INTEGER (0..15)														OPTIONAL, 	-- Cond InitialBWP-Only
+	commonControlResourceSet			ControlResourceSet										OPTIONAL, 	-- Need R
+	searchSpaceZero						INTEGER (0..15)													OPTIONAL, 	-- Cond InitialBWP-Only
+	commonSearchSpace					SEQUENCE (SIZE(1..4)) OF SearchSpace								OPTIONAL,	-- Need R
+	searchSpaceSIB1						SearchSpaceId														OPTIONAL,	-- Need R
+	searchSpaceOtherSystemInformation	SearchSpaceId														OPTIONAL,	-- Need R
+	pagingSearchSpace					SearchSpaceId														OPTIONAL, 	-- Need R
+	ra-SearchSpace						SearchSpaceId														OPTIONAL, 	-- Need R
+	...
+}
+
+-- TAG-PDCCH-CONFIGCOMMON-STOP
+-- TAG-PDCCH-SERVINGCELLCONFIG-START
+
+PDCCH-ServingCellConfig	::=			SEQUENCE {
+	slotFormatIndicator					SetupRelease { SlotFormatIndicator }								OPTIONAL,	-- Need M
+	...
+}
+
+-- TAG-PDCCH-SERVINGCELLCONFIG-STOP
+-- TAG-PDCP-CONFIG-START
+
+PDCP-Config ::=			SEQUENCE {
+	drb						SEQUENCE {
+		discardTimer			ENUMERATED {ms10, ms20, ms30, ms40, ms50, ms60, ms75, ms100, ms150, ms200, ms250, ms300, ms500, ms750, ms1500, infinity} 													OPTIONAL, -- Cond Setup
+		pdcp-SN-SizeUL			ENUMERATED {len12bits, len18bits}				OPTIONAL, -- Cond Setup2
+		pdcp-SN-SizeDL			ENUMERATED {len12bits, len18bits}				OPTIONAL, -- Cond Setup2
+		headerCompression		CHOICE {
+			notUsed					NULL,
+			rohc					SEQUENCE {
+				maxCID					INTEGER (1..16383)				DEFAULT 15,
+				profiles				SEQUENCE {
+					profile0x0001			BOOLEAN,
+					profile0x0002			BOOLEAN,
+					profile0x0003			BOOLEAN,
+					profile0x0004			BOOLEAN,
+					profile0x0006			BOOLEAN,
+					profile0x0101			BOOLEAN,
+					profile0x0102			BOOLEAN,
+					profile0x0103			BOOLEAN,
+					profile0x0104			BOOLEAN
+				},
+				drb-ContinueROHC			ENUMERATED { true }												OPTIONAL	-- Need R
+			},
+			uplinkOnlyROHC			SEQUENCE {
+				maxCID					INTEGER (1..16383)				DEFAULT 15,
+				profiles				SEQUENCE {
+					profile0x0006			BOOLEAN
+				},
+				drb-ContinueROHC			ENUMERATED { true }												OPTIONAL	-- Need R
+			},
+			...
+		},
+		integrityProtection		ENUMERATED { enabled }														OPTIONAL,	-- Cond ConnectedTo5GC
+		statusReportRequired	ENUMERATED { true }															OPTIONAL,	-- Cond Rlc-AM
+		outOfOrderDelivery		ENUMERATED { true }													OPTIONAL	-- Need R
+	}																											OPTIONAL,	-- Cond DRB
+	moreThanOneRLC			SEQUENCE {
+		primaryPath				SEQUENCE {
+			cellGroup				CellGroupId											OPTIONAL,	-- Need R
+			logicalChannel			LogicalChannelIdentity								OPTIONAL	-- Need R
+		},
+		ul-DataSplitThreshold	UL-DataSplitThreshold 									OPTIONAL, -- Cond SplitBearer						
+		pdcp-Duplication			BOOLEAN													OPTIONAL	-- Need R
+	}																										OPTIONAL, -- Cond MoreThanOneRLC
+
+	t-Reordering				ENUMERATED {
+									ms0, ms1, ms2, ms4, ms5, ms8, ms10, ms15, ms20, ms30, ms40, ms50, ms60, ms80, ms100, ms120, ms140, ms160, ms180, ms200, ms220, 
+									ms240, ms260, ms280, ms300,	ms500, ms750, ms1000, ms1250, ms1500, ms1750, ms2000, ms2250, ms2500, ms2750,
+									ms3000, spare28, spare27, spare26, spare25, spare24, spare23, spare22, spare21, spare20,
+									spare19, spare18, spare17, spare16, spare15, spare14, spare13, spare12, spare11, spare10, spare09,
+									spare08, spare07, spare06, spare05, spare04, spare03, spare02, spare01 }		OPTIONAL, -- Need S
+
+	
+	...
+}
+
+UL-DataSplitThreshold ::= ENUMERATED { 
+											b0, b100, b200, b400, b800, b1600, b3200, b6400, b12800, b25600, b51200, b102400, b204800, 
+											b409600, b819200, b1228800, b1638400, b2457600, b3276800, b4096000, b4915200, b5734400, 
+											b6553600, infinity, spare8, spare7, spare6, spare5, spare4, spare3, spare2, spare1}
+
+-- TAG-PDCP-CONFIG-STOP
+-- TAG-PDSCH-CONFIG-START
+
+PDSCH-Config ::= 						SEQUENCE {
+	dataScramblingIdentityPDSCH				INTEGER (0..1023)														OPTIONAL,
+	dmrs-DownlinkForPDSCH-MappingTypeA		SetupRelease { DMRS-DownlinkConfig }									OPTIONAL,	-- Need M
+	dmrs-DownlinkForPDSCH-MappingTypeB		SetupRelease { DMRS-DownlinkConfig } 									OPTIONAL,	-- Need M
+
+	tci-StatesToAddModList					SEQUENCE (SIZE(1..maxNrofTCI-States)) OF TCI-State						OPTIONAL,	-- Need N
+	tci-StatesToReleaseList					SEQUENCE (SIZE(1..maxNrofTCI-States)) OF TCI-StateId					OPTIONAL,	-- Need N
+	vrb-ToPRB-Interleaver					ENUMERATED {n2, n4}														OPTIONAL, 	-- Need S
+	resourceAllocation						ENUMERATED { resourceAllocationType0, resourceAllocationType1, dynamicSwitch},
+	pdsch-TimeDomainAllocationList			SetupRelease { PDSCH-TimeDomainResourceAllocationList }					OPTIONAL,	-- Need M
+	pdsch-AggregationFactor					ENUMERATED { n2, n4, n8 }												OPTIONAL,	-- Need S
+	rateMatchPatternToAddModList			SEQUENCE (SIZE (1..maxNrofRateMatchPatterns)) OF RateMatchPattern		OPTIONAL, 	-- Need N
+	rateMatchPatternToReleaseList			SEQUENCE (SIZE (1..maxNrofRateMatchPatterns)) OF RateMatchPatternId		OPTIONAL, 	-- Need N
+	rateMatchPatternGroup1					RateMatchPatternGroup		OPTIONAL, 	-- Need R
+	rateMatchPatternGroup2					RateMatchPatternGroup		OPTIONAL, 	-- Need R
+
+	rbg-Size								ENUMERATED {config1, config2},
+	mcs-Table								ENUMERATED {qam256, spare1}										OPTIONAL,	-- Need S
+	maxNrofCodeWordsScheduledByDCI			ENUMERATED {n1, n2}														OPTIONAL, 	-- Need R
+
+	prb-BundlingType						CHOICE {
+		staticBundling							SEQUENCE {
+			bundleSize								ENUMERATED { n4, wideband }										OPTIONAL		-- Need S
+		},
+		dynamicBundling 						SEQUENCE {
+			bundleSizeSet1							ENUMERATED { n4, wideband, n2-wideband, n4-wideband }			OPTIONAL,	-- Need S
+			bundleSizeSet2							ENUMERATED { n4, wideband }										OPTIONAL		-- Need S
+		}
+	},
+	zp-CSI-RS-ResourceToAddModList					SEQUENCE (SIZE (1..maxNrofZP-CSI-RS-Resources)) OF ZP-CSI-RS-Resource		  OPTIONAL, -- Need N
+	zp-CSI-RS-ResourceToReleaseList					SEQUENCE (SIZE (1..maxNrofZP-CSI-RS-Resources)) OF ZP-CSI-RS-ResourceId		  OPTIONAL, -- Need N
+	aperiodic-ZP-CSI-RS-ResourceSetsToAddModList 	SEQUENCE (SIZE (1..maxNrofZP-CSI-RS-ResourceSets)) OF ZP-CSI-RS-ResourceSet	  OPTIONAL, -- Need N
+	aperiodic-ZP-CSI-RS-ResourceSetsToReleaseList	SEQUENCE (SIZE (1..maxNrofZP-CSI-RS-ResourceSets)) OF ZP-CSI-RS-ResourceSetId OPTIONAL,
+																																		-- Need N
+	sp-ZP-CSI-RS-ResourceSetsToAddModList	SEQUENCE (SIZE (1..maxNrofZP-CSI-RS-ResourceSets)) OF ZP-CSI-RS-ResourceSet			  OPTIONAL,	-- Need N
+	sp-ZP-CSI-RS-ResourceSetsToReleaseList	SEQUENCE (SIZE (1..maxNrofZP-CSI-RS-ResourceSets)) OF ZP-CSI-RS-ResourceSetId		  OPTIONAL,	-- Need N
+	p-ZP-CSI-RS-ResourceSet					SetupRelease { ZP-CSI-RS-ResourceSet }												  OPTIONAL,	-- Need M
+	...
+}
+RateMatchPatternGroup ::=				SEQUENCE (SIZE (1..maxNrofRateMatchPatternsPerGroup)) OF CHOICE {	cellLevel								RateMatchPatternId,
+	bwpLevel								RateMatchPatternId
+}
+
+-- TAG-PDSCH-CONFIG-STOP
+-- TAG-PDSCH-CONFIGCOMMON-START
+
+PDSCH-ConfigCommon ::=					SEQUENCE {
+	pdsch-TimeDomainAllocationList					PDSCH-TimeDomainResourceAllocationList			OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-PDSCH-CONFIGCOMMON-STOP
+-- TAG-PDSCH-SERVINGCELLCONFIG-START
+
+PDSCH-ServingCellConfig ::= 			SEQUENCE {
+	codeBlockGroupTransmission				SetupRelease { PDSCH-CodeBlockGroupTransmission }						OPTIONAL,	-- Need M
+	xOverhead								ENUMERATED { xOh6, xOh12, xOh18 }										OPTIONAL,	-- Need S
+	nrofHARQ-ProcessesForPDSCH				ENUMERATED {n2, n4, n6, n10, n12, n16}									OPTIONAL,	-- Need S
+	pucch-Cell								ServCellIndex															OPTIONAL	,	-- Cond SCellAddOnly
+	...
+}
+
+PDSCH-CodeBlockGroupTransmission ::=	SEQUENCE {
+	maxCodeBlockGroupsPerTransportBlock		ENUMERATED {n2, n4, n6, n8},
+	codeBlockGroupFlushIndicator			BOOLEAN,
+	...
+}
+
+-- TAG-PDSCH-SERVINGCELLCONFIG-STOP
+-- TAG-PDSCH-TIMEDOMAINRESOURCEALLOCATIONLIST-START
+
+
+PDSCH-TimeDomainResourceAllocationList  ::=	SEQUENCE (SIZE(1..maxNrofDL-Allocations)) OF PDSCH-TimeDomainResourceAllocation
+
+PDSCH-TimeDomainResourceAllocation ::= 	SEQUENCE {
+	k0										INTEGER(0..32)						OPTIONAL,	-- Need S
+	mappingType								ENUMERATED {typeA, typeB},
+	startSymbolAndLength					INTEGER (0..127)
+}
+
+-- TAG-PDSCH-TIMEDOMAINRESOURCEALLOCATIONLIST-STOP
+-- TAG-PHYS-CELL-ID-START
+
+PhysCellId ::=						INTEGER (0..1007)
+
+-- TAG-PHYS-CELL-ID-STOP
+-- TAG-PHYSICALCELLGROUPCONFIG-START
+
+PhysicalCellGroupConfig ::=			SEQUENCE {
+	harq-ACK-SpatialBundlingPUCCH		ENUMERATED {true}													OPTIONAL,	-- Need S
+	harq-ACK-SpatialBundlingPUSCH		ENUMERATED {true}													OPTIONAL,	-- Need S
+	p-NR								P-Max																OPTIONAL,	-- Need R
+	pdsch-HARQ-ACK-Codebook				ENUMERATED {semiStatic, dynamic},
+	tpc-SRS-RNTI						RNTI-Value															OPTIONAL,	-- Need R
+	tpc-PUCCH-RNTI						RNTI-Value															OPTIONAL,	-- Need R
+	tpc-PUSCH-RNTI						RNTI-Value															OPTIONAL,	-- Need R
+	sp-CSI-RNTI							RNTI-Value															OPTIONAL,	-- Cond SP-CSI-Report
+	cs-RNTI								SetupRelease { RNTI-Value }											OPTIONAL,	 -- Need R
+	...
+}
+
+-- TAG-PHYSICALCELLGROUPCONFIG-STOP
+-- TAG-PRB-ID-START
+
+PRB-Id ::=							INTEGER (0..maxNrofPhysicalResourceBlocks-1)
+
+-- TAG-PRB-ID-STOP
+-- TAG-PTRS-DOWNLINKCONFIG-START
+
+PTRS-DownlinkConfig ::= 			SEQUENCE {
+	frequencyDensity					SEQUENCE (SIZE (2)) OF INTEGER (1..276)									OPTIONAL,	-- Need S
+	timeDensity							SEQUENCE (SIZE (3)) OF INTEGER (0..29)									OPTIONAL, 	-- Need S
+	epre-Ratio						INTEGER (0..3)															OPTIONAL,	-- Need S
+	resourceElementOffset				ENUMERATED { offset01, offset10, offset11 }								OPTIONAL,	-- Need S
+	...
+}
+
+-- TAG-PTRS-DOWNLINKCONFIG-STOP
+-- TAG-PTRS-UPLINKCONFIG-START
+
+PTRS-UplinkConfig ::= 					SEQUENCE { 
+	modeSpecificParameters					CHOICE {
+		cp-OFDM									SEQUENCE {
+			frequencyDensity						SEQUENCE (SIZE (2)) OF INTEGER (1..276)					OPTIONAL,	-- Need S
+			timeDensity								SEQUENCE (SIZE (3)) OF INTEGER (0..29)					OPTIONAL, 	-- Need S
+			maxNrofPorts							ENUMERATED {n1, n2},
+			resourceElementOffset					ENUMERATED {offset01, offset10, offset11 }				OPTIONAL,	-- Need S
+			ptrs-Power								ENUMERATED {p00, p01, p10, p11}
+		},
+		dft-S-OFDM								SEQUENCE {
+			sampleDensity						SEQUENCE (SIZE (5)) OF INTEGER (1..276),
+			timeDensityTransformPrecoding		ENUMERATED {d2}												OPTIONAL	-- Need S
+		}
+	}																										OPTIONAL,	-- Need M
+	...
+}
+
+-- TAG-PTRS-UPLINKCONFIG-STOP
+-- TAG-PUCCH-CONFIG-START
+
+PUCCH-Config ::= 						SEQUENCE {
+	resourceSetToAddModList					SEQUENCE (SIZE (1..maxNrofPUCCH-ResourceSets)) OF PUCCH-ResourceSet				OPTIONAL,	-- Need N
+	resourceSetToReleaseList				SEQUENCE (SIZE (1..maxNrofPUCCH-ResourceSets)) OF PUCCH-ResourceSetId			OPTIONAL,	-- Need N
+
+	resourceToAddModList					SEQUENCE (SIZE (1..maxNrofPUCCH-Resources)) OF PUCCH-Resource					OPTIONAL,	-- Need N
+	resourceToReleaseList					SEQUENCE (SIZE (1..maxNrofPUCCH-Resources)) OF PUCCH-ResourceId					OPTIONAL,	-- Need N
+
+	format1									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format2									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format3									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format4									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+
+	schedulingRequestResourceToAddModList	SEQUENCE (SIZE (1..maxNrofSR-Resources)) OF SchedulingRequestResourceConfig		OPTIONAL, -- Need N
+	schedulingRequestResourceToReleaseList	SEQUENCE (SIZE (1..maxNrofSR-Resources)) OF SchedulingRequestResourceId			OPTIONAL, -- Need N
+
+	multi-CSI-PUCCH-ResourceList			SEQUENCE (SIZE (1..2)) OF PUCCH-ResourceId										OPTIONAL,-- Need M
+	dl-DataToUL-ACK							SEQUENCE (SIZE (1..8)) OF INTEGER (0..15)											OPTIONAL,	-- Need M
+
+	spatialRelationInfoToAddModList			SEQUENCE (SIZE (1..maxNrofSpatialRelationInfos)) OF PUCCH-SpatialRelationInfo	OPTIONAL,	-- Need N
+	spatialRelationInfoToReleaseList		SEQUENCE (SIZE (1..maxNrofSpatialRelationInfos)) OF PUCCH-SpatialRelationInfoId	OPTIONAL,	-- Need N
+
+	pucch-PowerControl						PUCCH-PowerControl																OPTIONAL,	-- Need M
+	...
+}
+
+PUCCH-FormatConfig ::=					SEQUENCE {
+	interslotFrequencyHopping				ENUMERATED {enabled}														OPTIONAL, 	-- Need R
+	additionalDMRS							ENUMERATED {true}															OPTIONAL,	-- Need R
+	maxCodeRate								PUCCH-MaxCodeRate															OPTIONAL,	-- Need R
+	nrofSlots								ENUMERATED {n2,n4,n8}														OPTIONAL, 	-- Need S
+	pi2BPSK									ENUMERATED {enabled}														OPTIONAL, 	-- Need R
+	simultaneousHARQ-ACK-CSI				ENUMERATED {true}															OPTIONAL	-- Need R
+}
+
+PUCCH-MaxCodeRate ::= 					ENUMERATED {zeroDot08, zeroDot15, zeroDot25, zeroDot35, zeroDot45, zeroDot60, zeroDot80}
+
+PUCCH-SpatialRelationInfo ::=			SEQUENCE {
+	pucch-SpatialRelationInfoId			PUCCH-SpatialRelationInfoId,
+	servingCellId							ServCellIndex										OPTIONAL,	-- Need S
+	referenceSignal 						CHOICE {
+		ssb-Index								SSB-Index,
+		csi-RS-Index								NZP-CSI-RS-ResourceId,
+		srs										SEQUENCE {
+													resource							SRS-ResourceId,
+													uplinkBWP							BWP-Id
+												}
+	},
+	pucch-PathlossReferenceRS-Id 			PUCCH-PathlossReferenceRS-Id,
+	p0-PUCCH-Id								P0-PUCCH-Id,
+	closedLoopIndex							ENUMERATED { i0, i1 }
+}
+
+PUCCH-SpatialRelationInfoId ::= 		INTEGER (1..maxNrofSpatialRelationInfos)
+
+-- A set with one or more PUCCH resources
+PUCCH-ResourceSet ::=					SEQUENCE {
+	pucch-ResourceSetId						PUCCH-ResourceSetId,
+	resourceList					SEQUENCE (SIZE (1..maxNrofPUCCH-ResourcesPerSet)) OF PUCCH-ResourceId,
+	maxPayloadMinus1						INTEGER (4..256)														OPTIONAL	-- Need R
+}
+
+PUCCH-ResourceSetId ::=					INTEGER (0..maxNrofPUCCH-ResourceSets-1)
+
+PUCCH-Resource ::= 						SEQUENCE {
+	pucch-ResourceId						PUCCH-ResourceId,
+	startingPRB								PRB-Id, 
+	intraSlotFrequencyHopping				ENUMERATED { enabled }													OPTIONAL,	-- Need R
+	secondHopPRB							PRB-Id																	OPTIONAL,	-- Need R
+	format									CHOICE {
+		format0									PUCCH-format0,														-- Cond InFirstSetOnly
+		format1									PUCCH-format1,														-- Cond InFirstSetOnly
+		format2									PUCCH-format2,														-- Cond NotInFirstSet
+		format3									PUCCH-format3,														-- Cond NotInFirstSet
+		format4									PUCCH-format4														-- Cond NotInFirstSet
+	}
+}
+
+PUCCH-ResourceId ::=					INTEGER (0..maxNrofPUCCH-Resources-1)
+
+
+PUCCH-format0 ::=								SEQUENCE {
+	initialCyclicShift								INTEGER(0..11),
+	nrofSymbols										INTEGER (1..2), 
+	startingSymbolIndex								INTEGER(0..13) 
+}
+
+PUCCH-format1 ::= 								SEQUENCE {
+	initialCyclicShift								INTEGER(0..11), 
+	nrofSymbols										INTEGER (4..14), 
+	startingSymbolIndex								INTEGER(0..10), 
+	timeDomainOCC									INTEGER(0..6)
+}
+
+PUCCH-format2 ::= 								SEQUENCE {
+	nrofPRBs										INTEGER (1..16), 
+	nrofSymbols										INTEGER (1..2), 
+	startingSymbolIndex								INTEGER(0..13) 
+}
+
+PUCCH-format3 ::= 								SEQUENCE {
+	nrofPRBs										INTEGER (1..16), 
+	nrofSymbols										INTEGER (4..14), 
+	startingSymbolIndex								INTEGER(0..10) 
+}
+
+PUCCH-format4 ::= 								SEQUENCE {
+	nrofSymbols										INTEGER (4..14), 
+	occ-Length										ENUMERATED {n2,n4}, 
+	occ-Index										ENUMERATED {n0,n1,n2,n3},
+	startingSymbolIndex								INTEGER(0..10) 
+}
+
+-- TAG-PUCCH-CONFIG-STOP 
+-- TAG-PUCCH-CONFIGCOMMON-START
+
+PUCCH-ConfigCommon ::=				SEQUENCE {
+	pucch-ResourceCommon				INTEGER (0..15)															OPTIONAL,	-- Need R
+	pucch-GroupHopping					ENUMERATED { neither, enable, disable },
+	hoppingId							INTEGER (0..1024)															OPTIONAL, 	-- Need R
+	p0-nominal							INTEGER (-202..24)																OPTIONAL, 	-- Need R
+	...
+}
+
+-- TAG-PUCCH-CONFIGCOMMON-STOP
+-- TAG-PUCCH-PATHLOSSREFERENCERS-ID-START
+
+PUCCH-PathlossReferenceRS-Id ::=			INTEGER (0..maxNrofPUCCH-PathlossReferenceRSs-1)
+
+-- TAG-PUCCH-PATHLOSSREFERENCERS-ID-STOP
+-- TAG-PUCCH-POWERCONTROL-START
+PUCCH-PowerControl ::= 				SEQUENCE {
+	deltaF-PUCCH-f0						INTEGER (-16..15)																	OPTIONAL, 	-- Need R
+	deltaF-PUCCH-f1						INTEGER (-16..15)																	OPTIONAL, 	-- Need R
+	deltaF-PUCCH-f2						INTEGER (-16..15)																	OPTIONAL, 	-- Need R
+	deltaF-PUCCH-f3						INTEGER (-16..15)																	OPTIONAL, 	-- Need R
+	deltaF-PUCCH-f4						INTEGER (-16..15)																	OPTIONAL, 	-- Need R
+	p0-Set								SEQUENCE (SIZE (1..maxNrofPUCCH-P0-PerSet)) OF P0-PUCCH								OPTIONAL, -- Need M
+	pathlossReferenceRSs				SEQUENCE (SIZE (1..maxNrofPUCCH-PathlossReferenceRSs)) OF PUCCH-PathlossReferenceRS	OPTIONAL, -- Need M
+	twoPUCCH-PC-AdjustmentStates		ENUMERATED {twoStates}																OPTIONAL, -- Need S
+	...
+}
+
+P0-PUCCH ::=							SEQUENCE {
+	p0-PUCCH-Id								P0-PUCCH-Id,
+	p0-PUCCH-Value							INTEGER (-16..15)
+}
+
+P0-PUCCH-Id ::=							INTEGER (1..8)
+
+PUCCH-PathlossReferenceRS ::=					SEQUENCE {
+	pucch-PathlossReferenceRS-Id 				PUCCH-PathlossReferenceRS-Id, 
+	referenceSignal								CHOICE {
+		ssb-Index									SSB-Index,
+		csi-RS-Index								NZP-CSI-RS-ResourceId
+	}
+}
+
+-- TAG-PUCCH-POWERCONTROL-STOP
+-- TAG-PUCCH-TPC-COMMANDCONFIG-START
+
+PUCCH-TPC-CommandConfig ::=				SEQUENCE {
+	tpc-IndexPCell							INTEGER (1..15)										OPTIONAL,	-- Cond PDCCH-OfSpcell
+	tpc-IndexPUCCH-SCell					INTEGER (1..15)										OPTIONAL,	-- Cond PDCCH-ofSpCellOrPUCCH-Scell
+    ...
+}
+
+-- TAG-PUCCH-TPC-COMMANDCONFIG-STOP
+-- TAG-PUSCH-CONFIG-START
+
+PUSCH-Config ::= 						SEQUENCE {
+	dataScramblingIdentityPUSCH				INTEGER (0..1023)															OPTIONAL,	-- Need M
+	txConfig								ENUMERATED {codebook, nonCodebook}										OPTIONAL, 	-- Need S
+	dmrs-UplinkForPUSCH-MappingTypeA		SetupRelease { DMRS-UplinkConfig }											OPTIONAL,	-- Need M
+	dmrs-UplinkForPUSCH-MappingTypeB		SetupRelease { DMRS-UplinkConfig }											OPTIONAL,	-- Need M
+
+	pusch-PowerControl						PUSCH-PowerControl															OPTIONAL, -- Need M
+	frequencyHopping						ENUMERATED {mode1, mode2}													OPTIONAL,	-- Need S
+	frequencyHoppingOffsetLists				SEQUENCE (SIZE (1..4)) OF INTEGER (1.. maxNrofPhysicalResourceBlocks-1)		OPTIONAL,	-- Need M
+	resourceAllocation						ENUMERATED { resourceAllocationType0, resourceAllocationType1, dynamicSwitch},
+	pusch-TimeDomainAllocationList			SetupRelease { PUSCH-TimeDomainResourceAllocationList }						OPTIONAL, 	-- Need M
+	pusch-AggregationFactor					ENUMERATED { n2, n4, n8 }										OPTIONAL, 	-- Need S
+	mcs-Table								ENUMERATED {qam256, spare1}											OPTIONAL,	-- Need S
+	mcs-TableTransformPrecoder				ENUMERATED {qam256, spare1}										OPTIONAL,	-- Need S
+	transformPrecoder						ENUMERATED {enabled, disabled}									OPTIONAL,	-- Need S
+	codebookSubset							ENUMERATED {fullyAndPartialAndNonCoherent, partialAndNonCoherent,
+															nonCoherent}										OPTIONAL,	-- Cond codebookBased 
+	maxRank									INTEGER (1..4) 													OPTIONAL, 	-- Cond codebookBased
+	rbg-Size								ENUMERATED { config2}												OPTIONAL,	-- Need S
+	uci-OnPUSCH								SetupRelease { UCI-OnPUSCH}									OPTIONAL, -- Need M
+	tp-pi2BPSK								ENUMERATED {enabled}											OPTIONAL,	-- Need S
+	...
+}
+
+UCI-OnPUSCH ::= 						SEQUENCE {
+	betaOffsets								CHOICE {
+			dynamic								SEQUENCE (SIZE (4)) OF BetaOffsets,
+			semiStatic							BetaOffsets
+	}																													OPTIONAL, -- Need M
+	scaling									ENUMERATED { f0p5, f0p65, f0p8, f1 }
+}
+
+-- TAG-PUSCH-CONFIG-STOP
+-- TAG-PUSCH-CONFIGCOMMON-START
+
+PUSCH-ConfigCommon ::= 					SEQUENCE {
+	groupHoppingEnabledTransformPrecoding	ENUMERATED {enabled}													OPTIONAL,	-- Need R
+	pusch-TimeDomainAllocationList			PUSCH-TimeDomainResourceAllocationList	OPTIONAL,	-- Need R
+	msg3-DeltaPreamble						INTEGER (-1..6)															OPTIONAL,	-- Need R
+	p0-NominalWithGrant						INTEGER (-202..24)														OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-PUSCH-CONFIGCOMMON-STOP
+-- TAG-PUSCH-POWERCONTROL-START
+
+PUSCH-PowerControl ::= 				SEQUENCE {
+	tpc-Accumulation					ENUMERATED { disabled }														OPTIONAL,	-- Need S
+	msg3-Alpha							Alpha																		OPTIONAL, 	-- Need S
+	p0-NominalWithoutGrant				INTEGER (-202..24)															OPTIONAL,	-- Need M,
+	p0-AlphaSets						SEQUENCE (SIZE (1..maxNrofP0-PUSCH-AlphaSets)) OF P0-PUSCH-AlphaSet			OPTIONAL,	-- Need M,
+	pathlossReferenceRSToAddModList		SEQUENCE (SIZE (1..maxNrofPUSCH-PathlossReferenceRSs)) OF PUSCH-PathlossReferenceRS	
+																													OPTIONAL,	-- Need N
+	pathlossReferenceRSToReleaseList	SEQUENCE (SIZE (1..maxNrofPUSCH-PathlossReferenceRSs)) OF PUSCH-PathlossReferenceRS-Id	
+																													OPTIONAL,	-- Need N
+	twoPUSCH-PC-AdjustmentStates		ENUMERATED {twoStates}														OPTIONAL, -- Need S
+	deltaMCS							ENUMERATED {enabled}														OPTIONAL, -- Need S
+	sri-PUSCH-MappingToAddModList		SEQUENCE (SIZE (1..maxNrofSRI-PUSCH-Mappings)) OF SRI-PUSCH-PowerControl	OPTIONAL, -- Need N
+	sri-PUSCH-MappingToReleaseList		SEQUENCE (SIZE (1..maxNrofSRI-PUSCH-Mappings)) OF SRI-PUSCH-PowerControlId	OPTIONAL -- Need N 
+}
+
+-- A set of p0-pusch and alpha used for PUSCH with grant. 'PUSCH beam indication' (if present) gives the index of the set to 
+-- be used for a particular PUSCH transmission.
+-- FFS_CHECK: Is the ”PUSCH beam indication” in DCI which schedules the PUSCH? If so, clarify in field description
+-- Corresponds to L1 parameter 'p0-pusch-alpha-set' (see 38.213, section 7.1)
+P0-PUSCH-AlphaSet ::= 				SEQUENCE {
+	p0-PUSCH-AlphaSetId 				P0-PUSCH-AlphaSetId,
+	p0									INTEGER (-16..15)															OPTIONAL,
+	alpha 								Alpha																		OPTIONAL	-- Need S
+}
+
+-- ID for a P0-PUSCH-AlphaSet. Corresponds to L1 parameter 'p0alphasetindex' (see 38.213, section 7.1)
+P0-PUSCH-AlphaSetId ::= 			INTEGER (0..maxNrofP0-PUSCH-AlphaSets-1)
+
+-- A reference signal (RS) configured as pathloss reference signal for PUSCH power control
+-- Corresponds to L1 parameter 'pusch-pathlossReference-rs' (see 38.213, section 7.1)
+PUSCH-PathlossReferenceRS ::=		SEQUENCE {
+	pusch-PathlossReferenceRS-Id 		PUSCH-PathlossReferenceRS-Id, 
+	referenceSignal						CHOICE {
+		ssb-Index							SSB-Index,
+		csi-RS-Index						NZP-CSI-RS-ResourceId
+	}
+}
+
+-- ID for a referemce signal (RS) configured as PUSCH pathloss reference 
+-- Corresponds to L1 parameter 'pathlossreference-index' (see 38.213, section 7.1)
+-- FFS_CHECK: Is this ID used anywhere except inside the PUSCH-PathlossReference-RS	itself?
+PUSCH-PathlossReferenceRS-Id ::=	INTEGER (0..maxNrofPUSCH-PathlossReferenceRSs-1)
+
+
+-- A set of PUSCH power control parameters associated with one SRS-ResourceIndex (SRI)
+SRI-PUSCH-PowerControl ::=			SEQUENCE {
+	sri-PUSCH-PowerControlId			SRI-PUSCH-PowerControlId,
+	sri-PUSCH-PathlossReferenceRS-Id	PUSCH-PathlossReferenceRS-Id,
+	sri-P0-PUSCH-AlphaSetId 			P0-PUSCH-AlphaSetId,
+	sri-PUSCH-ClosedLoopIndex			ENUMERATED { i0, i1 }
+}
+
+SRI-PUSCH-PowerControlId ::=		INTEGER (0..maxNrofSRI-PUSCH-Mappings-1)
+
+-- A set of beta-offset values
+BetaOffsets ::= 					SEQUENCE {
+	betaOffsetACK-Index1				INTEGER(0..31)															OPTIONAL, -- Need S
+	betaOffsetACK-Index2				INTEGER(0..31)															OPTIONAL, -- Need S
+	betaOffsetACK-Index3				INTEGER(0..31)															OPTIONAL, -- Need S
+	betaOffsetCSI-Part1-Index1			INTEGER(0..31)															OPTIONAL, -- Need S
+	betaOffsetCSI-Part1-Index2			INTEGER(0..31)															OPTIONAL, -- Need S
+	betaOffsetCSI-Part2-Index1			INTEGER(0..31)															OPTIONAL, -- Need S
+	betaOffsetCSI-Part2-Index2			INTEGER(0..31)															OPTIONAL -- Need S
+}
+
+-- TAG-PUSCH-POWERCONTROL-STOP
+-- TAG-PUSCH-SERVINGCELLCONFIG-START
+
+PUSCH-ServingCellConfig ::=				SEQUENCE {
+	codeBlockGroupTransmission				SetupRelease { PUSCH-CodeBlockGroupTransmission	}							OPTIONAL,	-- Need M
+	rateMatching							ENUMERATED {limitedBufferRM}												OPTIONAL,	-- Need S
+	xOverhead								ENUMERATED {xoh6, xoh12, xoh18}												OPTIONAL,	-- Need S
+	...
+}
+
+PUSCH-CodeBlockGroupTransmission ::=	SEQUENCE {
+	maxCodeBlockGroupsPerTransportBlock		ENUMERATED {n2, n4, n6, n8},
+	...
+}
+
+-- TAG-PUSCH-SERVINGCELLCONFIG-STOP
+-- TAG-PUSCH-TIMEDOMAINRESOURCEALLOCATIONLIST-START
+
+PUSCH-TimeDomainResourceAllocationList ::= 	SEQUENCE (SIZE(1..maxNrofUL-Allocations)) OF PUSCH-TimeDomainResourceAllocation
+
+PUSCH-TimeDomainResourceAllocation ::= 	SEQUENCE {
+	k2										INTEGER(0..32)			OPTIONAL,	-- Need S
+	mappingType								ENUMERATED {typeA, typeB},
+	startSymbolAndLength					INTEGER (0..127)
+}
+
+-- TAG-PUSCH-TIMEDOMAINRESOURCEALLOCATIONLIST-STOP
+-- TAG-PUSCH-TPC-COMMANDCONFIG-START
+
+PUSCH-TPC-CommandConfig ::=			SEQUENCE {
+	tpc-Index							INTEGER (1..15)															OPTIONAL,	-- Cond SUL
+	tpc-IndexSUL						INTEGER (1..15)															OPTIONAL,	-- Cond SUL-Only
+	targetCell							ServCellIndex															OPTIONAL,	-- Need S
+	...
+}
+
+-- TAG-PUSCH-TPC-COMMANDCONFIG-STOP
+
+Q-OffsetRange ::=					ENUMERATED {
+												dB-24, dB-22, dB-20, dB-18, dB-16, dB-14,
+												dB-12, dB-10, dB-8, dB-6, dB-5, dB-4, dB-3,
+												dB-2, dB-1, dB0, dB1, dB2, dB3, dB4, dB5,
+												dB6, dB8, dB10, dB12, dB14, dB16, dB18,
+												dB20, dB22, dB24}
+
+-- TAG-QUANTITY-CONFIG-START
+
+	
+QuantityConfig ::=					SEQUENCE {
+	quantityConfigNR-List				SEQUENCE (SIZE (1..maxNrofQuantityConfig)) OF QuantityConfigNR			OPTIONAL,	-- Need M
+	...
+}
+
+QuantityConfigNR::=					SEQUENCE {
+	quantityConfigCell					QuantityConfigRS,
+	quantityConfigRS-Index				QuantityConfigRS														OPTIONAL	-- Need M
+}
+
+QuantityConfigRS ::=				SEQUENCE {
+	ssb-FilterConfig					FilterConfig,
+	cs-RS-FilterConfig					FilterConfig
+}
+
+FilterConfig ::=					SEQUENCE {
+	filterCoefficientRSRP				FilterCoefficient										DEFAULT fc4,
+	filterCoefficientRSRQ				FilterCoefficient										DEFAULT fc4,
+	filterCoefficientRS-SINR			FilterCoefficient										DEFAULT fc4
+}
+
+-- TAG-QUANTITY-CONFIG-STOP
+-- TAG-RACH-CONFIG-COMMON-START
+
+RACH-ConfigCommon ::= 				SEQUENCE {
+	rach-ConfigGeneric			RACH-ConfigGeneric,
+	totalNumberOfRA-Preambles			INTEGER (1..63)																		OPTIONAL,	-- Need S
+	ssb-perRACH-OccasionAndCB-PreamblesPerSSB	CHOICE { 
+		oneEighth								ENUMERATED {n4,n8,n12,n16,n20,n24,n28,n32,n36,n40,n44,n48,n52,n56,n60,n64}, 
+		oneFourth								ENUMERATED {n4,n8,n12,n16,n20,n24,n28,n32,n36,n40,n44,n48,n52,n56,n60,n64}, 
+		oneHalf									ENUMERATED {n4,n8,n12,n16,n20,n24,n28,n32,n36,n40,n44,n48,n52,n56,n60,n64}, 
+		one										ENUMERATED {n4,n8,n12,n16,n20,n24,n28,n32,n36,n40,n44,n48,n52,n56,n60,n64}, 
+		two										ENUMERATED {n4,n8,n12,n16,n20,n24,n28,n32}, 
+		four									INTEGER (1..16), 
+		eight									INTEGER (1..8), 
+		sixteen									INTEGER (1..4)
+	}																														OPTIONAL,	-- Need M
+
+	groupBconfigured 					SEQUENCE {
+		ra-Msg3SizeGroupA					ENUMERATED { b56, b144, b208, b256, b282, b480, b640, 
+														 b800, b1000, spare7, spare6, spare5, spare4, spare3, spare2, spare1},
+		messagePowerOffsetGroupB			ENUMERATED { minusinfinity, dB0, dB5, dB8, dB10, dB12, dB15, dB18},
+		numberOfRA-PreamblesGroupA			INTEGER (1..64)
+	}																														OPTIONAL,	-- Need R
+	ra-ContentionResolutionTimer			ENUMERATED { sf8, sf16, sf24, sf32, sf40, sf48, sf56, sf64},
+	rsrp-ThresholdSSB						RSRP-Range																		OPTIONAL,	-- Need R
+	rsrp-ThresholdSSB-SUL					RSRP-Range																		OPTIONAL,	-- Cond SUL
+	prach-RootSequenceIndex					CHOICE {
+		l839									INTEGER (0..837),
+		l139									INTEGER (0..137)
+	},
+	msg1-SubcarrierSpacing					SubcarrierSpacing                                                     OPTIONAL,   --Need S
+	restrictedSetConfig						ENUMERATED {unrestrictedSet, restrictedSetTypeA, restrictedSetTypeB},
+	msg3-transformPrecoding					ENUMERATED {enabled}															OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-RACH-CONFIG-COMMON-STOP 
+-- TAG-RACH-CONFIG-GENERIC-START
+
+RACH-ConfigGeneric ::= 				SEQUENCE {
+	prach-ConfigurationIndex			INTEGER (0..255),
+	msg1-FDM							ENUMERATED {one, two, four, eight},
+	msg1-FrequencyStart					INTEGER (0..maxNrofPhysicalResourceBlocks-1),
+	zeroCorrelationZoneConfig			INTEGER(0..15),
+	preambleReceivedTargetPower			INTEGER (-202..-60),
+	preambleTransMax 					ENUMERATED {n3, n4, n5, n6, n7,	n8, n10, n20, n50, n100, n200},
+	powerRampingStep					ENUMERATED {dB0, dB2, dB4, dB6},
+	ra-ResponseWindow					ENUMERATED {sl1, sl2, sl4, sl8, sl10, sl20, sl40, sl80},
+	...
+}
+
+-- TAG-RACH-CONFIG-GENERIC-STOP 
+-- TAG-RACH-CONFIG-DEDICATED-START
+
+-- FFS_Standlone: resources for msg1-based on-demand SI request
+
+RACH-ConfigDedicated ::=		SEQUENCE {
+	cfra							CFRA																	OPTIONAL,	-- Need N 
+	ra-Prioritization				RA-Prioritization																OPTIONAL,	-- Need N
+	...
+}
+
+CFRA ::=	 				SEQUENCE {
+	occasions						SEQUENCE {
+		rach-ConfigGeneric				RACH-ConfigGeneric,
+		ssb-perRACH-Occasion			ENUMERATED {oneEighth, oneFourth, oneHalf, one, two, four, eight, sixteen}	OPTIONAL	-- Cond SSB-CFRA
+	}																												OPTIONAL,	-- Need S
+	resources						CHOICE {
+		ssb								SEQUENCE {
+			ssb-ResourceList				SEQUENCE (SIZE(1..maxRA-SSB-Resources)) OF CFRA-SSB-Resource,
+			ra-ssb-OccasionMaskIndex		INTEGER (0..15)
+		},
+		csirs							SEQUENCE {
+			csirs-ResourceList				SEQUENCE (SIZE(1..maxRA-CSIRS-Resources)) OF CFRA-CSIRS-Resource,
+			rsrp-ThresholdCSI-RS			RSRP-Range
+		}
+	},
+	...
+}
+
+CFRA-SSB-Resource ::= 			SEQUENCE {
+	ssb								SSB-Index,
+	ra-PreambleIndex				INTEGER (0..63),
+	...
+}
+
+CFRA-CSIRS-Resource ::= 		SEQUENCE {
+	csi-RS							CSI-RS-Index,
+	ra-OccasionList					SEQUENCE (SIZE(1..maxRA-OccasionsPerCSIRS)) OF INTEGER (0..maxRA-Occasions-1),
+	ra-PreambleIndex				INTEGER (0..63),	
+	...
+}
+
+-- TAG-RACH-CONFIG-DEDICATED-STOP
+-- TAG-RA-PRIORITIZATION-START
+
+RA-Prioritization ::=			SEQUENCE {
+	powerRampingStepHighPriority		ENUMERATED {dB0, dB2, dB4, dB6},
+	scalingFactorBI					ENUMERATED {zero, dot25, dot5, dot75}								OPTIONAL,	-- Need R
+	...
+}
+
+-- TAG-RA-PRIORITIZATION-STOP
+-- TAG-RADIO-BEARER-CONFIG-START
+
+RadioBearerConfig ::=					SEQUENCE {
+	srb-ToAddModList						SRB-ToAddModList										OPTIONAL,	-- Need N
+	srb3-ToRelease							ENUMERATED{true}										OPTIONAL,	-- Need N
+	drb-ToAddModList						DRB-ToAddModList										OPTIONAL,	-- Need N
+	drb-ToReleaseList						DRB-ToReleaseList										OPTIONAL,	-- Need N
+	securityConfig 							SecurityConfig											OPTIONAL,	-- Need M
+	...
+}
+
+SRB-ToAddModList ::=					SEQUENCE (SIZE (1..2)) OF SRB-ToAddMod
+SRB-ToAddMod ::=						SEQUENCE {
+	srb-Identity							SRB-Identity,
+	reestablishPDCP							ENUMERATED{true}										OPTIONAL, 	-- Need N
+	discardOnPDCP                           ENUMERATED{true}										OPTIONAL,	-- Need N
+	pdcp-Config								PDCP-Config												OPTIONAL,	-- Cond PDCP
+	...
+}
+
+
+DRB-ToAddModList ::=					SEQUENCE (SIZE (1..maxDRB)) OF DRB-ToAddMod
+DRB-ToAddMod ::=						SEQUENCE {
+	cnAssociation							CHOICE {
+		eps-BearerIdentity						INTEGER (0..15),									-- EPS-DRB-Setup
+		sdap-Config								SDAP-Config											-- 5GC
+	} 										OPTIONAL, -- Cond DRBSetup
+	drb-Identity							DRB-Identity,
+	reestablishPDCP							ENUMERATED{true}										OPTIONAL, 	-- Need N
+	recoverPDCP								ENUMERATED{true}										OPTIONAL, 	-- Need N
+	pdcp-Config								PDCP-Config												OPTIONAL,	-- Cond PDCP
+	...
+}
+DRB-ToReleaseList ::=					SEQUENCE (SIZE (1..maxDRB)) OF DRB-Identity
+
+SecurityConfig ::=						SEQUENCE {	
+	securityAlgorithmConfig					SecurityAlgorithmConfig									OPTIONAL,	-- Cond RBTermChange
+	keyToUse								ENUMERATED{keNB, s-KgNB}								OPTIONAL,	-- Cond RBTermChange
+	...
+}
+
+-- TAG-RADIO-BEARER-CONFIG-STOP
+-- TAG-RADIOLINKMONITORINGCONFIG-START
+
+RadioLinkMonitoringConfig ::=		SEQUENCE {
+	failureDetectionResourcesToAddModList	SEQUENCE (SIZE(1..maxNrofFailureDetectionResources)) OF RadioLinkMonitoringRS	OPTIONAL, 	-- Need N
+	failureDetectionResourcesToReleaseList	SEQUENCE (SIZE(1..maxNrofFailureDetectionResources)) OF RadioLinkMonitoringRS-Id	OPTIONAL,-- Need N
+	beamFailureInstanceMaxCount				ENUMERATED {n1, n2, n3, n4, n5, n6, n8, n10}									OPTIONAL,	-- Need S
+	beamFailureDetectionTimer      			ENUMERATED {pbfd1, pbfd2, pbfd3, pbfd4, pbfd5, pbfd6, pbfd8, pbfd10}			OPTIONAL,	-- Need R
+	...
+}
+
+RadioLinkMonitoringRS ::=			SEQUENCE {
+	radioLinkMonitoringRS-Id				RadioLinkMonitoringRS-Id,
+	purpose								ENUMERATED {beamFailure, rlf, both},
+	detectionResource					CHOICE {
+		ssb-Index							SSB-Index,
+		csi-RS-Index						NZP-CSI-RS-ResourceId
+	},
+	...
+}
+
+-- TAG-RADIOLINKMONITORINGCONFIG-STOP
+-- TAG-RADIOLINKMONITORINGRSID-START
+
+RadioLinkMonitoringRS-Id ::= 			INTEGER (0..maxNrofFailureDetectionResources-1) 
+
+-- TAG-RADIOLINKMONITORINGRSID-STOP
+-- TAG-RATEMATCHPATTERN-START
+
+RateMatchPattern ::= 				SEQUENCE {
+	rateMatchPatternId					RateMatchPatternId,
+
+	patternType							CHOICE {
+		bitmaps								SEQUENCE {
+			resourceBlocks						BIT STRING (SIZE (275)),
+			symbolsInResourceBlock				CHOICE {
+				oneSlot								BIT STRING (SIZE (14)),
+				twoSlots							BIT STRING (SIZE (28))
+			},
+			periodicityAndPattern				CHOICE {
+				n2									BIT STRING (SIZE (2)), 
+				n4									BIT STRING (SIZE (4)), 
+				n5									BIT STRING (SIZE (5)), 
+				n8									BIT STRING (SIZE (8)), 
+				n10									BIT STRING (SIZE (10)), 
+				n20									BIT STRING (SIZE (20)), 
+				n40									BIT STRING (SIZE (40))
+			}																										OPTIONAL, 	-- Need S
+			...
+		},
+		controlResourceSet					ControlResourceSetId
+	},
+	subcarrierSpacing					SubcarrierSpacing 															OPTIONAL,	-- Cond CellLevel
+	mode								ENUMERATED { dynamic, semiStatic },
+	...
+}
+
+-- TAG-RATEMATCHPATTERN-STOP
+-- TAG-RATEMATCHPATTERNID-START
+
+RateMatchPatternId ::=				INTEGER (0..maxNrofRateMatchPatterns-1)
+
+-- TAG-RATEMATCHPATTERNID-STOP
+-- TAG-RATEMATCHPATTERNLTE-CRS-START
+
+RateMatchPatternLTE-CRS ::=			SEQUENCE {
+	carrierFreqDL						INTEGER (0..16383),
+	carrierBandwidthDL					ENUMERATED {n6, n15, n25, n50, n75, n100, spare2, spare1},
+	mbsfn-SubframeConfigList			EUTRA-MBSFN-SubframeConfigList												OPTIONAL,	-- Need M
+	nrofCRS-Ports						ENUMERATED {n1, n2, n4},
+	v-Shift								ENUMERATED {n0, n1, n2, n3, n4, n5}			
+}
+
+-- TAG-RATEMATCHPATTERNLTE-CRS-STOP
+-- TAG-REPORT-CONFIG-ID-START
+
+ReportConfigId ::=							INTEGER (1..maxReportConfigId)
+
+-- TAG-REPORT-CONFIG-ID-STOP
+-- TAG-REPORT-CONFIG-START
+
+ReportConfigNR ::=							SEQUENCE {
+	reportType									CHOICE {
+		periodical									PeriodicalReportConfig, 
+		eventTriggered								EventTriggerConfig,
+-- reportCGI is to be completed before the end of Rel-15.
+		...
+	}
+}
+
+-- FFS / TODO: Consider separating trgger configuration (trigger, periodic, ...) from report configuration.
+-- Current structure allows easier definiton of new events and new report types e.g. CGI, etc.
+EventTriggerConfig ::=						SEQUENCE {
+	eventId										CHOICE {
+		eventA1										SEQUENCE {
+			a1-Threshold								MeasTriggerQuantity,
+			reportOnLeave								BOOLEAN,
+			hysteresis									Hysteresis,
+			timeToTrigger								TimeToTrigger
+		},
+		eventA2										SEQUENCE {
+			a2-Threshold								MeasTriggerQuantity,
+			reportOnLeave								BOOLEAN,
+			hysteresis									Hysteresis,
+			timeToTrigger								TimeToTrigger
+		},
+		eventA3										SEQUENCE {
+			a3-Offset									MeasTriggerQuantityOffset,
+			reportOnLeave								BOOLEAN,
+			hysteresis									Hysteresis,
+			timeToTrigger								TimeToTrigger,
+			useWhiteCellList							BOOLEAN														
+		},
+		eventA4										SEQUENCE {
+			a4-Threshold								MeasTriggerQuantity,
+			reportOnLeave								BOOLEAN,
+			hysteresis									Hysteresis,
+			timeToTrigger								TimeToTrigger,
+			useWhiteCellList							BOOLEAN														
+		},
+		eventA5										SEQUENCE {
+			a5-Threshold1								MeasTriggerQuantity,
+			a5-Threshold2								MeasTriggerQuantity,
+			reportOnLeave								BOOLEAN,
+			hysteresis									Hysteresis,
+			timeToTrigger								TimeToTrigger,
+			useWhiteCellList							BOOLEAN														
+		},
+		eventA6										SEQUENCE {
+			a6-Offset									MeasTriggerQuantityOffset,
+			reportOnLeave								BOOLEAN,
+			hysteresis									Hysteresis,
+			timeToTrigger								TimeToTrigger,
+			useWhiteCellList							BOOLEAN														
+		},
+		...
+	},
+
+	rsType										NR-RS-Type,
+
+	reportInterval								ReportInterval,
+	reportAmount								ENUMERATED {r1, r2, r4, r8, r16, r32, r64, infinity},
+
+	reportQuantityCell							MeasReportQuantity,
+	maxReportCells								INTEGER (1..maxCellReport),
+
+	reportQuantityRsIndexes						MeasReportQuantity													OPTIONAL,	-- Need R
+	maxNrofRSIndexesToReport					INTEGER (1..maxNrofIndexesToReport) 								OPTIONAL,	-- Need R
+	includeBeamMeasurements						BOOLEAN,
+	reportAddNeighMeas							ENUMERATED {setup}													OPTIONAL,	-- Need R
+	...
+
+}
+
+PeriodicalReportConfig ::=					SEQUENCE {
+	rsType										NR-RS-Type,
+
+	reportInterval								ReportInterval,
+	reportAmount								ENUMERATED {r1, r2, r4, r8, r16, r32, r64, infinity},
+
+	reportQuantityCell							MeasReportQuantity,
+	maxReportCells								INTEGER (1..maxCellReport),
+
+	reportQuantityRsIndexes						MeasReportQuantity													OPTIONAL,	-- Need R
+	maxNrofRsIndexesToReport					INTEGER (1..maxNrofIndexesToReport) 								OPTIONAL,	-- Need R
+	includeBeamMeasurements						BOOLEAN,
+	useWhiteCellList							BOOLEAN,
+	...
+
+}
+
+NR-RS-Type ::= 								ENUMERATED {ssb, csi-rs}
+
+MeasTriggerQuantity ::=						CHOICE {
+	rsrp										RSRP-Range,
+	rsrq										RSRQ-Range,
+	sinr										SINR-Range
+}
+
+MeasTriggerQuantityOffset ::=				CHOICE {
+	rsrp										INTEGER (-30..30),														
+	rsrq										INTEGER (-30..30),														
+	sinr										INTEGER (-30..30)														
+}
+
+			
+MeasReportQuantity ::=						SEQUENCE {
+	rsrp										BOOLEAN,
+	rsrq										BOOLEAN,
+	sinr										BOOLEAN
+}
+
+
+-- TAG-REPORT-CONFIG-START
+-- TAG-REPORT-CONFIG-TO-ADD-MOD-LIST-START
+
+ReportConfigToAddModList ::=		SEQUENCE (SIZE (1..maxReportConfigId)) OF ReportConfigToAddMod
+
+ReportConfigToAddMod ::=			SEQUENCE {
+	reportConfigId						ReportConfigId,
+	reportConfig						CHOICE {
+		reportConfigNR						ReportConfigNR,
+		...
+	}
+}
+
+-- TAG- REPORT-CONFIG-TO-ADD-MOD-LIST-STOP
+
+ReportInterval ::=					ENUMERATED { ms120, ms240, ms480, ms640, ms1024, ms2048, ms5120, ms10240, ms20480, ms40960, 
+													min1, min6, min12, min30 }
+
+-- TAG-RLC-BEARERCONFIG-START
+
+RLC-BearerConfig ::=						SEQUENCE {
+	logicalChannelIdentity						LogicalChannelIdentity,
+	servedRadioBearer							CHOICE {
+		srb-Identity								SRB-Identity,
+		drb-Identity								DRB-Identity
+	}																											OPTIONAL,	-- Cond LCH-SetupOnly
+
+	reestablishRLC								ENUMERATED {true}												OPTIONAL, 	-- Need R
+	rlc-Config									RLC-Config														OPTIONAL,	-- Cond LCH-Setup
+
+	mac-LogicalChannelConfig					LogicalChannelConfig											OPTIONAL,	-- Cond LCH-Setup
+	...	
+}
+
+-- TAG-RLC-BEARERCONFIG-STOP
+-- TAG-RLC-CONFIG-START
+
+RLC-Config ::=						CHOICE {
+	am									SEQUENCE {
+		ul-AM-RLC							UL-AM-RLC,
+		dl-AM-RLC							DL-AM-RLC
+	},
+	um-Bi-Directional					SEQUENCE {
+		ul-UM-RLC							UL-UM-RLC,
+		dl-UM-RLC							DL-UM-RLC
+	},
+	um-Uni-Directional-UL				SEQUENCE {
+		ul-UM-RLC							UL-UM-RLC
+	},
+	um-Uni-Directional-DL				SEQUENCE {
+		dl-UM-RLC							DL-UM-RLC
+	},
+	...
+}
+
+UL-AM-RLC ::=						SEQUENCE {
+	sn-FieldLength						SN-FieldLengthAM									OPTIONAL, 	-- Cond Reestab
+	t-PollRetransmit					T-PollRetransmit,
+	pollPDU								PollPDU,
+	pollByte							PollByte,
+	maxRetxThreshold					ENUMERATED { t1, t2, t3, t4, t6, t8, t16, t32 }
+}
+
+DL-AM-RLC ::=						SEQUENCE {
+	sn-FieldLength						SN-FieldLengthAM									OPTIONAL, 	-- Cond Reestab
+	t-Reassembly						T-Reassembly,
+	t-StatusProhibit					T-StatusProhibit
+}
+
+UL-UM-RLC ::=						SEQUENCE {
+	sn-FieldLength						SN-FieldLengthUM									OPTIONAL 	-- Cond Reestab
+}
+
+DL-UM-RLC ::=						SEQUENCE {
+	sn-FieldLength						SN-FieldLengthUM									OPTIONAL, 	-- Cond Reestab
+	t-Reassembly						T-Reassembly
+}
+
+T-PollRetransmit ::=				ENUMERATED {
+										ms5, ms10, ms15, ms20, ms25, ms30, ms35,
+										ms40, ms45, ms50, ms55, ms60, ms65, ms70,
+										ms75, ms80, ms85, ms90, ms95, ms100, ms105,
+										ms110, ms115, ms120, ms125, ms130, ms135,
+										ms140, ms145, ms150, ms155, ms160, ms165,
+										ms170, ms175, ms180, ms185, ms190, ms195,
+										ms200, ms205, ms210, ms215, ms220, ms225,
+										ms230, ms235, ms240, ms245, ms250, ms300,
+										ms350, ms400, ms450, ms500, ms800, ms1000,
+										ms2000, ms4000, spare5, spare4, spare3,
+										spare2, spare1}
+
+
+PollPDU ::=							ENUMERATED {
+										p4, p8, p16, p32, p64, p128, p256, p512, p1024, p2048, p4096, p6144, p8192, p12288, p16384, p20480,
+										p24576, p28672, p32768, p40960, p49152, p57344, p65536, infinity, spare8, spare7, spare6, spare5, spare4,
+										spare3, spare2, spare1}
+
+PollByte ::=						ENUMERATED {
+										kB1, kB2, kB5, kB8, kB10, kB15, kB25, kB50, kB75,
+										kB100, kB125, kB250, kB375, kB500, kB750, kB1000,
+										kB1250, kB1500, kB2000, kB3000, kB4000, kB4500,
+										kB5000, kB5500, kB6000, kB6500, kB7000, kB7500,
+										mB8, mB9, mB10, mB11, mB12, mB13, mB14, mB15,
+										mB16, mB17, mB18, mB20, mB25, mB30, mB40, infinity,
+										spare20, spare19, spare18, spare17, spare16,
+										spare15, spare14, spare13, spare12, spare11,
+										spare10, spare9, spare8, spare7, spare6, spare5,
+										spare4, spare3, spare2, spare1}
+
+T-Reassembly ::=					ENUMERATED {
+										ms0, ms5, ms10, ms15, ms20, ms25, ms30, ms35,
+										ms40, ms45, ms50, ms55, ms60, ms65, ms70,
+										ms75, ms80, ms85, ms90, ms95, ms100, ms110,
+										ms120, ms130, ms140, ms150, ms160, ms170,
+										ms180, ms190, ms200, spare1}
+
+T-StatusProhibit ::=				ENUMERATED {
+										ms0, ms5, ms10, ms15, ms20, ms25, ms30, ms35,
+										ms40, ms45, ms50, ms55, ms60, ms65, ms70,
+										ms75, ms80, ms85, ms90, ms95, ms100, ms105,
+										ms110, ms115, ms120, ms125, ms130, ms135,
+										ms140, ms145, ms150, ms155, ms160, ms165,
+										ms170, ms175, ms180, ms185, ms190, ms195,
+										ms200, ms205, ms210, ms215, ms220, ms225,
+										ms230, ms235, ms240, ms245, ms250, ms300,
+										ms350, ms400, ms450, ms500, ms800, ms1000,
+										ms1200, ms1600, ms2000, ms2400, spare2, spare1}
+
+SN-FieldLengthUM ::=				ENUMERATED {size6, size12}
+SN-FieldLengthAM ::=				ENUMERATED {size12, size18}
+
+-- TAG-RLC-CONFIG-STOP
+-- TAG-RLF-TIMERS-AND-CONSTANTS-START
+
+RLF-TimersAndConstants ::= 			SEQUENCE {
+	t310								ENUMERATED {ms0, ms50, ms100, ms200, ms500, ms1000, ms2000, ms4000, ms6000},
+	n310								ENUMERATED {n1, n2, n3, n4, n6, n8, n10, n20},
+	n311								ENUMERATED {n1, n2, n3, n4, n5, n6, n8, n10},
+	...
+}
+
+-- TAG-RLF-TIMERS-AND-CONSTANTS-STOP
+-- TAG-RNTI-VALUE-START
+
+RNTI-Value ::=						INTEGER (0..65535)
+
+-- TAG-RNTI-VALUE-STOP
+-- TAG-RSRP-RANGE-START
+
+RSRP-Range ::=						INTEGER(0..127)
+
+-- TAG-RSRP-RANGE-STOP
+-- TAG-RSRQ-RANGE-START
+
+RSRQ-Range ::=						INTEGER(0..127)
+
+-- TAG-RSRQ-RANGE-STOP
+-- TAG-SCELL-INDEX-START
+
+SCellIndex ::=						INTEGER (1..31)
+
+-- TAG-SCELL-INDEX-STOP
+-- TAG-SCHEDULING-REQUEST-CONFIG-START
+
+SchedulingRequestConfig ::= 		SEQUENCE {
+	schedulingRequestToAddModList		SEQUENCE (SIZE (1..maxNrofSR-ConfigPerCellGroup)) OF SchedulingRequestToAddMod		OPTIONAL, -- Need N
+	schedulingRequestToReleaseList		SEQUENCE (SIZE (1..maxNrofSR-ConfigPerCellGroup)) OF SchedulingRequestId			OPTIONAL  -- Need N
+}
+
+SchedulingRequestToAddMod ::=		SEQUENCE {
+	schedulingRequestId		SchedulingRequestId,
+
+	sr-ProhibitTimer					ENUMERATED {ms1, ms2, ms4, ms8, ms16, ms32, ms64, ms128}							OPTIONAL,	-- Need S
+	sr-TransMax							ENUMERATED { n4, n8, n16, n32, n64, spare3, spare2, spare1}
+}
+
+
+
+-- TAG-SCHEDULING-REQUEST-CONFIG-STOP
+-- TAG-SCHEDULINGREQUESTID-START
+
+SchedulingRequestId ::=				INTEGER (0..7)
+
+-- TAG-SCHEDULINGREQUESTID-STOP
+-- TAG-SCHEDULING-REQUEST-RESOURCE-CONFIG-START
+
+SchedulingRequestResourceConfig ::=		SEQUENCE {
+	schedulingRequestResourceId				SchedulingRequestResourceId,
+	schedulingRequestID						SchedulingRequestId,
+	periodicityAndOffset					CHOICE {
+		sym2									NULL,						
+		sym6or7									NULL,						
+		sl1										NULL,						-- Recurs in every slot
+		sl2										INTEGER (0..1),
+		sl4										INTEGER (0..3),
+		sl5										INTEGER (0..4),
+		sl8										INTEGER (0..7),
+		sl10									INTEGER (0..9),
+		sl16									INTEGER (0..15),
+		sl20									INTEGER (0..19),
+		sl40									INTEGER (0..39),
+		sl80									INTEGER (0..79),
+		sl160									INTEGER (0..159),
+		sl320									INTEGER (0..319),
+		sl640									INTEGER (0..639)
+	}																													OPTIONAL,	-- Need M
+	resource								PUCCH-ResourceId															OPTIONAL	-- Need M
+}
+
+-- TAG-SCHEDULING-REQUEST-RESOURCE-CONFIG-STOP
+-- TAG-SCHEDULINGREQUESTRESOURCEID-START
+
+SchedulingRequestResourceId ::=		INTEGER (1..maxNrofSR-Resources)
+
+-- TAG-SCHEDULINGREQUESTRESOURCEID-STOP
+-- TAG-SCRAMBLING-ID-START
+
+ScramblingId ::=					INTEGER (0..1023)
+
+-- TAG-SCRAMBLING-ID-STOP
+-- TAG-SCS-SPECIFIC-CARRIER-START
+
+SCS-SpecificCarrier ::=				SEQUENCE {
+	offsetToCarrier						INTEGER (0..2199),
+	subcarrierSpacing					SubcarrierSpacing,
+	carrierBandwidth					INTEGER (1..maxNrofPhysicalResourceBlocks),
+	...
+}
+
+-- TAG-SCS-SPECIFIC-CARRIER-STOP 
+-- TAG-SDAP-CONFIG-START
+
+SDAP-Config ::=						SEQUENCE {
+	pdu-Session							PDU-SessionID,
+	sdap-HeaderDL 						ENUMERATED {present, absent},
+	sdap-HeaderUL 						ENUMERATED {present, absent},
+	defaultDRB							BOOLEAN,
+	mappedQoS-FlowsToAdd				SEQUENCE (SIZE (1..maxNrofQFIs)) OF QFI 									OPTIONAL, -- Need N
+	mappedQoS-FlowsToRelease			SEQUENCE (SIZE (1..maxNrofQFIs)) OF QFI 									OPTIONAL, -- Need N
+	...
+}
+
+QFI ::= 							INTEGER (0..maxQFI)
+
+PDU-SessionID ::= 					INTEGER (0..255)
+
+-- TAG-SDAP-CONFIG-STOP
+-- TAG-SEARCHSPACE-START
+
+SearchSpace ::= 						SEQUENCE {
+	searchSpaceId							SearchSpaceId,
+	controlResourceSetId					ControlResourceSetId														OPTIONAL, 	-- Cond SetupOnly
+	monitoringSlotPeriodicityAndOffset		CHOICE {
+		sl1										NULL, 
+		sl2										INTEGER (0..1), 
+		sl4										INTEGER (0..3), 
+		sl5 									INTEGER (0..4),
+		sl8										INTEGER (0..7), 
+		sl10 									INTEGER (0..9),
+		sl16 									INTEGER (0..15),
+		sl20 									INTEGER (0..19),
+		sl40 									INTEGER (0..39),
+		sl80 									INTEGER (0..79),
+		sl160 									INTEGER (0..159),
+		sl320 									INTEGER (0..319),
+		sl640 									INTEGER (0..639),
+		sl1280 									INTEGER (0..1279),
+		sl2560 									INTEGER (0..2559)
+	}																													OPTIONAL,	-- Cond Setup
+	duration								INTEGER (2..2559)															OPTIONAL,	-- Need R
+	monitoringSymbolsWithinSlot				BIT STRING (SIZE (14))														OPTIONAL, 	-- Cond Setup
+	nrofCandidates							SEQUENCE {
+		aggregationLevel1						ENUMERATED {n0, n1, n2, n3, n4, n5, n6, n8},
+		aggregationLevel2						ENUMERATED {n0, n1, n2, n3, n4, n5, n6, n8},
+		aggregationLevel4						ENUMERATED {n0, n1, n2, n3, n4, n5, n6, n8},
+		aggregationLevel8						ENUMERATED {n0, n1, n2, n3, n4, n5, n6, n8},
+		aggregationLevel16						ENUMERATED {n0, n1, n2, n3, n4, n5, n6, n8}
+	}																													OPTIONAL,	-- Cond Setup
+	searchSpaceType							CHOICE {
+		common									SEQUENCE {
+			dci-Format0-0-AndFormat1-0				SEQUENCE {
+				...
+			}																											OPTIONAL,	-- Need R
+			dci-Format2-0							SEQUENCE {
+				nrofCandidates-SFI						SEQUENCE {
+					aggregationLevel1						ENUMERATED {n1, n2}											OPTIONAL,	-- Need R
+					aggregationLevel2						ENUMERATED {n1, n2}											OPTIONAL,	-- Need R
+					aggregationLevel4						ENUMERATED {n1, n2}											OPTIONAL,	-- Need R
+					aggregationLevel8						ENUMERATED {n1, n2}											OPTIONAL,	-- Need R
+					aggregationLevel16						ENUMERATED {n1, n2}											OPTIONAL	-- Need R
+				},
+				...
+			}																											OPTIONAL,	-- Need R
+			dci-Format2-1							SEQUENCE {
+				...
+			}																											OPTIONAL,	-- Need R
+			dci-Format2-2							SEQUENCE {
+				...
+			}																											OPTIONAL,	-- Need R
+			dci-Format2-3							SEQUENCE {
+				monitoringPeriodicity					ENUMERATED {n1, n2, n4, n5, n8, n10, n16, n20 }					OPTIONAL, 	-- Cond Setup
+				nrofPDCCH-Candidates					ENUMERATED {n1, n2},
+				...
+			}																											OPTIONAL	-- Need R
+		},
+		ue-Specific								SEQUENCE {
+			dci-Formats								ENUMERATED {formats0-0-And-1-0, formats0-1-And-1-1},
+			... 
+		}
+	}																													OPTIONAL	-- Cond Setup
+}
+
+-- TAG-SEARCHSPACE-STOP
+-- TAG-SEARCHSPACEID-START
+
+SearchSpaceId ::= 					INTEGER (0..maxNrofSearchSpaces-1)
+
+-- TAG-SEARCHSPACEID-STOP
+-- TAG-SECURITY-ALGORITHM-CONFIG-START
+
+SecurityAlgorithmConfig ::=			SEQUENCE {
+	cipheringAlgorithm					CipheringAlgorithm,
+	integrityProtAlgorithm				IntegrityProtAlgorithm			OPTIONAL,	-- Need R	
+	...
+}
+
+IntegrityProtAlgorithm ::=			ENUMERATED {
+										nia0, nia1, nia2, nia3, spare4, spare3,
+										spare2, spare1, ...}
+
+CipheringAlgorithm ::=				ENUMERATED {
+										nea0, nea1, nea2, nea3, spare4, spare3,
+										spare2, spare1, ...}
+
+-- TAG-SECURITY-ALGORITHM-CONFIG-STOP
+-- TAG-SERV-CELL-INDEX-START
+
+ServCellIndex ::=					INTEGER (0..maxNrofServingCells-1)
+
+-- TAG-SERV-CELL-INDEX-STOP
+-- TAG-SERVING-CELL-CONFIG-START
+
+ServingCellConfig ::=				SEQUENCE {
+	tdd-UL-DL-ConfigurationDedicated	TDD-UL-DL-ConfigDedicated												OPTIONAL,	-- Cond TDD
+
+	initialDownlinkBWP					BWP-DownlinkDedicated													OPTIONAL,	-- Cond ServCellAdd
+	downlinkBWP-ToReleaseList			SEQUENCE (SIZE (1..maxNrofBWPs)) OF BWP-Id								OPTIONAL,	-- Need N
+	downlinkBWP-ToAddModList			SEQUENCE (SIZE (1..maxNrofBWPs)) OF BWP-Downlink						OPTIONAL, 	-- Need N
+	firstActiveDownlinkBWP-Id			BWP-Id																	OPTIONAL,	-- Cond SyncAndCellAdd
+	bwp-InactivityTimer					ENUMERATED { ms2, ms3, ms4, ms5, ms6, ms8, ms10, ms20, ms30, 
+													 ms40,ms50, ms60, ms80, ms100, ms200, ms300, ms500, 
+													 ms750, ms1280, ms1920, ms2560, spare10, spare9, spare8, 
+													 spare7, spare6, spare5, spare4, spare3, spare2, spare1 }	OPTIONAL,	-- Need R	
+	defaultDownlinkBWP-Id				BWP-Id																	OPTIONAL, 	-- Need S
+
+	uplinkConfig						UplinkConfig															OPTIONAL,	-- Cond ServCellAdd-UL
+	supplementaryUplink					UplinkConfig 															OPTIONAL, 	-- Cond ServCellAdd-SUL
+
+	pdcch-ServingCellConfig				SetupRelease { PDCCH-ServingCellConfig }								OPTIONAL,	-- Need M
+	pdsch-ServingCellConfig				SetupRelease { PDSCH-ServingCellConfig }								OPTIONAL,	-- Need M
+	csi-MeasConfig						SetupRelease { CSI-MeasConfig }											OPTIONAL,	-- Need M
+	sCellDeactivationTimer				ENUMERATED { ms20, ms40, ms80, ms160, ms200, ms240, 
+													 ms320, ms400, ms480, ms520, ms640, ms720, 
+													 ms840, ms1280, spare2,spare1}					OPTIONAL,	-- Cond ServingCellWithoutPUCCH
+	crossCarrierSchedulingConfig		CrossCarrierSchedulingConfig											OPTIONAL,	-- Need M
+	tag-Id								TAG-Id,
+	ue-BeamLockFunction					ENUMERATED {enabled}													OPTIONAL,	-- Need R
+	pathlossReferenceLinking			ENUMERATED {pCell, sCell}												OPTIONAL,	-- Cond SCellOnly
+	servingCellMO						MeasObjectId															OPTIONAL,	-- Cond MeasObject
+	...
+}
+
+UplinkConfig ::=					SEQUENCE {
+	initialUplinkBWP					BWP-UplinkDedicated														OPTIONAL, 	-- Cond ServCellAdd
+	uplinkBWP-ToReleaseList				SEQUENCE (SIZE (1..maxNrofBWPs)) OF BWP-Id								OPTIONAL,	-- Need N
+	uplinkBWP-ToAddModList				SEQUENCE (SIZE (1..maxNrofBWPs)) OF BWP-Uplink							OPTIONAL, 	-- Need N
+	firstActiveUplinkBWP-Id				BWP-Id																	OPTIONAL,	-- Cond SyncAndCellAdd
+
+	pusch-ServingCellConfig				SetupRelease { PUSCH-ServingCellConfig }								OPTIONAL,	-- Need M
+	carrierSwitching					SetupRelease { SRS-CarrierSwitching	}									OPTIONAL,	-- Need M
+	...
+}
+
+-- TAG-SERVING-CELL-CONFIG-STOP
+-- TAG-SERVING-CELL-CONFIG-COMMON-START
+
+ServingCellConfigCommon ::=			SEQUENCE {
+	physCellId							PhysCellId													OPTIONAL, -- Cond HOAndServCellAdd,
+	downlinkConfigCommon				DownlinkConfigCommon										OPTIONAL, -- Cond InterFreqHOAndServCellAdd
+
+	uplinkConfigCommon					UplinkConfigCommon											OPTIONAL, -- Cond ServCellAdd-UL 
+	supplementaryUplinkConfig					UplinkConfigCommon									OPTIONAL, -- Cond ServCellAdd-SUL
+	n-TimingAdvanceOffset				ENUMERATED { n0, n25600, n39936 }								OPTIONAL,-- Need S
+	ssb-PositionsInBurst				CHOICE {
+		shortBitmap							BIT STRING (SIZE (4)),
+		mediumBitmap						BIT STRING (SIZE (8)),
+		longBitmap							BIT STRING (SIZE (64))
+	}																								OPTIONAL, -- Cond AbsFreqSSB
+	ssb-periodicityServingCell			ENUMERATED { ms5, ms10, ms20, ms40, ms80, ms160, spare2, spare1 }		OPTIONAL,	-- Need S
+	dmrs-TypeA-Position					ENUMERATED {pos2, pos3},
+	lte-CRS-ToMatchAround				SetupRelease { RateMatchPatternLTE-CRS } 								OPTIONAL,	-- Need M
+	rateMatchPatternToAddModList		SEQUENCE (SIZE (1..maxNrofRateMatchPatterns)) OF RateMatchPattern		OPTIONAL, -- Need N
+	rateMatchPatternToReleaseList		SEQUENCE (SIZE (1..maxNrofRateMatchPatterns)) OF RateMatchPatternId		OPTIONAL, -- Need N
+	subcarrierSpacing					SubcarrierSpacing														OPTIONAL, -- Need S
+	tdd-UL-DL-ConfigurationCommon		TDD-UL-DL-ConfigCommon													OPTIONAL, -- Cond TDD
+	ss-PBCH-BlockPower					INTEGER (-60..50),
+	...
+}
+
+
+-- TAG-SERVING-CELL-CONFIG-COMMON-STOP 
+-- TAG-SINR-RANGE-START
+
+SINR-Range ::=						INTEGER (0..127)
+
+-- TAG-SINR-RANGE-STOP
+-- TAG-SLOTFORMATCOMBINATIONSPERCELL-START
+
+SlotFormatCombinationsPerCell ::=	SEQUENCE {
+	servingCellId						ServCellIndex,
+	subcarrierSpacing					SubcarrierSpacing,
+	subcarrierSpacing2					SubcarrierSpacing																	OPTIONAL,	-- Need R
+	slotFormatCombinations				SEQUENCE (SIZE (1..maxNrofSlotFormatCombinationsPerSet)) OF SlotFormatCombination	OPTIONAL,
+	positionInDCI						INTEGER(0..maxSFI-DCI-PayloadSize-1)												OPTIONAL,
+	...
+}
+
+SlotFormatCombination ::= 			SEQUENCE {
+	slotFormatCombinationId				SlotFormatCombinationId,
+	slotFormats							SEQUENCE (SIZE (1..maxNrofSlotFormatsPerCombination)) OF INTEGER (0..255)
+}
+
+SlotFormatCombinationId	::=			INTEGER (0..maxNrofSlotFormatCombinationsPerSet-1)
+
+-- TAG-SLOTFORMATCOMBINATIONSPERCELL-STOP
+-- TAG-SLOTFORMATINDICATOR-START
+
+SlotFormatIndicator ::= 		SEQUENCE {
+	sfi-RNTI						RNTI-Value,
+	dci-PayloadSize					INTEGER (1..maxSFI-DCI-PayloadSize),
+	slotFormatCombToAddModList		SEQUENCE (SIZE(1..maxNrofAggregatedCellsPerCellGroup)) OF SlotFormatCombinationsPerCell	OPTIONAL,	-- Need N
+	slotFormatCombToReleaseList		SEQUENCE (SIZE(1..maxNrofAggregatedCellsPerCellGroup)) OF ServCellIndex					OPTIONAL,	-- Need N
+	...
+}
+
+-- TAG-SLOTFORMATINDICATOR-STOP
+-- TAG-SS-RSSI-MEASUREMENT-START
+
+SS-RSSI-Measurement ::=				SEQUENCE {
+	measurementSlots					BIT STRING (SIZE(1..80)),
+	endSymbol							INTEGER(0..3)
+}
+
+-- TAG-SS-RSSI-MEASUREMENT-STOP
+-- TAG-SPS-CONFIG-START
+
+SPS-Config ::= 							SEQUENCE {
+	periodicity								ENUMERATED {ms10, ms20, ms32, ms40, ms64, ms80, ms128, ms160, ms320, ms640,
+														spare6, spare5, spare4, spare3, spare2, spare1},
+	nrofHARQ-Processes						INTEGER (1..8),
+	n1PUCCH-AN								PUCCH-ResourceId														OPTIONAL	-- Need M
+}
+
+-- TAG-SPS-CONFIG-STOP
+-- TAG-SRB-IDENTITY-START
+
+SRB-Identity ::=					INTEGER (1..3)
+
+-- TAG-SRB-IDENTITY-STOP
+-- TAG-SRS-CONFIG-START
+
+SRS-Config ::= 							SEQUENCE {
+	srs-ResourceSetToReleaseList 			SEQUENCE (SIZE(1..maxNrofSRS-ResourceSets)) OF SRS-ResourceSetId			OPTIONAL, 	-- Need N
+	srs-ResourceSetToAddModList 			SEQUENCE (SIZE(1..maxNrofSRS-ResourceSets)) OF SRS-ResourceSet				OPTIONAL, 	-- Need N
+
+	srs-ResourceToReleaseList 	 			SEQUENCE (SIZE(1..maxNrofSRS-Resources)) OF SRS-ResourceId					OPTIONAL,	-- Need N
+	srs-ResourceToAddModList 	 			SEQUENCE (SIZE(1..maxNrofSRS-Resources)) OF SRS-Resource					OPTIONAL, 	-- Need N
+
+	tpc-Accumulation						ENUMERATED {disabled}														OPTIONAL,	-- Need S
+	...
+}
+
+SRS-ResourceSet ::= 					SEQUENCE {
+	srs-ResourceSetId						SRS-ResourceSetId,
+	srs-ResourceIdList						SEQUENCE (SIZE(1..maxNrofSRS-ResourcesPerSet)) OF SRS-ResourceId		OPTIONAL,	-- Cond Setup
+
+	resourceType							CHOICE {
+		aperiodic								SEQUENCE {
+			aperiodicSRS-ResourceTrigger			INTEGER (1..maxNrofSRS-TriggerStates-1),
+			csi-RS									NZP-CSI-RS-ResourceId											OPTIONAL, 	-- Cond NonCodebook
+			slotOffset								INTEGER (1..32)													OPTIONAL,	-- Need S
+			...
+		},
+		semi-persistent							SEQUENCE {
+			associatedCSI-RS						NZP-CSI-RS-ResourceId											OPTIONAL, -- Cond NonCodebook
+			...
+		},
+		periodic								SEQUENCE {
+			associatedCSI-RS						NZP-CSI-RS-ResourceId											OPTIONAL, -- Cond NonCodebook
+			...
+		}
+	},
+	usage									ENUMERATED {beamManagement, codebook, nonCodebook, antennaSwitching},
+	alpha									Alpha																	OPTIONAL, -- Need S
+	p0										INTEGER (-202..24)														OPTIONAL, -- Cond Setup
+	pathlossReferenceRS						CHOICE {
+		ssb-Index								SSB-Index,
+		csi-RS-Index							NZP-CSI-RS-ResourceId
+	}																												OPTIONAL, -- Need M
+	srs-PowerControlAdjustmentStates		ENUMERATED { sameAsFci2, separateClosedLoop}							OPTIONAL, -- Need S
+	...
+}
+
+SRS-ResourceSetId ::= 					INTEGER (0..maxNrofSRS-ResourceSets-1)
+
+SRS-Resource ::= 						SEQUENCE {
+	srs-ResourceId							SRS-ResourceId,
+	nrofSRS-Ports							ENUMERATED {port1, ports2, ports4},
+	ptrs-PortIndex							ENUMERATED {n0, n1 }													OPTIONAL,	-- Need R  
+	transmissionComb						CHOICE {
+		n2										SEQUENCE {
+			combOffset-n2							INTEGER (0..1),
+			cyclicShift-n2							INTEGER (0..7)
+		}, 
+		n4										SEQUENCE {
+			combOffset-n4							INTEGER (0..3),
+			cyclicShift-n4							INTEGER (0..11)
+		}
+	},
+	resourceMapping							SEQUENCE {
+		startPosition							INTEGER (0..5),
+		nrofSymbols								ENUMERATED {n1, n2, n4},
+		repetitionFactor						ENUMERATED {n1, n2, n4}
+	},
+	freqDomainPosition						INTEGER (0..67),
+	freqDomainShift							INTEGER (0..268), 
+	freqHopping								SEQUENCE {
+		c-SRS									INTEGER (0..63),
+		b-SRS									INTEGER (0..3), 
+		b-hop									INTEGER (0..3)
+	},
+	groupOrSequenceHopping					ENUMERATED { neither, groupHopping, sequenceHopping },
+	resourceType							CHOICE {
+		aperiodic								SEQUENCE {
+			...
+		}, 
+		semi-persistent							SEQUENCE {
+			periodicityAndOffset-sp						SRS-PeriodicityAndOffset,
+			...
+		},
+		periodic								SEQUENCE {
+			periodicityAndOffset-p						SRS-PeriodicityAndOffset,
+			...
+		}
+	},
+	sequenceId								BIT STRING (SIZE (10)),
+	spatialRelationInfo						SRS-SpatialRelationInfo											OPTIONAL,	-- Need R
+	...
+}
+
+SRS-SpatialRelationInfo ::=		SEQUENCE {
+	servingCellId						ServCellIndex										OPTIONAL,	-- Need S
+	referenceSignal 					CHOICE {
+		ssb-Index							SSB-Index,
+		csi-RS-Index						NZP-CSI-RS-ResourceId,
+		srs									SEQUENCE {
+			resourceId							SRS-ResourceId,
+			uplinkBWP							BWP-Id
+		}
+	}
+}
+
+
+SRS-ResourceId ::= 						INTEGER (0..maxNrofSRS-Resources-1)
+
+SRS-PeriodicityAndOffset ::=			CHOICE {
+	sl1										NULL, 
+	sl2										INTEGER(0..1), 
+	sl4										INTEGER(0..3), 
+	sl5										INTEGER(0..4), 
+	sl8										INTEGER(0..7), 
+	sl10									INTEGER(0..9), 
+	sl16									INTEGER(0..15), 
+	sl20									INTEGER(0..19), 
+	sl32									INTEGER(0..31), 
+	sl40									INTEGER(0..39), 
+	sl64									INTEGER(0..63), 
+	sl80									INTEGER(0..79), 
+	sl160									INTEGER(0..159), 
+	sl320									INTEGER(0..319),
+	sl640									INTEGER(0..639),
+	sl1280									INTEGER(0..1279),
+	sl2560									INTEGER(0..2559)
+}
+
+-- TAG-SRS-CONFIG-STOP
+-- TAG-SRS-CARRIERSWITCHING-START
+SRS-CarrierSwitching ::=			SEQUENCE {
+	srs-SwitchFromServCellIndex			INTEGER (0..31)																	OPTIONAL,	-- Cond Setup
+	srs-SwitchFromCarrier				ENUMERATED {sUL, nUL},
+	srs-TPC-PDCCH-Group					CHOICE {
+		typeA								SEQUENCE (SIZE (1..32)) OF SRS-TPC-PDCCH-Config,
+		typeB								SRS-TPC-PDCCH-Config
+	}																													OPTIONAL, 	-- Cond Setup
+	monitoringCells						SEQUENCE (SIZE (1..maxNrofServingCells)) OF ServCellIndex						OPTIONAL,	-- Cond Setup
+	...
+}
+
+-- One trigger configuration for SRS-Carrier Switching. (see 38.212, 38.213, section 7.3.1, 11.3)
+SRS-TPC-PDCCH-Config ::=			SEQUENCE {
+	srs-CC-SetIndexlist					SEQUENCE (SIZE(1..4)) OF SRS-CC-SetIndex 										OPTIONAL	-- Cond Setup
+}
+
+SRS-CC-SetIndex ::=					SEQUENCE {
+	cc-SetIndex							INTEGER (0..3)																	OPTIONAL, 	-- Cond Setup
+	cc-IndexInOneCC-Set					INTEGER (0..7)																	OPTIONAL	-- Cond Setup
+}
+
+-- TAG-SRS-CARRIERSWITCHING-STOP
+-- TAG-SRS-TPC-COMMANDCONFIG-START
+
+SRS-TPC-CommandConfig ::=				SEQUENCE {
+	startingBitOfFormat2-3					INTEGER (1..31)																OPTIONAL, 	-- Cond Setup
+	fieldTypeFormat2-3						INTEGER (0..1)																OPTIONAL, 	-- Cond Setup
+	...
+}
+
+-- TAG-SRS-TPC-COMMANDCONFIG-STOP
+-- TAG-SSB-INDEX-START
+
+SSB-Index ::=						INTEGER (0..63)
+
+-- TAG-SSB-INDEX-STOP
+-- TAG-SSB-MTC-START
+
+SSB-MTC	::=								SEQUENCE {
+	periodicityAndOffset					CHOICE {
+		sf5									INTEGER (0..4),
+		sf10									INTEGER (0..9),
+		sf20									INTEGER (0..19),
+		sf40									INTEGER (0..39),
+		sf80									INTEGER (0..79),
+		sf160								INTEGER (0..159)
+	},
+	duration								ENUMERATED { sf1, sf2, sf3, sf4, sf5 }
+}
+
+SSB-MTC2 ::=						SEQUENCE {
+	pci-List							SEQUENCE (SIZE (1..maxNrofPCIsPerSMTC)) OF PhysCellId						OPTIONAL,	-- Need M
+	periodicity							ENUMERATED {sf5, sf10, sf20, sf40, sf80, spare3, spare2, spare1}
+}
+
+-- TAG-SSB-MTC-STOP
+-- TAG-SUBCARRIER-SPACING-START
+
+SubcarrierSpacing ::= 				ENUMERATED {kHz15, kHz30, kHz60, kHz120, kHz240, spare3, spare2, spare1}
+
+-- TAG-SUBCARRIER-SPACING-STOP
+-- TAG-TCI-STATE-START
+
+TCI-State ::= 						SEQUENCE {
+	tci-StateId							TCI-StateId,
+	qcl-Type1							QCL-Info,
+	qcl-Type2							QCL-Info																OPTIONAL,	-- Need R
+	...
+}
+
+QCL-Info ::=						SEQUENCE {
+	cell								ServCellIndex															OPTIONAL,	-- Need R
+	bwp-Id								BWP-Id																	OPTIONAL, -- Cond CSI-RS-Indicated
+	referenceSignal						CHOICE {
+		csi-rs								NZP-CSI-RS-ResourceId,
+		ssb									SSB-Index
+	},
+	qcl-Type							ENUMERATED {typeA, typeB, typeC, typeD},
+	...
+}
+
+-- TAG-TCI-STATE-STOP
+-- TAG-TCI-STATEID-START
+
+TCI-StateId ::=						INTEGER (0..maxNrofTCI-States-1)
+
+-- TAG-TCI-STATEID-STOP
+-- TAG-TDD-UL-DL-CONFIG-START
+
+TDD-UL-DL-ConfigCommon ::=			SEQUENCE {
+	referenceSubcarrierSpacing			SubcarrierSpacing,
+	pattern1							TDD-UL-DL-Pattern,
+	pattern2							TDD-UL-DL-Pattern															OPTIONAL, -- Need R
+	...
+}
+
+TDD-UL-DL-Pattern ::= 				SEQUENCE {
+	dl-UL-TransmissionPeriodicity		ENUMERATED {ms0p5, ms0p625, ms1, ms1p25, ms2, ms2p5, ms5, ms10},
+	nrofDownlinkSlots					INTEGER (0..maxNrofSlots),
+	nrofDownlinkSymbols					INTEGER (0..maxNrofSymbols-1),
+	nrofUplinkSlots						INTEGER (0..maxNrofSlots),
+	nrofUplinkSymbols					INTEGER (0..maxNrofSymbols-1),
+	...
+}
+
+TDD-UL-DL-ConfigDedicated ::=		SEQUENCE {
+	slotSpecificConfigurationsToAddModList		SEQUENCE (SIZE (1..maxNrofSlots)) OF TDD-UL-DL-SlotConfig					OPTIONAL, -- Need N
+	slotSpecificConfigurationsToreleaseList		SEQUENCE (SIZE (1..maxNrofSlots)) OF TDD-UL-DL-SlotIndex					OPTIONAL, -- Need N
+	...
+}
+
+TDD-UL-DL-SlotConfig ::=			SEQUENCE {
+	slotIndex							TDD-UL-DL-SlotIndex,
+	symbols								CHOICE {
+		allDownlink							NULL,
+		allUplink							NULL,
+		explicit							SEQUENCE {
+			nrofDownlinkSymbols					INTEGER (1..maxNrofSymbols-1)												OPTIONAL,	-- Need S
+			nrofUplinkSymbols					INTEGER (1..maxNrofSymbols-1)												OPTIONAL	-- Need S
+		}
+	}
+}
+
+TDD-UL-DL-SlotIndex ::=				INTEGER (0..maxNrofSlots-1)
+
+-- TAG-TDD-UL-DL-CONFIG-STOP
+
+TimeToTrigger ::=					ENUMERATED {
+										ms0, ms40, ms64, ms80, ms100, ms128, ms160, ms256,
+										ms320, ms480, ms512, ms640, ms1024, ms1280, ms2560,
+										ms5120}
+
+-- TAG-UPLINK-CONFIG-COMMON-START
+
+UplinkConfigCommon ::=				SEQUENCE {
+	frequencyInfoUL						FrequencyInfoUL										OPTIONAL,	-- Cond InterFreqHOAndServCellAddAndSIB1
+	initialUplinkBWP						BWP-UplinkCommon										OPTIONAL,	-- Cond ServCellAddAndSIB1
+	timeAlignmentTimerCommon				TimeAlignmentTimer
+}
+
+-- TAG-UPLINK-CONFIG-COMMON-STOP
+-- TAG-ZP-CSI-RS-RESOURCE-START
+
+ZP-CSI-RS-Resource ::=				SEQUENCE {
+	zp-CSI-RS-ResourceId				ZP-CSI-RS-ResourceId,
+	resourceMapping						CSI-RS-ResourceMapping,
+	periodicityAndOffset				CSI-ResourcePeriodicityAndOffset							OPTIONAL, --Cond PeriodicOrSemiPersistent
+	...
+}
+
+ZP-CSI-RS-ResourceId ::=			INTEGER (0..maxNrofZP-CSI-RS-Resources-1)
+
+-- TAG-ZP-CSI-RS-RESOURCE-STOP
+-- TAG-ZP-CSI-RS-RESOURCESET-START
+
+ZP-CSI-RS-ResourceSet ::= 			SEQUENCE {
+	zp-CSI-RS-ResourceSetId				ZP-CSI-RS-ResourceSetId,
+	zp-CSI-RS-ResourceIdList			SEQUENCE (SIZE(1..maxNrofZP-CSI-RS-ResourcesPerSet)) OF ZP-CSI-RS-ResourceId,
+	...
+}
+
+-- TAG-ZP-CSI-RS-RESOURCESET-STOP
+-- TAG-ZP-CSI-RS-RESOURCESETID-START
+
+ZP-CSI-RS-ResourceSetId ::= 					INTEGER (0..maxNrofZP-CSI-RS-ResourceSets-1)
+
+-- TAG-ZP-CSI-RS-RESOURCESETID-STOP
+-- TAG-ACCESSSTRATUMRELEASE-START
+
+AccessStratumRelease ::= ENUMERATED {
+							rel15, spare7, spare6, spare5, spare4, spare3, spare2, spare1, ... }
+
+-- TAG-ACCESSSTRATUMRELEASE-STOP
+-- TAG-BANDCOMBINATIONLIST-START
+
+BandCombinationList ::=			SEQUENCE (SIZE (1..maxBandComb)) OF BandCombination
+
+BandCombination ::= 				SEQUENCE {
+	bandList								SEQUENCE (SIZE (1..maxSimultaneousBands)) OF BandParameters,
+	featureSetCombination				FeatureSetCombinationId,
+
+	ca-ParametersEUTRA					CA-ParametersEUTRA					OPTIONAL,
+	ca-ParametersNR						CA-ParametersNR						OPTIONAL,
+	mrdc-Parameters						MRDC-Parameters						OPTIONAL,
+	supportedBandwidthCombinationSet		BIT STRING (SIZE (1..32))			OPTIONAL
+}
+
+
+
+BandParameters ::=					CHOICE {
+	eutra							SEQUENCE {
+		bandEUTRA						FreqBandIndicatorEUTRA,
+		ca-BandwidthClassDL-EUTRA		CA-BandwidthClassEUTRA				OPTIONAL,
+		ca-BandwidthClassUL-EUTRA		CA-BandwidthClassEUTRA				OPTIONAL
+	},
+	nr								SEQUENCE {
+		bandNR							FreqBandIndicatorNR,
+		ca-BandwidthClassDL-NR			CA-BandwidthClassNR					OPTIONAL,
+		ca-BandwidthClassUL-NR			CA-BandwidthClassNR					OPTIONAL
+	}
+}
+
+
+-- TAG-BANDCOMBINATIONLIST-STOP
+-- TAG-CA-BANDWIDTHCLASSNR-START
+
+CA-BandwidthClassNR ::= ENUMERATED {a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, ...}
+
+-- TAG-CA-BANDWIDTHCLASSNR-STOP
+-- TAG-CA-BANDWIDTHCLASSEUTRA-START
+
+CA-BandwidthClassEUTRA ::=	ENUMERATED {a, b, c, d, e, f, ...}
+
+-- TAG-CA-BANDWIDTHCLASSEUTRA-STOP
+-- TAG-CA-PARAMETERSNR-START
+
+CA-ParametersNR ::=	SEQUENCE {
+	multipleTimingAdvances				ENUMERATED {supported}		OPTIONAL,
+	parallelTxSRS-PUCCH-PUSCH			ENUMERATED {supported}		OPTIONAL,
+	parallelTxPRACH-SRS-PUCCH-PUSCH		ENUMERATED {supported}		OPTIONAL,
+	simultaneousRxTxInterBandCA			ENUMERATED {supported}		OPTIONAL,
+	simultaneousRxTxSUL					ENUMERATED {supported}		OPTIONAL,
+	diffNumerologyAcrossPUCCH-Group		ENUMERATED {supported}		OPTIONAL,
+	diffNumerologyWithinPUCCH-Group		ENUMERATED {supported}		OPTIONAL,
+	supportedNumberTAG					ENUMERATED {n2, n3, n4}		OPTIONAL,
+	...
+}
+
+-- TAG-CA-PARAMETERSNR-STOP
+-- TAG-CA-PARAMETERSEUTRA-START
+
+CA-ParametersEUTRA ::=	SEQUENCE {
+	multipleTimingAdvance					ENUMERATED {supported}							OPTIONAL,
+	simultaneousRx-Tx						ENUMERATED {supported}							OPTIONAL,
+	supportedNAICS-2CRS-AP					BIT STRING (SIZE (1..8))						OPTIONAL,
+	additionalRx-Tx-PerformanceReq			ENUMERATED {supported}							OPTIONAL,
+	ue-CA-PowerClass-N						ENUMERATED {class2}								OPTIONAL,
+	...
+}
+
+-- TAG-CA-PARAMETERSEUTRA-STOP
+-- TAG-FEATURESETCOMBINATION-START
+
+FeatureSetCombination ::=	SEQUENCE (SIZE (1..maxSimultaneousBands)) OF FeatureSetsPerBand
+
+FeatureSetsPerBand ::= 		SEQUENCE (SIZE (1..maxFeatureSetsPerBand)) OF FeatureSet
+
+FeatureSet ::=					CHOICE {
+	eutra							SEQUENCE {
+		downlinkSetEUTRA				FeatureSetEUTRA-DownlinkId,
+		uplinkSetEUTRA					FeatureSetEUTRA-UplinkId
+	},
+	nr								SEQUENCE {
+		downlinkSetNR					FeatureSetDownlinkId,
+		uplinkSetNR						FeatureSetUplinkId
+	}
+}
+
+-- TAG-FEATURESET-COMBINATION-ID-START
+
+FeatureSetCombinationId ::= 				INTEGER (0.. maxFeatureSetCombinations)
+
+-- TAG-FEATURESET-COMBINATION-ID-STOP
+-- TAG-FEATURESETDOWNLINK-START
+
+FeatureSetDownlink ::=				SEQUENCE {
+	featureSetListPerDownlinkCC			SEQUENCE (SIZE (1..maxNrofServingCells)) OF FeatureSetDownlinkPerCC-Id,
+
+	intraBandFreqSeparationDL				FreqSeparationClass														OPTIONAL,
+	scalingFactor							ENUMERATED {f0p4, f0p75, f0p8}											OPTIONAL,
+	crossCarrierSchedulingDL-OtherSCS		ENUMERATED {supported}													OPTIONAL,
+	scellWithoutSSB							ENUMERATED {supported}													OPTIONAL,
+	csi-RS-MeasSCellWithoutSSB				ENUMERATED {supported}													OPTIONAL,
+	srs-AssocCSI-RS							ENUMERATED {supported}													OPTIONAL,
+	type1-3-CSS								ENUMERATED {supported}													OPTIONAL,
+	pdcchMonitoringAnyOccasions				ENUMERATED {withoutDCI-Gap, withDCI-Gap}								OPTIONAL,
+	pdcchMonitoringAnyOccasionsWithSpanGap	ENUMERATED {supported}													OPTIONAL,
+	ue-SpecificUL-DL-Assignment				ENUMERATED {supported}													OPTIONAL,
+	searchSpaceSharingCA-DL					ENUMERATED {supported}													OPTIONAL,
+	timeDurationForQCL						SEQUENCE {
+		scs-60kHz								ENUMERATED {s7, s14, s28}											OPTIONAL,
+		sch-120kHz								ENUMERATED {s14, s28}												OPTIONAL
+	}																												OPTIONAL,
+	pdsch-DifferentTB-PerSlot				SEQUENCE {
+		scs-15kHz								ENUMERATED {upto2, upto4, upto7}									OPTIONAL,
+		scs-30kHz								ENUMERATED {upto2, upto4, upto7}									OPTIONAL,
+		scs-60kHz								ENUMERATED {upto2, upto4, upto7}									OPTIONAL,
+		scs-120kHz								ENUMERATED {upto2, upto4, upto7}									OPTIONAL
+	}																												OPTIONAL,
+	csi-RS-IM-ReceptionForFeedback			CSI-RS-IM-ReceptionForFeedback											OPTIONAL,
+	typeI-SinglePanelCodebookList			SEQUENCE (SIZE (1.. maxNrofCodebooks)) OF TypeI-SinglePanelCodebook	OPTIONAL,
+	typeI-MultiPanelCodebookList			SEQUENCE (SIZE (1.. maxNrofCodebooks)) OF TypeI-MultiPanelCodebook		OPTIONAL,
+	typeII-CodebookList						SEQUENCE (SIZE (1.. maxNrofCodebooks)) OF TypeII-Codebook				OPTIONAL,
+	typeII-CodebookPortSelectionList		SEQUENCE (SIZE (1.. maxNrofCodebooks)) OF TypeII-CodebookPortSelection	OPTIONAL
+
+}
+
+CSI-RS-IM-ReceptionForFeedback ::=	SEQUENCE {
+	maxNumberNZP-CSI-RS-PerCC					INTEGER (1..32),
+	maxNumberPortsAcrossNZP-CSI-RS-PerCC			ENUMERATED {p2, p4, p8, p12, p16, p24, p32, p40, p48, p56, p64, p72, p80, 
+																p88, p96, p104, p112, p120, p128, p136, p144, p152, p160, p168, 
+																p176, p184, p192, p200, p208, p216, p224, p232, p240, p248, p256},
+	maxNumberCS-IM-PerCC							ENUMERATED {n1, n2, n4, n8, n16, n32},
+	maxNumberSimultaneousCSI-RS-ActBWP-AllCC		ENUMERATED {n5, n6, n7, n8, n9, n10, n12, n14, n16, n18, n20, n22, n24, n26, 
+																n28, n30, n32, n34, n36, n38, n40, n42, n44, n46, n48, n50, n52, 
+																n54, n56, n58, n60, n62, n64},
+	totalNumberPortsSimultaneousCSI-RS-ActBWP-AllCC	ENUMERATED {p8, p12, p16, p24, p32, p40, p48, p56, p64, p72, p80, 
+																p88, p96, p104, p112, p120, p128, p136, p144, p152, p160, p168, 
+																p176, p184, p192, p200, p208, p216, p224, p232, p240, p248, p256}
+}
+
+TypeI-SinglePanelCodebook ::=		SEQUENCE {
+	maxNumberTxPortsPerResource			ENUMERATED {p2, p4, p8, p12, p16, p24, p32},
+	maxNumberResources					INTEGER (1..64),
+	totalNumberTxPorts					INTEGER (2..256),
+	supportedCodebookMode				ENUMERATED {mode1, mode1AndMode2},
+	maxNumberCSI-RS-PerResourceSet		INTEGER (1..8)
+}
+
+TypeI-MultiPanelCodebook ::=		SEQUENCE {
+	maxNumberTxPortsPerResource			ENUMERATED {p8, p16, p32},
+	maxNumberResources					INTEGER (1..64),
+	totalNumberTxPorts					INTEGER (2..256),
+	supportedCodebookMode				ENUMERATED {mode1, mode2, both},
+	supportedNumberPanels				ENUMERATED {n2, n4},
+	maxNumberCSI-RS-PerResourceSet		INTEGER (1..8)
+}
+
+TypeII-Codebook ::=					SEQUENCE {
+	maxNumberTxPortsPerResource			ENUMERATED {p4, p8, p12, p16, p24, p32},
+	maxNumberResources					INTEGER (1..64),
+	totalNumberTxPorts					INTEGER (2..256),
+	parameterLx							INTEGER (2..4),
+	amplitudeScalingType				ENUMERATED {wideband, widebandAndSubband},
+	amplitudeSubsetRestriction			ENUMERATED {supported}							OPTIONAL,
+	maxNumberCSI-RS-PerResourceSet		INTEGER (1..8)
+}
+
+TypeII-CodebookPortSelection ::=	SEQUENCE {
+	maxNumberTxPortsPerResource			ENUMERATED {p4, p8, p12, p16, p24, p32},
+	maxNumberResources					INTEGER (1..64),
+	totalNumberTxPorts					INTEGER (2..256),
+	parameterLx							INTEGER (2..4),
+	amplitudeScalingType				ENUMERATED {wideband, widebandAndSubband},
+	maxNumberCSI-RS-PerResourceSet		INTEGER (1..8)
+}
+
+-- TAG-FEATURESETDOWNLINK-STOP
+-- TAG-FEATURESET-DOWNLINK-ID-START
+
+FeatureSetDownlinkId ::= 				INTEGER (0..maxDownlinkFeatureSets)
+
+-- TAG-FEATURESET-DOWNLINK-ID-STOP
+-- TAG-FEATURESET-EUTRA-DOWNLINK-ID-START
+
+FeatureSetEUTRA-DownlinkId ::= 				INTEGER (0..maxEUTRA-DL-FeatureSets)
+
+-- TAG-FEATURESET-EUTRA-DOWNLINK-ID-STOP
+-- TAG-FEATURESETDOWNLINKPERCC-START
+
+FeatureSetDownlinkPerCC ::=		SEQUENCE {
+	supportedSubcarrierSpacingDL	SubcarrierSpacing,
+	supportedBandwidthDL			SupportedBandwidth,
+	channelBW-90mhz					ENUMERATED {supported}														OPTIONAL,
+	maxNumberMIMO-LayersPDSCH			MIMO-LayersDL															OPTIONAL,
+	supportedModulationOrderDL			ModulationOrder															OPTIONAL
+}
+
+-- TAG-FEATURESETDOWNLINKPERCC-STOP
+-- TAG-FEATURESET-DOWNLINK-PER-CC-ID-START
+
+FeatureSetDownlinkPerCC-Id ::=			INTEGER (1..maxPerCC-FeatureSets)
+
+-- TAG-FEATURESET-DOWNLINK-PER-CC-ID-STOP
+-- TAG-FEATURESETUPLINK-START
+
+FeatureSetUplink ::=					SEQUENCE {
+	featureSetListPerUplinkCC				SEQUENCE (SIZE (1.. maxNrofServingCells)) OF FeatureSetUplinkPerCC-Id,
+	scalingFactor						ENUMERATED {f0p4, f0p75, f0p8}				OPTIONAL,
+	crossCarrierSchedulingUL-OtherSCS	ENUMERATED {supported}						OPTIONAL,
+	intraBandFreqSeparationUL				FreqSeparationClass					OPTIONAL,
+	searchSpaceSharingCA-UL				ENUMERATED {supported}						OPTIONAL,
+	srs-TxSwitch						SRS-TxSwitch								OPTIONAL,
+	supportedSRS-Resources				SRS-Resources								OPTIONAL,
+	twoPUCCH-Group						ENUMERATED {supported}						OPTIONAL,
+	dynamicSwitchSUL					ENUMERATED {supported}						OPTIONAL,
+	pusch-DifferentTB-PerSlot			SEQUENCE {
+		scs-15kHz							ENUMERATED {upto2, upto4, upto7}			OPTIONAL,
+		scs-30kHz							ENUMERATED {upto2, upto4, upto7}			OPTIONAL,
+		scs-60kHz							ENUMERATED {upto2, upto4, upto7}			OPTIONAL,
+		scs-120kHz							ENUMERATED {upto2, upto4, upto7}			OPTIONAL
+	}																				OPTIONAL,
+	csi-ReportFramework					CSI-ReportFramework							OPTIONAL
+}
+
+
+CSI-ReportFramework ::=					SEQUENCE {
+	maxNumberPeriodicCSI-ReportPerBWP			INTEGER (1..4),
+	maxNumberAperiodicCSI-ReportPerBWP			INTEGER (1..4),
+	maxNumberSemiPersistentCSI-ReportPerBWP		INTEGER (0..4),
+	simultaneousCSI-ReportsAllCC					INTEGER (5..32)
+}
+
+-- TAG- FEATURESETUPLINK-STOP
+-- TAG-FEATURESET-UPLINK-ID-START
+
+FeatureSetUplinkId ::= 					INTEGER (0..maxUplinkFeatureSets)
+
+-- TAG-FEATURESET-UPLINK-ID-STOP
+-- TAG-FEATURESET-EUTRA-UPLINK-ID-START
+
+FeatureSetEUTRA-UplinkId ::= 					INTEGER (0..maxEUTRA-UL-FeatureSets)
+
+-- TAG-FEATURESET-EUTRA-UPLINK-ID-STOP
+-- TAG-FEATURESETUPLINKPERCC-START
+
+FeatureSetUplinkPerCC ::=			SEQUENCE {
+	supportedSubcarrierSpacingUL			SubcarrierSpacing,
+	supportedBandwidthUL					SupportedBandwidth,
+	channelBW-90mhz						ENUMERATED {supported}						OPTIONAL,
+	mimo-CB-PUSCH						SEQUENCE {
+		maxNumberMIMO-LayersCB-PUSCH		MIMO-LayersUL							OPTIONAL,
+		maxNumberSRS-ResourcePerSet			INTEGER (1..2)
+	}																				OPTIONAL,
+	maxNumberMIMO-LayersNonCB-PUSCH		MIMO-LayersUL								OPTIONAL,
+	supportedModulationOrderUL			ModulationOrder								OPTIONAL,
+	simultaneousTxSUL-NonSUL			ENUMERATED {supported}						OPTIONAL
+}
+
+-- TAG-FEATURESETUPLINKPERCC-STOP
+-- TAG-FEATURESET-UPLINK-PER-CC-ID-START
+
+FeatureSetUplinkPerCC-Id ::=			INTEGER (1..maxPerCC-FeatureSets)
+
+-- TAG-FEATURESET-UPLINK-PER-CC-ID-STOP
+-- TAG-FEATURESETS-START
+
+FeatureSets ::=	SEQUENCE {
+	featureSetsDownlink					SEQUENCE (SIZE (1..maxDownlinkFeatureSets)) OF FeatureSetDownlink				OPTIONAL,
+	featureSetsDownlinkPerCC			SEQUENCE (SIZE (1..maxPerCC-FeatureSets)) OF FeatureSetDownlinkPerCC			OPTIONAL,
+	featureSetsUplink					SEQUENCE (SIZE (1..maxUplinkFeatureSets)) OF FeatureSetUplink					OPTIONAL,
+	featureSetsUplinkPerCC				SEQUENCE (SIZE (1..maxPerCC-FeatureSets)) OF FeatureSetUplinkPerCC				OPTIONAL,
+	...
+}
+
+-- TAG-FREQ-BAND-INDICATOR-EUTRA-START
+
+FreqBandIndicatorEUTRA ::=	INTEGER (1..maxBandsEUTRA)
+
+-- TAG-FREQ-BAND-INDICATOR-EUTRA-STOP
+-- TAG-FREQBANDLIST-START
+
+FreqBandList ::=				SEQUENCE (SIZE (1..maxBandsMRDC)) OF FreqBandInformation
+
+FreqBandInformation ::= 		CHOICE {
+	bandInformationEUTRA			FreqBandInformationEUTRA,
+	bandInformationNR				FreqBandInformationNR
+}
+
+FreqBandInformationEUTRA ::=	SEQUENCE {
+	bandEUTRA						FreqBandIndicatorEUTRA,
+	ca-BandwidthClassDL-EUTRA		CA-BandwidthClassEUTRA					OPTIONAL,	-- Need N
+	ca-BandwidthClassUL-EUTRA		CA-BandwidthClassEUTRA					OPTIONAL	-- Need N
+}
+
+FreqBandInformationNR ::=		SEQUENCE {
+	bandNR							FreqBandIndicatorNR,
+	maxBandwidthRequestedDL			AggregatedBandwith			OPTIONAL, 	-- Need N
+	maxBandwidthRequestedUL			AggregatedBandwith			OPTIONAL, 	-- Need N
+	maxCarriersRequestedDL			INTEGER (1.. maxNrofServingCells)		OPTIONAL, 	-- Need N
+	maxCarriersRequestedUL			INTEGER (1.. maxNrofServingCells)		OPTIONAL	-- Need N
+}
+
+AggregatedBandwith ::=			ENUMERATED {mhz50, mhz100, mhz150, mhz200, mhz250, mhz300, mhz350, 
+												mhz400, mhz450, mhz500, mhz550, mhz600, mhz650, mhz700, mhz750, mhz800}
+
+-- TAG-FREQBANDLIST-STOP
+-- TAG-FREQSEPARATIONCLASS-START
+
+FreqSeparationClass ::=	ENUMERATED {c1, c2, c3, ...}
+
+-- TAG-FREQSEPARATIONCLASS-STOP
+-- TAG-MIMO-LAYERS-START
+
+MIMO-LayersDL ::=	ENUMERATED {twoLayers, fourLayers, eightLayers}
+
+MIMO-LayersUL ::=	ENUMERATED {oneLayer, twoLayers, fourLayers}
+
+-- TAG-MIMO-LAYERS-STOP
+-- TAG-MODULATION-ORDER-START
+
+ModulationOrder ::=	ENUMERATED {bpsk-halfpi, bpsk, qpsk, qam16, qam64, qam256}
+
+-- TAG-MODULATION-ORDER-STOP
+-- TAG-MRDC-PARAMETERS-START
+
+MRDC-Parameters ::=	SEQUENCE {
+	singleUL-Transmission				ENUMERATED {supported}		OPTIONAL,
+	dynamicPowerSharing					ENUMERATED {supported}		OPTIONAL,
+	tdm-Pattern							ENUMERATED {supported}		OPTIONAL,
+	ul-SharingEUTRA-NR					ENUMERATED {tdm, fdm, both}		OPTIONAL,
+	ul-SwitchingTimeEUTRA-NR			ENUMERATED {type1, type2}	OPTIONAL,
+	simultaneousRxTxInterBandENDC		ENUMERATED {supported}		OPTIONAL,
+	asyncIntraBandENDC					ENUMERATED {supported}		OPTIONAL,
+	...
+}
+
+-- TAG-MRDC-PARAMETERS-STOP
+-- TAG-RAT-TYPE-START
+
+RAT-Type ::= ENUMERATED {nr, eutra-nr, spare2, spare1, ...}
+
+-- TAG-RAT-TYPE-STOP
+-- TAG-SUPPORTEDBANDWIDTH-START
+
+SupportedBandwidth ::=		CHOICE {
+	fr1							ENUMERATED {mhz5, mhz10, mhz15, mhz20, mhz25, mhz30, mhz40, mhz50, mhz60, mhz80, mhz100},
+	fr2							ENUMERATED {mhz50, mhz100, mhz200, mhz400}
+}
+
+-- TAG-SUPPORTEDBANDWIDTH-STOP
+-- TAG-UE-CAPABILITY-RAT-CONTAINER-LIST-START
+
+UE-CapabilityRAT-ContainerList ::=SEQUENCE (SIZE (0..maxRAT-CapabilityContainers)) OF UE-CapabilityRAT-Container
+
+UE-CapabilityRAT-Container ::= SEQUENCE {
+	rat-Type							RAT-Type,
+	ue-CapabilityRAT-Container			OCTET STRING
+}
+
+-- TAG-UE-CAPABILITY-RAT-CONTAINER-LIST-STOP
+-- TAG-UE-MRDC-CAPABILITY-START
+
+UE-MRDC-Capability ::=	SEQUENCE {
+	measParametersMRDC					MeasParametersMRDC					OPTIONAL,
+	rf-ParametersMRDC					RF-ParametersMRDC,
+	generalParametersMRDC				GeneralParametersMRDC-XDD-Diff		OPTIONAL,
+	fdd-Add-UE-MRDC-Capabilities		UE-MRDC-CapabilityAddXDD-Mode		OPTIONAL,
+	tdd-Add-UE-MRDC-Capabilities		UE-MRDC-CapabilityAddXDD-Mode		OPTIONAL,
+	fr1-Add-UE-MRDC-Capabilities		UE-MRDC-CapabilityAddFRX-Mode		OPTIONAL,
+	fr2-Add-UE-MRDC-Capabilities		UE-MRDC-CapabilityAddFRX-Mode		OPTIONAL,
+	featureSetCombinations				SEQUENCE (SIZE (1..maxFeatureSetCombinations)) OF FeatureSetCombination			OPTIONAL,
+	lateNonCriticalExtension			OCTET STRING						OPTIONAL,
+	nonCriticalExtension				SEQUENCE {}							OPTIONAL
+}
+UE-MRDC-CapabilityAddXDD-Mode ::=	SEQUENCE {
+	measParametersMRDC-XDD-Diff		MeasParametersMRDC-XDD-Diff		OPTIONAL,
+	generalParametersMRDC-XDD-Diff		GeneralParametersMRDC-XDD-Diff		OPTIONAL
+}
+
+UE-MRDC-CapabilityAddFRX-Mode ::=	SEQUENCE {
+	measParametersMRDC-FRX-Diff		MeasParametersMRDC-FRX-Diff
+}
+
+GeneralParametersMRDC-XDD-Diff ::= SEQUENCE {
+	splitSRB-WithOneUL-Path				ENUMERATED {supported}		OPTIONAL,
+	splitDRB-withUL-Both-MCG-SCG		ENUMERATED {supported}		OPTIONAL,
+	srb3								ENUMERATED {supported}		OPTIONAL,
+	...
+}
+
+-- TAG-UE-MRDC-CAPABILITY-STOP
+-- TAG-RF-PARAMETERSMRDC-START
+
+RF-ParametersMRDC ::= SEQUENCE {
+	supportedBandCombinationList		BandCombinationList					OPTIONAL,
+	appliedFreqBandListFilter			FreqBandList						OPTIONAL
+}
+
+-- TAG-RF-PARAMETERSMRDC-STOP
+-- TAG-MEASPARAMETERSMRDC-START
+
+MeasParametersMRDC ::= SEQUENCE {
+	measParametersMRDC-Common		MeasParametersMRDC-Common				OPTIONAL,
+	measParametersMRDC-XDD-Diff		MeasParametersMRDC-XDD-Diff				OPTIONAL,
+	measParametersMRDC-FRX-Diff		MeasParametersMRDC-FRX-Diff				OPTIONAL
+}
+
+MeasParametersMRDC-Common ::=	SEQUENCE {
+	independentGapConfig			ENUMERATED {supported}				OPTIONAL
+}
+
+MeasParametersMRDC-XDD-Diff ::=	SEQUENCE {
+	sftd-MeasPSCell					ENUMERATED {supported}				OPTIONAL,
+	sftd-MeasNR-Cell				ENUMERATED {supported}				OPTIONAL
+}
+
+MeasParametersMRDC-FRX-Diff ::=	SEQUENCE {
+	simultaneousRxDataSSB-DiffNumerology	ENUMERATED {supported}		OPTIONAL
+}
+
+-- TAG-MEASPARAMETERSMRDC-STOP
+-- TAG-UE-NR-CAPABILITY-START
+
+UE-NR-Capability ::= SEQUENCE {
+	accessStratumRelease			AccessStratumRelease,
+	pdcp-Parameters					PDCP-Parameters, 
+	rlc-Parameters					RLC-Parameters						OPTIONAL,						
+	mac-Parameters					MAC-Parameters						OPTIONAL,						 
+	phy-Parameters					Phy-Parameters,
+	rf-Parameters					RF-Parameters,
+	measParameters					MeasParameters						OPTIONAL,
+	fdd-Add-UE-NR-Capabilities		UE-NR-CapabilityAddXDD-Mode			OPTIONAL,
+	tdd-Add-UE-NR-Capabilities		UE-NR-CapabilityAddXDD-Mode			OPTIONAL,
+	fr1-Add-UE-NR-Capabilities		UE-NR-CapabilityAddFRX-Mode			OPTIONAL,
+	fr2-Add-UE-NR-Capabilities		UE-NR-CapabilityAddFRX-Mode			OPTIONAL,
+	featureSets						FeatureSets 						OPTIONAL,
+	featureSetCombinations			SEQUENCE (SIZE (1..maxFeatureSetCombinations)) OF FeatureSetCombination			OPTIONAL,
+
+	lateNonCriticalExtension		OCTET STRING						OPTIONAL,
+	nonCriticalExtension			SEQUENCE {}							OPTIONAL
+}
+
+UE-NR-CapabilityAddXDD-Mode ::=	SEQUENCE {
+	phy-ParametersXDD-Diff			Phy-ParametersXDD-Diff			OPTIONAL,
+	mac-ParametersXDD-Diff			MAC-ParametersXDD-Diff			OPTIONAL,
+	measParametersXDD-Diff			MeasParametersXDD-Diff			OPTIONAL
+}
+
+UE-NR-CapabilityAddFRX-Mode ::=	SEQUENCE {
+	phy-ParametersFRX-Diff			Phy-ParametersFRX-Diff			OPTIONAL,
+	measParametersFRX-Diff			MeasParametersFRX-Diff			OPTIONAL
+}
+
+-- TAG-UE-NR-CAPABILITY-STOP
+-- TAG-PHY-PARAMETERS-START
+
+Phy-Parameters ::=	SEQUENCE {
+	phy-ParametersCommon			Phy-ParametersCommon				OPTIONAL,
+	phy-ParametersXDD-Diff			Phy-ParametersXDD-Diff				OPTIONAL,
+	phy-ParametersFRX-Diff			Phy-ParametersFRX-Diff				OPTIONAL,
+	phy-ParametersFR1				Phy-ParametersFR1					OPTIONAL,
+	phy-ParametersFR2				Phy-ParametersFR2					OPTIONAL
+}
+
+Phy-ParametersCommon ::=	SEQUENCE {
+	csi-RS-CFRA-ForHO					ENUMERATED {supported}						OPTIONAL,
+	dynamicPRB-BundlingDL				ENUMERATED {supported}						OPTIONAL,
+	sp-CSI-ReportPUCCH					ENUMERATED {supported}						OPTIONAL,
+	sp-CSI-ReportPUSCH					ENUMERATED {supported}						OPTIONAL,
+	nzp-CSI-RS-IntefMgmt				ENUMERATED {supported}						OPTIONAL,
+	type2-SP-CSI-Feedback-LongPUCCH		ENUMERATED {supported}						OPTIONAL,
+	precoderGranularityCORESET			ENUMERATED {supported}						OPTIONAL,
+	dynamicHARQ-ACK-Codebook			ENUMERATED {supported}						OPTIONAL,
+	semiStaticHARQ-ACK-Codebook			ENUMERATED {supported}						OPTIONAL,
+	spatialBundlingHARQ-ACK				ENUMERATED {supported}						OPTIONAL,
+	dynamicBetaOffsetInd-HARQ-ACK-CSI	ENUMERATED {supported}						OPTIONAL,
+	pucch-Repetition-F1-3-4				ENUMERATED {supported}						OPTIONAL,
+	ra-Type0-PUSCH						ENUMERATED {supported}						OPTIONAL,
+	dynamicSwitchRA-Type0-1-PDSCH		ENUMERATED {supported}						OPTIONAL,
+	dynamicSwitchRA-Type0-1-PUSCH		ENUMERATED {supported}						OPTIONAL,
+	pdsch-MappingTypeA					ENUMERATED {supported}						OPTIONAL,
+	pdsch-MappingTypeB					ENUMERATED {supported}						OPTIONAL,
+	interleavingVRB-ToPRB-PDSCH			ENUMERATED {supported}						OPTIONAL,
+	interSlotFreqHopping-PUSCH			ENUMERATED {supported}						OPTIONAL,
+	type1-PUSCH-RepetitionMultiSlots	ENUMERATED {supported}						OPTIONAL,
+	type2-PUSCH-RepetitionMultiSlots	ENUMERATED {supported}						OPTIONAL,
+	pusch-RepetitionMultiSlots			ENUMERATED {supported}						OPTIONAL,
+	pdsch-RepetitionMultiSlots			ENUMERATED {supported}						OPTIONAL,
+	downlinkSPS							ENUMERATED {supported}						OPTIONAL,
+	configuredUL-GrantType1				ENUMERATED {supported}						OPTIONAL,
+	configuredUL-GrantType2				ENUMERATED {supported}						OPTIONAL,
+	pre-EmptIndication-DL				ENUMERATED {supported}						OPTIONAL,
+	cbg-TransIndication-DL				ENUMERATED {supported}						OPTIONAL,
+	cbg-TransIndication-UL				ENUMERATED {supported}						OPTIONAL,
+	cbg-FlushIndication-DL				ENUMERATED {supported}						OPTIONAL,
+	dynamicHARQ-ACK-CodeB-CBG-Retx-DL	ENUMERATED {supported}						OPTIONAL,
+	rateMatchingResrcSetSemi-Static		ENUMERATED {supported}						OPTIONAL,
+	rateMatchingResrcSetDynamic			ENUMERATED {supported}						OPTIONAL,
+	bwp-SwitchingDelay					ENUMERATED {type1, type2}					OPTIONAL,
+	...
+}
+
+Phy-ParametersXDD-Diff ::=	SEQUENCE {
+	dynamicSFI							ENUMERATED {supported}						OPTIONAL,
+	twoPUCCH-F0-2-ConsecSymbols			ENUMERATED {supported}						OPTIONAL,
+	twoDifferentTPC-Loop-PUSCH			ENUMERATED {supported}						OPTIONAL,
+	twoDifferentTPC-Loop-PUCCH			ENUMERATED {supported}						OPTIONAL,
+	...
+}
+
+Phy-ParametersFRX-Diff ::=	SEQUENCE {
+	dynamicSFI							ENUMERATED {supported}						OPTIONAL,
+	oneFL-DMRS-TwoAdditionalDMRS		BIT STRING (SIZE (2))						OPTIONAL,
+	twoFL-DMRS							BIT STRING (SIZE (2))						OPTIONAL,
+	twoFL-DMRS-TwoAdditionalDMRS		BIT STRING (SIZE (2))						OPTIONAL,
+	oneFL-DMRS-ThreeAdditionalDMRS		BIT STRING (SIZE (2))						OPTIONAL,
+	supportedDMRS-TypeDL				ENUMERATED {type1, type2}					OPTIONAL,
+	supportedDMRS-TypeUL				ENUMERATED {type1, type2}					OPTIONAL,
+	semiOpenLoopCSI						ENUMERATED {supported}						OPTIONAL,
+	csi-ReportWithoutPMI				ENUMERATED {supported}						OPTIONAL,
+	csi-ReportWithoutCQI				ENUMERATED {supported}						OPTIONAL,
+	onePortsPTRS						BIT STRING (SIZE (2))						OPTIONAL,
+	twoPUCCH-F0-2-ConsecSymbols			ENUMERATED {supported}						OPTIONAL,
+	pucch-F2-WithFH						ENUMERATED {supported}						OPTIONAL,
+	pucch-F3-WithFH						ENUMERATED {supported}						OPTIONAL,
+	pucch-F4-WithFH						ENUMERATED {supported}						OPTIONAL,
+	freqHoppingPUCCH-F0-2				ENUMERATED {notSupported}					OPTIONAL,
+	freqHoppingPUCCH-F1-3-4				ENUMERATED {notSupported}					OPTIONAL,
+	mux-SR-HARQ-ACK-CSI-PUCCH			ENUMERATED {supported}						OPTIONAL,
+	uci-CodeBlockSegmentation			ENUMERATED {supported}						OPTIONAL,
+	onePUCCH-LongAndShortFormat			ENUMERATED {supported}						OPTIONAL,
+	twoPUCCH-AnyOthersInSlot			ENUMERATED {supported}						OPTIONAL,
+	intraSlotFreqHopping-PUSCH			ENUMERATED {supported}						OPTIONAL,
+	pusch-LBRM							ENUMERATED {supported}						OPTIONAL,
+	pdcch-BlindDetectionCA				ENUMERATED {supported}						OPTIONAL,
+	tpc-PUSCH-RNTI						ENUMERATED {supported}						OPTIONAL,
+	tpc-PUCCH-RNTI						ENUMERATED {supported}						OPTIONAL,
+	tpc-SRS-RNTI						ENUMERATED {supported}						OPTIONAL,
+	absoluteTPC-Command					ENUMERATED {supported}						OPTIONAL,
+	twoDifferentTPC-Loop-PUSCH			ENUMERATED {supported}						OPTIONAL,
+	twoDifferentTPC-Loop-PUCCH			ENUMERATED {supported}						OPTIONAL,
+	pusch-HalfPi-BPSK					ENUMERATED {supported}						OPTIONAL,
+	pucch-F3-4-HalfPi-BPSK				ENUMERATED {supported}						OPTIONAL,
+	almostContiguousCP-OFDM-UL			ENUMERATED {supported}						OPTIONAL ,
+	sp-CSI-RS							ENUMERATED {supported}						OPTIONAL,
+	sp-CSI-IM							ENUMERATED {supported}						OPTIONAL,
+	tdd-MultiDL-UL-SwitchPerSlot		ENUMERATED {supported}						OPTIONAL,
+	multipleCORESET						ENUMERATED {supported}						OPTIONAL,
+	...
+}
+
+Phy-ParametersFR1 ::=	SEQUENCE {
+	pdcchMonitoringSingleOccasion		ENUMERATED {supported}						OPTIONAL,
+	scs-60kHz							ENUMERATED {supported}						OPTIONAL,
+	pdsch-256QAM-FR1					ENUMERATED {supported}						OPTIONAL,
+	pdsch-RE-MappingFR1					ENUMERATED {n10, n20}						OPTIONAL,
+	...
+}
+
+Phy-ParametersFR2 ::=	SEQUENCE {
+	calibrationGapPA					ENUMERATED {supported}						OPTIONAL,
+	pdsch-RE-MappingFR2					ENUMERATED {n6, n20}						OPTIONAL,
+	...
+}
+
+-- TAG-PHY-PARAMETERS-STOP
+-- TAG-RF-PARAMETERS-START
+
+RF-Parameters ::= SEQUENCE {
+	supportedBandListNR				SEQUENCE (SIZE (1..maxBands)) OF BandNR,
+	supportedBandCombinationList		BandCombinationList						OPTIONAL,
+	appliedFreqBandListFilter			FreqBandList							OPTIONAL
+}
+
+BandNR ::=	SEQUENCE {
+	bandNR							FreqBandIndicatorNR,
+	modifiedMPR-Behaviour			BIT STRING (SIZE (8))						OPTIONAL,
+	mimo-ParametersPerBand			MIMO-ParametersPerBand						OPTIONAL,
+	extendedCP						ENUMERATED {supported}						OPTIONAL,
+	multipleTCI						ENUMERATED {supported}						OPTIONAL,
+	bwp-WithoutRestriction			ENUMERATED {supported}						OPTIONAL,
+	bwp-SameNumerology					ENUMERATED {upto2, upto4}				OPTIONAL,
+	bwp-DiffNumerology					ENUMERATED {upto4}						OPTIONAL,
+	crossCarrierSchedulingDL-SameSCS		ENUMERATED {supported}						OPTIONAL,
+	crossCarrierSchedulingUL-SameSCS		ENUMERATED {supported}						OPTIONAL,
+	pdsch-256QAM-FR2				ENUMERATED {supported}						OPTIONAL,
+	pusch-256QAM					ENUMERATED {supported}						OPTIONAL,
+	ue-PowerClass					ENUMERATED {pc2, pc3}				OPTIONAL,
+	rateMatchingLTE-CRS				ENUMERATED {supported}						OPTIONAL,
+	...
+}
+
+-- TAG-RF-PARAMETERS-STOP
+-- TAG-MIMO-PARAMETERSPERBAND-START
+
+MIMO-ParametersPerBand ::= SEQUENCE {
+	tci-StatePDSCH						SEQUENCE {
+		maxNumberConfiguredTCIstatesPerCC	ENUMERATED {n4, n8, n16, n32, n64}							OPTIONAL,
+		maxNumberActiveTCI-PerBWP			ENUMERATED {n1, n2, n4, n8}									OPTIONAL
+	}																									OPTIONAL,
+	additionalActiveTCI-StatePDCCH		ENUMERATED {supported}											OPTIONAL,
+	pusch-TransCoherence				ENUMERATED {nonCoherent, partialNonCoherent, fullCoherent}	OPTIONAL,
+	beamCorrespondence					ENUMERATED {supported}											OPTIONAL,
+	periodicBeamReport					ENUMERATED {supported}											OPTIONAL,
+	aperiodicBeamReport					ENUMERATED {supported}											OPTIONAL,
+	sp-BeamReportPUCCH					ENUMERATED {supported}											OPTIONAL,
+	sp-BeamReportPUSCH					ENUMERATED {supported}											OPTIONAL,
+	beamManagementSSB-CSI-RS			BeamManagementSSB-CSI-RS										OPTIONAL,
+	maxNumberRxBeam						INTEGER (2..8)													OPTIONAL,
+	maxNumberRxTxBeamSwitchDL			SEQUENCE {
+		scs-15kHz							ENUMERATED {n4, n7, n14}									OPTIONAL,
+		scs-30kHz							ENUMERATED {n4, n7, n14}									OPTIONAL,
+		scs-60kHz							ENUMERATED {n4, n7, n14}									OPTIONAL,
+		scs-120kHz							ENUMERATED {n4, n7, n14}									OPTIONAL,
+		scs-240kHz							ENUMERATED {n4, n7, n14}									OPTIONAL
+	}																									OPTIONAL,
+	maxNumberNonGroupBeamReporting		ENUMERATED {n1, n2, n4}											OPTIONAL,
+	groupBeamReporting					ENUMERATED {supported}											OPTIONAL,
+	uplinkBeamManagement				SEQUENCE {
+		maxNumberSRS-ResourcePerSet			ENUMERATED {n2, n4, n8, n16, n32},
+		maxNumberSRS-ResourceSet			INTEGER (1..8)
+	}																									OPTIONAL,
+	maxNumberCSI-RS-BFR					INTEGER (1..64)													OPTIONAL,
+	maxNumberSSB-BFR					INTEGER (1..64)													OPTIONAL,
+	maxNumberCSI-RS-SSB-BFR				INTEGER (1..256)												OPTIONAL,
+	twoPortsPTRS-DL						ENUMERATED {supported}											OPTIONAL,
+	twoPortsPTRS-UL						ENUMERATED {supported}											OPTIONAL,
+	supportedSRS-Resources			SRS-Resources														OPTIONAL,
+	srs-TxSwitch					SRS-TxSwitch														OPTIONAL,
+	maxNumberSimultaneousSRS-PerCC		INTEGER (1..4)													OPTIONAL,
+	beamReportTiming					SEQUENCE {
+		scs-15kHz							ENUMERATED {sym2, sym4, sym8}								OPTIONAL,
+		scs-30kHz							ENUMERATED {sym4, sym8, sym14}								OPTIONAL,
+		scs-60kHz							ENUMERATED {sym8, sym14, sym28}								OPTIONAL,
+		scs-120kHz							ENUMERATED {sym14, sym28, sym56}							OPTIONAL
+	}																									OPTIONAL,
+	ptrs-DensityRecommendationSetDL		SEQUENCE {
+		scs-15kHz							PTRS-DensityRecommendationDL								OPTIONAL,
+		scs-30kHz							PTRS-DensityRecommendationDL								OPTIONAL,
+		scs-60kHz							PTRS-DensityRecommendationDL								OPTIONAL,
+		scs-120kHz							PTRS-DensityRecommendationDL								OPTIONAL
+	}																									OPTIONAL,
+	ptrs-DensityRecommendationSetUL		SEQUENCE {
+		scs-15kHz							PTRS-DensityRecommendationUL								OPTIONAL,
+		scs-30kHz							PTRS-DensityRecommendationUL								OPTIONAL,
+		scs-60kHz							PTRS-DensityRecommendationUL								OPTIONAL,
+		scs-120kHz							PTRS-DensityRecommendationUL								OPTIONAL
+	}																									OPTIONAL,
+	csi-RS-ForTracking					CSI-RS-ForTracking												OPTIONAL,
+	aperiodicTRS						ENUMERATED {supported}											OPTIONAL,
+	...
+}
+
+BeamManagementSSB-CSI-RS ::=	SEQUENCE {
+	maxNumberSSB-CSI-RS-ResourceOneTx	ENUMERATED {n8, n16, n32, n64},
+	maxNumberSSB-CSI-RS-ResourceTwoTx	ENUMERATED {n0, n4, n8, n16, n32, n64},
+	supportedCSI-RS-Density				ENUMERATED {one, three, oneAndThree}
+}
+
+CSI-RS-ForTracking ::=				SEQUENCE {
+	burstLength							INTEGER (1..2),
+	maxSimultaneousResourceSetsPerCC	INTEGER (1..8),
+	maxConfiguredResourceSetsPerCC		INTEGER (1..64),
+	maxConfiguredResourceSetsAllCC		INTEGER (1..128)
+}
+
+PTRS-DensityRecommendationDL ::=	SEQUENCE {
+	frequencyDensity1					INTEGER (1..276),
+	frequencyDensity2					INTEGER (1..276),
+	timeDensity1						INTEGER (0..29),
+	timeDensity2						INTEGER (0..29),
+	timeDensity3						INTEGER (0..29)
+}
+
+PTRS-DensityRecommendationUL ::=	SEQUENCE {
+	frequencyDensity1					INTEGER (1..276),
+	frequencyDensity2					INTEGER (1..276),
+	timeDensity1						INTEGER (0..29),
+	timeDensity2						INTEGER (0..29),
+	timeDensity3						INTEGER (0..29),
+	sampleDensity1						INTEGER (1..276),
+	sampleDensity2						INTEGER (1..276),
+	sampleDensity3						INTEGER (1..276),
+	sampleDensity4						INTEGER (1..276),
+	sampleDensity5						INTEGER (1..276)
+}
+
+SRS-Resources ::=	SEQUENCE {
+	maxNumberAperiodicSRS-PerBWP					ENUMERATED {n1, n2, n4, n8, n16},
+	maxNumberAperiodicSRS-PerBWP-PerSlot			INTEGER (1..6),
+	maxNumberPeriodicSRS-PerBWP						ENUMERATED {n1, n2, n4, n8, n16},
+	maxNumberPeriodicSRS-PerBWP-PerSlot				INTEGER (1..6),
+	maxNumberSemiPersitentSRS-PerBWP				ENUMERATED {n1, n2, n4, n8, n16},
+	maxNumberSP-SRS-PerBWP-PerSlot					INTEGER (1..6),
+	maxNumberSRS-Ports-PerResource					ENUMERATED {n1, n2, n4}
+}
+
+SRS-TxSwitch ::=	SEQUENCE {
+	supportedSRS-TxPortSwitch			ENUMERATED {t1r2, t1r4, t2r4, t1r4-t2r4, tr-equal},
+	txSwitchImpactToRx					ENUMERATED {true}										OPTIONAL
+}
+
+-- TAG-PDCP-PARAMETERS-START
+
+PDCP-Parameters ::= SEQUENCE {
+	supportedROHC-Profiles	SEQUENCE {
+		profile0x0000		BOOLEAN, 
+		profile0x0001		BOOLEAN, 
+		profile0x0002		BOOLEAN,
+		profile0x0003		BOOLEAN, 
+		profile0x0004		BOOLEAN, 
+		profile0x0006		BOOLEAN, 
+		profile0x0101		BOOLEAN, 
+		profile0x0102		BOOLEAN, 
+		profile0x0103		BOOLEAN, 
+		profile0x0104		BOOLEAN
+	}, 
+	maxNumberROHC-ContextSessions	ENUMERATED {cs2, cs4, cs8, cs12, cs16, cs24, cs32, cs48, cs64, 
+												cs128, cs256, cs512, cs1024, cs16384, spare2, spare1},	
+	uplinkOnlyROHC-Profiles			ENUMERATED {supported}	OPTIONAL, 
+	continueROHC-Context				ENUMERATED {supported}	OPTIONAL,
+	outOfOrderDelivery				ENUMERATED {supported}	OPTIONAL, 
+	shortSN							ENUMERATED {supported} 	OPTIONAL,
+	...
+}
+
+-- TAG-PDCP-PARAMETERS-STOP
+-- TAG-RLC-PARAMETERS-START
+
+RLC-Parameters ::= SEQUENCE {
+	am-WithShortSN					ENUMERATED {supported}	OPTIONAL,
+	um-WithShortSN					ENUMERATED {supported}	OPTIONAL, 
+	um-WIthLongSN					ENUMERATED {supported}	OPTIONAL,
+	...
+}
+
+-- TAG-RLC-PARAMETERS-STOP
+-- TAG-MAC-PARAMETERS-START
+
+MAC-Parameters ::= SEQUENCE {
+	mac-ParametersCommon			MAC-ParametersCommon	OPTIONAL,
+	mac-ParametersXDD-Diff			MAC-ParametersXDD-Diff	OPTIONAL
+}
+
+MAC-ParametersCommon ::=	SEQUENCE {
+	lcp-Restriction					ENUMERATED {supported}	OPTIONAL,
+	pucch-SpatialRelInfoMAC-CE		ENUMERATED {supported}	OPTIONAL,
+	...
+}
+
+MAC-ParametersXDD-Diff ::=	SEQUENCE {
+	skipUplinkTxDynamic				ENUMERATED {supported}	OPTIONAL,
+	logicalChannelSR-DelayTimer		ENUMERATED {supported}	OPTIONAL, 
+	longDRX-Cycle					ENUMERATED {supported}	OPTIONAL, 
+	shortDRX-Cycle					ENUMERATED {supported}	OPTIONAL, 
+	multipleSR-Configurations		ENUMERATED {supported}	OPTIONAL, 
+	multipleConfiguredGrants	ENUMERATED {supported}	OPTIONAL, 
+	...
+}
+
+-- TAG-MAC-PARAMETERS-STOP
+-- TAG-MEASPARAMETERS-START
+
+MeasParameters ::= SEQUENCE {
+	measParametersCommon				MeasParametersCommon			OPTIONAL,
+	measParametersXDD-Diff			MeasParametersXDD-Diff		OPTIONAL,
+	measParametersFRX-Diff			MeasParametersFRX-Diff		OPTIONAL
+}
+
+MeasParametersCommon ::= SEQUENCE {
+	supportedGapPattern				BIT STRING (SIZE (22))			OPTIONAL,
+	...
+}
+
+MeasParametersXDD-Diff ::=	SEQUENCE {
+	intraAndInterF-MeasAndReport	ENUMERATED {supported}	OPTIONAL,
+	eventA-MeasAndReport			ENUMERATED {supported}	OPTIONAL,
+	...
+}
+
+MeasParametersFRX-Diff ::=	SEQUENCE {
+	ss-SINR-Meas						ENUMERATED {supported}		OPTIONAL,
+	csi-RSRP-AndRSRQ-MeasWithSSB		ENUMERATED {supported}		OPTIONAL,
+	csi-RSRP-AndRSRQ-MeasWithoutSSB		ENUMERATED {supported}		OPTIONAL,
+	csi-SINR-Meas						ENUMERATED {supported}		OPTIONAL,
+	csi-RS-RLM							ENUMERATED {supported}		OPTIONAL,
+	...
+}
+
+-- TAG-UE-NR-CAPABILITY-STOP
+-- TAG-RRC-TRANSACTIONIDENTIFIER-START
+
+RRC-TransactionIdentifier ::=		INTEGER (0..3)
+
+-- TAG-RRC-TRANSACTIONIDENTIFIER-STOP
+-- TAG-MULTIPLICITY-AND-TYPE-CONSTRAINT-DEFINITIONS-START
+
+maxBandComb								INTEGER ::=	65536	-- Maximum number of DL band combinations
+	
+maxNrofServingCells						INTEGER ::=	32		-- Max number of serving cells (SpCell + SCells) per cell group
+maxNrofServingCells-1					INTEGER ::= 31		-- Max number of serving cells (SpCell + SCells) per cell group minus 1
+maxNrofAggregatedCellsPerCellGroup		INTEGER ::= 16
+maxNrofSCells							INTEGER ::=	31		-- Max number of secondary serving cells per cell group
+maxNrofCellMeas							INTEGER ::=	32		-- Maximum number of entries in each of the cell lists in a measurement object
+maxNrofSS-BlocksToAverage				INTEGER ::= 16		-- Max number for the (max) number of SS blocks to average to determine cell
+															-- measurement
+maxNrofCSI-RS-ResourcesToAverage			INTEGER ::= 16		-- Max number for the (max) number of CSI-RS to average to determine cell
+															-- measurement
+maxNrofDL-Allocations 					INTEGER ::= 16		-- Maximum number of PDSCH time domain resource allocations
+
+maxNrofSR-ConfigPerCellGroup				INTEGER ::= 8		-- Maximum number of SR configurations per cell group
+
+maxLCG-ID								INTEGER ::= 7		-- Maximum value of LCG ID
+maxLC-ID								INTEGER ::= 32		-- Maximum value of Logical Channel ID
+maxNrofTAGs								INTEGER ::=	4		-- Maximum number of Timing Advance Groups
+maxNrofTAGs-1							INTEGER ::=	3		-- Maximum number of Timing Advance Groups minus 1
+
+maxNrofBWPs								INTEGER ::= 4		-- Maximum number of BWPs per serving cell
+maxNrofSymbols-1						INTEGER ::= 13		-- Maximum index identifying a symbol within a slot (14 symbols, indexed from 0..13)
+maxNrofSlots							INTEGER ::= 320		-- Maximum number of slots in a 10 ms period
+maxNrofSlots-1							INTEGER ::= 319		-- Maximum number of slots in a 10 ms period minus 1
+
+maxNrofPhysicalResourceBlocks			INTEGER ::= 275		-- Maximum number of PRBs
+maxNrofPhysicalResourceBlocks-1			INTEGER ::= 274		-- Maximum number of PRBs minus 1
+maxNrofPhysicalResourceBlocksPlus1		INTEGER ::= 276		-- Maximum number of PRBs plus 1
+maxNrofControlResourceSets 				INTEGER ::= 12 		-- Max number of CoReSets configurable on a serving cell
+maxNrofControlResourceSets-1			INTEGER ::= 11  	-- Max number of CoReSets configurable on a serving cell minus 1
+maxCoReSetDuration						INTEGER ::= 3		-- Max number of OFDM symbols in a control resource set
+maxNrofSearchSpaces						INTEGER ::= 40		-- Max number of Search Spaces
+maxNrofSearchSpaces-1					INTEGER ::= 39		-- Max number of Search Spaces minus 1
+maxSFI-DCI-PayloadSize					INTEGER ::= 128		-- Max number payload of a DCI scrambled with SFI-RNTI
+maxSFI-DCI-PayloadSize-1				INTEGER ::= 127		-- Max number payload of a DCI scrambled with SFI-RNTI minus 1
+maxINT-DCI-PayloadSize					INTEGER ::= 126		-- Max number payload of a DCI scrambled with INT-RNTI
+maxINT-DCI-PayloadSize-1				INTEGER ::= 125		-- Max number payload of a DCI scrambled with INT-RNTI minus 1
+maxNrofRateMatchPatterns				INTEGER ::= 4		-- Max number of rate matching patterns that may be configured
+maxNrofRateMatchPatterns-1				INTEGER ::= 3		-- Max number of rate matching patterns that may be configured minus 1
+maxNrofRateMatchPatternsPerGroup			INTEGER ::= 8		-- Max number of rate matching patterns that may be configured in one group
+
+maxNrofCSI-ReportConfigurations			INTEGER ::= 48 		-- Maximum number of report configurations
+maxNrofCSI-ReportConfigurations-1		INTEGER ::= 47		-- Maximum number of report configurations minus 1
+
+maxNrofCSI-ResourceConfigurations		INTEGER ::= 112		-- Maximum number of resource configurations
+maxNrofCSI-ResourceConfigurations-1		INTEGER ::= 111		-- Maximum number of resource configurations minus 1
+
+maxNrofAP-CSI-RS-ResourcesPerSet		INTEGER ::= 16
+maxNrOfCSI-AperiodicTriggers			INTEGER ::= 128		-- Maximum number of triggers for aperiodic CSI reporting
+maxNrofReportConfigPerAperiodicTrigger	INTEGER ::= 16		-- Maximum number of report configurations per trigger state for aperiodic reporting
+
+maxNrofNZP-CSI-RS-Resources				INTEGER ::= 192		-- Maximum number of Non-Zero-Power (NZP) CSI-RS resources
+maxNrofNZP-CSI-RS-Resources-1			INTEGER ::= 191		-- Maximum number of Non-Zero-Power (NZP) CSI-RS resources minus 1
+maxNrofNZP-CSI-RS-ResourcesPerSet		INTEGER ::= 64		-- Maximum number of NZP CSI-RS resources per resource set
+maxNrofNZP-CSI-RS-ResourceSets			INTEGER ::= 64		-- Maximum number of NZP CSI-RS resources per cell
+maxNrofNZP-CSI-RS-ResourceSets-1		INTEGER ::= 63		-- Maximum number of NZP CSI-RS resources per cell minus 1
+maxNrofNZP-CSI-RS-ResourceSetsPerConfig	INTEGER ::= 16		-- Maximum number of resource sets per resource configuration
+maxNrofNZP-CSI-RS-ResourcesPerConfig		INTEGER ::=	128		-- Maximum number of resources per resource configuration
+
+maxNrofZP-CSI-RS-Resources				INTEGER ::= 32		-- Maximum number of Zero-Power (NZP) CSI-RS resources
+maxNrofZP-CSI-RS-Resources-1			INTEGER ::= 31		-- Maximum number of Zero-Power (NZP) CSI-RS resources minus 1
+maxNrofZP-CSI-RS-ResourceSets-1			INTEGER ::= 15
+maxNrofZP-CSI-RS-ResourcesPerSet		INTEGER ::= 16
+maxNrofZP-CSI-RS-ResourceSets			INTEGER ::= 16
+
+maxNrofCSI-IM-Resources					INTEGER ::= 32		-- Maximum number of CSI-IM resources. See CSI-IM-ResourceMax in 38.214.
+maxNrofCSI-IM-Resources-1				INTEGER ::= 31		-- Maximum number of CSI-IM resources minus 1. See CSI-IM-ResourceMax in 38.214.
+maxNrofCSI-IM-ResourcesPerSet			INTEGER ::= 8		-- Maximum number of CSI-IM resources per set. See CSI-IM-ResourcePerSetMax in 38.214
+maxNrofCSI-IM-ResourceSets 				INTEGER ::=	64		-- Maximum number of NZP CSI-IM resources per cell
+maxNrofCSI-IM-ResourceSets-1			INTEGER ::=	63		-- Maximum number of NZP CSI-IM resources per cell minus 1
+maxNrofCSI-IM-ResourceSetsPerConfig 	INTEGER ::= 16		-- Maximum number of CSI IM resource sets per resource configuration
+
+maxNrofCSI-SSB-ResourcePerSet 			INTEGER ::= 64		-- Maximum number of SSB resources in a resource set
+maxNrofCSI-SSB-ResourceSets 			INTEGER ::=	64		-- Maximum number of CSI SSB resource sets per cell
+maxNrofCSI-SSB-ResourceSets-1 			INTEGER ::=	63		-- Maximum number of CSI SSB resource sets per cell minus 1
+maxNrofCSI-SSB-ResourceSetsPerConfig 	INTEGER ::= 1		-- Maximum number of CSI SSB resource sets per resource configuration
+
+maxNrofFailureDetectionResources		INTEGER ::= 10		-- Maximum number of failure detection resources	
+maxNrofFailureDetectionResources-1		INTEGER ::= 9		-- Maximum number of failure detection resources minus 1
+
+maxNrofObjectId							INTEGER ::= 64		-- Maximum number of measurement objects
+maxNrofPCI-Ranges						INTEGER ::= 8		-- Maximum number of PCI ranges
+
+maxNrofCSI-RS-ResourcesRRM				INTEGER ::= 96		-- Maximum number of CSI-RS resources for an RRM measurement object
+maxNrofCSI-RS-ResourcesRRM-1			INTEGER ::= 95		-- Maximum number of CSI-RS resources for an RRM measurement object minus 1
+maxNrofMeasId							INTEGER ::= 64		-- Maximum number of configured measurements
+maxNrofQuantityConfig					INTEGER	::= 2		-- Maximum number of quantity configurations
+maxNrofCSI-RS-CellsRRM 					INTEGER ::= 96 		-- Maximum number of FFS
+
+maxNrofSRS-ResourceSets					INTEGER ::= 16		-- Maximum number of SRS resource sets in a BWP.
+maxNrofSRS-ResourceSets-1				INTEGER ::= 15		-- Maximum number of SRS resource sets in a BWP minus 1.
+maxNrofSRS-Resources					INTEGER ::= 64		-- Maximum number of SRS resources in an SRS resource set.
+maxNrofSRS-Resources-1					INTEGER ::= 63		-- Maximum number of SRS resources in an SRS resource set minus 1.
+maxNrofSRS-TriggerStates-1 				INTEGER ::= 3		-- Maximum number of SRS trigger states minus 1, i.e., the largest code point.
+maxRAT-CapabilityContainers				INTEGER ::= 8		-- Maximum number of interworking RAT containers (incl NR and MRDC)
+maxSimultaneousBands					INTEGER ::= 32		-- Maximum number of simultaneously aggregated bands
+
+
+maxNrofSlotFormatCombinationsPerCell	INTEGER ::= 16		-- Maximum number of
+maxNrofSlotFormatCombinationsPerSet		INTEGER ::= 512	-- Maximum number of Slot Format Combinations in a SF-Set.
+maxNrofSlotFormatCombinationsPerSet-1	INTEGER ::= 511	-- Maximum number of Slot Format Combinations in a SF-Set minus 1.
+maxNrofPUCCH-Resources					INTEGER ::= 128
+maxNrofPUCCH-Resources-1				INTEGER ::= 127
+maxNrofPUCCH-ResourceSets				INTEGER ::= 4		-- Maximum number of PUCCH Resource Sets
+maxNrofPUCCH-ResourceSets-1				INTEGER ::= 3		-- Maximum number of PUCCH Resource Sets minus 1.
+maxNrofPUCCH-ResourcesPerSet			INTEGER ::= 32		-- Maximum number of PUCCH Resources per PUCCH-ResourceSet
+maxNrofPUCCH-ResourcesPerSet-1			INTEGER ::= 31		-- Maximum number of PUCCH Resources per PUCCH-ResourceSet minus 1.
+maxNrofPUCCH-P0-PerSet					INTEGER ::= 8		-- Maximum number of P0-pucch present in a p0-pucch set
+maxNrofPUCCH-PathlossReferenceRSs		INTEGER ::= 4		-- Maximum number of RSs used as pathloss reference for PUCCH power control. 
+maxNrofPUCCH-PathlossReferenceRSs-1		INTEGER ::= 3		-- Maximum number of RSs used as pathloss reference for PUCCH power control minus 1.
+
+maxNrofP0-PUSCH-AlphaSets				INTEGER ::= 30		-- Maximum number of P0-pusch-alpha-sets (see 38,213, section 7.1)
+maxNrofP0-PUSCH-AlphaSets-1				INTEGER ::= 29		-- Maximum number of P0-pusch-alpha-sets minus 1 (see 38,213, section 7.1)
+maxNrofPUSCH-PathlossReferenceRSs		INTEGER ::= 4		-- Maximum number of RSs used as pathloss reference for PUSCH power control. 
+maxNrofPUSCH-PathlossReferenceRSs-1		INTEGER ::= 3		-- Maximum number of RSs used as pathloss reference for PUSCH power control minus 1.
+
+maxBands 								INTEGER ::= 1024		-- Maximum number of supported bands in UE capability.
+maxBandsMRDC							INTEGER	::= 1280
+maxBandsEUTRA							INTEGER ::=	256
+maxCellReport		 					INTEGER ::= 8
+maxDRB		 							INTEGER ::= 29			-- Maximum number of DRBs (that can be added in DRB-ToAddModLIst).
+maxFreq		 							INTEGER ::= 8			-- Max number of non-serving frequencies in MeasResultSCG-Failure.
+maxNrofCSI-RS	 						INTEGER ::= 64
+maxNrofCandidateBeams 					INTEGER ::= 16			-- Max number of PRACH-ResourceDedicatedBFR that in BFR config.
+maxNrofPCIsPerSMTC 						INTEGER ::= 64			-- Maximun number of PCIs per SMTC.
+maxNrofQFIs 							INTEGER ::= 64
+maxNrOfSemiPersistentPUSCH-Triggers		INTEGER ::= 64			-- Maximum number of triggers for semi persistent reporting on PUSCH
+maxNrofSR-Resources		 				INTEGER ::= 8			-- Maximum number of SR resources per BWP in a cell.
+maxNrofSlotFormatsPerCombination 		INTEGER ::= 256
+maxNrofSpatialRelationInfos 			INTEGER ::= 8
+maxNrofSRS-ResourcesPerSet 				INTEGER ::= 16
+maxNrofIndexesToReport 					INTEGER ::= 32
+maxNrofSSBs 							INTEGER ::= 64 			-- Maximum number of SSB resources in a resource set.
+maxNrofSSBs-1							INTEGER ::= 63			-- Maximum number of SSB resources in a resource set minus 1.
+
+maxNrofTCI-StatesPDCCH 					INTEGER ::= 64
+maxNrofTCI-States						INTEGER ::= 64			-- Maximum number of TCI states.
+maxNrofTCI-States-1						INTEGER ::= 63			-- Maximum number of TCI states minus 1.
+maxNrofUL-Allocations 					INTEGER ::= 16			-- Maximum number of PUSCH time domain resource allocations.
+maxQFI 									INTEGER ::= 63
+maxRA-CSIRS-Resources 					INTEGER ::= 96
+maxRA-OccasionsPerCSIRS					INTEGER ::= 64			-- Maximum number of RA occasions for one CSI-RS
+maxRA-Occasions-1						INTEGER ::=	511			-- Maximum number of RA occasions in the system
+maxRA-SSB-Resources 					INTEGER ::= 64
+maxSCSs									INTEGER ::= 5
+maxSecondaryCellGroups 					INTEGER ::= 3
+maxNrofServingCellsEUTRA				INTEGER ::= 32
+maxMBSFN-Allocations					INTEGER ::= 8
+maxNrofMultiBands						INTEGER ::= 8
+maxCellSFTD    	                    	INTEGER ::= 3  			-- Maximum number of cells for SFTD reporting
+maxReportConfigId                 	 	INTEGER ::= 64
+maxNrofCodebooks						INTEGER ::= 16			-- Maximum number of codebooks suppoted by the UE
+
+maxNrofSRI-PUSCH-Mappings				INTEGER ::= 16
+maxNrofSRI-PUSCH-Mappings-1				INTEGER ::= 15
+
+maxDownlinkFeatureSets				INTEGER ::= 1024		-- (for NR DL) Total number of FeatureSets (size of the pool)
+maxUplinkFeatureSets				INTEGER ::= 1024		-- (for NR UL) Total number of FeatureSets (size of the pool)
+maxEUTRA-DL-FeatureSets				INTEGER ::= 256		-- (for EUTRA) Total number of FeatureSets (size of the pool)
+maxEUTRA-UL-FeatureSets				INTEGER ::= 256		-- (for EUTRA) Total number of FeatureSets (size of the pool)
+maxFeatureSetsPerBand				INTEGER ::= 128			-- (for NR) The number of feature sets associated with one band. 
+maxPerCC-FeatureSets				INTEGER ::= 1024		-- (for NR) Total number of CC-specific FeatureSets (size of the pool)
+maxFeatureSetCombinations 			INTEGER ::= 1024		-- (for MR-DC/NR)Total number of Feature set combinations (size of the pool)
+
+
+-- Editor's Note: Targeted for completion in Sept 2018. Not used in EN-DC drop.
+CellIdentity ::=						ENUMERATED {ffsTypeAndValue}
+ShortMAC-I ::=							ENUMERATED {ffsTypeAndValue}
+
+-- TAG-MULTIPLICITY-AND-TYPE-CONSTRAINT-DEFINITIONS-STOP
+
+END
+
+
+NR-UE-Variables DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+	MeasId,
+	MeasIdToAddModList,
+	MeasObjectToAddModList,
+	PhysCellId,
+	ReportConfigToAddModList,
+	RSRP-Range,
+	QuantityConfig,
+	maxNrofCellMeas,
+	maxNrofMeasId
+FROM NR-RRC-Definitions;
+
+-- TAG-VAR-MEAS-CONFIG-START
+
+VarMeasConfig ::=					SEQUENCE {
+	-- Measurement identities
+	measIdList							MeasIdToAddModList					OPTIONAL,
+	-- Measurement objects
+	measObjectList						MeasObjectToAddModList				OPTIONAL,
+	-- Reporting configurations
+	reportConfigList					ReportConfigToAddModList			OPTIONAL,
+	-- Other parameters
+	quantityConfig						QuantityConfig						OPTIONAL,
+	
+	s-MeasureConfig							CHOICE {
+		ssb-RSRP								RSRP-Range,						
+		csi-RSRP								RSRP-Range						
+	} 																		OPTIONAL
+
+}
+
+-- TAG-VAR-MEAS-CONFIG-STOP
+-- TAG-VAR-MEAS-REPORT-START
+
+VarMeasReportList ::=				SEQUENCE (SIZE (1..maxNrofMeasId)) OF VarMeasReport
+
+VarMeasReport ::=					SEQUENCE {
+	-- List of measurement that have been triggered
+	measId								MeasId,
+	cellsTriggeredList					CellsTriggeredList				OPTIONAL,
+	numberOfReportsSent					INTEGER
+}
+
+CellsTriggeredList ::=				SEQUENCE (SIZE (1..maxNrofCellMeas)) OF CHOICE {
+	physCellId							PhysCellId,
+--	Not needed for EN-DC.
+	physCellIdEUTRA						ENUMERATED {ffsTypeAndValue}
+	}
+
+
+-- TAG-VAR-MEAS-REPORT-STOP
+
+END
+
+-- TAG_NR-INTER-NODE-DEFINITIONS-START
+
+NR-InterNodeDefinitions DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+	ARFCN-ValueNR,
+	CellIdentity,
+	CSI-RS-Index,
+	GapConfig,
+	maxBandComb,
+	maxNrofSCells,
+	maxNrofServingCells-1,
+	maxNrofIndexesToReport,
+	MeasQuantityResults,
+	MeasResultList2NR,
+	MeasResultSCG-Failure,
+	MeasResultCellListSFTD,
+	P-Max,
+	PhysCellId,
+	RadioBearerConfig,
+	RRCReconfiguration,
+	ServCellIndex,
+	SetupRelease,
+	SSB-Index,
+	SSB-MTC,
+	ShortMAC-I,
+	UE-CapabilityRAT-ContainerList
+FROM NR-RRC-Definitions;
+
+-- TAG_NR-INTER-NODE-DEFINITIONS-STOP
+-- TAG-HANDOVER-COMMAND-START
+
+HandoverCommand ::=					SEQUENCE {
+	criticalExtensions					CHOICE {
+		c1									CHOICE{
+			handoverCommand					HandoverCommand-IEs,
+			spare3 NULL, spare2 NULL, spare1 NULL
+		},
+		criticalExtensionsFuture			SEQUENCE {}
+	}
+}
+
+HandoverCommand-IEs ::=				SEQUENCE {
+	handoverCommandMessage				OCTET STRING (CONTAINING RRCReconfiguration),
+	nonCriticalExtension				SEQUENCE {}							OPTIONAL
+}
+
+-- TAG-HANDOVER-COMMAND-STOP
+-- TAG-HANDOVER-PREPARATION-INFORMATION-START
+
+HandoverPreparationInformation ::=	SEQUENCE {
+	criticalExtensions					CHOICE {
+		c1									CHOICE{
+			handoverPreparationInformation		HandoverPreparationInformation-IEs,
+			spare3 NULL, spare2 NULL, spare1 NULL
+		},
+		criticalExtensionsFuture			SEQUENCE {}
+	}
+}
+
+HandoverPreparationInformation-IEs ::= SEQUENCE {
+	ue-CapabilityRAT-List				UE-CapabilityRAT-ContainerList,
+	sourceConfig						OCTET STRING (CONTAINING RRCReconfiguration),
+	rrm-Config							RRM-Config				OPTIONAL,
+	as-Context							AS-Context				OPTIONAL,
+	nonCriticalExtension				SEQUENCE {}				OPTIONAL
+}
+
+AS-Context ::=							SEQUENCE {
+	reestablishmentInfo						SEQUENCE {
+		sourcePhysCellId					PhysCellId,
+		targetCellShortMAC-I				ShortMAC-I,
+		additionalReestabInfoList			ReestabNCellInfoList					OPTIONAL
+	}																				OPTIONAL,
+	-- FFS Whether to change e.g. move all re-establishment info to Xx
+	configRestrictInfo					ConfigRestrictInfoSCG						OPTIONAL,
+	...
+}
+
+ReestabNCellInfoList ::=		SEQUENCE ( SIZE (1..maxCellPrep) ) OF ReestabNCellInfo
+
+ReestabNCellInfo::=	SEQUENCE{
+	cellIdentity							CellIdentity,
+	key-gNodeB-Star							BIT STRING (SIZE (256)),
+	shortMAC-I								ShortMAC-I
+}
+
+RRM-Config ::=				SEQUENCE {
+	ue-InactiveTime				ENUMERATED {
+									s1, s2, s3, s5, s7, s10, s15, s20,
+									s25, s30, s40, s50, min1, min1s20c, min1s40,
+									min2, min2s30, min3, min3s30, min4, min5, min6,
+									min7, min8, min9, min10, min12, min14, min17, min20,
+									min24, min28, min33, min38, min44, min50, hr1,
+									hr1min30, hr2, hr2min30, hr3, hr3min30, hr4, hr5, hr6,
+									hr8, hr10, hr13, hr16, hr20, day1, day1hr12, day2,
+									day2hr12, day3, day4, day5, day7, day10, day14, day19,
+									day24, day30, dayMoreThan30}		OPTIONAL ,
+	candidateCellInfoList		MeasResultList2NR		OPTIONAL,
+	...
+}
+
+-- TAG-HANDOVER-PREPARATION-INFORMATION-STOP
+-- TAG-CG-CONFIG-START
+
+CG-Config ::=					SEQUENCE {
+	criticalExtensions					CHOICE {
+		c1									CHOICE{
+			cg-Config					CG-Config-IEs,
+			spare3 NULL, spare2 NULL, spare1 NULL
+		},
+		criticalExtensionsFuture			SEQUENCE {}
+	}
+}
+
+CG-Config-IEs ::=			SEQUENCE {
+	scg-CellGroupConfig					OCTET STRING (CONTAINING RRCReconfiguration)	OPTIONAL,
+	scg-RB-Config						OCTET STRING (CONTAINING RadioBearerConfig)		OPTIONAL,
+	configRestrictModReq				ConfigRestrictModReqSCG							OPTIONAL,
+	drx-InfoSCG							DRX-Info										OPTIONAL,
+	candidateCellInfoListSN				OCTET STRING (CONTAINING MeasResultList2NR)	OPTIONAL,
+	measConfigSN						MeasConfigSN									OPTIONAL,
+	selectedBandCombinationNR			BandCombinationIndex							OPTIONAL,
+	fr-InfoListSCG						FR-InfoList										OPTIONAL,
+	nonCriticalExtension				SEQUENCE {}										OPTIONAL
+}
+
+MeasConfigSN ::= SEQUENCE {
+	measuredFrequenciesSN				SEQUENCE (SIZE (1.. maxMeasFreqsSN))	OF NR-FreqInfo	OPTIONAL,
+	...
+}
+
+NR-FreqInfo ::= SEQUENCE {
+	measuredFrequency 					ARFCN-ValueNR									OPTIONAL,
+	...
+}
+
+ConfigRestrictModReqSCG ::=			SEQUENCE {
+	requestedBC-MRDC					BandCombinationIndex							OPTIONAL,
+	requestedP-MaxFR1				P-Max												OPTIONAL,
+	...
+}
+
+BandCombinationIndex ::= INTEGER (1..maxBandComb)
+
+FR-InfoList ::=	SEQUENCE (SIZE (1..maxNrofServingCells-1)) OF FR-Info
+
+FR-Info ::=	SEQUENCE {
+	servCellIndex		ServCellIndex,
+	fr-Type				ENUMERATED {fr1, fr2}
+}
+
+-- TAG-CG-CONFIG-STOP
+-- TAG-CG-CONFIG-INFO-START
+
+CG-ConfigInfo ::=				SEQUENCE {
+	criticalExtensions				CHOICE {
+		c1								CHOICE{
+			cg-ConfigInfo				CG-ConfigInfo-IEs,
+			spare3 NULL, spare2 NULL, spare1 NULL
+		},
+		criticalExtensionsFuture		SEQUENCE {}
+	}
+}
+
+CG-ConfigInfo-IEs ::=		SEQUENCE {
+	ue-CapabilityInfo			OCTET STRING (CONTAINING UE-CapabilityRAT-ContainerList)		OPTIONAL,-- Cond SN-Addition
+	candidateCellInfoListMN			MeasResultList2NR									OPTIONAL,
+	candidateCellInfoListSN			OCTET STRING (CONTAINING MeasResultList2NR)			OPTIONAL,
+	measResultCellListSFTD			MeasResultCellListSFTD									OPTIONAL,
+	scgFailureInfo					SEQUENCE {
+		failureType						ENUMERATED { t310-Expiry, randomAccessProblem,
+														rlc-MaxNumRetx, scg-ChangeFailure, 
+														scg-reconfigFailure,
+														srb3-IntegrityFailure},
+		measResultSCG					OCTET STRING (CONTAINING MeasResultSCG-Failure)
+	}																						OPTIONAL,
+	configRestrictInfo			ConfigRestrictInfoSCG										OPTIONAL,
+	drx-InfoMCG					DRX-Info													OPTIONAL,
+	measConfigMN				MeasConfigMN												OPTIONAL,
+	sourceConfigSCG				OCTET STRING (CONTAINING RRCReconfiguration)				OPTIONAL,
+	scg-RB-Config             	OCTET STRING (CONTAINING RadioBearerConfig)        			OPTIONAL,
+	mcg-RB-Config				OCTET STRING (CONTAINING RadioBearerConfig)					OPTIONAL,
+	nonCriticalExtension		SEQUENCE {}													OPTIONAL
+}
+
+ConfigRestrictInfoSCG ::=		SEQUENCE {
+	allowedBC-ListMRDC				BandCombinationIndexList								OPTIONAL,
+	powerCoordination-FR1				SEQUENCE {
+		p-maxNR							P-Max												OPTIONAL,
+		p-maxEUTRA						P-Max												OPTIONAL
+	}																						OPTIONAL,
+	servCellIndexRangeSCG			SEQUENCE {
+		lowBound						ServCellIndex,
+		upBound							ServCellIndex
+	}																						OPTIONAL,   -- Cond SN-Addition
+	maxMeasFreqsSCG-NR					INTEGER(1..maxMeasFreqsMN)							OPTIONAL,
+	maxMeasIdentitiesSCG-NR				INTEGER(1..maxMeasIdentitiesMN)						OPTIONAL,
+	...
+}
+
+BandCombinationIndexList ::= SEQUENCE (SIZE (1..maxBandComb)) OF BandCombinationIndex
+
+DRX-Info ::=					SEQUENCE {
+	drx-LongCycleStartOffset		CHOICE {
+		ms10							INTEGER(0..9),
+		ms20							INTEGER(0..19),
+		ms32							INTEGER(0..31),
+		ms40							INTEGER(0..39),
+		ms60							INTEGER(0..59),
+		ms64							INTEGER(0..63),
+		ms70							INTEGER(0..69),
+		ms80							INTEGER(0..79),
+		ms128							INTEGER(0..127),
+		ms160							INTEGER(0..159),
+		ms256							INTEGER(0..255),
+		ms320							INTEGER(0..319),
+		ms512							INTEGER(0..511),
+		ms640							INTEGER(0..639),
+		ms1024							INTEGER(0..1023),
+		ms1280							INTEGER(0..1279),
+		ms2048							INTEGER(0..2047),
+		ms2560							INTEGER(0..2559),
+		ms5120							INTEGER(0..5119),
+		ms10240							INTEGER(0..10239)
+	},
+	shortDRX							SEQUENCE {
+		drx-ShortCycle						ENUMERATED	{
+												ms2, ms3, ms4, ms5, ms6, ms7, ms8, ms10, ms14, ms16, ms20, ms30, ms32,
+												ms35, ms40, ms64, ms80, ms128, ms160, ms256, ms320, ms512, ms640, spare9,
+												spare8, spare7, spare6, spare5, spare4, spare3, spare2, spare1 },
+		drx-ShortCycleTimer					INTEGER (1..16)
+	}																					OPTIONAL
+}
+
+MeasConfigMN ::= SEQUENCE {
+	measuredFrequenciesMN				SEQUENCE (SIZE (1..maxMeasFreqsMN))	OF NR-FreqInfo	OPTIONAL,
+	measGapConfig					SetupRelease { GapConfig }							OPTIONAL,
+	gapPurpose							ENUMERATED {perUE, perFR1}							OPTIONAL,
+	...
+}
+
+
+-- TAG-CG-CONFIG-INFO-STOP
+-- TAG-MEASUREMENT-TIMING-CONFIGURATION-START
+
+MeasurementTimingConfiguration ::=				SEQUENCE {
+	criticalExtensions				CHOICE {
+		c1								CHOICE{
+			measTimingConf					MeasurementTimingConfiguration-IEs,
+			spare3 NULL, spare2 NULL, spare1 NULL
+		},
+		criticalExtensionsFuture		SEQUENCE {}
+	}
+}
+
+MeasurementTimingConfiguration-IEs ::=	SEQUENCE {
+	measTiming								MeasTimingList							OPTIONAL,
+	nonCriticalExtension					SEQUENCE {}								OPTIONAL
+}
+
+MeasTimingList ::= SEQUENCE (SIZE (1..maxMeasFreqsMN)) OF MeasTiming  
+
+MeasTiming ::= SEQUENCE {
+	frequencyAndTiming						SEQUENCE {
+		carrierFreq								ARFCN-ValueNR, 
+		ssb-MeasurementTimingConfiguration		SSB-MTC
+	}																				OPTIONAL,
+	...
+}
+
+-- TAG-MEASUREMENT-TIMING-CONFIGURATION-STOP
+-- TAG_NR-MULTIPLICITY-AND-CONSTRAINTS-START
+
+maxMeasFreqsMN				INTEGER ::= 32	-- Maximum number of MN-configured measurement frequencies
+maxMeasFreqsSN				INTEGER ::= 32	-- Maximum number of SN-configured measurement frequencies
+maxMeasIdentitiesMN			INTEGER ::= 62	-- Maximum number of measurement identities that a UE can be configured with
+maxCellPrep					INTEGER ::= 32	-- Maximum number of cells prepared for handover
+
+-- TAG_NR-MULTIPLICITY-AND-CONSTRAINTS-STOP
+-- TAG_NR-INTER-NODE-DEFINITIONS-END-START
+
+END
+
+-- TAG_NR-INTER-NODE-DEFINITIONS-END-STOP
+-- TAG-NAME-START
+
+-- TAG-NAME-STOP

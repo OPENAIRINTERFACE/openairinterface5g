@@ -1,0 +1,180 @@
+ FRAME CONFIGURATION TEST 
+--------------------------
+log init done
+Start lte_param_init, frame_type 0, extended_prefix 0
+[PHY][I][nr_init_frame_parms_ue] Initializing frame parms for mu 1, N_RB 106, Ncp 0
+Initializing UE vars (abstraction 0) for eNB TXant 1, UE RXant 1
+[1;31m[PHY][E][set_tdd_config_nr] set_tdd_configuration_nr: given period is inconsistent with current tdd configuration 
+[0m
+Tdd configuration tti 2 downlink 5 uplink 1 period 2500 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] D
+
+[1;31m[PHY][E][set_tdd_config_nr] set_tdd_configuration_nr: given period is inconsistent with current tdd configuration 
+[0m
+Tdd configuration tti 2 downlink 4 uplink 2 period 2500 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] D
+
+[1;31m[PHY][E][set_tdd_config_nr] set_tdd_configuration_nr: given period is inconsistent with current tdd configuration 
+[0m
+Tdd configuration tti 2 downlink 4 uplink 1 period 500 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] D
+
+
+Tdd configuration tti 1 downlink 1 uplink 1 period 2000 
+ [  0] D [  1] U [  2] D [  3] U [  4] D [  5] U [  6] D [  7] U [  8] D [  9] U [ 10] D [ 11] U [ 12] D [ 13] U [ 14] D [ 15] U [ 16] D [ 17] U [ 18] D [ 19] U
+
+
+Tdd configuration tti 1 downlink 4 uplink 1 period 5000 
+ [  0] D [  1] D [  2] D [  3] D [  4] U [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] U [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+
+
+Tdd configuration tti 1 downlink 9 uplink 1 period 10000 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+
+
+Tdd configuration tti 2 downlink 1 uplink 1 period 1000 
+ [  0] D [  1] U [  2] D [  3] U [  4] D [  5] U [  6] D [  7] U [  8] D [  9] U [ 10] D [ 11] U [ 12] D [ 13] U [ 14] D [ 15] U [ 16] D [ 17] U [ 18] D [ 19] U
+ [ 20] D [ 21] U [ 22] D [ 23] U [ 24] D [ 25] U [ 26] D [ 27] U [ 28] D [ 29] U [ 30] D [ 31] U [ 32] D [ 33] U [ 34] D [ 35] U [ 36] D [ 37] U [ 38] D [ 39] U
+
+
+Tdd configuration tti 2 downlink 3 uplink 1 period 2000 
+ [  0] D [  1] D [  2] D [  3] U [  4] D [  5] D [  6] D [  7] U [  8] D [  9] D [ 10] D [ 11] U [ 12] D [ 13] D [ 14] D [ 15] U [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] U [ 24] D [ 25] D [ 26] D [ 27] U [ 28] D [ 29] D [ 30] D [ 31] U [ 32] D [ 33] D [ 34] D [ 35] U [ 36] D [ 37] D [ 38] D [ 39] U
+
+
+Tdd configuration tti 2 downlink 4 uplink 1 period 2500 
+ [  0] D [  1] D [  2] D [  3] D [  4] U [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] U [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] U [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] U [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+
+
+Tdd configuration tti 2 downlink 9 uplink 1 period 5000 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+
+
+Tdd configuration tti 2 downlink 19 uplink 1 period 10000 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+
+
+Tdd configuration tti 4 downlink 1 uplink 1 period 500 
+ [  0] D [  1] U [  2] D [  3] U [  4] D [  5] U [  6] D [  7] U [  8] D [  9] U [ 10] D [ 11] U [ 12] D [ 13] U [ 14] D [ 15] U [ 16] D [ 17] U [ 18] D [ 19] U
+ [ 20] D [ 21] U [ 22] D [ 23] U [ 24] D [ 25] U [ 26] D [ 27] U [ 28] D [ 29] U [ 30] D [ 31] U [ 32] D [ 33] U [ 34] D [ 35] U [ 36] D [ 37] U [ 38] D [ 39] U
+ [ 40] D [ 41] U [ 42] D [ 43] U [ 44] D [ 45] U [ 46] D [ 47] U [ 48] D [ 49] U [ 50] D [ 51] U [ 52] D [ 53] U [ 54] D [ 55] U [ 56] D [ 57] U [ 58] D [ 59] U
+ [ 60] D [ 61] U [ 62] D [ 63] U [ 64] D [ 65] U [ 66] D [ 67] U [ 68] D [ 69] U [ 70] D [ 71] U [ 72] D [ 73] U [ 74] D [ 75] U [ 76] D [ 77] U [ 78] D [ 79] U
+
+
+Tdd configuration tti 4 downlink 3 uplink 1 period 1000 
+ [  0] D [  1] D [  2] D [  3] U [  4] D [  5] D [  6] D [  7] U [  8] D [  9] D [ 10] D [ 11] U [ 12] D [ 13] D [ 14] D [ 15] U [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] U [ 24] D [ 25] D [ 26] D [ 27] U [ 28] D [ 29] D [ 30] D [ 31] U [ 32] D [ 33] D [ 34] D [ 35] U [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] U [ 44] D [ 45] D [ 46] D [ 47] U [ 48] D [ 49] D [ 50] D [ 51] U [ 52] D [ 53] D [ 54] D [ 55] U [ 56] D [ 57] D [ 58] D [ 59] U
+ [ 60] D [ 61] D [ 62] D [ 63] U [ 64] D [ 65] D [ 66] D [ 67] U [ 68] D [ 69] D [ 70] D [ 71] U [ 72] D [ 73] D [ 74] D [ 75] U [ 76] D [ 77] D [ 78] D [ 79] U
+
+
+Tdd configuration tti 4 downlink 4 uplink 1 period 1250 
+ [  0] D [  1] D [  2] D [  3] D [  4] U [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] U [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] U [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] U [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] U [ 45] D [ 46] D [ 47] D [ 48] D [ 49] U [ 50] D [ 51] D [ 52] D [ 53] D [ 54] U [ 55] D [ 56] D [ 57] D [ 58] D [ 59] U
+ [ 60] D [ 61] D [ 62] D [ 63] D [ 64] U [ 65] D [ 66] D [ 67] D [ 68] D [ 69] U [ 70] D [ 71] D [ 72] D [ 73] D [ 74] U [ 75] D [ 76] D [ 77] D [ 78] D [ 79] U
+
+
+Tdd configuration tti 4 downlink 7 uplink 1 period 2000 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] U [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] U [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] D [ 21] D [ 22] D [ 23] U [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] U [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] D [ 45] D [ 46] D [ 47] U [ 48] D [ 49] D [ 50] D [ 51] D [ 52] D [ 53] D [ 54] D [ 55] U [ 56] D [ 57] D [ 58] D [ 59] D
+ [ 60] D [ 61] D [ 62] D [ 63] U [ 64] D [ 65] D [ 66] D [ 67] D [ 68] D [ 69] D [ 70] D [ 71] U [ 72] D [ 73] D [ 74] D [ 75] D [ 76] D [ 77] D [ 78] D [ 79] U
+
+
+Tdd configuration tti 4 downlink 9 uplink 1 period 2500 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] D [ 45] D [ 46] D [ 47] D [ 48] D [ 49] U [ 50] D [ 51] D [ 52] D [ 53] D [ 54] D [ 55] D [ 56] D [ 57] D [ 58] D [ 59] U
+ [ 60] D [ 61] D [ 62] D [ 63] D [ 64] D [ 65] D [ 66] D [ 67] D [ 68] D [ 69] U [ 70] D [ 71] D [ 72] D [ 73] D [ 74] D [ 75] D [ 76] D [ 77] D [ 78] D [ 79] U
+
+
+Tdd configuration tti 4 downlink 19 uplink 1 period 5000 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] D [ 45] D [ 46] D [ 47] D [ 48] D [ 49] D [ 50] D [ 51] D [ 52] D [ 53] D [ 54] D [ 55] D [ 56] D [ 57] D [ 58] D [ 59] U
+ [ 60] D [ 61] D [ 62] D [ 63] D [ 64] D [ 65] D [ 66] D [ 67] D [ 68] D [ 69] D [ 70] D [ 71] D [ 72] D [ 73] D [ 74] D [ 75] D [ 76] D [ 77] D [ 78] D [ 79] U
+
+
+Tdd configuration tti 4 downlink 38 uplink 2 period 10000 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] D [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] D [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] D [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] U [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] D [ 45] D [ 46] D [ 47] D [ 48] D [ 49] D [ 50] D [ 51] D [ 52] D [ 53] D [ 54] D [ 55] D [ 56] D [ 57] D [ 58] D [ 59] D
+ [ 60] D [ 61] D [ 62] D [ 63] D [ 64] D [ 65] D [ 66] D [ 67] D [ 68] D [ 69] D [ 70] D [ 71] D [ 72] D [ 73] D [ 74] D [ 75] D [ 76] D [ 77] D [ 78] U [ 79] U
+
+
+Tdd configuration tti 8 downlink 4 uplink 1 period 625 
+ [  0] D [  1] D [  2] D [  3] D [  4] U [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] U [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] U [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] U [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] U [ 45] D [ 46] D [ 47] D [ 48] D [ 49] U [ 50] D [ 51] D [ 52] D [ 53] D [ 54] U [ 55] D [ 56] D [ 57] D [ 58] D [ 59] U
+ [ 60] D [ 61] D [ 62] D [ 63] D [ 64] U [ 65] D [ 66] D [ 67] D [ 68] D [ 69] U [ 70] D [ 71] D [ 72] D [ 73] D [ 74] U [ 75] D [ 76] D [ 77] D [ 78] D [ 79] U
+ [ 80] D [ 81] D [ 82] D [ 83] D [ 84] U [ 85] D [ 86] D [ 87] D [ 88] D [ 89] U [ 90] D [ 91] D [ 92] D [ 93] D [ 94] U [ 95] D [ 96] D [ 97] D [ 98] D [ 99] U
+ [100] D [101] D [102] D [103] D [104] U [105] D [106] D [107] D [108] D [109] U [110] D [111] D [112] D [113] D [114] U [115] D [116] D [117] D [118] D [119] U
+ [120] D [121] D [122] D [123] D [124] U [125] D [126] D [127] D [128] D [129] U [130] D [131] D [132] D [133] D [134] U [135] D [136] D [137] D [138] D [139] U
+ [140] D [141] D [142] D [143] D [144] U [145] D [146] D [147] D [148] D [149] U [150] D [151] D [152] D [153] D [154] U [155] D [156] D [157] D [158] D [159] U
+
+
+Tdd configuration tti 16 downlink 7 uplink 1 period 500 
+ [  0] D [  1] D [  2] D [  3] D [  4] D [  5] D [  6] D [  7] U [  8] D [  9] D [ 10] D [ 11] D [ 12] D [ 13] D [ 14] D [ 15] U [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] D [ 21] D [ 22] D [ 23] U [ 24] D [ 25] D [ 26] D [ 27] D [ 28] D [ 29] D [ 30] D [ 31] U [ 32] D [ 33] D [ 34] D [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+ [ 40] D [ 41] D [ 42] D [ 43] D [ 44] D [ 45] D [ 46] D [ 47] U [ 48] D [ 49] D [ 50] D [ 51] D [ 52] D [ 53] D [ 54] D [ 55] U [ 56] D [ 57] D [ 58] D [ 59] D
+ [ 60] D [ 61] D [ 62] D [ 63] U [ 64] D [ 65] D [ 66] D [ 67] D [ 68] D [ 69] D [ 70] D [ 71] U [ 72] D [ 73] D [ 74] D [ 75] D [ 76] D [ 77] D [ 78] D [ 79] U
+ [ 80] D [ 81] D [ 82] D [ 83] D [ 84] D [ 85] D [ 86] D [ 87] U [ 88] D [ 89] D [ 90] D [ 91] D [ 92] D [ 93] D [ 94] D [ 95] U [ 96] D [ 97] D [ 98] D [ 99] D
+ [100] D [101] D [102] D [103] U [104] D [105] D [106] D [107] D [108] D [109] D [110] D [111] U [112] D [113] D [114] D [115] D [116] D [117] D [118] D [119] U
+ [120] D [121] D [122] D [123] D [124] D [125] D [126] D [127] U [128] D [129] D [130] D [131] D [132] D [133] D [134] D [135] U [136] D [137] D [138] D [139] D
+ [140] D [141] D [142] D [143] U [144] D [145] D [146] D [147] D [148] D [149] D [150] D [151] U [152] D [153] D [154] D [155] D [156] D [157] D [158] D [159] U
+ [160] D [161] D [162] D [163] D [164] D [165] D [166] D [167] U [168] D [169] D [170] D [171] D [172] D [173] D [174] D [175] U [176] D [177] D [178] D [179] D
+ [180] D [181] D [182] D [183] U [184] D [185] D [186] D [187] D [188] D [189] D [190] D [191] U [192] D [193] D [194] D [195] D [196] D [197] D [198] D [199] U
+ [200] D [201] D [202] D [203] D [204] D [205] D [206] D [207] U [208] D [209] D [210] D [211] D [212] D [213] D [214] D [215] U [216] D [217] D [218] D [219] D
+ [220] D [221] D [222] D [223] U [224] D [225] D [226] D [227] D [228] D [229] D [230] D [231] U [232] D [233] D [234] D [235] D [236] D [237] D [238] D [239] U
+ [240] D [241] D [242] D [243] D [244] D [245] D [246] D [247] U [248] D [249] D [250] D [251] D [252] D [253] D [254] D [255] U [256] D [257] D [258] D [259] D
+ [260] D [261] D [262] D [263] U [264] D [265] D [266] D [267] D [268] D [269] D [270] D [271] U [272] D [273] D [274] D [275] D [276] D [277] D [278] D [279] U
+ [280] D [281] D [282] D [283] D [284] D [285] D [286] D [287] U [288] D [289] D [290] D [291] D [292] D [293] D [294] D [295] U [296] D [297] D [298] D [299] D
+ [300] D [301] D [302] D [303] U [304] D [305] D [306] D [307] D [308] D [309] D [310] D [311] U [312] D [313] D [314] D [315] D [316] D [317] D [318] D [319] U
+
+
+Tdd configuration tti 2 downlink 4 uplink 1 period 2500 
+ [  0] D [  1] D [  2] D [  3] D [  4] U [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] U [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] U [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] U [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+
+
+Set tdd dedicated configuration
+ [1;31m[PHY][E][set_tdd_configuration_dedicated_nr] set_tdd_configuration_dedicated_nr: tdd downlink symbol configuration is not supported 
+[0m
+Set tdd dedicated configuration
+ [1;31m[PHY][E][set_tdd_configuration_dedicated_nr] set_tdd_configuration_dedicated_nr: tdd uplink symbol configuration is not supported 
+[0m
+Set tdd dedicated configuration
+ [1;31m[PHY][E][set_tdd_configuration_dedicated_nr] set_tdd_configuration_dedicated_nr: tdd slot index exceeds maximum value 
+[0m
+Set tdd dedicated configuration
+ [1;31m[PHY][E][set_tdd_configuration_dedicated_nr] set_tdd_configuration_dedicated_nr: tdd downlink & uplink symbol configuration is not supported 
+[0m
+Set tdd dedicated configuration
+ [1;31m[PHY][E][set_tdd_configuration_dedicated_nr] set_tdd_configuration_dedicated_nr: no tdd symbol configuration is specified 
+[0m
+Set tdd dedicated configuration
+  UL[0] [1;31m[PHY][E][set_tdd_configuration_dedicated_nr] set_tdd_configuration_dedicated_nr: no tdd symbol configuration is specified 
+[0m
+Set tdd dedicated configuration
+  DL[0] 
+
+Tdd configuration tti 2 downlink 4 uplink 1 period 2500 
+ [  0] D [  1] D [  2] D [  3] D [  4] U [  5] D [  6] D [  7] D [  8] D [  9] U [ 10] D [ 11] D [ 12] D [ 13] D [ 14] U [ 15] D [ 16] D [ 17] D [ 18] D [ 19] U
+ [ 20] D [ 21] D [ 22] D [ 23] D [ 24] U [ 25] D [ 26] D [ 27] D [ 28] D [ 29] U [ 30] D [ 31] D [ 32] D [ 33] D [ 34] U [ 35] D [ 36] D [ 37] D [ 38] D [ 39] U
+
+
+Set tdd dedicated configuration
+  UL[0]  UL[5]  UL[10]  UL[15]  UL[20]  UL[25]  UL[30]  UL[35]  DL[4]  DL[9]  DL[14]  DL[19]  DL[19]  DL[24]  DL[29]  DL[34]  DL[39] 
+
+Tdd configuration tti 2 downlink 4 uplink 1 period 2500 
+ [  0] U [  1] D [  2] D [  3] D [  4] D [  5] U [  6] D [  7] D [  8] D [  9] D [ 10] U [ 11] D [ 12] D [ 13] D [ 14] D [ 15] U [ 16] D [ 17] D [ 18] D [ 19] D
+ [ 20] U [ 21] D [ 22] D [ 23] D [ 24] D [ 25] U [ 26] D [ 27] D [ 28] D [ 29] D [ 30] U [ 31] D [ 32] D [ 33] D [ 34] D [ 35] U [ 36] D [ 37] D [ 38] D [ 39] D
+
+Test NR FRAME CONFIGURATION is pass 

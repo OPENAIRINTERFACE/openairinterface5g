@@ -48,9 +48,9 @@
 
 /* Send to the controller all the pdcp stat updates that occured during this subframe*/
 int flexran_agent_pdcp_stats_reply(mid_t mod_id,       
-          const report_config_t *report_config,
-           Protocol__FlexUeStatsReport **ue_report,
-           Protocol__FlexCellStatsReport **cell_report);
+                                   Protocol__FlexUeStatsReport **ue_report,
+                                   int n_ue,
+                                   uint32_t ue_flags);
 int flexran_agent_pdcp_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
 /* Get the stats from RAN API and aggregate them per USER*/

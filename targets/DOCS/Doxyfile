@@ -745,7 +745,6 @@ WARN_LOGFILE           = $(OPENAIR_TARGETS)/bin/doxy.log
 
 INPUT                  = $(OPENAIR1_DIR)/PHY/defs.h \
                          $(OPENAIR1_DIR)/PHY/impl_defs_top.h \
-                         $(OPENAIR1_DIR)/PHY/impl_defs_lte.h \
                          $(OPENAIR1_DIR)/PHY/CODING/defs.h \
                          $(OPENAIR1_DIR)/PHY/INIT/defs.h \
                          $(OPENAIR1_DIR)/PHY/TOOLS/defs.h \

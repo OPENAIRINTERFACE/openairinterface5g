@@ -397,11 +397,11 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   tcp_bridge->is_enb = strncasecmp(tcp_bridge->ip,"enb",3) == 0;
   printf("tcp_bridge: running as %s\n", tcp_bridge->is_enb ? "eNB" : "UE");
 
-  /* only 25, 50 or 100 PRBs handled for the moment */
-  if (openair0_cfg[0].sample_rate != 30720000 &&
+  if (openair0_cfg[0].sample_rate != 61440000 &&
+      openair0_cfg[0].sample_rate != 30720000 &&
       openair0_cfg[0].sample_rate != 15360000 &&
       openair0_cfg[0].sample_rate !=  7680000) {
-    printf("tcp_bridge: ERROR: only 25, 50 or 100 PRBs supported\n");
+    printf("tcp_bridge: ERROR: only sample rate 61.44, 30.72, 15.36, and 7.68 Msps supported\n");
     exit(1);
   }
 

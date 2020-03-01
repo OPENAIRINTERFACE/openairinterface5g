@@ -49,23 +49,6 @@ void *one_thread(void *arg) {
   struct  one_thread *myThread=(struct  one_thread *) arg;
   struct  thread_pool *tp=myThread->pool;
 
-  // configure the thread core assignment
-  // TBD: reserve the core for us exclusively
-  if ( myThread->coreID >= 0 &&  myThread->coreID < get_nprocs_conf()) {
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(myThread->coreID, &cpuset);
-    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  }
-
-  //Configure the thread scheduler policy for Linux
-  struct sched_param sparam= {0};
-  sparam.sched_priority = sched_get_priority_max(SCHED_RR);
-  pthread_setschedparam(pthread_self(), SCHED_RR, &sparam);
-  // set the thread name for debugging
-  sprintf(myThread->name,"Tpool_%d",myThread->coreID);
-  pthread_setname_np(pthread_self(), myThread->name );
-
   // Infinite loop to process requests
   do {
     notifiedFIFO_elt_t *elt=pullNotifiedFifoRemember(&tp->incomingFifo, myThread);
@@ -84,7 +67,7 @@ void *one_thread(void *arg) {
         delNotifiedFIFO_elt(elt);
       else
         pushNotifiedFIFO(elt->reponseFifo, elt);
-
+      myThread->runningOnKey=-1;
       mutexunlock(tp->incomingFifo.lockF);
     }
   } while (true);
@@ -106,17 +89,13 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   } else
     pool->traceFd=-1;
 
-  //Configure the thread scheduler policy for Linux
-  struct sched_param sparam= {0};
-  sparam.sched_priority = sched_get_priority_max(SCHED_RR)-1;
-  pthread_setschedparam(pthread_self(), SCHED_RR, &sparam);
   pool->activated=true;
   initNotifiedFIFO(&pool->incomingFifo);
   char *saveptr, * curptr;
   pool->nbThreads=0;
   pool->restrictRNTI=false;
   curptr=strtok_r(params,",",&saveptr);
-
+  struct one_thread * ptr;
   while ( curptr!=NULL ) {
     int c=toupper(curptr[0]);
 
@@ -130,13 +109,18 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         break;
 
       default:
+	ptr=pool->allthreads;
         pool->allthreads=(struct one_thread *)malloc(sizeof(struct one_thread));
-        pool->allthreads->next=pool->allthreads;
+        pool->allthreads->next=ptr;
         printf("create a thread for core %d\n", atoi(curptr));
         pool->allthreads->coreID=atoi(curptr);
         pool->allthreads->id=pool->nbThreads;
         pool->allthreads->pool=pool;
-        pthread_create(&pool->allthreads->threadID, NULL, one_thread, (void *)pool->allthreads);
+        //Configure the thread scheduler policy for Linux
+        // set the thread name for debugging
+        sprintf(pool->allthreads->name,"Tpool_%d",pool->allthreads->coreID);
+        threadCreate(&pool->allthreads->threadID, one_thread, (void *)pool->allthreads,
+                     pool->allthreads->name, pool->allthreads->coreID, OAI_PRIORITY_RT);
         pool->nbThreads++;
     }
 
@@ -150,6 +134,9 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
 }
 
 #ifdef TEST_THREAD_POOL
+
+void exit_function(const char *file, const char *function, const int line, const char *s) {
+}
 
 struct testData {
   int id;

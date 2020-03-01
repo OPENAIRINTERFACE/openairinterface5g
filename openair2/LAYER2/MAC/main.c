@@ -34,15 +34,12 @@
 #include "mac_proto.h"
 #include "mac_extern.h"
 #include "assertions.h"
-//#include "PHY_INTERFACE/phy_extern.h"
-//#include "PHY/defs_eNB.h"
-//#include "SCHED/sched_eNB.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "common/utils/LOG/log.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
 #include "common/ran_context.h"
+#include "intertask_interface.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -146,7 +143,7 @@ void mac_top_init_eNB(void)
 
   RC.mac = mac;
 
-  AssertFatal(rlc_module_init() == 0,
+  AssertFatal(rlc_module_init(1) == 0,
       "Could not initialize RLC layer\n");
 
   // These should be out of here later
@@ -184,7 +181,7 @@ int rlcmac_init_global_param(void)
 
     LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
 
-    if (rlc_module_init() != 0) {
+    if (rlc_module_init(1) != 0) {
 	return (-1);
     }
 
@@ -222,4 +219,48 @@ int l2_init_eNB(void)
 
 
     return (1);
+}
+
+//-----------------------------------------------------------------------------
+/*
+ * Main loop of MAC itti message handling
+ */
+void *mac_enb_task(void *arg)
+//-----------------------------------------------------------------------------
+{
+  MessageDef *received_msg = NULL;
+  int         result;
+
+  itti_mark_task_ready(TASK_MAC_ENB); // void function 10/2019
+  LOG_I(MAC,"Starting main loop of MAC message task\n");
+
+  while (1) {
+    itti_receive_msg(TASK_MAC_ENB, &received_msg);
+
+    switch (ITTI_MSG_ID(received_msg)) {
+      case RRC_MAC_DRX_CONFIG_REQ:
+        LOG_I(MAC, "MAC Task Received RRC_MAC_DRX_CONFIG_REQ\n");
+        /* Set timers and thresholds values in local MAC context of UE */
+        eNB_Config_Local_DRX(ITTI_MESSAGE_GET_INSTANCE(received_msg), &received_msg->ittiMsg.rrc_mac_drx_config_req);
+        break;
+
+      case TERMINATE_MESSAGE:
+        LOG_W(MAC, " *** Exiting MAC thread\n");
+        itti_exit_task();
+        break;
+
+      default:
+        LOG_E(MAC, "MAC instance received unhandled message: %d:%s\n",
+              ITTI_MSG_ID(received_msg), 
+              ITTI_MSG_NAME(received_msg));
+        break;  
+    } // end switch
+
+    result = itti_free(ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+    
+    received_msg = NULL;
+  } // end while
+
+  return NULL;
 }

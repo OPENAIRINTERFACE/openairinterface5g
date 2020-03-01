@@ -38,17 +38,9 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern unsigned int DAQ_MBOX;
 extern int number_of_cards;
 
+extern short conjugate[8],conjugate2[8];
 
-#ifndef OCP_FRAMEWORK
-//extern PHY_VARS_eNB ***PHY_vars_eNB_g;
 extern RAN_CONTEXT_t RC;
-extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
-#else
-#define MAX_UE 10
-#define MAX_eNB 20
-
-extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
-#endif
 
 extern short primary_synch0[144];
 extern short primary_synch1[144];
@@ -68,16 +60,15 @@ extern int flagMag;
 
 extern char mode_string[4][20];
 
-
+extern unsigned char NB_RU;
 
 
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 extern unsigned char NB_RN_INST;
 #endif
 
-extern unsigned int ULSCH_max_consecutive_errors;
 extern int flag_LA;
 extern double sinr_bler_map[MCS_COUNT][2][MCS_TABLE_LENGTH_MAX];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
@@ -105,8 +96,8 @@ extern double p_qam64[8];
 extern double beta1_dlsch[6][MCS_COUNT];
 extern double beta2_dlsch[6][MCS_COUNT];
 
-extern char eNB_functions[6][20];
-extern char eNB_timing[2][20];
+extern char NB_functions[7][20];
+extern char NB_timing[2][20];
 extern char ru_if_types[MAX_RU_IF_TYPES][20];
 
 extern int16_t unscrambling_lut[65536*16];

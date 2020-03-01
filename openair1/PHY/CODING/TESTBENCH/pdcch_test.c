@@ -51,7 +51,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx)
   randominit(0);
   set_taus_seed(0);
 
-  lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
+  lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
