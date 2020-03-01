@@ -145,12 +145,6 @@ static inline void fh_if5_south_out(RU_t *ru,int frame, int subframe, uint64_t t
 }
 
 
-// southbound IF5 fronthaul for Mobipass packet format
-static inline void fh_if5_mobipass_south_out(RU_t *ru,int frame, int subframe, uint64_t timestamp) {
-  if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-
-  send_IF5(ru, timestamp, subframe, &ru->seqno, IF5_MOBIPASS);
-}
 
 
 // southbound IF4p5 fronthaul
@@ -190,12 +184,12 @@ void fh_if5_south_in(RU_t *ru,
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->tti_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
 
-  //LOG_I(PHY,"%d.%d (TS %llu) => %d.%d\n",*frame,*subframe,(unsigned long long)proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
+  //LOG_I(PHY,"%d.%d (TS %llu) => %d.%d\n",*frame,*subframe,(unsigned long long)proc->timestamp_rx,proc->frame_rx,proc->tti_rx);
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *subframe) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d), resynching\n",proc->subframe_rx,*subframe);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d), resynching\n",proc->tti_rx,*subframe);
       *frame=proc->frame_rx;
-      *subframe=proc->subframe_rx;
+      *subframe=proc->tti_rx;
     }
 
     if (proc->frame_rx != *frame) {
@@ -324,48 +318,6 @@ void fh_slave_south_in(RU_t *ru,
 
   release_thread(&proc->mutex_FH,&proc->instance_cnt_FH,"rx_fh_slave_south_in");
 }
-
-
-// asynchronous inbound if5 fronthaul from south (Mobipass)
-void fh_if5_south_asynch_in_mobipass(RU_t *ru,
-                                     int *frame,
-                                     int *subframe) {
-  RU_proc_t *proc        = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
-  recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_MOBIPASS);
-  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
-  int offset_mobipass = 40120;
-  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
-  proc->tti_rx = ((proc->timestamp_rx-offset_mobipass)/fp->samples_per_tti)%10;
-  proc->frame_rx    = ((proc->timestamp_rx-offset_mobipass)/(fp->samples_per_tti*10))&1023;
-  proc->tti_rx = (proc->timestamp_rx/fp->samples_per_tti)%10;
-  proc->frame_rx    = (proc->timestamp_rx/(10*fp->samples_per_tti))&1023;
-
-  if (proc->first_rx == 1) {
-    proc->first_rx =2;
-    *subframe = proc->tti_rx;
-    *frame    = proc->frame_rx;
-    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",(unsigned long long int)proc->timestamp_rx,proc->frame_rx,proc->tti_rx);
-  } else {
-    if (proc->tti_rx != *subframe) {
-      proc->first_rx++;
-      LOG_E(PHY,"[Mobipass]timestamp:%llu, tti_rx %d is not what we expect %d, first_rx:%d\n",(unsigned long long int)proc->timestamp_rx, proc->tti_rx,*subframe, proc->first_rx);
-      //exit_fun("Exiting");
-    }
-
-    if (proc->frame_rx != *frame) {
-      proc->first_rx++;
-      LOG_E(PHY,"[Mobipass]timestamp:%llu, frame_rx %d is not what we expect %d, first_rx:%d\n",(unsigned long long int)proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);
-      // exit_fun("Exiting");
-    }
-
-    // temporary solution
-    *subframe = proc->tti_rx;
-    *frame    = proc->frame_rx;
-  }
-
-  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
-} // eNodeB_3GPP_BBU
 
 
 // asynchronous inbound if4p5 fronthaul from south
@@ -927,12 +879,8 @@ static void *ru_thread_asynch_rxtx( void *param ) {
 
       LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
 
-      // asynchronous receive from south (Mobipass)
-      if (ru->fh_south_asynch_in) {
-        ru->fh_south_asynch_in(ru, &frame, &subframe);
-      }
       // asynchronous receive from north (RRU IF4/IF5)
-      else if (ru->fh_north_asynch_in) {
+      if (ru->fh_north_asynch_in) {
         if (subframe_select(ru->frame_parms,subframe)!=SF_UL)
           ru->fh_north_asynch_in(ru, &frame, &subframe);
       } else
@@ -1191,13 +1139,13 @@ void wakeup_L1s(RU_t *ru) {
   AssertFatal(0==pthread_mutex_lock(&proc->mutex_RU),"");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOCK_MUTEX_RU+ru->idx, 1);
   //printf("wakeup_L1s: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
-  //          ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
+  //          ru->proc.frame_rx,ru->proc.tti_rx,ru->idx,ru->wait_cnt,ru->proc.tti_rx,proc->RU_mask[ru->proc.tti_rx]);
   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
-  //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.subframe_rx);
+  //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.tti_rx);
   clock_gettime(CLOCK_MONOTONIC, &ru->proc.t[ru->proc.tti_rx]);
 
   if (proc->RU_mask[ru->proc.tti_rx] == 0) {
-    //clock_gettime(CLOCK_MONOTONIC,&proc->t[ru->proc.subframe_rx]);
+    //clock_gettime(CLOCK_MONOTONIC,&proc->t[ru->proc.tti_rx]);
     proc->t[ru->proc.tti_rx] = ru->proc.t[ru->proc.tti_rx];
     //start_meas(&proc->ru_arrival_time);
     LOG_D(PHY,"RU %d starting timer for frame %d subframe %d\n", ru->idx, ru->proc.frame_rx, ru->proc.tti_rx);
@@ -1210,13 +1158,13 @@ void wakeup_L1s(RU_t *ru) {
           eNB->RU_list[i]->idx, eNB->RU_list[i]->proc.frame_rx, eNB->RU_list[i]->proc.tti_rx, ru_states[eNB->RU_list[i]->state]);
 
     if (ru == eNB->RU_list[i] && eNB->RU_list[i]->wait_cnt == 0) {
-      //AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n", eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
+      //AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n", eNB->Mod_id,ru->proc.frame_rx,ru->proc.tti_rx,ru->idx,eNB->num_RU,proc->RU_mask);
       proc->RU_mask[ru->proc.tti_rx] |= (1<<i);
     } else if (/*eNB->RU_list[i]->state == RU_SYNC ||*/(eNB->RU_list[i]->is_slave==1 && eNB->RU_list[i]->wait_cnt>0 && ru!=eNB->RU_list[i] && ru->is_slave==0) ) {
       proc->RU_mask[ru->proc.tti_rx] |= (1<<i);
     }
 
-    //printf("RU %d, RU_mask[%d] %d, i %d, frame %d, slave %d, ru->cnt %d, i->cnt %d\n",ru->idx,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx],i,ru->proc.frame_rx,ru->is_slave,ru->wait_cnt,eNB->RU_list[i]->wait_cnt);
+    //printf("RU %d, RU_mask[%d] %d, i %d, frame %d, slave %d, ru->cnt %d, i->cnt %d\n",ru->idx,ru->proc.tti_rx,proc->RU_mask[ru->proc.tti_rx],i,ru->proc.frame_rx,ru->is_slave,ru->wait_cnt,eNB->RU_list[i]->wait_cnt);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_RU, proc->RU_mask[ru->proc.tti_rx]);
 
     if (ru->is_slave == 0 && ( (proc->RU_mask[ru->proc.tti_rx]&(1<<i)) == 1 ) && eNB->RU_list[i]->state == RU_RUN) { //This is master & the RRU has already been received
@@ -1231,21 +1179,21 @@ void wakeup_L1s(RU_t *ru) {
   }
 
   //clock_gettime(CLOCK_MONOTONIC,&t);
-  //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.subframe_rx], t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
+  //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.tti_rx], t.tv_nsec - proc->t[ru->proc.tti_rx].tv_nsec);
 
   if (proc->RU_mask[ru->proc.tti_rx] == (1<<eNB->num_RU)-1) { // all RUs have provided their information so continue on and wakeup eNB top
     LOG_D(PHY,"ru_mask is %d \n ", proc->RU_mask[ru->proc.tti_rx]);
     LOG_D(PHY,"the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
-    LOG_D(PHY,"ru->proc.subframe_rx is %d \n", ru->proc.tti_rx);
+    LOG_D(PHY,"ru->proc.tti_rx is %d \n", ru->proc.tti_rx);
     LOG_D(PHY,"Resetting mask frame %d, subframe %d, this is RU %d\n", ru->proc.frame_rx, ru->proc.tti_rx, ru->idx);
     proc->RU_mask[ru->proc.tti_rx] = 0;
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_RU, proc->RU_mask[ru->proc.tti_rx]);
     clock_gettime(CLOCK_MONOTONIC,&t);
     //stop_meas(&proc->ru_arrival_time);
-    /*AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000, "Time difference for subframe %d (Frame %d) => %lu > 5ms, this is RU %d\n",
-                  ru->proc.subframe_rx, ru->proc.frame_rx, t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec, ru->idx);*/
+    /*AssertFatal(t.tv_nsec < proc->t[ru->proc.tti_rx].tv_nsec+5000000, "Time difference for subframe %d (Frame %d) => %lu > 5ms, this is RU %d\n",
+                  ru->proc.tti_rx, ru->proc.frame_rx, t.tv_nsec - proc->t[ru->proc.tti_rx].tv_nsec, ru->idx);*/
     //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
-    //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.subframe_rx);
+    //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.tti_rx);
     AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_LOCK_MUTEX_RU+ru->idx, 0 );
     // unlock RUs that are waiting for eNB processing to be completed
@@ -1278,8 +1226,8 @@ void wakeup_L1s(RU_t *ru) {
   }
 
   //      pthread_mutex_unlock(&proc->mutex_RU);
-  //      LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
-  //      ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
+  //      LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.tti_rx);
+  //      ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.tti_rx,string);
   ru->proc.emulate_rf_busy = 0;
 }
 
@@ -1696,8 +1644,8 @@ static void *ru_thread( void *param ) {
     if (ru->if_south == LOCAL_RF)       openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
 
     fill_rf_config(ru,ru->rf_config_file);
-    init_frame_parms(&ru->frame_parms,1);
-    ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+    init_frame_parms(ru->frame_parms,1);
+    ru->frame_parms->nb_antennas_rx = ru->nb_rx;
     phy_init_RU(ru);
       
       
@@ -3034,39 +2982,33 @@ void RCconfig_RU(void) {
         RC.ru[j]->eth_params.remote_portc       = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
         RC.ru[j]->eth_params.my_portd           = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
         RC.ru[j]->eth_params.remote_portd       = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
-
-        if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF5;
-          RC.ru[j]->function                     = NGFI_RAU_IF5;
-          RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
-	  RC.ru[j]->if_south                     = REMOTE_IF5;
-	  RC.ru[j]->function                     = NGFI_RAU_IF5;
-	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
-          RC.ru[j]->has_ctrl_prt                 = 0;
-	} else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF5;
-          RC.ru[j]->function                     = NGFI_RAU_IF5;
-          RC.ru[j]->eth_params.transp_preference = ETH_RAW_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF4p5;
-          RC.ru[j]->function                     = NGFI_RAU_IF4p5;
-          RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF4p5;
-          RC.ru[j]->function                     = NGFI_RAU_IF4p5;
-          RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if5_mobipass") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF5;
-          RC.ru[j]->function                     = NGFI_RAU_IF5;
-          RC.ru[j]->if_timing                    = synch_to_other;
-          RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
-        }
-
+      }
+      if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
+	RC.ru[j]->if_south                     = REMOTE_IF5;
+	RC.ru[j]->function                     = NGFI_RAU_IF5;
+	RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
+	RC.ru[j]->if_south                     = REMOTE_IF5;
+	RC.ru[j]->function                     = NGFI_RAU_IF5;
+	RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
+	RC.ru[j]->has_ctrl_prt                 = 0;
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
+	RC.ru[j]->if_south                     = REMOTE_IF5;
+	RC.ru[j]->function                     = NGFI_RAU_IF5;
+	RC.ru[j]->eth_params.transp_preference = ETH_RAW_MODE;
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
+	RC.ru[j]->if_south                     = REMOTE_IF4p5;
+	RC.ru[j]->function                     = NGFI_RAU_IF4p5;
+	RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
+	RC.ru[j]->if_south                     = REMOTE_IF4p5;
+	RC.ru[j]->function                     = NGFI_RAU_IF4p5;
+	RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
+	
         if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
         else RC.ru[j]->is_slave=0;
       }  /* strcmp(local_rf, "yes") != 0 */
-
+      
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
