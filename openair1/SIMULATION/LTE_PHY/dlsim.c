@@ -59,6 +59,7 @@
 #include "unitary_defs.h"
 #include "dummy_functions.c"
 #include "executables/thread-common.h"
+#include "executables/split_headers.h"
 
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
@@ -78,6 +79,13 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
 int emulate_rf = 0;
+int split73=0;
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
 void handler(int sig) {
   void *array[10];
@@ -1590,11 +1598,11 @@ int main(int argc, char **argv) {
                                subframe<<1);
 
             for (i=0; i<coded_bits_per_codeword; i++)
-              if ((eNB->dlsch[0][0]->harq_processes[0]->e[i]==1 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] > 0)||
-                  (eNB->dlsch[0][0]->harq_processes[0]->e[i]==0 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] < 0)) {
+              if ((eNB->dlsch[0][0]->harq_processes[0]->eDL[i]==1 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] > 0)||
+                  (eNB->dlsch[0][0]->harq_processes[0]->eDL[i]==0 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] < 0)) {
                 uncoded_ber_bit[bit_errors++] = 1;
                 printf("error in pos %d : %d => %d\n",i,
-                       eNB->dlsch[0][0]->harq_processes[0]->e[i],
+                       eNB->dlsch[0][0]->harq_processes[0]->eDL[i],
                        UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i]);
               } else {
                 /*
@@ -1641,7 +1649,7 @@ int main(int argc, char **argv) {
             //pdsch_vars
             printf("coded_bits_per_codeword %u\n",coded_bits_per_codeword);
             dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid);
-            LOG_M("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
+            LOG_M("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->eDL,coded_bits_per_codeword,1,4);
             //pdcch_vars
             LOG_M("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
             LOG_M("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);

@@ -54,6 +54,7 @@
 #include "common/config/config_load_configmodule.h"
 #include "executables/thread-common.h"
 #include "targets/RT/USER/lte-softmodem.h"
+#include "executables/split_headers.h"
 
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
@@ -80,6 +81,14 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+
+int split73=0;
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
 extern void fep_full(RU_t *ru, int subframe);
 extern void ru_fep_full_2thread(RU_t *ru, int subframe);
