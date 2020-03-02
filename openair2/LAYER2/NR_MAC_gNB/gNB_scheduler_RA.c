@@ -546,7 +546,14 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,0);
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
-    pdsch_pdu_rel15->mcsTable[0] = 0;
+    if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
+      pdsch_pdu_rel15->mcsTable[0] = 0;
+    else{
+      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+        pdsch_pdu_rel15->mcsTable[0] = 1;
+      else
+        pdsch_pdu_rel15->mcsTable[0] = 2;
+    }
     pdsch_pdu_rel15->rvIndex[0] = 0;
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->nrOfLayers = 1;
@@ -559,7 +566,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = 0;
-    pdsch_pdu_rel15->rbSize = 7;
+    pdsch_pdu_rel15->rbSize = 6;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0; // non interleaved
 
     for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
@@ -577,7 +584,6 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols);
-
 
     dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
     dci_pdu_rel15[0].frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
@@ -635,7 +641,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     LOG_D(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
 
     x_Overhead = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, dci_pdu_rel15[0].tb_scaling);
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, 1, dci_pdu_rel15[0].tb_scaling);
 
     // DL TX request
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];

@@ -133,7 +133,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch->txdataF;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-
+  uint8_t nodata_dmrs = 1;
   uint8_t dmrs_Type = rel15->dmrsConfigType;
   int nb_re_dmrs = (dmrs_Type== NFAPI_NR_DMRS_TYPE1) ? 6:4;
   uint16_t n_dmrs = ((rel15->rbSize+rel15->rbStart)*nb_re_dmrs)<<1;
@@ -297,15 +297,16 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
         }
 
         else {
-
-          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
+          if( (l != dmrs_symbol) || !nodata_dmrs) {
+            ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
+            ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
-	  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-m, l, k, ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
-		 ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)]);
+	    printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+                   m, l, k, ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
+		   ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)]);
 #endif
-          m++;
+            m++;
+          }
         }
         if (++k >= frame_parms->ofdm_symbol_size)
           k -= frame_parms->ofdm_symbol_size;
