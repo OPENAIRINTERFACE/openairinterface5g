@@ -775,12 +775,12 @@ void *UE_thread(void *arg) {
 
     if (slot_nr<(nb_slot_frame - 1)) {
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
-      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(curMsg->proc.nr_tti_tx,&UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(curMsg->proc.nr_tti_tx,&UE->frame_parms) -
                      UE->rx_offset_diff;
     }
 
