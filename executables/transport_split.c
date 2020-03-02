@@ -1,3 +1,7 @@
+/*
+  Author: Laurent THOMAS, Open Cells Project company, funded by IRT SystemX
+  copyleft: OpenAirInterface Software Alliance and it's licence
+*/
 #include <executables/split_headers.h>
 #include <sys/types.h>          /* See NOTES */
 #include <sys/socket.h>

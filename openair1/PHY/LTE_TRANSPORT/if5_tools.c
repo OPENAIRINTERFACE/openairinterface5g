@@ -1504,7 +1504,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
       rxp[0] = (void*)&ru->common.rxdata[0][subframe*ru->frame_parms->samples_per_tti];
       rxp128 = (__m128i *) (rxp[0]);
    
-      RU_proc_t *proc = NULL; //&ru->eNB_list[0]->proc.L1_proc;
+      RU_proc_t *proc = &ru->proc;
 /*
    //   while(packet_id<fp->samples_per_tti/db_fulllength) {
         data_block = data_block_head;

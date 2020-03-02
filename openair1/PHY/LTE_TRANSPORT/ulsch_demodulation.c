@@ -1199,7 +1199,6 @@ void dump_ulsch(PHY_VARS_eNB *eNB,int frame,int subframe,uint8_t UE_id,int round
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
   sprintf(fname,"/tmp/ulsch_r%d_d",round);
   sprintf(vname,"/tmp/ulsch_r%d_dseq",round);
-
   LOG_UM(fname,vname,&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
 

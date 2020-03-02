@@ -1,9 +1,6 @@
 /*
- * Author: Laurent Thomas
- * Copyright: Open Cells Project company
- */
-
-/*
+  Author: Laurent THOMAS, Open Cells Project company, funded by IRT SystemX
+  copyleft: OpenAirInterface Software Alliance and it's licence
  * This file replaces
  * targets/RT/USER/lte-softmodem.c
  * targets/RT/USER/rt_wrapper.c

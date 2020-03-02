@@ -1,3 +1,7 @@
+/*
+  Author: Laurent THOMAS, Open Cells Project company, funded by IRT SystemX
+  copyleft: OpenAirInterface Software Alliance and it's licence
+*/
 #ifndef __SPLIT_HEADERS_H
 #define __SPLIT_HEADERS_H
 

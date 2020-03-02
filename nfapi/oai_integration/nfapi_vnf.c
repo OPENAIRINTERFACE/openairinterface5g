@@ -398,7 +398,7 @@ int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
   return(0);
 }
 
-int phy_subframe_indication(L1_rxtx_proc_t * proc, struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn_sf) {
+int phy_subframe_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn_sf) {
   static uint8_t first_time = 1;
 
   if (first_time) {

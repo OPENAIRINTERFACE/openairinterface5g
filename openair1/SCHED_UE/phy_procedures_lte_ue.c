@@ -3467,7 +3467,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
             frame_rx%1024, subframe_rx,(ue->dlsch_decoding_stats[ue->current_thread_id[subframe_rx]].p_time)/(cpuf*1000.0));
     }
 
-    LOG_D(PHY," ------ end turbo decoder for AbsSubframe %d.%d ------ iter %d \n", frame_rx, subframe_rx,ret1);
+    LOG_D(PHY," ------ end turbo decoder for AbsSubframe %d.%d ------  \n", frame_rx, subframe_rx);
 
     // Check CRC for CW 0
     if (ret == (1+dlsch0->max_turbo_iterations)) {

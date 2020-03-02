@@ -1,3 +1,7 @@
+/*
+  Author: Laurent THOMAS, Open Cells Project company, funded by IRT SystemX
+  copyleft: OpenAirInterface Software Alliance and it's licence
+*/
 #include <stdint.h>
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
