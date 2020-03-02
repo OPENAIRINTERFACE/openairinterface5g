@@ -92,7 +92,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
- 
+
 //static int DEFNRBANDS[] = {7};
 //static int DEFGNBS[] = {0};
 
@@ -712,7 +712,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   //nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
@@ -758,7 +758,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
 
-    for (i=0; i<ru->nb_tx; i++){
+    for (i=0; i<ru->nb_tx; i++) {
       txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
     }
 
@@ -870,7 +870,7 @@ static void *ru_thread_prach( void *param ) {
                 0,0
           );
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );*/ 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );*/
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
   }
 
@@ -1097,16 +1097,16 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
       }
     } else if(N_RB == 106) {
       if (fp->threequarter_fs) {
-	cfg->sample_rate=46.08e6;
-	cfg->samples_per_frame = 460800;
-	cfg->tx_bw = 40e6;
-	cfg->rx_bw = 40e6;
+        cfg->sample_rate=46.08e6;
+        cfg->samples_per_frame = 460800;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
       }
       else {
-	cfg->sample_rate=61.44e6;
-	cfg->samples_per_frame = 614400;
-	cfg->tx_bw = 40e6;
-	cfg->rx_bw = 40e6;
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
       }
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
@@ -1210,7 +1210,7 @@ static void *ru_stats_thread(void *param) {
 
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
 
-      if (ru->feptx_ofdm){
+      if (ru->feptx_ofdm) {
         print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
         print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
         print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
@@ -1219,7 +1219,7 @@ static void *ru_stats_thread(void *param) {
 
       if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
 
-        print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
+      print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
       if (ru->fh_north_out) {
         print_meas(&ru->compression,"compression",NULL,NULL);
         print_meas(&ru->transport,"transport",NULL,NULL);
@@ -1346,7 +1346,7 @@ static void *ru_thread_tx( void *param ) {
         if (L1_proc->instance_cnt_RUs == -1) {
           L1_proc->instance_cnt_RUs = 0;
           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
-                       "ERROR pthread_cond_signal for gNB_L1_thread\n");
+                      "ERROR pthread_cond_signal for gNB_L1_thread\n");
         } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         ret = pthread_mutex_unlock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
@@ -1371,7 +1371,7 @@ static void *ru_thread( void *param ) {
   int                print_frame = 8;
   int                i = 0;
   int                aa;
-
+  // set default return value
   // set default return value
   ru_thread_status = 0;
   // set default return value
@@ -1499,9 +1499,9 @@ static void *ru_thread( void *param ) {
     LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
     LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
 
-    for (aa=0;aa<ru->nb_rx;aa++)
-      memcpy((void*)RC.gNB[0][0]->common_vars.rxdataF[aa],
-         (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
+    for (aa=0; aa<ru->nb_rx; aa++)
+      memcpy((void *)RC.gNB[0][0]->common_vars.rxdataF[aa],
+             (void *)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
     // At this point, all information for subframe has been received on FH interface
 
@@ -2260,7 +2260,7 @@ void RCconfig_RU(void)
         }
       }
       else {
-	RC.ru[j]->openair0_cfg.clock_source = unset;
+        RC.ru[j]->openair0_cfg.clock_source = unset;
       }
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {

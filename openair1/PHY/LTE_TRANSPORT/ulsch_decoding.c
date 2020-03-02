@@ -54,9 +54,9 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   if (ulsch) {
     for (i=0; i<8; i++) {
       if (ulsch->harq_processes[i]) {
-        if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
-          ulsch->harq_processes[i]->b = NULL;
+        if (ulsch->harq_processes[i]->decodedBytes) {
+          free16(ulsch->harq_processes[i]->decodedBytes,MAX_ULSCH_PAYLOAD_BYTES);
+          ulsch->harq_processes[i]->decodedBytes = NULL;
         }
 
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
@@ -115,10 +115,10 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
 
       if (ulsch->harq_processes[i]) {
         memset(ulsch->harq_processes[i],0,sizeof(LTE_UL_eNB_HARQ_t));
-        ulsch->harq_processes[i]->b = (uint8_t *)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        ulsch->harq_processes[i]->decodedBytes = (uint8_t *)malloc16(MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
 
-        if (ulsch->harq_processes[i]->b)
-          memset(ulsch->harq_processes[i]->b,0,MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
+        if (ulsch->harq_processes[i]->decodedBytes)
+          memset(ulsch->harq_processes[i]->decodedBytes,0,MAX_ULSCH_PAYLOAD_BYTES/bw_scaling);
         else
           exit_flag=3;
 
@@ -229,7 +229,7 @@ void processULSegment(void * arg) {
                                    G,
                                    ulsch_harq->w[r],
                                    (uint8_t *) &dummy_w[0],
-                                   ulsch_harq->e+rdata->r_offset,
+                                   ulsch_harq->eUL+rdata->r_offset,
                                    ulsch_harq->C,
                                    NSOFT,
                                    0,   //Uplink
@@ -327,19 +327,15 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
       E = ulsch_harq->Qm * (Gp/ulsch_harq->C);
     else
       E = ulsch_harq->Qm * ((GpmodC==0?0:1) + (Gp/ulsch_harq->C));
-#ifdef FS6
-    if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
-
-      sendFs6Ul(eNB, UE_id, harq_pid, r, ulsch_harq->e+r_offset, E*sizeof(int16_t), r_offset);
-      
+    
+    if ( split73 == SPLIT73_DU ) {
+      sendFs6Ul(eNB, UE_id, harq_pid, r, ulsch_harq->eUL+r_offset, E*sizeof(int16_t), r_offset);
       r_offset += E;
       continue;
     }
 
-#endif
-
     union turboReqUnion id= {.s={ulsch->rnti,proc->frame_rx,proc->subframe_rx,0,0}};
-    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(turboDecode_t), id.p, &proc->respDecode, processULSegment);
+    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(turboDecode_t), id.p, proc->respDecode, processULSegment);
     turboDecode_t * rdata=(turboDecode_t *) NotifiedFifoData(req);
 
     rdata->eNB=eNB;
@@ -359,7 +355,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
     rdata->function=td;
     int Fbytes=(r==0) ? rdata->Fbits>>3 : 0;
     int sz=Kr_bytes - Fbytes - ((ulsch_harq->C>1)?3:0);
-    pushTpool(&proc->threadPool,req);
+    pushTpool(proc->threadPool,req);
     proc->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",proc->nbDecode);
     r_offset+=E;
@@ -892,8 +888,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
             j2+=2;
           }
 
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
         }
 
         break;
@@ -905,10 +901,10 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
             j2+=4;
           }
 
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
         }
 
         break;
@@ -920,12 +916,12 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
             j2+=6;
           }
 
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
-          ulsch_harq->e[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
+          ulsch_harq->eUL[iprime++] = y[j2++];
         }
 
         break;
@@ -963,7 +959,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
     */
     int16_t *yp,*ep;
 
-    for (iprime=0,yp=&y[j2],ep=&ulsch_harq->e[0];
+    for (iprime=0,yp=&y[j2],ep=&ulsch_harq->eUL[0];
          iprime<G;
          iprime+=8,j2+=8,ep+=8,yp+=8) {
       ep[0] = yp[0];

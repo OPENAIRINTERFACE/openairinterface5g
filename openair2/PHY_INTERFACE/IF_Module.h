@@ -176,11 +176,11 @@ typedef struct {
   pthread_cond_t cond_RUs;
   /// mutex for RXn-TXnp4 processing thread
   pthread_mutex_t mutex_RUs;
-  tpool_t threadPool;
+  tpool_t *threadPool;
   int nbEncode;
   int nbDecode;
-  notifiedFIFO_t respEncode;
-  notifiedFIFO_t respDecode;
+  notifiedFIFO_t *respEncode;
+  notifiedFIFO_t *respDecode;
     pthread_mutex_t mutex_emulateRF;
   int instance_cnt_emulateRF;
   pthread_t pthread_emulateRF;

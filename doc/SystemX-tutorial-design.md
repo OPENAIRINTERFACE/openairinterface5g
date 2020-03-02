@@ -258,26 +258,22 @@ lte-softmodem.
 
 The functionality and parameters is the same, enhanced with FS6 mode.
 
-The environment variable “fs6” enables the fs6 mode and decided to be cu
-or du from the fs6 variable content.
-
-A example configuration file is: $OPENAIR_DIR/enb.fs6.example.conf
-The IP addresses in this file should be updated for each network.
+The end line option “--split73” enables the fs6 (also called split 7.3) mode and decided to be cu or du.
 
 Example:
 
-`fs6=cu ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
+./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 cu:127.0.0.1
 `
+Run the CU init of the split 6 eNB, that will call du on 127.0.0.1 address
 
-Run the CU init of the split 6 eNB.
+./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 du:127.0.0.1
 
-`fs6=du ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
+will run the du, calling the cu on 127.0.0.1
 `
 If the CU and the DU are not on the same machine, the remote address of each side need to be specified as per this example
 
-`fs6=du FS6_REMOTE_IP=192.168.2.211 ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug
+./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 du:192.168.1.55
 `
-
 runs the functional split 6 DU
 
 `./lte-uesoftmodem -C 2685000000 -r 50 --rfsim --rfsimulator.serveraddr 192.168.1.1 -d
@@ -285,10 +281,7 @@ runs the functional split 6 DU
 
 Runs the UE (to have the UE signal scope, compile it with make uescope)
 
-CU and DU IP address and port are configurable in the eNB configuration
-file (as X2, GTP, … interfaces).
-
-CU+DU+UE can run with option --noS1 to avoid to use a EPC.
+CU+DU+UE can run with option --noS1 to avoid to use a EPC and/or with --rfsim to simulate RF board
 
 
 ##5G and F1

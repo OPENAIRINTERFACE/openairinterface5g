@@ -93,6 +93,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
+#include <executables/split_headers.h>
 
 
 pthread_cond_t nfapi_sync_cond;
@@ -152,6 +153,13 @@ int otg_enabled;
 
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
+int split73=0;
+void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -438,12 +446,9 @@ int restart_L1L2(module_id_t enb_id) {
   init_UE_list(&RC.mac[enb_id]->UE_list);
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
 
-  if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
-    LOG_E(RRC, "Create task for RRC eNB failed\n");
-    return -1;
-  } else {
-    LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
-  }
+  // No more rrc thread, as many race conditions are hidden behind
+  rrc_enb_init();
+  itti_mark_task_ready(TASK_RRC_ENB);
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */
@@ -477,8 +482,7 @@ void init_pdcp(void) {
 
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
 
-    if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 )
-	    pdcp_module_init(pdcp_initmask);
+    pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
       pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
@@ -643,12 +647,15 @@ int main ( int argc, char **argv )
     for (int x=0; x < RC.nb_L1_inst; x++) 
       for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
         L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
+	L1proc->threadPool=(tpool_t*)malloc(sizeof(tpool_t));
+        L1proc->respEncode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+        L1proc->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
         if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
-         initTpool(get_softmodem_params()->threadPoolConfig, &L1proc->threadPool, true);
+         initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
         else
-         initTpool("n", &L1proc->threadPool, true);
-      initNotifiedFIFO(&L1proc->respEncode);
-      initNotifiedFIFO(&L1proc->respDecode);
+         initTpool("n", L1proc->threadPool, true);
+      initNotifiedFIFO(L1proc->respEncode);
+      initNotifiedFIFO(L1proc->respDecode);
     }
 
 

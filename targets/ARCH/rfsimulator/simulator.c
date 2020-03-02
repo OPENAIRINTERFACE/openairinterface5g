@@ -346,7 +346,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if ( t->lastWroteTS != 0 && abs((double)t->lastWroteTS-timestamp) > (double)CirSize)
     LOG_E(HW,"Discontinuous TX gap too large Tx:%lu, %lu\n", t->lastWroteTS, timestamp);
 
-  if (t->lastWroteTS >= timestamp+1)
+  if (t->lastWroteTS > timestamp+nsamps)
     LOG_E(HW,"Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
               t->lastWroteTS, timestamp);
   t->lastWroteTS=timestamp+nsamps;
@@ -468,8 +468,8 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         } else if ( b->lastReceivedTS == b->th.timestamp ) {
           // normal case
         } else {
-          abort();
-          AssertFatal(false, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
+          LOG_E(HW, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
+	  b->trashingPacket=true;
         }
 
         pthread_mutex_lock(&Sockmutex);

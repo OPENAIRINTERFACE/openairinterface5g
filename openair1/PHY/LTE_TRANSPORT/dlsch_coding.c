@@ -310,7 +310,7 @@ static void TPencode(void * arg) {
   lte_rate_matching_turbo(hadlsch->RTC[rdata->r],
 			  rdata->G,  //G
 			  hadlsch->w[rdata->r],
-			  hadlsch->e+rdata->r_offset,
+			  hadlsch->eDL+rdata->r_offset,
 			  hadlsch->C, // C
 			  rdata->dlsch->Nsoft,                    // Nsoft,
 			  rdata->dlsch->Mdlharq,
@@ -389,7 +389,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   for (int r=0, r_offset=0; r<hadlsch->C; r++) {
     
     union turboReqUnion id= {.s={dlsch->rnti,frame,subframe,r,0}};
-    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(turboEncode_t), id.p, &proc->respEncode, TPencode);
+    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(turboEncode_t), id.p, proc->respEncode, TPencode);
     turboEncode_t * rdata=(turboEncode_t *) NotifiedFifoData(req);
     rdata->input=hadlsch->c[r];
     rdata->Kr_bytes= ( r<hadlsch->Cminus ? hadlsch->Kminus : hadlsch->Kplus) >>3;
@@ -404,8 +404,8 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
     rdata->r_offset=r_offset;
     rdata->G=G;
     
-    if (  proc->threadPool.activated) {
-      pushTpool(&proc->threadPool,req);
+    if (  proc->threadPool->activated ) {
+      pushTpool(proc->threadPool,req);
       proc->nbEncode++;
     } else {
       TPencode(rdata);

@@ -5,10 +5,11 @@
 #include <stdbool.h>
 #include <openair1/PHY/defs_eNB.h>
 
-#define CU_IP "127.0.0.1"
 #define CU_PORT "7878"
-#define DU_IP "127.0.0.1"
 #define DU_PORT "8787"
+#define SPLIT73_CU 1
+#define SPLIT73_DU 2
+extern int split73;
 
 #define MTU 65536
 #define UDP_TIMEOUT 900000L // in micro  second (struct timeval, NOT struct timespec)

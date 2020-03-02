@@ -165,16 +165,16 @@ void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_r
   }
 
   ocp_rx_prach(eNB,
-           proc,
-           eNB->RU_list[0],
-           header->max_preamble,
-           header->max_preamble_energy,
-           header->max_preamble_delay,
-           header->avg_preamble_energy,
-           proc->frame_prach,
-           0,
-           false
-          );
+               proc,
+               eNB->RU_list[0],
+               header->max_preamble,
+               header->max_preamble_energy,
+               header->max_preamble_delay,
+               header->avg_preamble_energy,
+               proc->frame_prach,
+               0,
+               false
+              );
   // run PRACH detection for CE-level 0 only for now when br_flag is set
   /* fixme: seems not operational and may overwrite regular LTE prach detection
    * OAI code can call is sequence
@@ -513,15 +513,12 @@ void fill_rx_indication_from_split(uint8_t *bufferZone, PHY_VARS_eNB *eNB,int UE
   nfapi_rx_indication_pdu_t *pdu;
   int             timing_advance_update;
   uint32_t        harq_pid;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
-  if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
+  if (eNB->ulsch[UE_id]->ue_type > 0)
+    harq_pid = 0;
   else
-#endif
-  {
     harq_pid = subframe2harq_pid (&eNB->frame_parms,
                                   frame, subframe);
-  }
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   eNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| subframe;
@@ -533,7 +530,7 @@ void fill_rx_indication_from_split(uint8_t *bufferZone, PHY_VARS_eNB *eNB,int UE
   pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;
+  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
   // estimate timing advance for MAC
   timing_advance_update                  = ul_propa[UE_id].ta;
 
@@ -662,7 +659,7 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
   }   //   for (i=0; i<NUMBER_OF_UE_MAX; i++)
 
   while (proc->nbDecode > 0) {
-    notifiedFIFO_elt_t *req=pullTpool(&proc->respDecode, &proc->threadPool);
+    notifiedFIFO_elt_t *req=pullTpool(proc->respDecode, proc->threadPool);
     postDecode(proc, req);
     delNotifiedFIFO_elt(req);
   }
@@ -678,7 +675,7 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
       if ( type == fs6ULsch)  {
         LTE_eNB_ULSCH_t *ulsch =eNB->ulsch[hULUE(bufPtr)->UE_id];
         LTE_UL_eNB_HARQ_t *ulsch_harq=ulsch->harq_processes[hULUE(bufPtr)->harq_id];
-        memcpy(ulsch_harq->e+hULUE(bufPtr)->r_offset,
+        memcpy(ulsch_harq->eUL+hULUE(bufPtr)->r_offset,
                hULUE(bufPtr)+1,
                hULUE(bufPtr)->segLen);
         memcpy(eNB->pusch_vars[hULUE(bufPtr)->UE_id]->ulsch_power,
@@ -691,7 +688,7 @@ void recvFs6Ul(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, ul_propagat
                sizeof(ulsch_harq->o_ACK));
         memcpy(ulsch_harq->o,hULUE(bufPtr)->o, sizeof(ulsch_harq->o));
         ul_propa[hULUE(bufPtr)->UE_id].ta=hULUE(bufPtr)->ta;
-        LOG_D(PHY,"Received ulsch data for: rnti:%x, cqi_crc_status %d O_ACK: %di, segment: %di, seglen: %d  \n",
+        LOG_D(PHY,"Received ulsch data for: rnti:%x, cqi_crc_status %d O_ACK: %d, segment: %d, seglen: %d  \n",
               ulsch->rnti, ulsch_harq->cqi_crc_status, ulsch_harq->O_ACK,hULUE(bufPtr)->segment, hULUE(bufPtr)->segLen);
       } else if ( type == fs6ULcch ) {
         int nb_uci=hULUEuci(bufPtr)->nb_active_ue;
@@ -771,10 +768,10 @@ void rcvFs6DL(uint8_t *bufferZone, int nbBlocks, PHY_VARS_eNB *eNB, int frame, i
         dlsch0->i0=hDLUE(bufPtr)->i0;
         dlsch0->sib1_br_flag=hDLUE(bufPtr)->sib1_br_flag;
 #endif
-        fs6Dlunpack(dlsch_harq->e,
+        fs6Dlunpack(dlsch_harq->eDL,
                     hDLUE(bufPtr)+1, hDLUE(bufPtr)->dataLen);
         LOG_D(PHY,"received %d bits, in harq id: %di fsf: %d.%d, sum %d\n",
-              hDLUE(bufPtr)->dataLen, hDLUE(bufPtr)->harq_pid, frame, subframe, sum(dlsch_harq->e, hDLUE(bufPtr)->dataLen));
+              hDLUE(bufPtr)->dataLen, hDLUE(bufPtr)->harq_pid, frame, subframe, sum(dlsch_harq->eDL, hDLUE(bufPtr)->dataLen));
       } else if (type == fs6UlConfig) {
         int nbUE=(((commonUDP_t *)bufPtr)->contentBytes - sizeof(fs6_dl_t)) / sizeof( fs6_dl_ulsched_t ) ;
 #define cpyVal(a) memcpy(&ulsch_harq->a,&hTxULUE(bufPtr)->a, sizeof(ulsch_harq->a))
@@ -1103,9 +1100,9 @@ void appendFs6DLUE(uint8_t *bufferZone, LTE_DL_FRAME_PARMS *fp, int UE_id, int8_
   hDLUE(newUDPheader)->sib1_br_flag=dlsch0->sib1_br_flag;
 #endif
   hDLUE(newUDPheader)->dataLen=UEdataLen;
-  fs6Dlpack(hDLUE(newUDPheader)+1, harqData->e, UEdataLen);
+  fs6Dlpack(hDLUE(newUDPheader)+1, harqData->eDL, UEdataLen);
   LOG_D(PHY,"sending %d bits, in harq id: %di fsf: %d.%d, sum %d\n",
-        UEdataLen, harq_pid, frame, subframe, sum(harqData->e, UEdataLen));
+        UEdataLen, harq_pid, frame, subframe, sum(harqData->eDL, UEdataLen));
   //for (int i=0; i < UEdataLen; i++)
   //LOG_D(PHY,"buffer ei[%d]:%hhx\n", i, ( (uint8_t *)(hDLUE(newUDPheader)+1) )[i]);
 }
@@ -1322,7 +1319,11 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 void *DL_du_fs6(void *arg) {
   RU_t *ru=(RU_t *)arg;
   static uint64_t lastTS;
-  L1_rxtx_proc_t L1_proc= {0};
+  L1_rxtx_proc_t L1proc= {0};
+  // We pick the global thread pool from the legacy code global vars
+  L1proc.threadPool=RC.eNB[0][0]->proc.L1_proc.threadPool;
+  L1proc.respEncode=RC.eNB[0][0]->proc.L1_proc.respEncode;
+  L1proc.respDecode=RC.eNB[0][0]->proc.L1_proc.respDecode;
   initStaticTime(begingWait);
   initStaticTime(begingProcessing);
   initRefTimes(fullLoop);
@@ -1338,27 +1339,31 @@ void *DL_du_fs6(void *arg) {
       updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait CU");
 
       if (nb_blocks > 0) {
-        if ( lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti != hUDP(bufferZone)->timestamp) {
+        if ( lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti < hUDP(bufferZone)->timestamp) {
           LOG_E(HW,"Missed a subframe: expecting: %lu, received %lu\n",
+                lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
+                hUDP(bufferZone)->timestamp);
+        } else if ( lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti > hUDP(bufferZone)->timestamp) {
+          LOG_E(HW,"Received a subframe in past time from CU (dropping it): expecting: %lu, received %lu\n",
                 lastTS+ru->eNB_list[i]->frame_parms.samples_per_tti,
                 hUDP(bufferZone)->timestamp);
         }
 
         pickStaticTime(begingProcessing);
         lastTS=hUDP(bufferZone)->timestamp;
-        setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1_proc);
+        setAllfromTS(hUDP(bufferZone)->timestamp - sf_ahead*ru->eNB_list[i]->frame_parms.samples_per_tti, &L1proc);
         measTransportTime(hDL(bufferZone)->DuClock, hDL(bufferZone)->CuSpentMicroSec,
                           &transportTime, 1000, false, "Transport time, to CU + from CU for one subframe");
-        phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1_proc, 1);
+        phy_procedures_eNB_TX_fromsplit( bufferZone, nb_blocks, ru->eNB_list[i], &L1proc, 1);
         updateTimesReset(begingProcessing, &DuHigh, 1000, false, "DU high layer1 processing for DL");
       } else
         LOG_E(PHY,"DL not received for subframe\n");
     }
 
     pickStaticTime(begingProcessing);
-    feptx_prec(ru, L1_proc.frame_tx,L1_proc.subframe_tx );
-    feptx_ofdm(ru, L1_proc.frame_tx,L1_proc.subframe_tx );
-    ocp_tx_rf(ru, &L1_proc);
+    feptx_prec(ru, L1proc.frame_tx,L1proc.subframe_tx );
+    feptx_ofdm(ru, L1proc.frame_tx,L1proc.subframe_tx );
+    ocp_tx_rf(ru, &L1proc);
     updateTimesReset(begingProcessing, &DuLow, 1000, false, "DU low layer1 processing for DL");
 
     if ( IS_SOFTMODEM_RFSIM )
@@ -1374,7 +1379,6 @@ void UL_du_fs6(RU_t *ru, L1_rxtx_proc_t *proc) {
   pickStaticTime(begingWait);
   rx_rf(ru, proc);
   updateTimesReset(begingWait, &fullLoop, 1000, false, "DU wait USRP");
-  setAllfromTS(proc->timestamp_rx, proc);
   // front end processing: convert from time domain to frequency domain
   // fills rxdataF buffer
   fep_full(ru, proc->subframe_rx);
@@ -1480,23 +1484,22 @@ void *cu_fs6(void *arg) {
   init_frame_parms(ru->frame_parms,1);
   phy_init_RU(ru);
   wait_sync("ru_thread");
-  char *remoteIP;
-
-  if ( getenv("FS6_REMOTE_IP") )
-    remoteIP=getenv("FS6_REMOTE_IP");
-  else
-    remoteIP=DU_IP;
-
-  AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, DU_PORT, &sockFS6), "");
+  char remoteIP[1024];
+  strncpy(remoteIP,get_softmodem_params()->split73+3, 1023); //three first char should be cu: or du:
+  char port_def[256]=DU_PORT;
+  for (int i=0; i <1000; i++)
+    if (remoteIP[i]==':') {
+      strncpy(port_def,remoteIP+i+1,255);
+      remoteIP[i]=0;
+      break;
+    }
+    
+  AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, port_def, &sockFS6), "");
   L1_rxtx_proc_t L1proc= {0};
-
-  if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
-    initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
-  else
-    initTpool("n", &L1proc.threadPool, true);
-
-  initNotifiedFIFO(&L1proc.respEncode);
-  initNotifiedFIFO(&L1proc.respDecode);
+  // We pick the global thread pool from the legacy code global vars
+  L1proc.threadPool=RC.eNB[0][0]->proc.L1_proc.threadPool;
+  L1proc.respEncode=RC.eNB[0][0]->proc.L1_proc.respEncode;
+  L1proc.respDecode=RC.eNB[0][0]->proc.L1_proc.respDecode;
   uint64_t timeStamp=0;
   initStaticTime(begingWait);
   initStaticTime(begingWait2);
@@ -1529,14 +1532,16 @@ void *du_fs6(void *arg) {
   phy_init_RU(ru);
   init_rf(ru);
   wait_sync("ru_thread");
-  char *remoteIP;
-
-  if ( getenv("FS6_REMOTE_IP") )
-    remoteIP=getenv("FS6_REMOTE_IP");
-  else
-    remoteIP=CU_IP;
-
-  AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, CU_PORT, &sockFS6), "");
+  char remoteIP[1024];
+  strncpy(remoteIP,get_softmodem_params()->split73+3,1023); //three first char should be cu: or du:
+  char port_def[256]=CU_PORT;
+  for (int i=0; i <1000; i++)
+    if (remoteIP[i]==':') {
+      strncpy(port_def,remoteIP+i+1,255);
+      remoteIP[i]=0;
+      break;
+    }
+  AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, port_def, &sockFS6), "");
 
   if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)
     LOG_E(HW,"Could not start the RF device\n");
@@ -1551,8 +1556,13 @@ void *du_fs6(void *arg) {
   if ( !IS_SOFTMODEM_RFSIM )
     threadCreate(&t, DL_du_fs6, (void *)ru, "MainDuTx", -1, OAI_PRIORITY_RT_MAX);
 
-  while(oai_exit) {
-    L1_rxtx_proc_t L1proc;
+  L1_rxtx_proc_t L1proc= {0};
+  // We pick the global thread pool from the legacy code global vars
+  L1proc.threadPool=RC.eNB[0][0]->proc.L1_proc.threadPool;
+  L1proc.respEncode=RC.eNB[0][0]->proc.L1_proc.respEncode;
+  L1proc.respDecode=RC.eNB[0][0]->proc.L1_proc.respDecode;
+
+  while(!oai_exit) {
     updateTimesReset(begingWait, &fullLoop, 1000,  true,"DU for full SubFrame (must be less 1ms)");
     pickStaticTime(begingWait);
     UL_du_fs6(ru, &L1proc);
@@ -1562,7 +1572,7 @@ void *du_fs6(void *arg) {
 
     updateTimesReset(begingWait, &waitRxAndProcessingUL, 1000,  true,"DU Time in wait Rx + Ul processing");
   }
-  
+
   ru->rfdevice.trx_end_func(&ru->rfdevice);
   LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   return NULL;

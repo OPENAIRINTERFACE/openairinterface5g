@@ -320,10 +320,10 @@ bool dlsch_procedures(PHY_VARS_eNB *eNB,
                        &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
 
-    if ( proc->threadPool.activated ) {
+    if ( proc->threadPool->activated ) {
     // Wait all other threads finish to process
     while (proc->nbEncode) {
-      delNotifiedFIFO_elt(pullTpool(&proc->respEncode, &proc->threadPool));
+      delNotifiedFIFO_elt(pullTpool(proc->respEncode, proc->threadPool));
       proc->nbEncode--;
     }
   }
@@ -604,12 +604,11 @@ void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 }
 
 void fill_sr_indication(int UEid, PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,uint32_t stat) {
-  #ifdef FS6
-  if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
+  if ( split73 == SPLIT73_DU ) {
     sendFs6Ulharq(fs6ULindicationSr, UEid, eNB, NULL, frame, subframe, NULL,0,0, rnti, stat);
     return;
   }
-  #endif
+
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_sr_indication_t       *sr_ind =         &eNB->UL_INFO.sr_ind;
   nfapi_sr_indication_body_t  *sr_ind_body =    &sr_ind->sr_indication_body;
@@ -1175,13 +1174,13 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
   if (decodeSucess)  {
     int Fbytes=(rdata->segment_r==0) ? rdata->Fbits>>3 : 0;
     int sz=(rdata->Kr>>3) - Fbytes - ((ulsch_harq->C>1)?3:0);
-    memcpy(ulsch_harq->b+rdata->offset,
+    memcpy(ulsch_harq->decodedBytes+rdata->offset,
 	   rdata->decoded_bytes+Fbytes,
 	   sz);
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpool(&proc->threadPool, req->key);
-      nb+=abortNotifiedFIFO(&proc->respDecode, req->key);
+      int nb=abortTpool(proc->threadPool, req->key);
+      nb+=abortNotifiedFIFO(proc->respDecode, req->key);
       proc->nbDecode-=nb;
       LOG_I(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
@@ -1329,7 +1328,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   }   //   for (i=0; i<NUMBER_OF_UE_MAX; i++)
   
   while (proc->nbDecode > 0) {
-    notifiedFIFO_elt_t *req=pullTpool(&proc->respDecode, &proc->threadPool);
+    notifiedFIFO_elt_t *req=pullTpool(proc->respDecode, proc->threadPool);
     postDecode(proc, req);
     delNotifiedFIFO_elt(req);
   }
@@ -1415,7 +1414,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;
+  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
   // estimate timing advance for MAC
   sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
   timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check
@@ -1749,12 +1748,10 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB *eNB, LTE_UL_eNB_HARQ_t *ulsch_har
 }
 
 void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
-  #ifdef FS6
-  if ( getenv("fs6") != NULL && strncasecmp( getenv("fs6"), "du", 2) == 0 ) {
+  if ( split73 == SPLIT73_DU ) {
     sendFs6Ulharq(fs6ULindicationHarq, UEid, eNB, uci, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask, 0, 0);
     return;
   }
-  #endif
   
   int UE_id=find_dlsch(uci->rnti,eNB,SEARCH_EXIST);
 

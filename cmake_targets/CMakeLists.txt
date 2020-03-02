@@ -1181,9 +1181,6 @@ set(SCHED_SRC
 add_library(SCHED_LIB ${SCHED_SRC})
 add_dependencies(SCHED_LIB rrc_flag)
 
-add_library(SCHED_LIB_FS6 ${SCHED_SRC})
-target_compile_definitions(SCHED_LIB_FS6 PRIVATE FS6=1)
-add_dependencies(SCHED_LIB_FS6 rrc_flag)
 set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/fapi_nr_l1.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
@@ -1563,8 +1560,6 @@ endif ()
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_dependencies(PHY_COMMON rrc_flag)
 add_library(PHY ${PHY_SRC})
-add_library(PHY_FS6 ${PHY_SRC})
-target_compile_definitions(PHY_FS6 PRIVATE FS6=1)
 
 add_dependencies(PHY rrc_flag)
 add_library(PHY_UE ${PHY_SRC_UE})
@@ -2485,13 +2480,11 @@ target_link_libraries (lte-softmodem ${T_LIB})
 
 
 add_executable(ocp-softmodem
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_DIR}/executables/main-ocp.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/executables/main-fs6.c
   ${OPENAIR_DIR}/executables/transport_split.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
@@ -2511,7 +2504,6 @@ add_executable(ocp-softmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-target_compile_definitions(ocp-softmodem PRIVATE FS6=1)
 add_dependencies(ocp-softmodem rrc_flag s1ap_flag x2_flag)
 
 target_link_libraries (ocp-softmodem

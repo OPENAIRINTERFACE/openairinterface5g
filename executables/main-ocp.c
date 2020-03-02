@@ -5,8 +5,11 @@
 
 /*
  * This file replaces
+ * targets/RT/USER/lte-softmodem.c
+ * targets/RT/USER/rt_wrapper.c
  * targets/RT/USER/lte-ru.c
  * targets/RT/USER/lte-enb.c
+ * targets/RT/USER/ru_control.c
  * openair1/SCHED/prach_procedures.c
  * The merger of OpenAir central code to this branch
  * should check if these 3 files are modified and analyze if code code has to be copied in here
@@ -16,6 +19,7 @@
 
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
+#include <common/utils/assertions.h>
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 #include <common/config/config_userapi.h>
@@ -30,8 +34,33 @@ static int DEFENBS[] = {0};
 #include <nfapi/oai_integration/nfapi_pnf.h>
 #include <executables/split_headers.h>
 #include <common/utils/threadPool/thread-pool.h>
+#include <openair2/ENB_APP/NB_IoT_interface.h>
+#include <common/utils/load_module_shlib.h>
+#include <targets/COMMON/create_tasks.h>
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
+#include <openair2/UTIL/OPT/opt.h>
+#include <openair1/SIMULATION/TOOLS/sim.h>
+#include <openair1/PHY/phy_vars.h>
+#include <openair1/SCHED/sched_common_vars.h>
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
 
-extern uint16_t sf_ahead;
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+pthread_cond_t sync_cond;
+pthread_mutex_t sync_mutex;
+int sync_var=-1; //!< protected by mutex \ref sync_mutex.
+int config_sync_var=-1;
+volatile int oai_exit = 0;
+double cpuf;
+uint16_t sf_ahead=4;
+int otg_enabled;
+uint32_t  downlink_frequency[MAX_NUM_CCs][4];
+int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];
+int split73;
+char * split73_config;
+int split73;
 
 static void *ru_thread( void *param );
 void kill_RU_proc(RU_t *ru) {
@@ -41,6 +70,34 @@ void kill_eNB_proc(int inst) {
 void free_transport(PHY_VARS_eNB *eNB) {
 }
 void reset_opp_meas(void) {
+}
+extern void  phy_free_RU(RU_t *);
+
+void exit_function(const char *file, const char *function, const int line, const char *s) {
+  if (s != NULL) {
+    printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
+  }
+
+  close_log_mem();
+  oai_exit = 1;
+
+  if (RC.ru == NULL)
+    exit(-1); // likely init not completed, prevent crash or hang, exit now...
+
+  for (int ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+    if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func) {
+      RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+      RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+    }
+
+    if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func) {
+      RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+      RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+    }
+  }
+
+  sleep(1); //allow lte-softmodem threads to exit first
+  exit(1);
 }
 
 // Fixme: there are many mistakes in the datamodel and in redondant variables
@@ -67,92 +124,47 @@ void setAllfromTS(uint64_t TS, L1_rxtx_proc_t *proc) {
   return;
 }
 
-
-void init_eNB_proc(int inst) {
-  /*int i=0;*/
-  int CC_id;
-  PHY_VARS_eNB *eNB;
-
-  for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
-    eNB = RC.eNB[inst][CC_id];
-    pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
-  }
-
-  //for multiple CCs: setup master and slaves
-  /*
-     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-     eNB = PHY_vars_eNB_g[inst][CC_id];
-
-     if (eNB->node_timing == synch_to_ext_device) { //master
-     proc->num_slaves = MAX_NUM_CCs-1;
-     proc->slave_proc = (L1_proc_t**)malloc(proc->num_slaves*sizeof(L1_proc_t*));
-
-     for (i=0; i< eNB->proc.num_slaves; i++) {
-     if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
-     if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
-     }
-     }
-     }
-  */
-}
-
 void init_RU_proc(RU_t *ru) {
   pthread_t t;
-  char *fs6=getenv("fs6");
 
-  if (fs6) {
-    if ( strncasecmp(fs6,"cu", 2) == 0 )
-      threadCreate(&t, cu_fs6, (void *)ru, "MainCu", -1, OAI_PRIORITY_RT_MAX);
-    else if ( strncasecmp(fs6,"du", 2) == 0 ) {
-      threadCreate(&t, du_fs6, (void *)ru, "MainDuRx", -1, OAI_PRIORITY_RT_MAX);
-    } else
-      AssertFatal(false, "environement variable fs6 is not cu or du");
-  } else
+  switch(split73) {
+  case SPLIT73_CU:
+    threadCreate(&t, cu_fs6, (void *)ru, "MainCu", -1, OAI_PRIORITY_RT_MAX);
+    break;
+  case SPLIT73_DU:
+    threadCreate(&t, du_fs6, (void *)ru, "MainDuRx", -1, OAI_PRIORITY_RT_MAX);
+    break;
+  default:
     threadCreate(&t,  ru_thread, (void *)ru, "MainRu", -1, OAI_PRIORITY_RT_MAX);
+  }
 }
 
+// Create per UE structures
 void init_transport(PHY_VARS_eNB *eNB) {
-  int i;
-  int j;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   LOG_I(PHY, "Initialise transport\n");
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
 
-    for (j=0; j<2; j++) {
-      eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
-
-      if (!eNB->dlsch[i][j]) {
-        LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
-        exit(-1);
-      } else {
-        eNB->dlsch[i][j]->rnti=0;
-        LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,eNB->dlsch[i][j], eNB->dlsch[i][j]->rnti);
-      }
+    for (int j=0; j<2; j++) {
+      AssertFatal( (eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp)) != NULL,
+                   "Can't get eNB dlsch structures for UE %d \n", i);
+      eNB->dlsch[i][j]->rnti=0;
+      LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,eNB->dlsch[i][j], eNB->dlsch[i][j]->rnti);
     }
 
     LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
-    eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
-
-    if (!eNB->ulsch[1+i]) {
-      LOG_E(PHY,"Can't get eNB ulsch structures\n");
-      exit(-1);
-    }
-
+    AssertFatal((eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0)) != NULL,
+                "Can't get eNB ulsch structures\n");
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
     eNB->transmission_mode[i] = fp->nb_antenna_ports_eNB==1 ? 1 : 2;
   }
 
   // ULSCH for RA
-  eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
-
-  if (!eNB->ulsch[0]) {
-    LOG_E(PHY,"Can't get eNB ulsch structures\n");
-    exit(-1);
-  }
-
+  AssertFatal( (eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0)) !=NULL,
+               "Can't get eNB ulsch structures\n");
   eNB->dlsch_SI  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
   LOG_D(PHY,"eNB %d.%d : SI %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_SI);
   eNB->dlsch_ra  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
@@ -161,7 +173,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
   LOG_D(PHY,"eNB %d.%d : MCH %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_MCH);
   eNB->rx_total_gain_dB=130;
 
-  for(i=0; i<NUMBER_OF_UE_MAX; i++)
+  for(int i=0; i<NUMBER_OF_UE_MAX; i++)
     eNB->mu_mimo_mode[i].dl_pow_off = 2;
 
   eNB->check_for_total_transmissions = 0;
@@ -172,23 +184,19 @@ void init_transport(PHY_VARS_eNB *eNB) {
 }
 
 void init_eNB_afterRU(void) {
-  int inst,CC_id,ru_id,i,aa;
-  PHY_VARS_eNB *eNB;
-
-  for (inst=0; inst<RC.nb_inst; inst++) {
-    for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
-      eNB = RC.eNB[inst][CC_id];
+  for (int inst=0; inst<RC.nb_inst; inst++) {
+    for (int CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
+      PHY_VARS_eNB *eNB = RC.eNB[inst][CC_id];
       phy_init_lte_eNB(eNB,0,0);
       eNB->frame_parms.nb_antennas_rx       = 0;
       eNB->frame_parms.nb_antennas_tx       = 0;
       eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
 
       for (int ce_level=0; ce_level<4; ce_level++) {
-        LOG_I(PHY,"Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:%p\n", eNB->prach_vars_br.rxsigF[ce_level]);
         eNB->prach_vars_br.rxsigF[ce_level] = (int16_t **)malloc16(64*sizeof(int16_t *));
       }
 
-      for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
+      for (int ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
         eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
         eNB->frame_parms.nb_antennas_tx    += eNB->RU_list[ru_id]->nb_tx;
         AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
@@ -198,7 +206,7 @@ void init_eNB_afterRU(void) {
                     "RU %d : prach_rxsigF is NULL\n",
                     eNB->RU_list[ru_id]->idx);
 
-        for (i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) {
+        for (int i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) {
           LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
           eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[i];
 
@@ -209,35 +217,24 @@ void init_eNB_afterRU(void) {
         }
       }
 
-      /* TODO: review this code, there is something wrong.
-       * In monolithic mode, we come here with nb_antennas_rx == 0
-       * (not tested in other modes).
-       */
       AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
       AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       init_transport(eNB);
       //init_precoding_weights(RC.eNB[inst][CC_id]);
     }
-
-    init_eNB_proc(inst);
   }
 }
 
 void init_eNB(int single_thread_flag,int wait_for_sync) {
-  int CC_id;
-  int inst;
-  PHY_VARS_eNB *eNB;
+  AssertFatal(RC.eNB != NULL,"RC.eNB must have been allocated\n");
 
-  if (RC.eNB == NULL) RC.eNB = (PHY_VARS_eNB ** *) malloc(RC.nb_L1_inst*sizeof(PHY_VARS_eNB **));
+  for (int inst=0; inst<RC.nb_L1_inst; inst++) {
+    AssertFatal(RC.eNB[inst] != NULL,"RC.eNB[%d] must have been allocated\n", inst);
 
-  for (inst=0; inst<RC.nb_L1_inst; inst++) {
-    if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB **) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
-
-    for (CC_id=0; CC_id<RC.nb_L1_CC[inst]; CC_id++) {
-      if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) malloc(sizeof(PHY_VARS_eNB));
-
-      eNB                     = RC.eNB[inst][CC_id];
+    for (int CC_id=0; CC_id<RC.nb_L1_CC[inst]; CC_id++) {
+      AssertFatal(RC.eNB[inst][CC_id] != NULL,"RC.eNB[%d][%d] must have been allocated\n", inst, CC_id);
+      PHY_VARS_eNB *eNB = RC.eNB[inst][CC_id];
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
@@ -245,6 +242,7 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
       eNB->if_inst->PHY_config_req      = phy_config_request;
       memset((void *)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
       memset((void *)&eNB->Sched_INFO,0,sizeof(eNB->Sched_INFO));
+      pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
       LOG_I(PHY,"Setting indication lists\n");
       eNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = eNB->rx_pdu_list;
       eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
@@ -381,7 +379,6 @@ int setup_RU_buffers(RU_t *ru) {
   return(0);
 }
 
-
 void init_precoding_weights(PHY_VARS_eNB *eNB) {
   int layer,ru_id,aa,re,ue,tb;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
@@ -416,21 +413,21 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
 }
 
 void ocp_rx_prach(PHY_VARS_eNB *eNB,
-		  L1_rxtx_proc_t *proc,
-		  RU_t *ru,
-		  uint16_t *max_preamble,
-		  uint16_t *max_preamble_energy,
-		  uint16_t *max_preamble_delay,
-		  uint16_t *avg_preamble_energy,
-		  uint16_t Nf,
-		  uint8_t tdd_mapindex,
-		  uint8_t br_flag) {
+                  L1_rxtx_proc_t *proc,
+                  RU_t *ru,
+                  uint16_t *max_preamble,
+                  uint16_t *max_preamble_energy,
+                  uint16_t *max_preamble_delay,
+                  uint16_t *avg_preamble_energy,
+                  uint16_t Nf,
+                  uint8_t tdd_mapindex,
+                  uint8_t br_flag) {
   int i;
   int prach_mask=0;
-  
+
   if (br_flag == 0) {
     rx_prach0(eNB,ru,proc->frame_prach, proc->subframe_prach,
-	      max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,0,0);
+              max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,0,0);
   } else { // This is procedure for eMTC, basically handling the repetitions
     prach_mask = is_prach_subframe(&eNB->frame_parms,proc->frame_prach_br,proc->subframe_prach_br);
 
@@ -445,7 +442,7 @@ void ocp_rx_prach(PHY_VARS_eNB *eNB,
         eNB->prach_vars_br.repetition_number[i]++;
         // do basic PRACH reception
         rx_prach0(eNB,ru,proc->frame_prach, proc->subframe_prach_br,
-		  max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,1,i);
+                  max_preamble,max_preamble_energy,max_preamble_delay,avg_preamble_energy,Nf,tdd_mapindex,1,i);
 
         // if last repetition, clear counter
         if (eNB->prach_vars_br.repetition_number[i] == eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[i]) {
@@ -477,16 +474,16 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int br_flag) 
 
   // run PRACH detection for CE-level 0 only for now when br_flag is set
   ocp_rx_prach(eNB,
-           proc,
-           eNB->RU_list[0],
-           &max_preamble[0],
-           &max_preamble_energy[0],
-           &max_preamble_delay[0],
-           &avg_preamble_energy[0],
-           proc->frame_prach,
-           0
-           ,br_flag
-          );
+               proc,
+               eNB->RU_list[0],
+               &max_preamble[0],
+               &max_preamble_energy[0],
+               &max_preamble_delay[0],
+               &avg_preamble_energy[0],
+               proc->frame_prach,
+               0
+               ,br_flag
+              );
   LOG_D(PHY,"RACH detection index 0: max preamble: %u, energy: %u, delay: %u, avg energy: %u\n",
         max_preamble[0],
         max_preamble_energy[0],
@@ -531,7 +528,7 @@ void prach_procedures_ocp(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int br_flag) 
     /*
       ind++;
       }
-    } */// ce_level
+      } */// ce_level
   } else if ((eNB->prach_energy_counter == 100) &&
              (max_preamble_energy[0] > eNB->measurements.prach_I0+eNB->prach_DTX_threshold)) {
     LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
@@ -614,13 +611,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   phy_procedures_eNB_TX(eNB, proc, 1);
   return(0);
-}
-
-void eNB_top(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc, int dummy1, int dummy2,  char *string,RU_t *ru) {
-  if (!oai_exit) {
-    if (rxtx(eNB,proc,string) < 0)
-      LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
-  }
 }
 
 void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
@@ -728,42 +718,36 @@ void ocp_tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
 static void *ru_thread( void *param ) {
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
-  RU_t               *ru      = (RU_t *)param;
+  RU_t *ru = (RU_t *)param;
   L1_rxtx_proc_t L1proc= {0};
-  L1_rxtx_proc_t *proc=&L1proc;
-  
-  if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
-    initTpool(get_softmodem_params()->threadPoolConfig, &L1proc.threadPool, true);
-  else
-    initTpool("n", &L1proc.threadPool, true);
-  
-  initNotifiedFIFO(&L1proc.respEncode);
-  initNotifiedFIFO(&L1proc.respDecode);
-  
+  // We pick the global thread pool from the legacy code global vars
+  L1proc.threadPool=RC.eNB[0][0]->proc.L1_proc.threadPool;
+  L1proc.respEncode=RC.eNB[0][0]->proc.L1_proc.respEncode;
+  L1proc.respDecode=RC.eNB[0][0]->proc.L1_proc.respDecode;
+
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);
     init_frame_parms(ru->frame_parms,1);
     phy_init_RU(ru);
     init_rf(ru);
   }
-  
+
   AssertFatal(setup_RU_buffers(ru)==0, "Exiting, cannot initialize RU Buffers\n");
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   wait_sync("ru_thread");
-  
+
   // Start RF device if any
   if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)
     LOG_E(HW,"Could not start the RF device\n");
   else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
-    
+
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
     // synchronization on input FH interface, acquire signals/data and block
-    rx_rf(ru, proc);
-    
+    rx_rf(ru, &L1proc);
     // do RX front-end processing (frequency-shift, dft) if needed
-    fep_full(ru, proc->subframe_rx);
-    
+    fep_full(ru, L1proc.subframe_rx);
+
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
     // Fixme: not used
@@ -771,24 +755,23 @@ static void *ru_thread( void *param ) {
     for (int i=0; i<ru->num_eNB; i++) {
       char string[20];
       sprintf(string,"Incoming RU %d",ru->idx);
-      eNB_top(ru->eNB_list[i],proc, proc->frame_rx,proc->subframe_rx,string,ru);
+
+      if (rxtx(ru->eNB_list[i],&L1proc,string) < 0)
+        LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",
+              ru->eNB_list[i]->Mod_id,ru->eNB_list[i]->CC_id);
     }
-    
+
     // do TX front-end processing if needed (precoding and/or IDFTs)
-    feptx_prec(ru, proc->frame_tx, proc->subframe_tx);
-    
+    feptx_prec(ru, L1proc.frame_tx, L1proc.subframe_tx);
     // do OFDM if needed
-    feptx_ofdm(ru, proc->frame_tx, proc->subframe_tx);
-    
+    feptx_ofdm(ru, L1proc.frame_tx, L1proc.subframe_tx);
     // do outgoing fronthaul (south) if needed
-    ocp_tx_rf(ru, proc);
+    ocp_tx_rf(ru, &L1proc);
   }
-  
+
   LOG_W(PHY,"Exiting ru_thread \n");
-  
   ru->rfdevice.trx_end_func(&ru->rfdevice);
   LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
-  
   return NULL;
 }
 
@@ -801,34 +784,24 @@ int init_rf(RU_t *ru) {
   return ret;
 }
 
-
-void set_function_spec_param(RU_t *ru) {
-}
-
-//extern void RCconfig_RU(void);
-
 void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t time_source,int send_dmrssync) {
-  int ru_id;
   RU_t *ru;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
   int CC_id;
-  // create status mask
-  pthread_mutex_init(&RC.ru_mutex,NULL);
-  pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
   LOG_I(PHY,"configuring RU from file\n");
-  RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
         RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
   if (RC.nb_CC != 0)
     for (i=0; i<RC.nb_L1_inst; i++)
-      for (CC_id=0; CC_id<RC.nb_CC[i]; CC_id++) RC.eNB[i][CC_id]->num_RU=0;
+      for (CC_id=0; CC_id<RC.nb_CC[i]; CC_id++)
+        RC.eNB[i][CC_id]->num_RU=0;
 
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
 
-  for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+  for (int ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     LOG_D(PHY,"Process RC.ru[%d]\n",ru_id);
     ru               = RC.ru[ru_id];
     ru->rf_config_file = rf_config_file;
@@ -862,43 +835,23 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     if (ru->num_eNB > 0) {
       LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n",
             __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
-
-      if (ru->eNB_list[0] == 0) {
-        LOG_E(PHY,"%s() DJP - ru->eNB_list ru->num_eNB are not initialized - so do it manually\n",
-              __FUNCTION__);
-        ru->eNB_list[0] = RC.eNB[0][0];
-        ru->num_eNB=1;
-        //
-        // DJP - feptx_prec() / feptx_ofdm() parses the eNB_list (based on num_eNB) and copies the txdata_F to txdata in RU
-        //
-      } else {
-        LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
-      }
+      AssertFatal(ru->eNB_list[0], "ru->eNB_list is not initialized\n");
+    } else {
+      LOG_E(PHY,"Wrong data model, assigning eNB 0, carrier 0 to RU 0\n");
+      ru->eNB_list[0] = RC.eNB[0][0];
+      ru->num_eNB=1;
     }
 
     eNB0 = ru->eNB_list[0];
-    LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);
-    LOG_D(PHY, "eNB0:%p\n", eNB0);
+    // datamodel error in regular OAI: a RU uses one single eNB carrier parameters!
+    ru->frame_parms = &eNB0->frame_parms;
 
-    if (eNB0) {
-      LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
-      ru->frame_parms=&eNB0->frame_parms;
-
-      for (i=0; i<ru->num_eNB; i++) {
-        eNB0 = ru->eNB_list[i];
-        eNB0->RU_list[eNB0->num_RU++] = ru;
-      }
+    for (i=0; i<ru->num_eNB; i++) {
+      eNB0 = ru->eNB_list[i];
+      int ruIndex=eNB0->num_RU++;
+      eNB0->RU_list[ruIndex] = ru;
     }
-
-    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",
-          ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
-    set_function_spec_param(ru);
-    LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
-    init_RU_proc(ru);
   } // for ru_id
-
-  //  sleep(1);
-  LOG_D(HW,"[lte-softmodem.c] RU threads created\n");
 }
 
 void stop_RU(int nb_ru) {
@@ -912,20 +865,25 @@ void stop_RU(int nb_ru) {
 /* from here function to use configuration module          */
 static int DEFBFW[] = {0x00007fff};
 void RCconfig_RU(void) {
-  int               j                             = 0;
-  int               i                             = 0;
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
   config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
 
-  if ( RUParamList.numelt == 0 ) {
+  if ( RUParamList.numelt == 0  ) {
+    LOG_W(PHY, "Calling RCconfig_RU while no ru\n");
     RC.nb_RU = 0;
     return;
   } // setting != NULL
 
+  if ( RC.ru != NULL ) {
+    LOG_W(PHY, "Calling RCconfig_RU twice (nb ru=%d), ignoring the second call data structure is %p\n",
+          RUParamList.numelt,RC.ru);
+    return;
+  }
+
   RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
 
-  for (j = 0; j < RC.nb_RU; j++) {
+  for (int j = 0; j < RC.nb_RU; j++) {
     RC.ru[j] = (RU_t *)calloc(sizeof(RU_t), 1);
     RC.ru[j]->idx = j;
     LOG_I(PHY,"Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
@@ -937,7 +895,7 @@ void RCconfig_RU(void) {
     else
       RC.ru[j]->num_eNB = 0;
 
-    for (i=0; i<RC.ru[j]->num_eNB; i++)
+    for (int i=0; i<RC.ru[j]->num_eNB; i++)
       RC.ru[j]->eNB_list[i] = RC.eNB[vals[RU_ENB_LIST_IDX].iptr[i]][0];
 
     if (config_isparamset(vals, RU_SDR_ADDRS)) {
@@ -981,7 +939,7 @@ void RCconfig_RU(void) {
       RC.ru[j]->sf_extension                  = *(vals[RU_SF_EXTENSION_IDX].uptr);
       RC.ru[j]->end_of_burst_delay            = *(vals[RU_END_OF_BURST_DELAY_IDX].uptr);
 
-      for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = vals[RU_BAND_LIST_IDX].iptr[i];
+      for (int i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = vals[RU_BAND_LIST_IDX].iptr[i];
     } else {
       LOG_I(PHY,"RU %d: Transport %s\n",j,*(vals[RU_TRANSPORT_PREFERENCE_IDX].strptr));
       RC.ru[j]->eth_params.local_if_name    = strdup(*(vals[RU_LOCAL_IF_NAME_IDX].strptr));
@@ -1000,4 +958,431 @@ void RCconfig_RU(void) {
   }// j=0..num_rus
 
   return;
+}
+
+
+static void get_options(void) {
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+  get_common_options();
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
+
+  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
+    memset((void *)&RC,0,sizeof(RC));
+    /* Read RC configuration file */
+    RCConfig();
+    NB_eNB_INST = RC.nb_inst;
+    printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
+
+    if (!IS_SOFTMODEM_NONBIOT) {
+      load_NB_IoT();
+      printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
+             RC.nb_nb_iot_rrc_inst, RC.nb_nb_iot_L1_inst, RC.nb_nb_iot_macrlc_inst);
+    } else {
+      printf("All Nb-IoT instances disabled\n");
+      RC.nb_nb_iot_rrc_inst=RC.nb_nb_iot_L1_inst=RC.nb_nb_iot_macrlc_inst=0;
+    }
+  }
+}
+
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
+  int CC_id;
+
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS *) malloc(sizeof(LTE_DL_FRAME_PARMS));
+    /* Set some default values that may be overwritten while reading options */
+    frame_parms[CC_id]->frame_type          = FDD;
+    frame_parms[CC_id]->tdd_config          = 3;
+    frame_parms[CC_id]->tdd_config_S        = 0;
+    frame_parms[CC_id]->N_RB_DL             = 100;
+    frame_parms[CC_id]->N_RB_UL             = 100;
+    frame_parms[CC_id]->Ncp                 = NORMAL;
+    frame_parms[CC_id]->Ncp_UL              = NORMAL;
+    frame_parms[CC_id]->Nid_cell            = 0;
+    frame_parms[CC_id]->num_MBSFN_config    = 0;
+    frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
+    frame_parms[CC_id]->nb_antennas_tx      = 1;
+    frame_parms[CC_id]->nb_antennas_rx      = 1;
+    frame_parms[CC_id]->nushift             = 0;
+    frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
+    frame_parms[CC_id]->phich_config_common.phich_duration = normal;
+    // UL RS Config
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+    frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+    //    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
+    //    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
+    //    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
+    //    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
+    //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
+    frame_parms[CC_id]->dl_CarrierFreq=downlink_frequency[CC_id][0];
+  }
+}
+
+void init_pdcp(void) {
+  if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
+    pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
+    if (IS_SOFTMODEM_NOS1)
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
+
+    if ( split73!=SPLIT73_DU)
+      pdcp_module_init(pdcp_initmask);
+
+    if (NODE_IS_CU(RC.rrc[0]->node_type)) {
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    }
+  } else {
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+  }
+}
+
+static  void wait_nfapi_init(char *thread_name) {
+  printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
+  pthread_mutex_lock( &nfapi_sync_mutex );
+
+  while (nfapi_sync_var<0)
+    pthread_cond_wait( &nfapi_sync_cond, &nfapi_sync_mutex );
+
+  pthread_mutex_unlock(&nfapi_sync_mutex);
+  printf( "NFAPI: got sync (%s)\n", thread_name);
+}
+
+void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {
+  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE from task %s (%d) to task %s (%d)\n",
+        itti_get_task_name(from), from, itti_get_task_name(to), to);
+  MessageDef *msg;
+  msg = itti_alloc_new_message (from, TERMINATE_MESSAGE);
+  itti_send_msg_to_task (to, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
+}
+
+int stop_L1L2(module_id_t enb_id) {
+  LOG_W(ENB_APP, "stopping lte-softmodem\n");
+
+  if (!RC.ru) {
+    LOG_UI(ENB_APP, "no RU configured\n");
+    return -1;
+  }
+
+  /* these tasks need to pick up new configuration */
+  terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
+  oai_exit = 1;
+  LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
+  kill_RU_proc(RC.ru[enb_id]);
+  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
+  kill_eNB_proc(enb_id);
+  oai_exit = 0;
+
+  for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) {
+    free_transport(RC.eNB[enb_id][cc_id]);
+    phy_free_lte_eNB(RC.eNB[enb_id][cc_id]);
+  }
+
+  phy_free_RU(RC.ru[enb_id]);
+  free_lte_top();
+  return 0;
+}
+
+/*
+ * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
+ */
+int restart_L1L2(module_id_t enb_id) {
+  RU_t *ru = RC.ru[enb_id];
+  MessageDef *msg_p = NULL;
+  LOG_W(ENB_APP, "restarting lte-softmodem\n");
+  /* block threads */
+  pthread_mutex_lock(&sync_mutex);
+  sync_var = -1;
+  pthread_mutex_unlock(&sync_mutex);
+  RC.ru_mask |= (1 << ru->idx);
+  /* copy the changed frame parameters to the RU */
+  /* TODO this should be done for all RUs associated to this eNB */
+  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  /* reset the list of connected UEs in the MAC, since in this process with
+   * loose all UEs (have to reconnect) */
+  init_UE_list(&RC.mac[enb_id]->UE_list);
+  LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
+  // No more rrc thread, as many race conditions are hidden behind
+  rrc_enb_init();
+  itti_mark_task_ready(TASK_RRC_ENB);
+  /* pass a reconfiguration request which will configure everything down to
+   * RC.eNB[i][j]->frame_parms, too */
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+  itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+  /* TODO XForms might need to be restarted, but it is currently (09/02/18)
+   * broken, so we cannot test it */
+  init_RU_proc(ru);
+  ru->rf_map.card = 0;
+  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
+  init_eNB_afterRU();
+  printf("Sending sync to all threads\n");
+  pthread_mutex_lock(&sync_mutex);
+  sync_var=0;
+  pthread_cond_broadcast(&sync_cond);
+  pthread_mutex_unlock(&sync_mutex);
+  return 0;
+}
+
+int main ( int argc, char **argv ) {
+  int i;
+  int CC_id = 0;
+  int node_type = ngran_eNB;
+  AssertFatal(load_configmodule(argc,argv,0), "[SOFTMODEM] Error, configuration module init failed\n");
+  logInit();
+  printf("Reading in command-line options\n");
+  get_options ();
+  AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+#if T_TRACER
+  T_Config_Init();
+#endif
+  configure_linux();
+  cpuf=get_cpu_freq_GHz();
+  set_taus_seed (0);
+
+  if (opp_enabled ==1)
+    reset_opp_meas();
+
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  init_opt();
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+
+  /* Read configuration */
+  if (RC.nb_inst > 0) {
+    // Allocate memory from RC variable
+    read_config_and_init();
+  } else {
+    printf("RC.nb_inst = 0, Initializing L1\n");
+    RCconfig_L1();
+  }
+
+  /* We need to read RU configuration before FlexRAN starts so it knows what
+   * splits to report. Actual RU start comes later. */
+  if (RC.nb_RU > 0 && NFAPI_MODE != NFAPI_MODE_VNF) {
+    RCconfig_RU();
+    LOG_I(PHY,
+          "number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
+          RC.nb_L1_inst, RC.nb_RU, get_nprocs());
+  }
+
+  if ( strlen(get_softmodem_params()->split73) > 0 ) {
+    char tmp[1024]={0};
+    strncpy(tmp,get_softmodem_params()->split73, 1023);
+    tmp[2]=0;
+    if ( strncasecmp(tmp,"cu", 2)==0 )
+      split73=SPLIT73_CU;
+    else if ( strncasecmp(tmp,"du", 2)==0 )
+      split73=SPLIT73_DU;
+    else
+      AssertFatal(false,"split73 syntax: <cu|du>:<remote ip addr>[:<ip port>] (string found: %s) \n",get_softmodem_params()->split73);
+  }
+  
+  if (RC.nb_inst > 0) {
+    /* Start the agent. If it is turned off in the configuration, it won't start */
+    for (i = 0; i < RC.nb_inst; i++) {
+      flexran_agent_start(i);
+    }
+    
+    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
+     * for monolithic/F1 modes */
+    init_pdcp();
+    AssertFatal(create_tasks(1)==0,"cannot create ITTI tasks\n");
+
+    for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+    }
+
+    node_type = RC.rrc[0]->node_type;
+  }
+
+  if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
+    protocol_ctxt_t ctxt;
+    ctxt.module_id = 0 ;
+    ctxt.instance = 0;
+    ctxt.rnti = 0;
+    ctxt.enb_flag = 1;
+    ctxt.frame = 0;
+    ctxt.subframe = 0;
+    pdcp_run(&ctxt);
+  }
+
+  /* start threads if only L1 or not a CU */
+  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type) || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
+    // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+
+    if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
+      LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+      pthread_cond_init(&sync_cond,NULL);
+      pthread_mutex_init(&sync_mutex, NULL);
+    }
+
+    if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
+#if defined(PRE_SCD_THREAD)
+      init_ru_vnf();  // ru pointer is necessary for pre_scd.
+#endif
+      wait_nfapi_init("main?");
+    }
+
+    LOG_I(ENB_APP,"START MAIN THREADS\n");
+    // start the main threads
+    number_of_cards = 1;
+    printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
+
+    if (RC.nb_L1_inst > 0) {
+      printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n",
+             get_softmodem_params()->single_thread_flag,
+             get_softmodem_params()->wait_for_sync);
+      init_eNB(get_softmodem_params()->single_thread_flag,
+               get_softmodem_params()->wait_for_sync);
+    }
+
+    for (int x=0; x < RC.nb_L1_inst; x++)
+      for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
+        L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
+        L1proc->threadPool=(tpool_t *)malloc(sizeof(tpool_t));
+        L1proc->respEncode=(notifiedFIFO_t *) malloc(sizeof(notifiedFIFO_t));
+        L1proc->respDecode=(notifiedFIFO_t *) malloc(sizeof(notifiedFIFO_t));
+
+        if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
+          initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
+        else
+          initTpool("n", L1proc->threadPool, true);
+
+        initNotifiedFIFO(L1proc->respEncode);
+        initNotifiedFIFO(L1proc->respDecode);
+      }
+  }
+
+  printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
+
+  // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
+  // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
+  // some initialization is necessary and init_ru_vnf do this.
+  if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
+    printf("Initializing RU threads\n");
+    init_RU(get_softmodem_params()->rf_config_file,
+            get_softmodem_params()->clock_source,
+            get_softmodem_params()->timing_source,
+            get_softmodem_params()->send_dmrs_sync);
+
+    for (int ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+      RC.ru[ru_id]->rf_map.card=0;
+      RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
+      LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
+      init_RU_proc(RC.ru[ru_id]);
+    }
+
+    config_sync_var=0;
+
+    if (NFAPI_MODE==NFAPI_MODE_PNF) { // PNF
+      wait_nfapi_init("main?");
+    }
+
+    LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
+    // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
+    printf("ALL RUs ready - init eNBs\n");
+
+    if (NFAPI_MODE!=NFAPI_MODE_PNF && NFAPI_MODE!=NFAPI_MODE_VNF) {
+      LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
+      init_eNB_afterRU();
+    } else {
+      LOG_I(ENB_APP,"NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+    }
+
+    LOG_UI(ENB_APP,"ALL RUs ready - ALL eNBs ready\n");
+    // connect the TX/RX buffers
+    sleep(1); /* wait for thread activation */
+    LOG_I(ENB_APP,"Sending sync to all threads\n");
+    pthread_mutex_lock(&sync_mutex);
+    sync_var=0;
+    pthread_cond_broadcast(&sync_cond);
+    pthread_mutex_unlock(&sync_mutex);
+    config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+  }
+
+  create_tasks_mbms(1);
+  // wait for end of program
+  LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
+  // CI -- Flushing the std outputs for the previous marker to show on the eNB / DU / CU log file
+  fflush(stdout);
+  fflush(stderr);
+
+  // end of CI modifications
+  //getchar();
+  if(IS_SOFTMODEM_DOFORMS)
+    load_softscope("enb");
+
+  itti_wait_tasks_end();
+  oai_exit=1;
+  LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
+  // stop threads
+
+  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
+    if(IS_SOFTMODEM_DOFORMS)
+      end_forms();
+
+    LOG_I(ENB_APP,"stopping MODEM threads\n");
+    stop_eNB(NB_eNB_INST);
+    stop_RU(RC.nb_RU);
+
+    /* release memory used by the RU/eNB threads (incomplete), after all
+     * threads have been stopped (they partially use the same memory) */
+    for (int inst = 0; inst < NB_eNB_INST; inst++) {
+      for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+        free_transport(RC.eNB[inst][cc_id]);
+        phy_free_lte_eNB(RC.eNB[inst][cc_id]);
+      }
+    }
+
+    for (int inst = 0; inst < RC.nb_RU; inst++) {
+      phy_free_RU(RC.ru[inst]);
+    }
+
+    free_lte_top();
+    end_configmodule();
+    pthread_cond_destroy(&sync_cond);
+    pthread_mutex_destroy(&sync_mutex);
+    pthread_cond_destroy(&nfapi_sync_cond);
+    pthread_mutex_destroy(&nfapi_sync_mutex);
+    pthread_mutex_destroy(&ue_pf_po_mutex);
+
+    for(int ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
+    }
+  }
+
+  terminate_opt();
+  logClean();
+  printf("Bye.\n");
+  return 0;
 }
