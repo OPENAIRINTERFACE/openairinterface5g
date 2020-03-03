@@ -139,7 +139,11 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   uint16_t n_dmrs = ((rel15->rbSize+rel15->rbStart)*nb_re_dmrs)<<1;
   int16_t mod_dmrs[n_dmrs<<1];
 
-  uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
+  uint16_t nb_re;
+  if (nodata_dmrs) // no data in dmrs symbol
+      nb_re = ((12*rel15->NrOfSymbols)-12-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
+  else
+    nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
   uint8_t Qm = rel15->qamModOrder[0];
   uint32_t encoded_length = nb_re*Qm;
 
