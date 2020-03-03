@@ -428,7 +428,7 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = 0;
   unsigned int available_bits;
   uint8_t nb_re_dmrs;
-  uint8_t length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+  uint8_t length_dmrs = UE->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
   unsigned char mod_order;
   uint16_t code_rate;
 
@@ -440,12 +440,12 @@ int main(int argc, char **argv)
                                             0,
                                             0,
                                             nb_symb_sch,
-                                            &UE->dmrs_UplinkConfig,
+                                            &UE->pusch_config.dmrs_UplinkConfig,
                                             UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType,
                                             frame_parms->ofdm_symbol_size);
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
-  nb_re_dmrs     = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
+  nb_re_dmrs     = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
   TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
