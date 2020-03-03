@@ -2342,7 +2342,11 @@ void init_RU_proc(RU_t *ru) {
     init_frame_parms(ru->frame_parms,1);
     ru->frame_parms->nb_antennas_rx = ru->nb_rx;
     phy_init_RU(ru);
-    openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    if (ret < 0) {
+       LOG_I(PHY,"Exiting, cannot load device\n");
+       exit(1);
+    }
 
     if (setup_RU_buffers(ru)!=0) {
       printf("Exiting, cannot initialize RU Buffers\n");
