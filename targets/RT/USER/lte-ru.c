@@ -2344,7 +2344,7 @@ void init_RU_proc(RU_t *ru) {
     phy_init_RU(ru);
     ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
     if (ret < 0) {
-       LOG_I(PHY,"Exiting, cannot load device\n");
+       LOG_I(PHY,"Exiting, cannot load device. Make sure that your SDR board is connected!\n");
        exit(1);
     }
 
