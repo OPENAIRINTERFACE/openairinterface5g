@@ -2349,8 +2349,8 @@ void init_RU_proc(RU_t *ru) {
     }
 
     if (setup_RU_buffers(ru)!=0) {
-      printf("Exiting, cannot initialize RU Buffers\n");
-      exit(-1);
+      LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
+      exit(1);
     }
   }
 
