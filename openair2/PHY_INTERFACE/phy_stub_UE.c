@@ -71,6 +71,8 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 	  //pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
 	  pdu->rx_indication_rel8.length         = buflen;
 	  pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
+	  pdu->rx_indication_rel9.tl.tag = NFAPI_RX_INDICATION_REL9_TAG;
+	  pdu->rx_indication_rel9.timing_advance_r9 = 0;
 
 	  // ulsch_buffer is necessary to keep its value.
 	  //pdu->data                              = ulsch_buffer;
