@@ -97,6 +97,7 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
 void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
+                      NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_subframe,
                       frame_t current_frame,
                       NR_RA_t *ra);
@@ -109,7 +110,7 @@ void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
 void nr_fill_rar(uint8_t Mod_idP,
                  NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
-                 uint16_t N_RB_UL);
+                 nfapi_nr_pusch_pdu_t  *pusch_pdu);
 
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);

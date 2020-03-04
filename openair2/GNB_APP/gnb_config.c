@@ -255,6 +255,10 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
      scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA = NULL;
   }
 
+  // default value for msg3 precoder is NULL (0 means enabled)
+  if (*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder!=0)
+    scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder = NULL;
+
   // fix libconfig (asn1c uses long) 
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower-=((long)1<<32); 
   *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant-=((long)1<<32);

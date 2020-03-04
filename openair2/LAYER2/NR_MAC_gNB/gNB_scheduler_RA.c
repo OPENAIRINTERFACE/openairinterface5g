@@ -43,6 +43,7 @@
 
 extern RAN_CONTEXT_t RC;
 uint16_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
+uint8_t DELTA[4]= {2,3,4,6};
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
@@ -352,17 +353,40 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 }
 
 void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
+                      NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
                       NR_RA_t *ra) {
 
-  // first simple version to schedule msg3
-  // it is schedulend in mixed slot in the following frame
-  ra->Msg3_frame = current_frame+1;
-  ra->Msg3_slot = current_slot;
-  ra->msg3_nb_rb = 6;
-  ra->msg3_first_rb = 0;
+  // msg3 is schedulend in mixed slot in the following TDD period
+  // for now we consider a TBS of 18 bytes
 
+  int mu = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+  int StartSymbolIndex, NrOfSymbols, startSymbolAndLength, temp_slot;
+  ra->Msg3_tda_id = 16; // initialization to a value above limit
+
+  for (int i=0; i<ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count; i++) {
+    startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
+    SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
+    // we want to transmit in the uplink symbols of mixed slot
+    if (NrOfSymbols == scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols) {
+      ra->Msg3_tda_id = i;
+      break;
+    }
+  }
+  AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
+
+  uint8_t k2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
+
+  temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
+  ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+  if (nr_slots_per_frame[mu]>temp_slot)
+    ra->Msg3_frame = current_frame;
+  else
+    ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
+
+  ra->msg3_nb_rb = 18;
+  ra->msg3_first_rb = 0;
 }
 
 // WIP
@@ -395,7 +419,6 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
     "downlinkBWP_ToAddModList has %d BWP!\n", secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
-  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
   LOG_D(MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
     frameP,
     slotP,
@@ -406,48 +429,68 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     ra->msg3_round,
     ra->rnti);
 
+  int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
+  int start_symbol_index,nr_of_symbols;
+  SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
+
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = ra->rnti;
   pusch_pdu->handle = 0;
-  pusch_pdu->bwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-  pusch_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  int abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
+  int ibwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
+  if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
+    pusch_pdu->bwp_start = abwp_start;
+  else
+    pusch_pdu->bwp_start = ibwp_start;
+  pusch_pdu->bwp_size = ibwp_size;
   pusch_pdu->subcarrier_spacing = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
   pusch_pdu->cyclic_prefix = 0;
-  pusch_pdu->mcs_index = 9;
+  pusch_pdu->mcs_index = 0;
   pusch_pdu->mcs_table = 0;
   pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
   pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
-  pusch_pdu->transform_precoding = 0;
-  pusch_pdu->data_scrambling_id = 0;
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
+    pusch_pdu->transform_precoding = 1;
+  else
+    pusch_pdu->transform_precoding = 0;
+  pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
-  pusch_pdu->ul_dmrs_symb_pos = 1;
+  pusch_pdu->ul_dmrs_symb_pos = 1; // ok for now but use fill dmrs mask later
   pusch_pdu->dmrs_config_type = 0;
-  pusch_pdu->ul_dmrs_scrambling_id = 0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
+  pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_pdu->resource_alloc = 1; //type 1
-  //pusch_pdu->rb_bitmap;// for ressource alloc type 0
   pusch_pdu->rb_start = ra->msg3_first_rb;
   pusch_pdu->rb_size = ra->msg3_nb_rb;
   pusch_pdu->vrb_to_prb_mapping = 0;
-  pusch_pdu->frequency_hopping = 0;
+  if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->frequencyHopping == NULL)
+    pusch_pdu->frequency_hopping = 0;
+  else
+    pusch_pdu->frequency_hopping = 1;
   //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   //Resource Allocation in time domain
-  pusch_pdu->start_symbol_index = 12;
-  pusch_pdu->nr_of_symbols = 2;
+  pusch_pdu->start_symbol_index = start_symbol_index;
+  pusch_pdu->nr_of_symbols = nr_of_symbols;
   //Optional Data only included if indicated in pduBitmap
-  pusch_pdu->pusch_data.rv_index = 0;
+  pusch_pdu->pusch_data.rv_index = 0;  // 8.3 in 38.213
   pusch_pdu->pusch_data.harq_process_id = 0;
-  pusch_pdu->pusch_data.new_data_indicator = 0;
-  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->mcs_index,
+  pusch_pdu->pusch_data.new_data_indicator = 1; // new data
+  pusch_pdu->pusch_data.num_cb = 0;
+  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
                                                  pusch_pdu->target_code_rate,
                                                  pusch_pdu->rb_size,
                                                  pusch_pdu->nr_of_symbols,
-                                                 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
+                                                 12, // nb dmrs set for no data in dmrs symbol
                                                  0, //nb_rb_oh
                                                  0, // to verify tb scaling
-                                                 pusch_pdu->nrOfLayers = 1);
-  pusch_pdu->pusch_data.num_cb = 0;
+                                                 pusch_pdu->nrOfLayers = 1)>>3;
+
+  // calling function to fill rar message
+  nr_fill_rar(module_idP, ra, cc->RAR_pdu.payload, pusch_pdu);
+
 }
 
 // WIP
@@ -461,7 +504,7 @@ void nr_generate_Msg2(module_id_t module_idP,
 
   int UE_id = 0, dci_formats[2], rnti_types[2], CCEIndex, mcsIndex;
   int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment;
-  int coreset_id, aggregation , search_space_type = 0, N_RB_UL = 106;
+  int coreset_id, aggregation , search_space_type = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[0];
   NR_RA_t                               *ra = &cc->ra[0];
@@ -528,6 +571,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
       "downlinkBWP_ToAddModList has %d BWP!\n", secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
     NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+    NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
     LOG_D(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
 
@@ -633,10 +677,9 @@ void nr_generate_Msg2(module_id_t module_idP,
     dl_req->nPDUs+=2;
 
     // Program UL processing for Msg3
-    nr_get_Msg3alloc(scc, slotP, frameP, ra);
+    nr_get_Msg3alloc(scc, ubwp, slotP, frameP, ra);
     LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
     nr_add_msg3(module_idP, CC_id, frameP, slotP);
-    nr_fill_rar(module_idP, ra, cc[CC_id].RAR_pdu.payload, N_RB_UL);
     ra->state = WAIT_Msg3;
     LOG_D(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
 
@@ -699,17 +742,14 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
 void nr_fill_rar(uint8_t Mod_idP,
                  NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
-                 uint16_t N_RB_UL){
+                 nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
   LOG_D(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d ", ra->Msg2_frame, ra-> Msg2_slot);
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus-1].pusch_pdu;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
-  unsigned char frequency_hopping_flag = 0, csi_req = 0, tpc_command = 0, mcs = 9, t_alloc = 0;
-  uint8_t N_UL_Hop;
-  uint16_t ul_grant, f_alloc, prb_alloc;
-  int bwp_size;
+  unsigned char csi_req = 0, tpc_command = 0;
+  uint8_t N_UL_Hop, valid_bits;
+  uint16_t ul_grant, f_alloc, prb_alloc, bwp_size, truncation=0;
 
   /// E/T/RAPID subheader ///
   // E = 0, one only RAR, first and last
@@ -717,7 +757,6 @@ void nr_fill_rar(uint8_t Mod_idP,
   rarh->E = 0;
   rarh->T = 1;
   rarh->RAPID = ra->preamble_index;
-
 
   /// RAR MAC payload ///
   rar->R = 0;
@@ -732,19 +771,27 @@ void nr_fill_rar(uint8_t Mod_idP,
 
   // UL grant
 
-  ra->msg3_mcs = mcs;
+  ra->msg3_mcs = pusch_pdu->mcs_index;
   ra->msg3_TPC = tpc_command;
 
   bwp_size = pusch_pdu->bwp_size;
   prb_alloc = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bwp_size);
-  if (frequency_hopping_flag){
-    // PUSCH with frequency hopping
-  } else {
-    N_UL_Hop = 0;
+  if (bwp_size>180) {
+    AssertFatal(1==0,"Initial UBWP larger than 180 currently not supported");
+  }
+  else {
+    valid_bits = (uint8_t)ceil(log2(bwp_size*(bwp_size+1)>>1));
   }
 
-  f_alloc = (prb_alloc & 0xfff) | (N_UL_Hop << 12);
-  ul_grant = csi_req | (tpc_command << 1) | (mcs << 4) | (t_alloc << 8) | (f_alloc << 12) | (frequency_hopping_flag << 26);
+  if (pusch_pdu->frequency_hopping){
+    AssertFatal(1==0,"PUSCH with frequency hopping currently not supported");
+  } else {
+    for (int i=0; i<valid_bits; i++)
+      truncation |= (1<<i);
+    f_alloc = (prb_alloc&truncation);
+  }
+
+  ul_grant = csi_req | (tpc_command << 1) | (ra->msg3_mcs << 4) | (ra->Msg3_tda_id << 8) | (f_alloc << 12) | (pusch_pdu->frequency_hopping << 26);
 
   rar->UL_GRANT_1 = (uint8_t) (ul_grant >> 24) & 0x07;
   rar->UL_GRANT_2 = (uint8_t) (ul_grant >> 16) & 0xff;

@@ -798,7 +798,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
                                                  0,
-						 pusch_pdu->nrOfLayers = 1);
+						 pusch_pdu->nrOfLayers = 1)>>3;
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;
   //pusch_pdu->pusch_uci;
