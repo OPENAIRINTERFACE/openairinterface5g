@@ -11,11 +11,47 @@ from multiprocessing import Process, Lock, SimpleQueue
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
-import sshconnection as mySSH
-#from sshconnection import mySSHConnection as mySSH
+import sshconnection as SSH
+import epc 
 import helpreadme as HELP
 import constants as CONST
+import html as HTML
 
+EPC = epc.EPCManagement()
+
+ALL_PROCESSES_OK = CONST.ALL_PROCESSES_OK
+ENB_PROCESS_FAILED = CONST.ENB_PROCESS_FAILED
+ENB_PROCESS_OK = CONST.ENB_PROCESS_OK
+ENB_PROCESS_SEG_FAULT = CONST.ENB_PROCESS_SEG_FAULT
+ENB_PROCESS_ASSERTION = CONST.ENB_PROCESS_ASSERTION
+ENB_PROCESS_REALTIME_ISSUE = CONST.ENB_PROCESS_REALTIME_ISSUE
+ENB_PROCESS_NOLOGFILE_TO_ANALYZE = CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE
+ENB_PROCESS_SLAVE_RRU_NOT_SYNCED = CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
+HSS_PROCESS_FAILED = CONST.HSS_PROCESS_FAILED
+HSS_PROCESS_OK = CONST.HSS_PROCESS_OK
+MME_PROCESS_FAILED = CONST.MME_PROCESS_FAILED
+MME_PROCESS_OK = CONST.MME_PROCESS_OK
+SPGW_PROCESS_FAILED = CONST.SPGW_PROCESS_FAILED
+SPGW_PROCESS_OK = CONST.SPGW_PROCESS_OK
+UE_IP_ADDRESS_ISSUE = CONST.UE_IP_ADDRESS_ISSUE
+OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE = CONST.OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE
+OAI_UE_PROCESS_COULD_NOT_SYNC = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+OAI_UE_PROCESS_ASSERTION = CONST.OAI_UE_PROCESS_ASSERTION
+OAI_UE_PROCESS_FAILED = CONST.OAI_UE_PROCESS_FAILED
+OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE
+OAI_UE_PROCESS_SEG_FAULT = CONST.OAI_UE_PROCESS_SEG_FAULT
+OAI_UE_PROCESS_OK = CONST.OAI_UE_PROCESS_OK
+
+UE_STATUS_DETACHED = CONST.UE_STATUS_DETACHED
+UE_STATUS_DETACHING = CONST.UE_STATUS_DETACHING
+UE_STATUS_ATTACHING = CONST.UE_STATUS_ATTACHING
+UE_STATUS_ATTACHED = CONST.UE_STATUS_ATTACHED
+
+X2_HO_REQ_STATE__IDLE = CONST.X2_HO_REQ_STATE__IDLE
+X2_HO_REQ_STATE__TARGET_RECEIVES_REQ = CONST.X2_HO_REQ_STATE__TARGET_RECEIVES_REQ
+X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE = CONST.X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE
+X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ = CONST.X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ
+X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK = CONST.X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -45,7 +81,7 @@ class RANManagement():
 		#self.ADBUserName = ''
 		#self.ADBPassword = ''
 		#self.ADBCentralized = True
-		#self.testCase_id = ''
+		self.testCase_id = ''
 		#self.testXMLfiles = []
 		#self.nbTestXMLfiles = 0
 		#self.desc = ''
@@ -110,12 +146,19 @@ class RANManagement():
 		#self.Build_OAI_UE_args = ''
 		#self.Initialize_OAI_UE_args = ''
 		#self.clean_repository = True
-		#self.flexranCtrlInstalled = False
-		#self.flexranCtrlStarted = False
+		self.flexranCtrlInstalled = False
+		self.flexranCtrlStarted = False
 		#self.expectedNbOfConnectedUEs = 0
 		#self.startTime = 0
 
-
+	def SettestCase_id(self,tcid):
+		self.testCase_id = tcid
+	def SetflexranCtrlInstalled(self,fxrctin):
+		self.flexranCtrlInstalled = fxrctin
+	def SetflexranCtrlStarted(self,fxrctst):
+		self.flexranCtrlStarted = fxrctst
+	def SetpStatus(self, pSt):
+		self.pStatus = pSt
 	def SetranRepository(self, repository):
 		self.ranRepository = repository
 	def GetranRepository(self):
@@ -241,14 +284,22 @@ class RANManagement():
 	def GeteNB2SourceCodePath(self):
 		return self.eNB2SourceCodePath
 
+	def SetprematureExit(self, premex):
+		self.prematureExit = premex
+	def GetprematureExit(self):
+		return self.prematureExit
 
 
 	def BuildeNB(self):
+		myHTML = HTML.HTMLManagement()
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		if self.eNB_serverId == '0':
+			#checkpoint enB_serverId
 			lIpAddr = self.eNBIPAddress
+			print(self.eNBIPAddress + 'self.eNBIPAddress')
+			print(lIpAddr + 'lIpAddr')
 			lUserName = self.eNBUserName
 			lPassWord = self.eNBPassword
 			lSourcePath = self.eNBSourceCodePath
@@ -262,11 +313,12 @@ class RANManagement():
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
+		print(lIpAddr + 'just before the error')
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
 		mySSH = SSH.SSHConnection()
-                mySSH.open(lIpAddr, lUserName, lPassWord)
+		mySSH.open(lIpAddr, lUserName, lPassWord)
 		# Check if we build an 5G-NR gNB or an LTE eNB
 		result = re.search('--gNB', self.Build_eNB_args)
 		if result is not None:
@@ -316,7 +368,7 @@ class RANManagement():
 						mismatch = True
 				if not mismatch:
 					mySSH.close()
-					self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+					myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 					return
 
 		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
@@ -342,7 +394,7 @@ class RANManagement():
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=build_enb_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.close()
-			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+			myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
 			return
 		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
@@ -369,7 +421,7 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-                mySSH = SSH.SSHConnection()
+		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		count = 40
 		buildOAIprocess = True
@@ -384,8 +436,9 @@ class RANManagement():
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)])
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
+		myHTML = HTML.HTMLManagement()
 		mySSH = SSH.SSHConnection()
-                mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
+		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
 		mySSH.command('ls ran_build/build', '\$', 3)
 		mySSH.command('ls ran_build/build', '\$', 3)
 		if self.air_interface == 'nr':
@@ -432,15 +485,16 @@ class RANManagement():
 
 		if buildStatus:
 			logging.info('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Pass\u001B[0m')
-			self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+			myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 		else:
 			logging.error('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Failed\u001B[0m')
-			self.CreateHtmlTestRow(self.Build_eNB_args, 'KO', ALL_PROCESSES_OK)
-			self.CreateHtmlTabFooter(False)
+			myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'KO', ALL_PROCESSES_OK)
+			myHTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
 
 	def InitializeeNB(self):
+		myHTML = HTML.HTMLManagement()
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -459,13 +513,13 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-                mySSH = SSH.SSHConnection()
-		check_eNB = False
-		check_OAI_UE = False
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
-		if (pStatus < 0):
-			self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
-			self.CreateHtmlTabFooter(False)
+		mySSH = SSH.SSHConnection()
+		#check_eNB = False
+		#check_OAI_UE = False
+		#pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
+		if (self.pStatus < 0):
+			myHTML.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', self.pStatus)
+			myHTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
@@ -476,7 +530,7 @@ class RANManagement():
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
-				EPC.Get_PcapFileName()  = 'enb_' + self.testCase_id + '_s1log.pcap'
+				EPC.Set_PcapFileName('enb_' + self.testCase_id + '_s1log.pcap')
 				mySSH.command('echo ' + EPC.GetPassword() + ' | sudo -S rm -f /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
 				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + EPC.Get_PcapFileName()  + ' > /tmp/tshark.log 2>&1 &', EPC.GetUserName(), 5)
 			mySSH.close()
@@ -566,7 +620,7 @@ class RANManagement():
 				mySSH.close()
 				doLoop = False
 				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
-				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
+				myHTML.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
@@ -616,7 +670,7 @@ class RANManagement():
 			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId)
 
 		mySSH.close()
-		self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
+		myHTML.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
 
@@ -640,7 +694,7 @@ class RANManagement():
 				lIpAddr = self.eNBIPAddress
 				lUserName = self.eNBUserName
 				lPassWord = self.eNBPassword
-                        mySSH = SSH.SSHConnection()
+			mySSH = SSH.SSHConnection()
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface + '-softmodem | grep -v grep', '\$', 5)
 			result = re.search(self.air_interface + '-softmodem', mySSH.getBefore())
@@ -656,6 +710,7 @@ class RANManagement():
 
 
 	def TerminateeNB(self):
+		myHTML = HTML.HTMLManagement()
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -674,7 +729,7 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-                mySSH = SSH.SSHConnection()
+		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		if self.air_interface == 'lte':
@@ -721,7 +776,7 @@ class RANManagement():
 			mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
-			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			myHTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
 			analyzeFile = False
@@ -734,7 +789,7 @@ class RANManagement():
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
-					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					myHTML.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId != '0':
@@ -742,20 +797,20 @@ class RANManagement():
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
-					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					myHTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.preamtureExit = True
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
-					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+					myHTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			else:
-				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+				myHTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
 
 	def LogCollecteNB(self):
-                mySSH = SSH.SSHConnection()
+		mySSH = SSH.SSHConnection()
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
@@ -763,3 +818,260 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
 		mySSH.close()
+
+
+	def AnalyzeLogFile_eNB(self, eNBlogFile):
+		if (not os.path.isfile('./' + eNBlogFile)):
+			return -1
+		enb_log_file = open('./' + eNBlogFile, 'r')
+		exitSignalReceived = False
+		foundAssertion = False
+		msgAssertion = ''
+		msgLine = 0
+		foundSegFault = False
+		foundRealTimeIssue = False
+		rrcSetupComplete = 0
+		rrcReleaseRequest = 0
+		rrcReconfigRequest = 0
+		rrcReconfigComplete = 0
+		rrcReestablishRequest = 0
+		rrcReestablishComplete = 0
+		rrcReestablishReject = 0
+		rlcDiscardBuffer = 0
+		rachCanceledProcedure = 0
+		uciStatMsgCount = 0
+		pdcpFailure = 0
+		ulschFailure = 0
+		cdrxActivationMessageCount = 0
+		dropNotEnoughRBs = 0
+		mbmsRequestMsg = 0
+		self.htmleNBFailureMsg = ''
+		isRRU = False
+		isSlave = False
+		slaveReceivesFrameResyncCmd = False
+		X2HO_state = X2_HO_REQ_STATE__IDLE
+		X2HO_inNbProcedures = 0
+		X2HO_outNbProcedures = 0
+		for line in enb_log_file.readlines():
+			if X2HO_state == X2_HO_REQ_STATE__IDLE:
+				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__TARGET_RECEIVES_REQ
+				result = re.search('source eNB receives the X2 HO ACK X2AP_HANDOVER_REQ_ACK', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK
+			if X2HO_state == X2_HO_REQ_STATE__TARGET_RECEIVES_REQ:
+				result = re.search('Received LTE_RRCConnectionReconfigurationComplete from UE', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE
+			if X2HO_state == X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE:
+				result = re.search('issue rrc_eNB_send_PATH_SWITCH_REQ', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ
+			if X2HO_state == X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ:
+				result = re.search('received path switch ack S1AP_PATH_SWITCH_REQ_ACK', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__IDLE
+					X2HO_inNbProcedures += 1
+			if X2HO_state == X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK:
+				result = re.search('source eNB receives the X2 UE CONTEXT RELEASE X2AP_UE_CONTEXT_RELEASE', str(line))
+				if result is not None:
+					X2HO_state = X2_HO_REQ_STATE__IDLE
+					X2HO_outNbProcedures += 1
+
+			if self.eNBOptions[int(self.eNB_instance)] != '':
+				res1 = re.search('max_rxgain (?P<requested_option>[0-9]+)', self.eNBOptions[int(self.eNB_instance)])
+				res2 = re.search('max_rxgain (?P<applied_option>[0-9]+)',  str(line))
+				if res1 is not None and res2 is not None:
+					requested_option = int(res1.group('requested_option'))
+					applied_option = int(res2.group('applied_option'))
+					if requested_option == applied_option:
+						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
+					else:
+						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
+			result = re.search('Exiting OAI softmodem', str(line))
+			if result is not None:
+				exitSignalReceived = True
+			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('./ran_build/build/lte-softmodem', str(line))
+			if result is not None and not exitSignalReceived:
+				foundSegFault = True
+			result = re.search('[Aa]ssertion', str(line))
+			if result is not None and not exitSignalReceived:
+				foundAssertion = True
+			result = re.search('LLL', str(line))
+			if result is not None and not exitSignalReceived:
+				foundRealTimeIssue = True
+			if foundAssertion and (msgLine < 3):
+				msgLine += 1
+				msgAssertion += str(line)
+			result = re.search('Setting function for RU', str(line))
+			if result is not None:
+				isRRU = True
+			if isRRU:
+				result = re.search('RU 0 is_slave=yes', str(line))
+				if result is not None:
+					isSlave = True
+				if isSlave:
+					result = re.search('Received RRU_frame_resynch command', str(line))
+					if result is not None:
+						slaveReceivesFrameResyncCmd = True
+			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
+			if result is not None:
+				rrcSetupComplete += 1
+			result = re.search('Generate LTE_RRCConnectionRelease|Generate RRCConnectionRelease', str(line))
+			if result is not None:
+				rrcReleaseRequest += 1
+			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
+			if result is not None:
+				rrcReconfigRequest += 1
+			result = re.search('LTE_RRCConnectionReconfigurationComplete from UE rnti', str(line))
+			if result is not None:
+				rrcReconfigComplete += 1
+			result = re.search('LTE_RRCConnectionReestablishmentRequest', str(line))
+			if result is not None:
+				rrcReestablishRequest += 1
+			result = re.search('LTE_RRCConnectionReestablishmentComplete', str(line))
+			if result is not None:
+				rrcReestablishComplete += 1
+			result = re.search('LTE_RRCConnectionReestablishmentReject', str(line))
+			if result is not None:
+				rrcReestablishReject += 1
+			result = re.search('CDRX configuration activated after RRC Connection', str(line))
+			if result is not None:
+				cdrxActivationMessageCount += 1
+			result = re.search('uci->stat', str(line))
+			if result is not None:
+				uciStatMsgCount += 1
+			result = re.search('PDCP.*Out of Resources.*reason', str(line))
+			if result is not None:
+				pdcpFailure += 1
+			result = re.search('ULSCH in error in round', str(line))
+			if result is not None:
+				ulschFailure += 1
+			result = re.search('BAD all_segments_received', str(line))
+			if result is not None:
+				rlcDiscardBuffer += 1
+			result = re.search('Canceled RA procedure for UE rnti', str(line))
+			if result is not None:
+				rachCanceledProcedure += 1
+			result = re.search('dropping, not enough RBs', str(line))
+			if result is not None:
+				dropNotEnoughRBs += 1
+			if self.eNBmbmsEnables[int(self.eNB_instance)]:
+				result = re.search('MBMS USER-PLANE.*Requesting.*bytes from RLC', str(line))
+				if result is not None:
+					mbmsRequestMsg += 1
+		enb_log_file.close()
+		logging.debug('   File analysis completed')
+		self.htmleNBFailureMsg = ''
+		if self.air_interface() == 'lte':
+			nodeB_prefix = 'e'
+		else:
+			nodeB_prefix = 'g'
+		if uciStatMsgCount > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if pdcpFailure > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if ulschFailure > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if dropNotEnoughRBs > 0:
+			statMsg = 'eNB showed ' + str(dropNotEnoughRBs) + ' "dropping, not enough RBs" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if rrcSetupComplete > 0:
+			rrcMsg = nodeB_prefix + 'NB completed ' + str(rrcSetupComplete) + ' RRC Connection Setup(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rrcReleaseRequest > 0:
+			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
+			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rrcReestablishRequest > 0 or rrcReestablishComplete > 0 or rrcReestablishReject > 0:
+			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReestablishComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if self.eNBmbmsEnables[int(self.eNB_instance)]:
+			if mbmsRequestMsg > 0:
+				rrcMsg = 'eNB requested ' + str(mbmsRequestMsg) + ' times the RLC for MBMS USER-PLANE'
+				logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+				self.htmleNBFailureMsg += rrcMsg + '\n'
+		if X2HO_inNbProcedures > 0:
+			rrcMsg = 'eNB completed ' + str(X2HO_inNbProcedures) + ' X2 Handover Connection procedure(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if X2HO_outNbProcedures > 0:
+			rrcMsg = 'eNB completed ' + str(X2HO_outNbProcedures) + ' X2 Handover Release procedure(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if self.eNBOptions[int(self.eNB_instance)] != '':
+			res1 = re.search('drx_Config_present prSetup', self.eNBOptions[int(self.eNB_instance)])
+			if res1 is not None:
+				if cdrxActivationMessageCount > 0:
+					rrcMsg = 'eNB activated the CDRX Configuration for ' + str(cdrxActivationMessageCount) + ' time(s)'
+					logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rrcMsg + '\n'
+				else:
+					rrcMsg = 'eNB did NOT ACTIVATE the CDRX Configuration'
+					logging.debug('\u001B[1;37;43m ' + rrcMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rachCanceledProcedure > 0:
+			rachMsg = nodeB_prefix + 'NB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
+			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rachMsg + '\n'
+		if isRRU:
+			if isSlave:
+				if slaveReceivesFrameResyncCmd:
+					rruMsg = 'Slave RRU received the RRU_frame_resynch command from RAU'
+					logging.debug('\u001B[1;30;43m ' + rruMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rruMsg + '\n'
+				else:
+					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
+					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
+					self.htmleNBFailureMsg += rruMsg + '\n'
+					self.prematureExit(True)
+					return ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
+		if foundSegFault:
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
+			return ENB_PROCESS_SEG_FAULT
+		if foundAssertion:
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with an assertion! \u001B[0m')
+			self.htmleNBFailureMsg += msgAssertion
+			return ENB_PROCESS_ASSERTION
+		if foundRealTimeIssue:
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
+			self.htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
+			#return ENB_PROCESS_REALTIME_ISSUE
+		if rlcDiscardBuffer > 0:
+			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
+			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rlcMsg + '\n'
+			return ENB_PROCESS_REALTIME_ISSUE
+		return 0

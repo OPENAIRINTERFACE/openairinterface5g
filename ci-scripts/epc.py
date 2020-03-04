@@ -6,6 +6,8 @@ import re               # reg
 import logging
 import os
 import time
+import signal
+
 from multiprocessing import Process, Lock, SimpleQueue
 
 #-----------------------------------------------------------
@@ -49,23 +51,22 @@ class EPCManagement():
 	def GetType(self):
 		return self.EPCType
 	def Set_PcapFileName(self, pcapfn):
-		self.PcapFileName = pcapfn
+		self.EPC_PcapFileName = pcapfn
 	def Get_PcapFileName(self):
-		return self.PcapFileName
+		return self.EPC_PcapFileName
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
 			HELP.GenericHelp(Version)
 			HELP.EPCSrvHelp(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath, self.EPCType)
 			sys.exit('Insufficient EPC Parameters')
-		#mySSH = SSH() 
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		if re.match('OAI-Rel14-CUPS', self.EPCType, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
 			mySSH.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			logging.debug('\u001B[1m Launching tshark on all interfaces \u001B[0m')
-			EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
+			self.EPC_PcapFileName = 'epc_' + self.testCase_id + '.pcap'
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f ' + self.EPC_PcapFileName, '\$', 5)
 			mySSH.command('echo $USER; nohup sudo tshark -f "tcp port not 22 and port not 53" -i any -w ' + self.EPCSourceCodePath + '/scripts/' + self.EPC_PcapFileName + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S mkdir -p logs', '\$', 5)
@@ -85,7 +86,8 @@ class EPCManagement():
 			mySSH.command('mkdir -p ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/hss_sim0609', '\$', 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
-			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
+			#mySSH.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
+			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo su -c "screen -dm -S simulated_hss ./starthss"', '\$', 5)
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
@@ -248,7 +250,8 @@ class EPCManagement():
 			mySSH.command('cd scripts', '\$', 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
 			time.sleep(1)
-			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
+			#mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
+			mySSH.command('echo ' + self.EPCPassword + ' | sudo killall hss_sim', '\$', 5)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
