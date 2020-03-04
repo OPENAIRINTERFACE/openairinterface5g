@@ -593,21 +593,20 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
     void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
-
+    *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
       int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
+      // we write before read becasue gNB waits for UE to write and both executions halt
+      // this happens here as the read size is samples_per_subframe which is very much larger than samp_per_slot
+      if (IS_SOFTMODEM_RFSIM) dummyWrite(UE,*timestamp, unitTransfer);
       AssertFatal(unitTransfer ==
                   UE->rfdevice.trx_read_func(&UE->rfdevice,
                                              timestamp,
                                              (void **)UE->common_vars.rxdata,
                                              unitTransfer,
                                              UE->frame_parms.nb_antennas_rx),"");
+      *timestamp += unitTransfer; // this does not affect the read but needed for RFSIM write
     }
-
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      free(dummy_tx[i]);
 
 }
 
