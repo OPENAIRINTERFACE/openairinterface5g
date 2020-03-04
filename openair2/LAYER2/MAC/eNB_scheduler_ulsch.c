@@ -171,7 +171,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       UE_scheduling_control->pusch_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
       
       if(UE_scheduling_control->pusch_snr[CC_idP] > 0 || UE_scheduling_control->pusch_snr[CC_idP] < 63) {
-        double snr_filter_tpc=0.9;
+        double snr_filter_tpc=0.7;
         int snr_thres_tpc=30;
         int diff = UE_scheduling_control->pusch_snr_avg[CC_idP] - UE_scheduling_control->pusch_snr[CC_idP];
         if(abs(diff) < snr_thres_tpc) {

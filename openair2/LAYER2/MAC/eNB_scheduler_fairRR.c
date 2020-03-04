@@ -3135,7 +3135,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
       // this assumes accumulated tpc
       // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
       int32_t framex10psubframe = UE_template->pusch_tpc_tx_frame*10+UE_template->pusch_tpc_tx_subframe;
-      int pusch_tpc_interval=10;
+      int pusch_tpc_interval=500;
 
       if (((framex10psubframe+pusch_tpc_interval)<=(frameP*10+subframeP)) || //normal case
           ((framex10psubframe>(frameP*10+subframeP)) && (((10240-framex10psubframe+frameP*10+subframeP)>=pusch_tpc_interval)))) { //frame wrap-around
