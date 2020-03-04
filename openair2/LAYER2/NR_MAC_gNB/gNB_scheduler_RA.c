@@ -263,11 +263,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
-  LOG_I(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, slotP, preamble_index);
+  LOG_I(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, slotP, preamble_index);
 
   if (ra->state == RA_IDLE) {
     int loop = 0;
-    LOG_D(MAC, "Frame %d, Subframe %d: Activating RA process \n", frameP, slotP);
+    LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;
     ra->timing_offset = timing_offset;
     ra->preamble_slot = slotP;
@@ -747,9 +747,11 @@ void nr_fill_rar(uint8_t Mod_idP,
   LOG_D(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d ", ra->Msg2_frame, ra-> Msg2_slot);
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
-  unsigned char csi_req = 0, tpc_command = 0;
+  unsigned char csi_req = 0, tpc_command;
   uint8_t N_UL_Hop, valid_bits;
   uint16_t ul_grant, f_alloc, prb_alloc, bwp_size, truncation=0;
+
+  tpc_command = 3; // this is 0 dB
 
   /// E/T/RAPID subheader ///
   // E = 0, one only RAR, first and last
