@@ -48,9 +48,7 @@
 #include "assertions.h"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "ENB_APP/flexran_agent_defs.h"
 #include "flexran_agent_ran_api.h"
@@ -935,6 +933,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU, 0);
   stop_meas(&mac->rx_ulsch_sdu);
 }
+
 
 //-----------------------------------------------------------------------------
 /*

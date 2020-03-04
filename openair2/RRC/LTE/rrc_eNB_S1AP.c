@@ -58,7 +58,7 @@
 #include "TLVDecoder.h"
 #include "S1AP_NAS-PDU.h"
 #include "flexran_agent_common_internal.h"
-
+#include "executables/softmodem-common.h"
 extern RAN_CONTEXT_t RC;
 
 extern int
@@ -540,9 +540,10 @@ rrc_pdcp_config_security(
   derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                      ue_context_pP->ue_context.kenb,
                      &kRRCint);
-#if !defined(USRP_REC_PLAY)
+ if (!IS_SOFTMODEM_IQPLAYER) {
   SET_LOG_DUMP(DEBUG_SECURITY) ;
-#endif
+ }
+
 
   if ( LOG_DUMPFLAG( DEBUG_SECURITY ) ) {
     if (print_keys ==1 ) {

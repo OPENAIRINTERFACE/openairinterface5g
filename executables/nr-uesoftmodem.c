@@ -135,6 +135,7 @@ int                      threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+//int32_t					 uplink_counter = 0;
 
 
 extern int16_t nr_dlsch_demod_shift;
@@ -332,8 +333,6 @@ void init_scope(void) {
 
 }
 
-
-#if defined(ENABLE_ITTI)
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -373,7 +372,7 @@ void *l2l1_task(void *arg) {
 
   return NULL;
 }
-#endif
+
 
 int16_t dlsch_demod_shift;
 
@@ -650,7 +649,7 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
   get_options (); //Command-line options, enb_properties
-  get_common_options();
+  get_common_options(SOFTMODEM_5GUE_BIT );
 #if T_TRACER
   T_Config_Init();
 #endif

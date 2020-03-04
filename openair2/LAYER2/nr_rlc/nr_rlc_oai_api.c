@@ -33,13 +33,13 @@
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
 
 /* TODO: handle time a bit more properly */
-#if 0
+//#if 0
 static uint64_t nr_rlc_current_time;
 static int      nr_rlc_current_time_last_frame;
 static int      nr_rlc_current_time_last_subframe;
-#endif
+//#endif
 
-#if 0
+//#if 0
 void mac_rlc_data_ind     (
   const module_id_t         module_idP,
   const rnti_t              rntiP,
@@ -68,6 +68,9 @@ void mac_rlc_data_ind     (
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
+  if(ue == NULL)
+	  LOG_I(RLC, "RLC instance for the given UE was not found \n");
+
   switch (channel_idP) {
   case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
   case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
@@ -75,6 +78,7 @@ void mac_rlc_data_ind     (
   }
 
   if (rb != NULL) {
+	LOG_D(RLC, "RB found! (channel ID %d) \n", channel_idP);
     rb->set_time(rb, nr_rlc_current_time);
     rb->recv_pdu(rb, buffer_pP, tb_sizeP);
   } else {
@@ -177,11 +181,11 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   if (rb != NULL) {
     nr_rlc_entity_buffer_status_t buf_stat;
     rb->set_time(rb, nr_rlc_current_time);
-    /* 36.321 deals with BSR values up to 3000000 bytes, after what it
-     * reports '> 3000000' (table 6.1.3.1-2). Passing 4000000 is thus
+    /* 38.321 deals with BSR values up to 81338368 bytes, after what it
+     * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 4000000);
+    buf_stat = rb->buffer_status(rb, 100000000);
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
@@ -199,11 +203,66 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   ret.head_sdu_is_segmented = 0;
   return ret;
 }
-#endif
+//#endif
+
+rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
+  const module_id_t       module_idP,
+  const rnti_t            rntiP,
+  const eNB_index_t       eNB_index,
+  const frame_t           frameP,
+  const sub_frame_t       subframeP,
+  const eNB_flag_t        enb_flagP,
+  const logical_chan_id_t channel_idP)
+{
+  nr_rlc_ue_t *ue;
+  rlc_buffer_occupancy_t ret;
+  nr_rlc_entity_t *rb;
+
+  if (enb_flagP) {
+    LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
+    exit(1);
+  }
+
+  /* TODO: handle time a bit more properly */
+  if (nr_rlc_current_time_last_frame != frameP ||
+      nr_rlc_current_time_last_subframe != subframeP) {
+    nr_rlc_current_time++;
+    nr_rlc_current_time_last_frame = frameP;
+    nr_rlc_current_time_last_subframe = subframeP;
+  }
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
+
+  switch (channel_idP) {
+  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
+  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  default:      rb = NULL;                     break;
+  }
+
+  if (rb != NULL) {
+    nr_rlc_entity_buffer_status_t buf_stat;
+    rb->set_time(rb, nr_rlc_current_time);
+    /* 38.321 deals with BSR values up to 81338368 bytes, after what it
+     * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
+     * more than enough.
+     */
+    buf_stat = rb->buffer_status(rb, 100000000);
+    ret = buf_stat.status_size
+        + buf_stat.retx_size
+        + buf_stat.tx_size;
+  } else {
+    ret = 0;
+  }
+
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+
+  return ret;
+}
 
 int oai_emulation;
 
-#if 0
+//#if 0
 rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const srb_flag_t   srb_flagP,
                                   const MBMS_flag_t  MBMS_flagP,
@@ -255,9 +314,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
   return RLC_OP_STATUS_OK;
 }
-#endif
+//#endif
 
-#if 0
+//#if 0
 int rlc_module_init(int enb_flag)
 {
   static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -278,13 +337,13 @@ int rlc_module_init(int enb_flag)
 
   return 0;
 }
-#endif
+//#endif
 
-#if 0
+//#if 0
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, const signed long sizeP)
 {
 }
-#endif
+//#endif
 
 static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
 {
@@ -755,7 +814,7 @@ __attribute__ ((unused)) static void add_drb(int rnti, struct LTE_DRB_ToAddMod *
   }
 }
 
-#if 0
+//#if 0
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
     const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const LTE_DRB_ToAddModList_t   * const drb2add_listP,
@@ -800,9 +859,9 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   return RLC_OP_STATUS_OK;
 }
-#endif
+//#endif
 
-#if 0
+//#if 0
 rlc_op_status_t rrc_rlc_config_req   (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t      srb_flagP,
@@ -861,16 +920,16 @@ rlc_op_status_t rrc_rlc_config_req   (
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
   return RLC_OP_STATUS_OK;
 }
-#endif
+//#endif
 
-#if 0
+//#if 0
 void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t rrc_data_confP)
 {
   /* nothing to do */
 }
-#endif
+//#endif
 
-#if 0
+//#if 0
 rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 {
   LOG_D(RLC, "%s:%d:%s: remove UE %d\n", __FILE__, __LINE__, __FUNCTION__, x->rnti);
@@ -880,4 +939,4 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 
   return RLC_OP_STATUS_OK;
 }
-#endif
+//#endif

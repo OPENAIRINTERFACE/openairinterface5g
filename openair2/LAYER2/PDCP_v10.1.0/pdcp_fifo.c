@@ -129,6 +129,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
 
       ret = sendto(pdcp_pc5_sockfd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),
                    sizeof(sidelink_pc5s_element), 0, (struct sockaddr *)&prose_pdcp_addr,sizeof(prose_pdcp_addr) );
+
     } else if (UE_NAS_USE_TUN) {
       //ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        if(rb_id == mbms_rab_id){
@@ -137,18 +138,33 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
         }
        else
        {
-       ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+		#if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
+    		LOG_I(PHY, "PDCP output to be sent to TUN interface: \n");
+    		for (int i = sizeof(pdcp_data_ind_header_t); i < sizeToWrite; i++) {
+    			printf("%02x ",(unsigned char)sdu_p->data[i]);
+    		}
+    		printf("\n");
+    	#endif
+    	ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        //LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
        }
     } else if (ENB_NAS_USE_TUN) {
-      ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+		#if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
+    		LOG_I(PHY, "PDCP output to be sent to TUN interface: \n");
+    		for (int i = sizeof(pdcp_data_ind_header_t); i < sizeToWrite; i++) {
+    			printf("%02x ",(unsigned char)sdu_p->data[i]);
+    		}
+    		printf("\n");
+		#endif
+    	ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), sizeToWrite);
+
     } else if (PDCP_USE_NETLINK) {
       memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data,  sizeToWrite);
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
 
-    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
+    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
     
     #if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
     LOG_I(PDCP, "Printing first bytes of PDCP SDU before removing it from the list: \n");
@@ -241,6 +257,15 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
       LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id);
+
+#if defined  ENABLE_PDCP_PAYLOAD_DEBUG
+      LOG_I(PHY, "TUN interface output received from PDCP: \n");
+      for (int i = 0; i < 128; i++) {
+    	  printf("%02x ",(unsigned char)nl_rx_buf[i]);
+      }
+      printf("\n");
+#endif
+
       pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, (unsigned char *)nl_rx_buf,
                     PDCP_TRANSMISSION_MODE_DATA

@@ -150,5 +150,18 @@ void nr_ue_process_mac_pdu(
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 
+uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+           sub_frame_t subframe, uint8_t eNB_index,
+           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode);
+
+uint16_t
+nr_generate_ulsch_pdu(uint8_t *mac_pdu,
+					  uint8_t *sdus_payload,
+                      uint8_t num_sdus,
+                      uint16_t *sdu_lengths,
+                      uint8_t *sdu_lcids,
+                      uint16_t *crnti,
+                      uint16_t buflen);
+
 #endif
 /** @}*/

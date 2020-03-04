@@ -274,16 +274,6 @@ typedef struct {
 } log_t;
 
 
-#if defined(ENABLE_ITTI)
-typedef enum log_instance_type_e {
-  LOG_INSTANCE_UNKNOWN,
-  LOG_INSTANCE_ENB,
-  LOG_INSTANCE_UE,
-} log_instance_type_t;
-
-void log_set_instance_type (log_instance_type_t instance);
-#endif
-
 
 #ifdef LOG_MAIN
 log_t *g_log;

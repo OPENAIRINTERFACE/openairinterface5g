@@ -55,14 +55,12 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #include "T.h"
-
+#include "executables/softmodem-common.h"
 #include "common/ran_context.h"
 #include "LAYER2/MAC/eNB_scheduler_fairRR.h"
 
@@ -1353,28 +1351,31 @@ initiate_ra_proc(module_id_t module_idP,
 
       /* TODO: find better procedure to allocate RNTI */
       do {
-#if defined(USRP_REC_PLAY) // deterministic rnti in usrp record/playback mode
-        static int drnti[MAX_MOBILES_PER_ENB] = { 0xbda7, 0x71da, 0x9c40, 0xc350, 0x2710, 0x4e20, 0x7530, 0x1388, 0x3a98, 0x61a8, 0x88b8, 0xafc8, 0xd6d8, 0x1b58, 0x4268, 0x6978 };
-        int j = 0;
-        int nb_ue = 0;
+        if (IS_SOFTMODEM_IQPLAYER) {  /* iq player mode, use deterministic rnti */
+          static int drnti[MAX_MOBILES_PER_ENB];
+          static int drnti_def[]={ 0xbda7, 0x71da, 0x9c40, 0xc350, 0x2710, 0x4e20, 0x7530, 0x1388, 0x3a98, 0x61a8, 0x88b8, 0xafc8, 0xd6d8, 0x1b58, 0x4268, 0x6978 };
+          for (int j=0; j<MAX_MOBILES_PER_ENB && j< (sizeof(drnti_def)/sizeof(int));j++)
+          	  drnti[i]=drnti_def[i];
+          
+          int nb_ue = 0;
 
-        for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
-          if (UE_RNTI(module_idP, j) > 0) {
-            nb_ue++;
-          } else {
-            break;
+          for (int j = 0; j < MAX_MOBILES_PER_ENB; j++) {
+            if (UE_RNTI(module_idP, j) > 0) {
+              nb_ue++;
+            } else {
+              break;
+            }
           }
-        }
 
-        if (nb_ue >= MAX_MOBILES_PER_ENB) {
-          printf("No more free RNTI available, increase MAX_MOBILES_PER_ENB\n");
-          abort();
-        }
+          if (nb_ue >= MAX_MOBILES_PER_ENB || nb_ue >= (sizeof(drnti_def)/sizeof(int))) {
+            printf("No more free RNTI available, increase MAX_MOBILES_PER_ENB\n");
+            abort();
+          }
 
-        ra[i].rnti = drnti[nb_ue];
-#else
-        ra[i].rnti = taus();
-#endif
+          ra[i].rnti = drnti[nb_ue];
+        } else {
+          ra[i].rnti = taus();
+        }
         loop++;
       } while (loop != 100 &&
                /* TODO: this is not correct, the rnti may be in use without

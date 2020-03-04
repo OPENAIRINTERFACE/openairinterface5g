@@ -33,6 +33,8 @@
 #include "mac_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "executables/nr-softmodem.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"
 extern RAN_CONTEXT_t RC;
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
@@ -529,3 +531,4 @@ void nr_schedule_uss_ulsch_phytest(nfapi_nr_ul_tti_request_t *UL_tti_req,
     //pusch_pdu->beamforming; //not used for now
   }
 }
+

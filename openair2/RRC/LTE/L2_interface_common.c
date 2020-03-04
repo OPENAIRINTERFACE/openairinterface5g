@@ -37,9 +37,7 @@
 #include "msc.h"
 #include "common/ran_context.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 //#define RRC_DATA_REQ_DEBUG
 //#define DEBUG_RRC 1
@@ -135,7 +133,6 @@ rrc_data_ind(
           ctxt_pP->rnti);
   }
 
-#if defined(ENABLE_ITTI)
   {
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
@@ -152,11 +149,4 @@ rrc_data_ind(
     RRC_DCCH_DATA_IND (message_p).eNB_index  = ctxt_pP->eNB_index;
     itti_send_msg_to_task (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, ctxt_pP->instance, message_p);
   }
-#else
-  rrc_eNB_decode_dcch(
-    ctxt_pP,
-    DCCH_index,
-    buffer_pP,
-    sdu_sizeP);
-#endif
 }

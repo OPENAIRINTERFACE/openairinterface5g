@@ -56,9 +56,7 @@
 #include "pdcp.h"
 #include "targets/RT/USER/lte-softmodem.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "assertions.h"
 
@@ -2455,10 +2453,8 @@ ue_scheduler(const module_id_t module_idP,
   struct LTE_RACH_ConfigCommon *rach_ConfigCommon =
     (struct LTE_RACH_ConfigCommon *) NULL;
   protocol_ctxt_t ctxt;
-#if defined(ENABLE_ITTI)
   MessageDef *msg_p;
   int result;
-#endif
 #if UE_TIMING_TRACE
   start_meas(&UE_mac_inst[module_idP].ue_scheduler);
 #endif
@@ -2467,7 +2463,6 @@ ue_scheduler(const module_id_t module_idP,
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_NO,
                                  UE_mac_inst[module_idP].crnti, txFrameP,
                                  txSubframeP, eNB_indexP);
-#if defined(ENABLE_ITTI)
 
   if(module_idP == 0) {
     do {
@@ -2496,8 +2491,6 @@ ue_scheduler(const module_id_t module_idP,
       }
     } while (msg_p != NULL);
   }
-
-#endif
 
   //Mac_rlc_xface->frameP=frameP;
   //Rrc_xface->Frame_index=Mac_rlc_xface->frameP;

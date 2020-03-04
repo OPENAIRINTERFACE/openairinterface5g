@@ -67,21 +67,15 @@
   #include "UTIL/OSA/osa_defs.h"
 #endif
 
-#if defined(ENABLE_USE_MME)
-  #include "rrc_eNB_S1AP.h"
-  #include "rrc_eNB_GTPV1U.h"
-  #if defined(ENABLE_ITTI)
-  #else
-    #include "../../S1AP/s1ap_eNB.h"
-  #endif
-#endif
+#include "rrc_eNB_S1AP.h"
+#include "rrc_eNB_GTPV1U.h"
+
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
+
 
 #if ENABLE_RAL
   #include "rrc_eNB_ral.h"
@@ -200,11 +194,9 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 ///---------------------------------------------------------------------------------------------------------------///
 
 static void init_NR_SI(const protocol_ctxt_t *const ctxt_pP,
-                       const int              CC_id
-#if defined(ENABLE_ITTI)
-  ,
-  gNB_RrcConfigurationReq *configuration
-#endif
+                       const int              CC_id,
+                       gNB_RrcConfigurationReq *configuration
+
                       ) {
   //int                                 i;
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
@@ -219,20 +211,14 @@ static void init_NR_SI(const protocol_ctxt_t *const ctxt_pP,
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = 0;
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].MIB             = (uint8_t *) malloc16(4);
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = do_MIB_NR(&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id],0,
-#ifdef ENABLE_ITTI
-      configuration->MIB_ssb_SubcarrierOffset[CC_id],
-      configuration->pdcch_ConfigSIB1[CC_id],
-      configuration->MIB_subCarrierSpacingCommon[CC_id],
-      configuration->MIB_dmrs_TypeA_Position[CC_id]
-#else
-      0,0,15,2
-#endif
+  configuration->MIB_ssb_SubcarrierOffset[CC_id],
+  configuration->pdcch_ConfigSIB1[CC_id],
+  configuration->MIB_subCarrierSpacingCommon[CC_id],
+  configuration->MIB_dmrs_TypeA_Position[CC_id]
                                                                           );
   do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
                              CC_id,
-#if defined(ENABLE_ITTI)
                              configuration,
-#endif
                              1
                             );
   LOG_I(NR_RRC,"Done init_NR_SI\n");
@@ -268,9 +254,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 #endif
   AssertFatal(RC.nrrrc[gnb_mod_idP] != NULL, "RC.nrrrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
-#ifdef ENABLE_ITTI
   AssertFatal(configuration!=NULL,"configuration input is null\n");
-#endif
+
   RC.nrrrc[ctxt.module_id]->Nb_ue = 0;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -287,10 +272,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     init_NR_SI(&ctxt,
-               CC_id
-#if defined(ENABLE_ITTI)
-               ,configuration
-#endif
+               CC_id,
+               configuration
               );
   }//END for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
 
@@ -302,7 +285,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
-#if defined(ENABLE_ITTI)
+
 
 void *rrc_gnb_task(void *args_p) {
   MessageDef                         *msg_p;
@@ -408,4 +391,3 @@ void *rrc_gnb_task(void *args_p) {
   }
 }
 
-#endif //END #if defined(ENABLE_ITTI)

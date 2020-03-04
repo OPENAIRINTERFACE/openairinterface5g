@@ -91,10 +91,8 @@ LTE_DRX_Config_t *do_DrxConfig(int CC_id, RrcConfigurationReq *configuration, LT
 @param br_flag Do for BL/CE UE configuration
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, BOOLEAN_t brOption
-#if defined(ENABLE_ITTI)
-  ,RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, BOOLEAN_t brOption,
+  RrcConfigurationReq *configuration
                );
 
 /**
@@ -120,10 +118,8 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcCo
 @param MBMS_flag Indicates presence of MBMS system information (when 1)
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB23(uint8_t Mod_id,int CC_id, BOOLEAN_t brOption
-#if defined(ENABLE_ITTI)
-  , RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB23(uint8_t Mod_id,int CC_id, BOOLEAN_t brOption,
+  RrcConfigurationReq *configuration
                 );
 
 /**
