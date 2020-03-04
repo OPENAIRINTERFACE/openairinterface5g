@@ -209,8 +209,8 @@ void fill_rach_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL
 	    UL_INFO->rach_ind.rach_indication_body.preamble_list[0].instance_length					 = 0;
 
 
-	          LOG_E(PHY,"\n\n\n\nDJP - this needs to be sent to VNF **********************************************\n\n\n\n");
-	          LOG_E(PHY,"UE Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+	          //LOG_E(PHY,"\n\n\n\nDJP - this needs to be sent to VNF **********************************************\n\n\n\n");
+	          LOG_I(PHY,"UE Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
 	        	  UL_INFO->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
 	        	  UL_INFO->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
 	        	  UL_INFO->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti,
@@ -685,7 +685,7 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) //,
 				if((dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index >= 0) &&(dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index <= tx_req_num_elems -1)){
 				//if(tx_request_pdu_list + dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index!= NULL){
 
-					LOG_E(MAC, "dl_config_req_UE_MAC 2 Received data: sfn/sf:%d PDU[%d] size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n", NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size, dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index, tx_req_num_elems);
+					LOG_I(MAC, "dl_config_req_UE_MAC 2 Received data: sfn/sf:%d PDU[%d] size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n", NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size, dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index, tx_req_num_elems);
 
 					ue_send_sdu(Mod_id, 0, sfn, sf,
 							tx_request_pdu_list[dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data,
@@ -699,7 +699,7 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) //,
 				}
 			}
 			else {
-				LOG_E(MAC,"[UE %d] Frame %d, subframe %d : DLSCH PDU from NFAPI not for this UE \n",Mod_id, sfn,sf);
+				LOG_W(MAC,"[UE %d] Frame %d, subframe %d : DLSCH PDU from NFAPI not for this UE \n",Mod_id, sfn,sf);
 				i++;
 			}
 		}
