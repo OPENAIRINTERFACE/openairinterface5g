@@ -79,10 +79,7 @@
   #include "UTIL/OTG/otg_vars.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "create_tasks.h"
-#endif
-
+#include "create_tasks.h"
 #include "system.h"
 
 
@@ -300,7 +297,7 @@ static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
      after all init have been performed                         */
-  get_common_options();
+  get_common_options(SOFTMODEM_4GUE_BIT );
   get_uethreads_params();
   paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
   paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
@@ -786,19 +783,11 @@ int main( int argc, char **argv ) {
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-#if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
-#else
-
-  while (oai_exit==0)
-    rt_sleep_ns(100000000ULL);
-
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
 
   // stop threads
   if(IS_SOFTMODEM_DOFORMS)

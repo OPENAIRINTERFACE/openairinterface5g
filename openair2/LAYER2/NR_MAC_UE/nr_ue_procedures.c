@@ -51,10 +51,13 @@
 #include "executables/softmodem-common.h"
 /* log utils */
 #include "common/utils/LOG/log.h"
+#include "SIMULATION/TOOLS/sim.h" // for taus
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include <stdio.h>
 #include <math.h>
+//int mbms_rab_id = 2047;
 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
@@ -2340,7 +2343,204 @@ void nr_ue_process_mac_pdu(
         }
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
-
         AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length < 0!\n");
     }
+}
+
+//---------------------------------------------------------------------------------
+
+
+uint16_t
+nr_generate_ulsch_pdu(uint8_t *mac_pdu,
+					  uint8_t *sdus_payload,
+                      uint8_t num_sdus,
+                      uint16_t *sdu_lengths,
+                      uint8_t *sdu_lcids,
+                      uint16_t *crnti,
+                      uint16_t buflen) {
+
+	NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
+	unsigned char * ulsch_buffer_ptr = sdus_payload;
+	uint8_t last_size=0;
+	uint16_t sdu_length_total=0;
+	int i;
+	int offset=0;
+
+	  // 2) Generation of ULSCH MAC SDU subheaders
+	  for (i = 0; i < num_sdus; i++) {
+	    LOG_D(MAC, "[gNB] Generate ULSCH header num sdu %d len sdu %d\n", num_sdus, sdu_lengths[i]);
+
+	    if (sdu_lengths[i] < 128) {
+	      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
+	      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
+	      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
+	      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
+	      last_size = 2;
+	    } else {
+	      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
+	      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
+	      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->LCID = sdu_lcids[i];
+	      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L1 = ((unsigned short) sdu_lengths[i] >> 8) & 0x7f;
+	      ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->L2 = (unsigned short) sdu_lengths[i] & 0xff;
+	      last_size = 3;
+	    }
+
+	    mac_pdu_ptr += last_size;
+
+	    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in
+	    memcpy((void *) mac_pdu_ptr, (void *) ulsch_buffer_ptr, sdu_lengths[i]);
+	    ulsch_buffer_ptr+= sdu_lengths[i];
+	    sdu_length_total+= sdu_lengths[i];
+	    mac_pdu_ptr += sdu_lengths[i];
+	  }
+
+	  offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
+
+	  // 4) Compute final offset for padding
+	  uint16_t padding_bytes = buflen - offset;
+	  LOG_D(MAC, "Number of padding bytes: %d \n", padding_bytes);
+	  if (padding_bytes > 0) {
+	    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
+	    ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = UL_SCH_LCID_PADDING;
+	    mac_pdu_ptr++;
+
+	  } else {
+	    // no MAC subPDU with padding
+	  }
+
+  return offset;
+}
+
+
+uint8_t
+nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+           sub_frame_t subframe, uint8_t eNB_index,
+           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
+  uint8_t total_rlc_pdu_header_len = 0;
+  int16_t buflen_remain = 0;
+  uint8_t lcid = 0;
+  uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  uint8_t sdu_lcids[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  uint16_t payload_offset = 0, num_sdus = 0;
+  uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
+  uint16_t sdu_length_total = 0;
+  //unsigned short post_padding = 0;
+
+  rlc_buffer_occupancy_t lcid_buffer_occupancy_old =
+    0, lcid_buffer_occupancy_new = 0;
+  LOG_D(MAC,
+        "[UE %d] MAC PROCESS UL TRANSPORT BLOCK at frame%d subframe %d TBS=%d\n",
+        module_idP, frameP, subframe, buflen);
+  AssertFatal(CC_id == 0,
+              "Transmission on secondary CCs is not supported yet\n");
+#if UE_TIMING_TRACE
+  start_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
+#endif
+
+  //NR_UE_MAC_INST_t *nr_ue_mac_inst = get_mac_inst(0);
+
+  // Check for DCCH first
+  // TO DO: Multiplex in the order defined by the logical channel prioritization
+  for (lcid = UL_SCH_LCID_SRB1;
+       lcid < NR_MAX_NUM_LCID; lcid++) {
+
+      lcid_buffer_occupancy_old =
+    		  //TODO: Replace static value with CRNTI
+        mac_rlc_get_buffer_occupancy_ind(module_idP,
+        								 0x1234, eNB_index, frameP, //nr_ue_mac_inst->crnti
+                                         subframe, ENB_FLAG_NO,
+                                         lcid);
+      lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
+
+      if(lcid_buffer_occupancy_new){
+
+        buflen_remain =
+          buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+        LOG_D(MAC,
+              "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
+              "send (Transport Block size %d SDU Length Total %d , mac header len %d, buflen_remain %d )\n", //BSR byte before Tx=%d
+              module_idP, frameP, lcid, lcid_buffer_occupancy_new,
+              buflen, sdu_length_total,
+              total_rlc_pdu_header_len, buflen_remain); // ,nr_ue_mac_inst->scheduling_info.BSR_bytes[nr_ue_mac_inst->scheduling_info.LCGID[lcid]]
+
+        while(buflen_remain > 0 && lcid_buffer_occupancy_new){
+
+        //TODO: Replace static value with CRNTI
+        sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+        						0x1234, eNB_index, //nr_ue_mac_inst->crnti
+                                frameP,
+                                ENB_FLAG_NO,
+                                MBMS_FLAG_NO,
+                                lcid,
+                                buflen_remain,
+                                (char *)&ulsch_sdus[sdu_length_total],0,
+                                0
+                                                );
+        AssertFatal(buflen_remain >= sdu_lengths[num_sdus],
+                    "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
+                    lcid, sdu_lengths[num_sdus], buflen_remain);
+
+        if (sdu_lengths[num_sdus]) {
+          sdu_length_total += sdu_lengths[num_sdus];
+          sdu_lcids[num_sdus] = lcid;
+
+
+          //Update total MAC Header size for RLC PDUs
+          /*if(sdu_lengths[num_sdus]<128)
+        	  total_rlc_pdu_header_len += 2;
+          else
+        	  total_rlc_pdu_header_len += 3;*/
+
+          total_rlc_pdu_header_len += MAX_RLC_SDU_SUBHEADER_SIZE; //rlc_pdu_header_len_last;
+
+          //Update number of SDU
+          num_sdus++;
+        }
+
+        /* Get updated BO after multiplexing this PDU */
+        //TODO: Replace static value with CRNTI
+
+        lcid_buffer_occupancy_new =
+          mac_rlc_get_buffer_occupancy_ind(module_idP,
+                                           0x1234, //nr_ue_mac_inst->crnti
+                                           eNB_index, frameP,
+                                           subframe, ENB_FLAG_NO,
+                                           lcid);
+        buflen_remain =
+                  buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+        }
+  }
+
+}
+
+  // Generate ULSCH PDU
+  if (num_sdus>0) {
+  payload_offset = nr_generate_ulsch_pdu(ulsch_buffer,  // mac header
+		  	  	  	  	  	  	  	  	 ulsch_sdus,
+                                         num_sdus,  // num sdus
+                                         sdu_lengths, // sdu length
+                                         sdu_lcids, // sdu lcid
+                                         NULL,  // crnti
+                                         buflen);  // long_bsr
+  }
+  else
+	  return 0;
+
+  // Padding: fill remainder of ULSCH with 0
+  if (buflen - payload_offset > 0){
+  	  for (int j = payload_offset; j < buflen; j++)
+  		  ulsch_buffer[j] = 0;
+  }
+
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+  LOG_I(MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
+  for (int i = 0; i < buflen ; i++) {
+	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
+	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+	  printf("%02x ",(unsigned char)ulsch_buffer[i]);
+  }
+  printf("\n");
+#endif
+
+  return 1;
 }

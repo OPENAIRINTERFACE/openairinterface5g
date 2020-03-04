@@ -46,9 +46,7 @@
 
 #include <time.h>
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);

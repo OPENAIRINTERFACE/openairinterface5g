@@ -674,7 +674,8 @@ class SSHConnection():
 			self.command('mkdir -p ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			self.command('cd /opt/hss_sim0609', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
-			self.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
+			# based on Robert's feedback, new method to run simulated HSS
+			self.command('sudo su -c "cd /opt/hss_sim0609 && screen -dm -S simulated_hss ./starthss_real"', '\$', 5)
 		else:
 			logging.error('This option should not occur!')
 		self.close()

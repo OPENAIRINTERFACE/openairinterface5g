@@ -36,7 +36,7 @@
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#include "executables/softmodem-common.h"
 
 //uint8_t ncs_cell[20][7];
 //#define DEBUG_PUCCH_TXS
@@ -801,9 +801,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       for (j=0; j<NUMBER_OF_UE_MAX; j++) {
         eNB->pucch1_stats_cnt[j][i]=0;
         eNB->pucch1ab_stats_cnt[j][i]=0;
-#if defined(USRP_REC_PLAY) // not 100% sure
-        eNB->pucch1_stats_thres[j][i]=0;
-#endif
+        if ( IS_SOFTMODEM_IQPLAYER)
+          eNB->pucch1_stats_thres[j][i]=0;
       }
     }
 
@@ -1193,15 +1192,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       stat_re=0;
       stat_im=0;
       // Do detection now
-#if defined(USRP_REC_PLAY)
 
-      // It looks like the value is a bit messy when RF is replayed.
+
+      // It looks like the pucch1_thres value is a bit messy when RF is replayed.
       // For instance i assume to skip pucch1_thres from the test below.
       // Not 100% sure
-      if (sigma2_dB<(dB_fixed(stat_max)))  {//
-#else
-      if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
-#endif
+        
+        if (sigma2_dB<(dB_fixed(stat_max) - (IS_SOFTMODEM_IQPLAYER?0:pucch1_thres)) ) {//
         chL = (nsymb>>1)-4;
         chest_mag=0;
         cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
@@ -1339,11 +1336,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
         if (fmt==pucch_format1b)
           *(1+payload) = (stat_im<0) ? 1 : 2;
       } else { // insufficient energy on PUCCH so NAK
-#if defined(USRP_REC_PLAY)
-        LOG_D(PHY,"PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
-#else
         LOG_D(PHY,"In pucch.c PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
-#endif
         *payload = 4;  // DTX
         ((int16_t *)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
         ((int16_t *)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);

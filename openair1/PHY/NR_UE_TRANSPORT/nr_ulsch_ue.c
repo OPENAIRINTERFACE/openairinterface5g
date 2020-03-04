@@ -41,9 +41,15 @@
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/TOOLS/tools_defs.h"
+#include "executables/nr-softmodem.h"
+#include "executables/softmodem-common.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define DEBUG_SCFDMA
 //#define DEBUG_PUSCH_MAPPING
+//#define DEBUG_MAC_PDU
+
+//extern int32_t uplink_counter;
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t size,
@@ -86,6 +92,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
+                               uint8_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id) {
@@ -104,11 +111,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
   uint16_t n_rnti;
+  uint8_t data_existing =0;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
+  uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
 
   num_of_codewords = 1; // tmp assumption
   n_rnti = 0x1234;
@@ -157,14 +166,54 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                              0,
                                              harq_process_ul_ue->Nl);
 
+    uint8_t access_mode = SCHEDULED_ACCESS;
+
     //-----------------------------------------------------//
     // to be removed later when MAC is ready
 
     if (harq_process_ul_ue != NULL){
-      for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
-        harq_process_ul_ue->a[i] = (unsigned char) rand();
-	//printf("input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-      }
+
+    	if (IS_SOFTMODEM_NOS1){
+    		data_existing = nr_ue_get_sdu(UE->Mod_id, UE->CC_id, frame,
+    				slot, 0, ulsch_input_buffer, harq_process_ul_ue->TBS/8, &access_mode);
+    		//IP traffic to be transmitted
+    		if(data_existing){
+    			//harq_process_ul_ue->a = (unsigned char*)calloc(harq_process_ul_ue->TBS/8, sizeof(unsigned char));
+    			memcpy(harq_process_ul_ue->a, ulsch_input_buffer, harq_process_ul_ue->TBS/8);
+
+    			#ifdef DEBUG_MAC_PDU
+    				LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", harq_process_ul_ue->TBS/8);
+    				for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
+    					printf("0x%02x",harq_process_ul_ue->a[i]);
+    				}
+    				printf("\n");
+				#endif
+    		}
+    		//Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+    		else{
+    			//Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+    			//and block this traffic from being forwarded to the upper layers at the gNB
+    			uint16_t payload_offset = 5;
+    			LOG_D(PHY, "Random data to be tranmsitted: \n");
+    			//Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
+    			for (i = 0; i<payload_offset; i++)
+    				harq_process_ul_ue->a[i] = 0;
+
+    			for (i = payload_offset; i < harq_process_ul_ue->TBS / 8; i++) {
+    				harq_process_ul_ue->a[i] = (unsigned char) rand();
+    				//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+    				}
+    		}
+    	}
+        //else if(uplink_counter == 0){ //if(!IS_SOFTMODEM_NOS1){
+    	else{
+        	LOG_D(PHY, "Random data to be tranmsitted: \n");
+        	for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
+        		harq_process_ul_ue->a[i] = (unsigned char) rand();
+        		//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+        	}
+        	//uplink_counter++;
+        }
     } else {
       LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
       return;
@@ -174,6 +223,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
+
 
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
 
@@ -219,6 +269,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ////////////////////////////////////////////////////////////////////////
 
 
+  //}
   }
 
   /////////////////////////DMRS Modulation/////////////////////////
@@ -372,10 +423,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     }
   }
 
+  //}
+
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  return;
+  LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
 }
 
 
@@ -405,6 +458,13 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
 
   if (tx_offset < 0)
     tx_offset += frame_parms->samples_per_frame;
+
+  // clear the transmit data array for the current subframe
+  /*for (int aa=0; aa<UE->frame_parms.nb_antennas_tx; aa++) {
+	  memset(&UE->common_vars.txdata[aa][tx_offset],0,UE->frame_parms.samples_per_slot*sizeof(int32_t));
+	  //memset(&UE->common_vars.txdataF[aa][tx_offset],0,UE->frame_parms.samples_per_slot*sizeof(int32_t));
+  }*/
+
 
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;

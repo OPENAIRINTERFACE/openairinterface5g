@@ -960,7 +960,7 @@ void RCconfig_RU(void) {
 
 static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
-  get_common_options();
+  get_common_options(SOFTMODEM_ENB_BIT);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {

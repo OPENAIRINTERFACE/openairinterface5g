@@ -342,6 +342,7 @@ function check_iperf {
         local FILE_COMPLETE=`egrep -c "Server Report" ${LOC_BASE_LOG}_client.txt`
         if [ $FILE_COMPLETE -eq 0 ]
         then
+            # This part will become obsolete once we have UL
             if [[ $LOC_IS_RF_SIM -eq 1 ]] && [[ $LOC_IS_NR -eq 1 ]]
             then
                 echo "no UL integration right now --> normal to have no server report"
@@ -350,11 +351,11 @@ function check_iperf {
                     local EFFECTIVE_BANDWIDTH=`tail -n1 ${LOC_BASE_LOG}_server.txt | sed -e "s#^.*MBytes *##" -e "s#^.*KBytes *##" -e "s#sec.*#sec#"`
                     if [[ $2 =~ .*K.* ]]
                     then
-                        local BW_SUFFIX="K"
+                        local BW_PREFIX="K"
                     else
-                        local BW_SUFFIX="M"
+                        local BW_PREFIX="M"
                     fi
-                    if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*${BW_SUFFIX}bits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*${BW_SUFFIX}bits.* ]]
+                    if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*${BW_PREFIX}bits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*${BW_PREFIX}bits.* ]]
                     then
                         echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                     else
@@ -370,10 +371,19 @@ function check_iperf {
                 echo "File Report not found"
             fi
         else
-            local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+            if [ `egrep -c "Mbits/sec" ${LOC_BASE_LOG}_client.txt` -ne 0 ]
+            then
+                local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+                local BW_PREFIX="M"
+            fi
+            if [ `egrep -c "Kbits/sec" ${LOC_BASE_LOG}_client.txt` -ne 0 ]
+            then
+                local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Kbits/sec" | sed -e "s#^.*KBytes *##" -e "s#sec.*#sec#"`
+                local BW_PREFIX="K"
+            fi
             if [ $LOC_IS_DL -eq 1 ] && [ $LOC_IS_BASIC_SIM -eq 1 ]
             then
-                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_TWO}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_THREE}.*Mbits.* ]]
+                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*${BW_PREFIX}bits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*${BW_PREFIX}bits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_TWO}.*${BW_PREFIX}bits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_THREE}.*${BW_PREFIX}bits.* ]]
                 then
                     echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                 else
@@ -381,7 +391,7 @@ function check_iperf {
                     IPERF_STATUS=-1
                 fi
             else
-                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]]
+                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*${BW_PREFIX}bits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*${BW_PREFIX}bits.* ]]
                 then
                     if [ $LOC_IS_DL -eq 1 ]
                     then
@@ -390,7 +400,7 @@ function check_iperf {
                         echo "got requested UL bandwidth: $EFFECTIVE_BANDWIDTH"
                     fi
                 else
-                    echo "not basic-sim got LESS than requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
+                    echo "got LESS than requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                     IPERF_STATUS=-1
                 fi
             fi
@@ -2067,7 +2077,7 @@ function run_test_on_vm {
         fi
 
         echo "############################################################"
-        echo "${CN_CONFIG} : iperf DL -- UE is server and eNB is client"
+        echo "${CN_CONFIG} : iperf DL -- NR-UE is server and gNB is client"
         echo "############################################################"
         THROUGHPUT="30K"
         CURR_IPERF_LOG_BASE=tdd_${PRB}prb_${CN_CONFIG}_iperf_dl
@@ -2076,6 +2086,18 @@ function run_test_on_vm {
         generic_iperf $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $UE_IP_ADDR $GNB_VM_CMDS $GNB_VM_IP_ADDR $ENB_IP_ADDR $THROUGHPUT $CURR_IPERF_LOG_BASE 1 0 
         scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE $THROUGHPUT
+
+        echo "############################################################"
+        echo "${CN_CONFIG} : iperf UL -- gNB is server and NR-UE is client"
+        echo "############################################################"
+        THROUGHPUT="30K"
+        CURR_IPERF_LOG_BASE=tdd_${PRB}prb_${CN_CONFIG}_iperf_ul
+        get_enb_noS1_ip_addr $GNB_VM_CMDS $GNB_VM_IP_ADDR
+        get_ue_ip_addr $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 1
+        generic_iperf $GNB_VM_CMDS $GNB_VM_IP_ADDR $ENB_IP_ADDR $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $UE_IP_ADDR $THROUGHPUT $CURR_IPERF_LOG_BASE 1 0
+        scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
         check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE $THROUGHPUT
 
         echo "############################################################"

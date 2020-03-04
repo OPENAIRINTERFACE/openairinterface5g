@@ -1294,3 +1294,4 @@ uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 /* MAC ITTI messaging related functions */
 /* Main loop of MAC itti message handling */
 void *mac_enb_task(void *arg);
+

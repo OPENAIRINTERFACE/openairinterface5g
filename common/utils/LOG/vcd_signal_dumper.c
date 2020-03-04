@@ -633,9 +633,6 @@ inline static uint32_t vcd_get_write_index(void)
   return write_index;
 }
 
-#if defined(ENABLE_ITTI)
-int signal_mask(void);
-#endif
 
 void *vcd_dumper_thread_rt(void *args)
 {
@@ -644,9 +641,7 @@ void *vcd_dumper_thread_rt(void *args)
   struct sched_param sched_param;
   uint32_t data_ready_wait;
 
-# if defined(ENABLE_ITTI)
   return 0; //signal_mask(); //function defined at common/utils/ocp_itti/intertask_interface.cpp
-# endif
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
   sched_setscheduler(0, SCHED_FIFO, &sched_param);
