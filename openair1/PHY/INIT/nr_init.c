@@ -170,7 +170,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
   }
 
-  gNB->ptrs_configured = 1;
+  gNB->ptrs_configured = 0;
 
   //------------- config PUSCH PTRS parameters(to be updated from RRC)--------------//
   ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 0; // setting MCS values to 0 indicate abscence of time_density field in the configuration

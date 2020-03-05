@@ -748,7 +748,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   /////////////////////////PUSCH PTRS init/////////////////////////
   ///////////
 
-  ue->ptrs_configured = 1; // flag to be toggled by RCC
+  ue->ptrs_configured = 0; // flag to be toggled by RCC
 
   //------------- config PTRS parameters--------------//
   ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 0; // setting MCS values to 0 indicate abscence of time_density field in the configuration
