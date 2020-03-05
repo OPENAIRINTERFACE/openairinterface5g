@@ -2217,8 +2217,8 @@ add_new_ue(module_id_t mod_idP,
     UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
     UE_info->UE_sched_ctrl[UE_id].pusch_snr[cc_idP] = 0;
-    UE_info->UE_sched_ctrl[UE_id].pusch_cqi[cc_idP]     = (eNB->puSch10xSnr+640)/5;
-    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = eNB->puSch10xSnr/10;
+    UE_info->UE_sched_ctrl[UE_id].pusch_cqi[cc_idP]     = (RC.mac[mod_idP]->puSch10xSnr+640)/5;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = RC.mac[mod_idP]->puSch10xSnr/10;
     UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[cc_idP] = 0;
     UE_info->UE_sched_ctrl[UE_id].pusch_rx_num_old[cc_idP] = 0;
     UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[cc_idP] = 0;
