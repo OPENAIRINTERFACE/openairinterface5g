@@ -898,7 +898,7 @@ typedef struct {
   //fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
-  uint8_t current_thread_id[40];
+  uint8_t current_thread_id[NR_MAX_SLOTS_PER_FRAME];
 
   t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
