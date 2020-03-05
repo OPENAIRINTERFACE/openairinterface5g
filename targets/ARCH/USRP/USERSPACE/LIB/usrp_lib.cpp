@@ -458,7 +458,7 @@ static int trx_usrp_write(openair0_device *device,
   pthread_mutex_lock(&write_thread->mutex_write);
 
   if(write_thread->count_write >= MAX_WRITE_THREAD_PACKAGE){
-    LOG_W("Buffer overflow, count_write = %d, start = %d end = %d, resetting write package\n", write_thread->count_write, write_thread->start, write_thread->end);
+    LOG_W(HW,"Buffer overflow, count_write = %d, start = %d end = %d, resetting write package\n", write_thread->count_write, write_thread->start, write_thread->end);
     write_thread->end = write_thread->start;
     write_thread->count_write = 0;
   }
@@ -469,6 +469,7 @@ static int trx_usrp_write(openair0_device *device,
   write_package[end].cc           = cc;
   write_package[end].first_packet = first_packet_state;
   write_package[end].last_packet  = last_packet_state;
+  write_package[end].flags_msb    = flags_msb;
   for (int i = 0; i < cc; i++)
     write_package[end].buff[i]    = buff[i];
   write_thread->count_write++;
@@ -495,15 +496,16 @@ void *trx_usrp_write_thread(void * arg){
   openair0_thread_t *write_thread = &device->write_thread;
   openair0_write_package_t *write_package = write_thread->write_package;
 
-    usrp_state_t *s;
-    int nsamps2;  // aligned to upper 32 or 16 byte boundary
-    int start;
-    openair0_timestamp timestamp;
-    void               **buff;
-    int                nsamps;
-    int                cc;
-    signed char        first_packet;
-    signed char        last_packet;
+  usrp_state_t *s;
+  int nsamps2;  // aligned to upper 32 or 16 byte boundary
+  int start;
+  openair0_timestamp timestamp;
+  void               **buff;
+  int                nsamps;
+  int                cc;
+  signed char        first_packet;
+  signed char        last_packet;
+  int                flags_msb;
 
   while(1){
     pthread_mutex_lock(&write_thread->mutex_write);
@@ -519,6 +521,7 @@ void *trx_usrp_write_thread(void * arg){
     cc           = write_package[start].cc;
     first_packet = write_package[start].first_packet;
     last_packet  = write_package[start].last_packet;
+    flags_msb    = write_package[start].flags_msb;
     write_thread->start = (write_thread->start + 1)% MAX_WRITE_THREAD_PACKAGE;
     write_thread->count_write--;
     pthread_mutex_unlock(&write_thread->mutex_write);
