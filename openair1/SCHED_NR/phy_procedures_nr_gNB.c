@@ -407,7 +407,6 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	    (ulsch_harq->slot == slot_rx) &&
 	    (ulsch_harq->handled == 0)){
 
-
 	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.ulsch_pdu_rel15.start_symbol;
 	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.ulsch_pdu_rel15.number_symbols;
       

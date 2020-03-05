@@ -240,6 +240,8 @@ void nr_generate_Msg2(module_id_t module_idP,
                       frame_t frameP,
                       sub_frame_t slotP);
 
+void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
+
 int find_aggregation_level (NR_SearchSpace_t *ss);
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,

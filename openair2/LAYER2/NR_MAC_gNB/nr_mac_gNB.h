@@ -125,8 +125,6 @@ typedef struct {
   uint8_t msg3_first_rb;
   /// Msg3 number of RB
   uint8_t msg3_nb_rb;
-  /// Msg3 MCS
-  uint8_t msg3_mcs;
   /// Msg3 TPC command
   uint8_t msg3_TPC;
   /// Msg3 ULdelay command
@@ -135,6 +133,8 @@ typedef struct {
   uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
+  /// Msg3 pusch pdu
+  nfapi_nr_pusch_pdu_t pusch_pdu;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4

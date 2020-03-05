@@ -389,8 +389,25 @@ void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
   ra->msg3_first_rb = 0;
 }
 
-// WIP
-// todo: fix
+
+void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
+  gNB_MAC_INST                                *mac = RC.nrmac[module_idP];
+  nfapi_nr_ul_tti_request_t                   *ul_req = &mac->UL_tti_req[0];
+  NR_COMMON_channels_t                        *cc = &mac->common_channels[CC_id];
+  NR_RA_t                                     *ra = &cc->ra[0];
+
+  if (ra->state == WAIT_Msg3) {
+    if ((frameP == ra->Msg3_frame) && (slotP == ra->Msg3_slot) ){
+      ul_req->SFN = ra->Msg3_frame;
+      ul_req->Slot = ra->Msg3_slot;
+      ul_req->pdus_list[ul_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+      ul_req->pdus_list[ul_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+      ul_req->pdus_list[ul_req->n_pdus].pusch_pdu = ra->pusch_pdu;
+      ul_req->n_pdus+=1;
+    }
+  }
+}
+
 void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP){
 
   gNB_MAC_INST                                   *mac = RC.nrmac[module_idP];
@@ -398,20 +415,15 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_ServingCellConfigCommon_t                   *scc = cc->ServingCellConfigCommon;
   NR_RA_t                                         *ra = &cc->ra[0];
   NR_UE_list_t                               *UE_list = &mac->UE_list;
-  nfapi_nr_ul_tti_request_t                   *ul_req = &mac->UL_tti_req[0];
-
   int UE_id = 0;
 
   AssertFatal(ra->state != RA_IDLE, "RA is not active for RA %X\n", ra->rnti);
 
   LOG_D(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
-  ul_req->SFN = ra->Msg3_frame;
-  ul_req->Slot = ra->Msg3_slot;
-  ul_req->pdus_list[ul_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-  ul_req->pdus_list[ul_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &ul_req->pdus_list[ul_req->n_pdus].pusch_pdu;
+
+  nfapi_nr_pusch_pdu_t  *pusch_pdu = &ra->pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
-  ul_req->n_pdus+=1;
+
 
   AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n", UE_id);
 
@@ -773,7 +785,6 @@ void nr_fill_rar(uint8_t Mod_idP,
 
   // UL grant
 
-  ra->msg3_mcs = pusch_pdu->mcs_index;
   ra->msg3_TPC = tpc_command;
 
   bwp_size = pusch_pdu->bwp_size;
@@ -793,7 +804,7 @@ void nr_fill_rar(uint8_t Mod_idP,
     f_alloc = (prb_alloc&truncation);
   }
 
-  ul_grant = csi_req | (tpc_command << 1) | (ra->msg3_mcs << 4) | (ra->Msg3_tda_id << 8) | (f_alloc << 12) | (pusch_pdu->frequency_hopping << 26);
+  ul_grant = csi_req | (tpc_command << 1) | (pusch_pdu->mcs_index << 4) | (ra->Msg3_tda_id << 8) | (f_alloc << 12) | (pusch_pdu->frequency_hopping << 26);
 
   rar->UL_GRANT_1 = (uint8_t) (ul_grant >> 24) & 0x07;
   rar->UL_GRANT_2 = (uint8_t) (ul_grant >> 16) & 0xff;
