@@ -2158,7 +2158,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)) {
     if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
       //Substitute with a static value for the MAC layer abstraction (phy_stub mode)
-      phr_p->PH = 40;
+      phr_p->PH = 60;
     } else {
       phr_p->PH = get_phr_mapping(module_idP, CC_id, eNB_index);
     }
