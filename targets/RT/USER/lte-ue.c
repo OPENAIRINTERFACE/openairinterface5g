@@ -1288,6 +1288,13 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
 
       if(tx_request_pdu_list!=NULL) {
+        for (int i = 0; i < tx_req_num_elems; i++) {
+          for (int j = 0; j < tx_request_pdu_list[i].num_segments; j++) {
+            free(tx_request_pdu_list[i].segments[j].segment_data);
+            tx_request_pdu_list[i].segments[j].segment_data = NULL;
+          }
+        }
+        tx_req_num_elems = 0;
         free(tx_request_pdu_list);
         tx_request_pdu_list = NULL;
       }
