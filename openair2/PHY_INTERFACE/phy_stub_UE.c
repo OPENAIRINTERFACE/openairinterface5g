@@ -241,27 +241,32 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subfram
 	nfapi_cqi_indication_pdu_t *pdu         = &UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
 	nfapi_cqi_indication_raw_pdu_t *raw_pdu = &UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
 
+	UL_INFO->cqi_ind.sfn_sf = frame << 4 | subframe;
+        // because of nfapi_vnf.c:733, set message id to 0, not NFAPI_RX_CQI_INDICATION;
+	UL_INFO->cqi_ind.header.message_id = 0;
+	UL_INFO->cqi_ind.cqi_indication_body.tl.tag = NFAPI_CQI_INDICATION_BODY_TAG;
+
 	pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
 	pdu->rx_ue_information.rnti = rnti;
 	// Since we assume that CRC flag is always 0 (ACK) I guess that data_offset should always be 0.
-	pdu->cqi_indication_rel9.data_offset = 0;
+	pdu->cqi_indication_rel8.data_offset = 0;
 
 	// by default set O to rank 1 value
-	//pdu->cqi_indication_rel9.length = (ulsch_harq->Or1>>3) + ((ulsch_harq->Or1&7) > 0 ? 1 : 0);
+	//pdu->cqi_indication_rel8.length = (ulsch_harq->Or1>>3) + ((ulsch_harq->Or1&7) > 0 ? 1 : 0);
 	//  Not useful field for our case
-	pdu->cqi_indication_rel9.tl.tag = NFAPI_CQI_INDICATION_REL9_TAG;
-	pdu->cqi_indication_rel9.length = 0;
-	pdu->cqi_indication_rel9.ri[0]  = 0;
+	pdu->cqi_indication_rel8.tl.tag = NFAPI_CQI_INDICATION_REL8_TAG;
+	pdu->cqi_indication_rel8.length = 1;
+	pdu->cqi_indication_rel8.ri  = 0;
 
 
-	pdu->cqi_indication_rel9.timing_advance = 0;
-  pdu->cqi_indication_rel9.number_of_cc_reported = 1;
-  pdu->ul_cqi_information.channel = 1; // PUSCH
+	pdu->cqi_indication_rel8.timing_advance = 0;
+	//pdu->cqi_indication_rel8.number_of_cc_reported = 1;
+	pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
+	pdu->ul_cqi_information.channel = 1; // PUSCH
 
-  // Not sure how to substitute this. This should be the actual CQI value? So can
-  // we hardcode it to a specific value?
-  //memcpy((void*)raw_pdu->pdu,ulsch_harq->o,pdu->cqi_indication_rel9.length);
-  raw_pdu->pdu[0] = 7;
+	// eNB_scheduler_primitives.c:4839: the upper four bits seem to be the CQI
+	const int cqi = 15;
+	raw_pdu->pdu[0] = cqi << 4;
 
 
 
