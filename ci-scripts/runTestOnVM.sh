@@ -870,9 +870,9 @@ function start_l2_sim_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread $LOC_NB_UES --nokrnmod 1 --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread $LOC_NB_UES --nokrnmod 1 --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
