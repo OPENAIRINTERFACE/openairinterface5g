@@ -474,8 +474,11 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_pdu->resource_alloc = 1; //type 1
-  pusch_pdu->rb_start = ra->msg3_first_rb;
-  pusch_pdu->rb_size = ra->msg3_nb_rb;
+  pusch_pdu->rb_start = ra->msg3_first_rb + ibwp_start - abwp_start; // as for 6.3.1.7 in 38.211
+  if (ra->msg3_nb_rb > pusch_pdu->bwp_size)
+    AssertFatal(1==0,"MSG3 allocated number of RBs exceed the BWP size\n");
+  else
+    pusch_pdu->rb_size = ra->msg3_nb_rb;
   pusch_pdu->vrb_to_prb_mapping = 0;
   if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->frequencyHopping == NULL)
     pusch_pdu->frequency_hopping = 0;
@@ -761,7 +764,8 @@ void nr_fill_rar(uint8_t Mod_idP,
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;
   uint8_t N_UL_Hop, valid_bits;
-  uint32_t ul_grant, f_alloc, prb_alloc, bwp_size, truncation=0;
+  uint32_t ul_grant;
+  uint16_t f_alloc, prb_alloc, bwp_size, truncation=0;
 
   tpc_command = 3; // this is 0 dB
 
@@ -788,7 +792,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   ra->msg3_TPC = tpc_command;
 
   bwp_size = pusch_pdu->bwp_size;
-  prb_alloc = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bwp_size);
+  prb_alloc = PRBalloc_to_locationandbandwidth0(ra->msg3_nb_rb, ra->msg3_first_rb, bwp_size);
   if (bwp_size>180) {
     AssertFatal(1==0,"Initial UBWP larger than 180 currently not supported");
   }
