@@ -49,6 +49,8 @@
 #include "common_lib.h"
 #include "assertions.h"
 
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include <sys/resource.h>
 
 #include "usrp_lib.h"
@@ -443,7 +445,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   pthread_mutex_lock(&write_thread->mutex_write);
 
   if(write_thread->count_write >= MAX_WRITE_THREAD_PACKAGE){
-    LOG_W(HW,"Buffer overflow, resetting write package\n");
+    LOG_W("Buffer overflow, count_write = %d, start = %d end = %d, resetting write package\n", write_thread->count_write, write_thread->start, write_thread->end);
     write_thread->end = write_thread->start;
     write_thread->count_write = 0;
   }
@@ -495,6 +497,7 @@ void *trx_usrp_write_thread(void * arg){
     while (write_thread->count_write == 0) {
       pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 1 );
     s = (usrp_state_t *)device->priv;
     start = write_thread->start;
     timestamp    = write_package[start].timestamp;
@@ -506,6 +509,9 @@ void *trx_usrp_write_thread(void * arg){
     write_thread->start = (write_thread->start + 1)% MAX_WRITE_THREAD_PACKAGE;
     write_thread->count_write--;
     pthread_mutex_unlock(&write_thread->mutex_write);
+    if(write_thread->count_write != 0){
+      LOG_W(HW,"count write = %d, start = %d, end = %d\n", write_thread->count_write, write_thread->start, write_thread->end);
+    }
 
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
@@ -552,6 +558,8 @@ void *trx_usrp_write_thread(void * arg){
       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
     } else ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
     if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_USRP_SEND_RETURN, ret );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 0 );
 
     if(0) break;
   }
@@ -567,7 +575,7 @@ int trx_write_init(openair0_device *device){
 
   write_thread->start              = 0;
   write_thread->end                = 0;
-  write_thread->count_write = 0;
+  write_thread->count_write        = 0;
   printf("end of tx write thread\n");
 
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);

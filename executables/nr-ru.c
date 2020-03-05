@@ -735,6 +735,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     else
       flags=4;
 
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags );
+
     /*
         if (SF_type == SF_S) {
           siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
