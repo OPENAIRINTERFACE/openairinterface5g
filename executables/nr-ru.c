@@ -792,7 +792,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d\n",ru->idx,
 	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-      AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
+      AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
 }
 
@@ -1482,6 +1482,9 @@ void *ru_thread( void *param ) {
 
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
+
+    // start trx write thread
+    ru->start_write_thread(ru);
   }
 
   pthread_mutex_lock(&proc->mutex_FH1);
@@ -1691,6 +1694,9 @@ int stop_rf(RU_t *ru) {
   return 0;
 }
 
+int start_write_thread(RU_t *ru) {
+  return(ru->rfdevice.trx_write_init(&ru->rfdevice));
+}
 
 void init_RU_proc(RU_t *ru) {
   int i=0;
@@ -2086,6 +2092,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
       ru->stop_rf                = stop_rf;
+      ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
       printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
       /*
           if (ru->function == gNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
