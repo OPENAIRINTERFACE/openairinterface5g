@@ -761,7 +761,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;
   uint8_t N_UL_Hop, valid_bits;
-  uint16_t ul_grant, f_alloc, prb_alloc, bwp_size, truncation=0;
+  uint32_t ul_grant, f_alloc, prb_alloc, bwp_size, truncation=0;
 
   tpc_command = 3; // this is 0 dB
 
