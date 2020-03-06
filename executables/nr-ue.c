@@ -531,8 +531,10 @@ void UE_processing(void *arg) {
       ul_indication.module_id = mod_id;
       ul_indication.gNB_index = gNB_id;
       ul_indication.cc_id     = CC_id;
-      ul_indication.frame     = proc->frame_rx;
-      ul_indication.slot      = proc->nr_tti_rx;
+      ul_indication.frame_rx  = proc->frame_rx;
+      ul_indication.slot_rx   = proc->nr_tti_rx;
+      ul_indication.frame_tx  = proc->frame_tx;
+      ul_indication.slot_tx   = proc->nr_tti_tx;
       UE->if_inst->ul_indication(&ul_indication);
     }
   }

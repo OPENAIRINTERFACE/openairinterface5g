@@ -113,17 +113,17 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   mac->dl_config_request.number_pdus = 0;
   // clean previous FAPI messages
 
-  ret = nr_ue_scheduler(
-			ul_info->module_id,
-			ul_info->gNB_index,
-			ul_info->cc_id,
-			ul_info->frame,
-			ul_info->slot,
-			ul_info->ssb_index, 
-			0, 0); //  TODO check tx/rx frame/slot is need for NR version
+  ret = nr_ue_scheduler(ul_info->module_id,
+                        ul_info->gNB_index,
+                        ul_info->cc_id,
+                        ul_info->frame_rx,
+                        ul_info->slot_rx,
+                        ul_info->ssb_index,
+                        ul_info->frame_tx,
+                        ul_info->slot_tx);
 
-  /*if (is_nr_UL_slot(mac->scc, ul_info->slot))
-    nr_ue_prach_scheduler(module_id, ul_info->frame, ul_info->slot);*/ // WIP TbD set tx frame/slot
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx))
+    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
 
   switch(ret){
   case UE_CONNECTION_OK:
