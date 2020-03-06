@@ -215,7 +215,7 @@ int emulate_rf = 0;
 
 tpool_t *Tpool;
 #ifdef UE_DLSCH_PARALLELISATION
-tpool_t *Tpool_dl;
+  tpool_t *Tpool_dl;
 #endif
 
 
@@ -309,8 +309,8 @@ static void *scope_thread(void *arg) {
 
   while (!oai_exit) {
     phy_scope_nrUE(form_nrue[0],
-                 PHY_vars_UE_g[0][0],
-                 0,0,1);
+                   PHY_vars_UE_g[0][0],
+                   0,0,1);
     usleep(100*1000);
   }
 
@@ -381,8 +381,8 @@ static void get_options(void) {
   int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
-
   //uint32_t noS1;
+  //uint32_t nokrnmod;
   //uint32_t nokrnmod;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
@@ -510,12 +510,12 @@ void init_openair0(void) {
         else {
           openair0_cfg[card].sample_rate=122.88e6;
           openair0_cfg[card].samples_per_frame = 1228800;
-        } 
+        }
       } else {
         LOG_E(PHY,"Unsupported numerology!\n");
         exit(-1);
       }
-     }else if(frame_parms[0]->N_RB_DL == 273) {
+    } else if(frame_parms[0]->N_RB_DL == 273) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
           AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
@@ -523,12 +523,12 @@ void init_openair0(void) {
         else {
           openair0_cfg[card].sample_rate=122.88e6;
           openair0_cfg[card].samples_per_frame = 1228800;
-        } 
+        }
       } else {
         LOG_E(PHY,"Unsupported numerology!\n");
         exit(-1);
       }
-     }else if(frame_parms[0]->N_RB_DL == 106) {
+    } else if(frame_parms[0]->N_RB_DL == 106) {
       if (numerology==0) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=23.04e6;
@@ -537,15 +537,15 @@ void init_openair0(void) {
           openair0_cfg[card].sample_rate=30.72e6;
           openair0_cfg[card].samples_per_frame = 307200;
         }
-     } else if (numerology==1) {
+      } else if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
-	  openair0_cfg[card].sample_rate=46.08e6;
-	  openair0_cfg[card].samples_per_frame = 460800;
+          openair0_cfg[card].sample_rate=46.08e6;
+          openair0_cfg[card].samples_per_frame = 460800;
 	}
 	else {
-	  openair0_cfg[card].sample_rate=61.44e6;
-	  openair0_cfg[card].samples_per_frame = 614400;
-	}
+          openair0_cfg[card].sample_rate=61.44e6;
+          openair0_cfg[card].samples_per_frame = 614400;
+        }
       } else if (numerology==2) {
         openair0_cfg[card].sample_rate=122.88e6;
         openair0_cfg[card].samples_per_frame = 1228800;
@@ -620,7 +620,7 @@ void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
 
   /*if (rlc_module_init() != 0) {
-	  LOG_I(RLC, "Problem at RLC initiation \n");
+    LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
   nr_ip_over_LTE_DRB_preconfiguration();*/
@@ -628,6 +628,11 @@ void init_pdcp(void) {
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   LOG_I(PDCP, "Before getting out from init_pdcp() \n");
+}
+
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_itti_msg(void *notUsed) {
+  return NULL;
 }
 
 
@@ -657,12 +662,12 @@ int main( int argc, char **argv ) {
   set_taus_seed (0);
   tpool_t pool;
   Tpool = &pool;
-  char params[]="-1,-1"; 
+  char params[]="-1,-1";
   initTpool(params, Tpool, false);
 #ifdef UE_DLSCH_PARALLELISATION
   tpool_t pool_dl;
   Tpool_dl = &pool_dl;
-  char params_dl[]="-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1"; 
+  char params_dl[]="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1";
   initTpool(params_dl, Tpool_dl, false);
 #endif
   cpuf=get_cpu_freq_GHz();
@@ -670,21 +675,21 @@ int main( int argc, char **argv ) {
 
   init_opt() ;
   if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
+    init_pdcp();
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
 
-/*
-#ifdef PDCP_USE_NETLINK
-  netlink_init();
-#if defined(PDCP_USE_NETLINK_QUEUES)
-  pdcp_netlink_init();
-#endif
-#endif
-*/
-  #ifndef PACKAGE_VERSION
+  /*
+  #ifdef PDCP_USE_NETLINK
+    netlink_init();
+  #if defined(PDCP_USE_NETLINK_QUEUES)
+    pdcp_netlink_init();
+  #endif
+  #endif
+  */
+#ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);

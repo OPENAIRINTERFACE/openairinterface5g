@@ -148,7 +148,7 @@ PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
-
+  // initialize all signal buffers
   // initialize all signal buffers
   init_nr_ue_signal(ue,1,abstraction_flag);
   // intialize transport
@@ -380,7 +380,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.CC_id     = 0;
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
-
+    //--------------------------Temporary configuration-----------------------------//
     //--------------------------Temporary configuration-----------------------------//
     n_rnti = 0x1234;
     nb_rb = 50;
@@ -391,7 +391,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     mcs = 9;
     harq_pid = 0;
     rvidx = 0;
-  //------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------//
 
     scheduled_response.ul_config->sfn_slot = NR_UPLINK_SLOT;
     scheduled_response.ul_config->number_pdus = 1;
@@ -426,7 +426,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   }
   }
 
-  
+  // no UL for now
   // no UL for now
   /*
   if (UE->mac_enabled==1) {
@@ -464,7 +464,7 @@ void UE_processing(void *arg) {
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   processSlotRX(UE, proc);
   uint8_t gNB_id = 0;
-
+  // params for UL time alignment procedure
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
   uint8_t numerology = UE->frame_parms.numerology_index;
@@ -474,24 +474,24 @@ void UE_processing(void *arg) {
 
   //printf(">>> mac ended\n");
   // Prepare the future Tx data
-/*
-#ifndef NO_RAT_NR
+  /*
+  #ifndef NO_RAT_NR
 
-  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_UPLINK_SLOT)
-#else
-  if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
-      (UE->frame_parms.frame_type == FDD) )
-#endif
-*/
+    if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_UPLINK_SLOT)
+  #else
+    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
+        (UE->frame_parms.frame_type == FDD) )
+  #endif
+  */
 
   /* UL time alignment
   // If the current tx frame and slot match the TA configuration in ul_time_alignment
   // then timing advance is processed and set to be applied in the next UL transmission */
   if (UE->mac_enabled == 1) {
 
-    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot){
+    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
       LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
-
+      //if (nfapi_mode!=3){
       //if (nfapi_mode!=3){
       nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
       ul_time_alignment->ta_frame = -1;
@@ -500,7 +500,7 @@ void UE_processing(void *arg) {
     }
   }
 
-  if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD){
+  if (proc->nr_tti_tx == NR_UPLINK_SLOT || UE->frame_parms.frame_type == FDD) {
 
     thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
 
@@ -565,7 +565,7 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                UE->frame_parms.samples_per_subframe,
                                UE->frame_parms.nb_antennas_rx);
     if (IS_SOFTMODEM_RFSIM ) {
-	 usleep(1000); // slow down, as would do actual rf to let cpu for the synchro thread
+      usleep(1000); // slow down, as would do actual rf to let cpu for the synchro thread
     }
   }
 
@@ -578,24 +578,24 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
-    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-    void *dummy_tx[UE->frame_parms.nb_antennas_tx];
+  LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
+  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
+  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
-    for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
-      int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
-      AssertFatal(unitTransfer ==
-                  UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                             timestamp,
-                                             (void **)UE->common_vars.rxdata,
-                                             unitTransfer,
-                                             UE->frame_parms.nb_antennas_rx),"");
-    }
+  for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
+    int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
+    AssertFatal(unitTransfer ==
+                UE->rfdevice.trx_read_func(&UE->rfdevice,
+                                           timestamp,
+                                           (void **)UE->common_vars.rxdata,
+                                           unitTransfer,
+                                           UE->frame_parms.nb_antennas_rx),"");
+  }
 
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      free(dummy_tx[i]);
+  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+    free(dummy_tx[i]);
 
 }
 
@@ -726,7 +726,7 @@ void *UE_thread(void *arg) {
 #ifdef OAI_ADRV9371_ZC706
     /*uint32_t total_gain_dB_prev = 0;
     if (total_gain_dB_prev != UE->rx_total_gain_dB) {
-		total_gain_dB_prev = UE->rx_total_gain_dB;
+    total_gain_dB_prev = UE->rx_total_gain_dB;
         openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB;
         UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
     }*/
@@ -762,29 +762,29 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
-if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX - 1)%20)
-    AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-                     timestamp+
-                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
-                     UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
-                     openair0_cfg[0].tx_sample_advance,
-                     txp,
-                     writeBlockSize,
-                     UE->frame_parms.nb_antennas_tx,
-                     2),"");
+    if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX - 1)%20)
+      AssertFatal( writeBlockSize ==
+                   UE->rfdevice.trx_write_func(&UE->rfdevice,
+                       timestamp+
+                       (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
+                       UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+                       openair0_cfg[0].tx_sample_advance,
+                       txp,
+                       writeBlockSize,
+                       UE->frame_parms.nb_antennas_tx,
+                       2),"");
 
-if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
-    AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-                     timestamp+
-                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
-                     UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
-                     openair0_cfg[0].tx_sample_advance,
-                     txp,
-                     writeBlockSize,
-                     UE->frame_parms.nb_antennas_tx,
-                     3),"");
+    if (slot_nr == (20+NR_UPLINK_SLOT-DURATION_RX_TO_TX)%20)
+      AssertFatal( writeBlockSize ==
+                   UE->rfdevice.trx_write_func(&UE->rfdevice,
+                       timestamp+
+                       (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
+                       UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+                       openair0_cfg[0].tx_sample_advance,
+                       txp,
+                       writeBlockSize,
+                       UE->frame_parms.nb_antennas_tx,
+                       3),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift

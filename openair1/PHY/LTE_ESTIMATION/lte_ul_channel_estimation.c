@@ -50,8 +50,11 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int32_t **ul_ch_estimates_time = (eNB!=NULL) ? pusch_vars->drs_ch_estimates_time : calibration->drs_ch_estimates_time;
   AssertFatal(ul_ch_estimates_time != NULL, "ul_ch_estimates_time is null\n");
   int32_t **rxdataF_ext = (eNB!=NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
-  int subframe = (eNB!=NULL) ? proc->subframe_rx : ru->proc.tti_rx;
-  uint8_t harq_pid;
+
+  int subframe = proc->subframe_rx;
+
+  uint8_t harq_pid; 
+
   int16_t delta_phase = 0;
   int16_t *ru1 = ru_90;
   int16_t *ru2 = ru_90;

@@ -8589,6 +8589,8 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   return NULL;
 }
 
+// as there are race conditions, no rrc thread
+#if 0
 //-----------------------------------------------------------------------------
 void *
 rrc_enb_task(
@@ -8600,10 +8602,12 @@ rrc_enb_task(
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
 
-  while (1) {
-    (void) rrc_enb_process_itti_msg(NULL);
-  }
+  //while (1) {
+    //(void) rrc_enb_process_itti_msg(NULL);
+  //}
+  return NULL;
 }
+#endif
 
 /*------------------------------------------------------------------------------*/
 void

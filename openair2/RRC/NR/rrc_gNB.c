@@ -238,20 +238,9 @@ static void init_NR_SI(const protocol_ctxt_t *const ctxt_pP,
 
 
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration) {
-  protocol_ctxt_t      ctxt;
+  protocol_ctxt_t      ctxt={0};
   int                  CC_id;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
-  LOG_I(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_FMT" Init...\n",
-        PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
-#if OCP_FRAMEWORK
-
-  while ( RC.nrrrc[gnb_mod_idP] == NULL ) {
-    LOG_E(NR_RRC, "RC.nrrrc not yet initialized, waiting 1 second\n");
-    sleep(1);
-  }
-
-#endif
   AssertFatal(RC.nrrrc[gnb_mod_idP] != NULL, "RC.nrrrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
@@ -267,8 +256,6 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   RC.nrrrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   RC.nrrrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   memcpy(&RC.nrrrc[ctxt.module_id]->configuration,configuration,sizeof(gNB_RrcConfigurationReq));
-  /// System Information INIT
-  LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     init_NR_SI(&ctxt,

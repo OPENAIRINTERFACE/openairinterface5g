@@ -45,7 +45,7 @@
 extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
 extern int32_t get_nr_uldl_offset(int nr_bandP);*/
 extern openair0_config_t openair0_cfg[MAX_CARDS];
-
+extern uint8_t threequarter_fs;
 int l1_north_init_gNB()
 {
   if (RC.nb_nr_L1_inst > 0 && RC.nb_nr_L1_CC != NULL && RC.gNB != NULL) {
@@ -450,7 +450,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   get_band(fp->dl_CarrierFreq, &gNB_config->nfapi_config.rf_bands.rf_band[0], &uplink_frequency_offset[CC_id][0], &fp->frame_type);
   fp->ul_CarrierFreq = fp->dl_CarrierFreq + uplink_frequency_offset[CC_id][0];
-  fp->threequarter_fs                    = openair0_cfg[0].threequarter_fs;
+  fp->threequarter_fs                    = threequarter_fs;
   LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u, UL freq %u)\n",
         Mod_id,
         CC_id,

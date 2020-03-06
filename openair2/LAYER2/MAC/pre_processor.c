@@ -1789,12 +1789,17 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       total_allocated_rbs[CC_id] += nb_allocated_rbs[CC_id][UE_id];
-      LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d\n",
+      LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d, nb_rb_ul %d, %d ,%d, slice %d, round ul %d\n",
             nb_allocated_rbs[CC_id][UE_id],
             UE_id,
             rntiTable[UE_id],
             CC_id,
-            harq_pid);
+            harq_pid,
+	    UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid],
+	    UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[slice_idx],
+	    average_rbs_per_user[CC_id],
+	    slice_idx,
+	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid]);
     }
   }
 
@@ -1819,6 +1824,10 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       while (UE_template->pre_allocated_nb_rb_ul[slice_idx] > 0 &&
              nb_allocated_rbs[CC_id][UE_id] < UE_template->pre_allocated_nb_rb_ul[slice_idx] &&
              total_remaining_rbs[CC_id] > 0) {
+	LOG_D(PHY,"in ulsch alloc: prealloc: %d, nb_allocated %d, total remain%d\n",
+	      UE_template->pre_allocated_nb_rb_ul[slice_idx],
+	      nb_allocated_rbs[CC_id][UE_id],
+	      total_remaining_rbs[CC_id]);
         nb_allocated_rbs[CC_id][UE_id] = cmin(nb_allocated_rbs[CC_id][UE_id] + 1, UE_template->pre_allocated_nb_rb_ul[slice_idx]);
         total_remaining_rbs[CC_id]--;
         total_allocated_rbs[CC_id]++;

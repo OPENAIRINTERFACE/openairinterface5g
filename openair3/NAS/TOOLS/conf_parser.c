@@ -13,7 +13,6 @@ bool parse_config_file(const char *output_dir, const char *conf_filename, int ou
     config_setting_t *root_setting = NULL;
     config_setting_t *ue_setting = NULL;
     config_setting_t *all_plmn_setting = NULL;
-    char user[10];
     config_t cfg;
 
 	networks_t networks;;
@@ -47,6 +46,7 @@ bool parse_config_file(const char *output_dir, const char *conf_filename, int ou
 
 		user_plmns_t user_plmns;
 
+        char user[100];
         sprintf(user, "%s%d", UE, i);
 
         ue_setting = config_setting_get_member(root_setting, user);
