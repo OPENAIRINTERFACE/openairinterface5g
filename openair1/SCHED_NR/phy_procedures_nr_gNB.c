@@ -212,42 +212,28 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)
 {
-  NR_DL_FRAME_PARMS                    *frame_parms           = &gNB->frame_parms;
-  nfapi_nr_ul_config_ulsch_pdu         *rel15_ul              = &gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->ulsch_pdu;
-  nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &rel15_ul->ulsch_pdu_rel15;
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->ulsch_pdu;
   
   uint8_t ret;
   uint8_t l, number_dmrs_symbols = 0;
-  uint8_t mapping_type;
   uint32_t G;
-  int Nid_cell = 0; // [hna] shouldn't be a local variable (should be signaled)
   uint16_t start_symbol, number_symbols, nb_re_dmrs;
 
-  mapping_type = gNB->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
-
-  start_symbol = nfapi_ulsch_pdu_rel15->start_symbol;
-  number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
+  start_symbol = pusch_pdu->start_symbol_index;
+  number_symbols = pusch_pdu->nr_of_symbols;
 
   for (l = start_symbol; l < start_symbol + number_symbols; l++)
-      number_dmrs_symbols += is_dmrs_symbol(l,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            number_symbols,
-                                            &gNB->dmrs_UplinkConfig,
-                                            mapping_type,
-                                            frame_parms->ofdm_symbol_size);
+      number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;;
 
-  nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+  nb_re_dmrs = ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
-  G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
+  G = nr_get_G(pusch_pdu->rb_size,
                number_symbols,
                nb_re_dmrs,
-               nfapi_ulsch_pdu_rel15->length_dmrs,
-               nfapi_ulsch_pdu_rel15->Qm,
-               nfapi_ulsch_pdu_rel15->n_layers);
+               1, // FIXME only single dmrs is implemented 
+               pusch_pdu->qam_mod_order,
+               pusch_pdu->nrOfLayers);
 
 
   //----------------------------------------------------------
@@ -257,23 +243,22 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
                         G,
                         0,
-                        Nid_cell,
-                        rel15_ul->rnti);
+                        pusch_pdu->data_scrambling_id,
+                        pusch_pdu->rnti);
 
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
   //----------------------------------------------------------
 
   ret = nr_ulsch_decoding(gNB,
-                    ULSCH_id,
-                    gNB->pusch_vars[ULSCH_id]->llr,
-                    frame_parms,
-                    frame_rx,
-                    number_symbols,
-                    nb_re_dmrs,
-                    slot_rx,
-                    harq_pid,
-                    0);
+                          ULSCH_id,
+                          gNB->pusch_vars[ULSCH_id]->llr,
+                          frame_parms,
+                          pusch_pdu,
+                          frame_rx,
+                          slot_rx,
+                          harq_pid,
+                          G);
         
   if (ret > gNB->ulsch[ULSCH_id][0]->max_ldpc_iterations)
     LOG_I(PHY, "ULSCH %d in error\n",ULSCH_id);
@@ -407,9 +392,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	    (ulsch_harq->slot == slot_rx) &&
 	    (ulsch_harq->handled == 0)){
 
-	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.ulsch_pdu_rel15.start_symbol;
-	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.ulsch_pdu_rel15.number_symbols;
-      
+	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
+	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	    nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
 	  }

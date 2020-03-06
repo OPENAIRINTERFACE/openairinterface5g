@@ -387,8 +387,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
 
-
-
     schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
 
     nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);

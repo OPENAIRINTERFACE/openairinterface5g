@@ -70,15 +70,10 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
                                  int **rxdataF_ext,
                                  int **ul_ch_estimates_ext,
                                  uint32_t rxdataF_ext_offset,
-                                 // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
                                  unsigned char symbol,
-                                 unsigned short start_rb,
-                                 unsigned short nb_rb_pusch,
+                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t dmrs_symbol,
-                                 uint16_t number_symbols,
-                                 uint8_t mapping_type,
-                                 dmrs_UplinkConfig_t *dmrs_UplinkConfig);
+                                 uint8_t dmrs_symbol);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,

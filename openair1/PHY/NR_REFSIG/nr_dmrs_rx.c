@@ -82,13 +82,13 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
           mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
 
           idx = ((((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
-        ((int16_t*)output)[i<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-        ((int16_t*)output)[(i<<1)+1] = mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+          ((int16_t*)output)[i<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+          ((int16_t*)output)[(i<<1)+1] = mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PUSCH
-        printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", dmrs_type, p, nb_pusch_rb);
-        printf("wf[%d] = %d wt[%d]= %d\n", i&1, wf[p-1000][i&1], lp, wt[p-1000][lp]);
-        printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-            (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1]);
+          printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", dmrs_type, p, nb_pusch_rb);
+          printf("wf[%d] = %d wt[%d]= %d\n", i&1, wf[p-1000][i&1], lp, wt[p-1000][lp]);
+          printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+          (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1]);
 #endif
         }
       } else {

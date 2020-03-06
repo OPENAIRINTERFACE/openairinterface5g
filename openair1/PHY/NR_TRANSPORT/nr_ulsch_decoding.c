@@ -296,15 +296,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t UE_id,
                            short *ulsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,
+                           nfapi_nr_pusch_pdu_t *pusch_pdu,
                            uint32_t frame,
-                           uint16_t nb_symb_sch,
-                           uint16_t nb_re_dmrs,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
-                           uint8_t is_crnti)
+                           uint32_t G)
 {
   uint32_t A,E;
-  uint32_t G;
   uint32_t ret, offset;
   int32_t no_iteration_ldpc, length_dec;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
@@ -318,7 +316,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
-  nfapi_nr_ul_config_ulsch_pdu_rel15_t *nfapi_ulsch_pdu_rel15 = &harq_process->ulsch_pdu.ulsch_pdu_rel15;
   
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams    = &decParams;
@@ -338,13 +335,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   double   Coderate = 0.0;
   
   // ------------------------------------------------------------------
-  uint16_t nb_rb          = nfapi_ulsch_pdu_rel15->number_rbs;
-  uint16_t number_symbols = nfapi_ulsch_pdu_rel15->number_symbols;
-  uint8_t Qm              = nfapi_ulsch_pdu_rel15->Qm;
-  uint16_t R               = nfapi_ulsch_pdu_rel15->R;
-  uint8_t mcs             = nfapi_ulsch_pdu_rel15->mcs;
-  uint8_t n_layers        = nfapi_ulsch_pdu_rel15->n_layers;
-  uint8_t length_dmrs     = nfapi_ulsch_pdu_rel15->length_dmrs;
+  uint16_t nb_rb          = pusch_pdu->rb_size;
+  uint8_t Qm              = pusch_pdu->qam_mod_order;
+  uint16_t R              = pusch_pdu->target_code_rate;
+  uint8_t mcs             = pusch_pdu->mcs_index;
+  uint8_t n_layers        = pusch_pdu->nrOfLayers;
   // ------------------------------------------------------------------
 
   uint32_t i,j;
@@ -364,14 +359,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
-  harq_process->TBS = nr_compute_tbs(Qm, R, nb_rb, number_symbols, nb_re_dmrs*length_dmrs, 0, 0, n_layers);
+  harq_process->TBS = pusch_pdu->pusch_data.tb_size;
 
   A   = harq_process->TBS;
   ret = ulsch->max_ldpc_iterations + 1;
 
-  G = nr_get_G(nb_rb, number_symbols, nb_re_dmrs, length_dmrs, Qm, n_layers);
-
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d, nb_re_dmrs %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_symb_sch,nb_rb, nb_re_dmrs, Qm, n_layers);
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
   if (harq_process->round == 0) {
 
@@ -461,7 +454,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
   for (r=0; r<harq_process->C; r++) {
-    E = nr_get_E(G, harq_process->C, nfapi_ulsch_pdu_rel15->Qm, nfapi_ulsch_pdu_rel15->n_layers, r);
+    E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
 
 #if gNB_TIMING_TRACE
     start_meas(ulsch_deinterleaving_stats);
@@ -474,7 +467,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     //////////////////////////// ulsch_llr =====> harq_process->e //////////////////////////////
 
     nr_deinterleaving_ldpc(E,
-                           nfapi_ulsch_pdu_rel15->Qm,
+                           Qm,
                            harq_process->e[r],
                            ulsch_llr+r_offset);
 
@@ -494,10 +487,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
           harq_pid,r, G,
           Kr*3,
           harq_process->TBS,
-          nfapi_ulsch_pdu_rel15->Qm,
-          nfapi_ulsch_pdu_rel15->number_rbs,
-          nfapi_ulsch_pdu_rel15->n_layers,
-          nfapi_ulsch_pdu_rel15->rv,
+          Qm,
+          nb_rb,
+          n_layers,
+          pusch_pdu->pusch_data.rv_index,
           harq_process->round);
 #endif
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -509,7 +502,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     ///////////////////////// harq_process->e =====> harq_process->d /////////////////////////
 
-    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,nfapi_ulsch_pdu_rel15->n_layers,harq_process->C);
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,n_layers,harq_process->C);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
@@ -518,7 +511,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                  harq_process->d[r],
                                  harq_process->e[r],
                                  harq_process->C,
-                                 nfapi_ulsch_pdu_rel15->rv,
+                                 pusch_pdu->pusch_data.rv_index,
                                  (harq_process->round==0)?1:0,
                                  E,
 				 harq_process->F,
@@ -654,7 +647,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int32_t tti_rx_prev = nr_tti_rx - 1;
   if (tti_rx_prev < 0) {
     frame_rx_prev--;
-    tti_rx_prev += 10*frame_parms->ttis_per_subframe;
+    tti_rx_prev += frame_parms->slots_per_frame;
   }
   frame_rx_prev = frame_rx_prev%1024;
 
@@ -678,10 +671,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       ulsch->harq_mask &= ~(1 << harq_pid);
     }
 
-    if(is_crnti) {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting NACK for nr_tti_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
-            phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->status,harq_process->round,ulsch->Mlimit,harq_process->TBS);
-    }
+    //   LOG_D(PHY,"[gNB %d] ULSCH: Setting NACK for nr_tti_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
+    //         phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->status,harq_process->round,ulsch->Mlimit,harq_process->TBS);
 
     harq_process->handled  = 1;
     ret = ulsch->max_ldpc_iterations + 1;
@@ -701,10 +692,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     // harq_process->harq_ack.harq_id = harq_pid;
     // harq_process->harq_ack.send_harq_status = 1;
 
-    if(is_crnti)
-    {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d (pid %d, round %d, TBS %d)\n",phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->round,harq_process->TBS);
-    }
+
+    //  LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d (pid %d, round %d, TBS %d)\n",phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->round,harq_process->TBS);
+
 
     // Reassembly of Transport block here
     offset = 0;
