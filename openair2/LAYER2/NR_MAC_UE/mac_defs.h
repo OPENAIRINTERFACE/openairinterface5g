@@ -75,7 +75,7 @@ typedef enum {
 } SFN_C_TYPE;
 
 typedef enum {
-  RA_IDLE = 0,
+  RA_UE_IDLE = 0,
   WAIT_RAR = 1,
   WAIT_CONTENTION_RESOLUTION = 2,
   RA_SUCCEEDED = 3

@@ -81,12 +81,12 @@ typedef enum {
   WAIT_Msg3 = 2,
   Msg4 = 3,
   WAIT_Msg4_ACK = 4
-} RA_state_t;
+} RA_gNB_state_t;
 
 /*! \brief gNB template for the Random access information */
 typedef struct {
   /// Flag to indicate this process is active
-  RA_state_t state;
+  RA_gNB_state_t state;
   /// BWP id of RA process
   int bwp_id;
   /// CORESET0 configured flag

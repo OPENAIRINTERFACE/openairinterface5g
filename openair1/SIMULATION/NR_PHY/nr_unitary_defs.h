@@ -55,10 +55,17 @@ signed char quantize(double D, double x, unsigned char B) {
   return ((char) qxd);
 }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe) {
-  AssertFatal(1==0,"Shouldn't be here ...\n");
-  return 0;
-}
+int8_t
+mac_rrc_data_req_ue(
+  const module_id_t Mod_idP,
+  const int         CC_id,
+  const frame_t     frameP,
+  const rb_id_t     Srb_id,
+  const uint8_t     Nb_tb,
+  uint8_t    *const buffer_pP,
+  const mac_enb_index_t eNB_indexP,
+  const uint8_t     mbsfn_sync_area
+		    ) { return(0);}
 
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {return(0);}
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
