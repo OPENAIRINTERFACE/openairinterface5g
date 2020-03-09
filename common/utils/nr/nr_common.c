@@ -37,7 +37,8 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
 
-  if (tmp <= ((N_RB>>1)-tmp2+1)) return(tmp+1);
+
+  if (tmp <= ((N_RB>>1)+1) && (tmp+tmp2)<N_RB) return(tmp+1);
   else                      return(N_RB+1-tmp);
 
 }
@@ -45,14 +46,16 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB) {
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
-  
-  if (tmp <= ((N_RB>>1)-tmp2+1)) return(tmp2);
+
+
+  if (tmp <= ((N_RB>>1)+1) && (tmp+tmp2)<N_RB) return(tmp2);
   else                      return(N_RB-1-tmp2);
 }
 
 /* TS 38.214 ch. 6.1.2.2.2 - Resource allocation type 1 for DL and UL */
 int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize) {
-  AssertFatal(NPRB>0 && (NPRB + RBstart <= BWPsize),"Illegal NPRB/RBstart Configuration (%d,%d)\n",NPRB,RBstart);
+  AssertFatal(NPRB>0 && (NPRB + RBstart <= BWPsize),"Illegal NPRB/RBstart Configuration (%d,%d) for BWPsize %d\n",NPRB,RBstart,BWPsize);
+
   if (NPRB <= 1+(BWPsize>>1)) return(BWPsize*(NPRB-1)+RBstart);
   else                        return(BWPsize*(BWPsize+1-NPRB) + (BWPsize-1-RBstart));
 }

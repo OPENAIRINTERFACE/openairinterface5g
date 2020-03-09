@@ -50,6 +50,7 @@
 #include <execinfo.h>
 #include <getopt.h>
 #include <sys/sysinfo.h>
+#include <math.h>
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -82,7 +83,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "enb_config.h"
-#include <executables/nr-softmodem.h>
+#include <executables/softmodem-common.h>
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -131,6 +132,7 @@ void configure_rru(int idx, void *arg);
 int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
 
+extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
 
 extern int emulate_rf;
@@ -328,8 +330,9 @@ void fh_if5_south_in(RU_t *ru,
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
   recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL);
-  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_slot*20))&1023;
-  proc->tti_rx = (proc->timestamp_rx / fp->samples_per_slot)%20;
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+  uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
+  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
 
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *tti) {
@@ -387,12 +390,12 @@ void fh_if4p5_south_in(RU_t *ru,
   } while(proc->symbol_mask[sl] != symbol_mask_full);
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
-  proc->tti_rx  = sl;
-  proc->frame_rx     = f;
-  proc->timestamp_rx = ((proc->frame_rx * fp->slots_per_frame)  + proc->tti_rx ) * fp->samples_per_slot ;
+  proc->tti_rx   = sl;
+  proc->frame_rx = f;
+  proc->timestamp_rx = (proc->frame_rx * fp->samples_per_subframe * 10)  + fp->get_samples_slot_timestamp(proc->tti_rx, fp, 0);
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_subframe);
-  proc->tti_tx  = (sl+sl_ahead)%fp->slots_per_frame;
-  proc->frame_tx     = (sl>(fp->slots_per_frame-sl_ahead)) ? (f+1)&1023 : f;
+  proc->tti_tx   = (sl+(fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
+  proc->frame_tx = (sl>(fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (f+1)&1023 : f;
 
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *slot) {
@@ -499,8 +502,9 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   openair0_timestamp timestamp_tx;
   recv_IF5(ru, &timestamp_tx, *slot, IF5_RRH_GW_DL);
   //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
-  tti_tx = (timestamp_tx/fp->samples_per_slot)%fp->slots_per_frame;
-  frame_tx    = (timestamp_tx/(fp->samples_per_slot*fp->slots_per_frame))&1023;
+  frame_tx    = (timestamp_tx / (fp->samples_per_subframe*10))&1023;
+  uint32_t idx_sf = timestamp_tx / fp->samples_per_subframe;
+  tti_tx = (idx_sf * fp->slots_per_subframe + (int)round((float)(timestamp_tx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
 
   if (proc->first_tx != 0) {
     *slot = tti_tx;
@@ -553,12 +557,12 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
   if ((nr_slot_select(cfg,frame_tx,slot_tx) & NR_DOWNLINK_SLOT)>0) stop_meas(&ru->rx_fhaul);
 
-  proc->tti_tx  = slot_tx;
-  proc->frame_tx     = frame_tx;
+  proc->tti_tx = slot_tx;
+  proc->frame_tx = frame_tx;
 
   if ((frame_tx == 0)&&(slot_tx == 0)) proc->frame_tx_unwrap += 1024;
 
-  proc->timestamp_tx = ((((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * fp->slots_per_frame) + (uint64_t)slot_tx) * (uint64_t)fp->samples_per_slot;
+  proc->timestamp_tx = (((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * fp->samples_per_subframe * 10) + fp->get_samples_slot_timestamp(slot_tx, fp, 0);
   LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,slot_tx);
 
   // dump VCD output for first RU in list
@@ -625,26 +629,27 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
+  uint32_t samples_per_slot = fp->get_samples_per_slot(*slot,fp);
   openair0_timestamp ts,old_ts;
   AssertFatal(*slot<fp->slots_per_frame && *slot>=0, "slot %d is illegal (%d)\n",*slot,fp->slots_per_frame);
 
   for (i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void *)&ru->common.rxdata[i][*slot*fp->samples_per_slot];
+    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(*slot,fp,0)];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
   old_ts = proc->timestamp_rx;
-  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",fp->samples_per_slot,*slot,rxp[0]);
+  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,*slot,rxp[0]);
 
   if(emulate_rf) {
     wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
     release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
-    rxs = fp->samples_per_slot;
+    rxs = samples_per_slot;
     ts = old_ts + rxs;
   } else {
     rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
                                      &ts,
                                      rxp,
-                                     fp->samples_per_slot,
+                                     samples_per_slot,
                                      ru->nb_rx);
   }
 
@@ -654,21 +659,22 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 
   //AssertFatal(rxs == fp->samples_per_subframe,
   //"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_subframe,rxs);
-  if (rxs != fp->samples_per_slot) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_slot,rxs);
+  if (rxs != samples_per_slot) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
 
   if (proc->first_rx == 1) {
     ru->ts_offset = proc->timestamp_rx;
     proc->timestamp_rx = 0;
   } else {
-    if (proc->timestamp_rx - old_ts != fp->samples_per_slot) {
-      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
-      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_slot);
+    if (proc->timestamp_rx - old_ts != fp->get_samples_per_slot((*slot-1)%fp->slots_per_frame,fp)) {
+      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - samples_per_slot,ru->ts_offset);
+      ru->ts_offset += (proc->timestamp_rx - old_ts - samples_per_slot);
       proc->timestamp_rx = ts-ru->ts_offset;
     }
   }
 
-  proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_slot*fp->slots_per_frame))&1023;
-  proc->tti_rx       = (proc->timestamp_rx / fp->samples_per_slot)%fp->slots_per_frame;
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+  uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
+  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
   // synchronize first reception to frame 0 subframe 0
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
         ru->idx,
@@ -684,7 +690,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *slot) {
-      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",(long long unsigned int)proc->timestamp_rx,proc->tti_rx,*slot);
+      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->tti_rx %d, slot %d)\n",(long long unsigned int)proc->timestamp_rx,proc->tti_rx,*slot);
       exit_fun("Exiting");
     }
 
@@ -701,7 +707,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",ru->timestamp_rx,proc->frame_rx,frame,proc->tti_rx,subframe);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
 
-  if (rxs != fp->samples_per_slot) {
+  if (rxs != samples_per_slot) {
     //exit_fun( "problem receiving samples" );
     LOG_E(PHY, "problem receiving samples\n");
   }
@@ -716,13 +722,13 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   unsigned int txs;
   int i,txsymb;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][slot * fp->samples_per_slot], fp->samples_per_slot * 4));
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
 
   int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
   int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
   int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
   int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
-  int siglen=fp->samples_per_slot;
+  int siglen=fp->get_samples_per_slot(slot,fp);
   int flags=1;
 
   //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
@@ -735,7 +741,10 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
           txsymb++;
       }
       AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
-      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      if(slot%(fp->slots_per_subframe/2))
+        siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      else
+        siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
                //+ ru->end_of_burst_delay;
       flags=3; // end of burst
     }
@@ -756,11 +765,13 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
       int beam=0;
+      if (slot==0) beam = 11; //3 for boresight & 8 to enable
+      /*
       if (slot==0 || slot==40) beam=0&8;
       if (slot==10 || slot==50) beam=1&8;
       if (slot==20 || slot==60) beam=2&8;
       if (slot==30 || slot==70) beam=3&8;
-
+      */
       flags |= beam<<8;
     }
     
@@ -768,7 +779,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][(slot*fp->samples_per_slot)-sf_extension];
+      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)-sf_extension];
     
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
@@ -2417,7 +2428,7 @@ void RCconfig_RU(void)
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
-      RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].uptr);
+      RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;

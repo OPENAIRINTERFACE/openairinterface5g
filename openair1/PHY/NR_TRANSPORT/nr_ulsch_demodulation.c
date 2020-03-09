@@ -268,7 +268,7 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
     for (re = 0; re < nb_re_pusch; re++) {
 
   #ifdef DEBUG_RB_EXT
-      printf("re = %d, is_dmrs_symbol_flag = %d, symbol = %d\n", re, is_dmrs_symbol_flag, symbol);
+      printf("re = %d, symbol = %d\n", re, symbol);
   #endif
 
       if ( dmrs_symbol != symbol ) {
@@ -278,8 +278,7 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
         ul_ch0_ext[ul_ch0_ext_index] = ul_ch0[ul_ch0_index];
 
   #ifdef DEBUG_RB_EXT
-        printf("rxF_ext[%d] = %d\n", rxF_ext_index, rxF_ext[rxF_ext_index]);
-        printf("rxF_ext[%d] = %d\n", rxF_ext_index+1, rxF_ext[rxF_ext_index+1]);
+        printf("rxF_ext[%d] = (%d,%d)\n", rxF_ext_index>>1, rxF_ext[rxF_ext_index],rxF_ext[rxF_ext_index+1]);
   #endif
 
         ul_ch0_ext_index++;
@@ -474,12 +473,12 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
   ul_ch = (int16_t *)&ul_ch_estimates_ext[0][symbol*nb_rb*12];
 
   printf("--------------------symbol = %d, mod_order = %d, output_shift = %d-----------------------\n", symbol, mod_order, output_shift);
-  printf("----------------Before compansation------------------\n");
+  printf("----------------Before compensation------------------\n");
 
-  for (prnt_idx=0;prnt_idx<12*nb_rb*2;prnt_idx++){
+  for (prnt_idx=0;prnt_idx<12*nb_rb*2;prnt_idx+=2){
 
-    printf("rxF[%d] = %d\n", prnt_idx, rxF[prnt_idx]);
-    printf("ul_ch[%d] = %d\n", prnt_idx, ul_ch[prnt_idx]);
+    printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
+    printf("ul_ch[%d] = (%d,%d)\n", prnt_idx>>1, ul_ch[prnt_idx],ul_ch[prnt_idx+1]);
 
   }
 
@@ -951,9 +950,9 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   printf("----------------After compansation------------------\n");
 
-  for (prnt_idx=0;prnt_idx<12*nb_rb*2;prnt_idx++){
+  for (prnt_idx=0;prnt_idx<12*nb_rb*2;prnt_idx+=2){
 
-    printf("rxF[%d] = %d\n", prnt_idx, rxF[prnt_idx]);
+    printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
 
   }
 
@@ -966,9 +965,9 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   printf("----------------After computation------------------\n");
 
-  for (print_idx=0;print_idx<12*nb_rb*2;print_idx++){
+  for (print_idx=0;print_idx<12*nb_rb*2;print_idx+=2){
 
-    printf("ch_mag[%d] = %d\n", print_idx, ch_mag[print_idx]);
+    printf("ch_mag[%d] = (%d,%d)\n", print_idx>>1, ch_mag[print_idx],ch_mag[print_idx+1]);
 
   }
 

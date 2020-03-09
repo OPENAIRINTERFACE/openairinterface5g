@@ -150,7 +150,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
     for (int i=0; i<9; i++) {
       z[index_z + i] = llr[index_llr + i];
-      LOG_DDD("[reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
+      LOG_D(PHY,"[reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
              reg,bundle_j,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
              f_reg,f_bundle_j,(index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
     }
@@ -678,7 +678,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     int n_rb,rb_offset;
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
     for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
-      LOG_DD("in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
+      LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
       nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[slot]].rxdataF,
 				  pdcch_vars->dl_ch_estimates,
@@ -690,8 +690,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 				  n_rb,
 				  rel15->BWPStart);
 
-      LOG_DD("we enter nr_pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
-      LOG_DD("in nr_pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
+      LOG_D(PHY,"we enter nr_pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",*avgP);
+      LOG_D(PHY,"in nr_pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
       // compute channel level based on ofdm symbol 0
       nr_pdcch_channel_level(pdcch_vars->dl_ch_estimates_ext,
                              frame_parms,
@@ -710,8 +710,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
       T(T_UE_PHY_PDCCH_ENERGY, T_INT(0), T_INT(0), T_INT(frame%1024), T_INT(slot),
 	    T_INT(avgP[0]), T_INT(avgP[1]), T_INT(avgP[2]), T_INT(avgP[3]));
 #endif
-      LOG_DD("we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
-      LOG_DD("in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
+      LOG_D(PHY,"we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
+      LOG_D(PHY,"in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
       // compute LLRs for ofdm symbol 0 only
       nr_pdcch_channel_compensation(pdcch_vars->rxdataF_ext,
                                     pdcch_vars->dl_ch_estimates_ext,
@@ -722,12 +722,12 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                     log2_maxh,
                                     n_rb); // log2_maxh+I0_shift
       if (frame_parms->nb_antennas_rx > 1) {
-        LOG_DD("we enter nr_pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n", frame_parms->nb_antennas_rx);
+        LOG_D(PHY,"we enter nr_pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n", frame_parms->nb_antennas_rx);
         nr_pdcch_detection_mrc(frame_parms, pdcch_vars->rxdataF_comp,s);
       }
 
-      LOG_DD("we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
-      LOG_DD("in nr_pdcch_llr(rxdataF_comp -> llr)\n");
+      LOG_D(PHY,"we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
+      LOG_D(PHY,"in nr_pdcch_llr(rxdataF_comp -> llr)\n");
       nr_pdcch_llr(frame_parms,
                    pdcch_vars->rxdataF_comp,
                    pdcch_vars->llr,
@@ -745,7 +745,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #endif
     }
 
-    LOG_DD("we enter nr_pdcch_demapping_deinterleaving()\n");
+    LOG_D(PHY,"we enter nr_pdcch_demapping_deinterleaving()\n");
     nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
                                       (uint32_t *) pdcch_vars->e_rx,
                                       frame_parms,
@@ -754,6 +754,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                       rel15->coreset.RegBundleSize,
                                       rel15->coreset.InterleaverSize,
                                       rel15->coreset.ShiftIndex);
+    /*
     nr_pdcch_unscrambling(rel15->rnti,
                           frame_parms,
                           slot,
@@ -761,8 +762,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                           rel15->coreset.duration*n_rb*9*2,
                           // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
                           rel15->coreset.pdcch_dmrs_scrambling_id);
-    LOG_DD("we end nr_pdcch_unscrambling()\n");
-    LOG_DD("Ending nr_rx_pdcch() function\n");
+    */
+    LOG_D(PHY,"we end nr_pdcch_unscrambling()\n");
+    LOG_D(PHY,"Ending nr_rx_pdcch() function\n");
 
   }
   return (0);
@@ -798,7 +800,7 @@ void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
 #ifdef NR_PDCCH_DCI_RUN
 
 void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t slot,
-                           int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id) {
+                           int16_t *z, int16_t *z2,uint32_t length, uint16_t pdcch_DMRS_scrambling_id) {
   int i;
   uint8_t reset;
   uint32_t x1, x2, s = 0;
@@ -812,13 +814,16 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
 
   x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
 
+  LOG_D(PHY,"PDCCH Unscrambling x2 %x : n_RNTI %x\n",x2,n_rnti);
+
   for (i = 0; i < length; i++) {
     if ((i & 0x1f) == 0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
 
-    if (((s >> (i % 32)) & 1) == 1) z[i] = -z[i];
+    if (((s >> (i % 32)) & 1) == 1) z2[i] = -z[i];
+    else z2[i]=z[i];
   }
 }
 
@@ -837,15 +842,29 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
 
     rel15 = &pdcch_vars->pdcch_config[i];
     int dci_length = rel15->dci_length;
+    int16_t tmp_e[16*108];
+
     for (int j=0;j<rel15->number_of_candidates;j++) {
+      LOG_D(PHY,"Trying DCI candidate %d, CCE %d (%d), L %d\n",j,rel15->CCE[j],rel15->CCE[j]*9*6*2,rel15->L[j]);
       int CCEind = rel15->CCE[j];
       int L = rel15->L[j];
       uint64_t dci_estimation[2]= {0};
       const t_nrPolar_params *currentPtrDCI=nr_polar_params(1, dci_length, L,1,&ue->polarList);
-      uint16_t crc = polar_decoder_int16(&pdcch_vars->e_rx[CCEind*9*6*2],
+
+      nr_pdcch_unscrambling(rel15->rnti,
+			    &ue->frame_parms,
+			    slot,
+			    &pdcch_vars->e_rx[CCEind*108],
+			    tmp_e,
+			    L*108,
+			    // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
+			    rel15->coreset.pdcch_dmrs_scrambling_id);
+
+      uint16_t crc = polar_decoder_int16(tmp_e,
                                          dci_estimation,
                                          1,
                                          currentPtrDCI);
+      LOG_D(PHY,"Decoded crc %x\n",crc);
       if (crc == rel15->rnti) {
 	dci_ind->SFN = frame;
 	dci_ind->slot = slot;

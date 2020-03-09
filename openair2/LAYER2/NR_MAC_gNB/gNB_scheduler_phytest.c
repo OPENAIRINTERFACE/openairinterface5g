@@ -34,8 +34,7 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
-#include "executables/nr-softmodem.h"
-#include "common/utils/nr/nr_common.h"
+#include "executables/softmodem-common.h"
 
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -383,6 +382,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdcch_pdu_rel15->numDlDci = 1;
   pdcch_pdu_rel15->dci_pdu.AggregationLevel[0] = 4;
   pdcch_pdu_rel15->dci_pdu.RNTI[0]=UE_list->rnti[0];
+  pdcch_pdu_rel15->dci_pdu.ScramblingRNTI[0]=UE_list->rnti[0];
   pdcch_pdu_rel15->dci_pdu.CceIndex[0] = CCEIndex[0];
   pdcch_pdu_rel15->dci_pdu.beta_PDCCH_1_0[0]=0;
   pdcch_pdu_rel15->dci_pdu.powerControlOffsetSS[0]=1;
@@ -406,7 +406,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	pdcch_pdu_rel15->DurationSymbols);
 
   int x_Overhead = 0; // should be 0 for initialBWP
-  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, 1, x_Overhead,0);
+  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead,1,0);
 
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];

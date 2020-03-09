@@ -1289,6 +1289,52 @@ rrc_eNB_generate_UECapabilityEnquiry(
 
 //-----------------------------------------------------------------------------
 void
+rrc_eNB_generate_NR_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP
+)
+//-----------------------------------------------------------------------------
+{
+  uint8_t                             buffer[100];
+  uint8_t                             size;
+  T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  size = do_NR_UECapabilityEnquiry(
+           ctxt_pP,
+           buffer,
+           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  LOG_I(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size);
+  LOG_D(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (NR UECapabilityEnquiry MUI %d) --->[PDCP][RB %02d]\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size,
+        rrc_eNB_mui,
+        DCCH);
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_RRC_UE,
+    buffer,
+    size,
+    MSC_AS_TIME_FMT" rrcNRUECapabilityEnquiry UE %x MUI %d size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    rrc_eNB_mui,
+    size);
+  rrc_data_req(
+    ctxt_pP,
+    DCCH,
+    rrc_eNB_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
+}
+
+//-----------------------------------------------------------------------------
+void
 rrc_eNB_generate_RRCConnectionReject(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t          *const ue_context_pP,
@@ -6396,6 +6442,16 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     free(DRB_Release_configList2);
     ue_context_pP->ue_context.DRB_Release_configList2[xid] = NULL;
   }
+
+  /* let's request NR capabilities if the UE supports NR
+   * maybe not the right place/time to request
+   */
+  if (ue_context_pP->ue_context.does_nr &&
+      !ue_context_pP->ue_context.nr_capabilities_requested) {
+    ue_context_pP->ue_context.nr_capabilities_requested = 1;
+    rrc_eNB_generate_NR_UECapabilityEnquiry(ctxt_pP, ue_context_pP);
+  }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -7215,6 +7271,48 @@ rrc_eNB_decode_ccch(
 }
 
 //-----------------------------------------------------------------------------
+static int
+is_en_dc_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
+//-----------------------------------------------------------------------------
+{
+  /* to be refined - check that the eNB is connected to a gNB, check that
+   * the bands supported by the UE include the band of the gNB
+   */
+#define NCE nonCriticalExtension
+  return c != NULL
+      && c->NCE != NULL
+      && c->NCE->NCE != NULL
+      && c->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 != NULL
+      && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 == LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
+#undef NCE
+}
+
+//-----------------------------------------------------------------------------
 int
 rrc_eNB_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
@@ -7743,13 +7841,6 @@ rrc_eNB_decode_dcch(
 
         LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
 
-        if (ue_context_p->ue_context.UE_Capability) {
-          LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
-          ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
-                          ue_context_p->ue_context.UE_Capability);
-          ue_context_p->ue_context.UE_Capability = 0;
-        }
-
         int eutra_index = -1;
 
         for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
@@ -7760,9 +7851,17 @@ rrc_eNB_decode_dcch(
             }
             eutra_index = i;
           }
-          /* todo: improve nr dual connectivity capability checking */
-          if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr)
-            ue_context_p->ue_context.does_nr = 1;
+        }
+
+        /* do nothing if no EUTRA capabilities (TODO: may be NR capabilities, to be processed somehow) */
+        if (eutra_index == -1)
+          break;
+
+        if (ue_context_p->ue_context.UE_Capability) {
+          LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
+          ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
+                          ue_context_p->ue_context.UE_Capability);
+          ue_context_p->ue_context.UE_Capability = 0;
         }
 
         dec_rval = uper_decode(NULL,
@@ -7785,6 +7884,9 @@ rrc_eNB_decode_dcch(
                           ue_context_p->ue_context.UE_Capability);
           ue_context_p->ue_context.UE_Capability = 0;
         }
+
+        if (dec_rval.code == RC_OK)
+          ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
 
         if (EPC_MODE_ENABLED) {
           rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,

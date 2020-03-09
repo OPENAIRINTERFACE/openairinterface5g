@@ -242,7 +242,8 @@ static void UE_synch(void *arg) {
 
       if (nr_initial_sync( &syncD->proc, UE, UE->mode,2) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
-        hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
+        hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
+                         round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %lu, UL %lu), UE_scan_carrier %d\n",
               hw_slot_offset,
               freq_offset,
@@ -540,57 +541,54 @@ void UE_processing(void *arg) {
 
 }
 
-void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
-  void *rxp[NB_ANTENNAS_RX];
+void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
   void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
+    dummy_tx[i]=malloc16_clear(writeBlockSize*4);
 
-  for(int x=0; x<20; x++) {  // two frames for initial sync
-    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-      rxp[i] = ((void *)&UE->common_vars.rxdata[i][0]) + 4*x*UE->frame_parms.samples_per_subframe;
-
-    AssertFatal( UE->frame_parms.samples_per_subframe ==
-                 UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                            timestamp,
-                                            rxp,
-                                            UE->frame_parms.samples_per_subframe,
-                                            UE->frame_parms.nb_antennas_rx), "");
-  }
+  AssertFatal( writeBlockSize ==
+               UE->rfdevice.trx_write_func(&UE->rfdevice,
+               timestamp,
+               dummy_tx,
+               writeBlockSize,
+               UE->frame_parms.nb_antennas_tx,
+               4),"");
 
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
     free(dummy_tx[i]);
 }
 
-void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
+void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash) {
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
+  void *rxp[NB_ANTENNAS_RX];
 
-  void *dummy_rx[UE->frame_parms.nb_antennas_rx];
+  for(int x=0; x<20; x++) {  // two frames for initial sync
+    for (int slot=0; slot<UE->frame_parms.slots_per_subframe; slot ++ ) {
+      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++) {
+        if (toTrash)
+          rxp[i]=malloc16(UE->frame_parms.get_samples_per_slot(slot,&UE->frame_parms)*4);
+        else
+          rxp[i] = ((void *)&UE->common_vars.rxdata[i][0]) +
+                   4*((x*UE->frame_parms.samples_per_subframe)+
+                   UE->frame_parms.get_samples_slot_timestamp(slot,&UE->frame_parms,0));
+      }
+        
+      AssertFatal( UE->frame_parms.get_samples_per_slot(slot,&UE->frame_parms) ==
+                   UE->rfdevice.trx_read_func(&UE->rfdevice,
+                   timestamp,
+                   rxp,
+                   UE->frame_parms.get_samples_per_slot(slot,&UE->frame_parms),
+                   UE->frame_parms.nb_antennas_rx), "");
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-    dummy_rx[i]=malloc16(UE->frame_parms.samples_per_subframe*4);
-
-  for (int sf=0; sf<NR_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++) {
-    //      printf("Reading dummy sf %d\n",sf);
-    UE->rfdevice.trx_read_func(&UE->rfdevice,
-                               timestamp,
-                               dummy_rx,
-                               UE->frame_parms.samples_per_subframe,
-                               UE->frame_parms.nb_antennas_rx);
-    if (IS_SOFTMODEM_RFSIM ) {
-	 usleep(1000); // slow down, as would do actual rf to let cpu for the synchro thread
+      if (IS_SOFTMODEM_RFSIM)
+        dummyWrite(UE,*timestamp, UE->frame_parms.get_samples_per_slot(slot,&UE->frame_parms));
+      if (toTrash)
+        for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+          free(rxp[i]);
     }
   }
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-    free(dummy_rx[i]);
 }
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
@@ -675,7 +673,7 @@ void *UE_thread(void *arg) {
         decoded_frame_rx=(tmp->proc.decoded_frame_rx+trashed_frames) % MAX_FRAME_NUMBER;
         delNotifiedFIFO_elt(res);
       } else {
-        trashFrame(UE, &timestamp);
+        readFrame(UE, &timestamp, true);
         trashed_frames++;
         continue;
       }
@@ -684,7 +682,7 @@ void *UE_thread(void *arg) {
     AssertFatal( !syncRunning, "At this point synchronization can't be running\n");
 
     if (!UE->is_synchronized) {
-      readFrame(UE, &timestamp);
+      readFrame(UE, &timestamp, false);
       notifiedFIFO_elt_t *Msg=newNotifiedFIFO_elt(sizeof(syncData_t),0,&nf,UE_synch);
       syncData_t *syncMsg=(syncData_t *)NotifiedFifoData(Msg);
       syncMsg->UE=UE;
@@ -750,24 +748,25 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
       rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
-               UE->frame_parms.nb_prefix_samples0+
-               slot_nr*UE->frame_parms.samples_per_slot];
+               UE->frame_parms.nb_prefix_samples0+UE->frame_parms.
+               get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      txp[i] = (void *)&UE->common_vars.txdata[i][((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX)%nb_slot_frame)*UE->frame_parms.samples_per_slot];
+      txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
+               ((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
-      readBlockSize=UE->frame_parms.samples_per_slot;
-      writeBlockSize=UE->frame_parms.samples_per_slot;
+      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
-      readBlockSize=UE->frame_parms.samples_per_slot -
+      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
                     UE->frame_parms.ofdm_symbol_size -
                     UE->frame_parms.nb_prefix_samples0 -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.samples_per_slot -
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
                      UE->rx_offset_diff;
     }
 
@@ -781,7 +780,8 @@ void *UE_thread(void *arg) {
     AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
-                     (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot) -
+                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
+                     &UE->frame_parms,DURATION_RX_TO_TX) -
                      UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
                      openair0_cfg[0].tx_sample_advance,
                      txp,
@@ -805,7 +805,8 @@ void *UE_thread(void *arg) {
     }
 
     curMsg->proc.timestamp_tx = timestamp+
-                                (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot)-
+                                UE->frame_parms.get_samples_slot_timestamp(slot_nr,
+                                &UE->frame_parms,DURATION_RX_TO_TX) -
                                 UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
     notifiedFIFO_elt_t *res;
 

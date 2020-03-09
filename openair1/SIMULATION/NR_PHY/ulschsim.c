@@ -232,9 +232,9 @@ int main(int argc, char **argv)
         break;
 
       case 'R':
-        N_RB_DL = atoi(optarg);
+        N_RB_UL = atoi(optarg);
 #ifdef DEBUG_NR_ULSCHSIM
-        printf("N_RB_DL (-R) = %d\n", N_RB_DL);
+        printf("N_RB_UL (-R) = %d\n", N_RB_UL);
 #endif
         break;
 
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
           //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
           printf("-M Multiple SSB positions in burst\n");
           printf("-N Nid_cell\n");
-          printf("-R N_RB_DL\n");
+          printf("-R N_RB_UL\n");
           printf("-F Input filename (.txt format) for RX conformance testing\n");
           printf("-m\n");
           printf("-l\n");
@@ -339,10 +339,11 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
-
   crcTableInit();
 
-  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell, SSB_positions);
+  memcpy(&gNB->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+
+  nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
   phy_init_nr_gNB(gNB, 0, 0);
 

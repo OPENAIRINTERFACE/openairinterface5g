@@ -66,46 +66,77 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0) , 1 );
 
-  slot_offset  = slot*fp->samples_per_slot;
+  slot_offset  = fp->get_samples_slot_timestamp(slot,fp,0);
   slot_offsetF = first_symbol*fp->ofdm_symbol_size;
 
+  int abs_first_symbol = slot*fp->symbols_per_slot;
 
-  if (first_symbol>0) slot_offset += (fp->ofdm_symbol_size*first_symbol) + (fp->nb_prefix_samples0) + (fp->nb_prefix_samples*(first_symbol-1));
+  for (uint16_t idx_sym=abs_first_symbol; idx_sym<abs_first_symbol+first_symbol; idx_sym++)
+    slot_offset += (idx_sym%(0x7<<fp->numerology_index)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
+
+  slot_offset += fp->ofdm_symbol_size*first_symbol;
 
   LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d (first_symbol %d num_symbols %d)\n",ru->proc.frame_tx, ru->proc.tti_tx,slot,first_symbol,num_symbols);
-
-  if (fp->Ncp == 1) {
+  
+  if (fp->Ncp == 1)
     PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
                  (int*)&ru->common.txdata[aa][slot_offset],
                  fp->ofdm_symbol_size,
                  num_symbols,
                  fp->nb_prefix_samples,
                  CYCLIC_PREFIX);
-  }
   else {
-    if (first_symbol==0) {
-      PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
-                   (int*)&ru->common.txdata[aa][slot_offset],
-                   fp->ofdm_symbol_size,
-                   1,
-                   fp->nb_prefix_samples0,
-                   CYCLIC_PREFIX);
-      PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF+fp->ofdm_symbol_size],
-                   (int*)&ru->common.txdata[aa][slot_offset+fp->nb_prefix_samples0+fp->ofdm_symbol_size],
-                   fp->ofdm_symbol_size,
-                   num_symbols-1,
-                   fp->nb_prefix_samples,
-                   CYCLIC_PREFIX);
+    if (fp->numerology_index != 0) {
+
+      if (!(slot%(fp->slots_per_subframe/2))&&(first_symbol==0)) {
+        PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
+                     (int*)&ru->common.txdata[aa][slot_offset],
+                     fp->ofdm_symbol_size,
+                     1,
+                     fp->nb_prefix_samples0,
+                     CYCLIC_PREFIX);
+        PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF+fp->ofdm_symbol_size],
+                     (int*)&ru->common.txdata[aa][slot_offset+fp->nb_prefix_samples0+fp->ofdm_symbol_size],
+                     fp->ofdm_symbol_size,
+                     num_symbols-1,
+                     fp->nb_prefix_samples,
+                     CYCLIC_PREFIX);
+      }
+      else {
+        PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
+                     (int*)&ru->common.txdata[aa][slot_offset],
+                     fp->ofdm_symbol_size,
+                     num_symbols,
+                     fp->nb_prefix_samples,
+                     CYCLIC_PREFIX);
+      }
     }
+
     else {
-      PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
-                   (int*)&ru->common.txdata[aa][slot_offset],
-                   fp->ofdm_symbol_size,
-                   num_symbols,
-                   fp->nb_prefix_samples,
-                   CYCLIC_PREFIX);
+      for (uint16_t idx_sym=abs_first_symbol; idx_sym<abs_first_symbol+num_symbols; idx_sym++) {
+        if (idx_sym%0x7) {
+          PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
+                       (int*)&ru->common.txdata[aa][slot_offset],
+                       fp->ofdm_symbol_size,
+                       1,
+                       fp->nb_prefix_samples,
+                       CYCLIC_PREFIX);
+          slot_offset += fp->nb_prefix_samples+fp->ofdm_symbol_size;
+        }
+        else {
+          PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
+                       (int*)&ru->common.txdata[aa][slot_offset],
+                       fp->ofdm_symbol_size,
+                       1,
+                       fp->nb_prefix_samples0,
+                       CYCLIC_PREFIX);
+          slot_offset += fp->nb_prefix_samples0+fp->ofdm_symbol_size;
+        }
+      }
     }
   }
+
+        
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0), 0);
 }
 
@@ -370,7 +401,7 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   int slot_sizeF = (fp->ofdm_symbol_size)*
                    ((cyclic_prefix_type == 1) ? 12 : 14);
   int slot = tti_tx;
-  int *txdata = &ru->common.txdata[aa][slot*fp->samples_per_slot];
+  int *txdata = &ru->common.txdata[aa][fp->get_samples_slot_timestamp(slot,fp,0)];
 
   if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
 
@@ -386,8 +417,8 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   stop_meas(&ru->ofdm_mod_stats);
 
   LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, slot %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_slot)),
-	dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
+	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->get_samples_per_slot(
+  slot,fp))),dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
 
 }
 

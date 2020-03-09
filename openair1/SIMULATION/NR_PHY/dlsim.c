@@ -74,7 +74,8 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
 
-int sf_ahead=4, phy_test = 0;
+int sf_ahead=4 ;
+int sl_ahead=0;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
@@ -107,7 +108,6 @@ void config_common(int Mod_idP,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
-uint64_t get_softmodem_optmask(void) {return 0;}
 mac_rlc_status_resp_t mac_rlc_status_ind(const module_id_t       module_idP,
                                          const rnti_t            rntiP,
                                          const eNB_index_t       eNB_index,
@@ -140,6 +140,7 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 void nr_ip_over_LTE_DRB_preconfiguration(void){}
+
 void mac_rlc_data_ind     (
   const module_id_t         module_idP,
   const rnti_t              rntiP,
@@ -156,6 +157,8 @@ void mac_rlc_data_ind     (
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+
 
 
 int main(int argc, char **argv)
@@ -446,6 +449,8 @@ int main(int argc, char **argv)
   set_glog(loglvl);
   T_stdout = 1;
 
+  get_softmodem_params()->phy_test = 1;
+  
   if (snr1set==0)
     snr1 = snr0+10;
 
@@ -470,6 +475,7 @@ int main(int argc, char **argv)
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
+  /*
   // read in SCGroupConfig
   AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");
   char buffer[1024];
@@ -507,22 +513,35 @@ int main(int argc, char **argv)
     SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, secondaryCellGroup, 1 );
     exit(-1);
   }      
-
-  NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+  NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+  */
 
-  rrc.carrier.servingcellconfigcommon = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  printf("%p,%p\n",
-	 secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon,
-	 rrc.carrier.servingcellconfigcommon);
+
+  rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
+
+  NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
+  prepare_scc(rrc.carrier.servingcellconfigcommon);
+  uint64_t ssb_bitmap;
+  fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
+
+  fill_default_secondaryCellGroup(scc,
+				  secondaryCellGroup,
+				  0,
+				  1,
+				  n_tx,
+				  0);
+  fix_scc(scc,ssb_bitmap);
+
+  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
   rrc_mac_config_req_gNB(0,0,1,scc,0,0,NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,1,NULL,1,4660/*secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity*/,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0,1,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   // stub to configure frame_parms
@@ -657,9 +676,9 @@ int main(int argc, char **argv)
   gNB->ssb_pdu.ssb_pdu_rel15.bchPayload=0x001234;
   
   if (mcsIndex_set==0) dlsch_config.mcsIndex[0]=9;
-  if (rbSize_set==0) dlsch_config.rbSize=N_RB_DL;
+  
   if (rbStart_set==0) dlsch_config.rbStart=0;
-
+  if (rbSize_set==0) dlsch_config.rbSize=N_RB_DL-dlsch_config.rbStart;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
@@ -729,9 +748,11 @@ int main(int argc, char **argv)
       Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
       nr_schedule_response(&Sched_INFO);
       
-      phy_procedures_gNB_TX(gNB,frame,slot,0);
+      if (run_initial_sync)
+        nr_common_signal_procedures(gNB,frame,slot);
+      else
+        phy_procedures_gNB_TX(gNB,frame,slot,0);
           
-      //nr_common_signal_procedures (gNB,frame,subframe);
       int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
       
       if (n_trials==1) {
@@ -739,7 +760,7 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
       }
-      int tx_offset = slot*frame_parms->samples_per_slot;
+      int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
       if (n_trials==1) printf("samples_per_slot_wCP = %d\n", frame_parms->samples_per_slot_wCP);
       
       //TODO: loop over slots
@@ -768,13 +789,13 @@ int main(int argc, char **argv)
       if (output_fd) 
 	fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
       
-      int txlev = signal_energy(&txdata[0][(slot*frame_parms->samples_per_slot)+5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+      int txlev = signal_energy(&txdata[0][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 				frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
       
       //  if (n_trials==1) printf("txlev %d (%f)\n",txlev,10*log10((double)txlev));
       
-      for (i=(slot * frame_parms->samples_per_slot); 
-	   i<((slot+1) * frame_parms->samples_per_slot); 
+      for (i=(frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)); 
+	   i<(frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0)); 
 	   i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	  r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
@@ -790,8 +811,8 @@ int main(int argc, char **argv)
       sigma2    = pow(10, sigma2_dB/10);
       if (n_trials==1) printf("sigma2 %f (%f dB), txlev %f (factor %f)\n",sigma2,sigma2_dB,10*log10((double)txlev),(double)(double)UE->frame_parms.ofdm_symbol_size/(12*rel15.rbSize));
       
-      for (i=(slot * frame_parms->samples_per_slot); 
-	   i<((slot+1) * frame_parms->samples_per_slot); 
+      for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
+	   i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);
 	   i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));

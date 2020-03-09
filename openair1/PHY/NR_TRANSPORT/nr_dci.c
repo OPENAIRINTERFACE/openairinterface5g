@@ -137,6 +137,7 @@ void nr_pdcch_scrambling(uint32_t *in,
   uint32_t x1, x2, s=0;
   reset = 1;
   x2 = (n_RNTI<<16) + Nid;
+  LOG_D(PHY,"PDCCH Scrambling x2 %x : n_RNTI %x\n",x2,n_RNTI);
   for (int i=0; i<size; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
@@ -166,7 +167,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   int k,l,k_prime,dci_idx, dmrs_idx;
   /*First iteration: single DCI*/
 
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15; 
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15=NULL;
 
 
   // find coreset descriptor
@@ -244,8 +245,8 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
     
     for (int i=0; i<encoded_length>>5; i++)
-      printf("[%d]->0x%08x \t", i,encoder_output[i]);
-    
+      printf("[%d]->0x%08x \t", i,encoder_output[i]);    
+
     printf("\n");
 #endif
     /// Scrambling
@@ -273,10 +274,11 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
       cset_start_sc -= frame_parms.ofdm_symbol_size;
     
     /*Reorder REG list for a freq first mapping*/
+    uint8_t reg_idx0 = pdcch_pdu_rel15->dci_pdu.CceIndex[d]*NR_NB_REG_PER_CCE;
     uint8_t nb_regs = pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]*NR_NB_REG_PER_CCE;
 
     /*Mapping the encoded DCI along with the DMRS */
-    for (int reg_idx=0; reg_idx<nb_regs; reg_idx++) {
+    for (int reg_idx=reg_idx0; reg_idx<(nb_regs+reg_idx0); reg_idx++) {
       k = cset_start_sc + (12*reg_idx/cset_nsymb);
       
       if (k >= frame_parms.ofdm_symbol_size)

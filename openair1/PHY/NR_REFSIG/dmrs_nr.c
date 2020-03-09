@@ -167,6 +167,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
 
   }
 
+
   if (is_dmrs_time && is_dmrs_freq)
     return 1;
   else

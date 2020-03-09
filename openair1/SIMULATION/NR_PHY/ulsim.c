@@ -63,7 +63,8 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-int sf_ahead=4, phy_test = 0;
+int sf_ahead=4 ;
+int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
@@ -114,7 +115,6 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char *ue_cont_res_id,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
-uint64_t get_softmodem_optmask(void) {return 0;}
 int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
 void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
@@ -374,6 +374,8 @@ int main(int argc, char **argv)
   set_glog(loglvl);
   T_stdout = 1;
 
+  get_softmodem_params()->phy_test = 1;
+    
   if (snr1set == 0)
     snr1 = snr0 + 10;
 
@@ -412,52 +414,23 @@ int main(int argc, char **argv)
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
-  // read in SCGroupConfig
-  AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");
-  char buffer[1024];
-  int msg_len=fread(buffer,1,1024,scg_fd);
-  NR_RRCReconfiguration_t *NR_RRCReconfiguration;
+  rrc.carrier.servingcellconfigcommon = calloc(1,sizeof(*rrc.carrier.servingcellconfigcommon));
 
-  printf("Decoding NR_RRCReconfiguration (%d bytes)\n",msg_len);
-  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-						  &asn_DEF_NR_RRCReconfiguration,
-						  (void **)&NR_RRCReconfiguration,
-						  (uint8_t *)buffer,
-						  msg_len); 
-  
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    AssertFatal(1==0,"NR_RRCReConfiguration decode error\n");
-    // free the memory
-    SEQUENCE_free( &asn_DEF_NR_RRCReconfiguration, NR_RRCReconfiguration, 1 );
-    exit(-1);
-  }      
-  fclose(scg_fd);
+  NR_ServingCellConfigCommon_t *scc = rrc.carrier.servingcellconfigcommon;
+  NR_CellGroupConfig_t *secondaryCellGroup=calloc(1,sizeof(*secondaryCellGroup));
+  prepare_scc(rrc.carrier.servingcellconfigcommon);
+  uint64_t ssb_bitmap;
+  fill_scc(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
 
-  AssertFatal(NR_RRCReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration,"wrong NR_RRCReconfiguration->criticalExstions.present type\n");
+  fill_default_secondaryCellGroup(scc,
+				  secondaryCellGroup,
+				  0,
+				  1,
+				  n_tx,
+				  0);
+  fix_scc(scc,ssb_bitmap);
 
-  NR_RRCReconfiguration_IEs_t *reconfig_ies = NR_RRCReconfiguration->criticalExtensions.choice.rrcReconfiguration;
-  NR_CellGroupConfig_t *secondaryCellGroup;
-  dec_rval = uper_decode_complete( NULL,
-				   &asn_DEF_NR_CellGroupConfig,
-				   (void **)&secondaryCellGroup,
-				   (uint8_t *)reconfig_ies->secondaryCellGroup->buf,
-				   reconfig_ies->secondaryCellGroup->size); 
-  
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    AssertFatal(1==0,"NR_CellGroupConfig decode error\n");
-    // free the memory
-    SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, secondaryCellGroup, 1 );
-    exit(-1);
-  }      
-
-  NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
-
-  rrc.carrier.servingcellconfigcommon = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  printf("%p,%p\n",
-	 secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon,
-	 rrc.carrier.servingcellconfigcommon);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
@@ -530,7 +503,11 @@ int main(int argc, char **argv)
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
+  NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
+  memset((void*)Sched_INFO,0,sizeof(*Sched_INFO));
+  Sched_INFO->UL_tti_req=UL_tti_req;
+
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
@@ -547,27 +524,15 @@ int main(int argc, char **argv)
   fapi_nr_ul_config_request_t ul_config;
 
   unsigned int TBS;
-  uint16_t number_dmrs_symbols = 0;
+  uint16_t number_dmrs_symbols = 1;
   unsigned int available_bits;
-  uint8_t nb_re_dmrs;
-  uint8_t length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+  uint8_t nb_re_dmrs=12; // no PUSCH REs 
+  uint8_t length_dmrs = 1;
   unsigned char mod_order;
   uint16_t code_rate;
 
-  for (i = start_symbol; i < nb_symb_sch; i++)
-      number_dmrs_symbols += is_dmrs_symbol(i,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            nb_symb_sch,
-                                            &UE->dmrs_UplinkConfig,
-                                            UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType,
-                                            frame_parms->ofdm_symbol_size);
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
-  nb_re_dmrs     = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
   TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, precod_nbr_layers);
@@ -630,6 +595,8 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.tb_size = TBS;
       pusch_pdu->pusch_data.num_cb = 0;
 
+      // prepare ULSCH/PUSCH reception
+      nr_schedule_response(Sched_INFO);
 
       // --------- setting parameters for UE --------
 
@@ -670,7 +637,7 @@ int main(int argc, char **argv)
 
       ///////////
       ////////////////////////////////////////////////////
-      tx_offset = slot*frame_parms->samples_per_slot;
+      tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
 
       txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
               frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);

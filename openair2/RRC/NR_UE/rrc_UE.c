@@ -44,8 +44,8 @@
 #include "rrc_vars.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
+#include "executables/softmodem-common.h"
 
-extern int phy_test;
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -319,7 +319,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ResourceConfig_list, NR_maxNrofCSI_ResourceConfigurations);
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
 
-	if (phy_test==1) {
+	if (get_softmodem_params()->phy_test==1) {
 	  // read in files for RRCReconfiguration and RBconfig
 	  FILE *fd;
 	  char filename[1024];

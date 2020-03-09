@@ -1297,7 +1297,7 @@ uint32_t to_nrarfcn(int nr_bandP,
   uint32_t nrarfcn, delta_arfcn;
 
   LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
-  AssertFatal(nr_bandP < 261, "nr_band %d > 260\n", nr_bandP);
+  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
   for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
 
   // selection of correct Deltaf raster according to SCS
@@ -1345,9 +1345,9 @@ uint64_t from_nrarfcn(int nr_bandP,
   if (dl_nrarfcn > 2016666 && dl_nrarfcn < 3279166)
     deltaFglobal = 60; 
   
-  AssertFatal(nr_bandP < 261, "nr_band %d > 260\n", nr_bandP);
+  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
   for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL %llu\n",dl_nrarfcn, (long long unsigned int)nr_bandtable[i].N_OFFs_DL);
+  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL[%d] %llu\n",dl_nrarfcn, nr_bandtable[i].band,(long long unsigned int)nr_bandtable[i].N_OFFs_DL);
  
   // selection of correct Deltaf raster according to SCS
   if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))

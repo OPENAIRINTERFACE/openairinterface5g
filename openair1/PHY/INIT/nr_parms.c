@@ -196,13 +196,13 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
         case 100:
           fp->ofdm_symbol_size = 1024;
           fp->first_carrier_offset = 628; //1024 - ( (66*12) / 2 )
-          fp->nb_prefix_samples0 = 88;
+          fp->nb_prefix_samples0 = 136;
           fp->nb_prefix_samples = 72;
           break;
         case 50:
           fp->ofdm_symbol_size = 512;
           fp->first_carrier_offset = 320; //1024 - ( (66*12) / 2 )
-          fp->nb_prefix_samples0 = 44;
+          fp->nb_prefix_samples0 = 68;
           fp->nb_prefix_samples = 36;
           break;
       default:
@@ -221,6 +221,31 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, uint16_t bw)
   }
 }
 
+uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
+{
+  uint32_t samp_count;
+
+  if(fp->numerology_index == 0)
+    samp_count = fp->samples_per_subframe;
+  else
+    samp_count = (slot%(fp->slots_per_subframe/2)) ? fp->samples_per_slotN0 : fp->samples_per_slot0;
+
+  return samp_count;
+}
+
+uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead)
+{
+  uint32_t samp_count = 0;
+
+  if(!sl_ahead) {
+    for(uint8_t idx_slot = 0; idx_slot < slot; idx_slot++)
+      samp_count += fp->get_samples_per_slot(idx_slot, fp);
+  } else {
+    for(uint8_t idx_slot = slot; idx_slot < slot+sl_ahead; idx_slot++)
+      samp_count += fp->get_samples_per_slot(idx_slot, fp);
+  }
+  return samp_count;
+}
 
 int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
                         NR_DL_FRAME_PARMS *fp)
@@ -258,9 +283,12 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
   fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
-  fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
-  fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
-			      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
+  fp->samples_per_slotN0 = (fp->nb_prefix_samples + fp->ofdm_symbol_size) * fp->symbols_per_slot;
+  fp->samples_per_slot0 = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
+  fp->samples_per_subframe = (fp->nb_prefix_samples0 + fp->ofdm_symbol_size) * 2 + 
+                             (fp->nb_prefix_samples + fp->ofdm_symbol_size) * (fp->symbols_per_slot * fp->slots_per_subframe - 2); 
+  fp->get_samples_per_slot = &get_samples_per_slot;
+  fp->get_samples_slot_timestamp = &get_samples_slot_timestamp;
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
@@ -331,9 +359,12 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
   fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
-  fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
-  fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
-			      (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
+  fp->samples_per_slotN0 = (fp->nb_prefix_samples + fp->ofdm_symbol_size) * fp->symbols_per_slot;
+  fp->samples_per_slot0 = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
+  fp->samples_per_subframe = (fp->nb_prefix_samples0 + fp->ofdm_symbol_size) * 2 + 
+                             (fp->nb_prefix_samples + fp->ofdm_symbol_size) * (fp->symbols_per_slot * fp->slots_per_subframe - 2); 
+  fp->get_samples_per_slot = &get_samples_per_slot;
+  fp->get_samples_slot_timestamp = &get_samples_slot_timestamp;
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 

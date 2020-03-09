@@ -105,7 +105,7 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
 }
 
 
-NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL,
+NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
                                int number_of_harq_pids,
                                uint8_t abstraction_flag)
 {

@@ -60,7 +60,6 @@ extern unsigned short NODE_ID[1];
 
 /* Scheduler */
 extern RAN_CONTEXT_t RC;
-extern int phy_test;
 extern uint8_t nfapi_mode;
 extern mac_rlc_am_muilist_t rlc_am_mui;
 extern SCHEDULER_MODES global_scheduler_mode;

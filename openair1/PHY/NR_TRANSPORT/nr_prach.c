@@ -84,7 +84,6 @@ void init_prach_ru_list(RU_t *ru) {
   AssertFatal(ru!=NULL,"ruis null\n");
   for (int i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) ru->prach_list[i].frame=-1;
   pthread_mutex_init(&ru->prach_list_mutex,NULL);
-  
 }
 
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type) {
@@ -161,7 +160,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
   for (int aa=0; aa<ru->nb_rx; aa++) 
-    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot*fp->samples_per_slot)-ru->N_TA_offset];
+    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
   
 
 

@@ -248,6 +248,7 @@ class SSHConnection():
 		elif self.sshresponse == 1:
 			logging.debug('\u001B[1;37;41m Unexpected EOF \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
+			logging.debug(str(self.ssh.before))
 			sys.exit(self.sshresponse)
 		elif self.sshresponse == 2:
 			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
@@ -1103,6 +1104,9 @@ class SSHConnection():
 				if result is not None:
 					self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT -r *-uesoftmodem', '\$', 4)
 					time.sleep(3)
+				outterLoopCounter = outterLoopCounter - 1
+				if (outterLoopCounter == 0):
+					doOutterLoop = False
 				continue
 			if self.air_interface == 'nr':
 				fullSyncStatus = True
@@ -1213,6 +1217,11 @@ class SSHConnection():
 		# Calling twice AT to clear all buffers
 		self.command('AT', 'OK|ERROR', 5)
 		self.command('AT', 'OK', 5)
+		# Doing a power cycle
+		self.command('AT^RESET', 'SIMSTORE,READY', 15)
+		self.command('AT', 'OK|ERROR', 5)
+		self.command('AT', 'OK', 5)
+		self.command('ATE1', 'OK', 5)
 		# Disabling the Radio
 		self.command('AT+CFUN=0', 'OK', 5)
 		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
@@ -2763,7 +2772,9 @@ class SSHConnection():
 					self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				else:
 					self.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-				self.command('fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+				# fromdos has to be called on the python executor not on ADB server
+				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log'
+				subprocess.run(cmd, shell=True)
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 			# in case of OAI UE: 

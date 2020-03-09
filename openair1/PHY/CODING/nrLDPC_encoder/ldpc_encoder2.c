@@ -35,6 +35,7 @@
 #include <string.h>
 #include <types.h>
 #include "assertions.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "defs.h"
 
@@ -482,13 +483,14 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   //Table of possible lifting sizes
   char temp;
   int simd_size;
-  int macro_segment, macro_segment_end;
+  unsigned int macro_segment, macro_segment_end;
 
-
+  
   macro_segment = 8*macro_num;
   macro_segment_end = (n_segments > 8*(macro_num+1)) ? 8*(macro_num+1) : n_segments;
-  ///printf("macro_segment: %d\n", macro_segment);
-  ///printf("macro_segment_end: %d\n", macro_segment_end );
+  //macro_segment_end = macro_segment + (n_segments > 8 ? 8 : n_segments);
+  //printf("macro_segment: %d\n", macro_segment);
+  //printf("macro_segment_end: %d\n", macro_segment_end );
 
 #ifdef __AVX2__
   __m256i shufmask = _mm256_set_epi64x(0x0303030303030303, 0x0202020202020202,0x0101010101010101, 0x0000000000000000);
@@ -506,7 +508,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   masks[7] = _mm256_set1_epi8(0x80);
 #endif
 
-  ///AssertFatal(n_segments>0&&n_segments<=8,"0 < n_segments %d <= 8\n",n_segments);
+
 
   //determine number of bits in codeword
   if (BG==1)

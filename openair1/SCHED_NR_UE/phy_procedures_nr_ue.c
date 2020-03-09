@@ -3081,17 +3081,25 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
       start_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
       // process DLSCH received in first slot
-      nr_rx_pdsch(ue,
-	       pdsch,
-	       eNB_id,
-	       eNB_id_i,
-	       proc->frame_rx,
-	       nr_tti_rx,  // nr_tti_rx,
-	       m,
-	       first_symbol_flag,
-	       dual_stream_UE,
-	       i_mod,
-	       dlsch0->current_harq_pid);
+      // skip DMRS symbols (will have to check later if PDSCH/DMRS are multiplexed
+      if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) == 0) 
+	nr_rx_pdsch(ue,
+		    pdsch,
+		    eNB_id,
+		    eNB_id_i,
+		    proc->frame_rx,
+		    nr_tti_rx,  // nr_tti_rx,
+		    m,
+		    first_symbol_flag,
+		    dual_stream_UE,
+		    i_mod,
+		    dlsch0->current_harq_pid);
+      else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
+	if      (pdsch == RA_PDSCH) ue->pdsch_vars_ra[eNB_id]->llr_offset[m]=ue->pdsch_vars_ra[eNB_id]->llr_offset[m-1];
+	else if (pdsch == PDSCH)    ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
+	else AssertFatal(1==0,"not RA_PDSCH or PDSCH\n");
+      }
+      if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]);
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -3274,7 +3282,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   uint8_t is_cw1_active = 0;
   //nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
   //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
-  uint8_t nb_re_dmrs = 6; //(dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
+  uint8_t nb_re_dmrs = 12; //(dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
