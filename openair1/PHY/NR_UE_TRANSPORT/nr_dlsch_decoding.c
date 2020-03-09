@@ -581,13 +581,13 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
+        LOG_I(PHY,"Segment %u CRC OK\n\033[0m",r);
         //Temporary hack
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
       }
       else {
-        LOG_D(PHY,"CRC NOK\n\033[0m");
+        LOG_I(PHY,"CRC NOK\n\033[0m");
         ret = 1 + dlsch->max_ldpc_iterations;
       }
 
@@ -799,13 +799,12 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &harq_processes[harq_pid]->dl_config_pdu
-  uint8_t dmrs_type = dl_config_pdu->dmrsConfigType;
+  uint8_t dmrs_type = harq_process->dmrsConfigType;
   //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
   //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
 
   uint8_t nb_re_dmrs = (dmrs_type==1)?6:4;
-  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
+  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
 
   uint32_t i,j;
 //  int nbDlProcessing =0;
@@ -861,7 +860,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   A = harq_process->TBS;
 
-  ret = dlsch->max_ldpc_iterations;
+  ret = dlsch->max_ldpc_iterations + 1;
+  dlsch->last_iteration_cnt = ret;
 
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
 
@@ -929,9 +929,10 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                       &harq_process->F,
                       p_decParams->BG);
 
-      p_decParams->Z = harq_process->Z;
 
     }
+    
+    p_decParams->Z = harq_process->Z;
 
   //printf("coderate %f kc %d \n", Coderate, kc);
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
@@ -1149,11 +1150,13 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
 
-      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      j+=(harq_process->F>>3);
+      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
       {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
-
+      
       for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
       {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
@@ -1683,9 +1686,11 @@ void nr_dlsch_decoding_process(void *arg)
           pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
         }
 
-        for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+        j+=(harq_process->F>>3);
+        //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+        for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
         {
-          pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
+         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
         }
 
         for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
