@@ -292,18 +292,36 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       printf("%02x.",a[i]);
     printf("\n");
     */
-    // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(harq_process->a,A)>>8;
-    harq_process->a[A>>3] = ((uint8_t*)&crc)[2];
-    harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-    harq_process->a[2+(A>>3)] = ((uint8_t*)&crc)[0];
-    //printf("CRC %x (A %d)\n",crc,A);
-    //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
 
-    harq_process->B = A+24;
+    if (A > 3824) {
+      // Add 24-bit crc (polynomial A) to payload
+      crc = crc24a(harq_process->a,A)>>8;
+      harq_process->a[A>>3] = ((uint8_t*)&crc)[2];
+      harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[1];
+      harq_process->a[2+(A>>3)] = ((uint8_t*)&crc)[0];
+      //printf("CRC %x (A %d)\n",crc,A);
+      //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
 
-    memcpy(harq_process->b,harq_process->a,(A/8)+4);
+      harq_process->B = A+24;
 
+      AssertFatal((A/8)+4 <= MAX_NR_ULSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_ULSCH_PAYLOAD_BYTES);
+
+      memcpy(harq_process->b,harq_process->a,(A/8)+4);
+    }
+    else {
+      // Add 16-bit crc (polynomial A) to payload
+      crc = crc16(harq_process->a,A)>>16;
+      harq_process->a[A>>3] = ((uint8_t*)&crc)[1];
+      harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[0];
+      //printf("CRC %x (A %d)\n",crc,A);
+      //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
+
+      harq_process->B = A+16;
+
+      AssertFatal((A/8)+3 <= MAX_NR_ULSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_NR_ULSCH_PAYLOAD_BYTES);
+
+      memcpy(harq_process->b,harq_process->a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
+    }
 ///////////
 ///////////////////////////////////////////////////////////////////////////
 
