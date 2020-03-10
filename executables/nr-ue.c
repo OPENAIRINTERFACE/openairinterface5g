@@ -665,6 +665,7 @@ void *UE_thread(void *arg) {
   int thread_idx=0;
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
   for (int i=0; i<RX_NB_TH+1; i++)  // RX_NB_TH working + 1 we are making to be pushed
     pushNotifiedFIFO_nothreadSafe(&freeBlocks,
@@ -825,7 +826,8 @@ void *UE_thread(void *arg) {
         processingData_t *tmp=(processingData_t *)res->msgData;
 
         if (tmp->proc.decoded_frame_rx != -1)
-          decoded_frame_rx=tmp->proc.decoded_frame_rx;
+          decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+          //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
         pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
       }
@@ -851,7 +853,8 @@ void *UE_thread(void *arg) {
       processingData_t *tmp=(processingData_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=tmp->proc.decoded_frame_rx;
+        decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+        //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
