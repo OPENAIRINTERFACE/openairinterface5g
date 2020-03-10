@@ -361,7 +361,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
 
-  A   = harq_process->TBS;
+  A   = (harq_process->TBS)<<3;
   ret = ulsch->max_ldpc_iterations + 1;
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
@@ -548,7 +548,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     //    printf("done\n");
     if (harq_process->C == 1) {
-      crc_type = CRC24_A;
+      if (A > 3824)
+        crc_type = CRC24_A;
+      else
+        crc_type = CRC16;
+
       length_dec = harq_process->B;
     }
     else {

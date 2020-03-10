@@ -62,7 +62,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
-    @param is_dmrs_symbol, flag to indicate wether this OFDM symbol contains DMRS symbols or not.
 
 */
 void nr_ulsch_extract_rbs_single(int **rxdataF,

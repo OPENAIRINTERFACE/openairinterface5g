@@ -139,7 +139,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                             &UE->dmrs_UplinkConfig,
                                             mapping_type,
                                             frame_parms->ofdm_symbol_size);
-      printf("dmrs_symb %d, number_dmrs_symbols %d\n",dmrs_symb,number_dmrs_symbols);
       if (dmrs_symb == -1 && number_dmrs_symbols == 1) dmrs_symb = i;
     }
     AssertFatal(number_dmrs_symbols ==1,"number_dmrs_symbols != 1\n");
@@ -363,8 +362,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 				   &UE->dmrs_UplinkConfig,
 				   mapping_type,
 				   frame_parms->ofdm_symbol_size);
-	  LOG_D(PHY,"dmrs symb %d : k %d, kprime %d is_dmrs %d, mapping_type %d\n",
-		l,k,k_prime,is_dmrs,mapping_type);
 	  if (is_dmrs == 1) {
 	    
 	    nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
