@@ -23,6 +23,25 @@
 
 cmake_minimum_required (VERSION 3.0)
 
+##############################################
+# Base CUDA setting
+##############################################
+find_package(CUDA)
+message ("cuda include ${CUDA_INCLUDE_DIRS}")
+message ("cuda library ${CUDA_LIBRARY_DIRS}")
+
+add_definitions("-L/usr/local/cuda/lib64")
+
+SET(CUDA_NVCC_FLAGS
+  "${CUDA_NVCC_FLAGS};-arch=sm_60")
+
+# Disable warnings for CUDA
+SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
+SET(CUDA_VERBOSE_BUILD ON)
+SET(CUDA_HOST_COMPILER "/usr/bin/g++")
+
+SET(CUDA_SEPARABLE_COMPILATION ON)
+
 #########################################################
 # Base directories, compatible with legacy OAI building #
 #########################################################
@@ -174,7 +193,7 @@ set(CMAKE_C_FLAGS
 	"${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
 )
 set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11" #-D${MKVER}
 )
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
@@ -1300,6 +1319,7 @@ set(PHY_TURBOIF
 )
 set(PHY_LDPCSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
@@ -2695,15 +2715,34 @@ target_link_libraries(smallblocktest
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-add_executable(ldpctest  
+###################################################
+# For CUDA library 
+###################################################
+CUDA_ADD_LIBRARY(LDPC_CU 
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
+  )
+
+cuda_add_executable(ldpctest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
-target_link_libraries(ldpctest
-  -Wl,--start-group UTIL SIMU PHY_NR CONFIG_LIB -Wl,--end-group
+
+target_link_libraries(ldpctest -ldl
+  -Wl,--start-group 
+  LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB 
+  -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
+#add_executable(ldpctest  
+#  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+#  ${T_SOURCE}
+#  ${SHLIB_LOADER_SOURCES}
+#  )
+#target_link_libraries(ldpctest
+#  -Wl,--start-group UTIL SIMU PHY_NR CONFIG_LIB -Wl,--end-group
+#  m pthread ${ATLAS_LIBRARIES} dl
+#  )
 
 add_executable(nr_dlschsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 

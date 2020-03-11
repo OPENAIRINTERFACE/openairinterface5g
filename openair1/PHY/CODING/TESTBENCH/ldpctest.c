@@ -29,6 +29,8 @@
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 
+#include "PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
+
 #define MAX_NUM_DLSCH_SEGMENTS 16
 #define MAX_BLOCK_LENGTH 8448
 
@@ -395,14 +397,19 @@ int test_ldpc(short No_iteration,
 
 
       for(j=0;j<n_segments;j++) {
-    	  start_meas(time_decoder);
       // decode the sequence
       // decoder supports BG2, Z=128 & 256
       //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
       ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
-          n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-      
-	stop_meas(time_decoder);
+#ifdef __NR_LDPC_DECODER_LYC__H__
+    	  start_meas(time_decoder);
+		  n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
+		  stop_meas(time_decoder);
+#else		  	  
+    	  start_meas(time_decoder);
+		  n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
+		  stop_meas(time_decoder);
+#endif      
       }
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
