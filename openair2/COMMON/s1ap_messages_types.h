@@ -45,6 +45,7 @@
 #define S1AP_E_RAB_MODIFY_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_modify_resp
 #define S1AP_PATH_SWITCH_REQ(mSGpTR)            (mSGpTR)->ittiMsg.s1ap_path_switch_req
 #define S1AP_PATH_SWITCH_REQ_ACK(mSGpTR)        (mSGpTR)->ittiMsg.s1ap_path_switch_req_ack
+#define S1AP_E_RAB_MODIFICATION_IND(mSGpTR)     (mSGpTR)->ittiMsg.s1ap_e_rab_modification_ind
 
 #define S1AP_DOWNLINK_NAS(mSGpTR)               (mSGpTR)->ittiMsg.s1ap_downlink_nas
 #define S1AP_INITIAL_CONTEXT_SETUP_REQ(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_initial_context_setup_req
@@ -281,11 +282,25 @@ typedef struct e_rab_tobe_added_s {
   uint8_t drb_ID;
 
   /* The transport layer address for the IP packets */
-  transport_layer_addr_t eNB_addr;
+  transport_layer_addr_t sgw_addr;
 
   /* S-GW Tunnel endpoint identifier */
   uint32_t gtp_teid;
 } e_rab_tobe_added_t;
+
+typedef struct e_rab_admitted_tobe_added_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t e_rab_id;
+
+  /* Unique drb_ID for the UE. */
+  uint8_t drb_ID;
+
+  /* The transport layer address for the IP packets */
+  transport_layer_addr_t gnb_addr;
+
+  /* S-GW Tunnel endpoint identifier */
+  uint32_t gtp_teid;
+} e_rab_admitted_tobe_added_t;
 
 
 
@@ -645,6 +660,27 @@ typedef struct s1ap_path_switch_req_ack_s {
   uint8_t next_security_key[SECURITY_KEY_LENGTH];
 
 } s1ap_path_switch_req_ack_t;
+
+typedef struct s1ap_e_rab_modification_ind_s {
+
+  unsigned  eNB_ue_s1ap_id:24;
+
+  /* MME UE id  */
+    uint32_t mme_ue_s1ap_id;
+
+  /* Number of e_rab setup-ed in the list */
+  uint8_t       nb_of_e_rabs_tobemodified;
+
+  uint8_t       nb_of_e_rabs_nottobemodified;
+
+  /* list of e_rab setup-ed by RRC layers */
+  e_rab_setup_t e_rabs_tobemodified[S1AP_MAX_E_RAB];
+
+  e_rab_setup_t e_rabs_nottobemodified[S1AP_MAX_E_RAB];
+
+  uint16_t ue_initial_id;
+
+} s1ap_e_rab_modification_ind_t;
 
 // S1AP --> RRC messages
 typedef struct s1ap_ue_release_command_s {

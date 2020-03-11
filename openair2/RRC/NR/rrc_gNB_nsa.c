@@ -37,8 +37,9 @@
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
   OCTET_STRING_t *ueCapabilityRAT_Container_nr;
@@ -94,10 +95,10 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerL
      xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }  
 
-  rrc_add_nsa_user(rrc,ue_context_p);
+  rrc_add_nsa_user(rrc,ue_context_p, m);
 }
 
-void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p) {
+void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
 
 // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
 
@@ -105,6 +106,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   MessageDef *msg;
   msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+  gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
+  gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
+  uint8_t inde_list[m->nb_e_rabs_tobeadded];
+  memset(inde_list, 0, m->nb_e_rabs_tobeadded*sizeof(uint8_t));
+  protocol_ctxt_t *ctxt = NULL;
 
 // NR RRCReconfiguration
 
@@ -132,6 +138,45 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   memset((void*)CG_Config,0,sizeof(*CG_Config));
   //int CG_Config_size = generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
   generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
+
+  if(m!=NULL){
+	  if (m->nb_e_rabs_tobeadded>0){
+		  for (int i=0; i<m->nb_e_rabs_tobeadded; i++){
+			  // Add the new E-RABs at the corresponding rrc ue context of the gNB
+			  ue_context_p->ue_context.e_rab[i].param.e_rab_id = m->e_rabs_tobeadded[i].e_rab_id;
+			  ue_context_p->ue_context.e_rab[i].param.gtp_teid = m->e_rabs_tobeadded[i].gtp_teid;
+			  memcpy(&ue_context_p->ue_context.e_rab[i].param.sgw_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));
+			  ue_context_p->ue_context.nb_of_e_rabs++;
+  			  //Fill the required E-RAB specific information for the creation of the S1-U tunnel between the gNB and the SGW
+			  create_tunnel_req.eps_bearer_id[i]       = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
+			  create_tunnel_req.sgw_S1u_teid[i]        = ue_context_p->ue_context.e_rab[i].param.gtp_teid;
+			  memcpy(&create_tunnel_req.sgw_addr[i], &ue_context_p->ue_context.e_rab[i].param.sgw_addr, sizeof(transport_layer_addr_t));
+			  inde_list[i] = i;
+		  }
+		  //PM: Is this where we should extract the rnti from?
+		  create_tunnel_req.rnti           = ue_context_p->ue_id_rnti;
+		  create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(ctxt, rrc->module_id, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,rrc->module_id);
+		  gtpv1u_create_s1u_tunnel(
+				  ctxt->instance,
+				  &create_tunnel_req,
+				  &create_tunnel_resp);
+		  rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+				  ctxt,
+				  &create_tunnel_resp,
+				  &inde_list[0]);
+		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
+
+		  for(int i=0; i<ue_context_p->ue_context.nb_of_e_rabs; i++){
+			  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
+			  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid = create_tunnel_resp.enb_S1u_teid[i];
+			  memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr, &create_tunnel_resp.enb_addr, sizeof(transport_layer_addr_t));
+		  }
+	  }
+	  else
+		  LOG_W(RRC, "No E-RAB to be added received from SgNB Addition Request message \n");
+  }
+
 
   //X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = CG_Config_size; //Need to verify correct value for the buffer_size
   // Send to X2 entity to transport to MeNB

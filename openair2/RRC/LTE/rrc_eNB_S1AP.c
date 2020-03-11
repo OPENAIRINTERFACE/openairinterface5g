@@ -2283,3 +2283,77 @@ int s1ap_ue_context_release(instance_t instance, const uint32_t eNB_ue_s1ap_id) 
   }*/
   return 0;
 }
+
+
+int rrc_eNB_send_E_RAB_Modification_Indication(const protocol_ctxt_t *const ctxt_pP,
+                                 rrc_eNB_ue_context_t          *const ue_context_pP) {
+  MessageDef      *msg_p         = NULL;
+  int e_rab = 0;
+  int e_rab_modify_index = 0;
+  int e_rab_notmodify_index = 0;
+  rrc_ue_s1ap_ids_t  *rrc_ue_s1ap_ids_p = NULL;
+  hashtable_rc_t      h_rc;
+
+  uint8_t inde_list[ue_context_pP->ue_context.nb_of_e_rabs];
+  memset(inde_list, 0, ue_context_pP->ue_context.nb_of_e_rabs*sizeof(uint8_t));
+
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFICATION_IND);
+
+
+  S1AP_E_RAB_MODIFICATION_IND (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+  S1AP_E_RAB_MODIFICATION_IND (msg_p).mme_ue_s1ap_id = ue_context_pP->ue_context.mme_ue_s1ap_id;
+
+  LOG_I (RRC,"E-RAB modification indication: nb nb_of_e_rabs %u status %u\n",
+         ue_context_pP->ue_context.nb_of_e_rabs,
+         ue_context_pP->ue_context.e_rab[e_rab].status);
+
+  if (ue_context_pP->ue_context.nb_of_modify_endc_e_rabs > 0){
+	  S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_tobemodified = ue_context_pP->ue_context.nb_of_modify_endc_e_rabs;
+	  for (e_rab = 0; e_rab <  ue_context_pP->ue_context.setup_e_rabs ; e_rab++) {
+		  //Add E-RAB in the list of E-RABs to be modified
+		  if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_TOMODIFY) {
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+			  memcpy(S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].eNB_addr.buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length);
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].eNB_addr.length = ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length;
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].gtp_teid = ue_context_pP->ue_context.gnb_gtp_endc_teid[e_rab];
+			  e_rab_modify_index++;
+		  }
+		  //Add E-RAB in the list of E-RABs NOT to be modified
+		  else{
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+			  memcpy(S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].eNB_addr.buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length);
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].eNB_addr.length = ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length;
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].gtp_teid = ue_context_pP->ue_context.gnb_gtp_endc_teid[e_rab];
+			  e_rab_notmodify_index++;
+		  }
+	  }
+	  S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_nottobemodified = e_rab_notmodify_index;
+  }
+
+  if (e_rab_modify_index > 0) {
+    LOG_I(RRC,"S1AP_E_RAB_MODIFICATION_IND: sending the message: nb_of_erabstobemodified %d, total e_rabs %d, index %d\n",
+    		S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_tobemodified, ue_context_pP->ue_context.setup_e_rabs, e_rab);
+    MSC_LOG_TX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      (const char *)&S1AP_E_RAB_MODIFICATION_IND (msg_p),
+      sizeof(s1ap_e_rab_modification_ind_t),
+      MSC_AS_TIME_FMT" E RAB MODIFICATION IND UE %X eNB_ue_s1ap_id %u e_rabs:%u succ",
+      MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_context_pP->ue_id_rnti,
+      S1AP_E_RAB_MODIFICATION_IND (msg_p).eNB_ue_s1ap_id,
+      e_rab_modify_index);
+    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+  } else {
+    itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+  }
+
+  return 0;
+}
+
+
+

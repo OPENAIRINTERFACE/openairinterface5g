@@ -285,4 +285,6 @@ int rrc_eNB_send_X2AP_UE_CONTEXT_RELEASE(const protocol_ctxt_t* const ctxt_pP, r
 
 int s1ap_ue_context_release(instance_t instance, const uint32_t eNB_ue_s1ap_id);
 
+int rrc_eNB_send_E_RAB_Modification_Indication(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP);
+
 #endif /* RRC_ENB_S1AP_H_ */

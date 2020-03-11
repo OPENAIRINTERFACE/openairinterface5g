@@ -38,7 +38,7 @@
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
 
-int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo) {
+int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m) {
 
   if (CG_ConfigInfo->criticalExtensions.present == NR_CG_ConfigInfo__criticalExtensions_PR_c1) {
     if (CG_ConfigInfo->criticalExtensions.choice.c1) {
@@ -56,7 +56,7 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo) {
 	    AssertFatal(1==0,"[InterNode] Failed to decode NR_UE_CapabilityRAT_ContainerList (%zu bits), size of OCTET_STRING %lu\n",
 			dec_rval.consumed, cg_ConfigInfo->ue_CapabilityInfo->size);
 	  }
-	  rrc_parse_ue_capabilities(rrc,UE_CapabilityRAT_ContainerList);
+	  rrc_parse_ue_capabilities(rrc,UE_CapabilityRAT_ContainerList, m);
 	}
 	if (cg_ConfigInfo->candidateCellInfoListMN) AssertFatal(1==0,"Can't handle candidateCellInfoListMN yet\n");
       }

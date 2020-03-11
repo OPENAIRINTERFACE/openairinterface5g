@@ -4372,6 +4372,16 @@ rrc_eNB_process_MeasurementReport(
 
       msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
       X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+      //For the moment we have a single E-RAB which will be the one to be added to the gNB
+      //Not sure how to select bearers to be added if there are multiple.
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
+      for (int e_rab=0; i< X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded; e_rab++){
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].gtp_teid = ue_context_pP->ue_context.e_rab[e_rab].param.gtp_teid;
+    	        memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr,
+    	               &ue_context_pP->ue_context.e_rab[e_rab].param.sgw_addr,
+    	               sizeof(transport_layer_addr_t));
+      }
       LOG_I(RRC,
             "[eNB %d] frame %d subframe %d: UE rnti %x switching to NSA mode\n",
             ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->subframe, ctxt_pP->rnti);
@@ -7493,6 +7503,16 @@ rrc_eNB_decode_dcch(
             }
 
             ue_context_p->ue_context.reestablishment_xid = -1;
+
+            //Looking for a condition to trigger S1AP E-RAB-Modification-indication, based on the reception of RRCConnectionReconfigurationComplete
+            //including NR specific elements. Not sure if this is the correct one and the correct placement
+            if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            		nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+            		scg_ConfigResponseNR_r15->buf!=NULL){
+            	/*Trigger E-RAB Modification Indication */
+            	rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
+            }
+
           } else {
             dedicated_DRB = 1;
             ue_context_p->ue_context.Status = RRC_RECONFIGURED;
@@ -8526,6 +8546,27 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
     int size;
 
     ue_context = (rrc_eNB_ue_context_t *) get_first_ue_context(RC.rrc[enb_mod_idP]);
+
+    ue_context->ue_context.nb_of_modify_endc_e_rabs = m->nb_e_rabs_admitted_tobeadded;
+
+    int j=0;
+    while(j < m->nb_e_rabs_admitted_tobeadded){
+        	for (int e_rab_idx=0; e_rab_idx<ue_context->ue_context.setup_e_rabs; e_rab_idx++){
+        		//Update ue_context information with gNB's address and new GTP tunnel ID
+        		if( ue_context->ue_context.e_rab[e_rab_idx].param.e_rab_id == m->e_rabs_admitted_tobeadded[j].e_rab_id){
+        			memcpy(ue_context->ue_context.gnb_gtp_endc_addrs[e_rab_idx].buffer,
+        					m->e_rabs_admitted_tobeadded[j].gnb_addr.buffer,
+        					m->e_rabs_admitted_tobeadded[j].gnb_addr.length);
+        			ue_context->ue_context.gnb_gtp_endc_addrs[e_rab_idx].length = m->e_rabs_admitted_tobeadded[j].gnb_addr.length;
+        			ue_context->ue_context.gnb_gtp_endc_teid[e_rab_idx] = m->e_rabs_admitted_tobeadded[j].gtp_teid;
+        			ue_context->ue_context.e_rab[e_rab_idx].status = E_RAB_STATUS_TOMODIFY;
+        			break;
+        		}
+        	}
+        	j++;
+    }
+
+
 
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                     0,
