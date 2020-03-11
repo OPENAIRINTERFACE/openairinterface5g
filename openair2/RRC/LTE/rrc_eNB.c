@@ -7506,11 +7506,36 @@ rrc_eNB_decode_dcch(
 
             //Looking for a condition to trigger S1AP E-RAB-Modification-indication, based on the reception of RRCConnectionReconfigurationComplete
             //including NR specific elements. Not sure if this is the correct one and the correct placement
-            if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            /*if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
             		nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
             		scg_ConfigResponseNR_r15->buf!=NULL){
-            	/*Trigger E-RAB Modification Indication */
+            	//Trigger E-RAB Modification Indication
             	rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
+            }*/
+
+            if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            		nonCriticalExtension!=NULL){
+            	if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+                		nonCriticalExtension->nonCriticalExtension!=NULL){
+            		if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            				nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL){
+            			if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            					nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL){
+            				if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            						nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL){
+            					if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            							nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL){
+            						if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+            								nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
+            								->scg_ConfigResponseNR_r15!=NULL){
+            							/*Trigger E-RAB Modification Indication */
+            							rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
+            						}
+            					}
+            				}
+            			}
+            		}
+            	}
             }
 
           } else {
