@@ -1298,14 +1298,35 @@ set(PHY_SMALLBLOCKSRC
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
 )
-set(PHY_LDPCSRC
+
+set(PHY_LDPC_ORIG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
 )
 
+set(PHY_LDPC_OPTIM_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim.c
+)
+set(PHY_LDPC_OPTIM8SEG_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8seg.c
+)
+set(PHY_LDPC_OPTIM8SEGMULTI_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
+)
+set(PHY_NR_CODINGIF
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
+)
+
+add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
+add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
+add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
+add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
+
 add_library(coding MODULE ${PHY_TURBOSRC} )
+
 set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
@@ -1484,10 +1505,9 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
-  ${PHY_LDPCSRC}
+  ${PHY_NR_CODINGIF}
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/pucch_rx.c 
   )
-
   set(PHY_NR_UE_SRC
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
   ${OPENAIR1_DIR}/PHY/MODULATION/nr_modulation.c
@@ -1535,7 +1555,7 @@ set(PHY_SRC_UE
   #  ${OPENAIR1_DIR}/SIMULATION/NR_UE_PHY/unit_tests/src/pucch_uci_test.c
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
-  ${PHY_LDPCSRC}
+  ${PHY_NR_CODINGIF}
   )
 
 
@@ -2588,7 +2608,7 @@ target_link_libraries (nr-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LI
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
-
+add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 # nr-uesoftmodem is  UE implementation
 #######################################
 
@@ -2629,7 +2649,7 @@ target_link_libraries (nr-uesoftmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_
 target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
-
+add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 
 # USIM process
 #################
@@ -2696,10 +2716,13 @@ target_link_libraries(smallblocktest
   )
 
 add_executable(ldpctest  
+  ${PHY_NR_CODINGIF}
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
+add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ) 
+
 target_link_libraries(ldpctest
   -Wl,--start-group UTIL SIMU PHY_NR CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl

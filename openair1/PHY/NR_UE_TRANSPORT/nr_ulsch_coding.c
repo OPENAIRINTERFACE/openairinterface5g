@@ -36,7 +36,7 @@
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/CODING/nrLDPC_encoder/defs.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -353,8 +353,11 @@ opp_enabled=0;
       printf("%d \n",  harq_process->d[0][cnt]);
       }
       printf("\n");*/
+    encoder_implemparams_t impp;
+    impp.n_segments=harq_process->C;
+    impp.macro_num=0;
 
-    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
+    nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
