@@ -111,6 +111,7 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 *              n                      index starting 0,1,...
 *              delta                  see Table 6.4.1.1.3
 *              duration_in_symbols    number of scheduled PUSCH ofdm symbols
+*              start_symbol           first symbol index in PUSCH allocation
 *              dmrs_UplinkConfig      DMRS uplink configuration
 *              mapping_type           PUSCH mapping type (A or B)
 *              ofdm_symbol_size       IFFT size
@@ -128,6 +129,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
                        uint16_t n,
                        uint8_t delta,
                        uint8_t duration_in_symbols,
+                       uint8_t start_symbol,
                        dmrs_UplinkConfig_t *dmrs_UplinkConfig,
                        uint8_t mapping_type,
                        uint16_t ofdm_symbol_size) {
@@ -140,6 +142,11 @@ uint8_t is_dmrs_symbol(uint8_t l,
   is_dmrs_time = 0;
   dmrs_type = dmrs_UplinkConfig->pusch_dmrs_type;
   additional_pos = dmrs_UplinkConfig->pusch_dmrs_AdditionalPosition;
+
+  if (mapping_type==typeB)
+    l -= start_symbol;
+
+  AssertFatal(l >= 0,"Check DMRS configuration (start_symbol) !\n");
 
 
   l0 = get_l0_ul(mapping_type, 2);
@@ -370,7 +377,7 @@ void lte_gold_new(LTE_DL_FRAME_PARMS *frame_parms, uint32_t lte_gold_table[20][2
 *
 * NAME :         get_l0_ul
 *
-* PARAMETERS :   mapping_type : PUSCH mapping type
+* PARAMETERS :   mapping_type         : PUSCH mapping type
 *                dmrs_typeA_position  : higher layer parameter
 *
 * RETURN :       demodulation reference signal for PUSCH

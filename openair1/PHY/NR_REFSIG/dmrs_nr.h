@@ -66,6 +66,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
                        uint16_t n,
                        uint8_t delta,
                        uint8_t duration_in_symbols,
+                       uint8_t start_symbol,
                        dmrs_UplinkConfig_t *dmrs_UplinkConfig,
                        uint8_t mapping_type,
                        uint16_t ofdm_symbol_size);
