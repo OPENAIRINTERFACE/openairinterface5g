@@ -37,19 +37,6 @@
 extern "C"
 {
 #endif
-#define CONFIG_OPT_RECPLAY "enable_recplay"
-
-#define  CONFIG_HLP_RECPLAY  "Allow record player"
-#define USRP_SECTION "device.usrp"
-/* inclusion for device configuration */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for USRP record/playback                                                                               */
-/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define DEVICE_PARAMS_DESC {  \
-    {CONFIG_OPT_RECPLAY,      CONFIG_HLP_RECPLAY, PARAMFLAG_BOOL,   uptr:&enable_recplay,                 defuintval:0,                    TYPE_UINT,     0} \
-  }
-
 
 /* inclusions for record player */
 #define RECPLAY_DISABLED     0
@@ -114,7 +101,7 @@ typedef struct {
     {CONFIG_OPT_SF_LOOPS,     CONFIG_HLP_SF_LOOPS,  0,                uptr:&((*recplay_conf)->u_sf_loops),                defintval:DEF_SF_NB_LOOP,        TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_RDELAY,    CONFIG_HLP_SF_RDELAY, 0,                uptr:&((*recplay_conf)->u_sf_read_delay),           defintval:DEF_SF_DELAY_READ,     TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_WDELAY,    CONFIG_HLP_SF_WDELAY, 0,                uptr:&((*recplay_conf)->u_sf_write_delay),          defintval:DEF_SF_DELAY_WRITE,    TYPE_UINT,   0}, \
-  }/*! \brief USRP Configuration and state */
+  }/*! \brief Record Player Configuration and state */
 typedef struct {
   char            u_sf_filename[1024];              // subframes file path
   unsigned int    u_sf_max ;                  // max number of recorded subframes
