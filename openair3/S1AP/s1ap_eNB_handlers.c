@@ -1105,13 +1105,6 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
   // received Paging Message from MME
   S1AP_DEBUG("[SCTP %d] Received Paging Message From MME\n",assoc_id);
 
-  /* Paging procedure -> stream != 0 */
-  if (stream == 0) {
-    LOG_W(S1AP,"[SCTP %d] Received Paging procedure on stream (%d)\n",
-          assoc_id, stream);
-    return -1;
-  }
-
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
     S1AP_ERROR("[SCTP %d] Received Paging for non "
                "existing MME context\n", assoc_id);
