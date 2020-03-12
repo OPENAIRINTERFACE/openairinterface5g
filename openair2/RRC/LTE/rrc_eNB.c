@@ -4375,7 +4375,7 @@ rrc_eNB_process_MeasurementReport(
       //For the moment we have a single E-RAB which will be the one to be added to the gNB
       //Not sure how to select bearers to be added if there are multiple.
       X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
-      for (int e_rab=0; i< X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded; e_rab++){
+      for (int e_rab=0; e_rab < X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded; e_rab++){
     	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
     	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].gtp_teid = ue_context_pP->ue_context.e_rab[e_rab].param.gtp_teid;
     	        memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr,
