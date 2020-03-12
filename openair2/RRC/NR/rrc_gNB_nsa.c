@@ -159,7 +159,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 		  //PM: Is this where we should extract the rnti from?
 		  create_tunnel_req.rnti           = ue_context_p->ue_id_rnti;
 		  create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,rrc->module_id);
+		  RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
+
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
 		  gtpv1u_create_s1u_tunnel(
 				  ctxt.instance,
 				  &create_tunnel_req,
