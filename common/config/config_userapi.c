@@ -45,7 +45,8 @@
 
 configmodule_interface_t *config_get_if(void) {
   if (cfgptr == NULL) {
-    CONFIG_PRINTF_ERROR("[CONFIG] %s %d config module not initialized\n",__FILE__,__LINE__);
+  	if (isLogInitDone())
+       LOG_W(ENB_APP,"[CONFIG] %s %d config module not initialized\n",__FILE__,__LINE__);
   }
 
   return cfgptr;

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*!\file nrLDPC_defs.h
+/*!\file nrLDPCdecoder_defs.h
  * \brief Defines all constants and buffers for the LDPC decoder
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
  * \date 27-03-2018

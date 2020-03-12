@@ -40,7 +40,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/defs_common.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
