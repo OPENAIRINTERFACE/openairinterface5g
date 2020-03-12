@@ -42,9 +42,10 @@
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
-  OCTET_STRING_t *ueCapabilityRAT_Container_nr;
-  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC;
+  OCTET_STRING_t *ueCapabilityRAT_Container_nr = NULL;
+  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC = NULL;
   int list_size;
+  asn_dec_rval_t dec_rval;
   AssertFatal(UE_CapabilityRAT_ContainerList!=NULL,"UE_CapabilityRAT_ContainerList is null\n");
   AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
   for (int i=0;i<list_size;i++) {
@@ -52,46 +53,48 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
     else if (UE_CapabilityRAT_ContainerList->list.array[i]->rat_Type == LTE_RAT_Type_eutra_nr) ueCapabilityRAT_Container_MRDC = &UE_CapabilityRAT_ContainerList->list.array[i]->ueCapabilityRAT_Container;
   }    
 
-  AssertFatal(ueCapabilityRAT_Container_nr!=NULL,"ueCapabilityRAT_Container_nr is NULL\n");
-  AssertFatal(ueCapabilityRAT_Container_MRDC!=NULL,"ueCapabilityRAT_Container_MRDC is NULL\n");
   // decode and store capabilities
   ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
-  
-  asn_dec_rval_t dec_rval = uper_decode(NULL,
-					&asn_DEF_NR_UE_NR_Capability,
-					(void **)&ue_context_p->ue_context.UE_Capability_nr,
-					ueCapabilityRAT_Container_nr->buf,
-					ueCapabilityRAT_Container_nr->size, 0, 0);
 
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes) container size %lu\n", dec_rval.consumed,ueCapabilityRAT_Container_nr->size);
-      ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,
-                      ue_context_p->ue_context.UE_Capability_nr);
-      ue_context_p->ue_context.UE_Capability_nr = 0;
-      AssertFatal(1==0,"exiting\n");
+  if (ueCapabilityRAT_Container_nr != NULL) {
+    dec_rval = uper_decode(NULL,
+                           &asn_DEF_NR_UE_NR_Capability,
+                           (void **)&ue_context_p->ue_context.UE_Capability_nr,
+                           ueCapabilityRAT_Container_nr->buf,
+                           ueCapabilityRAT_Container_nr->size, 0, 0);
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      LOG_E(RRC, "Failed to decode UE NR capabilities (%zu bytes) container size %lu\n", dec_rval.consumed,ueCapabilityRAT_Container_nr->size);
+        ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,
+                        ue_context_p->ue_context.UE_Capability_nr);
+        ue_context_p->ue_context.UE_Capability_nr = 0;
+        AssertFatal(1==0,"exiting\n");
+    }
   }
 
-  dec_rval = uper_decode(NULL,
-			 &asn_DEF_NR_UE_MRDC_Capability,
-			 (void **)&ue_context_p->ue_context.UE_Capability_MRDC,
-			 ueCapabilityRAT_Container_MRDC->buf,
-			 ueCapabilityRAT_Container_MRDC->size, 0, 0);
+  if (ueCapabilityRAT_Container_MRDC != NULL) {
+    dec_rval = uper_decode(NULL,
+                           &asn_DEF_NR_UE_MRDC_Capability,
+                           (void **)&ue_context_p->ue_context.UE_Capability_MRDC,
+                           ueCapabilityRAT_Container_MRDC->buf,
+                           ueCapabilityRAT_Container_MRDC->size, 0, 0);
 
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-      LOG_E(RRC, "Failed to decode UE MRDC capabilities (%zu bytes)\n", dec_rval.consumed);
-      ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability,
-                      ue_context_p->ue_context.UE_Capability_MRDC);
-      ue_context_p->ue_context.UE_Capability_MRDC = 0;
-      AssertFatal(1==0,"exiting\n");
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+        LOG_E(RRC, "Failed to decode UE MRDC capabilities (%zu bytes)\n", dec_rval.consumed);
+        ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability,
+                        ue_context_p->ue_context.UE_Capability_MRDC);
+        ue_context_p->ue_context.UE_Capability_MRDC = 0;
+        AssertFatal(1==0,"exiting\n");
+    }
   }
 
   // dump ue_capabilities
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1 && ueCapabilityRAT_Container_nr != NULL) ) {
      xer_fprint(stdout, &asn_DEF_NR_UE_NR_Capability, ue_context_p->ue_context.UE_Capability_nr);
   }  
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1 && ueCapabilityRAT_Container_MRDC != NULL) ) {
      xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }  
 
@@ -110,7 +113,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
   uint8_t inde_list[m->nb_e_rabs_tobeadded];
   memset(inde_list, 0, m->nb_e_rabs_tobeadded*sizeof(uint8_t));
-  protocol_ctxt_t *ctxt = NULL;
+  protocol_ctxt_t ctxt;
 
 // NR RRCReconfiguration
 
@@ -156,13 +159,13 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 		  //PM: Is this where we should extract the rnti from?
 		  create_tunnel_req.rnti           = ue_context_p->ue_id_rnti;
 		  create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(ctxt, rrc->module_id, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,rrc->module_id);
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,rrc->module_id);
 		  gtpv1u_create_s1u_tunnel(
-				  ctxt->instance,
+				  ctxt.instance,
 				  &create_tunnel_req,
 				  &create_tunnel_resp);
 		  rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-				  ctxt,
+				  &ctxt,
 				  &create_tunnel_resp,
 				  &inde_list[0]);
 		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
