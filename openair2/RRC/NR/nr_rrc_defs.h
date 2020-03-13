@@ -326,9 +326,9 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
   // LG: For GTPV1 TUNNELS
-  uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
-  transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
-  rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+  uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
 #endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;

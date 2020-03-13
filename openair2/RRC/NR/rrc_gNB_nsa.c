@@ -166,12 +166,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 				  ctxt.instance,
 				  &create_tunnel_req,
 				  &create_tunnel_resp);
-		  rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+		  rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 				  &ctxt,
 				  &create_tunnel_resp,
 				  &inde_list[0]);
 		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
-
 		  for(int i=0; i<ue_context_p->ue_context.nb_of_e_rabs; i++){
 			  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
 			  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid = create_tunnel_resp.enb_S1u_teid[i];
