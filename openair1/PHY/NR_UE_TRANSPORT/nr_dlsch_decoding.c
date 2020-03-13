@@ -1483,7 +1483,7 @@ void nr_dlsch_decoding_process(void *arg)
   }    
 
   harq_process->round  =0;
-  if (harq_process->round == 0) {
+ // if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
 	if (A > 3824)
 	  harq_process->B = A+24;
@@ -1501,7 +1501,7 @@ void nr_dlsch_decoding_process(void *arg)
 
     p_decParams->Z = harq_process->Z;
 
-    }
+   // }
     
     //printf("round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
 
