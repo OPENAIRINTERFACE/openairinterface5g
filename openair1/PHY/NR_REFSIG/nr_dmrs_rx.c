@@ -59,7 +59,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned short nb_pusch_rb,
                      uint8_t dmrs_type)
 {
-  int8_t w;
+  int8_t w, nb_dmrs;
   short *mod_table;
   unsigned char idx=0;
 
@@ -71,12 +71,12 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
   wt = (dmrs_type==pusch_dmrs_type1) ? wt1 : wt2;
 
   if (dmrs_type > 2)
-    LOG_E(PHY,"Bad PUSCH DMRS config type %d\n", dmrs_type);
+    LOG_E(PHY,"PUSCH DMRS config type %d not valid\n", dmrs_type+1);
 
   if ((p>=1000) && (p<((dmrs_type==pusch_dmrs_type1) ? 1008 : 1012))) {
       if (gNB->frame_parms.Ncp == NORMAL) {
-
-        for (int i=0; i<nb_pusch_rb*((dmrs_type==pusch_dmrs_type1) ? 6:4); i++) {
+        nb_dmrs = ((dmrs_type==pusch_dmrs_type1) ? 6:4);
+        for (int i=0; i<nb_pusch_rb*nb_dmrs; i++) {
 
           w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
           mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
