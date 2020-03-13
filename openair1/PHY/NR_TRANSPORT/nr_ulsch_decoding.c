@@ -369,7 +369,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (harq_process->round == 0) {
 
     // This is a new packet, so compute quantities regarding segmentation
-    harq_process->B = A+24;
+    if (A > 3824)
+      harq_process->B = A+24;
+    else
+      harq_process->B = A+16;
 
     if (R<1024)
       Coderate = (float) R /(float) 1024;
@@ -406,20 +409,20 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     }
   }
 
-    // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
-    nr_segmentation(NULL,
-                    NULL,
-                    harq_process->B,
-                    &harq_process->C,
-                    &harq_process->K,
-                    &harq_process->Z, // [hna] Z is Zc
-                    &harq_process->F,
-                    p_decParams->BG);
+  // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+  nr_segmentation(NULL,
+                  NULL,
+                  harq_process->B,
+                  &harq_process->C,
+                  &harq_process->K,
+                  &harq_process->Z, // [hna] Z is Zc
+                  &harq_process->F,
+                  p_decParams->BG);
 
 #ifdef DEBUG_ULSCH_DECODING
     printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
     if (!frame%100)
-      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, harq_process->Z, harq_process->Nl);
+      printf("K %d C %d Z %d \n", harq_process->K, harq_process->C, harq_process->Z);
 #endif
   }
   p_decParams->Z = harq_process->Z;
