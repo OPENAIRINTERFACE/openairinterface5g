@@ -37,6 +37,7 @@
 #include "common/utils/load_module_shlib.h"
 #include "common/utils/telnetsrv/telnetsrv.h"
 #include "executables/thread-common.h"
+#include "common/utils/LOG/log.h"
 #include "softmodem-common.h"
 
 static softmodem_params_t softmodem_params;
@@ -44,7 +45,7 @@ char *parallel_config=NULL;
 char *worker_config=NULL;
 
 
-
+static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
 static struct timespec start;
 
 uint64_t get_softmodem_optmask(void) {
@@ -60,6 +61,7 @@ softmodem_params_t *get_softmodem_params(void) {
   return &softmodem_params;
 }
 
+<<<<<<< HEAD
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
    struct rusage usage;
    struct timespec stop;
@@ -121,6 +123,28 @@ void set_softmodem_sighandler(void) {
 }
 #ifndef PHYSICAL_SIMULATOR
 void get_common_options(void) {
+=======
+int32_t check_execmask(uint64_t execmask) {
+  char *softmodemfunc=map_int_to_str(softmodem_funcs, execmask);
+  if (softmodemfunc != NULL) {
+  	  set_softmodem_optmask(execmask);
+  	  return 0;
+  } 
+  return -1;
+}
+char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
+  uint64_t fmask=(get_softmodem_optmask()&SOFTMODEM_FUNC_BITS);
+  char *softmodemfunc=map_int_to_str(softmodem_funcs, fmask);
+  if (sofmodemfunc_mask_ptr != NULL)
+  	  *sofmodemfunc_mask_ptr=fmask;
+  if (softmodemfunc != NULL) {
+  	  return softmodemfunc;
+  }
+  return "???";
+}
+
+void get_common_options(uint32_t execmask) {
+>>>>>>> origin/develop
   uint32_t online_log_messages;
   uint32_t glog_level ;
   uint32_t start_telnetsrv = 0;
@@ -130,6 +154,7 @@ void get_common_options(void) {
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
+  check_execmask(execmask);
   config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
   config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
                             sizeof(cmdline_logparams)/sizeof(paramdef_t));

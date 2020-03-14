@@ -98,6 +98,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 
 
 //Dummy Functions
+
 //lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
 int rlc_module_init (int eNB_id) {return(0);}
 
@@ -156,7 +157,6 @@ void mac_rlc_data_ind     (
   num_tb_t                  num_tbP,
   crc_t                    *crcs_pP)
 {}
-
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 

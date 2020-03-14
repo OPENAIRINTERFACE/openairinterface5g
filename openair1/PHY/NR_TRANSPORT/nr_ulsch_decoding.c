@@ -727,6 +727,19 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       
     }
   }
+<<<<<<< HEAD
+=======
+
+#ifdef DEBUG_ULSCH_DECODING
+  LOG_I(PHY, "Decoder output (payload): \n");
+  for (i = 0; i < harq_process->TBS / 8; i++) {
+	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
+	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+	  printf("0x%02x",harq_process->b[i]);
+  }
+#endif
+
+>>>>>>> origin/develop
   ulsch->last_iteration_cnt = ret;
 
   return(ret);

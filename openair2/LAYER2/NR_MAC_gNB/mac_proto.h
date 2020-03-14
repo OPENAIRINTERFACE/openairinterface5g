@@ -197,6 +197,14 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
+
+void nr_process_mac_pdu(
+    module_id_t module_idP,
+    uint8_t CC_id,
+    frame_t frameP,
+    uint8_t *pduP,
+    uint16_t mac_pdu_len);
+
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of gNB
 @param CC_id Component carrier index

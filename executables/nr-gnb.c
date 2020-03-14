@@ -93,10 +93,8 @@
 // extern openair0_device openair0;
 
 
-#if defined(ENABLE_ITTI)
-  extern volatile int start_gNB;
-  extern volatile int start_UE;
-#endif
+extern volatile int start_gNB;
+extern volatile int start_UE;
 extern volatile int oai_exit;
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
@@ -370,7 +368,7 @@ static void *gNB_L1_thread( void *param ) {
 }
 
 
-#if 0 //defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+#if 0 
 // Wait for gNB application initialization to be complete (gNB registration to MME)
 static void wait_system_ready (char *message, volatile int *start_flag) {
   static char *indicator[] = {".    ", "..   ", "...  ", ".... ", ".....",

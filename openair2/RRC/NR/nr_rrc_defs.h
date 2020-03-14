@@ -67,21 +67,15 @@
 #include "NR_EstablishmentCause.h"
 //-------------------
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 /* TODO: be sure this include is correct.
  * It solves a problem of compilation of the RRH GW,
  * issue #186.
  */
-#if !defined(ENABLE_ITTI)
   #include "as_message.h"
-#endif
 
-#if defined(ENABLE_USE_MME)
   #include "commonDef.h"
-#endif
 
 
 /*I will change the name of the structure for compile purposes--> hope not to undo this process*/
@@ -296,7 +290,6 @@ typedef struct gNB_RRC_UE_s {
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
-#if defined(ENABLE_ITTI)
   /* Information from UE RRC ConnectionRequest */
   UE_S_TMSI                          Initialue_identity_s_TMSI;
   NR_EstablishmentCause_t            establishment_cause;
@@ -329,7 +322,6 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
-#endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;

@@ -37,9 +37,7 @@
 #include "msc.h"
 #include "common/ran_context.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "flexran_agent_extern.h"
 #undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace

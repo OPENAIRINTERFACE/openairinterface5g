@@ -34,6 +34,8 @@
 #include "nr_mac_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "executables/nr-softmodem.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"
 
 #include "NR_SCS-SpecificCarrier.h"
@@ -834,3 +836,4 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
   
 }
+

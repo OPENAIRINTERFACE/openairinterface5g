@@ -74,15 +74,7 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
-
-//#include "PHY/defs.h"
-
-//#include "PHY/CODING/extern.h"
-
+#include "intertask_interface.h"
 #include "T.h"
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
@@ -2349,6 +2341,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   nr_ue_ulsch_procedures(ue,
                          harq_pid,
+                         frame_tx,
                          slot_tx,
                          thread_id,
                          gNB_id);
@@ -2363,8 +2356,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-
-  nr_ue_pusch_common_procedures(ue,
+	  LOG_D(PHY, "Sending data \n");
+	  nr_ue_pusch_common_procedures(ue,
                                 harq_pid,
                                 slot_tx,
                                 thread_id,
@@ -2372,6 +2365,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                 &ue->frame_parms);
 
   //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
+
 
 /*
   if ((ue->UE_mode[eNB_id] == PRACH) &&

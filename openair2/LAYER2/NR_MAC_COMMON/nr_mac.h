@@ -118,7 +118,8 @@ typedef struct {
 #define UL_SCH_LCID_CCCH                           0x00
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
-#define UL_SCH_LCID_SRB3                           0x03
+#define UL_SCH_LCID_DTCH						   0x03
+#define UL_SCH_LCID_SRB3                           0x04
 #define UL_SCH_LCID_CCCH_MSG3                      0x21
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
@@ -132,5 +133,10 @@ typedef struct {
 #define UL_SCH_LCID_L_BSR                          0x3E
 #define UL_SCH_LCID_PADDING                        0x3F
 
+#define NR_MAX_NUM_LCID							   32
+#define NR_MAX_NUM_LCGID							8
+#define MAX_RLC_SDU_SUBHEADER_SIZE					3
+
 
 #endif /*__LAYER2_MAC_H__ */
+

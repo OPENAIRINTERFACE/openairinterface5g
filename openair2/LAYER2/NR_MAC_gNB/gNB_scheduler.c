@@ -55,9 +55,7 @@
 #include "flexran_agent_extern.h"
 #include "flexran_agent_mac.h"
 
-#if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
-#endif
 
 #include "executables/softmodem-common.h"
 

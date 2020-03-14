@@ -117,10 +117,8 @@ typedef struct rach_dedicated_s{
 }rach_dedicated_t;
 
 void rrc_config_servingcellconfigcommon(uint8_t Mod_id,
-                                        int CC_id
-                                        #if defined(ENABLE_ITTI)
-                                        ,gNB_RrcConfigurationReq *common_configuration
-                                        #endif
+                                        int CC_id,
+                                        gNB_RrcConfigurationReq *common_configuration
                                        );
 
 void rrc_config_rlc_bearer(uint8_t Mod_id,
