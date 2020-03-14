@@ -859,10 +859,6 @@ if(!IS_SOFTMODEM_NOS1)
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/develop
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
@@ -871,11 +867,6 @@ if(!IS_SOFTMODEM_NOS1)
     RCconfig_L1();
   }
 
-<<<<<<< HEAD
-
-  
-=======
->>>>>>> origin/develop
   /* Start the agent. If it is turned off in the configuration, it won't start */
   /*
   RCconfig_nr_flexran();
@@ -995,11 +986,6 @@ if(!IS_SOFTMODEM_NOS1)
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
 
-<<<<<<< HEAD
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
-  // stop threads  
-=======
   // stop threads
 /*#ifdef XFORMS
 
@@ -1022,7 +1008,6 @@ if(!IS_SOFTMODEM_NOS1)
     }
 
 #endif*/
->>>>>>> origin/develop
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);

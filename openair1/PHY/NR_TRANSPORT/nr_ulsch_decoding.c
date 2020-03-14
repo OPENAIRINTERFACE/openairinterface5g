@@ -727,8 +727,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       
     }
   }
-<<<<<<< HEAD
-=======
 
 #ifdef DEBUG_ULSCH_DECODING
   LOG_I(PHY, "Decoder output (payload): \n");
@@ -739,7 +737,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 #endif
 
->>>>>>> origin/develop
   ulsch->last_iteration_cnt = ret;
 
   return(ret);
