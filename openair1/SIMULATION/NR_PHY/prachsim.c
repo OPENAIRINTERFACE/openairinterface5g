@@ -73,6 +73,10 @@ int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t e
   return 0;
 }
 
+uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+           sub_frame_t subframe, uint8_t eNB_index,
+           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {return(0);}
+
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {return(0);}
 
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -80,6 +84,9 @@ uint8_t nfapi_mode=0;
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
 
+uint64_t get_softmodem_optmask(void) {
+  return 0;
+}
 
 int main(int argc, char **argv)
 {

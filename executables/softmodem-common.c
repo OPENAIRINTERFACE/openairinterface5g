@@ -144,4 +144,63 @@ void get_common_options(uint32_t execmask) {
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
 }
-#endif
+void softmodem_printresources(int sig, telnet_printfunc_t pf) {
+   struct rusage usage;
+   struct timespec stop;
+
+   clock_gettime(CLOCK_BOOTTIME, &stop);
+
+   uint64_t elapse = (stop.tv_sec - start.tv_sec) ;   // in seconds
+
+
+   int st = getrusage(RUSAGE_SELF,&usage);
+   if (!st) {
+   	 pf("\nRun time: %lluh %llus\n",(unsigned long long)elapse/3600,(unsigned long long)(elapse - (elapse/3600)));
+     pf("\tTime executing user inst.: %lds %ldus\n",(long)usage.ru_utime.tv_sec,(long)usage.ru_utime.tv_usec);
+     pf("\tTime executing system inst.: %lds %ldus\n",(long)usage.ru_stime.tv_sec,(long)usage.ru_stime.tv_usec);
+     pf("\tMax. Phy. memory usage: %ldkB\n",(long)usage.ru_maxrss);
+     pf("\tPage fault number (no io): %ld\n",(long)usage.ru_minflt);
+     pf("\tPage fault number (requiring io): %ld\n",(long)usage.ru_majflt);
+     pf("\tNumber of file system read: %ld\n",(long)usage.ru_inblock);
+     pf("\tNumber of filesystem write: %ld\n",(long)usage.ru_oublock);
+     pf("\tNumber of context switch (process origin, io...): %ld\n",(long)usage.ru_nvcsw);
+     pf("\tNumber of context switch (os origin, priority...): %ld\n",(long)usage.ru_nivcsw);
+   } 
+}
+
+void signal_handler(int sig) {
+  void *array[10];
+  size_t size;
+
+  if (sig==SIGSEGV) {
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, 2);
+    exit(-1);
+  } else {
+  	if(sig==SIGINT ||sig==SOFTMODEM_RTSIGNAL)
+  		softmodem_printresources(sig,(telnet_printfunc_t)printf);
+  	if (sig != SOFTMODEM_RTSIGNAL) {
+      printf("Linux signal %s...\n",strsignal(sig));
+      exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
+    }
+  }
+}
+
+
+
+void set_softmodem_sighandler(void) {
+  struct sigaction	act,oldact;
+  clock_gettime(CLOCK_BOOTTIME, &start);
+  memset(&act,0,sizeof(act));
+  act.sa_handler=signal_handler;
+  sigaction(SOFTMODEM_RTSIGNAL,&act,&oldact);
+  printf("Send signal %d to display resource usage...\n",SIGRTMIN+1);
+  signal(SIGSEGV, signal_handler);
+  signal(SIGINT,  signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGABRT, signal_handler);	
+}
+

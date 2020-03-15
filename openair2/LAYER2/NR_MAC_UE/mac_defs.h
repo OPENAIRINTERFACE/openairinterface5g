@@ -167,8 +167,6 @@ typedef struct {
   RA_state_t ra_state;
   ///     RA-rnti
   uint16_t ra_rnti;
-  uint16_t crnti;
-
   ///     Temporary CRNTI
   uint16_t t_crnti;
   ///     CRNTI
