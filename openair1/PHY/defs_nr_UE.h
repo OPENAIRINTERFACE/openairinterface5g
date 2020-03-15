@@ -954,6 +954,9 @@ typedef struct {
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
 
+  /// flag to indicate if PTRS is configured
+  uint8_t ptrs_configured;
+
   uint32_t X_u[64][839];
 
   uint32_t high_speed_flag;
@@ -1086,7 +1089,6 @@ typedef struct {
 
   crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
   supplementaryUplink_t supplementaryUplink;
-  dmrs_UplinkConfig_t dmrs_UplinkConfig;
   dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
   csi_MeasConfig_t csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;

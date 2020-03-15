@@ -32,7 +32,6 @@
 #define __NR_LDPC_INIT_MEM__H__
 
 #include <stdlib.h>
-#include "nrLDPC_defs.h"
 #include "nrLDPC_types.h"
 
 #ifndef malloc32_clear

@@ -25,6 +25,7 @@
  */
 #define _LARGEFILE_SOURCE
 #define _FILE_OFFSET_BITS 64
+#define NB_ANTENNAS_RX  2
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -45,7 +46,9 @@
 
 
 static void parse_iqfile_header(openair0_device *device, iqfile_header_t *iq_fh) {
-  AssertFatal((memcmp(iq_fh->oaiid,OAIIQFILE_ID,sizeof(OAIIQFILE_ID)) == 0),"iqfile doesn't seem to be compatible with oai (invalid id in header)\n");
+  AssertFatal((memcmp(iq_fh->oaiid,OAIIQFILE_ID,sizeof(OAIIQFILE_ID)) == 0),
+  	           "iqfile doesn't seem to be compatible with oai (invalid id %.4s in header)\n",
+  	           iq_fh->oaiid);
   device->type = iq_fh->devtype;
   device->openair0_cfg[0].tx_sample_advance=iq_fh->tx_sample_advance;
   device->openair0_cfg[0].tx_bw =  device->openair0_cfg[0].rx_bw = iq_fh->bw;
@@ -136,6 +139,13 @@ static int iqplayer_loadfile(openair0_device *device, openair0_config_t *openair
   }
 
   return 0;
+}
+
+/*! \brief start the oai iq player
+ * \param device, the hardware used
+ */
+static int trx_iqplayer_start(openair0_device *device){
+	return 0;
 }
 
 /*! \brief Terminate operation of the oai iq player
@@ -287,7 +297,7 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
 
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->openair0_cfg = openair0_cfg;
-  device->trx_start_func = NULL;
+  device->trx_start_func = trx_iqplayer_start;
   device->trx_get_stats_func = NULL;
   device->trx_reset_stats_func = NULL;
   device->trx_end_func   = trx_iqplayer_end;

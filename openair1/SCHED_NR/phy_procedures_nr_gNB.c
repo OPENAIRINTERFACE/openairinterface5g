@@ -238,11 +238,11 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                                             0,
                                             0,
                                             number_symbols,
-                                            &gNB->dmrs_UplinkConfig,
+                                            &gNB->pusch_config.dmrs_UplinkConfig,
                                             mapping_type,
                                             frame_parms->ofdm_symbol_size);
 
-  nb_re_dmrs = ((gNB->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+  nb_re_dmrs = ((gNB->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
   G = nr_get_G(nfapi_ulsch_pdu_rel15->number_rbs,
                number_symbols,

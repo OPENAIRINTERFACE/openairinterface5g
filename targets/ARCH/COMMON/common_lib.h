@@ -448,6 +448,24 @@ typedef struct {
 extern "C"
 {
 #endif
+
+
+#define  DEVICE_SECTION   "device"
+#define  CONFIG_HLP_DEVICE  "Identifies the oai device (the interface to RF) to use, the shared lib \"lib_<name>.so\" will be loaded"
+
+#define  CONFIG_DEVICEOPT_NAME "name"
+
+/* inclusion for device configuration */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            config parameters for oai device                                                                                               */
+/*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define DEVICE_PARAMS_DESC {\
+    { CONFIG_DEVICEOPT_NAME,      CONFIG_HLP_DEVICE,          0,                strptr:&devname,                 defstrval:NULL,         TYPE_STRING,     0}\
+}
+
+
+
 /*! \brief get device name from device type */
 char *get_devname(int devtype);
 /*! \brief Initialize openair RF target. It returns 0 if OK */

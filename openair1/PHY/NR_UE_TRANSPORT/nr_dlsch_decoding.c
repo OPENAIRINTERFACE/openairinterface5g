@@ -41,9 +41,8 @@
 #include "SCHED_NR_UE/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/nr-uesoftmodem.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
-//#define DEBUG_DLSCH_DECODING 1
+#include "PHY/CODING/nrLDPC_extern.h"
+//#define DEBUG_DLSCH_DECODING
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
 //#define OAI_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX
