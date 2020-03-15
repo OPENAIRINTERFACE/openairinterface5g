@@ -32,7 +32,7 @@
 #define __NR_LDPC_MPASS__H__
 
 #include <string.h>
-#include "nrLDPC_defs.h"
+#include "nrLDPCdecoder_defs.h"
 
 /**
    \brief Circular memcpy

@@ -31,7 +31,7 @@
 
 #include <stdint.h>
 #include <immintrin.h>
-#include "nrLDPC_defs.h"
+#include "nrLDPCdecoder_defs.h"
 #include "nrLDPC_types.h"
 #include "nrLDPC_init.h"
 #include "nrLDPC_mPass.h"
@@ -47,7 +47,7 @@
 
 static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, uint32_t numLLR, t_nrLDPC_lut* p_lut, t_nrLDPC_dec_params* p_decParams, t_nrLDPC_time_stats* p_profiler);
 
-int32_t nrLDPC_decoder(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler)
+int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler)
 {
     uint32_t numLLR;
     uint32_t numIter = 0;
