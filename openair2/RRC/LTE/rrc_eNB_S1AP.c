@@ -2291,8 +2291,6 @@ int rrc_eNB_send_E_RAB_Modification_Indication(const protocol_ctxt_t *const ctxt
   int e_rab = 0;
   int e_rab_modify_index = 0;
   int e_rab_notmodify_index = 0;
-  rrc_ue_s1ap_ids_t  *rrc_ue_s1ap_ids_p = NULL;
-  hashtable_rc_t      h_rc;
 
   uint8_t inde_list[ue_context_pP->ue_context.nb_of_e_rabs];
   memset(inde_list, 0, ue_context_pP->ue_context.nb_of_e_rabs*sizeof(uint8_t));

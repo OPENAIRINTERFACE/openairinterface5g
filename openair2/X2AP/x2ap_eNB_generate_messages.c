@@ -1516,8 +1516,6 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	int uEaggregateMaximumBitRateDownlink = 100000000;
 	int uEaggregateMaximumBitRateUplink = 100000000;
 	int e_rabs_tobeadded = 1;
-	int e_RAB_ID = 1;
-	int drb_ID = 2;
 	long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
 	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;
@@ -1691,13 +1689,7 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 
 		// Currently hardcoded (dummy) values filling the fields of SgNB_addition_request message. To be substituted
 		// with values coming from RRC.
-		uint16_t nRencryptionAlgorithms = 0;
-		uint16_t nRintegrityProtectionAlgorithms = 0;
-		uint8_t  SgNBSecurityKey[32] = { 0 };
-		int uEaggregateMaximumBitRateDownlink = 100000000;
-		int uEaggregateMaximumBitRateUplink = 100000000;
 		int e_rabs_admitted_tobeadded = 1;
-		int e_RAB_ID = 1;
 		long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 		long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
 		long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;

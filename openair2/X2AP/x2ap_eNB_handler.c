@@ -1771,7 +1771,6 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
 		  X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer, true);
 
-  X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
 
     if (ie->value.choice.MeNBtoSgNBContainer.size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
       { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
@@ -1943,7 +1942,6 @@ int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
 	x2ap_eNB_instance_t                *instance_p;
 	x2ap_eNB_data_t                    *x2ap_eNB_data;
 	MessageDef                         *msg;
-	int                                ue_id;
 
 		  DevAssert (pdu != NULL);
 		  x2SgNBReconfigurationComplete = &pdu->choice.initiatingMessage.value.choice.SgNBReconfigurationComplete;
