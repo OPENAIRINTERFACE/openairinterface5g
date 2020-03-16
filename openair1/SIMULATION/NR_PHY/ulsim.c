@@ -562,6 +562,10 @@ int main(int argc, char **argv)
       pusch_pdu->nrOfLayers = 1;
       pusch_pdu->ul_dmrs_symb_pos = 1;
       pusch_pdu->dmrs_config_type = 0;
+      // inserted to make simulation work 
+      // remove the next 2 lines when P7 is integrated from new branch
+      gNB->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type=pusch_dmrs_type1;
+      gNB->pusch_config.dmrs_UplinkConfig.pusch_maxLength   = length_dmrs;
       pusch_pdu->ul_dmrs_scrambling_id =  0;
       pusch_pdu->scid = 0;
       pusch_pdu->resource_alloc = 1; 

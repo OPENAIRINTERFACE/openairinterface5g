@@ -442,6 +442,11 @@ int nr_dlsch_encoding(unsigned char *a,
     }
     encoder_implemparams_t impp;
     impp.n_segments=dlsch->harq_processes[harq_pid]->C;
+    impp.tprep = tprep;
+    impp.tinput = tinput;
+    impp.tparity = tparity;
+    impp.toutput = toutput;
+
     for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
       impp.macro_num=j;
       nrLDPC_encoder(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,&impp);
