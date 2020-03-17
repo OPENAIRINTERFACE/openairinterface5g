@@ -329,7 +329,6 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
           nb_rb = (2*nb_rb)/3;
       }
 
-
       for (rb=0;rb<nb_rb;rb++) {
 
         ul_ch128[0] = _mm_mulhi_epi16(ul_ch128[0], ch_amp128);
@@ -403,7 +402,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128U = vdupq_n_s32(0);
@@ -446,8 +445,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                              ((int32_t*)&avg128U)[2] +
                              ((int32_t*)&avg128U)[3]   ) / (nb_rb*nre);
     }
-
-
+  }
 #endif
 }
 
@@ -666,7 +664,6 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   if (rho) {
 
-
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       rho128        = (__m128i *)&rho[aarx][symbol*frame_parms->N_RB_UL*12];
       ul_ch128      = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_UL*12];
@@ -747,7 +744,6 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
   _m_empty();
 
 #elif defined(__arm__)
-
 
   unsigned short rb;
   unsigned char aatx,aarx,symbol_mod,is_dmrs_symbol=0;
@@ -1017,7 +1013,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
   }
 
-
   //----------------------------------------------------------
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
@@ -1071,7 +1066,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
       gNB->pusch_vars[UE_id]->log2_maxh = (log2_approx(avgs)/2)+1;
       gNB->pusch_vars[UE_id]->cl_done = 1;
-  }
+    }
 
     nr_ulsch_channel_compensation(gNB->pusch_vars[UE_id]->rxdataF_ext,
                                   gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,

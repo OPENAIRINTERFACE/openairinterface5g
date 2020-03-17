@@ -211,10 +211,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 }
 
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
-                unsigned char symbol,
-                unsigned char Ns,
-                int sample_offset,
-                int no_prefix)
+                          unsigned char symbol,
+                          unsigned char Ns,
+                          int sample_offset,
+                          int no_prefix)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;

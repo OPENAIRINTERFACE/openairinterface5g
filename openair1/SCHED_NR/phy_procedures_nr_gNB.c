@@ -224,7 +224,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   number_symbols = pusch_pdu->nr_of_symbols;
 
   for (l = start_symbol; l < start_symbol + number_symbols; l++)
-      number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;;
+    number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;
 
   if (nodata_dmrs)
     nb_re_dmrs = 12*number_dmrs_symbols;
@@ -237,7 +237,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                1, // FIXME only single dmrs is implemented 
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);
-
 
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
