@@ -688,6 +688,7 @@ int main( int argc, char **argv ) {
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   init_opt() ;
+  load_nrLDPClib();
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
