@@ -446,7 +446,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }  else if (is_ptrs == 1) {
 
           if (k == start_sc){
-            nr_modulation(pusch_dmrs[l][0], harq_process_ul_ue->nb_rb/2, DMRS_MOD_ORDER, mod_ptrs);
+            nr_modulation(pusch_dmrs[l][0], harq_process_ul_ue->nb_rb, DMRS_MOD_ORDER, mod_ptrs);
           }
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (beta_ptrs*AMP*mod_ptrs[ptrs_idx<<1]) >> 15;

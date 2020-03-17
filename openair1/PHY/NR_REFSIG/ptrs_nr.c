@@ -240,15 +240,13 @@ uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t
   else
     k_RB_ref = n_rnti % (N_RB % K_ptrs);
 
-  while (k > sc) {
-    sc = (start_sc + k_RE_ref + (i*K_ptrs + k_RB_ref)*NR_NB_SC_PER_RB)%ofdm_symbol_size;
-    i++;
-  }
-
-  if (k == sc)
-    return 1;
-  else
+  if (k < (k_RE_ref + k_RB_ref*NR_NB_SC_PER_RB + start_sc))
     return 0;
+
+  if ((k-k_RE_ref - k_RB_ref*NR_NB_SC_PER_RB - start_sc)%(K_ptrs*NR_NB_SC_PER_RB) == 0)
+    return 1;
+
+  return 0;
 }
 
 /*******************************************************************
@@ -285,24 +283,18 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t start_sc,
                        uint16_t ofdm_symbol_size,
                        pusch_dmrs_type_t pusch_dmrs_type,
-                       uint8_t resourceElementOffset) {
-  uint8_t is_ptrs_freq, is_ptrs_time;
-  int16_t k_RE_ref;
-  is_ptrs_freq = 0;
-  is_ptrs_time = 0;
-  k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
-  is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
+                       uint8_t resourceElementOffset)
+{
+  int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
+  uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
 
   if (is_ptrs_freq == 0)
     return 0;
 
   if (((ptrs_symbols>>l)&1) == 1)
-    is_ptrs_time = 1;
-
-  if (is_ptrs_time && is_ptrs_freq)
     return 1;
-  else
-    return 0;
+
+  return 0;
 }
 
 /*
