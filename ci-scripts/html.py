@@ -1,3 +1,32 @@
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+# Python for CI of OAI-eNB + COTS-UE
+#
+#   Required Python Version
+#     Python 3.x
+#
+#   Required Python Package
+#     pexpect
+#---------------------------------------------------------------------
+
 
 #-----------------------------------------------------------
 # Import
@@ -11,116 +40,23 @@ import subprocess
 from multiprocessing import Process, Lock, SimpleQueue
 
 #-----------------------------------------------------------
-# OAI Testing modules
-#-----------------------------------------------------------
-#import main_enb
-#MAIN = main_enb.OaiCiTest()
-
-
-#-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
 class HTMLManagement():
+
 	def __init__(self):
-	#	self.FailReportCnt = 0
-	#	self.prematureExit = False
-		self.ranRepository = ''
-		self.ranBranch = ''
-		self.ranAllowMerge = False
-		self.ranCommitID = ''
-		self.ranTargetBranch = ''
-		#self.eNBIPAddress = ''
-		#self.eNBUserName = ''
-		#self.eNBPassword = ''
-		#self.eNBSourceCodePath = ''
-		#self.eNB1IPAddress = ''
-		#self.eNB1UserName = ''
-		#self.eNB1Password = ''
-		#self.eNB1SourceCodePath = ''
-		#self.eNB2IPAddress = ''
-		#self.eNB2UserName = ''
-		#self.eNB2Password = ''
-		#self.eNB2SourceCodePath = ''
-		#self.ADBIPAddress = ''
-		#self.ADBUserName = ''
-		#self.ADBPassword = ''
-		#self.ADBCentralized = True
-		#self.testCase_id = ''
-		self.testXMLfiles = []
-		self.nbTestXMLfiles = 0
-		#self.desc = ''
-		#self.Build_eNB_args = ''
-		#self.backgroundBuild = False
-		#self.backgroundBuildTestId = ['', '', '']
-		#self.Build_eNB_forced_workspace_cleanup = False
-		#self.Initialize_eNB_args = ''
-		#self.air_interface = 'lte'
-		#self.eNB_instance = ''
-		#self.eNB_serverId = ''
-		#self.eNBLogFiles = ['', '', '']
-		#self.eNBOptions = ['', '', '']
-		#self.eNBmbmsEnables = [False, False, False]
-		#self.eNBstatuses = [-1, -1, -1]
-		#self.ping_args = ''
-		#self.ping_packetloss_threshold = ''
-		#self.iperf_args = ''
-		#self.iperf_packetloss_threshold = ''
-		#self.iperf_profile = ''
-		#self.iperf_options = ''
-		#self.nbMaxUEtoAttach = -1
-		#self.UEDevices = []
-		#self.UEDevicesStatus = []
-		#self.UEDevicesRemoteServer = []
-		#self.UEDevicesRemoteUser = []
-		#self.UEDevicesOffCmd = []
-		#self.UEDevicesOnCmd = []
-		#self.UEDevicesRebootCmd = []
-		#self.CatMDevices = []
-		#self.UEIPAddresses = []
-		self.htmlFile = ''
-		self.htmlHeaderCreated = False
-		self.htmlFooterCreated = False
-		self.htmlUEConnected = -1
-		self.htmlNb_Smartphones = 0
-		self.htmlNb_CATM_Modules = 0
-		self.htmleNBFailureMsg = ''
-		self.htmlUEFailureMsg = ''
-		#self.picocom_closure = False
-		#self.idle_sleep_time = 0
-		#self.x2_ho_options = 'network'
-		#self.x2NbENBs = 0
-		#self.x2ENBBsIds = []
-		#self.x2ENBConnectedUEs = []
+		
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
-		#self.repeatCounts = []
-		#self.finalStatus = False
-		#self.OsVersion = ''
-		#self.KernelVersion = ''
-		#self.UhdVersion = ''
-		#self.UsrpBoard = ''
-		#self.CpuNb = ''
-		#self.CpuModel = ''
-		#self.CpuMHz = ''
-		#self.UEIPAddress = ''
-		#self.UEUserName = ''
-		#self.UEPassword = ''
-		#self.UE_instance = ''
-		#self.UESourceCodePath = ''
-		#self.UELogFile = ''
-		#self.Build_OAI_UE_args = ''
-		#self.Initialize_OAI_UE_args = ''
-		#self.clean_repository = True
-		#self.flexranCtrlInstalled = False
-		#self.flexranCtrlStarted = False
-		#self.expectedNbOfConnectedUEs = 0
-		#self.startTime = 0
-
-
+		self.testXMLfiles = []
 #-----------------------------------------------------------
-# HTML Reporting....
+# Setters and Getters
 #-----------------------------------------------------------
+	def SetreseNB(self,rsenb):
+		self.reseNB = rsenb
+	def SetresUE(self,rsue):
+		self.resUE = rsue
 
 	def Setdesc(self, dsc):
 		self.desc = dsc
@@ -157,11 +93,6 @@ class HTMLManagement():
 		self.ranTargetBranch = tbranch
 	def GetranTargetBranch(self):
 		return self.ranTargetBranch
-	
-#	def SetADBIPAddress(self, adbip):
-#		self.ADBIPAddress = adbip
-#	def GetADBIPAddress(self):
-#		return self.ADBIPAddress
 
 	def SethtmlUEConnected(self, nbUEs):
 		self.htmlUEConnected = nbUEs
@@ -186,6 +117,12 @@ class HTMLManagement():
 
 	def SethtmlTabIcons(self, tabIcon):
 		self.htmlTabIcons.append(tabIcon)
+
+
+#-----------------------------------------------------------
+# HTML structure creation functions
+#-----------------------------------------------------------
+
 
 	def CreateHtmlHeader(self, ADBIPAddress):
 		if (not self.htmlHeaderCreated):
@@ -270,15 +207,9 @@ class HTMLManagement():
 			self.htmlFile.write('  </table>\n')
 
 			if (ADBIPAddress != 'none'):
-				#terminate_ue_flag = True
-				#MAIN.GetAllUEDevices(terminate_ue_flag)
-				#self.GetAllCatMDevices(terminate_ue_flag)
-				#self.htmlUEConnected = len(self.UEDevices)
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_Smartphones) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_CATM_Modules) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
 			else:
-				#self.UEDevices.append('OAI-UE')
-				#self.htmlUEConnected = len(self.UEDevices)
 				self.htmlUEConnected = 1
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> 1 OAI UE(s) is(are) connected to CI bench</h2>\n')
 			self.htmlFile.write('  <br>\n')
@@ -316,14 +247,6 @@ class HTMLManagement():
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
 			self.htmlFile.write('        <th>Test Status</th>\n')
-			#if (self.htmlUEConnected == -1):
-			#	terminate_ue_flag = True
-			#	if (self.ADBIPAddress != 'none'):
-			#		self.GetAllUEDevices(terminate_ue_flag)
-			#		self.GetAllCatMDevices(terminate_ue_flag)
-			#	else:
-			#		self.UEDevices.append('OAI-UE')
-			#	self.htmlUEConnected = len(self.UEDevices)
 
 			i = 0
 			while (i < self.htmlUEConnected):
@@ -366,14 +289,41 @@ class HTMLManagement():
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
 
-			machines = [ 'eNB', 'UE' ]
-			for machine in machines:
-				#This needs to move back to main and be called before CreateHtmlFooter
-				res = self.RetrieveSystemVersion(machine)
-				if res == -1:
-					continue
+		#	GP machines = [ 'eNB', 'UE' ]
+		#	GP for machine in machines:
+				#GP This needs to move back to main and be called before CreateHtmlFooter
+			
+			res = self.reseNB
+			if res != -1:
 				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <th colspan=8>' + str(machine) + ' Server Characteristics</th>\n')
+				self.htmlFile.write('        <th colspan=8>' + str('eNB') + ' Server Characteristics</th>\n')
+				self.htmlFile.write('      </tr>\n')
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <td>OS Version</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion + '</span></td>\n')
+				self.htmlFile.write('        <td>Kernel Version</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion + '</span></td>\n')
+				self.htmlFile.write('        <td>UHD Version</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion + '</span></td>\n')
+				self.htmlFile.write('        <td>USRP Board</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard + '</span></td>\n')
+				self.htmlFile.write('      </tr>\n')
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <td>Nb CPUs</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb + '</span></td>\n')
+				self.htmlFile.write('        <td>CPU Model Name</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel + '</span></td>\n')
+				self.htmlFile.write('        <td>CPU Frequency</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz + '</span></td>\n')
+				self.htmlFile.write('        <td></td>\n')
+				self.htmlFile.write('        <td></td>\n')
+				self.htmlFile.write('      </tr>\n')
+
+
+			res = self.resUE
+			if res != -1:
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <th colspan=8>' + str('UE') + ' Server Characteristics</th>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td>OS Version</td>\n')
@@ -410,8 +360,6 @@ class HTMLManagement():
 			self.htmlFile.write('</html>\n')
 			self.htmlFile.close()
 
-	#FailReportCnt should be passed as a parameter of CreateHtmlRetrySeparator method 
-	# no need for a setter and be a member of html class 
 	def CreateHtmlRetrySeparator(self, cntnumfails):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile = open('test_results.html', 'a')

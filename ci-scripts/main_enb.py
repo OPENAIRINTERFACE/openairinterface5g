@@ -36,43 +36,6 @@ import constants as CONST
 Version = '0.1'
 
 #-----------------------------------------------------------
-# Constants
-#-----------------------------------------------------------
-ALL_PROCESSES_OK = CONST.ALL_PROCESSES_OK
-ENB_PROCESS_FAILED = CONST.ENB_PROCESS_FAILED
-ENB_PROCESS_OK = CONST.ENB_PROCESS_OK
-ENB_PROCESS_SEG_FAULT = CONST.ENB_PROCESS_SEG_FAULT
-ENB_PROCESS_ASSERTION = CONST.ENB_PROCESS_ASSERTION
-ENB_PROCESS_REALTIME_ISSUE = CONST.ENB_PROCESS_REALTIME_ISSUE
-ENB_PROCESS_NOLOGFILE_TO_ANALYZE = CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE
-ENB_PROCESS_SLAVE_RRU_NOT_SYNCED = CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
-HSS_PROCESS_FAILED = CONST.HSS_PROCESS_FAILED
-HSS_PROCESS_OK = CONST.HSS_PROCESS_OK
-MME_PROCESS_FAILED = CONST.MME_PROCESS_FAILED
-MME_PROCESS_OK = CONST.MME_PROCESS_OK
-SPGW_PROCESS_FAILED = CONST.SPGW_PROCESS_FAILED
-SPGW_PROCESS_OK = CONST.SPGW_PROCESS_OK
-UE_IP_ADDRESS_ISSUE = CONST.UE_IP_ADDRESS_ISSUE
-OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE = CONST.OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE
-OAI_UE_PROCESS_COULD_NOT_SYNC = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
-OAI_UE_PROCESS_ASSERTION = CONST.OAI_UE_PROCESS_ASSERTION
-OAI_UE_PROCESS_FAILED = CONST.OAI_UE_PROCESS_FAILED
-OAI_UE_PROCESS_NO_TUNNEL_INTERFACE = CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE
-OAI_UE_PROCESS_SEG_FAULT = CONST.OAI_UE_PROCESS_SEG_FAULT
-OAI_UE_PROCESS_OK = CONST.OAI_UE_PROCESS_OK
-
-UE_STATUS_DETACHED = CONST.UE_STATUS_DETACHED
-UE_STATUS_DETACHING = CONST.UE_STATUS_DETACHING
-UE_STATUS_ATTACHING = CONST.UE_STATUS_ATTACHING
-UE_STATUS_ATTACHED = CONST.UE_STATUS_ATTACHED
-
-X2_HO_REQ_STATE__IDLE = CONST.X2_HO_REQ_STATE__IDLE
-X2_HO_REQ_STATE__TARGET_RECEIVES_REQ = CONST.X2_HO_REQ_STATE__TARGET_RECEIVES_REQ
-X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE = CONST.X2_HO_REQ_STATE__TARGET_RRC_RECFG_COMPLETE
-X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ = CONST.X2_HO_REQ_STATE__TARGET_SENDS_SWITCH_REQ
-X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK = CONST.X2_HO_REQ_STATE__SOURCE_RECEIVES_REQ_ACK
-
-#-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
 import sys		# arg
@@ -91,36 +54,14 @@ logging.basicConfig(
 	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
 )
 
+
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
 class OaiCiTest():
+	
 	def __init__(self):
 		self.FailReportCnt = 0
-		self.prematureExit = False
-		#self.ranRepository = ''
-		#self.ranBranch = ''
-		#RAN.GetranAllowMerge() = False
-		#self.ranCommitID = ''
-		#RAN.GetranTargetBranch() = ''
-		#self.eNBIPAddress = ''
-		#self.eNBUserName = ''
-		#self.eNBPassword = ''
-		#RAN.GeteNBSourceCodePath() = ''
-		#self.EPCIPAddress = ''
-		#self.EPCUserName = ''
-		#self.EPCPassword = ''
-		#self.eNB1IPAddress = ''
-		#self.eNB1UserName = ''
-		#self.eNB1Password = ''
-		#self.eNB1SourceCodePath = ''
-		#self.eNB2IPAddress = ''
-		#self.eNB2UserName = ''
-		#self.eNB2Password = ''
-		#self.eNB2SourceCodePath = ''
-		#self.EPCSourceCodePath = ''
-		#self.EPCType = ''
-		#self.EPC_PcapFileName  = ''
 		self.ADBIPAddress = ''
 		self.ADBUserName = ''
 		self.ADBPassword = ''
@@ -129,18 +70,6 @@ class OaiCiTest():
 		self.testXMLfiles = []
 		self.nbTestXMLfiles = 0
 		self.desc = ''
-		#RAN.GetBuild_eNB_args() = ''
-		#self.backgroundBuild = False
-		#self.backgroundBuildTestId = ['', '', '']
-		#self.Build_eNB_forced_workspace_cleanup = False
-		#RAN.GetInitialize_eNB_args() = ''
-		self.air_interface = 'lte'
-		#self.eNB_instance = ''
-		#self.eNB_serverId = ''
-		#self.eNBLogFiles = ['', '', '']
-		#self.eNBOptions = ['', '', '']
-		#self.eNBmbmsEnables = [False, False, False]
-		#self.eNBstatuses = [-1, -1, -1]
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -169,9 +98,6 @@ class OaiCiTest():
 		self.x2NbENBs = 0
 		self.x2ENBBsIds = []
 		self.x2ENBConnectedUEs = []
-		#self.htmlTabRefs = []
-		#self.htmlTabNames = []
-		#self.htmlTabIcons = []
 		self.repeatCounts = []
 		self.finalStatus = False
 		self.OsVersion = ''
@@ -246,7 +172,7 @@ class OaiCiTest():
 						mismatch = True
 				if not mismatch:
 					SSH.close()
-					HTML.CreateHtmlTestRow(RAN.GetBuild_eNB_args(), 'OK', ALL_PROCESSES_OK)
+					HTML.CreateHtmlTestRow(RAN.GetBuild_eNB_args(), 'OK', CONST.ALL_PROCESSES_OK)
 					return
 
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
@@ -291,11 +217,11 @@ class OaiCiTest():
 			else:
 				SSH.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			SSH.close()
-			HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+			HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK, 'OAI UE')
 		else:
 			SSH.close()
 			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
-			HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
+			HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'KO', CONST.ALL_PROCESSES_OK, 'OAI UE')
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 	
@@ -330,7 +256,7 @@ class OaiCiTest():
 			self.flexranCtrlStarted = True
 			RAN.SetflexranCtrlStarted(True)
 		SSH.close()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 	
 	def InitializeUE_common(self, device_id, idx):
 		try:
@@ -393,7 +319,7 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def InitializeOAIUE(self):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -551,23 +477,23 @@ class OaiCiTest():
 
 		SSH.close()
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
-			HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
+			HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 			if (self.ADBIPAddress != 'none'):
 				self.UEDevices = []
 				self.UEDevices.append('OAI-UE')
 				self.UEDevicesStatus = []
-				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
+				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 		else:
 			if RAN.Getair_interface() == 'lte':
 				if RAN.GeteNBmbmsEnables[0]:
 					self.htmlUEFailureMsg = 'oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
 				else:
 					self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
-				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			else:
 				self.htmlUEFailureMsg = 'nr-uesoftmodem did NOT synced'
-				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
+				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
 
@@ -620,7 +546,7 @@ class OaiCiTest():
 		# Force closure of picocom but device might still be locked
 		SSH.close()
 		self.picocom_closure = False
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
 	def TerminateCatM(self):
@@ -641,7 +567,7 @@ class OaiCiTest():
 		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
 		SSH.close()
 		self.picocom_closure = False
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
 	def AttachCatM(self):
@@ -902,7 +828,7 @@ class OaiCiTest():
 		nb_ue_to_connect = 0
 		for device_id in self.UEDevices:
 			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
-				self.UEDevicesStatus[nb_ue_to_connect] = UE_STATUS_ATTACHING
+				self.UEDevicesStatus[nb_ue_to_connect] = CONST.UE_STATUS_ATTACHING
 				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,))
 				p.daemon = True
 				p.start()
@@ -912,7 +838,7 @@ class OaiCiTest():
 			job.join()
 
 		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow('N/A', 'KO', ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
 			return
 		else:
@@ -932,8 +858,8 @@ class OaiCiTest():
 			if (attach_status):
 				cnt = 0
 				while cnt < len(self.UEDevices):
-					if self.UEDevicesStatus[cnt] == UE_STATUS_ATTACHING:
-						self.UEDevicesStatus[cnt] = UE_STATUS_ATTACHED
+					if self.UEDevicesStatus[cnt] == CONST.UE_STATUS_ATTACHING:
+						self.UEDevicesStatus[cnt] = CONST.UE_STATUS_ATTACHED
 					cnt += 1
 				HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 				result = re.search('T_stdout', str(RAN.GetInitialize_eNB_args()))
@@ -973,7 +899,7 @@ class OaiCiTest():
 		multi_jobs = []
 		cnt = 0
 		for device_id in self.UEDevices:
-			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHING
+			self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHING
 			p = Process(target = self.DetachUE_common, args = (device_id,cnt,))
 			p.daemon = True
 			p.start()
@@ -981,14 +907,14 @@ class OaiCiTest():
 			cnt += 1
 		for job in multi_jobs:
 			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		result = re.search('T_stdout', str(RAN.GetInitialize_eNB_args()))
 		if result is not None:
 			logging.debug('Waiting 5 seconds to fill up record file')
 			time.sleep(5)
 		cnt = 0
 		while cnt < len(self.UEDevices):
-			self.UEDevicesStatus[cnt] = UE_STATUS_DETACHED
+			self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHED
 			cnt += 1
 
 	def RebootUE_common(self, device_id):
@@ -1049,7 +975,7 @@ class OaiCiTest():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def DataDisableUE_common(self, device_id, idx):
 		try:
@@ -1078,7 +1004,7 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def DataEnableUE_common(self, device_id, idx):
 		try:
@@ -1107,7 +1033,7 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -1152,7 +1078,7 @@ class OaiCiTest():
 			print('len(self.UEDevicesStatus) == 0')
 			cnt = 0
 			while cnt < len(self.UEDevices):
-				self.UEDevicesStatus.append(UE_STATUS_DETACHED)
+				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 				cnt += 1
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
@@ -1272,7 +1198,7 @@ class OaiCiTest():
 			htmlOptions = 'N/A'
 
 		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow(htmlOptions, 'KO', ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
 		else:
 			check_status = True
@@ -1319,8 +1245,8 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		idx = 0
 		for device_id in self.UEDevices:
-			print('UE status attched'+UE_STATUS_ATTACHED)
-			if self.UEDevicesStatus[idx] != UE_STATUS_ATTACHED:
+			print('UE status attched'+CONST.UE_STATUS_ATTACHED)
+			if self.UEDevicesStatus[idx] != CONST.UE_STATUS_ATTACHED:
 				idx += 1
 				continue
 			count = 0
@@ -1563,7 +1489,7 @@ class OaiCiTest():
 			return
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
-			HTML.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 			self.AutoTerminateUEandeNB()
 			return
 		multi_jobs = []
@@ -1581,7 +1507,7 @@ class OaiCiTest():
 			job.join()
 
 		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow(self.ping_args, 'KO', ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
 		else:
 			ping_status = True
@@ -1998,7 +1924,7 @@ class OaiCiTest():
 			if (device_id != 'OAI-UE'):
 				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 				# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
-				SSH.command('if [ ! -d ' + EPC.GetSourceCodePath() + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
+				SSH.command('if [ ! -d ' + EPC.GetSourceCodePath() + '/scripts ]; then mkdir -p ' + EPC.GetSourceCodePath() + '/scripts ; fi', '\$', 5)
 				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
 				# Checking if iperf / iperf3 are installed
 				if self.ADBCentralized:
@@ -2306,7 +2232,7 @@ class OaiCiTest():
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			logging.debug('going here')
-			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 			self.AutoTerminateUEandeNB()
 			return
 
@@ -2338,7 +2264,7 @@ class OaiCiTest():
 			job.join()
 
 		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
 		else:
 			iperf_status = True
@@ -2406,7 +2332,7 @@ class OaiCiTest():
 				status = status_queue.get()
 				if (status < 0):
 					result = status
-			if result == ENB_PROCESS_FAILED:
+			if result == CONST.ENB_PROCESS_FAILED:
 				fileCheck = re.search('enb_', str(RAN.GeteNBLogFiles[0]))
 				if fileCheck is not None:
 					SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/' + RAN.GeteNBLogFiles[0], '.')
@@ -2437,7 +2363,7 @@ class OaiCiTest():
 				status = status_queue.get()
 				if (status < 0):
 					result = status
-			if result == OAI_UE_PROCESS_FAILED:
+			if result == CONST.OAI_UE_PROCESS_FAILED:
 				fileCheck = re.search('ue_', str(self.UELogFile))
 				if fileCheck is not None:
 					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
@@ -2453,9 +2379,9 @@ class OaiCiTest():
 			result = re.search(RAN.Getair_interface() + '-uesoftmodem', SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m OAI UE Process Not Found! \u001B[0m')
-				status_queue.put(OAI_UE_PROCESS_FAILED)
+				status_queue.put(CONST.OAI_UE_PROCESS_FAILED)
 			else:
-				status_queue.put(OAI_UE_PROCESS_OK)
+				status_queue.put(CONST.OAI_UE_PROCESS_OK)
 			SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -2688,31 +2614,31 @@ class OaiCiTest():
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			if not nrUEFlag:
-				return OAI_UE_PROCESS_SEG_FAULT
+				return CONST.OAI_UE_PROCESS_SEG_FAULT
 			else:
 				if not frequency_found:
-					return OAI_UE_PROCESS_SEG_FAULT
+					return CONST.OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE showed an assertion!\n'
 			if not nrUEFlag:
 				if not mib_found or not frequency_found:
-					return OAI_UE_PROCESS_ASSERTION
+					return CONST.OAI_UE_PROCESS_ASSERTION
 			else:
 				if not frequency_found:
-					return OAI_UE_PROCESS_ASSERTION
+					return CONST.OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE faced real time issues!\n'
-			#return ENB_PROCESS_REALTIME_ISSUE
+			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if nrUEFlag:
 			if not frequency_found:
-				return OAI_UE_PROCESS_COULD_NOT_SYNC
+				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		else:
 			if no_cell_sync_found and not mib_found:
 				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
 				self.htmlUEFailureMsg += 'UE could not synchronize!\n'
-				return OAI_UE_PROCESS_COULD_NOT_SYNC
+				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		return 0
 
 
@@ -2729,7 +2655,7 @@ class OaiCiTest():
 		time.sleep(1)
 		SSH.close()
 		self.flexranCtrlStarted = False
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateUE_common(self, device_id, idx):
 		try:
@@ -2772,7 +2698,7 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateOAIUE(self):
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
@@ -2795,7 +2721,7 @@ class OaiCiTest():
 			if (copyin_res == -1):
 				logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
 				self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
-				HTML.CreateHtmlTestRow('N/A', 'KO', OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
 				self.UELogFile = ''
 				return
 			logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
@@ -2812,20 +2738,20 @@ class OaiCiTest():
 				if RAN.Getair_interface() == 'lte':
 					# In case of sniffing on commercial eNBs we have random results
 					# Not an error then
-					if (logStatus != OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
+					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
 						self.Initialize_OAI_UE_args = ''
 						self.AutoTerminateUEandeNB()
 				else:
-					if (logStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
+					if (logStatus == CONST.OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
 						self.AutoTerminateUEandeNB()
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				self.htmlUEFailureMsg = '<b>' + ueAction + ' Completed</b>\n' + self.htmlUEFailureMsg
-				HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+				HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
-			HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
 		if (self.ADBIPAddress != 'none'):
@@ -2857,7 +2783,7 @@ class OaiCiTest():
 
 	def IdleSleep(self):
 		time.sleep(self.idle_sleep_time)
-		HTML.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def X2_Status(self, idx, fileName):
 		cmd = "curl --silent http://" + EPC.GetIPAddress() + ":9999/stats | jq '.' > " + fileName
@@ -2967,7 +2893,7 @@ class OaiCiTest():
 					html_queue.put(fullMessage)
 					HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 			else:
-				HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', ALL_PROCESSES_OK)
+				HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', CONST.ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self):
 		if (RAN.GeteNBIPAddress() != '' and RAN.GeteNBUserName() != '' and RAN.GeteNBPassword() != ''):
@@ -3548,6 +3474,8 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		HTML.SethtmlNb_CATM_Modules(len(CiTestObj.CatMDevices))
 	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
+	HTML.SetreseNB(RetrieveSystemVersion('eNB'))
+	HTML.SetresUE(RetrieveSystemVersion('UE'))	
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
