@@ -2458,7 +2458,10 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     UE_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
     int bytes_to_schedule = UE_info->UE_template[CC_id][UE_id].estimated_ul_buffer - UE_info->UE_template[CC_id][UE_id].scheduled_ul_bytes;
 
-    if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+    if (bytes_to_schedule < 0) {
+      bytes_to_schedule = 0;
+      UE_list->UE_template[CC_id][UE_id].scheduled_ul_bytes = 0;
+    }
     rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
 
     if ( (bytes_to_schedule > 0) || (UE_info->UE_template[CC_id][UE_id].ul_SR > 0) ||
