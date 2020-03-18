@@ -410,7 +410,9 @@ int main(int argc, char **argv)
   uint8_t n_hf = 0;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
-  double fs,bw,scs,eps;
+  double fs, eps;
+  double scs = 30000;
+  double bw = 100e6;
   
   switch (mu) {
     case 1:

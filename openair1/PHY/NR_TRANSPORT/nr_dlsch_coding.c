@@ -272,7 +272,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
 
-  free_gNB_dlsch(dlsch,N_RB);
+  free_gNB_dlsch(&dlsch,N_RB);
 
   return(NULL);
 

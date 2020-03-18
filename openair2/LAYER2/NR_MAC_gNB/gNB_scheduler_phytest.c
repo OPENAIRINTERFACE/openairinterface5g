@@ -37,7 +37,7 @@
 #include "executables/nr-softmodem.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"
-
+#include "common/utils/nr/nr_common.h"
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
 #include "NR_FrequencyInfoUL.h"

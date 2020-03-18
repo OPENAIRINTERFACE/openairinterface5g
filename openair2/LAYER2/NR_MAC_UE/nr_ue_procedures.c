@@ -2732,7 +2732,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275) :
     NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
 
-  int pos;
+  int pos=0;
   int fsize=0;
   switch(dci_format) {
 
