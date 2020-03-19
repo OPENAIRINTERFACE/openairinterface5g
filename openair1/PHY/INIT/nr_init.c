@@ -83,8 +83,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
   NR_gNB_PRACH *const prach_vars   = &gNB->prach_vars;
   NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
-  dmrs_UplinkConfig_t *dmrs_Uplink_Config = &gNB->pusch_config.dmrs_UplinkConfig;
-  ptrs_UplinkConfig_t *ptrs_Uplink_Config = &gNB->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   /*LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
@@ -154,31 +152,30 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  //------------- config PUSCH DMRS parameters(to be updated from RRC)--------------
-  gNB->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
-  gNB->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  gNB->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
-  //--------------------------------------------------------------------------------
 
   nr_init_pdsch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
 
-  // default values until overwritten by RRCConnectionReconfiguration
+  //PUSCH DMRS init
+  gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
+  uint32_t ****pusch_dmrs = gNB->nr_gold_pusch_dmrs;
 
-  for (i=0;i<MAX_NR_OF_UL_ALLOCATIONS;i++){
-    gNB->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    gNB->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
+  for(int nscid=0; nscid<2; nscid++) {
+    pusch_dmrs[nscid] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+    AssertFatal(pusch_dmrs[nscid]!=NULL, "NR init: pusch_dmrs for nscid %d - malloc failed\n", nscid);
+
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      pusch_dmrs[nscid][slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+      AssertFatal(pusch_dmrs[nscid][slot]!=NULL, "NR init: pusch_dmrs for slot %d - malloc failed\n", slot);
+
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        pusch_dmrs[nscid][slot][symb] = (uint32_t *)malloc16(NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(pusch_dmrs[nscid][slot][symb]!=NULL, "NR init: pusch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+      }
+    }
   }
 
-  gNB->ptrs_configured = 0;
-
-  //------------- config PUSCH PTRS parameters(to be updated from RRC)--------------//
-  ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 0; // setting MCS values to 0 indicate abscence of time_density field in the configuration
-  ptrs_Uplink_Config->timeDensity.ptrs_mcs2 = 0;
-  ptrs_Uplink_Config->timeDensity.ptrs_mcs3 = 0;
-  ptrs_Uplink_Config->frequencyDensity.n_rb0 = 0;     // setting N_RB values to 0 indicate abscence of frequency_density field in the configuration
-  ptrs_Uplink_Config->frequencyDensity.n_rb1 = 0;
-  ptrs_Uplink_Config->resourceElementOffset = 0;
-  //--------------------------------------------------------------------------------//
+  uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
+  nr_gold_pusch(gNB, &Nid_pusch[0]);
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);

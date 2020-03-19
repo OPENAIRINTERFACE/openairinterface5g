@@ -108,7 +108,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int8_t Wf[2], Wt[2], l_prime[2], delta;
   uint16_t n_dmrs, code_rate, number_dmrs_symbols, k;
   uint8_t dmrs_type;
-  uint8_t mapping_type;
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
   uint16_t n_rnti;
@@ -129,8 +128,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   number_dmrs_symbols = 0;
 
-  mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
-
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
     ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
@@ -146,8 +143,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                             0,
                                             0,
                                             harq_process_ul_ue->number_of_symbols,
-                                            &UE->pusch_config.dmrs_UplinkConfig,
-                                            mapping_type,
+                                            UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
                                             frame_parms->ofdm_symbol_size);
 
     ulsch_ue->length_dmrs = UE->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
@@ -303,12 +299,11 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ulsch_ue->ptrs_symbols = 0;
 
     set_ptrs_symb_idx(&ulsch_ue->ptrs_symbols,
-                      ptrs_Uplink_Config,
-                      &UE->pusch_config.dmrs_UplinkConfig,
-                      1,
                       harq_process_ul_ue->number_of_symbols,
                       start_symbol,
+                      dmrs_type,
                       L_ptrs,
+                      ulsch_ue->length_dmrs,
                       frame_parms->ofdm_symbol_size);
   }
 
@@ -347,8 +342,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                              0,
                              0,
                              harq_process_ul_ue->number_of_symbols,
-                             &UE->pusch_config.dmrs_UplinkConfig,
-                             mapping_type,
+                             dmrs_type,
                              frame_parms->ofdm_symbol_size);
 
     if (is_dmrs == 1)
@@ -414,8 +408,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                  n,
                                  delta,
                                  harq_process_ul_ue->number_of_symbols,
-                                 &UE->pusch_config.dmrs_UplinkConfig,
-                                 mapping_type,
+                                 dmrs_type,
                                  frame_parms->ofdm_symbol_size);
 
         if (UE->ptrs_configured == 1){
@@ -430,7 +423,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                    start_sc,
                                    frame_parms->ofdm_symbol_size,
                                    UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
-                                   ptrs_Uplink_Config);
+                                   ptrs_Uplink_Config->resourceElementOffset);
         }
 
         if (is_dmrs == 1) {

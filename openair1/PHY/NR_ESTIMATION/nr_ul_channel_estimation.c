@@ -31,22 +31,19 @@
 
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
-                                uint8_t gNB_offset,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
                                 unsigned short bwp_start_subcarrier,
-                                unsigned short nb_rb_pusch,
-                                dmrs_UplinkConfig_t *dmrs_UplinkConfig)
-{
+                                nfapi_nr_pusch_pdu_t *pusch_pdu) {
+
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt,re_cnt;
   int16_t ch[2],ch_r[2],ch_l[2],*pil,*rxF,*ul_ch;
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
-  int ch_offset,symbol_offset, length_dmrs, UE_id = 0;
-  unsigned short n_idDMRS[2] = {0,1}; //to update from pusch config
+  int ch_offset,symbol_offset, UE_id = 0;
   int32_t **ul_ch_estimates_time =  gNB->pusch_vars[UE_id]->ul_ch_estimates_time;
   __m128i *ul_ch_128;
 
@@ -71,9 +68,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   k = bwp_start_subcarrier;
   int re_offset = k;
 
+  uint16_t nb_rb_pusch = pusch_pdu->rb_size;
+
 /*
 #ifdef DEBUG_CH
-  printf("PUSCH Channel Estimation : gNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", gNB_offset,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
+  printf("PUSCH Channel Estimation : ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", ,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
          gNB->frame_parms.Ncp,l,Ns,k, symbol);
 #endif
 */
@@ -117,21 +116,17 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   //------------------generate DMRS------------------//
 
-  length_dmrs = dmrs_UplinkConfig->pusch_maxLength;
-
-  nr_gold_pusch(gNB, symbol, n_idDMRS, length_dmrs);
-
-  nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch[gNB_offset][Ns][0], &pilot[0], 1000, 0, nb_rb_pusch, dmrs_UplinkConfig->pusch_dmrs_type);
+  nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->dmrs_config_type);
 
   //------------------------------------------------//
 
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
-      pil   = (int16_t *)&pilot[0];
-      rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
-      ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
+    pil   = (int16_t *)&pilot[0];
+    rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
+    ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
 
-      memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
+    memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PUSCH
     printf("ch est pilot addr %p RB_DL %d\n",&pilot[0], gNB->frame_parms.N_RB_UL);
@@ -141,8 +136,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
-
-    if (dmrs_UplinkConfig->pusch_dmrs_type == pusch_dmrs_type1){
+    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1){
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -237,10 +231,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
       
       // Treat first 2 pilots specially (right edge)
-	  ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 #ifdef DEBUG_PUSCH
-    printf("pilot %u : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("pilot %u : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 #endif
       multadd_real_vector_complex_scalar(fm,
                                          ch,

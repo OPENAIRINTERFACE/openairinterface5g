@@ -1122,10 +1122,10 @@ typedef struct
   uint16_t data_scrambling_id;
   uint8_t  nrOfLayers;
   //DMRS
-  uint8_t  ul_dmrs_symb_pos;
+  uint16_t  ul_dmrs_symb_pos;
   uint8_t  dmrs_config_type;
   uint16_t ul_dmrs_scrambling_id;
-  uint8_t  scid;//
+  uint8_t  scid;
   uint8_t  num_dmrs_cdm_grps_no_data;
   uint16_t dmrs_ports;//DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]

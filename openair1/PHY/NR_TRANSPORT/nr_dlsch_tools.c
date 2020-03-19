@@ -333,23 +333,9 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   ulsch->harq_mask |= 1<<harq_pid;
   ulsch->harq_process_id[slot] = harq_pid;
 
-  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
+  memcpy((void*)&ulsch->harq_processes[harq_pid]->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
 
   LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
- 
-  
-  //FK this is still a bad hack. We need to replace the L1 FAPI structures with the new scf ones as well.
-  rel15_ul->rnti                           = ulsch_pdu->rnti;
-  rel15_ul->ulsch_pdu_rel15.start_rb       = ulsch_pdu->rb_start;
-  rel15_ul->ulsch_pdu_rel15.number_rbs     = ulsch_pdu->rb_size;
-  rel15_ul->ulsch_pdu_rel15.start_symbol   = ulsch_pdu->start_symbol_index;
-  rel15_ul->ulsch_pdu_rel15.number_symbols = ulsch_pdu->nr_of_symbols;
-  rel15_ul->ulsch_pdu_rel15.length_dmrs    = gNB->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
-  rel15_ul->ulsch_pdu_rel15.Qm             = ulsch_pdu->qam_mod_order;
-  rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
-  rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;
-  rel15_ul->ulsch_pdu_rel15.n_layers       = ulsch_pdu->nrOfLayers;
-  rel15_ul->ulsch_pdu_rel15.R              = ulsch_pdu->target_code_rate;
 
 }
 

@@ -781,13 +781,13 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 0;
-  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->mcs_index,
+  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
 						 pusch_pdu->target_code_rate,
 						 pusch_pdu->rb_size,
 						 pusch_pdu->nr_of_symbols,
 						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
-						 pusch_pdu->nrOfLayers = 1);
+						 pusch_pdu->nrOfLayers)>>3;
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;
   //pusch_pdu->pusch_uci;

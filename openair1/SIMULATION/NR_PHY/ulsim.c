@@ -511,8 +511,7 @@ int main(int argc, char **argv)
                                             0,
                                             0,
                                             nb_symb_sch,
-                                            &UE->pusch_config.dmrs_UplinkConfig,
-                                            UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType,
+                                            UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
                                             frame_parms->ofdm_symbol_size);
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
@@ -563,10 +562,6 @@ int main(int argc, char **argv)
       pusch_pdu->nrOfLayers = 1;
       pusch_pdu->ul_dmrs_symb_pos = 1;
       pusch_pdu->dmrs_config_type = 0;
-      // inserted to make simulation work 
-      // remove the next 2 lines when P7 is integrated from new branch
-      gNB->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type=pusch_dmrs_type1;
-      gNB->pusch_config.dmrs_UplinkConfig.pusch_maxLength   = length_dmrs;
       pusch_pdu->ul_dmrs_scrambling_id =  0;
       pusch_pdu->scid = 0;
       pusch_pdu->resource_alloc = 1; 
@@ -580,7 +575,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.rv_index = 0;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
-      pusch_pdu->pusch_data.tb_size = TBS;
+      pusch_pdu->pusch_data.tb_size = TBS>>3;
       pusch_pdu->pusch_data.num_cb = 0;
 
 

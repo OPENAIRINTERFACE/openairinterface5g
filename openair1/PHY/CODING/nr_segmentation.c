@@ -30,13 +30,13 @@
 //#define DEBUG_SEGMENTATION
 
 int32_t nr_segmentation(unsigned char *input_buffer,
-                     unsigned char **output_buffers,
-                     unsigned int B,
-                     unsigned int *C,
-                     unsigned int *K,
-                     unsigned int *Zout, // [hna] Zout is Zc
-                     unsigned int *F,
-                     uint8_t BG)
+                        unsigned char **output_buffers,
+                        unsigned int B,
+                        unsigned int *C,
+                        unsigned int *K,
+                        unsigned int *Zout, // [hna] Zout is Zc
+                        unsigned int *F,
+                        uint8_t BG)
 {
 
   unsigned int L,Bprime,Z,r,Kcb,Kb,k,s,crc,Kprime;

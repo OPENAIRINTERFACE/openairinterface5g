@@ -68,15 +68,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
-                                 unsigned short start_rb,
-                                 unsigned short nb_rb_pusch,
-                                 uint16_t n_rnti,
-                                 NR_DL_FRAME_PARMS *frame_parms,
-                                 uint16_t number_symbols,
-                                 uint8_t mapping_type,
-                                 uint8_t ptrs_configured,
-                                 dmrs_UplinkConfig_t *dmrs_UplinkConfig,
-                                 ptrs_UplinkConfig_t *ptrs_Uplink_Config);
+                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
+                                 NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
