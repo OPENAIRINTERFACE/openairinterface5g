@@ -740,7 +740,7 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) {
         continue;
       }
       const int pdu_index = dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
-      if (pdu_index < 0 && pdu_index >= tx_req_num_elems) {
+      if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
         LOG_E(MAC,
               "dl_config_req_UE_MAC 2: Problem with receiving data: "
               "sfn/sf:%d PDU[%d] size:%d, TX_PDU index: %d\n",
