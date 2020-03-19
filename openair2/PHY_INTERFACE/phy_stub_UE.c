@@ -791,7 +791,11 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) {
                       tx_request_pdu_list[pdu_index].segments[0].segment_data,
                       tx_request_pdu_list[pdu_index].segments[0].segment_length);
         } else if (rnti == 0x0002) { /* RA-RNTI */
-          LOG_E(MAC, "%s(): Received RAR?\n", __func__);
+          if (UE_mac_inst[Mod_id].UE_mode[0] != RA_RESPONSE) {
+            LOG_D(MAC, "UE %d not awaiting RAR, is in mode %d\n",
+                  Mod_id, UE_mac_inst[Mod_id].UE_mode[0]);
+            continue;
+          }
           // RNTI parameter not actually used. Provided only to comply with
           // existing function definition.  Not sure about parameters to fill
           // the preamble index.
@@ -806,7 +810,7 @@ int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) {
             ue_process_rar(Mod_id, 0, sfn,
                 ra_rnti, //RA-RNTI
                 tx_request_pdu_list[pdu_index].segments[0].segment_data,
-                &dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.rnti, //t-crnti
+                &UE_mac_inst[Mod_id].crnti, //t-crnti
                 UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex,
                 tx_request_pdu_list[pdu_index].segments[0].segment_data);
             UE_mac_inst[Mod_id].UE_mode[0] = RA_RESPONSE;
