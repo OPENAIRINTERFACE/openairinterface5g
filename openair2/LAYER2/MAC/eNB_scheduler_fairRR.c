@@ -2332,7 +2332,10 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     //
     int bytes_to_schedule = UE_info->UE_template[CC_id][UE_id].estimated_ul_buffer - UE_info->UE_template[CC_id][UE_id].scheduled_ul_bytes;
 
-    if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+    if (bytes_to_schedule < 0) {
+      bytes_to_schedule = 0;
+      UE_list->UE_template[CC_id][UE_id].scheduled_ul_bytes = 0;
+    }
 
     if ( UE_id > last_ulsch_ue_id[CC_id] && ((ulsch_ue_select[CC_id].ue_num+ue_first_num[CC_id]) < ulsch_ue_max_num[CC_id]) ) {
       if ( bytes_to_schedule > 0 ) {
@@ -2724,7 +2727,10 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
         if ( ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority  == SCH_UL_FIRST ) {
           int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
 
-          if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+          if (bytes_to_schedule < 0) {
+            bytes_to_schedule = 0;
+            UE_template->scheduled_ul_bytes = 0;
+          }
 
           if ( ulsch_ue_select[CC_id].list[ulsch_ue_num].ul_total_buffer > 0 ) {
             rb_table_index = 2;
@@ -3088,7 +3094,10 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
             module_idP,frameP,subframeP,harq_pid,UE_id,rnti,CC_id, aggregation,N_RB_UL);
       int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
 
-      if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+      if (bytes_to_schedule < 0) {
+        bytes_to_schedule = 0;
+        UE_template->scheduled_ul_bytes = 0;
+      }
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = bytes_to_schedule;
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);
