@@ -8510,7 +8510,7 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
     unsigned char buffer[8192];
     int size;
 
-    ue_context = (rrc_eNB_ue_context_t *) get_first_ue_context(RC.rrc[enb_mod_idP]);
+    ue_context = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], m->rnti);
 
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                     0,
@@ -8892,9 +8892,6 @@ rrc_enb_task(
 //-----------------------------------------------------------------------------
 {
   rrc_enb_init();
-
-void rrc_endc_hack_init(void);
-rrc_endc_hack_init();
 
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
