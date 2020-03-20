@@ -226,16 +226,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   number_symbols = pusch_pdu->nr_of_symbols;
 
   for (l = start_symbol; l < start_symbol + number_symbols; l++)
-      number_dmrs_symbols += is_dmrs_symbol(l,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            number_symbols,
-                                            pusch_pdu->dmrs_config_type,
-                                            frame_parms->ofdm_symbol_size);
-
+      number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;
 
   nb_re_dmrs = ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
 
