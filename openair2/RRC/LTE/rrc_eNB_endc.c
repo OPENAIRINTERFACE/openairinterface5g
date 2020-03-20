@@ -35,6 +35,39 @@
 extern RAN_CONTEXT_t RC;
 extern mui_t rrc_eNB_mui;
 
+static int generate_release_drb1(unsigned char *nr1_buf, int nr1_buf_size)
+{
+  NR_RadioBearerConfig_t r;
+  NR_DRB_ToReleaseList_t l;
+  NR_DRB_Identity_t      id;
+  asn_enc_rval_t         enc_rval;
+
+  memset(&r, 0, sizeof(r));
+  memset(&l, 0, sizeof(l));
+  memset(&id, 0, sizeof(id));
+
+  id = 1;
+
+  r.drb_ToReleaseList = &l;
+
+  ASN_SEQUENCE_ADD(&l.list, &id);
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig,
+                                   NULL,
+                                   &r,
+                                   nr1_buf,
+                                   nr1_buf_size);
+{
+int len = (enc_rval.encoded + 7) / 8;
+int i;
+printf("generate_release_drb1: len = %d (encoded %d)\n", len, enc_rval.encoded);
+for (i = 0; i < len; i++) printf(" %2.2x", nr1_buf[i]);
+printf("\n");
+}
+
+  return (enc_rval.encoded + 7) / 8;
+}
+
 int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
                                                        rrc_eNB_ue_context_t *ue_context,
                                                        unsigned char *buffer,
@@ -130,10 +163,12 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   mac.choice.explicitValue.timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_sf10240;
   mac.choice.explicitValue.ext4 = &mac_ext4;
 
+#if 0
   mac_ext4.dualConnectivityPHR = &dc_phr;
 
   dc_phr.present = LTE_MAC_MainConfig__ext4__dualConnectivityPHR_PR_setup;
   dc_phr.choice.setup.phr_ModeOtherCG_r12 = LTE_MAC_MainConfig__ext4__dualConnectivityPHR__setup__phr_ModeOtherCG_r12_virtual;
+#endif
 
   /* NR config */
   struct LTE_RRCConnectionReconfiguration_v890_IEs cr_890;
@@ -194,6 +229,7 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   long sk_counter = 0;
   cr_1510.sk_Counter_r15 = &sk_counter;
 
+#if 1
   OCTET_STRING_t dummy_nr1_conf;
   unsigned char nr1_buf[4] = { 0, 0, 0, 0 };
 
@@ -216,6 +252,15 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   }
 #endif
 
+#else
+  OCTET_STRING_t nr1_conf;
+  unsigned char nr1_buf[1024];
+  int nr1_size;
+  nr1_size = generate_release_drb1(nr1_buf, 1024);
+  cr_1510.nr_RadioBearerConfig1_r15 = &nr1_conf;
+  nr1_conf.buf = nr1_buf;
+  nr1_conf.size = nr1_size;
+#endif
 
 #if 0
   OCTET_STRING_t nr2_conf;
