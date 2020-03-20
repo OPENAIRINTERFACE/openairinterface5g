@@ -991,6 +991,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   int avg[4];
   uint8_t nodata_dmrs = 1; // FIXME to be properly configured from fapi
 
+printf("nr_rx_pusch frame %d nr_tti_rx %d symbol %d rel15_ul->start_symbol_index %d rel15_ul->nr_of_symbols %d\n", frame, nr_tti_rx, symbol, rel15_ul->start_symbol_index, rel15_ul->nr_of_symbols);
+
   dmrs_symbol_flag = 0;
 
   if(symbol == rel15_ul->start_symbol_index){
@@ -1033,6 +1035,15 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
+
+{
+  char name[128];
+  FILE *f;
+  sprintf(name, "rxdataF.%d.%d.raw", frame, symbol);
+  f = fopen(name, "w");
+  fwrite(&gNB->common_vars.rxdataF[0][symbol * frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size*4, 1, f);
+  fclose(f);
+}
 
   if (nb_re_pusch > 0) {
 
@@ -1085,6 +1096,20 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   rel15_ul->qam_mod_order,
                                   rel15_ul->rb_size,
                                   gNB->pusch_vars[UE_id]->log2_maxh);
+
+{
+  char name[128];
+  FILE *f;
+  sprintf(name, "rxdataF_ext.%d.%d.raw", frame, symbol);
+  f = fopen(name, "w");
+  int nb_re_pusch = NR_NB_SC_PER_RB * rel15_ul->rb_size;
+  fwrite(&gNB->pusch_vars[UE_id]->rxdataF_ext[0][symbol * nb_re_pusch], nb_re_pusch*4, 1, f);
+  fclose(f);
+  sprintf(name, "rxdataF_comp.%d.%d.raw", frame, symbol);
+  f = fopen(name, "w");
+  fwrite(&gNB->pusch_vars[UE_id]->rxdataF_comp[0][symbol * nb_re_pusch], nb_re_pusch*4, 1, f);
+  fclose(f);
+}
 
 #ifdef NR_SC_FDMA
     nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);

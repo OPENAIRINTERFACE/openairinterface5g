@@ -512,6 +512,16 @@ void nr_fep0(RU_t *ru, int first_half) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 1);
 
+if(0){
+//printf("nr_fep0 proc->tti_rx %d f %dd\n", proc->tti_rx, proc->frame_rx);
+  char name[128];
+  FILE *f;
+  sprintf(name, "rxdata.%d.%d.raw", proc->frame_rx, proc->tti_rx);
+  f = fopen(name, "w"); if (f == NULL) exit(1);
+  fwrite(&ru->common.rxdata[0][proc->tti_rx * 23040], 23040*4, 1, f);
+  fclose(f);
+}
+
   // remove_7_5_kHz(ru,(slot&1)+(proc->tti_rx<<1));
   for (l = start_symbol; l < end_symbol; l++) {
     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
@@ -647,6 +657,8 @@ void nr_fep_full(RU_t *ru, int slot) {
 
   // remove_7_5_kHz(ru,proc->tti_rx<<1);
   // remove_7_5_kHz(ru,1+(proc->tti_rx<<1));
+
+printf("nr_fep_full proc->tti_rx %d\n", proc->tti_rx);
 
   for (l = 0; l < fp->symbols_per_slot; l++) {
     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {

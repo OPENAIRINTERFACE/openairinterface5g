@@ -155,6 +155,14 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			  create_tunnel_req.sgw_S1u_teid[i]        = ue_context_p->ue_context.e_rab[i].param.gtp_teid;
 			  memcpy(&create_tunnel_req.sgw_addr[i], &ue_context_p->ue_context.e_rab[i].param.sgw_addr, sizeof(transport_layer_addr_t));
 			  inde_list[i] = i;
+                          LOG_I(RRC,"S1-U tunnel: index %d target sgw ip %d.%d.%d.%d length %d gtp teid %u\n",
+			  		   	        	 i,
+			  		      	        	create_tunnel_req.sgw_addr[i].buffer[0],
+			  		      	            create_tunnel_req.sgw_addr[i].buffer[1],
+			  		      	            create_tunnel_req.sgw_addr[i].buffer[2],
+			  		      	            create_tunnel_req.sgw_addr[i].buffer[3],
+			  		      	            create_tunnel_req.sgw_addr[i].length,
+			  		      	            create_tunnel_req.sgw_S1u_teid[i]);   
 		  }
 		  //PM: Is this where we should extract the rnti from?
 		  create_tunnel_req.rnti           = ue_context_p->ue_id_rnti;
@@ -175,6 +183,26 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = ue_context_p->ue_context.e_rab[i].param.e_rab_id;
 			  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid = create_tunnel_resp.enb_S1u_teid[i];
 			  memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr, &create_tunnel_resp.enb_addr, sizeof(transport_layer_addr_t));
+
+			 //The length field in the X2AP targetting structure is expected in bits but the create_tunnel_resp returns the address length in bytes
+		         X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.length = create_tunnel_resp.enb_addr.length*8;
+
+                          LOG_I(RRC,"S1-U create_tunnel_resp tunnel: index %d target gNB ip %d.%d.%d.%d length %d gtp teid %u\n",
+					  i,
+					  create_tunnel_resp.enb_addr.buffer[0],
+					  create_tunnel_resp.enb_addr.buffer[1],
+					  create_tunnel_resp.enb_addr.buffer[2],
+					  create_tunnel_resp.enb_addr.buffer[3],
+					  create_tunnel_resp.enb_addr.length,
+					  create_tunnel_resp.enb_S1u_teid[i]);
+			  LOG_I(RRC,"X2AP sGNB Addition Request: index %d target gNB ip %d.%d.%d.%d length %d gtp teid %u\n",
+					  i,
+					  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer[0],
+					  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer[1],
+					  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer[2],
+					  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer[3],
+					  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.length,
+					  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid);
 		  }
 	  }
 	  else

@@ -295,7 +295,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     LOG_D(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
 
     do {
-      ra->rnti = (taus() % 65518) + 1;
+      ra->rnti = 666; //(taus() % 65518) + 1;
       loop++;
     }
     while (loop != 100 && !(find_nr_UE_id(module_idP, ra->rnti) == -1 && ra->rnti >= 1 && ra->rnti <= 65519));
@@ -677,7 +677,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     dci_formats[0] = NR_DL_DCI_FORMAT_1_0;
     rnti_types[0] = NR_RNTI_RA;
 
-    LOG_D(MAC, "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+    LOG_I(MAC, "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
       pdcch_pdu_rel15->dci_pdu.RNTI[0],
       rnti_types[0],
       dci_formats[0],
@@ -809,6 +809,8 @@ void nr_fill_rar(uint8_t Mod_idP,
   }
 
   ul_grant = csi_req | (tpc_command << 1) | (pusch_pdu->mcs_index << 4) | (ra->Msg3_tda_id << 8) | (f_alloc << 12) | (pusch_pdu->frequency_hopping << 26);
+
+printf("ul grant 0x%x mcs %d f_alloc %d tpc %d\n", ul_grant, pusch_pdu->mcs_index, f_alloc, tpc_command);
 
   rar->UL_GRANT_1 = (uint8_t) (ul_grant >> 24) & 0x07;
   rar->UL_GRANT_2 = (uint8_t) (ul_grant >> 16) & 0xff;
