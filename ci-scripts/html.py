@@ -50,6 +50,9 @@ class HTMLManagement():
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
 		self.testXMLfiles = []
+		self.htmlHeaderCreated = False
+		self.htmlFooterCreated = False
+
 #-----------------------------------------------------------
 # Setters and Getters
 #-----------------------------------------------------------

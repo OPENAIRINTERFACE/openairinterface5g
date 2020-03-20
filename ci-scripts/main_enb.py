@@ -87,8 +87,8 @@ class OaiCiTest():
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
-		self.htmlHeaderCreated = False
-		self.htmlFooterCreated = False
+	#	self.htmlHeaderCreated = False
+	#	self.htmlFooterCreated = False
 		self.htmlUEConnected = -1
 		self.htmleNBFailureMsg = ''
 		self.htmlUEFailureMsg = ''
