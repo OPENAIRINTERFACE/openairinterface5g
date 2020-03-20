@@ -238,7 +238,8 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
   uint32_t ul_ch0_index = 0;
   uint8_t k_prime;
   uint16_t n=0;
-
+  uint8_t delta = 0;
+  uint8_t is_dmrs_re;
   int16_t *rxF,*rxF_ext;
   int *ul_ch0,*ul_ch0_ext;
 
@@ -271,7 +272,13 @@ void nr_ulsch_extract_rbs_single(int **rxdataF,
       printf("re = %d, symbol = %d\n", re, symbol);
   #endif
 
-      if ( dmrs_symbol != symbol ) {
+      if (symbol == dmrs_symbol)
+        is_dmrs_re = (re == get_dmrs_freq_idx_ul(n, k_prime, delta, pusch_pdu->dmrs_config_type));
+      else
+        is_dmrs_re = 0;
+
+
+      if ( is_dmrs_re == 0 ) {
 
         rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
         rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
