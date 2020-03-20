@@ -228,12 +228,12 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   for (l = start_symbol; l < start_symbol + number_symbols; l++)
       number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;
 
-  nb_re_dmrs = ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+  nb_re_dmrs = ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1)?6:4);
 
   G = nr_get_G(pusch_pdu->rb_size,
                number_symbols,
                nb_re_dmrs,
-               1, // FIXME only single dmrs is implemented
+               number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);
 
