@@ -209,8 +209,15 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     	}
         //else if(uplink_counter == 0){ //if(!IS_SOFTMODEM_NOS1){
     	else{
-        	LOG_D(PHY, "Random data to be tranmsitted: \n");
-        	for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
+          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+          //and block this traffic from being forwarded to the upper layers at the gNB
+          uint16_t payload_offset = 5;
+          LOG_D(PHY, "Random data to be tranmsitted: \n");
+          //Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
+          for (i = 0; i<payload_offset; i++)
+            harq_process_ul_ue->a[i] = 0;
+
+          for (i = payload_offset; i < harq_process_ul_ue->TBS / 8; i++) {
         		harq_process_ul_ue->a[i] = (unsigned char) rand();
         		//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
         	}
