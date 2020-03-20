@@ -3154,6 +3154,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId5);
 
+//ue_context_pP->ue_context.does_nr=0;
   if (ue_context_pP->ue_context.does_nr) {
     MeasId6 = calloc(1, sizeof(LTE_MeasIdToAddMod_t));
     if (MeasId6 == NULL) exit(1);
@@ -3217,7 +3218,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     if (MeasObj2 == NULL) exit(1);
     MeasObj2->measObjectId = 2;
     MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
-    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 642256; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 641272; //642208; //642208 is for SSB at ptA + 82 RBs with ptA at 3600MHz //642256; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
@@ -3360,13 +3361,13 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present = LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.present = LTE_ThresholdNR_r15_PR_nr_RSRP_r15;
-    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 46;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 0;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.reportOnLeave_r15 = FALSE;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis = 2;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger = LTE_TimeToTrigger_ms80;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.maxReportCells = 4;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportInterval = LTE_ReportInterval_ms120;
-    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportAmount = LTE_ReportConfigInterRAT__reportAmount_infinity;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportAmount = LTE_ReportConfigInterRAT__reportAmount_r1;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 = calloc(1, sizeof(struct LTE_ReportConfigInterRAT__ext7));
     if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 == NULL) exit(1);
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 = calloc(1, sizeof(struct LTE_ReportQuantityNR_r15));
@@ -4292,6 +4293,16 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
   return(0);
 }
 
+static volatile int start_nr;
+static void *xx(void *_)
+{
+  while (1) {
+    getchar();
+    start_nr = 1;
+    printf("start nr\n");
+  }
+  return 0;
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -4311,6 +4322,15 @@ rrc_eNB_process_MeasurementReport(
   T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
+{
+static int conf = 0;
+if (!conf) {
+  pthread_t t;
+  pthread_create(&t, NULL, xx, NULL);
+  conf = 1;
+}
+}
+
   if (measResults2 == NULL )
     return;
 
@@ -4321,6 +4341,7 @@ rrc_eNB_process_MeasurementReport(
 
     ue_context_pP->ue_context.measResults->measId=measResults2->measId;
 
+printf("meas %d\n", (int)measResults2->measId);
     switch (measResults2->measId) {
       case 1:
         LOG_D(RRC,"Periodic report at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
@@ -4366,7 +4387,11 @@ rrc_eNB_process_MeasurementReport(
 
   /* TODO: improve NR triggering */
   if (measResults2->measId == 7) {
-    if (ue_context_pP->ue_context.Status != RRC_NR_NSA) {
+//  if (start_nr) {
+printf("nr\n");
+static int gonr = 0;
+    if (!gonr && ue_context_pP->ue_context.Status != RRC_NR_NSA) {
+gonr=1;
       MessageDef      *msg;
       ue_context_pP->ue_context.Status = RRC_NR_NSA;
 
@@ -4382,6 +4407,14 @@ rrc_eNB_process_MeasurementReport(
     	  memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr,
     	               &ue_context_pP->ue_context.e_rab[e_rab].param.sgw_addr,
     	               sizeof(transport_layer_addr_t));
+          LOG_I(RRC,"x2u tunnel: index %d target enb ip %d.%d.%d.%d length %d gtp teid %u\n",
+    	        		    i,
+    	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr.buffer[0],
+    	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr.buffer[1],
+    	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr.buffer[2],
+    	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr.buffer[3],
+    	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr.length,
+    	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].gtp_teid);
       }
       LOG_I(RRC,
             "[eNB %d] frame %d subframe %d: UE rnti %x switching to NSA mode\n",
@@ -8509,6 +8542,14 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
 		printf("\n");
 
 	}
+{
+int i;
+int len = m->rrc_buffer_size;
+unsigned char *buffer = (unsigned char*)m->rrc_buffer;
+printf("xxx: (len %d): ", m->rrc_buffer_size);
+for (i = 0; i<len; i++) printf("%2.2x ", ((unsigned char *)buffer)[i]);
+printf("\n");
+}
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
 						      &asn_DEF_NR_CG_Config,
 						      (void **)&CG_Config,
@@ -8601,6 +8642,7 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
                                     0, 0);
 
     size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, scg_CellGroupConfig, nr1_conf);
+printf("called rrc_eNB_generate_RRCConnectionReconfiguration_endc size %d rnti %x\n", size, m->rnti);
 
     rrc_data_req(&ctxt,
                    DCCH,
