@@ -654,7 +654,7 @@ int main ( int argc, char **argv )
   // some initialization is necessary and init_ru_vnf do this.
   if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
     printf("Initializing RU threads\n");
-    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
+    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
     
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;

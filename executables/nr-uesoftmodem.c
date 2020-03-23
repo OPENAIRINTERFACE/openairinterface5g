@@ -127,7 +127,6 @@ volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
-static clock_source_t    clock_source = unset;
 int                      single_thread_flag=1;
 static double            snr_dB=20;
 
@@ -597,7 +596,8 @@ void init_openair0(void) {
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
     openair0_cfg[card].Mod_id = 0;
     openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
-    openair0_cfg[card].clock_source = clock_source;
+    openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
+    openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
     openair0_cfg[card].tx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx);
     openair0_cfg[card].rx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
 
