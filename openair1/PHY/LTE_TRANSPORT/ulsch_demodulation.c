@@ -1064,11 +1064,12 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   if (deltaMCS==1) {
     // Note we're using TBS instead of sumKr, since didn't run segmentation yet!
     MPR_times_100Ks = 500*ulsch[UE_id]->harq_processes[harq_pid]->TBS/(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
-    AssertFatal(MPR_times_100Ks < 750 && MPR_times_100Ks >= 0,"Impossible value for MPR_times_100Ks %d (TBS %d,Nre %d)\n",
-                MPR_times_100Ks,ulsch[UE_id]->harq_processes[harq_pid]->TBS,
-                (ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch));
 
-    if (MPR_times_100Ks > 0) correction_factor = ulsch_power_LUT[MPR_times_100Ks];
+    if ((MPR_times_100Ks > 0)&&(MPR_times_100Ks < 750)){
+      correction_factor = ulsch_power_LUT[MPR_times_100Ks];
+    }else{
+      correction_factor = 1;
+    }
   }
 
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
