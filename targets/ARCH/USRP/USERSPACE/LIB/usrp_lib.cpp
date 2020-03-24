@@ -525,9 +525,9 @@ void *trx_usrp_write_thread(void * arg){
     write_thread->start = (write_thread->start + 1)% MAX_WRITE_THREAD_PACKAGE;
     write_thread->count_write--;
     pthread_mutex_unlock(&write_thread->mutex_write);
-    if(write_thread->count_write != 0){
+    /*if(write_thread->count_write != 0){
       LOG_W(HW,"count write = %d, start = %d, end = %d\n", write_thread->count_write, write_thread->start, write_thread->end);
-    }
+    }*/
 
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
