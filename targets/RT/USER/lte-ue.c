@@ -88,7 +88,7 @@ extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 extern void multicast_link_start(void (*rx_handlerP) (unsigned int, char *),
                                  unsigned char _multicast_group, char *multicast_ifname);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
-extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
+extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
@@ -992,6 +992,19 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
   UE = rtd->UE;
 
+  UL_INFO = (UL_IND_t *)malloc(sizeof(UL_IND_t));
+  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_rx_indication_pdu_t));
+  UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_crc_indication_pdu_t));
+  UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_harq_indication_pdu_t));
+  UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_sr_indication_pdu_t));
+  UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list =  calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_raw_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
+
   if(ue_thread_id == 0) {
     phy_stub_ticking->ticking_var = -1;
     proc->subframe_rx=proc->sub_frame_start;
@@ -1064,20 +1077,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         initRefTimes(t3);
         pickTime(current);
         updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");*/
-      // Not sure whether we should put the memory allocation here and not sure how much memory
-      //we should allocate for each subframe cycle.
-      UL_INFO = (UL_IND_t *)malloc(sizeof(UL_IND_t));
-      UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = (nfapi_rx_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_rx_indication_pdu_t));
-      UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
-      UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = (nfapi_crc_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_crc_indication_pdu_t));
-      UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
-      UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = (nfapi_harq_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_harq_indication_pdu_t));
-      UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
-      UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = (nfapi_sr_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_sr_indication_pdu_t));
-      UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list =  (nfapi_cqi_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_cqi_indication_pdu_t));
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = (nfapi_cqi_indication_raw_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_cqi_indication_raw_pdu_t));
-      UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
       if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
         LOG_E( MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
@@ -1253,6 +1252,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
       }
 
+      if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
+        oai_nfapi_cqi_indication(&UL_INFO->cqi_ind);
+        UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
+      }
+
       if(UL_INFO->harq_ind.harq_indication_body.number_of_harqs>0) {
         //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
         oai_nfapi_harq_indication(&UL_INFO->harq_ind);
@@ -1266,30 +1270,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
         UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
       }
-
-      // Free UL_INFO messages
-      //if(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list != NULL){
-      free(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list);
-      UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = NULL;
-      //}
-      //if(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list != NULL){
-      free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list);
-      UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = NULL;
-      //}
-      //if(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list !=NULL){
-      free(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list);
-      UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = NULL;
-      //}
-      //if(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list!=NULL){
-      free(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list);
-      UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = NULL;
-      //}
-      free(UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list);
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = NULL;
-      free(UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list);
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = NULL;
-      free(UL_INFO);
-      UL_INFO = NULL;
 
       // De-allocate memory of nfapi requests copies before next subframe round
       if(dl_config_req!=NULL) {
@@ -1308,6 +1288,13 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
 
       if(tx_request_pdu_list!=NULL) {
+        for (int i = 0; i < tx_req_num_elems; i++) {
+          for (int j = 0; j < tx_request_pdu_list[i].num_segments; j++) {
+            free(tx_request_pdu_list[i].segments[j].segment_data);
+            tx_request_pdu_list[i].segments[j].segment_data = NULL;
+          }
+        }
+        tx_req_num_elems = 0;
         free(tx_request_pdu_list);
         tx_request_pdu_list = NULL;
       }
@@ -1333,6 +1320,22 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
     }
   }
+
+  // Free UL_INFO messages
+  free(UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list);
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = NULL;
+  free(UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list);
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = NULL;
+  free(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list);
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = NULL;
+  free(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list);
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = NULL;
+  free(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list);
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = NULL;
+  free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list);
+  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = NULL;
+  free(UL_INFO);
+  UL_INFO = NULL;
 
   // thread finished
   free(arg);

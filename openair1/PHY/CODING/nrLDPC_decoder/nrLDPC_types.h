@@ -32,8 +32,7 @@
 #define __NR_LDPC_TYPES__H__
 
 #include "PHY/TOOLS/time_meas.h"
-#include "nrLDPC_defs.h"
-
+#include "nrLDPCdecoder_defs.h"
 // ==============================================================================
 // TYPES
 
@@ -102,5 +101,7 @@ typedef struct nrLDPC_procBuf {
     int8_t* llrRes; /**< Buffer for LLR results */
     int8_t* llrProcBuf; /**< LLR processing buffer */
 } t_nrLDPC_procBuf;
+
+
 
 #endif

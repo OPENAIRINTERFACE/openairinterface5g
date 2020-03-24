@@ -40,7 +40,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/defs_common.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
@@ -375,6 +375,14 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_estimates_ext;
+  /// \brief Hold the PTRS phase estimates in frequency domain.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_ptrs_estimates;
+  /// \brief Uplink phase estimates extracted in PRBS.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_ptrs_estimates_ext;
   /// \brief Holds the compensated signal.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
@@ -416,6 +424,12 @@ typedef struct {
   int16_t *llr;
   // DMRS symbol index, to be updated every DMRS symbol within a slot.
   uint8_t dmrs_symbol;
+  // PTRS symbol index, to be updated every PTRS symbol within a slot.
+  uint8_t ptrs_symbol_index;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
+  // PTRS subcarriers per OFDM symbol
+  uint16_t ptrs_sc_per_ofdm_symbol;
 } NR_gNB_PUSCH;
 
 
@@ -669,6 +683,9 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
+
+  /// flag to indicate if PTRS is configured
+  uint8_t ptrs_configured;
   
   /// PUSCH DMRS
   uint32_t nr_gold_pusch[2][20][2][NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD];
@@ -726,8 +743,6 @@ typedef struct PHY_VARS_gNB_s {
 
   // SRS Variables
   SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_UE_MAX];
-
-  dmrs_UplinkConfig_t dmrs_UplinkConfig;
 
   dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
 
