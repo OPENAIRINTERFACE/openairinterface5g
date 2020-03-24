@@ -80,24 +80,26 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
           //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
-          dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
-          dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
-          dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
-          dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
-          dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
-          dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
-          dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
-          dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
-          dlsch0_harq->mcs = dlsch_config_pdu->mcs;
-          dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
-          dlsch0_harq->rvidx = dlsch_config_pdu->rv;
-          dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-          dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-          dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
-          dlsch0_harq->Nl=1;
-          dlsch0_harq->mcs_table=0;
-          dlsch0_harq->status = ACTIVE;
-          LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+          if (dlsch0_harq != NULL){
+            dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
+            dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
+            dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
+            dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
+            dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
+            dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
+            dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
+            dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
+            dlsch0_harq->mcs = dlsch_config_pdu->mcs;
+            dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
+            dlsch0_harq->rvidx = dlsch_config_pdu->rv;
+            dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+            dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
+            dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+            dlsch0_harq->Nl=1;
+            dlsch0_harq->mcs_table=0;
+            dlsch0_harq->status = ACTIVE;
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+          }
         }
       }
     } else {
