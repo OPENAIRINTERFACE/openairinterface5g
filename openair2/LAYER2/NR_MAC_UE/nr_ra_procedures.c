@@ -492,6 +492,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // - handle beam failure recovery request
       // - handle DL assignment on PDCCH for RA-RNTI
       // - handle backoff and raResponseWindow params
+      // - disabled contention resolution as OAI NSA is contention-free based
 
       LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
         mod_id, frame, nr_tti_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
@@ -502,8 +503,8 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         prach_resources->RA_PREAMBLE_BACKOFF = 0;
       }
 
-      if (mac->RA_window_cnt > 0  && mac->RA_RAPID_found == 1) {
-        mac->ra_state = WAIT_CONTENTION_RESOLUTION;
+      if (mac->RA_window_cnt > 0 && mac->RA_RAPID_found == 1) {
+        // mac->ra_state = WAIT_CONTENTION_RESOLUTION;
       } else {
         LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR reception not successful, (RA window count %d) \n",
           mod_id,
