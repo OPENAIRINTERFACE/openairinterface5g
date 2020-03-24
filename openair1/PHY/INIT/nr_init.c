@@ -418,6 +418,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
 
 void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   uint8_t Mod_id = phy_config->Mod_id;
+  uint8_t short_sequence, num_sequences, rootSequenceIndex, fd_occasion;
   NR_DL_FRAME_PARMS *fp = &RC.gNB[Mod_id]->frame_parms;
   nfapi_nr_config_request_scf_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
 
@@ -481,7 +482,13 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
     return;
   }
 
-  compute_nr_prach_seq(gNB_config,0,RC.gNB[Mod_id]->X_u);
+  fd_occasion = 0;
+  nfapi_nr_prach_config_t *prach_config = &gNB_config->prach_config;
+  short_sequence = prach_config->prach_sequence_length.value;
+  num_sequences = prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value;
+  rootSequenceIndex = prach_config->num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index.value;
+
+  compute_nr_prach_seq(short_sequence, num_sequences, rootSequenceIndex, RC.gNB[Mod_id]->X_u);
 
   RC.gNB[Mod_id]->configured     = 1;
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
