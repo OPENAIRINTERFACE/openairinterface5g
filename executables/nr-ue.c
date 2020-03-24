@@ -142,15 +142,23 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t abstraction_flag)
 {
 
+  int nb_connected_gNB = 1, gNB_id;
+
   memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
 
+  // Setting UE mode to NOT_SYNCHED by default
+  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
+    ue->UE_mode[gNB_id] = NOT_SYNCHED;
+    ue->prach_resources[gNB_id] = (NR_PRACH_RESOURCES_t *)malloc16_clear(sizeof(NR_PRACH_RESOURCES_t));
+  }
+
   // initialize all signal buffers
-  init_nr_ue_signal(ue,1,abstraction_flag);
+  init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
   // intialize transport
-  init_nr_ue_transport(ue,abstraction_flag);
+  init_nr_ue_transport(ue, abstraction_flag);
 }
 
 /*!
