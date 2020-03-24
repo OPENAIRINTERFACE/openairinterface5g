@@ -297,7 +297,7 @@ void nr_fill_rx_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_
 
  gNB->UL_INFO.rx_ind.sfn_sf                    = frame<<4| slot_rx;
  gNB->UL_INFO.rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
- gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list->rx_indication_rel8.length = gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->TBS>>3;
+ gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list->rx_indication_rel8.length = gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->TBS;
 
  pdu                                    = &gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list[gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus];
 
