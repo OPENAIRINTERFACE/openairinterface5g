@@ -308,6 +308,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   //printf("gNB_dlsch_ulsch_scheduler frameRX %d slotRX %d frameTX %d slotTX %d\n",frame_rxP,slot_rxP,frame_txP,slot_txP);
 			       
   protocol_ctxt_t   ctxt;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   int CC_id, UE_id = 0;
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &gNB->UE_list;
@@ -351,7 +352,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   */
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
   // This schedules MIB
   if((slot_txP == 0) && (frame_txP & 7) == 0){
