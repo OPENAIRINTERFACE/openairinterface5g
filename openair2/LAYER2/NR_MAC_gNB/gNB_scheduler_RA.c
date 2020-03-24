@@ -473,6 +473,8 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
+  pusch_pdu->dmrs_ports = 1;  // 6.2.2 in 38.214 only port 0 to be used
+  pusch_pdu->num_dmrs_cdm_grps_no_data = 2;  // no data in dmrs symbols as in 6.2.2 in 38.214
   pusch_pdu->resource_alloc = 1; //type 1
   pusch_pdu->rb_start = ra->msg3_first_rb + ibwp_start - abwp_start; // as for 6.3.1.7 in 38.211
   if (ra->msg3_nb_rb > pusch_pdu->bwp_size)
@@ -621,7 +623,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->dmrsConfigType = 0;
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
-    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 1;
+    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 2;
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = 0;

@@ -45,7 +45,7 @@ int wt1[8][2] = {{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1}};
 int wf2[12][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,1},{1,1},{1,-1},{1,1},{1,1}};
 int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1}};
 
-
+// complex conjugate of mod table
 short nr_rx_mod_table[14]  = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 short nr_rx_nmod_table[14] = {0,0,-23170,23170,23170,-23170,-23170,23170,-23170,-23170,23170,23170,23170,-23170};
 
@@ -57,6 +57,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned short p,
                      unsigned char lp,
                      unsigned short nb_pusch_rb,
+                     uint32_t re_offset,
                      uint8_t dmrs_type)
 {
   int8_t w, nb_dmrs;
@@ -66,7 +67,6 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
   typedef int array_of_w[2];
   array_of_w *wf;
   array_of_w *wt;
-
   wf = (dmrs_type==pusch_dmrs_type1) ? wf1 : wf2;
   wt = (dmrs_type==pusch_dmrs_type1) ? wt1 : wt2;
 
@@ -76,7 +76,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
   if ((p>=1000) && (p<((dmrs_type==pusch_dmrs_type1) ? 1008 : 1012))) {
       if (gNB->frame_parms.Ncp == NORMAL) {
         nb_dmrs = ((dmrs_type==pusch_dmrs_type1) ? 6:4);
-        for (int i=0; i<nb_pusch_rb*nb_dmrs; i++) {
+        for (int i=re_offset; i<re_offset+(nb_pusch_rb*nb_dmrs); i++) {
 
           w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
           mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
@@ -90,6 +90,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
           printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
           (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1]);
 #endif
+
         }
       } else {
         LOG_E(PHY,"extended cp not supported for PUSCH DMRS yet\n");
