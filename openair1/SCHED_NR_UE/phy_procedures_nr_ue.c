@@ -2243,12 +2243,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->phy_proc_tx);
 #endif
 
-  nr_ue_ulsch_procedures(ue,
-                         harq_pid,
-                         frame_tx,
-                         slot_tx,
-                         thread_id,
-                         gNB_id);
+  if (ue->UE_mode[gNB_id] == PUSCH ){
+    nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, thread_id, gNB_id);
 
 /*
   if (ue->UE_mode[eNB_id] == PUSCH) {
@@ -2266,6 +2262,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                 thread_id,
                                 gNB_id,
                                 &ue->frame_parms);
+  }
 
 
   /* RACH */
@@ -2451,7 +2448,7 @@ void restart_phy(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t eNB_id,uint
 }
 #endif //(0)
 
-void nr_ue_pbch_procedures(uint8_t eNB_id,
+void nr_ue_pbch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
 			   uint8_t abstraction_flag)
@@ -2470,20 +2467,23 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
+  //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,gNB_id);
 
   ret = nr_rx_pbch(ue, proc,
-		   ue->pbch_vars[eNB_id],
+		   ue->pbch_vars[gNB_id],
 		   &ue->frame_parms,
-		   eNB_id,
+		   gNB_id,
 		   (ue->frame_parms.ssb_index)&7,
 		   SISO,
 		   ue->high_speed_flag);
 
   if (ret==0) {
 
-    ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
+    ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
 
+    // Switch to PRACH state if it is first PBCH after initial synch and no timing correction is performed
+    if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1)
+      ue->UE_mode[gNB_id] = PRACH;
 
 #ifdef DEBUG_PHY_PROC
     uint16_t frame_tx;
@@ -2513,25 +2513,25 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,
       exit(-1);
     */
 
-    ue->pbch_vars[eNB_id]->pdu_errors_conseq++;
-    ue->pbch_vars[eNB_id]->pdu_errors++;
+    ue->pbch_vars[gNB_id]->pdu_errors_conseq++;
+    ue->pbch_vars[gNB_id]->pdu_errors++;
 
-    if (ue->pbch_vars[eNB_id]->pdu_errors_conseq>=100) {
+    if (ue->pbch_vars[gNB_id]->pdu_errors_conseq>=100) {
       LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
       exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
     }
   }
 
   if (frame_rx % 100 == 0) {
-    ue->pbch_vars[eNB_id]->pdu_fer = ue->pbch_vars[eNB_id]->pdu_errors - ue->pbch_vars[eNB_id]->pdu_errors_last;
-    ue->pbch_vars[eNB_id]->pdu_errors_last = ue->pbch_vars[eNB_id]->pdu_errors;
+    ue->pbch_vars[gNB_id]->pdu_fer = ue->pbch_vars[gNB_id]->pdu_errors - ue->pbch_vars[gNB_id]->pdu_errors_last;
+    ue->pbch_vars[gNB_id]->pdu_errors_last = ue->pbch_vars[gNB_id]->pdu_errors;
   }
 
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[UE %d] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
 	ue->Mod_id,frame_rx, nr_tti_rx,
-	ue->pbch_vars[eNB_id]->pdu_errors,
-	ue->pbch_vars[eNB_id]->pdu_errors_conseq);
+	ue->pbch_vars[gNB_id]->pdu_errors,
+	ue->pbch_vars[gNB_id]->pdu_errors_conseq);
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
 }
