@@ -1806,7 +1806,7 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   int num_e_rabs_tobemodified = e_rab_modification_ind->nb_of_e_rabs_tobemodified;
   int num_e_rabs_nottobemodified = e_rab_modification_ind->nb_of_e_rabs_nottobemodified;
 
-  uint16_t CSG_id = 0;
+  uint32_t CSG_id = 0;
 
   if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
 		  e_rab_modification_ind->eNB_ue_s1ap_id)) == NULL) {
@@ -1913,10 +1913,10 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_CSGMembershipInfo;
   ie->value.choice.CSGMembershipInfo.cSGMembershipStatus = S1AP_CSGMembershipStatus_member;
-  INT16_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
+    INT32_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
+      ie->value.choice.CSGMembershipInfo.cSG_Id.bits_unused=5;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-
+  
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
     S1AP_ERROR("Failed to encode S1 E-RAB modification indication \n");
     return -1;
