@@ -54,6 +54,12 @@ int nr_slot_fep(PHY_VARS_NR_UE *phy_vars_ue,
              int sample_offset,
              int no_prefix);
 
+int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
+                          unsigned char symbol,
+                          unsigned char Ns,
+                          int sample_offset,
+                          int no_prefix);
+
 int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    unsigned char l,
                    int subframe,

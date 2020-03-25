@@ -133,7 +133,7 @@ static double            snr_dB=20;
 
 int                      threequarter_fs=0;
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 //int32_t					 uplink_counter = 0;
 
@@ -220,6 +220,8 @@ tpool_t *Tpool_dl;
 
 
 char *usrp_args=NULL;
+
+char *rrc_config_path=NULL;
 
 /* forward declarations */
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -472,7 +474,7 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     /* Set some default values that may be overwritten while reading options */
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS *) calloc(sizeof(NR_DL_FRAME_PARMS),1);
-    frame_parms[CC_id]->eutra_band          = 78;
+    frame_parms[CC_id]->nr_band          = 78;
     frame_parms[CC_id]->frame_type          = FDD;
     frame_parms[CC_id]->tdd_config          = 3;
     //frame_parms[CC_id]->tdd_config_S        = 0;
@@ -482,7 +484,7 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     //frame_parms[CC_id]->Ncp_UL              = NORMAL;
     frame_parms[CC_id]->Nid_cell            = 0;
     //frame_parms[CC_id]->num_MBSFN_config    = 0;
-    frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
+    frame_parms[CC_id]->nb_antenna_ports_gNB  = 1;
     frame_parms[CC_id]->nb_antennas_tx      = 1;
     frame_parms[CC_id]->nb_antennas_rx      = 1;
     //frame_parms[CC_id]->nushift             = 0;
@@ -500,8 +502,25 @@ void init_openair0(void) {
   for (card=0; card<MAX_CARDS; card++) {
     openair0_cfg[card].configFilename = NULL;
     openair0_cfg[card].threequarter_fs = frame_parms[0]->threequarter_fs;
+    numerology = frame_parms[0]->numerology_index;
 
-    if(frame_parms[0]->N_RB_DL == 217) {
+    if(frame_parms[0]->N_RB_DL == 66) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=122.88e6;
+          openair0_cfg[card].samples_per_frame = 1228800;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
+    }else if(frame_parms[0]->N_RB_DL == 32) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=61.44e6;
+          openair0_cfg[card].samples_per_frame = 614400;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
+    }else if(frame_parms[0]->N_RB_DL == 217) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
           openair0_cfg[card].sample_rate=92.16e6;
@@ -584,12 +603,12 @@ void init_openair0(void) {
 
     for (i=0; i<4; i++) {
       if (i<openair0_cfg[card].tx_num_channels)
-        openair0_cfg[card].tx_freq[i] = downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+        openair0_cfg[card].tx_freq[i] = frame_parms[0]->ul_CarrierFreq;
       else
         openair0_cfg[card].tx_freq[i]=0.0;
 
       if (i<openair0_cfg[card].rx_num_channels)
-        openair0_cfg[card].rx_freq[i] = downlink_frequency[0][i];
+        openair0_cfg[card].rx_freq[i] = frame_parms[0]->dl_CarrierFreq;
       else
         openair0_cfg[card].rx_freq[i]=0.0;
 
@@ -669,13 +688,20 @@ int main( int argc, char **argv ) {
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   init_opt() ;
-  if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
+  load_nrLDPClib();
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
 
+  #ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+
+  init_NR_UE(1,rrc_config_path);
+  if(IS_SOFTMODEM_NOS1)
+	  init_pdcp();
 /*
 #ifdef PDCP_USE_NETLINK
   netlink_init();
@@ -684,20 +710,6 @@ int main( int argc, char **argv ) {
 #endif
 #endif
 */
-  #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
-#endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
-  // init the parameters
-  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
-    frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
-    frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
-    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
-    LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
-    get_band(downlink_frequency[CC_id][0], &frame_parms[CC_id]->eutra_band,   &uplink_frequency_offset[CC_id][0], &frame_parms[CC_id]->frame_type);
-  }
 
   NB_UE_INST=1;
   NB_INST=1;
@@ -705,30 +717,44 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
 
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    printf("frame_parms %hu\n",frame_parms[CC_id]->ofdm_symbol_size);
-    nr_init_frame_parms_ue(frame_parms[CC_id],numerology,NORMAL,frame_parms[CC_id]->N_RB_DL,(frame_parms[CC_id]->N_RB_DL-20)>>1,0);
-    PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
-    UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+    printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
+    frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
+    frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
+    frame_parms[CC_id]->nb_antenna_ports_gNB = 1; //initial value overwritten by initial sync later
+    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
+    LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
 
+    PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+
+    UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+    memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
+
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+      mac->if_module->phy_config_request(&mac->phy_config);
+
+    fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+    nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
+    
+    // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0)
+      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+   
+    init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     if (get_softmodem_params()->phy_test==1)
       UE[CC_id]->mac_enabled = 0;
     else
       UE[CC_id]->mac_enabled = 1;
 
+    UE[CC_id]->mac_enabled = 1;
+    UE[CC_id]->if_inst = nr_ue_if_module_init(0);
     UE[CC_id]->UE_scan = UE_scan;
     UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
     UE[CC_id]->UE_fo_compensation = UE_fo_compensation;
     UE[CC_id]->mode    = mode;
     UE[CC_id]->no_timing_correction = UE_no_timing_correction;
     printf("UE[%d]->mode = %d\n",CC_id,mode);
-
-    for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
-      if (UE[CC_id]->mac_enabled == 1)
-        UE[CC_id]->pdcch_vars[i][0]->crnti = 0x1234;
-      else
-        UE[CC_id]->pdcch_vars[i][0]->crnti = 0x1235;
-    }
 
     UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
     UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
@@ -764,11 +790,14 @@ int main( int argc, char **argv ) {
 #else
     PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
 #endif
+
   }
 
+  init_NR_UE_threads(1);
+  printf("UE threads created by %ld\n", gettid());
+  
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  init_NR_UE(1);
 
   while(true)
     sleep(3600);

@@ -37,6 +37,7 @@
 
 #include "common/utils/LOG/log.h"
 
+#include "x2ap_eNB.h"
 #include "intertask_interface.h"
 #include "s1ap_eNB.h"
 #include "sctp_eNB_task.h"
@@ -45,12 +46,9 @@
 
 extern unsigned char NB_gNB_INST;
 
-
 extern RAN_CONTEXT_t RC;
 
 #define GNB_REGISTER_RETRY_DELAY 10
-
-
 
 /*------------------------------------------------------------------------------*/
 static void configure_nr_rrc(uint32_t gnb_id)
@@ -106,13 +104,34 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 }
 */
 
+/*------------------------------------------------------------------------------*/
+static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) {
+  uint32_t         gnb_id;
+  MessageDef      *msg_p;
+  uint32_t         register_gnb_x2_pending = 0;
+
+  for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
+    {
+      msg_p = itti_alloc_new_message (TASK_GNB_APP, X2AP_REGISTER_ENB_REQ);
+      LOG_I(X2AP, "GNB_ID: %d \n", gnb_id);
+      RCconfig_NR_X2(msg_p, gnb_id);
+      itti_send_msg_to_task (TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+      register_gnb_x2_pending++;
+    }
+  }
+
+  return register_gnb_x2_pending;
+}
+
 
 /*------------------------------------------------------------------------------*/
 void *gNB_app_task(void *args_p)
 {
+
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
+  uint32_t                        x2_register_gnb_pending = 0;
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
   const char                      *msg_name        = NULL;
@@ -147,6 +166,11 @@ void *gNB_app_task(void *args_p)
     LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
     memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
     configure_nr_rrc(gnb_id);
+  }
+
+  if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
+	  LOG_I(X2AP, "X2AP enabled \n");
+	  x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
   }
 
   if (EPC_MODE_ENABLED) {

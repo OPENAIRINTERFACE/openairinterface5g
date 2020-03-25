@@ -33,6 +33,12 @@
 
 #include "RRC/NR/nr_rrc_defs.h"
 #include "flexran_agent_extern.h"
+#include "NR_RRCReconfiguration.h"
+#include "NR_UE-NR-Capability.h"
+#include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "LTE_UE-CapabilityRAT-ContainerList.h"
+#include "NR_CG-Config.h"
+#include "NR_CG-ConfigInfo.h"
 
 int rrc_init_nr_global_param(void);
 
@@ -56,6 +62,35 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      const protocol_ctxt_t  *const ctxt_pP,
      rrc_gNB_ue_context_t   *const ue_context_pP
      );
+
+struct rrc_gNB_ue_context_s *rrc_gNB_allocate_new_UE_context(gNB_RRC_INST *rrc_instance_pP);
+
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList);
+
+void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p);
+
+void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+				     NR_CellGroupConfig_t *secondaryCellGroup,
+				     int scg_id,
+				     int servCellIndex,
+				     int n_physical_antenna_ports,
+				     int initial_csi_index);
+
+void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+			   NR_RRCReconfiguration_IEs_t *reconfig,
+			   NR_CellGroupConfig_t *secondaryCellGroup,
+			   int n_physical_antenna_ports,
+			   int initial_csi_index);
+
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig);
+
+int generate_CG_Config(gNB_RRC_INST *rrc, 
+		       NR_CG_Config_t *cg_Config,
+		       NR_RRCReconfiguration_t *reconfig,
+		       NR_RadioBearerConfig_t *rbconfig);
+
+int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo);
+
 
 
 /**\brief RRC eNB task.

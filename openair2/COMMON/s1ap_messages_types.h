@@ -81,7 +81,8 @@
 #ifndef OCP_FRAMEWORK
 typedef enum cell_type_e {
   CELL_MACRO_ENB,
-  CELL_HOME_ENB
+  CELL_HOME_ENB,
+  CELL_MACRO_GNB
 } cell_type_t;
 
 typedef enum paging_drx_e {
@@ -271,6 +272,22 @@ typedef struct e_rab_setup_s {
   /* S-GW Tunnel endpoint identifier */
   uint32_t gtp_teid;
 } e_rab_setup_t;
+
+typedef struct e_rab_tobe_added_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t e_rab_id;
+
+  /* Unique drb_ID for the UE. */
+  uint8_t drb_ID;
+
+  /* The transport layer address for the IP packets */
+  transport_layer_addr_t eNB_addr;
+
+  /* S-GW Tunnel endpoint identifier */
+  uint32_t gtp_teid;
+} e_rab_tobe_added_t;
+
+
 
 typedef struct e_rab_tobeswitched_s {
   /* Unique e_rab_id for the UE. */

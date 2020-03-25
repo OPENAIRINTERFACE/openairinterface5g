@@ -92,6 +92,7 @@
 
 #define PC5_DISCOVERY_PAYLOAD_SIZE      29
 
+#define DEBUG_SCG_CONFIG 1
 
 typedef enum {
   UE_STATE_OFF_NETWORK,
@@ -264,7 +265,8 @@ typedef enum UE_STATE_e {
   RRC_SI_RECEIVED,
   RRC_CONNECTED,
   RRC_RECONFIGURED,
-  RRC_HO_EXECUTION
+  RRC_HO_EXECUTION,
+  RRC_NR_NSA,
 } UE_STATE_t;
 
 typedef enum HO_STATE_e {
@@ -644,6 +646,8 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_rrc_inactivity_timer;
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
+  int                                does_nr;
+  int                                nr_capabilities_requested;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

@@ -1199,7 +1199,7 @@ function start_rf_sim_gnb {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim\" > ./my-nr-softmodem-run.sh " >> $1
+        echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
     echo "cat ./my-nr-softmodem-run.sh" >> $1
@@ -1274,7 +1274,7 @@ function start_rf_sim_nr_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --numerology 1 -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/ci-scripts/rrc-files --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
     echo "cat ./my-nr-softmodem-run.sh" >> $1
@@ -1285,7 +1285,7 @@ function start_rf_sim_nr_ue {
     rm $1
 
     local i="0"
-    echo "egrep -c \"rfsimulator: Success\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    echo "egrep -c \"Initial sync: pbch decoded sucessfully\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
     while [ $i -lt 10 ]
     do
         sleep 5

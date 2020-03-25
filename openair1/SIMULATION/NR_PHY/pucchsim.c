@@ -304,10 +304,11 @@ int main(int argc, char **argv)
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
-  RC.gNB = (PHY_VARS_gNB***) malloc(sizeof(PHY_VARS_gNB **));
-  RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
-  gNB = RC.gNB[0][0];
+
+  RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  gNB = RC.gNB[0];
+
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -315,6 +316,9 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
 
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
+  cfg->carrier_config.num_tx_ant.value = n_tx;
+  cfg->carrier_config.num_rx_ant.value = n_rx;
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
