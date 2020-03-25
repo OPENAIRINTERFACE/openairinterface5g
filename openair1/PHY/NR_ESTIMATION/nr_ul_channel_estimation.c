@@ -72,7 +72,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 /*
 #ifdef DEBUG_CH
-  printf("PUSCH Channel Estimation : gNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", gNB_offset,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
+  printf("PUSCH Channel Estimation : ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", ,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
          gNB->frame_parms.Ncp,l,Ns,k, symbol);
 #endif
 */

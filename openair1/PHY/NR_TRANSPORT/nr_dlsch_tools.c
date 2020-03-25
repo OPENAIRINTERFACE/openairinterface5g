@@ -298,5 +298,3 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
 
 }
 
-
-

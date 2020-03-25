@@ -129,19 +129,17 @@ uint8_t is_dmrs_symbol(uint8_t l,
                        uint16_t n,
                        uint8_t delta,
                        uint8_t duration_in_symbols,
-                       uint8_t start_symbol,
-                       dmrs_UplinkConfig_t *dmrs_UplinkConfig,
-                       uint8_t mapping_type,
+                       uint8_t dmrs_type,
                        uint16_t ofdm_symbol_size) {
 
-  uint8_t is_dmrs_freq, is_dmrs_time, dmrs_type, l0;
+  uint8_t is_dmrs_freq, is_dmrs_time, l0;
   int32_t l_prime_mask;
-  pusch_dmrs_AdditionalPosition_t additional_pos;
+  pusch_dmrs_AdditionalPosition_t additional_pos = pusch_dmrs_pos0;
+  pusch_maxLength_t pusch_maxLength = pusch_len1;
+  uint8_t mapping_type = typeB;
 
   is_dmrs_freq = 0;
   is_dmrs_time = 0;
-  dmrs_type = dmrs_UplinkConfig->pusch_dmrs_type;
-  additional_pos = dmrs_UplinkConfig->pusch_dmrs_AdditionalPosition;
 
   if (mapping_type==typeB)
     l -= start_symbol;
@@ -150,7 +148,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
 
 
   l0 = get_l0_ul(mapping_type, 2);
-  l_prime_mask = get_l_prime(duration_in_symbols, mapping_type, additional_pos, dmrs_UplinkConfig->pusch_maxLength);
+  l_prime_mask = get_l_prime(duration_in_symbols, mapping_type, additional_pos, pusch_maxLength);
 
   if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%ofdm_symbol_size))
     is_dmrs_freq = 1;
@@ -164,7 +162,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
   } else if ( (l==l0) || (((l_prime_mask>>l)&1) == 1 && l!=0) )
     is_dmrs_time = 1;
 
-  if (dmrs_UplinkConfig->pusch_maxLength == pusch_len2){
+  if (pusch_maxLength == pusch_len2){
 
     if (((l_prime_mask>>(l-1))&1) == 1 && l!=0 && l!=1)
       is_dmrs_time = 1;

@@ -303,7 +303,13 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
         sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+
+        if (ue->ssb_offset < sync_pos_frame)
+          ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
+        else
+          ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+
+        ue->init_sync_frame = is;
       }   
 
       nr_gold_pdcch(ue,0, 2);

@@ -32,6 +32,7 @@
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
+#include "openair1/PHY/CODING/nrLDPC_extern.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "assertions.h"
 #include <math.h>
@@ -112,6 +113,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
   crcTableInit();
   init_dfts();
+  load_nrLDPClib();
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   //PDCCH DMRS init
@@ -154,7 +156,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   //PUSCH DMRS init
   gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
-  uint32_t ****pusch_dmrs             = gNB->nr_gold_pusch_dmrs;
+
+  uint32_t ****pusch_dmrs = gNB->nr_gold_pusch_dmrs;
 
   for(int nscid=0; nscid<2; nscid++) {
     pusch_dmrs[nscid] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
@@ -174,7 +177,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
   nr_gold_pusch(gNB, &Nid_pusch[0]);
 
-  // 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
@@ -241,6 +243,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates     = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_time  = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->rxdataF_comp          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_mag0             = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
@@ -256,6 +260,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       pusch_vars[ULSCH_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
+      pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot ); // max intensity in freq is 1 sc every 2 RBs
+      pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_mag0[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
       pusch_vars[ULSCH_id]->ul_ch_magb0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
@@ -324,6 +330,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb0[i]);
@@ -336,6 +344,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time);
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0);

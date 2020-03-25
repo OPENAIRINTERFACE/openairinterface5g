@@ -37,8 +37,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
@@ -122,7 +121,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
     a_segments = a_segments/273;
-  }  
+  }
 
   uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
@@ -300,8 +299,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint32_t frame,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
-                           uint32_t G)
-{
+                           uint32_t G) {
+
   uint32_t A,E;
   uint32_t ret, offset;
   int32_t no_iteration_ldpc, length_dec;
@@ -439,7 +438,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
     a_segments = a_segments/273;
-  }  
+  }
 
   if (harq_process->C > a_segments) {
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,a_segments);
@@ -699,7 +698,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     // harq_process->harq_ack.harq_id = harq_pid;
     // harq_process->harq_ack.send_harq_status = 1;
 
-
     //  LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d (pid %d, round %d, TBS %d)\n",phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->round,harq_process->TBS);
 
 
@@ -724,6 +722,16 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       
     }
   }
+
+#ifdef DEBUG_ULSCH_DECODING
+  LOG_I(PHY, "Decoder output (payload): \n");
+  for (i = 0; i < harq_process->TBS / 8; i++) {
+	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
+	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+	  printf("0x%02x",harq_process->b[i]);
+  }
+#endif
+
   ulsch->last_iteration_cnt = ret;
 
   return(ret);

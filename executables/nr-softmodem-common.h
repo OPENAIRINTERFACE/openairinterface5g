@@ -143,9 +143,7 @@ extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
 
-#if defined(ENABLE_ITTI)
-  extern volatile int start_eNB;
-  extern volatile int start_UE;
-#endif
+extern volatile int start_eNB;
+extern volatile int start_UE;
 
 #endif

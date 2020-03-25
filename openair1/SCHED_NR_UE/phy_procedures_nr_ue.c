@@ -75,15 +75,7 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
-
-//#include "PHY/defs.h"
-
-//#include "PHY/CODING/extern.h"
-
+#include "intertask_interface.h"
 #include "T.h"
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
@@ -1290,6 +1282,8 @@ uint16_t get_bw_scaling(uint16_t bwp_ul_NB_RB){
   uint16_t bw_scaling;
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   switch (bwp_ul_NB_RB) {
+    case 32:  bw_scaling =  4; break;
+    case 66:  bw_scaling =  8; break;
     case 106: bw_scaling = 16; break;
     case 217: bw_scaling = 32; break;
     case 245: bw_scaling = 32; break;
@@ -2251,6 +2245,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   nr_ue_ulsch_procedures(ue,
                          harq_pid,
+                         frame_tx,
                          slot_tx,
                          thread_id,
                          gNB_id);
@@ -2264,12 +2259,14 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
+
   nr_ue_pusch_common_procedures(ue,
                                 harq_pid,
                                 slot_tx,
                                 thread_id,
                                 gNB_id,
                                 &ue->frame_parms);
+
 
   /* RACH */
   if ((ue->UE_mode[gNB_id] == PRACH) && (ue->frame_parms.prach_config_common.prach_Config_enabled == 1)) {
@@ -3611,6 +3608,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
         switch (ue->frame_parms.N_RB_DL) {
+          case 32:  bw_scaling =  4; break;
+          case 66:  bw_scaling =  8; break;
           case 106: bw_scaling = 16; break;
           case 217: bw_scaling = 32; break;
           case 245: bw_scaling = 32; break;

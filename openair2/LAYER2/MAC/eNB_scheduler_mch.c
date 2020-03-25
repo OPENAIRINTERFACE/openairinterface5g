@@ -48,10 +48,6 @@
 #include "pdcp.h"
 #include "assertions.h"
 
-//#if defined(ENABLE_ITTI)
-//#include "intertask_interface.h"
-//#endif
-//
 #include "SIMULATION/TOOLS/sim.h"	// for taus
 
 #define ENABLE_MAC_PAYLOAD_DEBUG

@@ -898,7 +898,7 @@ typedef struct {
   //fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
-  uint8_t current_thread_id[40];
+  uint8_t current_thread_id[NR_MAX_SLOTS_PER_FRAME];
 
   t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
@@ -953,6 +953,9 @@ typedef struct {
 
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
+
+  /// flag to indicate if PTRS is configured
+  uint8_t ptrs_configured;
 
   uint32_t X_u[64][839];
 
@@ -1013,6 +1016,7 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
+  uint8_t               init_sync_frame;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
   uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
@@ -1086,7 +1090,6 @@ typedef struct {
 
   crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
   supplementaryUplink_t supplementaryUplink;
-  dmrs_UplinkConfig_t dmrs_UplinkConfig;
   dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
   csi_MeasConfig_t csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;

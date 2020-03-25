@@ -235,6 +235,7 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
+
 void nr_generate_Msg2(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
@@ -247,6 +248,14 @@ int find_aggregation_level (NR_SearchSpace_t *ss);
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
                                                uint16_t *offset);
+
+void nr_process_mac_pdu(
+    module_id_t module_idP,
+    uint8_t CC_id,
+    frame_t frameP,
+    uint8_t *pduP,
+    uint16_t mac_pdu_len);
+
 
 /* \brief Function to indicate a received SDU on ULSCH.
 @param Mod_id Instance ID of gNB

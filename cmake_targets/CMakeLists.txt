@@ -248,22 +248,18 @@ add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
-add_boolean_option(USRP_REC_PLAY       False "Enable USRP record playback mode")
-add_boolean_option(BASIC_SIMULATOR     False "Has to be True when building the basic simulator, False otherwise")
 add_boolean_option(DEBUG_CONSOLE       False "makes debugging easier, disables stdout/stderr buffering")
 
-add_boolean_option(ENABLE_ITTI True "ITTI is internal messaging, should remain enabled for most targets")
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
-if (${ENABLE_ITTI})
-  add_library(ITTI
-    ${OCP_ITTI}/intertask_interface.cpp
-    ${OPENAIR_DIR}/common/utils/backtrace.c
-    ${OPENAIR_DIR}/common/utils/memory_pools.c
-    )
+add_library(ITTI
+  ${OCP_ITTI}/intertask_interface.cpp
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/memory_pools.c
+  )
 add_dependencies(ITTI rrc_flag)
   set(ITTI_LIB ITTI)
   set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
-endif (${ENABLE_ITTI})
+
 
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
@@ -661,7 +657,6 @@ set (SHLIB_LOADER_SOURCES
 include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
 set(HWLIB_USRP_SOURCE
   ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp
-  ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib_config.c
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
 target_link_libraries(oai_usrpdevif uhd)
@@ -1306,14 +1301,35 @@ set(PHY_SMALLBLOCKSRC
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
 )
-set(PHY_LDPCSRC
+
+set(PHY_LDPC_ORIG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
 )
 
+set(PHY_LDPC_OPTIM_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim.c
+)
+set(PHY_LDPC_OPTIM8SEG_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8seg.c
+)
+set(PHY_LDPC_OPTIM8SEGMULTI_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
+)
+set(PHY_NR_CODINGIF
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
+)
+
+add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
+add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
+add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
+add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
+
 add_library(coding MODULE ${PHY_TURBOSRC} )
+
 set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
@@ -1480,6 +1496,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/dmrs_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_REFSIG/ptrs_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/filt16a_32.c
   ${OPENAIR1_DIR}/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/NR_ESTIMATION/nr_adjust_sync_gNB.c
@@ -1497,10 +1514,9 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
-  ${PHY_LDPCSRC}
+  ${PHY_NR_CODINGIF}
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/pucch_rx.c 
   )
-
   set(PHY_NR_UE_SRC
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
   ${OPENAIR1_DIR}/PHY/MODULATION/nr_modulation.c
@@ -1527,6 +1543,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/ul_ref_seq_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/dmrs_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_REFSIG/ptrs_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold_ue.c
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/filt16a_32.c
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/nr_dl_channel_estimation.c
@@ -1549,7 +1566,7 @@ set(PHY_SRC_UE
   #  ${OPENAIR1_DIR}/SIMULATION/NR_UE_PHY/unit_tests/src/pucch_uci_test.c
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
-  ${PHY_LDPCSRC}
+  ${PHY_NR_CODINGIF}
   )
 
 
@@ -1728,7 +1745,6 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
-  ${LTE_RLC_SRC}
   )
 
 set (MAC_SRC
@@ -2388,6 +2404,9 @@ add_library(rfsimulator MODULE
 	)
 target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
 
+add_library(oai_iqplayer MODULE 
+	${OPENAIR_TARGETS}/ARCH/iqplayer/iqplayer_lib.c
+	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
 #include T directory even if the T is off because T macros are in the code
@@ -2467,6 +2486,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_mbms.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2481,7 +2501,7 @@ add_executable(lte-softmodem
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag)
+add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag oai_iqplayer)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
@@ -2536,6 +2556,7 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/rfsim.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2582,6 +2603,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2599,7 +2621,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
-  S1AP_LIB S1AP_ENB L2 L2_LTE L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
 
@@ -2608,6 +2630,7 @@ target_link_libraries (nr-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LI
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
+add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 # nr-uesoftmodem is  UE implementation
 #######################################
 
@@ -2621,6 +2644,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
@@ -2649,6 +2673,7 @@ target_link_libraries (nr-uesoftmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_
 target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
+add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 
 # USIM process
 #################
@@ -2722,10 +2747,13 @@ target_link_libraries(smallblocktest
   )
 
 add_executable(ldpctest  
+  ${PHY_NR_CODINGIF}
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
+add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ) 
+
 target_link_libraries(ldpctest
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
@@ -2909,14 +2937,15 @@ if (${T_TRACER})
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP 
-        params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
+        params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass tcp_bridge tcp_bridge_oai
         coding FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_UE NR_L2_UE MAC_NR_COMMON MAC_NR MAC_UE_NR
-        CN_UTILS GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU SIMU_ETH OPENAIR0_LIB)
+        CN_UTILS GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU SIMU_ETH OPENAIR0_LIB
+        ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()

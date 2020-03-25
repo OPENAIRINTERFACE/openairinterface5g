@@ -132,8 +132,8 @@ void configure_rru(int idx, void *arg);
 int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
 
-extern uint16_t sf_ahead;
-extern uint16_t sl_ahead;
+uint16_t sf_ahead;
+uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
@@ -1499,6 +1499,7 @@ void *ru_thread( void *param ) {
     }
   }
 
+  sf_ahead = (uint16_t) ceil((float)6/(0x01<<fp->numerology_index));
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   pthread_mutex_lock(&RC.ru_mutex);
   RC.ru_mask &= ~(1<<ru->idx);

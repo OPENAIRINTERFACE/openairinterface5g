@@ -41,7 +41,7 @@
 #include "BOOLEAN.h"
 #include "assertions.h"
 #include "common/utils/nr/nr_common.h"
-
+#include "SIMULATION/TOOLS/sim.h"
 #include "executables/softmodem-common.h"
 
 #define false 0

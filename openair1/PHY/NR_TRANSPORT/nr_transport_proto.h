@@ -64,15 +64,13 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param frame_parms, Pointer to frame descriptor structure
 
 */
-void nr_ulsch_extract_rbs_single(int **rxdataF,
-                                 int **ul_ch_estimates,
-                                 int **rxdataF_ext,
-                                 int **ul_ch_estimates_ext,
-                                 uint32_t rxdataF_ext_offset,
+
+void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
+                                 NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
+                                 uint8_t is_dmrs_symbol,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
-                                 NR_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t dmrs_symbol);
+                                 NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,

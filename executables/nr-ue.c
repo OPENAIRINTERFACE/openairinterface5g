@@ -463,6 +463,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
+
     if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
       //Hardcoded rnti value
       protocol_ctxt_t ctxt;
@@ -470,7 +471,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 				     0x1234, proc->frame_rx,
 				     proc->nr_tti_rx, 0);
       pdcp_run(&ctxt);
-      pdcp_fifo_flush_sdus(&ctxt);
     }
   }
 }
@@ -596,21 +596,20 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
     void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
-
+    *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
       int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
+      // we write before read becasue gNB waits for UE to write and both executions halt
+      // this happens here as the read size is samples_per_subframe which is very much larger than samp_per_slot
+      if (IS_SOFTMODEM_RFSIM) dummyWrite(UE,*timestamp, unitTransfer);
       AssertFatal(unitTransfer ==
                   UE->rfdevice.trx_read_func(&UE->rfdevice,
                                              timestamp,
                                              (void **)UE->common_vars.rxdata,
                                              unitTransfer,
                                              UE->frame_parms.nb_antennas_rx),"");
+      *timestamp += unitTransfer; // this does not affect the read but needed for RFSIM write
     }
-
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      free(dummy_tx[i]);
 
 }
 
@@ -637,6 +636,22 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   return 0;
 }
 
+static inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+  if (fp->numerology_index == 0)
+    return fp->nb_prefix_samples0 + fp->ofdm_symbol_size;
+  int num_samples = (slot%(fp->slots_per_subframe/2)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
+  num_samples += fp->ofdm_symbol_size;
+  return num_samples;
+}
+
+static inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+  int rem_samples = fp->get_samples_per_slot(slot, fp) - get_firstSymSamp(slot, fp);
+  int next_slot_first_symbol = 0;
+  if (slot < (fp->slots_per_frame-1))
+    next_slot_first_symbol = get_firstSymSamp(slot+1, fp);
+  return rem_samples + next_slot_first_symbol;
+}
+
 void *UE_thread(void *arg) {
   //this thread should be over the processing thread to keep in real time
   PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
@@ -653,6 +668,7 @@ void *UE_thread(void *arg) {
   int thread_idx=0;
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
   for (int i=0; i<RX_NB_TH+1; i++)  // RX_NB_TH working + 1 we are making to be pushed
     pushNotifiedFIFO_nothreadSafe(&freeBlocks,
@@ -670,11 +686,11 @@ void *UE_thread(void *arg) {
         syncRunning=false;
         syncData_t *tmp=(syncData_t *)NotifiedFifoData(res);
         // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-        decoded_frame_rx=(tmp->proc.decoded_frame_rx+trashed_frames) % MAX_FRAME_NUMBER;
+        decoded_frame_rx=(tmp->proc.decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
         delNotifiedFIFO_elt(res);
       } else {
         readFrame(UE, &timestamp, true);
-        trashed_frames++;
+        trashed_frames+=2;
         continue;
       }
     }
@@ -709,7 +725,7 @@ void *UE_thread(void *arg) {
       // and we shifted above to the first slot of next frame
       decoded_frame_rx++;
       // we do ++ first in the regular processing, so it will be begin of frame;
-      absolute_slot=decoded_frame_rx*nb_slot_frame + nb_slot_frame -1;
+      absolute_slot=decoded_frame_rx*nb_slot_frame -1;
       continue;
     }
 
@@ -746,10 +762,10 @@ void *UE_thread(void *arg) {
     }*/
 #endif
 
+    int firstSymSamp = get_firstSymSamp(slot_nr, &UE->frame_parms);
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-      rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
-               UE->frame_parms.nb_prefix_samples0+UE->frame_parms.
-               get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
+      rxp[i] = (void *)&UE->common_vars.rxdata[i][firstSymSamp+
+               UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
@@ -758,15 +774,13 @@ void *UE_thread(void *arg) {
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
-      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
-      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms);
+      readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(curMsg->proc.nr_tti_tx,&UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
-      readBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
-                    UE->frame_parms.ofdm_symbol_size -
-                    UE->frame_parms.nb_prefix_samples0 -
+      readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.get_samples_per_slot(slot_nr,&UE->frame_parms) -
+      writeBlockSize=UE->frame_parms.get_samples_per_slot(curMsg->proc.nr_tti_tx,&UE->frame_parms) -
                      UE->rx_offset_diff;
     }
 
@@ -781,8 +795,7 @@ void *UE_thread(void *arg) {
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
                      UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX) -
-                     UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
+                     &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp -
                      openair0_cfg[0].tx_sample_advance,
                      txp,
                      writeBlockSize,
@@ -791,7 +804,7 @@ void *UE_thread(void *arg) {
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
-      int first_symbols=writeBlockSize-readBlockSize;
+      int first_symbols=UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0; // first symbol of every frames
 
       if ( first_symbols > 0 )
         AssertFatal(first_symbols ==
@@ -806,8 +819,8 @@ void *UE_thread(void *arg) {
 
     curMsg->proc.timestamp_tx = timestamp+
                                 UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                                &UE->frame_parms,DURATION_RX_TO_TX) -
-                                UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
+                                &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp;
+
     notifiedFIFO_elt_t *res;
 
     while (nbSlotProcessing >= RX_NB_TH) {
@@ -816,7 +829,8 @@ void *UE_thread(void *arg) {
         processingData_t *tmp=(processingData_t *)res->msgData;
 
         if (tmp->proc.decoded_frame_rx != -1)
-          decoded_frame_rx=tmp->proc.decoded_frame_rx;
+          decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+          //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
         pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
       }
@@ -842,7 +856,8 @@ void *UE_thread(void *arg) {
       processingData_t *tmp=(processingData_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=tmp->proc.decoded_frame_rx;
+        decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+        //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }

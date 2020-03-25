@@ -920,7 +920,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 	  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
 	  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
 	  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
-				  (short*) &(rxdata[0][peak_position+frame_parms->ofdm_symbol_size+(is*frame_parms->samples_per_frame)]), 
+				  (short*) &(rxdata[0][peak_position+is*frame_parms->samples_per_frame])+frame_parms->ofdm_symbol_size, 
 				  frame_parms->ofdm_symbol_size>>1, 
 				  shift);
 

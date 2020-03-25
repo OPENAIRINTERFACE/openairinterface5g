@@ -25,8 +25,7 @@
 #include <string.h>
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "PHY/CODING/nrLDPC_encoder/defs.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 
 #define MAX_NUM_DLSCH_SEGMENTS 16
@@ -85,6 +84,7 @@ typedef struct {
 RAN_CONTEXT_t RC;
 PHY_VARS_UE ***PHY_vars_UE_g;
 uint16_t NB_UE_INST = 1;
+nrLDPC_encoderfunc_t encoder_orig;
 
 short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
 
@@ -286,16 +286,19 @@ int test_ldpc(short No_iteration,
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*(1/((float)nom_rate/(float)denom_rate)))/Zc;
   //  printf("puncture:%d\n",no_punctured_columns);
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
+  encoder_implemparams_t impp=INIT0_LDPCIMPLEMPARAMS;
+ 
+  impp.gen_code=1;
   if (ntrials==0)
-    ldpc_encoder_orig(test_input[0],channel_input[0], Zc, BG, block_length, BG, 1);
-
+    encoder_orig(test_input,channel_input, Zc, BG, block_length, BG, &impp);
+  impp.gen_code=0;
   for (trial=0; trial < ntrials; trial++)
   {
 	segment_bler = 0;
     //// encoder
     start_meas(&time);
     for(j=0;j<n_segments;j++) {
-      ldpc_encoder_orig(test_input[j], channel_input[j],Zc,Kb,block_length,BG,0);
+      encoder_orig(&(test_input[j]), &(channel_input[j]),Zc,Kb,block_length,BG,&impp);
     }
     stop_meas(&time);
 
@@ -305,10 +308,11 @@ int test_ldpc(short No_iteration,
       ldpc_encoder_optim(test_input[j],channel_input_optim[j],Zc,Kb,block_length,BG,&tinput,&tprep,&tparity,&toutput);
       }
     stop_meas(time_optim);*/
-
+    impp.n_segments=n_segments;
     for(j=0;j<(n_segments/8+1);j++) {
     	start_meas(time_optim);
-    	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,Zc,Kb,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
+    	impp.macro_num=j;
+    	nrLDPC_encoder(test_input,channel_input_optim,Zc,Kb,block_length, BG, &impp);
     	stop_meas(time_optim);
     }
     
@@ -598,8 +602,8 @@ int main(int argc, char *argv[])
   printf("SNR0 %f: \n", SNR0);
 
 
-
-
+  load_nrLDPClib();
+  load_nrLDPClib_ref("_orig", &encoder_orig);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 
 

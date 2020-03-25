@@ -40,7 +40,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/defs_common.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
 #include "nfapi_nr_interface_scf.h"
@@ -375,6 +375,14 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_estimates_ext;
+  /// \brief Hold the PTRS phase estimates in frequency domain.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_ptrs_estimates;
+  /// \brief Uplink phase estimates extracted in PRBS.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_ptrs_estimates_ext;
   /// \brief Holds the compensated signal.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
@@ -416,6 +424,12 @@ typedef struct {
   int16_t *llr;
   /// DMRS symbol index, to be updated every DMRS symbol within a slot.
   uint8_t dmrs_symbol;
+  // PTRS symbol index, to be updated every PTRS symbol within a slot.
+  uint8_t ptrs_symbol_index;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
+  // PTRS subcarriers per OFDM symbol
+  uint16_t ptrs_sc_per_ofdm_symbol;
   /// flag to verify if channel level computation is done
   uint8_t cl_done;
 } NR_gNB_PUSCH;
@@ -676,7 +690,7 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
-  
+
   /// PUSCH DMRS
   uint32_t ****nr_gold_pusch_dmrs;
 
