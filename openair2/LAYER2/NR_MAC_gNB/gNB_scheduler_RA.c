@@ -105,7 +105,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
             prach_pdu->prach_format = 10;
             break;
           case 0xa3:
-            prach_pdu->prach_format = 10;
+            prach_pdu->prach_format = 11;
             break;
         default:
           AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
