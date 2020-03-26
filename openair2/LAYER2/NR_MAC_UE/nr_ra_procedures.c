@@ -109,7 +109,6 @@ void nr_get_prach_resources(module_id_t mod_id,
   //   // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
   //   // - availalbe CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
   //   prach_resources->ra_PreambleIndex = rach_ConfigDedicated->ra_PreambleIndex;
-  //   return;
   // }
 
   //////////* Contention-based RA preamble selection *//////////
@@ -119,7 +118,7 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
 
-  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
+  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
   nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
@@ -503,8 +502,6 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           for (int j = 0; j < (TBS_bytes - offset); j++)
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
         }
-
-        return;
       } 
     } else { // RACH is active
 
@@ -603,13 +600,11 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->RA_tx_subframe = nr_tti_tx;
         // Fill in preamble and PRACH resources
         nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, NULL);
-        return;
       }
     }
   } else if (UE_mode == PUSCH) {
     LOG_D(MAC, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...", mod_id);
     AssertFatal(1 == 0, "");
   }
- prach_resources = NULL;
  return;
 }
