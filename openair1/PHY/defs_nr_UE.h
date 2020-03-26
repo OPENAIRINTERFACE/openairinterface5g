@@ -1009,8 +1009,6 @@ typedef struct {
   int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint8_t               generate_prach;
-  uint8_t               generate_nr_prach;
   uint8_t               prach_cnt;
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;

@@ -2270,7 +2270,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
   }
   else {
-    ue->generate_nr_prach = 0;
+    ue->prach_resources[gNB_id]->generate_nr_prach = 0;
   }
 
   LOG_I(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
@@ -4503,12 +4503,12 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  ue->generate_nr_prach = 0;
   if (ue->mac_enabled == 0){
     //    prach_resources->ra_PreambleIndex = preamble_tx;
     prach_resources->ra_TDD_map_index = 0;
     prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
     prach_resources->ra_RNTI = 0x1234;
+    prach_resources->generate_nr_prach = 1;
   } else {
     // ask L2 for RACH transport
     if ((runmode != rx_calib_ue) && (runmode != rx_calib_ue_med) && (runmode != rx_calib_ue_byp) && (runmode != no_L2_connect) ) {
@@ -4523,9 +4523,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     }
   }
 
-  if (ue->prach_resources[gNB_id] != NULL) {
+  if (ue->prach_resources[gNB_id] != NULL && prach_resources->generate_nr_prach == 1) {
 
-    ue->generate_nr_prach = 1;
     ue->prach_cnt = 0;
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
     LOG_D(PHY,"runmode %d\n",runmode);
@@ -4534,7 +4533,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       ue->tx_power_dBm[nr_tti_tx] = prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER + pathloss;
     }
 
-    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %d\n",
+    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d : Generating PRACH, preamble %d, PL %d, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %d\n",
       ue->Mod_id,
       frame_tx,
       nr_tti_tx,
@@ -4555,7 +4554,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     #endif
 
     if ((runmode == calib_prach_tx) && (((proc->frame_tx&0xfffe)%100)==0))
-      LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d : PRACH TX power %d dBm, amp %d\n", ue->Mod_id,
+      LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d : PRACH TX power %d dBm, amp %d (%d)\n", ue->Mod_id,
         proc->frame_rx,
         proc->nr_tti_tx,
         ue->tx_power_dBm[nr_tti_tx],
@@ -4577,7 +4576,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     if (ue->mac_enabled == 1)
       nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
 
-    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_rx %d: Generating PRACH (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
+    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d: Generating PRACH (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
       ue->Mod_id,
       frame_tx,
       nr_tti_tx,
@@ -4591,12 +4590,12 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   if (runmode == calib_prach_tx)
     ue->prach_resources[gNB_id] = NULL;
 
-  LOG_D(PHY,"[UE %d] frame %d nr_tti_rx %d : generate_nr_prach %d, prach_cnt %d\n", ue->Mod_id,frame_tx,nr_tti_tx, ue->generate_nr_prach, ue->prach_cnt);
+  LOG_D(PHY,"[UE %d] frame %d nr_tti_tx %d : generate_nr_prach %d, prach_cnt %d\n", ue->Mod_id, frame_tx, nr_tti_tx, ue->prach_resources[gNB_id]->generate_nr_prach, ue->prach_cnt);
 
   ue->prach_cnt++;
 
   if (ue->prach_cnt == 3)
-    ue->generate_nr_prach = 0;
+    prach_resources->generate_nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);
 }

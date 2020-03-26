@@ -246,6 +246,8 @@ typedef struct {
   uint16_t ra_RNTI;
   /// Pointer to Msg3 payload for UL-grant
   uint8_t *Msg3;
+  /// Flag for the Msg1 generation
+  uint8_t generate_nr_prach;
 } NR_PRACH_RESOURCES_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

@@ -333,11 +333,15 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *mac_sdus, *payload, ra_ResponseWindow;
+  uint8_t config_index, mu;
+  int is_nr_prach_slot;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
+  fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
+  NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   // int32_t frame_diff = 0;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -349,6 +353,27 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   if (UE_mode == PRACH) {
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
+
+    config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
+    if (setup->msg1_SubcarrierSpacing)
+      mu = *setup->msg1_SubcarrierSpacing;
+    else
+      mu = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+
+    is_nr_prach_slot = get_nr_prach_info_from_index(config_index,
+                                                    (int)frame,
+                                                    (int)nr_tti_tx,
+                                                    frequencyInfoDL->absoluteFrequencyPointA,
+                                                    mu,
+                                                    cfg->cell_config.frame_duplex_type,
+                                                    NULL,
+                                                    NULL,
+                                                    NULL,
+                                                    NULL);
+    if (is_nr_prach_slot)
+      prach_resources->generate_nr_prach = 1;
+    else
+      prach_resources->generate_nr_prach = 0;
 
     AssertFatal(setup != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
