@@ -1807,6 +1807,7 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   int num_e_rabs_nottobemodified = e_rab_modification_ind->nb_of_e_rabs_nottobemodified;
 
   uint32_t CSG_id = 0;
+  uint32_t pseudo_gtp_teid = 10;
 
   if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
 		  e_rab_modification_ind->eNB_ue_s1ap_id)) == NULL) {
@@ -1870,7 +1871,7 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   //E-RABs NOT to be modified list
-  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  /*ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_E_RABNotToBeModifiedListBearerModInd;
   ie->criticality = S1AP_Criticality_reject;
   //if(num_e_rabs_nottobemodified > 0) {
@@ -1884,7 +1885,7 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
 		  E_RAB_NotToBeModifiedItem_BearerModInd = &E_RAB_NotToBeModifiedItem_BearerModInd_IEs->value.choice.E_RABNotToBeModifiedItemBearerModInd;
 
 		  {
-			  E_RAB_NotToBeModifiedItem_BearerModInd->e_RAB_ID = e_rab_modification_ind->e_rabs_tobemodified[i].e_rab_id;
+			  E_RAB_NotToBeModifiedItem_BearerModInd->e_RAB_ID = 10; //e_rab_modification_ind->e_rabs_tobemodified[i].e_rab_id;
 
 			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size  = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length/8;
 			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length%8;
@@ -1893,29 +1894,31 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
 			  memcpy (E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf, e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.buffer,
 					  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
 
-			  INT32_TO_OCTET_STRING(e_rab_modification_ind->e_rabs_tobemodified[i].gtp_teid, &E_RAB_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+			  //INT32_TO_OCTET_STRING(e_rab_modification_ind->e_rabs_tobemodified[i].gtp_teid, &E_RAB_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+			    INT32_TO_OCTET_STRING(pseudo_gtp_teid, &E_RAB_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
 
 		  }
 		  ASN_SEQUENCE_ADD(&ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list, E_RAB_NotToBeModifiedItem_BearerModInd_IEs);
 	  }
  // }
-  /*else{
-	  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABNotToBeModifiedListBearerModInd;
-	  ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list.size = 0;
-  } */ 
+  //else{
+//	  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABNotToBeModifiedListBearerModInd;
+//	  ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list.size = 0;
+//  } / 
   
 	   
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);*/
 
-  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  /*ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_CSGMembershipInfo;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_CSGMembershipInfo;
   ie->value.choice.CSGMembershipInfo.cSGMembershipStatus = S1AP_CSGMembershipStatus_member;
-    INT32_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
-      ie->value.choice.CSGMembershipInfo.cSG_Id.bits_unused=5;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  INT32_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
+  ie->value.choice.CSGMembershipInfo.cSG_Id.bits_unused=5; 
+  ie->value.choice.CSGMembershipInfo.cellAccessMode = S1AP_CellAccessMode_hybrid;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);*/
   
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
     S1AP_ERROR("Failed to encode S1 E-RAB modification indication \n");
