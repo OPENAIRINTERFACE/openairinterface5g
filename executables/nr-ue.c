@@ -624,11 +624,6 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
-  if (IS_SOFTMODEM_RFSIM) {
-    LOG_E(PHY,"SET rx_offset %d \n",UE->rx_offset);
-    //UE->rx_offset_diff=0;
-    return 0;
-  }
 
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
