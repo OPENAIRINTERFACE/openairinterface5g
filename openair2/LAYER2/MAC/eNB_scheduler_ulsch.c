@@ -1211,32 +1211,17 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
-    /* From Louis-Adrien to François:
-     * The comment bloc below is to configure with a command line.
-     * I took it from the equivalent part in the fairRR scheduler (around line 2578 in eNB_scheduler_fairRR.c).
-     * As said in the meeting, it seems to work only for small TBS.
-     * The cause of false RA still present with this fix is to investigate.
-     *
-     * Note: in the get_prach_prb_offset() function below, the last argument is frameP in eNB_scheduler_fairRR.c
-     * I think it should be sched_frame instead. This parameter has only impacts in case TDD and preamble format 4.
-     * To confirm.
-     */
-    /* TODO: update vrb_map_UL here? */
-    /*
-    int start_rb = 0;
-    int nb_rb = 6;
-    LTE_DL_FRAME_PARMS *frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
-
-    if (is_prach_subframe(frame_parms, sched_frame, sched_subframe) == 1) {
-      start_rb = get_prach_prb_offset(frame_parms,
-                                      frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
-                                      frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
-                                      0, // tdd_mapindex
-                                      sched_frame); // Nf
-
-      first_rb[CC_id] = start_rb + nb_rb;
+    LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[module_idP][CC_id]->frame_parms;
+    if (is_prach_subframe(frame_parms, sched_frame, sched_subframe)) {
+      int start_rb = get_prach_prb_offset(
+          frame_parms,
+          frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+          frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
+          0, // tdd_mapindex
+          sched_frame); // Nf
+      for (int i = 0; i < 6; i++)
+        cc[CC_id].vrb_map_UL[start_rb + i] = 1;
     }
-    */
 
     /* HACK: let's remove the PUCCH from available RBs
      * we suppose PUCCH size is:
