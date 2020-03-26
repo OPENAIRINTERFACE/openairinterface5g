@@ -4576,7 +4576,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     if (ue->mac_enabled == 1)
       nr_Msg1_transmitted(ue->Mod_id, ue->CC_id, frame_tx, gNB_id);
 
-    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d: Generating PRACH (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
+    LOG_I(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d: Generated PRACH Msg1 (gNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB) \n",
       ue->Mod_id,
       frame_tx,
       nr_tti_tx,

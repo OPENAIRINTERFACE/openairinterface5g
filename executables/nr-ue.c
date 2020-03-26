@@ -420,7 +420,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nr_ue_scheduled_response(&scheduled_response);
 
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
+      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_tx];
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
     }
   }

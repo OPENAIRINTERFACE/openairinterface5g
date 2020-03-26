@@ -414,15 +414,15 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // initialisation by RRC
         // CCCH PDU
         mac_sdus = &payload[sizeof(NR_MAC_SUBHEADER_SHORT)];
-        size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
-                                                  CC_id,
-                                                  frame,
-                                                  CCCH,
-                                                  1,
-                                                  mac_sdus,
-                                                  gNB_id,
-                                                  0);
-        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id,frame, size_sdu);
+        // size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
+        //                                           CC_id,
+        //                                           frame,
+        //                                           CCCH,
+        //                                           1,
+        //                                           mac_sdus,
+        //                                           gNB_id,
+        //                                           0);
+        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
       } else {
         // fill ulsch_buffer with random data
         for (int i = 0; i < TBS_bytes; i++){
