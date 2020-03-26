@@ -307,12 +307,6 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
       printf("re = %d, symbol = %d\n", re, symbol);
   #endif
 
-      if (symbol == dmrs_symbol)
-        is_dmrs_re = (re == get_dmrs_freq_idx_ul(n, k_prime, delta, pusch_pdu->dmrs_config_type));
-      else
-        is_dmrs_re = 0;
-
-
       if ( is_dmrs_re == 0 && is_ptrs_symbol_flag == 0) {
 
         rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
@@ -1027,7 +1021,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char harq_pid)
 {
 
-  uint8_t first_symbol_flag, aarx, aatx, dmrs_symbol_flag, ptrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
+  uint8_t aarx, aatx, dmrs_symbol_flag, ptrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   uint8_t L_ptrs = 0; // PTRS parameter
   int avgs;
@@ -1038,7 +1032,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   dmrs_symbol_flag = 0;
   ptrs_symbol_flag = 0;
-  first_symbol_flag = 0;
   gNB->pusch_vars[UE_id]->ptrs_sc_per_ofdm_symbol = 0;
 
   if(symbol == rel15_ul->start_symbol_index){
@@ -1046,7 +1039,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     gNB->pusch_vars[UE_id]->dmrs_symbol = 0;
     gNB->pusch_vars[UE_id]->cl_done = 0;
     gNB->pusch_vars[UE_id]->ptrs_symbols = 0;
-    first_symbol_flag = 1;
 
     if ( ((rel15_ul->pdu_bit_map)>>2)& 0x01 ) {  // if there is ptrs pdu
       L_ptrs = 1<<(rel15_ul->pusch_ptrs.ptrs_time_density);

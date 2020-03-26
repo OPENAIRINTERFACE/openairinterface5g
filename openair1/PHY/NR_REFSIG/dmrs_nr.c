@@ -141,9 +141,6 @@ uint8_t is_dmrs_symbol(uint8_t l,
   is_dmrs_freq = 0;
   is_dmrs_time = 0;
 
-  if (mapping_type==typeB)
-    l -= start_symbol;
-
   AssertFatal(l >= 0,"Check DMRS configuration (start_symbol) !\n");
 
 

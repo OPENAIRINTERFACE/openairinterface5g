@@ -235,8 +235,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   G = nr_get_G(pusch_pdu->rb_size,
                number_symbols,
                nb_re_dmrs,
-               pusch_pdu->qam_mod_order,
-               pusch_pdu->nrOfLayers);
                number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);

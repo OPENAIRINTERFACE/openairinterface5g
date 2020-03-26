@@ -470,7 +470,8 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                                        0,                                 // truncated bsr
                                        0,                                 // short bsr
                                        0,                                 // long_bsr
-                                       post_padding);                     // post_padding
+                                       post_padding,
+                                       0);
 
         // Padding: fill remainder with 0
         if (post_padding > 0){

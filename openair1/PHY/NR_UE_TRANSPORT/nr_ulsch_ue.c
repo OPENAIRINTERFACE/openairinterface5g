@@ -126,14 +126,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   n_rnti = 0x1234;
   Nid_cell = 0;
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
-<<<<<<< HEAD
-
-  mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
-  int dmrs_symb;
-=======
   number_dmrs_symbols = 0;
   uint8_t mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
->>>>>>> develop
+
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
@@ -142,47 +137,23 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     start_symbol = harq_process_ul_ue->start_symbol;
 
-<<<<<<< HEAD
-    dmrs_symb=-1;
-    number_dmrs_symbols = 0;
-  
-    for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++) {
-      number_dmrs_symbols += is_dmrs_symbol(i,
-=======
     for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++)
       number_dmrs_symbols += is_dmrs_symbol((mapping_type)?i-start_symbol:i,
->>>>>>> develop
                                             0,
                                             0,
                                             0,
                                             0,
                                             0,
                                             harq_process_ul_ue->number_of_symbols,
-<<<<<<< HEAD
-                                            start_symbol,
-                                            &UE->dmrs_UplinkConfig,
-                                            mapping_type,
-=======
                                             UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
->>>>>>> develop
                                             frame_parms->ofdm_symbol_size);
-      if (dmrs_symb == -1 && number_dmrs_symbols == 1) dmrs_symb = i;
-    }
-    AssertFatal(number_dmrs_symbols ==1,"number_dmrs_symbols != 1\n");
-    AssertFatal(dmrs_symb >=0,"dmrs_symb < 0\n");
 
-    LOG_D(PHY,"pusch: start_symbol %d, dmrs_symbol %d, num_symbols %d\n",
-	  start_symbol,dmrs_symb,harq_process_ul_ue->number_of_symbols);
 
     ulsch_ue->length_dmrs = number_dmrs_symbols; // pusch.MaxLenght is redundant here as number_dmrs_symbols
                                                  // contains all dmrs symbols even for double symbol dmrs
     ulsch_ue->rnti        = n_rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-<<<<<<< HEAD
     ulsch_ue->nb_re_dmrs  = 12;//((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
-=======
-    ulsch_ue->nb_re_dmrs  = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4);
->>>>>>> develop
 
     N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs*number_dmrs_symbols - N_PRB_oh;
 
@@ -415,17 +386,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     uint8_t l_ref;
     uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
-    for (l=start_symbol; l<start_symbol+harq_process_ul_ue->number_of_symbols; l++) {
+     for (l=start_symbol; l<start_symbol+harq_process_ul_ue->number_of_symbols; l++) {
 
       k = start_sc;
       n = 0;
       dmrs_idx = 0;
       l_ref = (mapping_type) ? l-start_symbol : l;
 
-<<<<<<< HEAD
-      if (l!=dmrs_symb) {
-	for (i=0; i<harq_process_ul_ue->nb_rb*NR_NB_SC_PER_RB; i++) {
-=======
       for (i=0; i<harq_process_ul_ue->nb_rb*NR_NB_SC_PER_RB; i++) {
 
         sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
@@ -491,81 +458,21 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           ptrs_idx++;
 
           } else {
->>>>>>> develop
 
-	  sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
 
-#ifdef DEBUG_PUSCH_MAPPING
-	  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+          #ifdef DEBUG_PUSCH_MAPPING
+            printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
             m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-#endif
-	  
+          #endif
+
           m++;
-	  if (++k >= frame_parms->ofdm_symbol_size)
-	    k -= frame_parms->ofdm_symbol_size;
-	  
-	}
-      }
-      else {
+        }
 
-	for (i=0; i<harq_process_ul_ue->nb_rb*NR_NB_SC_PER_RB; i++) {
-
-	  sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
-	  is_dmrs = 0;
-	  
-	  is_dmrs = is_dmrs_symbol(l,
-				   k,
-				   start_sc,
-				   k_prime,
-				   n,
-				   delta,
-				   harq_process_ul_ue->number_of_symbols,
-           start_symbol,
-				   &UE->dmrs_UplinkConfig,
-				   mapping_type,
-				   frame_parms->ofdm_symbol_size);
-	  if (is_dmrs == 1) {
-	    
-	    nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-	    
-	    ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[dmrs_idx<<1]) >> 15;
-	    ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
-	    
-#ifdef DEBUG_PUSCH_MAPPING
-            printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t dmrs: %d %d\n",
-		   dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-		   ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-#endif
-	    
-	    
-	    dmrs_idx++;
-	    k_prime++;
-	    k_prime&=1;
-	    n+=(k_prime)?0:1;
-	  }
-	  
-	  else {
-	    //remove PDSCH REs from DMRS symbols for now
-	    /*
-	      ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
-	      ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
-	      
-	      #ifdef DEBUG_PUSCH_MAPPING
-	      printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-	      m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-	      ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-	      #endif
-	      
-	      m++;
-	    */
-	  }
-
-	  if (++k >= frame_parms->ofdm_symbol_size)
-	    k -= frame_parms->ofdm_symbol_size;
-	}
+        if (++k >= frame_parms->ofdm_symbol_size)
+          k -= frame_parms->ofdm_symbol_size;
       }
     }
   }
