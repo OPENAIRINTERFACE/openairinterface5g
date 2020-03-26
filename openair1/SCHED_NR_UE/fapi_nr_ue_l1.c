@@ -188,7 +188,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
           fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
-          prach_resources = &PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
+          prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
           prach_config_common = &fp->prach_config_common;
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
 
