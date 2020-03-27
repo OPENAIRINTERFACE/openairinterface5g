@@ -782,6 +782,8 @@ typedef struct {
   int16_t amp;
   int16_t *prachF;
   int16_t *prach;
+  fapi_nr_ul_config_prach_pdu prach_pdu;
+  uint8_t prach_Config_enabled;
 } NR_UE_PRACH;
 
 // structure used for multiple SSB detection

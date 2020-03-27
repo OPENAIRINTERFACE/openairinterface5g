@@ -42,7 +42,7 @@
 
 
 
-void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
+/*void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
   FILE *fd;
 
@@ -76,7 +76,7 @@ void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
   fprintf(fd,"prach_config: n_ra_prboffset    = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.msg1_frequencystart);
   fclose(fd);
 
-}
+}*/
 
 // This function computes the du
 void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)

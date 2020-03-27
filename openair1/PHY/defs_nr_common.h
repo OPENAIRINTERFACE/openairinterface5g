@@ -198,31 +198,6 @@ typedef struct {
   nr_reg_t reg_list[NR_NB_REG_PER_CCE];
 } nr_cce_t;
 
-
-/// PRACH-ConfigInfo from 38.331 RRC spec
-typedef struct {
-  /// Parameter: prach-ConfigurationIndex, see TS 38.211 (6.3.3.2). 
-  uint8_t prach_ConfigIndex;
-  /// Parameter: High-speed-flag, see TS 38.211 (6.3.3.1). 1 corresponds to Restricted set and 0 to Unrestricted set.
-  uint8_t highSpeedFlag;
-  /// Restricted Set Config (type A=0 , type B=1) TS 38.211 (6.3.3.1)
-  uint8_t restrictedSetConfig;
-  /// 38.211 (NCS 38.211 6.3.3.1). 
-  uint8_t zeroCorrelationZoneConfig;
-  /// see TS 38.211 (6.3.3.2). 
-  uint8_t msg1_frequencystart;
-} NR_PRACH_CONFIG_INFO;
-
-/// PRACH-ConfigSIB or PRACH-Config
-typedef struct {
-  /// Parameter: prach-rootSequenceIndex, see TS 38.211 (6.3.3.2).
-  uint16_t rootSequenceIndex;
-  /// prach_Config_enabled=1 means enabled.}
-  uint8_t prach_Config_enabled;
-  /// PRACH Configuration Information
-  NR_PRACH_CONFIG_INFO prach_ConfigInfo;
-} NR_PRACH_CONFIG_COMMON;
-
 typedef struct {
   /// PRACH format retrieved from prach_ConfigIndex
   uint16_t prach_format;
@@ -340,8 +315,6 @@ struct NR_DL_FRAME_PARMS {
   uint8_t nb_antennas_rx;
   /// Number of common transmit antenna ports in eNodeB (1 or 2)
   uint8_t nb_antenna_ports_gNB;
-  /// PRACH_CONFIG
-  NR_PRACH_CONFIG_COMMON prach_config_common;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// shift of pilot position in one RB

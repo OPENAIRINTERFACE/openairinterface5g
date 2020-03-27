@@ -72,6 +72,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   NR_DL_FRAME_PARMS *fp=&ue->frame_parms;
   fapi_nr_config_request_t *nrUE_config = &ue->nrUE_config;
   NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_id];
+  fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
 
   uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
   uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset;
@@ -89,11 +90,11 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   prach_sequence_length   = nrUE_config->prach_config.prach_sequence_length;
   N_ZC                    = (prach_sequence_length == 0) ? 839:139;
   mu                      = nrUE_config->prach_config.prach_sub_c_spacing;
-  restricted_set          = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  rootSequenceIndex       = fp->prach_config_common.rootSequenceIndex;
-  n_ra_prb                = fp->prach_config_common.prach_ConfigInfo.msg1_frequencystart;
-  NCS                     = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  prach_fmt_id            = prach_resources->prach_format;
+  restricted_set          = prach_pdu->restricted_set;
+  rootSequenceIndex       = prach_pdu->root_seq_id;
+  n_ra_prb                = prach_pdu->freq_msg1;
+  NCS                     = prach_pdu->num_cs;
+  prach_fmt_id            = prach_pdu->prach_format;
   preamble_index          = 0; //prach_resources->ra_PreambleIndex // temporary hardcoded
   fd_occasion             = 0;
   prach_len               = 0;
@@ -134,28 +135,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   * Table 6.3.3.1-6:  for preamble formats with delta_f_RA = 5 Khz (formats 3)
   * NOTE: Restricted set type B is not implemented
   *************************************************************************/
-
-  // restricted type is hardcoded ('0' for restricted_TypeA; and '1' for restricted_TypeB). FIXME
-  // uint8_t Ncs_config = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  // if (prach_fmt_id<3){
-  //   if (restricted_set == 0) {
-  //     NCS = NCS_unrestricted_delta_f_RA_125[Ncs_config];
-  //   } else {
-  //     if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_125[Ncs_config]; // for TypeA, this is hardcoded. FIXME
-  //     if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_125[Ncs_config]; // for TypeB, this is hardcoded. FIXME
-  //   }
-  // }
-  // if (prach_fmt_id==3){
-  //   if (restricted_set == 0) {
-  //     NCS = NCS_unrestricted_delta_f_RA_5[Ncs_config];
-  //   } else {
-  //     if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_5[Ncs_config]; // for TypeA, this is hardcoded. FIXME
-  //     if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_5[Ncs_config]; // for TypeB, this is hardcoded. FIXME
-  //   }
-  // }
-  // if (prach_fmt_id>3){
-  //   NCS = NCS_unrestricted_delta_f_RA_15[Ncs_config];
-  // }
 
   prach_root_sequence_map = (prach_sequence_length == 0) ? prach_root_sequence_map_0_3 : prach_root_sequence_map_abc;
 

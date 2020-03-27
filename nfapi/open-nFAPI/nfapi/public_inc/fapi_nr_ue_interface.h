@@ -156,17 +156,28 @@ typedef struct {
   fapi_nr_tx_request_body_t *tx_request_body;
 } fapi_nr_tx_request_t;
 
+/// This struct replaces:
+/// PRACH-ConfigInfo from 38.331 RRC spec
+/// PRACH-ConfigSIB or PRACH-Config
 typedef struct {
+  /// PHY cell ID
   uint16_t phys_cell_id;
+  /// Num PRACH occasions
   uint8_t  num_prach_ocas;
+  /// PRACH format
   uint8_t  prach_format;
+  /// Num RA
   uint8_t  num_ra;
   uint8_t  prach_start_symbol;
+  /// 38.211 (NCS 38.211 6.3.3.1).
   uint16_t num_cs;
+  /// Parameter: prach-rootSequenceIndex, see TS 38.211 (6.3.3.2).
   uint16_t root_seq_id;
-  uint8_t restricted_set;
+  /// Parameter: High-speed-flag, see TS 38.211 (6.3.3.1). 1 corresponds to Restricted set and 0 to Unrestricted set.
+  uint8_t  restricted_set;
+  /// see TS 38.211 (6.3.3.2).
   uint16_t freq_msg1;
-  //nfapi_nr_ul_beamforming_t beamforming;
+  // nfapi_nr_ul_beamforming_t beamforming;
 } fapi_nr_ul_config_prach_pdu;
 
 typedef struct {

@@ -114,9 +114,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
         /* PRACH */
-        NR_DL_FRAME_PARMS *fp;
         NR_PRACH_RESOURCES_t *prach_resources;
-        NR_PRACH_CONFIG_COMMON *prach_config_common;
         fapi_nr_ul_config_prach_pdu *prach_config_pdu;
         /* PUSCH */
         fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu;
@@ -189,19 +187,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
-          fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
           prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
-          prach_config_common = &fp->prach_config_common;
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-
-          prach_config_common->prach_Config_enabled = 1;
-          prach_config_common->rootSequenceIndex = prach_config_pdu->root_seq_id;
-          prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->num_cs;
-          prach_config_common->prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restricted_set;
-          prach_config_common->prach_ConfigInfo.msg1_frequencystart = prach_config_pdu->freq_msg1;
-
-          prach_resources->prach_format = prach_config_pdu->prach_format;
-
+          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
+          PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_Config_enabled = 1;
         break;
 
         default:
