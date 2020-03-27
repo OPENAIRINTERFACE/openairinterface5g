@@ -1081,7 +1081,10 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
     symbol_offset = frame_parms->N_RB_UL*12*((3 - frame_parms->Ncp)+(7-frame_parms->Ncp));
     pusch_vars->ulsch_interference_power[i] += interference_power(&pusch_vars->drs_ch_estimates[i][symbol_offset],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
     pusch_vars->ulsch_power[i] += signal_power(&pusch_vars->drs_ch_estimates[i][symbol_offset],ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
-    
+    //ave
+    pusch_vars->ulsch_interference_power[i] >>= 1;
+    pusch_vars->ulsch_power[i] >>= 1;
+
     pusch_vars->ulsch_interference_power[i] = pusch_vars->ulsch_interference_power[i]/correction_factor;
     pusch_vars->ulsch_power[i] = pusch_vars->ulsch_power[i]/correction_factor;
 
