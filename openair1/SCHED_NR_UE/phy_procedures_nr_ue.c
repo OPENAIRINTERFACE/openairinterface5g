@@ -4544,17 +4544,18 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       prach_resources->ra_RNTI);
 
     //ue->tx_total_RE[nr_tti_tx] = 96; // todo
+    ue->prach_vars[gNB_id]->amp = AMP;
 
-    #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
+    /* #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
       tx_amp = get_tx_amp_prach(ue->tx_power_dBm[nr_tti_tx], ue->tx_power_max_dBm, ue->frame_parms.N_RB_UL);
       if (tx_amp != -1)
         ue->prach_vars[gNB_id]->amp = tx_amp;
     #else
       ue->prach_vars[gNB_id]->amp = AMP;
-    #endif
+    #endif */
 
     if ((runmode == calib_prach_tx) && (((proc->frame_tx&0xfffe)%100)==0))
-      LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d : PRACH TX power %d dBm, amp %d (%d)\n", ue->Mod_id,
+      LOG_D(PHY,"[UE %d][RAPROC] Frame %d, nr_tti_tx %d : PRACH TX power %d dBm, amp %d\n", ue->Mod_id,
         proc->frame_rx,
         proc->nr_tti_tx,
         ue->tx_power_dBm[nr_tti_tx],
