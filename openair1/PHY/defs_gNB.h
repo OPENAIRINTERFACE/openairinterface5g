@@ -598,6 +598,12 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
 
+#define MAX_NUM_NR_RX_RACH_PDUS 4
+#define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
+#define MAX_UL_PDUS_PER_SLOT 100
+#define MAX_NUM_NR_SRS_PDUS 100
+#define MAX_NUM_NR_UCI_PDUS 100
+
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {
   /// Module ID indicator for this instance
@@ -624,19 +630,17 @@ typedef struct PHY_VARS_gNB_s {
   pthread_mutex_t      UL_INFO_mutex;
 
   /// NFAPI RX ULSCH information
-  nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];
+  nfapi_nr_rx_data_pdu_t  rx_pdu_list[MAX_UL_PDUS_PER_SLOT];
   /// NFAPI RX ULSCH CRC information
-  nfapi_crc_indication_pdu_t crc_pdu_list[NFAPI_CRC_IND_MAX_PDU];
-  /// NFAPI HARQ information
-  nfapi_harq_indication_pdu_t harq_pdu_list[NFAPI_HARQ_IND_MAX_PDU];
-  /// NFAPI SR information
-  nfapi_sr_indication_pdu_t sr_pdu_list[NFAPI_SR_IND_MAX_PDU];
-  /// NFAPI CQI information
-  nfapi_cqi_indication_pdu_t cqi_pdu_list[NFAPI_CQI_IND_MAX_PDU];
-  /// NFAPI CQI information (raw component)
-  nfapi_cqi_indication_raw_pdu_t cqi_raw_pdu_list[NFAPI_CQI_IND_MAX_PDU];
+  nfapi_nr_crc_t crc_pdu_list[MAX_UL_PDUS_PER_SLOT];
+  /// NFAPI SRS information
+  nfapi_nr_srs_indication_pdu_t srs_pdu_list[MAX_NUM_NR_SRS_PDUS];
+  /// NFAPI UCI information
+  nfapi_nr_uci_t uci_pdu_list[MAX_NUM_NR_UCI_PDUS];
   /// NFAPI PRACH information
-  nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
+  nfapi_nr_prach_indication_pdu_t prach_pdu_indication_list[MAX_NUM_NR_RX_RACH_PDUS];
+  /// NFAPI PRACH information
+  nfapi_nr_prach_indication_preamble_t preamble_list[MAX_NUM_NR_RX_PRACH_PREAMBLES];
 
   //Sched_Rsp_t         Sched_INFO;
   nfapi_nr_ul_tti_request_t     UL_tti_req;
