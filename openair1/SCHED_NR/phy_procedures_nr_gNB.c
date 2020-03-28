@@ -325,7 +325,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   gNB->crc_pdu_list[num_crc].rnti = pusch_pdu->rnti;
   gNB->crc_pdu_list[num_crc].harq_id = harq_pid;
   gNB->crc_pdu_list[num_crc].tb_crc_status = crc_flag;
-  gNB->crc_pdu_list[num_crc].num_cb = 0; // FIXME pusch_pdu->pusch_data.num_cb
+  gNB->crc_pdu_list[num_crc].num_cb = pusch_pdu->pusch_data.num_cb;
   gNB->crc_pdu_list[num_crc].ul_cqi = cqi;
   gNB->crc_pdu_list[num_crc].timing_advance = timing_advance_update;
   gNB->crc_pdu_list[num_crc].rssi = 0xffff; // invalid value as this is not yet computed
