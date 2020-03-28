@@ -336,6 +336,8 @@ schedule_SR (module_id_t module_idP,
             if ((10 * (frameP & 3) + subframeP) != (SRconfig->choice.setup.sr_ConfigIndex - 35)) continue;
           } else if (SRconfig->choice.setup.sr_ConfigIndex <= 154) {  // 80 ms SR period
             if ((10 * (frameP & 7) + subframeP) != (SRconfig->choice.setup.sr_ConfigIndex - 75)) continue;
+          } else if (SRconfig->choice.setup.sr_ConfigIndex <= 156) { // 2ms SR period
+            if ((subframeP % 2) != (SRconfig->choice.setup.sr_ConfigIndex - 155)) continue;
           }
         }  // SRconfig->present == SchedulingRequestConfig_PR_setup)
       }  // SRconfig = UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig)!=NULL)
