@@ -370,10 +370,10 @@ int main(int argc, char **argv)
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
-  gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list = (nfapi_rx_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_rx_indication_pdu_t));
-  gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = (nfapi_crc_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_crc_indication_pdu_t));
-  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
-  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs = 0;
+  gNB->UL_INFO.rx_ind.pdu_list = (nfapi_nr_rx_data_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_rx_data_pdu_t));
+  gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
+  gNB->UL_INFO.rx_ind.number_of_pdus = 0;
+  gNB->UL_INFO.crc_ind.number_crcs = 0;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -651,8 +651,8 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         //------------------- gNB phy procedures -------------------
         //----------------------------------------------------------
-        gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
-        gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs = 0;
+        gNB->UL_INFO.rx_ind.number_of_pdus = 0;
+        gNB->UL_INFO.crc_ind.number_crcs = 0;
 
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
