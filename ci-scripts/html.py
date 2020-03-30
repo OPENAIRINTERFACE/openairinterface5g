@@ -46,6 +46,8 @@ class HTMLManagement():
 
 	def __init__(self):
 		
+		self.htmlHeaderCreated = False
+		self.htmlFooterCreated = False
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
