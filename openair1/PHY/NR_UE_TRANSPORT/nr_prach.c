@@ -58,7 +58,7 @@ extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
-const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
+extern const char *prachfmt[9];
 
 // Note:
 // - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt
