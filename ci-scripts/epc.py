@@ -126,7 +126,6 @@ class EPCManagement():
 			mySSH.command('mkdir -p ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/hss_sim0609', '\$', 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
-			#mySSH.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
 			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo su -c "screen -dm -S simulated_hss ./starthss"', '\$', 5)
 		else:
 			logging.error('This option should not occur!')
@@ -288,10 +287,10 @@ class EPCManagement():
 		elif re.match('ltebox', self.EPCType, re.IGNORECASE):
 			mySSH.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			mySSH.command('cd scripts', '\$', 5)
-			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
+			#mySSH.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
 			time.sleep(1)
 			#mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
-			mySSH.command('echo ' + self.EPCPassword + ' | sudo killall hss_sim', '\$', 5)
+			mySSH.command('echo ' + self.EPCPassword + ' | sudo screen -X -S simulated_hss quit', '\$', 5)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
