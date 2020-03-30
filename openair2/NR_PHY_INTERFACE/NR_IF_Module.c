@@ -54,35 +54,27 @@ extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
-
   if (UL_info->rach_ind.number_of_pdus>0) {
     AssertFatal(UL_info->rach_ind.number_of_pdus==1,"More than 1 RACH pdu not supported\n");
     UL_info->rach_ind.number_of_pdus=0;
     LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
 
     if (UL_info->rach_ind.pdu_list[0].num_preamble>0)
-      AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
-		  "More than 1 preamble not supported\n");
+    AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
+		"More than 1 preamble not supported\n");
 
-    /*
-    initiate_ra_proc(UL_info->module_id,
+    /*nr_initiate_ra_proc(UL_info->module_id,
+                        UL_info->CC_id,
+                        UL_info->rach_ind.sfn,
+                        UL_info->rach_ind.slot,
+                        UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
+                        UL_info->rach_ind.pdu_list[0].freq_index,
+                        UL_info->rach_ind.pdu_list[0].symbol_index,
+                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);*/
 
-    		         UL_info->CC_id,
-					 NFAPI_SFNSF2SFN(UL_info->rach_ind.sfn_sf),
-					 NFAPI_SFNSF2SF(UL_info->rach_ind.sfn_sf),
-					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
-					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-					 UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#if (NR_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) || (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-//#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                    ,0
-#endif
-
-         );
-    */
   }
-
 }
+
 
 void handle_nr_sr(NR_UL_IND_t *UL_info) {
 
