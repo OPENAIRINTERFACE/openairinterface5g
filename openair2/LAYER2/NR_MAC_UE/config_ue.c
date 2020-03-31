@@ -149,8 +149,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
   int i;
 
-    mac->phy_config.Mod_id = module_id;
-    mac->phy_config.CC_id = cc_idP;    
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_idP;
   
   // carrier config
 
@@ -318,8 +318,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
     cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
     cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,
-                                                                                              nb_preambles, frame_type);
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, frame_type);
     //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
   }
 
@@ -351,10 +350,10 @@ int nr_rrc_mac_config_req_ue(
     if(spCell_ConfigP != NULL ){
       mac->servCellIndex = *spCell_ConfigP->servCellIndex;
       if (spCell_ConfigP->reconfigurationWithSync) {
-	mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
-	config_common_ue(mac,module_id,cc_idP);
-	mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
-	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
+        mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
+        config_common_ue(mac,module_id,cc_idP);
+        mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
+        LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
       mac->scd = spCell_ConfigP->spCellConfigDedicated;
 

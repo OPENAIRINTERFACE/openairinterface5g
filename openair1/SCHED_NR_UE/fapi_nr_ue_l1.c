@@ -80,24 +80,26 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
           //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
-          dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
-          dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
-          dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
-          dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
-          dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
-          dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
-          dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
-          dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
-          dlsch0_harq->mcs = dlsch_config_pdu->mcs;
-          dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
-          dlsch0_harq->rvidx = dlsch_config_pdu->rv;
-          dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-          dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-          dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
-          dlsch0_harq->Nl=1;
-          dlsch0_harq->mcs_table=0;
-          dlsch0_harq->status = ACTIVE;
-          LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+          if (dlsch0_harq != NULL){
+            dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
+            dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
+            dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
+            dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
+            dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
+            dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
+            dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
+            dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
+            dlsch0_harq->mcs = dlsch_config_pdu->mcs;
+            dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
+            dlsch0_harq->rvidx = dlsch_config_pdu->rv;
+            dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+            dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
+            dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+            dlsch0_harq->Nl=1;
+            dlsch0_harq->mcs_table=0;
+            dlsch0_harq->status = ACTIVE;
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+          }
         }
       }
     } else {
@@ -112,9 +114,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
         /* PRACH */
-        NR_DL_FRAME_PARMS *fp;
         NR_PRACH_RESOURCES_t *prach_resources;
-        NR_PRACH_CONFIG_COMMON *prach_config_common;
         fapi_nr_ul_config_prach_pdu *prach_config_pdu;
         /* PUSCH */
         fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu;
@@ -187,19 +187,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
-          fp = &PHY_vars_UE_g[module_id][cc_id]->frame_parms;
-          prach_resources = &PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
-          prach_config_common = &fp->prach_config_common;
+          prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-
-          prach_config_common->prach_Config_enabled = 1;
-          prach_config_common->rootSequenceIndex = prach_config_pdu->root_seq_id;
-          prach_config_common->prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->num_cs;
-          prach_config_common->prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restricted_set;
-          prach_config_common->prach_ConfigInfo.msg1_frequencystart = prach_config_pdu->freq_msg1;
-
-          prach_resources->prach_format = prach_config_pdu->prach_format;
-
+          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
+          PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_Config_enabled = 1;
         break;
 
         default:

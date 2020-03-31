@@ -42,7 +42,7 @@
 
 
 
-void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
+/*void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
   FILE *fd;
 
@@ -76,7 +76,7 @@ void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
   fprintf(fd,"prach_config: n_ra_prboffset    = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.msg1_frequencystart);
   fclose(fd);
 
-}
+}*/
 
 // This function computes the du
 void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)
@@ -96,28 +96,21 @@ void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)
   }
 }
 
+void compute_nr_prach_seq(uint8_t short_sequence,
+                          uint8_t num_sequences,
+                          uint8_t rootSequenceIndex,
+                          uint32_t X_u[64][839]){
 
-void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
-			  uint8_t fd_occasion,
-			  uint32_t X_u[64][839])
-{
   // Compute DFT of x_u => X_u[k] = x_u(inv(u)*k)^* X_u[k] = exp(j\pi u*inv(u)*k*(inv(u)*k+1)/N_ZC)
-  nfapi_nr_prach_config_t prach_config = config->prach_config;
   unsigned int k,inv_u,i;
   int N_ZC;
 
   uint16_t *prach_root_sequence_map;
   uint16_t u;
-  uint8_t short_sequence = prach_config.prach_sequence_length.value;
-  uint8_t num_sequences = prach_config.num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value;
-  uint8_t rootSequenceIndex = prach_config.num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index.value;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);
 
-
-  LOG_D(PHY,"compute_prach_seq: NCS_config %d, prach short sequence %x, num_Seqeuences %d, rootSequenceIndex %d\n",prach_config.num_prach_fd_occasions_list[fd_occasion].prach_zero_corr_conf.value, short_sequence, num_sequences, rootSequenceIndex);
-
-
+  LOG_D(PHY,"compute_prach_seq: prach short sequence %x, num_sequences %d, rootSequenceIndex %d\n", short_sequence, num_sequences, rootSequenceIndex);
 
   N_ZC = (short_sequence) ? 139 : 839;
   //init_prach_tables(N_ZC); //moved to phy_init_lte_ue/eNB, since it takes to long in real-time
@@ -131,10 +124,7 @@ void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
     prach_root_sequence_map = prach_root_sequence_map_0_3;
   }
 
-
-
   LOG_D( PHY, "compute_prach_seq: done init prach_tables\n" );
-
 
   for (i=0; i<num_sequences; i++) {
     int index = (rootSequenceIndex+i) % (N_ZC-1);

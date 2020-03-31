@@ -371,7 +371,6 @@ int main(int argc, char **argv)
   }
 
   unsigned char harq_pid = 0;
-  uint8_t is_crnti = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
   uint8_t nb_re_dmrs = 6;
@@ -385,7 +384,7 @@ int main(int argc, char **argv)
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_processes[harq_pid];
-  nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &harq_process_gNB->ulsch_pdu.ulsch_pdu_rel15;
+  nfapi_nr_pusch_pdu_t *rel15_ul = &harq_process_gNB->ulsch_pdu;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
@@ -397,14 +396,15 @@ int main(int argc, char **argv)
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 
   /////////// setting rel15_ul parameters ///////////
-  rel15_ul->number_rbs     = nb_rb;
-  rel15_ul->number_symbols = nb_symb_sch;
-  rel15_ul->Qm             = mod_order;
-  rel15_ul->mcs            = Imcs;
-  rel15_ul->rv             = rvidx;
-  rel15_ul->n_layers       = Nl;
-  rel15_ul->length_dmrs    = length_dmrs;
-  rel15_ul->R              = code_rate;
+  rel15_ul->rb_size             = nb_rb;
+  rel15_ul->nr_of_symbols       = nb_symb_sch;
+  rel15_ul->qam_mod_order       = mod_order;
+  rel15_ul->mcs_index           = Imcs;
+  rel15_ul->pusch_data.rv_index = rvidx;
+  rel15_ul->nrOfLayers          = Nl;
+  //rel15_ul->length_dmrs       = length_dmrs;
+  rel15_ul->target_code_rate    = code_rate;
+  rel15_ul->pusch_data.tb_size  = TBS>>3;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -527,8 +527,15 @@ int main(int argc, char **argv)
       exit(-1);
 #endif
 
-      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms,
-                              frame, nb_symb_sch, nb_re_dmrs, subframe, harq_pid, is_crnti);
+     uint32_t G = nr_get_G(rel15_ul->rb_size,
+                           rel15_ul->nr_of_symbols,
+                           nb_re_dmrs,
+                           1, // FIXME only single dmrs is implemented 
+                           rel15_ul->qam_mod_order,
+                           rel15_ul->nrOfLayers);
+
+      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
+                              frame, subframe, harq_pid, G);
 
       if (ret > ulsch_gNB->max_ldpc_iterations)
         n_errors++;

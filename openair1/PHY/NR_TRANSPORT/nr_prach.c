@@ -38,6 +38,7 @@ extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
+extern const char *prachfmt[9];
 
 void init_prach_list(PHY_VARS_gNB *gNB) {
 
@@ -139,7 +140,6 @@ void free_nr_ru_prach_entry(RU_t *ru,
 
 }
 
-const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
 
 void rx_nr_prach_ru(RU_t *ru,
 		    int prachFormat,

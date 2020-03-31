@@ -20,10 +20,10 @@
  */
 
 /*! \file nr_l1_helper.c
-* \brief PHY helper function adapted to NR
+* \brief PHY helper functions for PRACH adapted to NR
 * \author Guido Casati
 * \date 2019
-* \version 1.0
+* \version 2.0
 * \email guido.casati@iis.fraunhofer.de
 * @ingroup _mac
 
@@ -38,60 +38,62 @@
 /* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format){
 
-    NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-    NR_ServingCellConfigCommon_t *scc = mac->scc;
-    NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
+  int prach_sequence_length = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present - 1;
+  uint8_t prachConfigIndex, mu;
 
-    AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
+  AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
-    uint8_t prachConfigIndex, mu;
+  // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211
 
-    // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211
+  switch (scs){
+    case NR_SubcarrierSpacing_kHz15:
+    mu = 0;
+    break;
 
-    NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
+    case NR_SubcarrierSpacing_kHz30:
+    mu = 1;
+    break;
 
-    switch (scs){
-      case NR_SubcarrierSpacing_kHz15:
-      mu = 0;
-      break;
+    case NR_SubcarrierSpacing_kHz60:
+    mu = 2;
+    break;
 
-      case NR_SubcarrierSpacing_kHz30:
-      mu = 1;
-      break;
+    case NR_SubcarrierSpacing_kHz120:
+    mu = 3;
+    break;
 
-      case NR_SubcarrierSpacing_kHz60:
-      mu = 2;
-      break;
+    case NR_SubcarrierSpacing_kHz240:
+    mu = 4;
+    break;
 
-      case NR_SubcarrierSpacing_kHz120:
-      mu = 3;
-      break;
+    case NR_SubcarrierSpacing_spare3:
+    mu = 5;
+    break;
 
-      case NR_SubcarrierSpacing_kHz240:
-      mu = 4;
-      break;
+    case NR_SubcarrierSpacing_spare2:
+    mu = 6;
+    break;
 
-      case NR_SubcarrierSpacing_spare3:
-      mu = 5;
-      break;
+    case NR_SubcarrierSpacing_spare1:
+    mu = 7;
+    break;
 
-      case NR_SubcarrierSpacing_spare2:
-      mu = 6;
-      break;
+    default:
+    AssertFatal(1 == 0,"Unknown msg1_SubcarrierSpacing %lu\n", scs);
+  }
 
-      case NR_SubcarrierSpacing_spare1:
-      mu = 7;
-      break;
+  // Preamble formats given by prach_ConfigurationIndex and tables 6.3.3.2-2 and 6.3.3.2-2 in TS 38.211
 
-      default:
-      AssertFatal(1 == 0,"Unknown msg1_SubcarrierSpacing %lu\n", scs);
-    }
+  prachConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
 
-    // Preamble formats given by prach_ConfigurationIndex and tables 6.3.3.2-2 and 6.3.3.2-2 in TS 38.211
-
-    prachConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
-
+  if (prach_sequence_length == 0) {
     switch (prach_format) {
+      AssertFatal(prach_format < 4, "Illegal PRACH format %d for sequence length 839\n", prach_format);
+
       // long preamble formats
       case 0:
       case 3:
@@ -102,30 +104,32 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
 
       case 2:
       return -6;
-
-      // short preamble formats
-      case 0xa1:
-      case 0xb1:
+    }
+  } else {
+    switch (prach_format) { // short preamble formats
+      case 0:
+      case 3:
       return 8 + 3*mu;
 
-      case 0xa2:
-      case 0xb2:
-      case 0xc2:
+      case 1:
+      case 4:
+      case 8:
       return 5 + 3*mu;
 
-      case 0xa3:
-      case 0xb3:
+      case 2:
+      case 5:
       return 3 + 3*mu;
 
-      case 0xb4:      
+      case 6:
       return 3*mu;
 
-      case 0xc0:
+      case 7:
       return 5 + 3*mu;
 
       default:
       AssertFatal(1 == 0, "[UE %d] ue_procedures.c: FATAL, Illegal preambleFormat %d, prachConfigIndex %d\n", mod_id, prach_format, prachConfigIndex);
     }
+  }
 }
 
 /* TS 38.321 subclause 5.1.3 - RA preamble transmission - ra_PREAMBLE_RECEIVED_TARGET_POWER configuration */

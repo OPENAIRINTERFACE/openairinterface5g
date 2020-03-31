@@ -69,14 +69,15 @@
   #include "UTIL/OSA/osa_defs.h"
 #endif
 
-#   include "rrc_eNB_S1AP.h"
-#   include "rrc_eNB_GTPV1U.h"
+#include "rrc_eNB_S1AP.h"
+#include "rrc_eNB_GTPV1U.h"
+
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
 
-#   include "intertask_interface.h"
 
+#include "intertask_interface.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #include "executables/softmodem-common.h"
@@ -179,7 +180,6 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-
 static void init_NR_SI(gNB_RRC_INST *rrc) {
 
 
@@ -277,7 +277,6 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
-  
   rrc->module_id = gnb_mod_idP;
   rrc->Nb_ue = 0;
   
@@ -342,7 +341,6 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
-
 void *rrc_gnb_task(void *args_p) {
   MessageDef                         *msg_p;
   const char                         *msg_name_p;

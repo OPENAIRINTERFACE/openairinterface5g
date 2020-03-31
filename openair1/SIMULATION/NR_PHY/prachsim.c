@@ -65,9 +65,9 @@ void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 uint16_t NB_UE_INST=1;
 
 
-
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint8_t nfapi_mode=0;
+
 
 void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 		      module_id_t mod_id,
@@ -90,6 +90,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
 int is_nr_prach_subframe(NR_DL_FRAME_PARMS *fp,uint32_t frame,uint8_t slot) { return(1);}
 
 int get_nr_prach_fmt(int prachConfigIndex,int frame_type,int fr) { return(0xa2); }
+
 
 int main(int argc, char **argv)
 {

@@ -163,7 +163,8 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint16_t truncated_bsr,
                                     uint16_t short_bsr,
                                     uint16_t long_bsr,
-                                    unsigned short post_padding);
+                                    unsigned short post_padding,
+                                    uint16_t buflen);
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 

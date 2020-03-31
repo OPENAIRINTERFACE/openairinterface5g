@@ -36,9 +36,7 @@
 #include "msc.h"
 #include "common/ran_context.h"
 
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"

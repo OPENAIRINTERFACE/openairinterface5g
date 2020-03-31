@@ -32,7 +32,7 @@
 #define __NR_LDPC_INIT__H__
 
 #include "nrLDPC_lut.h"
-#include "nrLDPC_defs.h"
+#include "nrLDPCdecoder_defs.h"
 
 /**
    \brief Initializes the decoder and sets correct LUTs

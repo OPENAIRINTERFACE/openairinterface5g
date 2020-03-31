@@ -35,13 +35,12 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/CODING/nrLDPC_encoder/defs.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "SCHED_NR/sched_nr.h"
-#include "defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
@@ -273,7 +272,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
 
-  free_gNB_dlsch(&dlsch, N_RB);
+  free_gNB_dlsch(&dlsch,N_RB);
 
   return(NULL);
 
@@ -446,11 +445,16 @@ int nr_dlsch_encoding(unsigned char *a,
       //ldpc_encoder_orig((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],dlsch->harq_processes[harq_pid]->d[r],*Zc,Kb,Kr,BG,0);
       //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
     }
+    encoder_implemparams_t impp;
+    impp.n_segments=dlsch->harq_processes[harq_pid]->C;
+    impp.tprep = tprep;
+    impp.tinput = tinput;
+    impp.tparity = tparity;
+    impp.toutput = toutput;
 
-    for(int j=0;j<((dlsch->harq_processes[harq_pid]->C-1)/8+1);j++) {
-      ldpc_encoder_optim_8seg_multi(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,
-				    dlsch->harq_processes[harq_pid]->C,j,
-				    tinput,tprep,tparity,toutput);
+    for(int j=0;j<(dlsch->harq_processes[harq_pid]->C/8+1);j++) {
+      impp.macro_num=j;
+      nrLDPC_encoder(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,*Zc,Kb,Kr,BG,&impp);
     }
 
 

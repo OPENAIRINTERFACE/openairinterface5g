@@ -31,6 +31,7 @@
  */
 #ifndef SOFTMODEM_COMMON_H
 #define SOFTMODEM_COMMON_H
+#include "openair1/PHY/defs_common.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -164,6 +165,14 @@ extern "C"
 #define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
 #define SOFTMODEM_DOFORMS_BIT         (1<<15)
+#define SOFTMODEM_RECPLAY_BIT         (1<<16)
+#define SOFTMODEM_ENB_BIT             (1<<20)
+#define SOFTMODEM_GNB_BIT             (1<<21)
+#define SOFTMODEM_4GUE_BIT            (1<<22)
+#define SOFTMODEM_5GUE_BIT            (1<<23)
+#define SOFTMODEM_FUNC_BITS (SOFTMODEM_ENB_BIT | SOFTMODEM_GNB_BIT | SOFTMODEM_5GUE_BIT | SOFTMODEM_4GUE_BIT)
+#define MAPPING_SOFTMODEM_FUNCTIONS {{"enb",SOFTMODEM_ENB_BIT},{"gnb",SOFTMODEM_GNB_BIT},{"4Gue",SOFTMODEM_4GUE_BIT},{"5Gue",SOFTMODEM_5GUE_BIT}}
+
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
 #define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
@@ -172,7 +181,11 @@ extern "C"
 #define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
 #define IS_SOFTMODEM_DOFORMS         ( get_softmodem_optmask() & SOFTMODEM_DOFORMS_BIT)
-
+#define IS_SOFTMODEM_IQPLAYER        ( get_softmodem_optmask() & SOFTMODEM_RECPLAY_BIT)
+#define IS_SOFTMODEM_ENB_BIT         ( get_softmodem_optmask() & SOFTMODEM_ENB_BIT)
+#define IS_SOFTMODEM_GNB_BIT         ( get_softmodem_optmask() & SOFTMODEM_GNB_BIT)
+#define IS_SOFTMODEM_4GUE_BIT        ( get_softmodem_optmask() & SOFTMODEM_4GUE_BIT)
+#define IS_SOFTMODEM_5GUE_BIT        ( get_softmodem_optmask() & SOFTMODEM_5GUE_BIT)
 
 typedef struct {
   uint64_t       optmask;
@@ -195,7 +208,8 @@ typedef struct {
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
 extern softmodem_params_t *get_softmodem_params(void);
-extern void get_common_options(void);
+extern void get_common_options(uint32_t execmask);
+extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 #define SOFTMODEM_RTSIGNAL  (SIGRTMIN+1)
 extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];

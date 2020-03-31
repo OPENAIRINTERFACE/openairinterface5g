@@ -73,7 +73,7 @@ printf("nr_pusch_channel_estimation Ns %d p %d symbol %d\n", Ns, p, symbol);
 
 /*
 #ifdef DEBUG_CH
-  printf("PUSCH Channel Estimation : gNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", gNB_offset,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
+  printf("PUSCH Channel Estimation : ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n", ,ch_offset,symbol_offset,gNB->frame_parms.ofdm_symbol_size,
          gNB->frame_parms.Ncp,l,Ns,k, symbol);
 #endif
 */
@@ -117,7 +117,10 @@ printf("nr_pusch_channel_estimation Ns %d p %d symbol %d\n", Ns, p, symbol);
 
   //------------------generate DMRS------------------//
 
-  nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->dmrs_config_type);
+  if (pusch_pdu->transform_precoding) // if transform precoding is disabled
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
+  else
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, 0, pusch_pdu->dmrs_config_type);
 
   //------------------------------------------------//
 

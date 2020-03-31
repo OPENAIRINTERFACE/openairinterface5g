@@ -1671,10 +1671,10 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
 		       lte_frame_type_t frame_type,
 		       uint32_t X_u[64][839]);
 
-void compute_nr_prach_seq(nfapi_nr_config_request_scf_t *config,
-			  uint8_t fd_occasion,
-			  uint32_t X_u[64][839]);
-
+void compute_nr_prach_seq(uint8_t short_sequence,
+                          uint8_t num_sequences,
+                          uint8_t rootSequenceIndex,
+                          uint32_t X_u[64][839]);
 
 void init_prach_tables(int N_ZC);
 void init_nr_prach_tables(int N_ZC);

@@ -93,9 +93,7 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2
 
 
 
-#if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_gnb_task(void *args_p);
 
-#endif

@@ -83,12 +83,10 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 }
 
 void nr_ulsch_unscrambling(int16_t* llr,
-                         uint32_t size,
-                         uint8_t q,
-                         uint32_t Nid,
-                         uint32_t n_RNTI) 
-{
-printf("nr_ulsch_unscrambling n_RNTI %d\n", n_RNTI);
+                           uint32_t size,
+                           uint8_t q,
+                           uint32_t Nid,
+                           uint32_t n_RNTI) {
   uint8_t reset;
   uint32_t x1, x2, s=0;
 

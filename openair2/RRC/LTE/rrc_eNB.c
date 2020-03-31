@@ -154,21 +154,15 @@ init_SI(
           (int)configuration->N_RB_DL[CC_id]);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
     do_MIB_FeMBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
-#ifdef ENABLE_ITTI
                   configuration->N_RB_DL[CC_id],
-                  0 //additionalNonMBSFN
-#else
-                  50,0
-#endif
-                  ,0);
+                  0, //additionalNonMBSFN
+                  0);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = 0;
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS = (uint8_t *) malloc16(32);
     AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1_MBMS allocated\n",
                 PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = do_SIB1_MBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
-#if defined(ENABLE_ITTI)
-        , configuration
-#endif
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = do_SIB1_MBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id,
+         configuration
                                                                               );
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB1-MBMS\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP)
@@ -894,7 +888,6 @@ rrc_eNB_free_mem_UE_context(
   //uint8_t                            Status;
   //rnti_t                             rnti;
   //uint64_t                           random_ue_identity;
-#if defined(ENABLE_ITTI)
   //UE_S_TMSI                          Initialue_identity_s_TMSI;
   //EstablishmentCause_t               establishment_cause;
   //ReestablishmentCause_t             reestablishment_cause;
@@ -906,7 +899,6 @@ rrc_eNB_free_mem_UE_context(
   //uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   //transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   //rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
-#endif
 #endif
 }
 
@@ -4931,7 +4923,6 @@ check_handovers(
     if (ue_context_p->ue_context.Status == RRC_RECONFIGURED
         && ue_context_p->ue_context.handover_info != NULL &&
         ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_NO_EMPTY ) {
-#if defined(ENABLE_ITTI)
       MessageDef   *msg_p;
       int    result;
       protocol_ctxt_t  ctxt;
@@ -5062,7 +5053,6 @@ check_handovers(
 
       ue_context_p->ue_context.handover_info->endmark_state = ENDMARK_EMPTY;
       ue_context_p->ue_context.handover_info->state = HO_FORWARDING_COMPLETE;
-#endif
     }
   }
 }
@@ -5978,7 +5968,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   securityConfigHO->handoverType.choice.intraLTE.securityAlgorithmConfig = NULL; /* TODO: to be checked */
   securityConfigHO->handoverType.choice.intraLTE.keyChangeIndicator = 0;
   securityConfigHO->handoverType.choice.intraLTE.nextHopChainingCount = 0;
-#if defined(ENABLE_ITTI)
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
@@ -6011,7 +6000,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     dedicatedInfoNASList = NULL;
   }
 
-#endif
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
   memset(buffer, 0, RRC_BUF_SIZE);
@@ -6060,7 +6048,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   *_size = size = ho_size;
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Connection Reconfiguration handover\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
@@ -6070,8 +6057,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
       ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer = NULL;
     }
   }
-
-#endif
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration handover (bytes %d, UE id %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -8612,7 +8597,7 @@ printf("\n");
     unsigned char buffer[8192];
     int size;
 
-    ue_context = (rrc_eNB_ue_context_t *) get_first_ue_context(RC.rrc[enb_mod_idP]);
+    ue_context = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], m->rnti);
 
     ue_context->ue_context.nb_of_modify_endc_e_rabs = m->nb_e_rabs_admitted_tobeadded;
 
@@ -9016,9 +9001,6 @@ rrc_enb_task(
 //-----------------------------------------------------------------------------
 {
   rrc_enb_init();
-
-void rrc_endc_hack_init(void);
-rrc_endc_hack_init();
 
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");

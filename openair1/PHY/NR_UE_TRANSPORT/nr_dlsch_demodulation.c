@@ -159,14 +159,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   switch (type) {
   case SI_PDSCH:
-    pdsch_vars = ue->pdsch_vars_SI[ue->current_thread_id[nr_tti_rx]];
+    pdsch_vars = ue->pdsch_vars_SI;
     dlsch = &ue->dlsch_SI[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
     beamforming_mode  = 0;
     break;
 
   case RA_PDSCH:
-    pdsch_vars = ue->pdsch_vars_ra[ue->current_thread_id[nr_tti_rx]];
+    pdsch_vars = ue->pdsch_vars_ra;
     dlsch = &ue->dlsch_ra[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
     beamforming_mode  = 0;

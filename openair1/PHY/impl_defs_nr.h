@@ -483,9 +483,6 @@ typedef struct {
   uint8_t         startSymbolAndLength;
 } PUSCH_TimeDomainResourceAllocation_t;
 ////////////////////////////////////////////////////////////////////////////////################################
-typedef struct { // The IE PTRS-UplinkConfig is used to configure uplink Phase-Tracking-Reference-Signals (PTRS)
-
-} ptrs_UplinkConfig_t;
 typedef enum{
   maxCodeBlockGroupsPerTransportBlock_n2 = 2,
   maxCodeBlockGroupsPerTransportBlock_n4 = 4,
@@ -518,6 +515,12 @@ typedef enum {
   pusch_dmrs_pos3 = 3,
 } pusch_dmrs_AdditionalPosition_t;
 typedef enum {
+  offset00 = 0,
+  offset01 = 1,
+  offset10 = 2,
+  offset11 = 3,
+} ptrs_resource_elementoffset_t;
+typedef enum {
   pdsch_len1 = 1,
   pdsch_len2 = 2
 } pdsch_maxLength_t;
@@ -525,6 +528,22 @@ typedef enum {
   pusch_len1 = 1,
   pusch_len2 = 2
 } pusch_maxLength_t;
+typedef struct {
+  uint8_t ptrs_mcs1;
+  uint8_t ptrs_mcs2;
+  uint8_t ptrs_mcs3;
+} ptrs_time_density_t;
+typedef struct {
+  uint16_t n_rb0;
+  uint16_t n_rb1;
+} ptrs_frequency_density_t;
+typedef struct { // The IE PTRS-UplinkConfig is used to configure uplink Phase-Tracking-Reference-Signals (PTRS)
+  uint8_t  num_ptrs_ports;
+  ptrs_resource_elementoffset_t resourceElementOffset;
+  ptrs_time_density_t  timeDensity;
+  ptrs_frequency_density_t  frequencyDensity;
+  uint32_t  ul_ptrs_power;
+} ptrs_UplinkConfig_t;
 typedef struct { // The IE DMRS-DownlinkConfig is used to configure downlink demodulation reference signals for PDSCH
   pdsch_dmrs_type_t pdsch_dmrs_type;
   pdsch_dmrs_AdditionalPosition_t pdsch_dmrs_AdditionalPosition;
@@ -536,6 +555,7 @@ typedef struct { // The IE DMRS-UplinkConfig is used to configure uplink demodul
   pusch_dmrs_type_t pusch_dmrs_type;
   pusch_dmrs_AdditionalPosition_t pusch_dmrs_AdditionalPosition;
   pusch_maxLength_t pusch_maxLength;
+  ptrs_UplinkConfig_t ptrs_UplinkConfig;
   uint16_t scramblingID0;
   uint16_t scramblingID1;
 } dmrs_UplinkConfig_t;
@@ -620,6 +640,10 @@ typedef struct {
  * resourceAllocation
  */
   ul_resourceAllocation_t ul_resourceAllocation;
+/*
+ * DMRS-Uplinkconfig
+ */
+  dmrs_UplinkConfig_t dmrs_UplinkConfig;
 /*
  * rgb_Size
  */

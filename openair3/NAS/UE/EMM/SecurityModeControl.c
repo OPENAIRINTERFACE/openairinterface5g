@@ -286,7 +286,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
       user->emm_data->security->selected_algorithms.encryption = seea;
       user->emm_data->security->selected_algorithms.integrity  = seia;
 #if  defined(NAS_BUILT_IN_UE)
-      nas_itti_kenb_refresh_req(security_data->kenb.value);
+      nas_itti_kenb_refresh_req(security_data->kenb.value, user->ueid);
 #endif
 
     }

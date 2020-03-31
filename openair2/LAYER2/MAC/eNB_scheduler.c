@@ -57,9 +57,7 @@
 /* for fair round robin SCHED */
 #include "eNB_scheduler_fairRR.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "assertions.h"
 

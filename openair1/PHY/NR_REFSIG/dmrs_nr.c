@@ -111,6 +111,7 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 *              n                      index starting 0,1,...
 *              delta                  see Table 6.4.1.1.3
 *              duration_in_symbols    number of scheduled PUSCH ofdm symbols
+*              start_symbol           first symbol index in PUSCH allocation
 *              dmrs_UplinkConfig      DMRS uplink configuration
 *              mapping_type           PUSCH mapping type (A or B)
 *              ofdm_symbol_size       IFFT size
@@ -128,22 +129,23 @@ uint8_t is_dmrs_symbol(uint8_t l,
                        uint16_t n,
                        uint8_t delta,
                        uint8_t duration_in_symbols,
-                       dmrs_UplinkConfig_t *dmrs_UplinkConfig,
-                       uint8_t mapping_type,
+                       uint8_t dmrs_type,
                        uint16_t ofdm_symbol_size) {
 
-  uint8_t is_dmrs_freq, is_dmrs_time, dmrs_type, l0;
+  uint8_t is_dmrs_freq, is_dmrs_time, l0;
   int32_t l_prime_mask;
-  pusch_dmrs_AdditionalPosition_t additional_pos;
+  pusch_dmrs_AdditionalPosition_t additional_pos = pusch_dmrs_pos0;
+  pusch_maxLength_t pusch_maxLength = pusch_len1;
+  uint8_t mapping_type = typeB;
 
   is_dmrs_freq = 0;
   is_dmrs_time = 0;
-  dmrs_type = dmrs_UplinkConfig->pusch_dmrs_type;
-  additional_pos = dmrs_UplinkConfig->pusch_dmrs_AdditionalPosition;
+
+  AssertFatal(l >= 0,"Check DMRS configuration (start_symbol) !\n");
 
 
   l0 = get_l0_ul(mapping_type, 2);
-  l_prime_mask = get_l_prime(duration_in_symbols, mapping_type, additional_pos, dmrs_UplinkConfig->pusch_maxLength);
+  l_prime_mask = get_l_prime(duration_in_symbols, mapping_type, additional_pos, pusch_maxLength);
 
   if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%ofdm_symbol_size))
     is_dmrs_freq = 1;
@@ -157,7 +159,7 @@ uint8_t is_dmrs_symbol(uint8_t l,
   } else if ( (l==l0) || (((l_prime_mask>>l)&1) == 1 && l!=0) )
     is_dmrs_time = 1;
 
-  if (dmrs_UplinkConfig->pusch_maxLength == pusch_len2){
+  if (pusch_maxLength == pusch_len2){
 
     if (((l_prime_mask>>(l-1))&1) == 1 && l!=0 && l!=1)
       is_dmrs_time = 1;
@@ -370,7 +372,7 @@ void lte_gold_new(LTE_DL_FRAME_PARMS *frame_parms, uint32_t lte_gold_table[20][2
 *
 * NAME :         get_l0_ul
 *
-* PARAMETERS :   mapping_type : PUSCH mapping type
+* PARAMETERS :   mapping_type         : PUSCH mapping type
 *                dmrs_typeA_position  : higher layer parameter
 *
 * RETURN :       demodulation reference signal for PUSCH

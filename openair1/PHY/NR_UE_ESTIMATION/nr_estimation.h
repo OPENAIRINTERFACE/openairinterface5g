@@ -92,4 +92,5 @@ void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
 
 int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
 
+
 #endif

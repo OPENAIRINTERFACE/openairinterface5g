@@ -4,7 +4,7 @@ MODULE="riffa"
 KERNEL_VERSION=$(uname -r)
 RHR=/etc/redhat-release
 
-sudo apt-get install -y --allow-unauthenticated linux-headers-`uname -r`
+sudo apt-get install -y linux-headers-`uname -r`
 
 if lsmod | grep "$MODULE" &> /dev/null ; then
 	echo "Previous SYRIQ is loaded!"

@@ -139,7 +139,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     abs_symbol = Ns * frame_parms->symbols_per_slot + symbol;
     
     for (int idx_symb = Ns*frame_parms->symbols_per_slot; idx_symb < abs_symbol; idx_symb++)
-      rx_offset += (abs_symbol%(0x7<<frame_parms->numerology_index)) ? nb_prefix_samples : nb_prefix_samples0;
+      rx_offset += (idx_symb%(0x7<<frame_parms->numerology_index)) ? nb_prefix_samples : nb_prefix_samples0;
 
     rx_offset += frame_parms->ofdm_symbol_size * symbol;
 
@@ -211,10 +211,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 }
 
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
-                unsigned char symbol,
-                unsigned char Ns,
-                int sample_offset,
-                int no_prefix)
+                          unsigned char symbol,
+                          unsigned char Ns,
+                          int sample_offset,
+                          int no_prefix)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -394,12 +394,13 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
                    int sample_offset,
                    int no_prefix)
 {
-  uint32_t slot_offset;
-  uint32_t rxdata_offset;
+  int32_t slot_offset, rxdata_offset;
 
   unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   
+  int tmp_dft_in[8192] __attribute__ ((aligned (32)));
+
   void (*dft)(int16_t *,int16_t *, int);
 
   switch (frame_parms->ofdm_symbol_size) {
@@ -442,14 +443,26 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   
   slot_offset   = frame_parms->get_samples_slot_timestamp(Ns,frame_parms,0);
 
-  
   if(symbol == 0)
     rxdata_offset = slot_offset + nb_prefix_samples0 - SOFFSET;
   else
     rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
 
-  dft((int16_t *)&rxdata[rxdata_offset],
-       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+  if(sample_offset>rxdata_offset) {
+    memcpy((void *)tmp_dft_in,
+           (void *) &rxdata[frame_parms->samples_per_frame-sample_offset+rxdata_offset],
+           (sample_offset-rxdata_offset)*sizeof(int));
+
+    memcpy((void *)&tmp_dft_in[sample_offset-rxdata_offset],
+           (void *) &rxdata[0],
+           (frame_parms->ofdm_symbol_size-sample_offset+rxdata_offset)*sizeof(int));
+
+    dft((int16_t *)&tmp_dft_in,
+        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+  }
+  else
+    dft((int16_t *)&rxdata[rxdata_offset-sample_offset],
+        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
 
   return(0);
 }

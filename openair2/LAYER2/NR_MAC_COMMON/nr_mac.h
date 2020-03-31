@@ -213,5 +213,10 @@ typedef struct {
 #define UL_SCH_LCID_L_BSR                          0x3E
 #define UL_SCH_LCID_PADDING                        0x3F
 
+#define NR_MAX_NUM_LCID							   32
+#define NR_MAX_NUM_LCGID							8
+#define MAX_RLC_SDU_SUBHEADER_SIZE					3
+
 
 #endif /*__LAYER2_MAC_H__ */
+
