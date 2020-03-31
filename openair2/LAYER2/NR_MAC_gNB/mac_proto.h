@@ -130,9 +130,10 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp);
 
-void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15,
-                        nfapi_nr_pusch_pdu_t *pusch_pdu,
+void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
+                        nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                        nfapi_nr_pusch_pdu_t  *pusch_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
                         int *rnti_types);
