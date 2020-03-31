@@ -55,7 +55,8 @@
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-
+#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#include "SIMULATION/LTE_PHY/common_sim.h"
 //#define DEBUG_ULSIM
 
 PHY_VARS_gNB *gNB;
@@ -140,7 +141,7 @@ int main(int argc, char **argv)
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
   float target_error_rate = 0.01;
-  
+  int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
 
 
@@ -155,7 +156,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:L:")) != -1) {
+  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:PR:S:L:")) != -1) {
     switch (c) {
 
       /*case 'd':
@@ -309,9 +310,14 @@ int main(int argc, char **argv)
         printf("Setting SNR1 to %f\n", snr1);
         break;
 
-    case 'L':
-      loglvl = atoi(optarg);
-      break;	
+      case 'P':
+        print_perf=1;
+        opp_enabled=1;
+        break;
+
+      case 'L':
+        loglvl = atoi(optarg);
+        break;
 
       default:
         case 'h':
@@ -340,6 +346,7 @@ int main(int argc, char **argv)
           printf("-O oversampling factor (1,2,4,8,16)\n");
           printf("-R N_RB_DL\n");
           printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+          printf("-P Print ULSCH performances\n");
           exit(-1);
           break;
     }
@@ -524,6 +531,18 @@ int main(int argc, char **argv)
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
+      varArray_t *table_rx=initVarArray(1000,sizeof(double));
+      reset_meas(&gNB->phy_proc_rx);
+      reset_meas(&gNB->ulsch_decoding_stats);
+      reset_meas(&gNB->ulsch_deinterleaving_stats);
+      reset_meas(&gNB->ulsch_rate_unmatching_stats);
+      reset_meas(&gNB->ulsch_ldpc_decoding_stats);
+      reset_meas(&gNB->ulsch_unscrambling_stats);
+      reset_meas(&gNB->ulsch_channel_estimation_stats);
+      reset_meas(&gNB->ulsch_llr_stats);
+      reset_meas(&gNB->ulsch_channel_compensation_stats);
+      reset_meas(&gNB->ulsch_rbs_extraction_stats);
+
       UE_proc.nr_tti_tx = slot;
       UE_proc.frame_tx = frame;
 
@@ -654,12 +673,14 @@ int main(int argc, char **argv)
         gNB->UL_INFO.rx_ind.number_of_pdus = 0;
         gNB->UL_INFO.crc_ind.number_crcs = 0;
 
+        start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
 	if (n_trials==1)
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],frame_length_complex_samples_no_prefix,1,1);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+        start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
 
 	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
@@ -712,6 +733,20 @@ int main(int argc, char **argv)
       printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
       printf("*****************************************\n");
       printf("\n");
+
+      if (print_perf==1) {
+        printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
+        printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
+        printStatIndent(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
+        printStatIndent(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
+        printStatIndent(&gNB->ulsch_llr_stats,"ULSCH llr computation");
+        printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
+        printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+        printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
+        printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
+        printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
+        printf("\n");
+      }
 
       if(n_trials==1)
 	break;

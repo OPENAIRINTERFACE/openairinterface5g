@@ -242,16 +242,18 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
 
+  start_meas(&gNB->ulsch_unscrambling_stats);
   nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
                         G,
                         0,
                         pusch_pdu->data_scrambling_id,
                         pusch_pdu->rnti);
-
+  stop_meas(&gNB->ulsch_unscrambling_stats);
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
   //----------------------------------------------------------
 
+  start_meas(&gNB->ulsch_decoding_stats);
   ret = nr_ulsch_decoding(gNB,
                           ULSCH_id,
                           gNB->pusch_vars[ULSCH_id]->llr,
@@ -261,8 +263,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                           slot_rx,
                           harq_pid,
                           G);
+  stop_meas(&gNB->ulsch_decoding_stats);
 
-        
   if (ret > gNB->ulsch[ULSCH_id][0]->max_ldpc_iterations){
     LOG_I(PHY, "ULSCH %d in error\n",ULSCH_id);
     nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);

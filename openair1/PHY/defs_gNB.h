@@ -717,9 +717,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t phy_proc;
   */
   time_stats_t phy_proc_tx;
-  /*
   time_stats_t phy_proc_rx;
-  */
   time_stats_t rx_prach;
   /*
   time_stats_t ofdm_mod_stats;
@@ -735,18 +733,21 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_interleaving_stats;
   time_stats_t dlsch_segmentation_stats;
+
+  time_stats_t ulsch_decoding_stats;
+  time_stats_t ulsch_rate_unmatching_stats;
+  time_stats_t ulsch_ldpc_decoding_stats;
+  time_stats_t ulsch_deinterleaving_stats;
+  time_stats_t ulsch_unscrambling_stats;
+  time_stats_t ulsch_channel_estimation_stats;
+  time_stats_t ulsch_channel_compensation_stats;
+  time_stats_t ulsch_rbs_extraction_stats;
+  time_stats_t ulsch_llr_stats;
   /*
   time_stats_t rx_dft_stats;
-  time_stats_t ulsch_channel_estimation_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
-  time_stats_t ulsch_decoding_stats;
-  time_stats_t ulsch_demodulation_stats;
-  time_stats_t ulsch_rate_unmatching_stats;
-  time_stats_t ulsch_turbo_decoding_stats;
-  time_stats_t ulsch_deinterleaving_stats;
-  time_stats_t ulsch_demultiplexing_stats;
-  time_stats_t ulsch_llr_stats;
   */
+
 } PHY_VARS_gNB;
 
 #endif
