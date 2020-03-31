@@ -546,7 +546,9 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 
 
-void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15,
+      nfapi_nr_pusch_pdu_t *pusch_pdu,
+      nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 			dci_pdu_rel15_t *dci_pdu_rel15,
 			int *dci_formats,
 			int *rnti_types
@@ -554,6 +556,7 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
   
   uint16_t N_RB = pdcch_pdu_rel15->BWPSize;
   uint8_t fsize=0, pos=0;
+  uint8_t nbits=0;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 
@@ -561,6 +564,7 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
     AssertFatal(pdcch_pdu_rel15->PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
 
     int dci_size = pdcch_pdu_rel15->PayloadSizeBits[d];
+    pos = 0;
     
     /// Payload generation
     switch(dci_formats[d]) {
@@ -864,6 +868,110 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 	  
 	    }
       break;
+
+    case NR_DL_DCI_FORMAT_1_1:
+      // Indicating a DL DCI format 1bit
+      pos=1;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator&1)<<(dci_size-pos);
+
+      // Carrier indicator
+      if (!dci_pdu_rel15->carrier_indicator) {// TODO: check if UE configured with CrossCarrierSchedulingConfig
+        pos+=3;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->carrier_indicator&0x7)<<(dci_size-pos);
+      }
+
+      // BWP indicator
+      uint8_t n_bwp_rrc = 0; // TODO: get this parameter from RRC
+      
+      nbits = (uint8_t)((n_bwp_rrc < 4) ? ceil(log2(n_bwp_rrc+1)) : ceil(log2(n_bwp_rrc))); 
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->bwp_indicator&((1<<nbits)-1)<<(dci_size-pos);
+
+      // Frequency domain resource assignment
+      uint16_t numRBG = 0; // TODO: replace with N_RBG (couldn't find it)
+
+      if (pdsch_pdu_rel15->resourceAlloc == 0)
+        nbits = numRBG;
+      else if (pdsch_pdu_rel15->resourceAlloc == 1)
+        nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      else
+        nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
+
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_domain_assignment&((1<<nbits)-1)) << (dci_size-pos);
+
+      // Time domain resource assignment
+      uint8_t num_entries;
+      if (0) // TODO: check if pdschTimeDomainAllocationList exists
+        num_entries = 0; // TODO: replace with number of entries in pdschTimeDomainAllocationList
+      else
+        num_entries = 16;
+
+      nbits = (int)ceil(log2(num_entries));
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->time_domain_assignment&((1<<nbits)-1)) << (dci_size-pos);
+
+      // VRB-to-PRB mapping
+      if (pdsch_pdu_rel15->resourceAlloc == 1) {
+        pos++;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping&1)<<(dci_size-pos);
+      }
+      
+      // PRB bundling size indicator
+      if (0) {// TODO: check if prb-BundlingType is dynamic
+        pos++;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->prb_bundling_size_indicator&1)<<(dci_size-pos);
+      }
+
+      // Rate matching indicator
+      // TODO: check for rateMatchPatternGroup
+
+      // ZP CSI-RS trigger
+      uint8_t nZP = 0; // TODO: replace with number of aperiodic ZP CSI-RS resource sets
+      nbits = (int)ceil(log2(nZP+1));
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->zp_csi_rs_trigger&((1<<nbits)-1)) << (dci_size-pos);
+
+      // MCS 5bit
+      pos+=5;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs&0x1f)<<(dci_size-pos);
+      
+      // New data indicator 1bit
+      pos++;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->ndi&1)<<(dci_size-pos);
+      
+      // Redundancy version  2bit
+      pos+=2;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->rv&0x3)<<(dci_size-pos);
+
+      // HARQ process number  4bit
+      pos+=4;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->harq_pid&0xf)<<(dci_size-pos);
+
+      // Downlink assignment index
+      if (0) { // TODO: check if UE has more than 1 serving cell AND pdsch-HARQ-ACK-Codebook is dynamic
+        pos+=4;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->dai&0xf)<<(dci_size-pos);
+      } else if (0) { // TODO: check if UE had only 1 serving cell AND "
+        pos+=2;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->dai&0x3)<<(dci_size-pos);
+      }
+
+      // TPC command for scheduled PUCCH  2bit
+      pos+=2;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->tpc&0x3)<<(dci_size-pos);
+      
+      // PUCCH resource indicator  3bit
+      pos+=3;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->pucch_resource_indicator&0x7)<<(dci_size-pos);
+
+      // PDSCH-to-HARQ_feedback timing indicator
+      uint8_t I = 0; // TODO: replace with number of entries in dl-DataToUL-ACK
+      nbits = (int)ceil(log2(I));
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator&((1<<nbits)-1))<<(dci_size-pos);
+
+        
     }
   }
 }
