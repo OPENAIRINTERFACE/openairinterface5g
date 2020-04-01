@@ -123,4 +123,26 @@ void rx_nr_prach_ru(RU_t *ru,
 		    int frame,
 		    int subframe);
 
+void nr_decode_pucch1(int32_t **rxdataF,
+                      pucch_GroupHopping_t pucch_GroupHopping,
+                      uint32_t n_id,       // hoppingID higher layer parameter
+                      uint64_t *payload,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      int16_t amp,
+                      int nr_tti_tx,
+                      uint8_t m0,
+                      uint8_t nrofSymbols,
+                      uint8_t startingSymbolIndex,
+                      uint16_t startingPRB,
+                      uint16_t startingPRB_intraSlotHopping,
+                      uint8_t timeDomainOCC,
+                      uint8_t nr_bit);
+
+void nr_decode_pucch0(int32_t **rxdataF,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      int slot,
+                      nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
+                      nfapi_nr_pucch_pdu_t* pucch_pdu);
+
+
 #endif /*__NR_TRANSPORT__H__*/

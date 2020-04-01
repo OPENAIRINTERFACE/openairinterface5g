@@ -1516,6 +1516,7 @@ set(PHY_SRC_UE
   ${PHY_SMALLBLOCKSRC}
   ${PHY_NR_CODINGIF}
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/pucch_rx.c 
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_uci_tools_common.c
   )
   set(PHY_NR_UE_SRC
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
@@ -1539,6 +1540,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dci_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dci_tools_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/pucch_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_uci_tools_common.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_ulsch_ue.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/ul_ref_seq_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c

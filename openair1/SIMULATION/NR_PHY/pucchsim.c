@@ -87,12 +87,13 @@ int main(int argc, char **argv)
   uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
   int nr_tti_tx=0; 
-  uint64_t actual_payload=0,payload_received;//payload bits b7b6...b2b1b0 where b7..b3=0 b2b1=HARQ b0 is SR. payload maximum value is 7 for pucch format 0 
+  uint64_t actual_payload=0,payload_received;
   int nr_bit=1; // maximum value possible is 2
   uint8_t m0=0;// higher layer paramater initial cyclic shift
   uint8_t nrofSymbols=1; //number of OFDM symbols can be 1-2 for format 1
   uint8_t startingSymbolIndex=0; // resource allocated see 9.2.1, 38.213 for more info.should be actually present in the resource set provided
   uint16_t startingPRB=0,startingPRB_intraSlotHopping=0; //PRB number not sure see 9.2.1, 38.213 for more info. Should be actually present in the resource set provided
+  uint32_t hoppingId=40;
   uint8_t timeDomainOCC=0;
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
   
@@ -114,7 +115,7 @@ int main(int argc, char **argv)
   logInit();
   set_glog(loglvl);
 
-  while ((c = getopt (argc, argv, "f:hA:f:g:i:P:b:T:n:o:s:S:x:y:z:N:F:GR:IL")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL")) != -1) {
     switch (c) {
     case 'f':
       //write_output_file=1;
@@ -257,11 +258,23 @@ int main(int argc, char **argv)
     case 'i':
       nrofSymbols=(uint8_t)atoi(optarg);
       break;
+    case 'I':
+      startingSymbolIndex=(uint8_t)atoi(optarg);
+      break;
+    case 'r':
+      startingPRB=atoi(optarg);
+      break;
     case 'P':
       format=atoi(optarg);
       break;
+    case 'm':
+      m0=atoi(optarg);
+      break;
     case 'b':
       nr_bit=atoi(optarg);
+      break;
+    case 'B':
+      actual_payload=atoi(optarg);
       break;
     case 'T':
       nacktoack_flag=(uint8_t)atoi(optarg);
@@ -292,8 +305,12 @@ int main(int argc, char **argv)
       printf("-f Output filename (.txt format) for Pe/SNR results\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-i Enter number of ofdm symbols for pucch\n");
+      printf("-I Starting symbol index for pucch\n");
+      printf("-r PUCCCH starting PRB\n");
       printf("-P Enter the format of PUCCH\n");
       printf("-b number of HARQ bits (1-2)\n");
+      printf("-B payload to be transmitted on PUCCH\n");
+      printf("-m initial cyclic shift m0\n");
       printf("-T to check nacktoack miss for format 1");
       exit (-1);
       break;
@@ -304,6 +321,16 @@ int main(int argc, char **argv)
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
+  if((format!=0) && (format!=1)){
+    printf("PUCCH format %d not supported\n",format);
+    exit(0); 
+  }
+
+  AssertFatal((nr_bit<3)&&(actual_payload<4),"Only format 0 and 1 currently supported. 2 bits max supported");
+
+  if (nr_bit==1) actual_payload = actual_payload&1;
+
+  printf("Transmitted payload is %ld\n",actual_payload);
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
@@ -398,6 +425,7 @@ int main(int argc, char **argv)
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
+  UE->pucch_config_common_nr->hoppingId = hoppingId;
   //phy_init_nr_top(UE); //called from init_nr_ue_signal
                       
   UE->perfect_ce = 0;
@@ -414,35 +442,15 @@ int main(int argc, char **argv)
   startingPRB_intraSlotHopping=N_RB_DL-1;
   pucch_GroupHopping_t PUCCH_GroupHopping=UE->pucch_config_common_nr->pucch_GroupHopping;
   uint32_t n_id=UE->pucch_config_common_nr->hoppingId;
-  if((format!=0) && (format!=1)){
-    printf("format not supported\n");
-    exit(0); 
+
+  if(format==0){
+  // for now we are not considering SR just HARQ-ACK
+    if(nr_bit==1)
+      mcs=table1_mcs[actual_payload];
+    else if(nr_bit==2)
+      mcs=table2_mcs[actual_payload];
   }
-  if(nacktoack_flag==0){ 
-    if(format==0){
-      if(nr_bit==1){
-        actual_payload=2;
-        mcs=table1_mcs[actual_payload];
-      }
-      else if(nr_bit==2){
-        actual_payload=6;
-        mcs=table2_mcs[actual_payload];
-      }
-      else{
-        printf("Number of HARQ bits possible is 1-2\n");
-        exit(0);
-      }
-    }
-    else {
-      if(nr_bit==1)
-        actual_payload=1;
-      else if(nr_bit==2)
-        actual_payload=3;
-      else{
-        printf("number of bits carried by PUCCH format1 is 1-2\n");
-      }
-    }
-  }   
+
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     ack_nack_errors=0;
     n_errors = 0;
@@ -488,6 +496,7 @@ int main(int argc, char **argv)
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
+    printf("Decoded payload is %ld\n",payload_received);
     printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,n_errors);
     if((float)ack_nack_errors/(float)(nr_bit*n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");

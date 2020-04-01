@@ -80,12 +80,15 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
+
 int configure_fapi_dl_pdu(int Mod_id,
                          int *CCEIndeces,
                          nfapi_nr_dl_tti_request_body_t *dl_req,
+                         NR_sched_pucch *pucch_sched,
                          uint8_t *mcsIndex,
                          uint16_t *rbSize,
                          uint16_t *rbStart);
+
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types);
 
@@ -100,11 +103,24 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
+                                   NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
 void nr_schedule_uss_ulsch_phytest(int Mod_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP);
+
+void nr_update_pucch_scheduling(int Mod_idP,
+                                int UE_id,
+                                frame_t frameP,
+                                sub_frame_t slotP,
+                                int slots_per_tdd,
+                                NR_sched_pucch *sched_pucch);
+
+void get_pdsch_to_harq_feedback(int Mod_idP,
+                                int UE_id,
+                                NR_SearchSpace__searchSpaceType_PR ss_type,
+                                uint8_t *pdsch_to_harq_feedback);
   
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                                   nr_scs_e scs_common,
@@ -125,6 +141,7 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_config_request_scf_t cfg);
 */
 
+
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                         int ss_type,
                         NR_ServingCellConfigCommon_t *scc,
@@ -137,6 +154,15 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
                         int *rnti_types);
+
+void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+			NR_ServingCellConfigCommon_t *scc,
+			NR_BWP_Uplink_t *bwp,
+                        uint8_t pucch_resource,
+                        uint16_t O_uci,
+                        uint16_t O_ack,
+                        uint8_t SR_flag);
+
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 

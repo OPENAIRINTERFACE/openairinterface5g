@@ -563,14 +563,199 @@ uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {
   return (uint8_t)ceil((bwp_size+(bwp_start % rbg_size))/rbg_size);
 }
 
+
+// This function configures pucch pdu fapi structure
+void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+			NR_ServingCellConfigCommon_t *scc,
+			NR_BWP_Uplink_t *bwp,
+                        uint8_t pucch_resource,
+                        uint16_t O_uci,
+                        uint16_t O_ack,
+                        uint8_t SR_flag) {
+
+  NR_PUCCH_Config_t *pucch_Config;
+  NR_PUCCH_Resource_t *pucchres;
+  NR_PUCCH_ResourceSet_t *pucchresset;
+  NR_PUCCH_FormatConfig_t *pucchfmt;
+  NR_PUCCH_ResourceId_t *resource_id = NULL;
+
+  long *id0 = NULL;
+  int n_list, n_set;
+  uint16_t N2,N3;
+  int res_found = 0;
+
+  pucch_pdu->bit_len_harq = O_ack;
+
+  if (bwp) { // This is not the InitialBWP
+
+    NR_PUSCH_Config_t *pusch_Config = bwp->bwp_Dedicated->pusch_Config->choice.setup;
+    long *pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
+
+    if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+      id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
+    if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+      id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
+
+    // hop flags and hopping id are valid for any BWP
+    switch (bwp->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping){
+      case 0 :
+        // if neither, both disabled
+        pucch_pdu->group_hop_flag = 0;
+        pucch_pdu->sequence_hop_flag = 0;
+        break;
+      case 1 :
+        // if enable, group enabled
+        pucch_pdu->group_hop_flag = 1;
+        pucch_pdu->sequence_hop_flag = 0;
+        break;
+      case 2 :
+        // if disable, sequence disabled
+        pucch_pdu->group_hop_flag = 0;
+        pucch_pdu->sequence_hop_flag = 1;
+        break;
+      default:
+        AssertFatal(1==0,"Group hopping flag %ld undefined (0,1,2) \n", bwp->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping);
+    }
+
+    if (bwp->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId != NULL)
+      pucch_pdu->hopping_id = *bwp->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId;
+    else
+      pucch_pdu->hopping_id = *scc->physCellId;
+
+    pucch_pdu->bwp_size  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+    pucch_pdu->subcarrier_spacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+    pucch_pdu->cyclic_prefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
+
+    pucch_Config = bwp->bwp_Dedicated->pucch_Config->choice.setup;
+
+    AssertFatal(pucch_Config->resourceSetToAddModList!=NULL,
+		"PUCCH resourceSetToAddModList is null\n");
+
+    n_set = pucch_Config->resourceSetToAddModList->list.count; 
+    AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
+
+    N2 = 2;
+    // procedure to select pucch resource id from resource sets according to 
+    // number of uci bits and pucch resource indicator pucch_resource
+    // ( see table 9.2.3.2 in 38.213)
+    for (int i=0; i<n_set; i++) {
+      pucchresset = pucch_Config->resourceSetToAddModList->list.array[i];
+      n_list = pucchresset->resourceList.list.count;
+      if (pucchresset->pucch_ResourceSetId == 0 && O_uci<3) {
+        if (pucch_resource < n_list)
+          resource_id = pucchresset->resourceList.list.array[pucch_resource];
+        else 
+          AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
+      }
+      else {
+        N3 = pucchresset->maxPayloadMinus1!= NULL ?  *pucchresset->maxPayloadMinus1 : 1706;
+        if (N2<O_uci && N3>O_uci) {
+          if (pucch_resource < n_list)
+            resource_id = pucchresset->resourceList.list.array[pucch_resource];
+          else 
+            AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
+        }
+        else N2 = N3;
+      }
+    }
+
+    AssertFatal(resource_id!=NULL,"Couldn-t find any matching PUCCH resource in the PUCCH resource sets");
+
+    AssertFatal(pucch_Config->resourceToAddModList!=NULL,
+		"PUCCH resourceToAddModList is null\n");
+
+    n_list = pucch_Config->resourceToAddModList->list.count; 
+    AssertFatal(n_list>0,"PUCCH resourceToAddModList is empty\n");
+
+    // going through the list of PUCCH resources to find the one indexed by resource_id
+    for (int i=0; i<n_list; i++) {
+      pucchres = pucch_Config->resourceToAddModList->list.array[i];
+      if (pucchres->pucch_ResourceId == *resource_id) {
+        res_found = 1;
+        pucch_pdu->prb_start = pucchres->startingPRB;
+        // FIXME why there is only one frequency hopping flag
+        // what about inter slot frequency hopping?
+        pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
+        pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
+        switch(pucchres->format.present) {
+          case NR_PUCCH_Resource__format_PR_format0 :
+            pucch_pdu->format_type = 0;
+            pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format0->initialCyclicShift;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format0->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format0->startingSymbolIndex;
+            pucch_pdu->sr_flag = SR_flag;
+            break;
+          case NR_PUCCH_Resource__format_PR_format1 :
+            pucch_pdu->format_type = 1;
+            pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format1->initialCyclicShift;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format1->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format1->startingSymbolIndex;
+            pucch_pdu->time_domain_occ_idx = pucchres->format.choice.format1->timeDomainOCC;
+            pucch_pdu->sr_flag = SR_flag;
+            break;
+          case NR_PUCCH_Resource__format_PR_format2 :
+            pucch_pdu->format_type = 2;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format2->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format2->startingSymbolIndex;
+            pucch_pdu->prb_size = pucchres->format.choice.format2->nrofPRBs;
+            pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
+            pucch_pdu->dmrs_scrambling_id = id0!= NULL ? *id0 : *scc->physCellId;
+            break;
+          case NR_PUCCH_Resource__format_PR_format3 :
+            pucch_pdu->format_type = 3;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format3->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format3->startingSymbolIndex;
+            pucch_pdu->prb_size = pucchres->format.choice.format3->nrofPRBs;
+            pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
+            if (pucch_Config->format3 == NULL) {
+              pucch_pdu->pi_2bpsk = 0;
+              pucch_pdu->add_dmrs_flag = 0;
+            }
+            else {
+              pucchfmt = pucch_Config->format3->choice.setup;
+              pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
+              pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
+            }
+            break;
+          case NR_PUCCH_Resource__format_PR_format4 :
+            pucch_pdu->format_type = 4;
+            pucch_pdu->nr_of_symbols = pucchres->format.choice.format4->nrofSymbols;
+            pucch_pdu->start_symbol_index = pucchres->format.choice.format4->startingSymbolIndex;
+            pucch_pdu->pre_dft_occ_len = pucchres->format.choice.format4->occ_Length;
+            pucch_pdu->pre_dft_occ_idx = pucchres->format.choice.format4->occ_Index;
+            pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
+            if (pucch_Config->format3 == NULL) {
+              pucch_pdu->pi_2bpsk = 0;
+              pucch_pdu->add_dmrs_flag = 0;
+            }
+            else {
+              pucchfmt = pucch_Config->format3->choice.setup;
+              pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
+              pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
+            }
+            break;
+          default :
+            AssertFatal(1==0,"Undefined PUCCH format \n");
+        }
+      }
+    }
+    AssertFatal(res_found==1,"No PUCCH resource found corresponding to id %ld\n",*resource_id);
+  }  
+  else { // this is for InitialBWP
+    AssertFatal(1==0,"Fill in InitialBWP PUCCH configuration\n");
+  }
+
+}
+
+
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15,
       nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
       nfapi_nr_pusch_pdu_t  *pusch_pdu,
 			dci_pdu_rel15_t *dci_pdu_rel15,
 			int *dci_formats,
-			int *rnti_types
-			) {
+			int *rnti_types) {
   
   NR_PDSCH_Config_t *pdsch_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup;
   uint16_t N_RB = pdcch_pdu_rel15->BWPSize;
@@ -1142,6 +1327,171 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 		  0);
   return -1;
 }
+
+
+void get_pdsch_to_harq_feedback(int Mod_idP,
+                                int UE_id,
+                                NR_SearchSpace__searchSpaceType_PR ss_type,
+                                uint8_t *pdsch_to_harq_feedback) {
+
+  int bwp_id=1;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+
+  NR_SearchSpace_t *ss;
+
+  // common search type uses DCI format 1_0
+  if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
+    for (int i=0; i<8; i++)
+      pdsch_to_harq_feedback[i] = i+1;
+  }
+  else {
+    // searching for a ue specific search space
+    int found=0;
+
+    for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
+      ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+      AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
+      AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
+      if (ss->searchSpaceType->present == ss_type) {
+	found=1;
+	break;
+      }
+    }
+    AssertFatal(found==1,"Couldn't find a ue specific searchspace\n");
+    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
+      for (int i=0; i<8; i++)
+        pdsch_to_harq_feedback[i] = i+1;
+    }
+    else {
+      if(ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK != NULL)
+        pdsch_to_harq_feedback = (uint8_t *)ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK;
+      else
+        AssertFatal(found==1,"There is no allocated dl_DataToUL_ACK for pdsch to harq feedback\n");
+    }
+  }
+}
+
+
+// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
+void nr_update_pucch_scheduling(int Mod_idP,
+                                int UE_id,
+                                frame_t frameP,
+                                sub_frame_t slotP,
+                                int slots_per_tdd,
+                                NR_sched_pucch *sched_pucch) {
+
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  int first_ul_slot_tdd,k;
+  NR_sched_pucch *curr_pucch;
+  uint8_t pdsch_to_harq_feedback[8];
+  int found = 0;
+  int i = 0;
+  int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
+    nr_ulmix_slots++;
+
+  // this is hardcoded for now as ue specific
+  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  get_pdsch_to_harq_feedback(Mod_idP,UE_id,ss_type,pdsch_to_harq_feedback);
+
+  // if the list of pucch to be scheduled is empty
+  if (UE_list->UE_sched_ctrl[UE_id].sched_pucch == NULL) {
+    sched_pucch->frame = frameP;
+    sched_pucch->next_sched_pucch = NULL;
+    sched_pucch->dai_c = 1;
+    sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+    if ( nr_ulmix_slots > 0 ) {
+      // first pucch occasion in first UL or MIXED slot
+      first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+      for (k=0; k<nr_ulmix_slots; k++) { // for each possible UL or mixed slot
+        while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+          if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
+            found = 1;
+          if (found == 0) i++;
+        }
+        if (found == 1) break;
+      }
+      if (found == 1) {
+        // computing slot in which pucch is scheduled
+        sched_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
+        sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+      }
+      else
+        AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
+    }
+    else
+      AssertFatal(1==0,"No Uplink Slots in this Frame\n");
+
+    UE_list->UE_sched_ctrl[UE_id].sched_pucch = sched_pucch;
+  }
+  else {  // to be tested
+    curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+    if (curr_pucch->dai_c<11) {     // we are scheduling at most 11 harq-ack in the same pucch
+      while (i<8 && found == 0)  {  // look if timing indicator is among allowed values for current pucch
+        if (pdsch_to_harq_feedback[i]==(curr_pucch->ul_slot % slots_per_tdd)-(slotP % slots_per_tdd))
+          found = 1;
+        if (found == 0) i++;
+      }
+      if (found == 1) {  // scheduling this harq-ack in current pucch
+        sched_pucch = curr_pucch;
+        sched_pucch->dai_c = 1 + sched_pucch->dai_c;
+        sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+      }
+    }
+    if (curr_pucch->dai_c==11 || found == 0) { // if current pucch is full or no timing indicator allowed
+      // look for pucch occasions in other UL of mixed slots
+      for (k=scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots; k<slots_per_tdd; k++) { // for each possible UL or mixed slot
+        if (k!=(curr_pucch->ul_slot % slots_per_tdd)) { // skip current scheduled slot (already checked)
+          i = 0;
+          while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+            if (pdsch_to_harq_feedback[i]==k-(slotP % slots_per_tdd))
+              found = 1;
+            if (found == 0) i++;
+          }
+          if (found == 1) {
+            if (k<(curr_pucch->ul_slot % slots_per_tdd)) { // we need to add a pucch occasion before current pucch
+              sched_pucch->frame = frameP;
+              sched_pucch->ul_slot =  k + (slotP - (slotP % slots_per_tdd));
+              sched_pucch->next_sched_pucch = curr_pucch;
+              sched_pucch->dai_c = 1;
+              sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+              sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+              UE_list->UE_sched_ctrl[UE_id].sched_pucch = sched_pucch;
+            }
+            else {
+              while (curr_pucch->next_sched_pucch != NULL && k!=(curr_pucch->ul_slot % slots_per_tdd))
+                curr_pucch = curr_pucch->next_sched_pucch;
+              if (curr_pucch == NULL) {  // creating a new item in the list
+                sched_pucch->frame = frameP;
+                sched_pucch->next_sched_pucch = NULL;
+                sched_pucch->dai_c = 1;
+                sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+                sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+                sched_pucch->ul_slot = k + (slotP - (slotP % slots_per_tdd));
+                curr_pucch->next_sched_pucch = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
+                curr_pucch->next_sched_pucch = sched_pucch;
+              }
+              else {
+                if (curr_pucch->dai_c==11)
+                  found = 0; // if pucch at index k is already full we have to find a new one in a following occasion
+                else { // scheduling this harq-ack in current pucch
+                  sched_pucch = curr_pucch;
+                  sched_pucch->dai_c = 1 + sched_pucch->dai_c;
+                  sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
