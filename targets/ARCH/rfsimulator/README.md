@@ -106,6 +106,24 @@ Note:
 
 In the UE, you can add `-d` option to get the softscope.
 
+### Testing IP traffic (ping and iperf)
+
+```
+ping -I oaitun_enb1 10.0.1.2 (from gNB mchine)
+ping -I oaitun_ue1 10.0.1.1 (from nrUE mchine)
+``` 
+
+```iperf (Downlink):
+Server nrUE machine: iperf -s -i 1 -u -B 10.0.1.2
+Client gNB machine: iperf -c 10.0.1.2 -u -b 0.1M --bind 10.0.1.1
+```
+
+```iperf (Uplink):
+Server gNB machine: iperf -s -i 1 -u -B 10.0.1.1
+Client nrUE machine: iperf -c 10.0.1.1 -u -b 0.1M --bind 10.0.1.2
+Note: iperf tests cannot be performed only when running gNB and nrUE on separate hosts. 
+```
+
 ### Store and replay
 
 You can store emitted I/Q samples. If you set the option `saviq`, the simulator will write all the I/Q samples into this file. Then, you can replay with the executable `replay_node`.
