@@ -1627,7 +1627,7 @@ fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
                         uint8_t resource_allocation_type,
                         uint8_t
                         virtual_resource_block_assignment_flag,
-                        uint16_t resource_block_coding,
+                        uint32_t resource_block_coding,
                         uint8_t modulation,
                         uint8_t redundancy_version,
                         uint8_t transport_blocks,

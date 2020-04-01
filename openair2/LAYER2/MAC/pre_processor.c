@@ -287,6 +287,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   int last_UE_id = -1;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    const UE_TEMPLATE *ue_template = &UE_info->UE_template[CC_id][UE_id];
 
     /* initialize per-UE scheduling information */
     ue_sched_ctrl->pre_nb_available_rbs[CC_id] = 0;
@@ -300,6 +301,17 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     }
     if (UE_info->active[UE_id] != TRUE) {
       LOG_E(MAC, "UE %d RNTI %x is NOT active!\n", UE_id, rnti);
+      continue;
+    }
+    if (ue_template->rach_resource_type > 0) {
+      LOG_D(MAC,
+            "UE %d is RACH resource type %d\n",
+            UE_id,
+            ue_template->rach_resource_type);
+      continue;
+    }
+    if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_CONNECTED) {
+      LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n", UE_id);
       continue;
     }
 
