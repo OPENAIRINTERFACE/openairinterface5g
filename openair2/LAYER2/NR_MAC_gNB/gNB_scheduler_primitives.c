@@ -544,7 +544,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
   }
 }
 
-// TODO: Move the following 2 functions somewhere that UE can also use
+// TODO: Move the following 3 functions somewhere that UE can also use
 // Table 5.1.2.2.1-1 38.214
 uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
   
@@ -561,6 +561,16 @@ uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {
   uint8_t rbg_size = getRBGSize(bwp_size,rbg_size_config);
 
   return (uint8_t)ceil((bwp_size+(bwp_start % rbg_size))/rbg_size);
+}
+
+uint8_t getAntPortBitWidth(NR_SetupRelease_DMRS_DownlinkConfig_t *typeA, NR_SetupRelease_DMRS_DownlinkConfig_t *typeB) {
+
+  uint8_t nbitsA, nbitsB, nbits = 0;
+  if (typeA != NULL) nbitsA = (typeA->choise.setup->maxLength[0]==0) ? 4 : 5;
+  if (typeB != NULL) nbitsB = (typeB->choise.setup->maxLength[0]==0) ? 5 : 6;
+  if ((typeA != NULL) && (typeB != NULL)) nbits = (nbitsA > nbitsB) ? nbitsA : nbitsB;
+
+  return nbits;
 }
 
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
@@ -1003,7 +1013,45 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
       pos+=nbits;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator&((1<<nbits)-1))<<(dci_size-pos);
 
-        
+      // Antenna ports
+      NR_SetupRelease_DMRS_DownlinkConfig_t *typeA = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA;
+      NR_SetupRelease_DMRS_DownlinkConfig_t *typeB = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB;
+      nbits = getAntPortBitWidth(typeA,typeB);
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->antenna_ports&((1<<nbits)-1))<<(dci_size-pos);
+
+      // TCI
+      long *isTciEnable = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
+      if (isTciEnable != NULL) {
+        pos+=3;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->transmission_configuration_indication&0x7)<<(dci_size-pos);
+      }
+
+      // SRS request
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig==NULL)
+        nbits = 2;
+      else
+        nbits = 3;
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->srs_request&((1<<nbits)-1))<<(dci_size-pos);
+
+      // CBG transmission information
+      uint8_t maxCBGperTB = (secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_ServingCellConfig->choise.setup->codeBlockGroupTransmission->choise.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
+      long *maxCWperDCI_rrc = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI;
+      uint8_t maxCWperDCI = (maxCWperDCI_rrc == NULL) ? 1 : *maxCWperDCI_rrc;
+      nbits = maxCBGperTB * maxCWperDCI;
+      pos+=nbits;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->cbgti&((1<<nbits)-1))<<(dci_size-pos);
+
+      // CBG flushing out information
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_ServingCellConfig->choise.setup->codeBlockGroupTransmission->choise.setup->codeBlockGroupFlushIndicator) {
+        pos+=1;
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->cbgfi&0x1)<<(dci_size-pos);
+      }
+
+      // DMRS sequence init
+      pos+=1;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization&0x1)<<(dci_size-pos);
     }
   }
 }
