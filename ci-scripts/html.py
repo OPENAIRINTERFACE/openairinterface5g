@@ -48,12 +48,12 @@ class HTMLManagement():
 		
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
+		self.ranAllowMerge = False
+		self.nbTestXMLfiles = 0
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
 		self.testXMLfiles = []
-		self.htmlHeaderCreated = False
-		self.htmlFooterCreated = False
 
 #-----------------------------------------------------------
 # Setters and Getters
@@ -110,6 +110,9 @@ class HTMLManagement():
 
 	def SetnbTestXMLfiles(self, nb):
 		self.nbTestXMLfiles = nb
+	def GetnbTestXMLfiles(self):
+		return self.nbTestXMLfiles
+
 
 	def SettestXMLfiles(self, xmlFile):
 		self.testXMLfiles.append(xmlFile)
