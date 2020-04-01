@@ -3,6 +3,12 @@ This is an RF simulator that allows to test OAI without an RF board. It replaces
 
 As much as possible, it works like an RF board, but not in real-time: It can run faster than real-time if there is enough CPU, or slower (it is CPU-bound instead of real-time RF sampling-bound).
 
+It can be run either in:
+
+- "noS1" mode: the generated IP traffic is sent and received between gNB and UE IP tunnel interfaces ("oaitun") by applications like ping and iperf
+- "phy-test" mode: random UL and DL traffic is generated at every scheduling opportunity 
+
+
 # build
 
 ## From [build_oai](../../../doc/BUILD.md) script
@@ -84,16 +90,19 @@ make rfsimulator
 ### Launch gNB in one window
 
 ```bash
-sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test
 ```
 
 ### Launch UE in another window
 
 ```bash
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C 3510000000 
+sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path ../../../ci-scripts/rrc-files 
 ```
+Note:
+1. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts
+2. the --rrc_config_path parameter can be omitted (but not necessarily) if the gNB and nrUE run on the same host, in which case the gNB provides the nrUE with the necessary rrc configuration
+3. to enable the noS1 mode --noS1 and --nokrnmod 1 options should be added to the command line
 
-Of course, set the gNB machine IP address if the UE and the gNB are not on the same machine.
 
 In the UE, you can add `-d` option to get the softscope.
 
