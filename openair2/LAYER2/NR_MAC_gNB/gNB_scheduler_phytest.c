@@ -758,14 +758,6 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->transform_precoding = 0;
   pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
   pusch_pdu->nrOfLayers = 1;
-  //DMRS
-  pusch_pdu->ul_dmrs_symb_pos = 1<<2; //for now the gnb assumes dmrs in the first symbol of the scheduled pusch resource
-  pusch_pdu->dmrs_config_type = 0;  //dmrs-type 1 (the one with a single DMRS symbol in the beginning)
-  pusch_pdu->ul_dmrs_scrambling_id =  0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
-  pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
-  //pusch_pdu->num_dmrs_cdm_grps_no_data;
-  //pusch_pdu->dmrs_ports; //DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
-  //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   pusch_pdu->resource_alloc = 1; //type 1
   //pusch_pdu->rb_bitmap;// for ressource alloc type 0
   pusch_pdu->rb_start = 0;
@@ -777,6 +769,23 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   //Resource Allocation in time domain
   pusch_pdu->start_symbol_index = 2;
   pusch_pdu->nr_of_symbols = 12;
+
+  // --------------------
+  // ------- DMRS -------
+  // --------------------
+  uint16_t l_prime_mask            = get_l_prime(pusch_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+  pusch_pdu->ul_dmrs_symb_pos      = l_prime_mask;
+  pusch_pdu->dmrs_config_type      = 0;      // dmrs-type 1 (the one with a single DMRS symbol in the beginning)
+  pusch_pdu->ul_dmrs_scrambling_id = 0;      // If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id
+  pusch_pdu->scid                  = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
+                                             // Should match what is sent in DCI 0_1, otherwise set to 0
+  //pusch_pdu->num_dmrs_cdm_grps_no_data;
+  //pusch_pdu->dmrs_ports; // DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports
+                           // Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011,
+                           // and for each bit 0: DMRS port not used 1: DMRS port used
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+
+  //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;

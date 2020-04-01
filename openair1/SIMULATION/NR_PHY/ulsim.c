@@ -503,16 +503,11 @@ int main(int argc, char **argv)
   unsigned char mod_order;
   uint16_t code_rate;
 
-  for (i = start_symbol; i < nb_symb_sch; i++)
-      number_dmrs_symbols += is_dmrs_symbol(i,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            nb_symb_sch,
-                                            UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
-                                            frame_parms->ofdm_symbol_size);
+  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type, pusch_dmrs_pos0, length_dmrs);
+
+  for (i = 0; i < nb_symb_sch; i++) {
+    number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
+  }
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
   nb_re_dmrs     = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
@@ -560,7 +555,7 @@ int main(int argc, char **argv)
       pusch_pdu->transform_precoding = 0;
       pusch_pdu->data_scrambling_id = 0;
       pusch_pdu->nrOfLayers = 1;
-      pusch_pdu->ul_dmrs_symb_pos = 1;
+      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
       pusch_pdu->dmrs_config_type = 0;
       pusch_pdu->ul_dmrs_scrambling_id =  0;
       pusch_pdu->scid = 0;

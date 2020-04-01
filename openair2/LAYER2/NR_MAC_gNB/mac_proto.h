@@ -162,6 +162,8 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
 int get_num_dmrs(uint16_t dmrs_mask );
+uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position);
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength);
 
 uint16_t nr_dci_size(nr_dci_format_t format,
                          nr_rnti_type_t rnti_type,

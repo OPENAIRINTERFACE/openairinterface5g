@@ -136,16 +136,15 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     start_symbol = harq_process_ul_ue->start_symbol;
 
-    for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++)
-      number_dmrs_symbols += is_dmrs_symbol((mapping_type)?i-start_symbol:i,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            harq_process_ul_ue->number_of_symbols,
-                                            UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
-                                            frame_parms->ofdm_symbol_size);
+    for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++) {
+
+      // [hna] Temporary implementation until nFAPI structs are adopted at UE side
+      // --------------------------
+      if((mapping_type ? (i - start_symbol) : i) == start_symbol)
+        number_dmrs_symbols += 1;
+      // --------------------------
+
+    }
 
     ulsch_ue->length_dmrs = number_dmrs_symbols; // pusch.MaxLenght is redundant here as number_dmrs_symbols
                                                  // contains all dmrs symbols even for double symbol dmrs
@@ -329,15 +328,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   for (l = start_symbol; l < start_symbol + harq_process_ul_ue->number_of_symbols; l++) {
 
-    is_dmrs = is_dmrs_symbol((mapping_type)?l-start_symbol:l,
-                             0,
-                             0,
-                             0,
-                             0,
-                             0,
-                             harq_process_ul_ue->number_of_symbols,
-                             dmrs_type,
-                             frame_parms->ofdm_symbol_size);
+    // [hna] Temporary implementation until nFAPI structs are adopted at UE side
+    // --------------------------
+    if(((mapping_type)?l-start_symbol:l) == start_symbol)
+      is_dmrs = 1;
+    else
+      is_dmrs = 0;
+    // --------------------------
 
     if (is_dmrs == 1)
       nb_re_dmrs_per_rb = ulsch_ue->nb_re_dmrs;
@@ -397,15 +394,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         is_dmrs = 0;
         is_ptrs = 0;
 
-        is_dmrs = is_dmrs_symbol(l_ref,
-                                 k,
-                                 start_sc,
-                                 k_prime,
-                                 n,
-                                 delta,
-                                 harq_process_ul_ue->number_of_symbols,
-                                 dmrs_type,
-                                 frame_parms->ofdm_symbol_size);
+        // [hna] Temporary implementation until nFAPI structs are adopted at UE side
+        // --------------------------
+        if(l_ref == start_symbol) {
+          if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%frame_parms->ofdm_symbol_size))
+            is_dmrs = 1;
+        }
+        // --------------------------
 
         if (UE->ptrs_configured == 1){
           is_ptrs = is_ptrs_symbol(l,
