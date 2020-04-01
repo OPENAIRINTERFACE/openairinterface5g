@@ -17,6 +17,7 @@
 
 #include "T.h"
 
+#define DEBUG_NR_PUCCH_RX 1
 
 void nr_decode_pucch0(int32_t **rxdataF,
                       NR_DL_FRAME_PARMS *frame_parms,
@@ -79,27 +80,31 @@ void nr_decode_pucch0(int32_t **rxdataF,
 
       nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,n_hop,slot,&u,&v); // calculating u and v value
       alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
-      #ifdef DEBUG_NR_PUCCH_RX
-        printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
-      #endif
+#ifdef DEBUG_NR_PUCCH_RX
+      printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d/%d,mcs %d)\n",u,v,alpha,l,l+pucch_pdu->start_symbol_index,mcs[i]);
+#endif
       for (n=0; n<12; n++){
         x_n_re[i][(12*l)+n] = (int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
-                                  - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))>>15); // Re part of base sequence shifted by alpha
+                                  - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))); // Re part of base sequence shifted by alpha
         x_n_im[i][(12*l)+n] =(int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
-                                  + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)))>>15); // Im part of base sequence shifted by alpha
-        #ifdef DEBUG_NR_PUCCH_RX
-          printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d)\n",
-                u,v,alpha,l,n,x_n_re[(12*l)+n],x_n_im[(12*l)+n]);
-        #endif
+                                  + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)))); // Im part of base sequence shifted by alpha
+#ifdef DEBUG_NR_PUCCH_RX
+          printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d) %d,%d\n",
+		 u,v,alpha,l,n,x_n_re[i][(12*l)+n],x_n_im[i][(12*l)+n],
+		 (int32_t)(round(32767*cos(alpha*n))),
+		 (int32_t)(round(32767*sin(alpha*n))));
+#endif
       }
     }
   }
-  int16_t r_re[24],r_im[24];
   /*
    * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources
    */
   uint32_t re_offset=0;
   uint8_t l2;
+
+#ifdef OLD_IMPL
+  int16_t r_re[24],r_im[24];
 
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
 
@@ -122,7 +127,7 @@ void nr_decode_pucch0(int32_t **rxdataF,
       if (re_offset>= frame_parms->ofdm_symbol_size) 
         re_offset-=frame_parms->ofdm_symbol_size;
     }
-  }   
+  }  
   double corr[nr_sequences],corr_re[nr_sequences],corr_im[nr_sequences];
   memset(corr,0,nr_sequences*sizeof(double));
   memset(corr_re,0,nr_sequences*sizeof(double));
@@ -144,7 +149,55 @@ void nr_decode_pucch0(int32_t **rxdataF,
       max_corr=corr[i];
     }
   }
+#else
 
+  int16_t *x_re = x_n_re[0],*x_im = x_n_im[0];
+  int16_t xr[32]  __attribute__((aligned(32)));
+  int16_t xrt[32] __attribute__((aligned(32)));
+  int32_t xrtmag=0;
+  int maxpos=0;
+  int n2=0;
+  uint8_t index=0;
+  memset((void*)xr,0,32*sizeof(int16_t));
+
+  for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
+
+    l2 = l+pucch_pdu->start_symbol_index;
+    re_offset = (12*pucch_pdu->prb_start) + frame_parms->first_carrier_offset;
+    if (re_offset>= frame_parms->ofdm_symbol_size) 
+      re_offset-=frame_parms->ofdm_symbol_size;
+  
+    AssertFatal(re_offset+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
+
+    n2=0;
+    int16_t *r=(int16_t*)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size+re_offset)];
+    if (l==0) for (n=0;n<12;n++,n2+=2) {
+	xr[n2]  =((int32_t)x_re[n]*r[n2]+(int32_t)x_im[n]*r[n2+1])>>15;
+	xr[n2+1]=((int32_t)x_re[n]*r[n2+1]-(int32_t)x_im[n]*r[n2])>>15;
+	printf("x (%d,%d), r (%d,%d), xr (%d,%d)\n",
+	       x_re[n],x_im[n],r[n2],r[n2+1],xr[n2],xr[n2+1]);
+      }
+    else for (n=0;n<12;n++,n2+=2) {
+	xr[n2]  +=((int32_t)x_re[n]*r[n2]+(int32_t)x_im[n]*r[n2+1])>>15;
+	xr[n2+1]+=((int32_t)x_re[n]*r[n2+1]-(int32_t)x_im[n]*r[n2])>>15;
+      }
+    x_re+=12;
+    x_im+=12;
+  }
+  idft16f(xr,xrt);
+  n2=0;
+  int32_t temp;
+  for (n=0;n<16;n++,n2+=2) {
+#ifdef DEBUG_NR_PUCCH_RX
+    printf("PUCCH IDFT[%d] = (%d,%d)\n",n,xrt[n2],xrt[n2+1]);
+#endif
+    if ((temp=(int32_t)xrt[n2]*xrt[n2]+(int32_t)xrt[n2+1]*xrt[n2+1])<xrtmag) {
+      xrtmag=temp;
+      maxpos=n;
+    }
+  }
+  exit(-1);
+#endif
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pdu_bit_map = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
@@ -281,7 +334,6 @@ void nr_decode_pucch1(  int32_t **rxdataF,
       re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
     }
 
-    //txptr = &txdataF[0][re_offset];
     for (int n=0; n<12; n++) {
       if ((n==6) && (startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
         // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)
@@ -294,7 +346,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
 #ifdef DEBUG_NR_PUCCH_RX
         printf("\t [nr_generate_pucch1] mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
-               l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
+               l,n,((int16_t *)&rxdataF[0][re_offset])[0],((int16_t *)&rxdataF[0][re_offset])[1]);
 #endif
       }
 
@@ -305,7 +357,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
 #ifdef DEBUG_NR_PUCCH_RX
         printf("\t [nr_generate_pucch1] mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
-               l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
+               l,n,((int16_t *)&rxdataF[0][re_offset])[0],((int16_t *)&rxdataF[0][re_offset])[1]);
 #endif
 //        printf("l=%d\ti=%d\tre_offset=%d\treceived dmrs re=%d\tim=%d\n",l,i,re_offset,z_dmrs_re_rx[i+n],z_dmrs_im_rx[i+n]);
       }
@@ -416,7 +468,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                      mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
                      table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],
                      table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],
-                     z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+                     z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif   
 	      // multiplying with conjugate of low papr sequence  
 	      z_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
@@ -450,7 +502,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                      mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
                      table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],
                      table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
-                     z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+                     z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif
               //finding channel coeffcients by dividing received dmrs with actual dmrs and storing them in z_dmrs_re_rx and z_dmrs_im_rx arrays
               z_dmrs_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
@@ -501,7 +553,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                        mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
                        table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],
                        table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],
-                       z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+                       z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif 
                 z_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
                             + (((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 
@@ -529,7 +581,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                        mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
                        table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],
                        table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
-                       z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+                       z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif
                 //finding channel coeffcients by dividing received dmrs with actual dmrs and storing them in z_dmrs_re_rx and z_dmrs_im_rx arrays
                 z_dmrs_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)

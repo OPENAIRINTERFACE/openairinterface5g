@@ -454,8 +454,6 @@ int main(int argc, char **argv)
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     ack_nack_errors=0;
     n_errors = 0;
-    sigma2_dB = 20*log10((double)amp/32767)-SNR;
-    sigma2 = pow(10,sigma2_dB/10);
     for (trial=0; trial<n_trials; trial++) {
       bzero(txdata[0],frame_length_complex_samples*sizeof(int));
       if(format==0){
@@ -464,7 +462,11 @@ int main(int argc, char **argv)
       else{
         nr_generate_pucch1(UE,txdata,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	
       }
-      for(i=0; i<frame_length_complex_samples; i++) {
+      int tx_lev=signal_energy(
+      sigma2_dB = 20*log10((double)amp/32767)-SNR;
+      sigma2 = pow(10,sigma2_dB/10);
+      
+      for(i=(nr_tti_tx*frame_parms->samples_per_slot; i<(nr_tti_tx+1)*frame_parms->samples_per_slot; i++) {
         r_re[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)])/32767 + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
         r_im[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)+1])/32767+ sqrt(sigma2/2)*gaussdouble(0.0,1.0));
         r_re[aa][i]=r_re[0][i]/(sqrt(sigma2/2)+1);
@@ -481,13 +483,26 @@ int main(int argc, char **argv)
         ((int16_t *)txdata[aa])[(i<<1)+1] =(int16_t)round(r_im[aa][i]*32767);
       }
       if(format==0){
-        nr_decode_pucch0(txdata,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,nr_bit);
+	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
+	nfapi_nr_pucch_pdu_t pucch_pdu;
+	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
+	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
+	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.sr_flag               = 0;
+	pucch_pdu.nr_of_symbols         = nrofSymbols;
+	pucch_pdu.hopping_id            = n_id;
+	pucch_pdu.initial_cyclic_shift  = 0;
+	pucch_pdu.start_symbol_index    = startingSymbolIndex;
+	pucch_pdu.prb_start             = startingPRB;
+        nr_decode_pucch0(txdata,frame_parms,nr_tti_tx,&uci_pdu,&pucch_pdu);
         if(nr_bit==1)
-          ack_nack_errors+=(((actual_payload^payload_received)&2)>>1);
+          ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
         else
-          ack_nack_errors+=(((actual_payload^payload_received)&2)>>1) + (((actual_payload^payload_received)&4)>>2);
+          ack_nack_errors+=((actual_payload^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
+	free(uci_pdu.harq->harq_list);
       }
       else{
+	
         nr_decode_pucch1(txdata,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
         if(nr_bit==1)
           ack_nack_errors+=((actual_payload^payload_received)&1);
@@ -496,8 +511,7 @@ int main(int argc, char **argv)
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
-    printf("Decoded payload is %ld\n",payload_received);
-    printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,n_errors);
+    printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
     if((float)ack_nack_errors/(float)(nr_bit*n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");
       break;

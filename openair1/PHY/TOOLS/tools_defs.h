@@ -171,6 +171,8 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
         );
 */
 
+void idft16f(int16_t *x,int16_t *y);
+
 void idft1536(int16_t *sigF,int16_t *sig,int scale);
 
 void idft6144(int16_t *sigF,int16_t *sig,int scale);
