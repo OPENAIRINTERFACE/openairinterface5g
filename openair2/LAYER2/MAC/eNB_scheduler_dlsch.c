@@ -543,18 +543,15 @@ schedule_ue_spec(module_id_t module_idP,
                  sub_frame_t subframeP)
 //------------------------------------------------------------------------------
 {
-  int ta_len = 0;
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = eNB->common_channels;
   UE_info_t *UE_info = &eNB->UE_info;
-  int tpc = 1;
   const int dl_Bandwidth = cc[CC_id].mib->message.dl_Bandwidth;
   const int N_RB_DL = to_prb(dl_Bandwidth);
   const int N_RBG = to_rbg(eNB->common_channels[CC_id].mib->message.dl_Bandwidth);
   int total_nb_available_rb = N_RB_DL;
   nfapi_dl_config_request_body_t *dl_req = &eNB->DL_req[CC_id].dl_config_request_body;
-  int ta_update;
 
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,
@@ -850,6 +847,7 @@ schedule_ue_spec(module_id_t module_idP,
       if (ue_sched_ctrl->ta_timer)
         ue_sched_ctrl->ta_timer--;
 
+      int ta_update = 31;
       if (ue_sched_ctrl->ta_timer == 0) {
         ta_update = ue_sched_ctrl->ta_update;
 
@@ -860,11 +858,9 @@ schedule_ue_spec(module_id_t module_idP,
 
         /* reset ta_update */
         ue_sched_ctrl->ta_update = 31;
-      } else {
-        ta_update = 31;
       }
 
-      ta_len = (ta_update != 31) ? 2 : 0;
+      int ta_len = (ta_update != 31) ? 2 : 0;
 
 
       int num_sdus = 0;
@@ -1092,8 +1088,9 @@ schedule_ue_spec(module_id_t module_idP,
         // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
         int32_t framex10psubframe = ue_template->pucch_tpc_tx_frame * 10 + ue_template->pucch_tpc_tx_subframe;
 
+        int tpc = 1;
         if (framex10psubframe + 10 <= (frameP * 10) + subframeP ||  //normal case
-            (framex10psubframe > (frameP * 10) + subframeP && 10240 - framex10psubframe + (frameP * 10) + subframeP >= 10)) //frame wrap-around
+            (framex10psubframe > (frameP * 10) + subframeP && 10240 - framex10psubframe + (frameP * 10) + subframeP >= 10)) { //frame wrap-around
           if (ue_sched_ctrl->pucch1_cqi_update[CC_id] == 1) {
             ue_sched_ctrl->pucch1_cqi_update[CC_id] = 0;
             ue_template->pucch_tpc_tx_frame = frameP;
@@ -1116,11 +1113,6 @@ schedule_ue_spec(module_id_t module_idP,
                   snr,
                   target_snr);
           } // Po_PUCCH has been updated
-          else {
-            tpc = 1;  //0
-          } // time to do TPC update
-        else {
-          tpc = 1;  //0
         }
 
         nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
