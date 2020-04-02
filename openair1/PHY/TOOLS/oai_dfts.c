@@ -31,7 +31,7 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-#define OAIDFTS
+#define OAIDFTS_MAIN
 #ifndef MR_MAIN
 #include "PHY/defs_common.h"
 #include "PHY/impl_defs_top.h"
@@ -5697,12 +5697,12 @@ void dft6144(int16_t *input, int16_t *output,unsigned char scale)
 int16_t twa9216[6144] __attribute__((aligned(32)));
 int16_t twb9216[6144] __attribute__((aligned(32)));
 // 3072 x 3
-void dft9216(int16_t *input, int16_t *output,int scale) {
+void dft9216(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft9216(int16_t *input, int16_t *output,int scale) {
+void idft9216(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6059,11 +6059,11 @@ void idft24576(int16_t *input, int16_t *output,unsigned char scale)
 int16_t twa36864[24576] __attribute__((aligned(32)));
 int16_t twb36884[24576] __attribute__((aligned(32)));
 // 12288 x 3
-void dft36864(int16_t *input, int16_t *output,int scale) {
+void dft36864(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
-void idft36864(int16_t *input, int16_t *output,int scale) {
+void idft36864(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6071,12 +6071,12 @@ void idft36864(int16_t *input, int16_t *output,int scale) {
 int16_t twa49152[32768] __attribute__((aligned(32)));
 int16_t twb49152[32768] __attribute__((aligned(32)));
 // 16384 x 3
-void dft49152(int16_t *input, int16_t *output,int scale) {
+void dft49152(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft49152(int16_t *input, int16_t *output,int scale) {
+void idft49152(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6084,12 +6084,12 @@ void idft49152(int16_t *input, int16_t *output,int scale) {
 int16_t twa73728[49152] __attribute__((aligned(32)));
 int16_t twb73728[49152] __attribute__((aligned(32)));
 // 24576 x 3
-void dft73728(int16_t *input, int16_t *output,int scale) {
+void dft73728(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft73728(int16_t *input, int16_t *output,int scale) {
+void idft73728(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6098,12 +6098,12 @@ void idft73728(int16_t *input, int16_t *output,int scale) {
 int16_t twa98304[49152] __attribute__((aligned(32)));
 int16_t twb98304[49152] __attribute__((aligned(32)));
 // 32768 x 3
-void dft98304(int16_t *input, int16_t *output,int scale) {
+void dft98304(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft98304(int16_t *input, int16_t *output,int scale) {
+void idft98304(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -8593,8 +8593,6 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-//#define round trunc
-
 void init_rad4(int N,int16_t *tw) {
 
   int16_t *twa = tw;
@@ -8710,13 +8708,13 @@ void init_rad5_rep(int N,int16_t *twa,int16_t *twb,int16_t *twc,int16_t *twd) {
     twa+=8;
     twb+=8;
     twc+=8;
-    twd+=8;
+    twd+=8;                  
   }
 }
 /*----------------------------------------------------------------*/
 /* dft library entry points:                                      */
 
-void init_dfts(void)
+int dfts_autoinit(void)
 {
   init_rad4(1024,tw1024);
   init_rad2(2048,tw2048);
@@ -8763,8 +8761,10 @@ void init_dfts(void)
   init_rad3_rep(1080,twa1080,twb1080);
   init_rad4_rep(1152,twa1152,twb1152,twc1152);
   init_rad4_rep(1200,twa1200,twb1200,twc1200);
-
+  return 0;
 }
+
+
 
 
 void dft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
@@ -8778,7 +8778,6 @@ void idft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
 };
 
 /*---------------------------------------------------------------------------------------*/
-
 
 #ifdef MR_MAIN
 #include <string.h>
@@ -8949,12 +8948,12 @@ int main(int argc, char**argv)
 #ifdef __AVX2__
   simd256_q15_t x[4096],x2[4096],y[4096],tw0,tw1,tw2,tw3;
 #else
-  simd_q15_t x[8192],x2[8192],y[8192],tw0,tw1,tw2,tw3;
+  simd_q15_t x[8192],y[8192],tw0,tw1,tw2,tw3;
 #endif
   int i;
   simd_q15_t *x128=(simd_q15_t*)x,*y128=(simd_q15_t*)y;
 
-  init_dfts();
+  dfts_autoinit();
 
   set_taus_seed(0);
   opp_enabled = 1;

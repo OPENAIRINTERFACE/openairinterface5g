@@ -1373,7 +1373,7 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/INIT/lte_parms.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
-#  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/dfts_load.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
