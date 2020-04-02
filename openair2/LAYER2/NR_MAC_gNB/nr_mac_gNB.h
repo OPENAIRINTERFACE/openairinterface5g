@@ -190,7 +190,7 @@ typedef struct gNB_MAC_INST_s {
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 } gNB_MAC_INST;
 
-typedef struct {
+/*typedef struct {
 
 
 uint8_t format_indicator; //1 bit
@@ -250,8 +250,74 @@ uint8_t antenna_ports;
 uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
 uint16_t padding;
 
-} dci_pdu_rel15_t;
+} dci_pdu_rel15_t;*/
 
+typedef struct {
+  uint16_t val;
+  uint8_t nbits;
+} dci_field_t;
+
+typedef struct {
+
+
+dci_field_t format_indicator; //1 bit
+dci_field_t frequency_domain_assignment; //up to 16 bits
+dci_field_t time_domain_assignment; // 4 bits
+dci_field_t frequency_hopping_flag; //1 bit
+ 
+dci_field_t ra_preamble_index; //6 bits
+dci_field_t ss_pbch_index; //6 bits
+dci_field_t prach_mask_index; //4 bits
+ 
+dci_field_t vrb_to_prb_mapping; //0 or 1 bit
+dci_field_t mcs[2]; //5 bits
+dci_field_t ndi[2]; //1 bit
+dci_field_t rv[2]; //2 bits
+dci_field_t harq_pid; //4 bits
+dci_field_t dai; //0, 2 or 4 bits
+dci_field_t dai1; //1 or 2 bits
+dci_field_t dai2; //0 or 2 bits
+dci_field_t tpc; //2 bits
+dci_field_t pucch_resource_indicator; //3 bits
+dci_field_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
+ 
+dci_field_t short_messages_indicator; //2 bits
+dci_field_t short_messages; //8 bits
+dci_field_t tb_scaling; //2 bits
+ 
+dci_field_t carrier_indicator; //0 or 3 bits
+dci_field_t bwp_indicator; //0, 1 or 2 bits
+dci_field_t prb_bundling_size_indicator; //0 or 1 bits
+dci_field_t rate_matching_indicator; //0, 1 or 2 bits
+dci_field_t zp_csi_rs_trigger; //0, 1 or 2 bits
+dci_field_t transmission_configuration_indication; //0 or 3 bits
+dci_field_t srs_request; //2 bits
+dci_field_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
+dci_field_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
+dci_field_t dmrs_sequence_initialization; //0 or 1 bit
+ 
+dci_field_t srs_resource_indicator;
+dci_field_t precoding_information;
+dci_field_t csi_request;
+dci_field_t ptrs_dmrs_association;
+dci_field_t beta_offset_indicator; //0 or 2 bits
+ 
+dci_field_t slot_format_indicator_count;
+dci_field_t *slot_format_indicators;
+ 
+dci_field_t pre_emption_indication_count;
+dci_field_t *pre_emption_indications; //14 bit
+ 
+dci_field_t block_number_count;
+dci_field_t *block_numbers;
+ 
+dci_field_t ul_sul_indicator; //0 or 1 bit
+dci_field_t antenna_ports;
+ 
+dci_field_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+dci_field_t padding;
+
+} dci_pdu_rel15_t;
 
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
