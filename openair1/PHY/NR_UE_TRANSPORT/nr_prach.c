@@ -118,15 +118,15 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   #if defined (OAI_USRP)
     prach_start = (ue->rx_offset + slot*samp_count - ue->hw_timing_advance - ue->N_TA_offset);
-
-    if (prach_start<0)
-      prach_start += (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
-
-    if (prach_start >= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME))
-      prach_start -= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
   #else //normal case (simulation)
     prach_start = slot*samp_count - ue->N_TA_offset;
   #endif
+
+  if (prach_start<0)
+    prach_start += (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
+
+  if (prach_start >= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME))
+    prach_start -= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
   // First compute physical root sequence
   /************************************************************************
