@@ -1364,13 +1364,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,
                                             UE_template_ptr->estimated_ul_buffer);
 
-    /*
-     * If there is information on BSR of DCCH, DTCH or if there is UL_SR,
-     * or if there is a packet to retransmit, or we want to schedule a periodic
-     * feedback
-     * TODO: this should be decided in the preprocessor
-     */
-    if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) == 0 && round_index == 0)
+    if (UE_template_ptr->pre_allocated_nb_rb_ul < 1)
       continue;
 
     LOG_D(MAC,
@@ -1504,11 +1498,12 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       }
 
       const uint8_t ndi = 1 - UE_template_ptr->oldNDI_UL[harq_pid]; // NDI: new data indicator
+      const uint8_t mcs = UE_template_ptr->pre_assigned_mcs_ul;
       UE_template_ptr->oldNDI_UL[harq_pid] = ndi;
       UE_info->eNB_UE_stats[CC_id][UE_id].snr = snr;
       UE_info->eNB_UE_stats[CC_id][UE_id].target_snr = target_snr;
-      UE_template_ptr->mcs_UL[harq_pid] = UE_template_ptr->pre_assigned_mcs_ul;
-      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = UE_template_ptr->mcs_UL[harq_pid];
+      UE_template_ptr->mcs_UL[harq_pid] = mcs;
+      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = mcs;
 
       /* CDRX */
       if (UE_sched_ctrl_ptr->cdrx_configured) {
@@ -1522,20 +1517,14 @@ schedule_ulsch_rnti(module_id_t   module_idP,
         UE_sched_ctrl_ptr->dci0_ongoing_timer = 1;
       }
 
-      uint8_t rb_table_index = -1;
-      if (UE_template_ptr->pre_allocated_rb_table_index_ul >= 0) {
-        rb_table_index = UE_template_ptr->pre_allocated_rb_table_index_ul;
-      } else {
-        UE_template_ptr->mcs_UL[harq_pid] = 10;
-        rb_table_index = 5; // for PHR
-      }
+      uint8_t rb_table_index = UE_template_ptr->pre_allocated_rb_table_index_ul;
 
-      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
+      UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = mcs;
 
       while (rb_table[rb_table_index] > 45 && rb_table_index > 0)
         rb_table_index--;
 
-      UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid], rb_table[rb_table_index]);
+      UE_template_ptr->TBS_UL[harq_pid] = get_TBS_UL(mcs, rb_table[rb_table_index]);
       UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
       UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template_ptr->TBS_UL[harq_pid];
       UE_info->eNB_UE_stats[CC_id][UE_id].total_ulsch_TBS += UE_template_ptr->TBS_UL[harq_pid];
@@ -1546,7 +1535,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
         T_INT(frameP),
         T_INT(subframeP),
         T_INT(harq_pid),
-        T_INT(UE_template_ptr->mcs_UL[harq_pid]),
+        T_INT(mcs),
         T_INT(rb_table[rb_table_index]),
         T_INT(UE_template_ptr->TBS_UL[harq_pid]),
         T_INT(ndi));
@@ -1593,8 +1582,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = UE_template_ptr->pre_first_nb_rb_ul;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block =
           rb_table[rb_table_index];
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 =
-          UE_template_ptr->mcs_UL[harq_pid];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 = mcs;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms = cshift;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag = 0;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.new_data_indication_1 = ndi;
@@ -1648,7 +1636,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           rnti,
           UE_template_ptr->pre_first_nb_rb_ul, // resource_block_start
           rb_table[rb_table_index], // number_of_resource_blocks
-          UE_template_ptr->mcs_UL[harq_pid],
+          mcs,
           cshift, // cyclic_shift_2_for_drms
           0, // frequency_hopping_enabled_flag
           0, // frequency_hopping_bits
@@ -1658,8 +1646,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           0, // ul_tx_mode
           0, // current_tx_nb
           0, // n_srs
-          get_TBS_UL(UE_template_ptr->mcs_UL[harq_pid],
-                     rb_table[rb_table_index]));
+          get_TBS_UL(mcs, rb_table[rb_table_index]));
 
       /* This is a BL/CE UE allocation */
       if (UE_template_ptr->rach_resource_type > 0) {
