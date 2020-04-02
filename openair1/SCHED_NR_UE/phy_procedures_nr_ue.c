@@ -4495,7 +4495,7 @@ uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,
 // - power control as per 38.213 ch 7.4
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t runmode) {
 
-  int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power, tx_amp;
+  int frame_tx = proc->frame_tx, nr_tti_tx = proc->nr_tti_tx, prach_power; // tx_amp
   uint16_t /*preamble_tx = 50,*/ pathloss;
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);

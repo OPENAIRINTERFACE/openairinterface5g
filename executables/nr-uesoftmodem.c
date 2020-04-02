@@ -801,7 +801,7 @@ int main( int argc, char **argv ) {
       }
       if (UE[CC_id]->frame_parms.threequarter_fs == 1) factor = factor*.75;
       UE[CC_id]->N_TA_offset = (int)(N_TA_offset * factor);
-      LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %d, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
+      LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
     }
   }
 
