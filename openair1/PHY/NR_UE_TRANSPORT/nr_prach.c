@@ -75,8 +75,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
 
   uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
-  uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset;
-  uint16_t preamble_shift, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
+  uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
+  uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
   int16_t Ncp, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im, samp_count;
@@ -125,7 +125,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
     if (prach_start >= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME))
       prach_start -= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
   #else //normal case (simulation)
-    prach_start = slot*(fp->samples_per_subframe)-ue->N_TA_offset;
+    prach_start = slot*samp_count - ue->N_TA_offset;
   #endif
 
   // First compute physical root sequence
@@ -138,10 +138,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   prach_root_sequence_map = (prach_sequence_length == 0) ? prach_root_sequence_map_0_3 : prach_root_sequence_map_abc;
 
-  // This is the relative offset (for unrestricted case) in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
-  preamble_offset = ((NCS==0)? preamble_index : (preamble_index/(N_ZC/NCS)));
-
   if (restricted_set == 0) {
+    // This is the relative offset (for unrestricted case) in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
+    preamble_offset = ((NCS==0)? preamble_index : (preamble_index/(N_ZC/NCS)));
     // This is the \nu corresponding to the preamble index
     preamble_shift  = (NCS==0)? 0 : (preamble_index % (N_ZC/NCS));
     preamble_shift *= NCS;
@@ -203,9 +202,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
       }
     }
   }
-
-  preamble_offset = 0;
-  preamble_shift = 0;
 
   // now generate PRACH signal
   #ifdef NR_PRACH_DEBUG
@@ -465,17 +461,17 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         }
       } else { // short PRACH sequence
         if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
-            Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
-            prach2 = prach+(Ncp<<1);
-            idft2048(prachF,prach2,1);
-            // here we have |empty | Prach2048 |
-            if (prach_fmt_id != 7) {
-              memmove(prach2+(2048<<1),prach2,(2048<<2));
-              prach_len = (2048*2)+Ncp;
-            }
-            else prach_len = (2048*1)+Ncp;
-            memmove(prach,prach+(2048<<1),(Ncp<<2));
-            // here we have |Prefix | Prach2048 | Prach2048 (if ! 0xc0)  |
+          Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft2048(prachF,prach2,1);
+          // here we have |empty | Prach2048 |
+          if (prach_fmt_id != 7) {
+            memmove(prach2+(2048<<1),prach2,(2048<<2));
+            prach_len = (2048*2)+Ncp;
+          }
+          else prach_len = (2048*1)+Ncp;
+          memmove(prach,prach+(2048<<1),(Ncp<<2));
+          // here we have |Prefix | Prach2048 | Prach2048 (if ! 0xc0)  |
         } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 6x2048
           Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
@@ -572,8 +568,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           // here we have |Prefix | Prach1536 | Prach1536 (if ! 0xc0) |
 
         } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 6x1536
-
-          printf(" CHECK 3/4 sampling prachFormat == 0xa2\n");
 
           Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
