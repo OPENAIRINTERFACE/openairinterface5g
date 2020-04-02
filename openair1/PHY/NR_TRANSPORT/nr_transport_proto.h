@@ -65,20 +65,12 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param is_dmrs_symbol, flag to indicate wether this OFDM symbol contains DMRS symbols or not.
 
 */
-void nr_ulsch_extract_rbs_single(int **rxdataF,
-                                 int **ul_ch_estimates,
-                                 int **rxdataF_ext,
-                                 int **ul_ch_estimates_ext,
-                                 uint32_t rxdataF_ext_offset,
-                                 // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
+void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
+                                 NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
-                                 unsigned short start_rb,
-                                 unsigned short nb_rb_pusch,
-                                 NR_DL_FRAME_PARMS *frame_parms,
-                                 uint8_t dmrs_symbol,
-                                 uint16_t number_symbols,
-                                 uint8_t mapping_type,
-                                 dmrs_UplinkConfig_t *dmrs_UplinkConfig);
+                                 uint8_t is_dmrs_symbol,
+                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
+                                 NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,

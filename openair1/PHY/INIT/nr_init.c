@@ -31,6 +31,7 @@
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
+#include "openair1/PHY/CODING/nrLDPC_extern.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "assertions.h"
 #include <math.h>
@@ -112,6 +113,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
   crcTableInit();
   init_dfts();
+  load_nrLDPClib();
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   //PDCCH DMRS init
@@ -150,20 +152,30 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  //------------- config PUSCH DMRS parameters(to be updated from RRC)--------------
-  gNB->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
-  gNB->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  gNB->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
-  //--------------------------------------------------------------------------------
 
   nr_init_pdsch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
 
-  // default values until overwritten by RRCConnectionReconfiguration
+  //PUSCH DMRS init
+  gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
+  uint32_t ****pusch_dmrs = gNB->nr_gold_pusch_dmrs;
 
-  for (i=0;i<MAX_NR_OF_UL_ALLOCATIONS;i++){
-    gNB->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    gNB->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
+  for(int nscid=0; nscid<2; nscid++) {
+    pusch_dmrs[nscid] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+    AssertFatal(pusch_dmrs[nscid]!=NULL, "NR init: pusch_dmrs for nscid %d - malloc failed\n", nscid);
+
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      pusch_dmrs[nscid][slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+      AssertFatal(pusch_dmrs[nscid][slot]!=NULL, "NR init: pusch_dmrs for slot %d - malloc failed\n", slot);
+
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        pusch_dmrs[nscid][slot][symb] = (uint32_t *)malloc16(NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(pusch_dmrs[nscid][slot][symb]!=NULL, "NR init: pusch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+      }
+    }
   }
+
+  uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
+  nr_gold_pusch(gNB, &Nid_pusch[0]);
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
@@ -229,6 +241,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates     = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_time  = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->rxdataF_comp          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_mag0             = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
@@ -244,6 +258,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       pusch_vars[ULSCH_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
+      pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot ); // max intensity in freq is 1 sc every 2 RBs
+      pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_mag0[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
       pusch_vars[ULSCH_id]->ul_ch_magb0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
@@ -312,6 +328,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb0[i]);
@@ -324,6 +342,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time);
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0);

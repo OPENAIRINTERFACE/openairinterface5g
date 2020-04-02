@@ -37,6 +37,7 @@
 #include "common/utils/load_module_shlib.h"
 #include "common/utils/telnetsrv/telnetsrv.h"
 #include "executables/thread-common.h"
+#include "common/utils/LOG/log.h"
 #include "softmodem-common.h"
 
 static softmodem_params_t softmodem_params;
@@ -44,7 +45,7 @@ char *parallel_config=NULL;
 char *worker_config=NULL;
 
 
-
+static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
 static struct timespec start;
 
 uint64_t get_softmodem_optmask(void) {
@@ -60,6 +61,89 @@ softmodem_params_t *get_softmodem_params(void) {
   return &softmodem_params;
 }
 
+int32_t check_execmask(uint64_t execmask) {
+  char *softmodemfunc=map_int_to_str(softmodem_funcs, execmask);
+  if (softmodemfunc != NULL) {
+  	  set_softmodem_optmask(execmask);
+  	  return 0;
+  } 
+  return -1;
+}
+char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
+  uint64_t fmask=(get_softmodem_optmask()&SOFTMODEM_FUNC_BITS);
+  char *softmodemfunc=map_int_to_str(softmodem_funcs, fmask);
+  if (sofmodemfunc_mask_ptr != NULL)
+  	  *sofmodemfunc_mask_ptr=fmask;
+  if (softmodemfunc != NULL) {
+  	  return softmodemfunc;
+  }
+  return "???";
+}
+
+void get_common_options(uint32_t execmask) {
+  uint32_t online_log_messages;
+  uint32_t glog_level ;
+  uint32_t start_telnetsrv = 0;
+  uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
+  uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
+  char *logmem_filename = NULL;
+  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
+  checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
+  check_execmask(execmask);
+  config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
+                            sizeof(cmdline_logparams)/sizeof(paramdef_t));
+  config_get( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
+
+  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
+    set_glog_onlinelog(online_log_messages);
+  }
+
+  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+    set_glog(glog_level);
+  }
+
+  if (start_telnetsrv) {
+    load_module_shlib("telnetsrv",NULL,0,NULL);
+  }
+
+  if (logmem_filename != NULL && strlen(logmem_filename) > 0) {
+    log_mem_filename = &logmem_filename[0];
+    log_mem_flag = 1;
+    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
+    logInit_log_mem();
+  }
+
+  if (noS1) {
+    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+  }
+
+  if (nokrnmod) {
+    printf("nokrnmod bit enabled \n");
+    set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
+  }
+
+  if (nonbiot) {
+    set_softmodem_optmask(SOFTMODEM_NONBIOT_BIT);
+  }
+
+  if (rfsim) {
+    set_softmodem_optmask(SOFTMODEM_RFSIM_BIT);
+  }
+
+  if (basicsim) {
+    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+  }
+
+  if (do_forms) {
+    set_softmodem_optmask(SOFTMODEM_DOFORMS_BIT);
+  }
+
+  if(parallel_config != NULL) set_parallel_conf(parallel_config);
+
+  if(worker_config != NULL)   set_worker_conf(worker_config);
+}
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
    struct rusage usage;
    struct timespec stop;
@@ -119,68 +203,4 @@ void set_softmodem_sighandler(void) {
   signal(SIGTERM, signal_handler);
   signal(SIGABRT, signal_handler);	
 }
-#ifndef PHYSICAL_SIMULATOR
-void get_common_options(void) {
-  uint32_t online_log_messages;
-  uint32_t glog_level ;
-  uint32_t start_telnetsrv = 0;
-  uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
-  uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
-  char *logmem_filename = NULL;
-  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
-  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
-  checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
-  config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
-                            sizeof(cmdline_logparams)/sizeof(paramdef_t));
-  config_get( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
 
-  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-    set_glog_onlinelog(online_log_messages);
-  }
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-    set_glog(glog_level);
-  }
-
-  if (start_telnetsrv) {
-    load_module_shlib("telnetsrv",NULL,0,NULL);
-  }
-
-  if (logmem_filename != NULL && strlen(logmem_filename) > 0) {
-    log_mem_filename = &logmem_filename[0];
-    log_mem_flag = 1;
-    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
-    logInit_log_mem();
-  }
-
-  if (noS1) {
-    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
-  }
-
-  if (nokrnmod) {
-    printf("nokrnmod bit enabled \n");
-    set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
-  }
-
-  if (nonbiot) {
-    set_softmodem_optmask(SOFTMODEM_NONBIOT_BIT);
-  }
-
-  if (rfsim) {
-    set_softmodem_optmask(SOFTMODEM_RFSIM_BIT);
-  }
-
-  if (basicsim) {
-    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
-  }
-
-  if (do_forms) {
-    set_softmodem_optmask(SOFTMODEM_DOFORMS_BIT);
-  }
-
-  if(parallel_config != NULL) set_parallel_conf(parallel_config);
-
-  if(worker_config != NULL)   set_worker_conf(worker_config);
-}
-#endif

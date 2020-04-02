@@ -52,6 +52,7 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
@@ -67,44 +68,11 @@ int sl_ahead=0;
 double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
+
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
                               const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
-void mac_rlc_data_ind ( const module_id_t         module_idP,
-			const rnti_t              rntiP,
-			const eNB_index_t         eNB_index,
-			const frame_t             frameP,
-			const eNB_flag_t          enb_flagP,
-			const MBMS_flag_t         MBMS_flagP,
-			const logical_chan_id_t   channel_idP,
-			char                     *buffer_pP,
-			const tb_size_t           tb_sizeP,
-			num_tb_t                  num_tbP,
-			crc_t                    *crcs_pP){}
-mac_rlc_status_resp_t mac_rlc_status_ind( const module_id_t       module_idP,
-					  const rnti_t            rntiP,
-					  const eNB_index_t       eNB_index,
-					  const frame_t           frameP,
-					  const sub_frame_t 	  subframeP,
-					  const eNB_flag_t        enb_flagP,
-					  const MBMS_flag_t       MBMS_flagP,
-					  const logical_chan_id_t channel_idP,
-					  const tb_size_t         tb_sizeP,
-					  const uint32_t sourceL2Id,
-					  const uint32_t destinationL2Id)
-{mac_rlc_status_resp_t  mac_rlc_status_resp = {0}; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(  const module_id_t       module_idP,
-			      const rnti_t            rntiP,
-			      const eNB_index_t       eNB_index,
-			      const frame_t           frameP,
-			      const eNB_flag_t        enb_flagP,
-			      const MBMS_flag_t       MBMS_flagP,
-			      const logical_chan_id_t channel_idP,
-			      const tb_size_t         tb_sizeP,
-			      char             *buffer_pP,
-			      const uint32_t sourceL2Id,
-			      const uint32_t destinationL2Id )
-{return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
                           unsigned short *sdu_lengths,
@@ -114,8 +82,16 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char *ue_cont_res_id,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
-int rlc_module_init (int enb) {return(0);}
 void pdcp_layer_init (void) {}
+boolean_t pdcp_data_ind(
+  const protocol_ctxt_t *const ctxt_pP,
+  const srb_flag_t   srb_flagP,
+  const MBMS_flag_t  MBMS_flagP,
+  const rb_id_t      rb_idP,
+  const sdu_size_t   sdu_buffer_sizeP,
+  mem_block_t *const sdu_buffer_pP
+) { return(false);}
+
 void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
 void nr_ip_over_LTE_DRB_preconfiguration(void){}
 int rrc_init_nr_global_param(void){return(0);}
@@ -395,8 +371,9 @@ int main(int argc, char **argv)
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
   gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list = (nfapi_rx_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_rx_indication_pdu_t));
+  gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = (nfapi_crc_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_crc_indication_pdu_t));
   gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
-
+  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs = 0;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -522,7 +499,7 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = 0;
   unsigned int available_bits;
   uint8_t nb_re_dmrs;
-  uint8_t length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+  uint8_t length_dmrs = UE->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
   unsigned char mod_order;
   uint16_t code_rate;
 
@@ -534,12 +511,11 @@ int main(int argc, char **argv)
                                             0,
                                             0,
                                             nb_symb_sch,
-                                            &UE->dmrs_UplinkConfig,
-                                            UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType,
+                                            UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
                                             frame_parms->ofdm_symbol_size);
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
-  nb_re_dmrs     = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
+  nb_re_dmrs     = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
   TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
@@ -599,7 +575,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.rv_index = 0;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
-      pusch_pdu->pusch_data.tb_size = TBS;
+      pusch_pdu->pusch_data.tb_size = TBS>>3;
       pusch_pdu->pusch_data.num_cb = 0;
 
 
@@ -675,6 +651,9 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         //------------------- gNB phy procedures -------------------
         //----------------------------------------------------------
+        gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
+        gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs = 0;
+
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
 	if (n_trials==1)

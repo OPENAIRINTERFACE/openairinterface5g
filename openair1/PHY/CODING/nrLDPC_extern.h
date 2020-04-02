@@ -18,29 +18,18 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+#include "openair1/PHY/CODING/nrLDPC_defs.h"
 
-/*!\file nrLDPC_decoder.h
- * \brief Defines the LDPC decoder core prototypes
- * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
- * \date 27-03-2018
- * \version 1.0
- * \note
- * \warning
- */
-
-#ifndef __NR_LDPC_DECODER__H__
-#define __NR_LDPC_DECODER__H__
-
-#include "nrLDPC_types.h"
-#include "nrLDPC_init_mem.h"
-
-/**
-   \brief LDPC decoder
-   \param p_decParams LDPC decoder parameters
-   \param p_llr Input LLRs
-   \param p_llrOut Output vector
-   \param p_profiler LDPC profiler statistics
-*/
-int32_t nrLDPC_decoder(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_llrOut, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler);
-
+#ifdef LDPC_LOADER
+nrLDPC_decoderfunc_t nrLDPC_decoder;
+nrLDPC_encoderfunc_t nrLDPC_encoder;
+#else
+/* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
+extern int load_nrLDPClib(void) ;
+extern int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr); // for ldpctest
+/* ldpc coder/decoder functions, as loaded by load_nrLDPClib(). */
+extern nrLDPC_decoderfunc_t nrLDPC_decoder;
+extern nrLDPC_encoderfunc_t nrLDPC_encoder;
+// inline functions:
+#include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 #endif

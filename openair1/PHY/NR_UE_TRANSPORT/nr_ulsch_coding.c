@@ -36,7 +36,7 @@
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/CODING/nrLDPC_encoder/defs.h"
+#include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
@@ -292,17 +292,35 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       printf("%02x.",a[i]);
     printf("\n");
     */
-    // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(harq_process->a,A)>>8;
-    harq_process->a[A>>3] = ((uint8_t*)&crc)[2];
-    harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-    harq_process->a[2+(A>>3)] = ((uint8_t*)&crc)[0];
-    //printf("CRC %x (A %d)\n",crc,A);
-    //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
+    if (A > 3824) {
+      // Add 24-bit crc (polynomial A) to payload
+      crc = crc24a(harq_process->a,A)>>8;
+      harq_process->a[A>>3] = ((uint8_t*)&crc)[2];
+      harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[1];
+      harq_process->a[2+(A>>3)] = ((uint8_t*)&crc)[0];
+      //printf("CRC %x (A %d)\n",crc,A);
+      //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
 
-    harq_process->B = A+24;
+      harq_process->B = A+24;
 
-    memcpy(harq_process->b,harq_process->a,(A/8)+4);
+      AssertFatal((A/8)+4 <= MAX_NR_ULSCH_PAYLOAD_BYTES,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,MAX_NR_ULSCH_PAYLOAD_BYTES);
+
+      memcpy(harq_process->b,harq_process->a,(A/8)+4);
+    }
+    else {
+      // Add 16-bit crc (polynomial A) to payload
+      crc = crc16(harq_process->a,A)>>16;
+      harq_process->a[A>>3] = ((uint8_t*)&crc)[1];
+      harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[0];
+      //printf("CRC %x (A %d)\n",crc,A);
+      //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
+
+      harq_process->B = A+16;
+
+      AssertFatal((A/8)+3 <= MAX_NR_ULSCH_PAYLOAD_BYTES,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,MAX_NR_ULSCH_PAYLOAD_BYTES);
+
+      memcpy(harq_process->b,harq_process->a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
+    }
 
 ///////////
 ///////////////////////////////////////////////////////////////////////////
@@ -375,8 +393,11 @@ opp_enabled=0;
       printf("%d \n",  harq_process->d[0][cnt]);
       }
       printf("\n");*/
+    encoder_implemparams_t impp;
+    impp.n_segments=harq_process->C;
+    impp.macro_num=0;
 
-    ldpc_encoder_optim_8seg(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,harq_process->C,NULL,NULL,NULL,NULL);
+    nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");

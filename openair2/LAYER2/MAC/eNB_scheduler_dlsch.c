@@ -53,9 +53,7 @@
 
 #include "assertions.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include <dlfcn.h>
 

@@ -51,9 +51,7 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
-#endif
 
 #include "T.h"
 #include "NR_PDCCH-ConfigCommon.h"
@@ -922,28 +920,6 @@ int extract_length(int startSymbolAndLength) {
 
   if (tmp > 0 && tmp < (14-tmp2)) return(tmp);
   else                            return(15-tmp2);
-}
- 
-void fill_initialBWPDLtimeDomainAllocaion(nfapi_nr_config_request_t *cfg,int time_domain_assignment,int *k0,int *mappingType,int *start_symbol,int *length) {
-  AssertFatal(time_domain_assignment < cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value,"DL time_domain_assignment %d >= %d\n",
-	      time_domain_assignment,cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value);
-  *k0           = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_k0[time_domain_assignment].value;
-  *mappingType = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[time_domain_assignment].value;
-  *start_symbol = extract_startSymbol(cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-  *length       = extract_length(cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-
-}
-
-
-
-void fill_initialBWPULtimeDomainAllocaion(nfapi_nr_config_request_t *cfg,int time_domain_assignment,int *k2, int *mappingType, int *start_symbol,int *length) {
-  AssertFatal(time_domain_assignment < cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value,"UL time_domain_assignment %d >= %d\n",
-	      time_domain_assignment,cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value);
-
-  *k2           = cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[time_domain_assignment].value;
-  *mappingType = cfg->pusch_config.PUSCHTimeDomainResourceAllocation_mappingType[time_domain_assignment].value;
-  *start_symbol = extract_startSymbol(cfg->pusch_config.PUSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-  *length       = extract_length(cfg->pusch_config.PUSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
 }
 
 /*

@@ -242,6 +242,8 @@ typedef struct {
   int16_t Po_SRS;
   /// num active cba group
   uint8_t num_active_cba_groups;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
   /// num dci found for cba
   //uint8_t num_cba_dci[10];
   /// allocated CBA RNTI

@@ -329,6 +329,11 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
 	    sprintf(filename,"reconfig.raw");
 	  fd = fopen(filename,"r");
           char buffer[1024];
+	  AssertFatal(fd,
+	              "cannot read file %s: errno %d, %s\n",
+	              filename,
+	              errno,
+	              strerror(errno));
 	  int msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
@@ -337,6 +342,11 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
 	  else
 	    sprintf(filename,"rbconfig.raw");
 	  fd = fopen(filename,"r");
+	  AssertFatal(fd,
+	              "cannot read file %s: errno %d, %s\n",
+	              filename,
+	              errno,
+	              strerror(errno));
 	  msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 

@@ -80,6 +80,7 @@ int sf_ahead=4 ;
 int sl_ahead=0;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
@@ -97,12 +98,17 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
 }
 
 
-//Dummy Functions
-//lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms, unsigned char subframe) {return(SF_DL);}
-int rlc_module_init (int eNB_id) {return(0);}
-
-
 void pdcp_layer_init(void) {}
+boolean_t
+pdcp_data_ind(
+  const protocol_ctxt_t *const ctxt_pP,
+  const srb_flag_t   srb_flagP,
+  const MBMS_flag_t  MBMS_flagP,
+  const rb_id_t      rb_idP,
+  const sdu_size_t   sdu_buffer_sizeP,
+  mem_block_t *const sdu_buffer_pP
+) { return(false);}
+
 int rrc_init_nr_global_param(void){return(0);}
 
 void config_common(int Mod_idP,
@@ -110,28 +116,6 @@ void config_common(int Mod_idP,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
-mac_rlc_status_resp_t mac_rlc_status_ind(const module_id_t       module_idP,
-                                         const rnti_t            rntiP,
-                                         const eNB_index_t       eNB_index,
-                                         const frame_t           frameP,
-                                         const sub_frame_t       subframeP,
-                                         const eNB_flag_t        enb_flagP,
-                                         const MBMS_flag_t       MBMS_flagP,
-                                         const logical_chan_id_t channel_idP,
-                                         const tb_size_t         tb_sizeP,
-                                         const uint32_t          sourceL2Id,
-                                         const uint32_t          destinationL2Id) {mac_rlc_status_resp_t  mac_rlc_status_resp = {0}; return mac_rlc_status_resp;}
-tbs_size_t mac_rlc_data_req(const module_id_t       module_idP,
-                            const rnti_t            rntiP,
-                            const eNB_index_t       eNB_index,
-                            const frame_t           frameP,
-                            const eNB_flag_t        enb_flagP,
-                            const MBMS_flag_t       MBMS_flagP,
-                            const logical_chan_id_t channel_idP,
-                            const tb_size_t         tb_sizeP,
-                            char                    *buffer_pP,
-                            const uint32_t          sourceL2Id,
-                            const uint32_t          destinationL2Id) {return 0;}
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
                           unsigned short *sdu_lengths,
@@ -142,20 +126,6 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
 void nr_ip_over_LTE_DRB_preconfiguration(void){}
-
-void mac_rlc_data_ind     (
-  const module_id_t         module_idP,
-  const rnti_t              rntiP,
-  const eNB_index_t         eNB_index,
-  const frame_t             frameP,
-  const eNB_flag_t          enb_flagP,
-  const MBMS_flag_t         MBMS_flagP,
-  const logical_chan_id_t   channel_idP,
-  char                     *buffer_pP,
-  const tb_size_t           tb_sizeP,
-  num_tb_t                  num_tbP,
-  crc_t                    *crcs_pP)
-{}
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];

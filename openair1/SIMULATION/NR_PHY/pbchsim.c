@@ -60,6 +60,7 @@ uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+uint64_t get_softmodem_optmask(void) {return 0;}
 
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
@@ -409,7 +410,9 @@ int main(int argc, char **argv)
   uint8_t n_hf = 0;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
-  double fs,bw,scs,eps;
+  double fs, eps;
+  double scs = 30000;
+  double bw = 100e6;
   
   switch (mu) {
     case 1:

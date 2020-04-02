@@ -34,8 +34,10 @@
 #include "nr_mac_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "executables/nr-softmodem.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"
-
+#include "common/utils/nr/nr_common.h"
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
 #include "NR_FrequencyInfoUL.h"
@@ -757,7 +759,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
   pusch_pdu->nrOfLayers = 1;
   //DMRS
-  pusch_pdu->ul_dmrs_symb_pos = 1;
+  pusch_pdu->ul_dmrs_symb_pos = 1<<2; //for now the gnb assumes dmrs in the first symbol of the scheduled pusch resource
   pusch_pdu->dmrs_config_type = 0;  //dmrs-type 1 (the one with a single DMRS symbol in the beginning)
   pusch_pdu->ul_dmrs_scrambling_id =  0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
@@ -773,19 +775,19 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   //Resource Allocation in time domain
-  pusch_pdu->start_symbol_index = 0;
+  pusch_pdu->start_symbol_index = 2;
   pusch_pdu->nr_of_symbols = 12;
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 0;
-  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->mcs_index,
+  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
 						 pusch_pdu->target_code_rate,
 						 pusch_pdu->rb_size,
 						 pusch_pdu->nr_of_symbols,
 						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
-						 pusch_pdu->nrOfLayers = 1);
+						 pusch_pdu->nrOfLayers)>>3;
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;
   //pusch_pdu->pusch_uci;
@@ -834,3 +836,4 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   fill_dci_pdu_rel15(pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types);
   
 }
+

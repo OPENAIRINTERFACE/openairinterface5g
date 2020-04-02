@@ -41,9 +41,8 @@
 #include "SCHED_NR_UE/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/nr-uesoftmodem.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
-//#define DEBUG_DLSCH_DECODING 1
+#include "PHY/CODING/nrLDPC_extern.h"
+//#define DEBUG_DLSCH_DECODING
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
 //#define OAI_LDPC_MAX_NUM_LLR 27000//26112 // NR_LDPC_NCOL_BG1*NR_LDPC_ZMAX
@@ -799,13 +798,12 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t Tbslbrm = 950984;
   uint16_t nb_rb = 30;
   double Coderate = 0.0;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dl_config_pdu = &harq_processes[harq_pid]->dl_config_pdu
-  uint8_t dmrs_type = dl_config_pdu->dmrsConfigType;
+  uint8_t dmrs_type = harq_process->dmrsConfigType;
   //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
   //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
 
   uint8_t nb_re_dmrs = (dmrs_type==1)?6:4;
-  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
+  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
 
   uint32_t i,j;
 //  int nbDlProcessing =0;
@@ -861,7 +859,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   A = harq_process->TBS;
 
-  ret = dlsch->max_ldpc_iterations;
+  ret = dlsch->max_ldpc_iterations + 1;
+  dlsch->last_iteration_cnt = ret;
 
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
 
@@ -929,9 +928,10 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                       &harq_process->F,
                       p_decParams->BG);
 
-      p_decParams->Z = harq_process->Z;
 
     }
+    
+    p_decParams->Z = harq_process->Z;
 
   //printf("coderate %f kc %d \n", Coderate, kc);
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
@@ -1149,11 +1149,13 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
 
-      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      j+=(harq_process->F>>3);
+      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
       {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
-
+      
       for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
       {
         pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
@@ -1480,7 +1482,7 @@ void nr_dlsch_decoding_process(void *arg)
   }    
 
   harq_process->round  =0;
-  if (harq_process->round == 0) {
+ // if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
 	if (A > 3824)
 	  harq_process->B = A+24;
@@ -1498,7 +1500,7 @@ void nr_dlsch_decoding_process(void *arg)
 
     p_decParams->Z = harq_process->Z;
 
-    }
+   // }
     
     //printf("round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
 
@@ -1683,9 +1685,11 @@ void nr_dlsch_decoding_process(void *arg)
           pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
         }
 
-        for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+        j+=(harq_process->F>>3);
+        //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+        for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++,j++)
         {
-          pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
+         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
         }
 
         for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)

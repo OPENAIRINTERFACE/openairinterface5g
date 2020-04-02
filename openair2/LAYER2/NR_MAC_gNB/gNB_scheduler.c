@@ -55,9 +55,7 @@
 #include "flexran_agent_extern.h"
 #include "flexran_agent_mac.h"
 
-#if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
-#endif
 
 #include "executables/softmodem-common.h"
 
@@ -310,10 +308,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   //printf("gNB_dlsch_ulsch_scheduler frameRX %d slotRX %d frameTX %d slotTX %d\n",frame_rxP,slot_rxP,frame_txP,slot_txP);
 			       
   protocol_ctxt_t   ctxt;
-  int CC_id, i = -1, UE_id = 0;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame_txP, slot_txP,module_idP);
+  int CC_id, UE_id = 0;
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &gNB->UE_list;
-  rnti_t rnti;
   UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
 
@@ -354,7 +352,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   */
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
   // This schedules MIB
   if((slot_txP == 0) && (frame_txP & 7) == 0){

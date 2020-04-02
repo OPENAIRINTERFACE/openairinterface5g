@@ -460,6 +460,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     LOG_D(PHY,"phy_procedures_nrUE_RX: slot:%d, time %lu\n", proc->nr_tti_rx, (rdtsc()-a)/3500);
     //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
+
     if(IS_SOFTMODEM_NOS1){ //&& proc->nr_tti_rx==1
       //Hardcoded rnti value
       protocol_ctxt_t ctxt;
@@ -467,7 +468,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 				     0x1234, proc->frame_rx,
 				     proc->nr_tti_rx, 0);
       pdcp_run(&ctxt);
-      pdcp_fifo_flush_sdus(&ctxt);
     }
   }
 
@@ -633,7 +633,7 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   return 0;
 }
 
-inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+static inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   if (fp->numerology_index == 0)
     return fp->nb_prefix_samples0 + fp->ofdm_symbol_size;
   int num_samples = (slot%(fp->slots_per_subframe/2)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
@@ -641,7 +641,7 @@ inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   return num_samples;
 }
 
-inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+static inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   int rem_samples = fp->get_samples_per_slot(slot, fp) - get_firstSymSamp(slot, fp);
   int next_slot_first_symbol = 0;
   if (slot < (fp->slots_per_frame-1))
@@ -665,6 +665,7 @@ void *UE_thread(void *arg) {
   int thread_idx=0;
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
   for (int i=0; i<RX_NB_TH+1; i++)  // RX_NB_TH working + 1 we are making to be pushed
     pushNotifiedFIFO_nothreadSafe(&freeBlocks,
@@ -761,7 +762,7 @@ void *UE_thread(void *arg) {
     int firstSymSamp = get_firstSymSamp(slot_nr, &UE->frame_parms);
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
       rxp[i] = (void *)&UE->common_vars.rxdata[i][firstSymSamp+
-               get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
+               UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,0)];
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
@@ -825,7 +826,8 @@ void *UE_thread(void *arg) {
         processingData_t *tmp=(processingData_t *)res->msgData;
 
         if (tmp->proc.decoded_frame_rx != -1)
-          decoded_frame_rx=tmp->proc.decoded_frame_rx;
+          decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+          //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
         pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
       }
@@ -851,7 +853,8 @@ void *UE_thread(void *arg) {
       processingData_t *tmp=(processingData_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=tmp->proc.decoded_frame_rx;
+        decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+        //decoded_frame_rx=tmp->proc.decoded_frame_rx;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
