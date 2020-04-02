@@ -102,9 +102,22 @@ typedef struct {
   uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
 
-/*! \brief scheduling control information set through an API (not used)*/
+typedef struct NR_sched_pucch {
+  int frame;
+  int ul_slot;
+  uint8_t dai_c;
+  uint8_t timing_indicator;
+  uint8_t resource_indicator;
+  struct NR_sched_pucch *next_sched_pucch;
+} NR_sched_pucch;
+
+/*! \brief scheduling control information set through an API */
 typedef struct {
-  int dummy;
+  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+  uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+  NR_sched_pucch *sched_pucch;
+  uint16_t ta_timer;
+  int16_t ta_update;
 } NR_UE_sched_ctrl_t;
 
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
@@ -112,7 +125,7 @@ typedef struct {
 
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
-  UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
+  NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   int next[MAX_MOBILES_PER_GNB];
   int head;
   int next_ul[MAX_MOBILES_PER_GNB];
@@ -124,7 +137,7 @@ typedef struct {
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
 
-/*! \brief top level eNB MAC structure */
+/*! \brief top level gNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t                    eth_params_n;
