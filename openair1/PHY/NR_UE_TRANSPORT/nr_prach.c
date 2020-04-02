@@ -95,7 +95,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   n_ra_prb                = prach_pdu->freq_msg1;
   NCS                     = prach_pdu->num_cs;
   prach_fmt_id            = prach_pdu->prach_format;
-  preamble_index          = 0; //prach_resources->ra_PreambleIndex // temporary hardcoded
+  preamble_index          = prach_resources->ra_PreambleIndex;
   fd_occasion             = 0;
   prach_len               = 0;
   dftlen                  = 0;
