@@ -1706,6 +1706,23 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       } else if (rvidx_tab[round_UL & 3] == 3) {
         mcs_rv = 31;
       }
+
+      const uint16_t first_rb = UE_template_ptr->pre_first_nb_rb_ul;
+      const uint8_t nb_rb = UE_template_ptr->pre_allocated_nb_rb_ul;
+      if (first_rb != UE_template_ptr->first_rb_ul[harq_pid]
+          || nb_rb != UE_template_ptr->nb_rb_ul[harq_pid])
+        LOG_D(MAC,
+              "%4d.%d UE %4x retx: change freq allocation to %d RBs start %d (from %d RBs start %d)\n",
+              frameP,
+              subframeP,
+              rnti,
+              nb_rb,
+              first_rb,
+              UE_template_ptr->nb_rb_ul[harq_pid],
+              UE_template_ptr->first_rb_ul[harq_pid]);
+      UE_template_ptr->first_rb_ul[harq_pid] = first_rb;
+      UE_template_ptr->nb_rb_ul[harq_pid] = nb_rb;
+
       T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION,
         T_INT(module_idP),
         T_INT(CC_id),
@@ -1714,8 +1731,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
         T_INT(subframeP),
         T_INT(harq_pid),
         T_INT(mcs_rv),
-        T_INT(UE_template_ptr->first_rb_ul[harq_pid]),
-        T_INT(UE_template_ptr->nb_rb_ul[harq_pid]),
+        T_INT(first_rb),
+        T_INT(nb_rb),
         T_INT(round_index));
       /* Add UL_config PDUs */
       LOG_D(MAC,
@@ -1738,8 +1755,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = UE_template_ptr->first_rb_ul[harq_pid];
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block = UE_template_ptr->nb_rb_ul[harq_pid];
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block = nb_rb;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 = mcs_rv;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms = cshift;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag = 0;
@@ -1776,8 +1793,8 @@ schedule_ulsch_rnti(module_id_t   module_idP,
           get_tmode(module_idP, CC_id, UE_id),
           mac->ul_handle,
           rnti,
-          UE_template_ptr->first_rb_ul[harq_pid], // resource_block_start
-          UE_template_ptr->nb_rb_ul[harq_pid], // number_of_resource_blocks
+          first_rb, // resource_block_start
+          nb_rb, // number_of_resource_blocks
           mcs_rv,
           cshift, // cyclic_shift_2_for_drms
           0, // frequency_hopping_enabled_flag
