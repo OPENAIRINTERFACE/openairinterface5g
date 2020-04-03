@@ -413,6 +413,12 @@ boolean_t CCE_allocation_infeasible(int module_idP,
                                     int common_flag,
                                     int subframe,
                                     int aggregation, int rnti);
+/* tries to allocate a CCE. If it succeeds, reserves NFAPI DCI and DLSCH config */
+int CCE_try_allocate_dlsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi);
 
 void set_ue_dai(sub_frame_t subframeP,
                 int UE_id,

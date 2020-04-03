@@ -3510,6 +3510,67 @@ CCE_allocation_infeasible(int module_idP,
   return res;
 }
 
+int CCE_try_allocate_dlsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi) {
+  const rnti_t rnti = RC.mac[module_id]->UE_info.UE_template[CC_id][UE_id].rnti;
+  nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_id]->DL_req[CC_id].dl_config_request_body;
+
+  if (DL_req->number_pdu >= MAX_NUM_DL_PDU) {
+    LOG_W(MAC, "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n", subframe, rnti);
+    return -1;
+  }
+
+  int aggregation = 2;
+  const uint8_t tm = get_tmode(module_id, CC_id, UE_id);
+  switch (tm) {
+    case 1:
+    case 2:
+    case 7:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format1);
+      break;
+
+    case 3:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format2A);
+      break;
+
+    default:
+      AssertFatal(0, "Unsupported transmission mode %d\n", tm);
+      break;
+  }
+
+  nfapi_dl_config_request_pdu_t *dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
+  memset(dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag            = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
+  dl_config_pdu->pdu_type                                     = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti              = rnti;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type         = 1;
+  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
+  DL_req->number_pdu++;
+  LOG_D(MAC, "Subframe %d: Checking CCE feasibility format 1: (%x,%d) \n",
+        subframe, rnti, aggregation);
+
+  if (allocate_CCEs(module_id, CC_id, 0, subframe, 0) < 0) {
+    DL_req->number_pdu--;
+    return -1;
+  }
+
+  DL_req->number_dci++;
+  nfapi_dl_config_request_pdu_t *dl_dlsch_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
+  dl_dlsch_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
+  dl_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DLSCH_PDU_REL8_TAG;
+  dl_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti = rnti;
+  DL_req->number_pdu++;
+
+  return DL_req->number_pdu - 2;
+}
+
 //------------------------------------------------------------------------------
 void
 get_retransmission_timing(LTE_TDD_Config_t *tdd_Config,

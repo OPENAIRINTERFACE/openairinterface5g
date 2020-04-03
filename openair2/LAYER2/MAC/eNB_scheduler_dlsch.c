@@ -617,43 +617,31 @@ schedule_ue_spec(module_id_t module_idP,
       continue;
     }
 
-    int aggregation = 2;
-    switch (get_tmode(module_idP,
-                      CC_id,
-                      UE_id)) {
-      case 1:
-      case 2:
-      case 7:
-        aggregation = get_aggregation(get_bw_index(module_idP,
-                                      CC_id),
-                                      ue_sched_ctrl->dl_cqi[CC_id],
-                                      format1);
-        break;
-
-      case 3:
-        aggregation = get_aggregation(get_bw_index(module_idP,
-                                      CC_id),
-                                      ue_sched_ctrl->dl_cqi[CC_id],
-                                      format2A);
-        break;
-
-      default:
-        AssertFatal(1==0,"Unsupported transmission mode %d\n", get_tmode(module_idP, CC_id, UE_id));
-        aggregation = 2;
-        break;
+    int dci_dl_pdu_idx = ue_sched_ctrl->pre_dci_dl_pdu_idx;
+    if (dci_dl_pdu_idx < 0) {
+      dci_dl_pdu_idx = CCE_try_allocate_dlsch(
+          module_idP, CC_id, subframeP, UE_id, ue_sched_ctrl->dl_cqi[CC_id]);
+      if (dci_dl_pdu_idx < 0) {
+        LOG_W(MAC, "%d.%d: Dropping Allocation for RNTI 0x%04x/UE %d\n",
+              frameP,
+              subframeP,
+              rnti,
+              UE_id);
+        continue;
+      }
     }
 
-    if (CCE_allocation_infeasible(module_idP,
-                                  CC_id,
-                                  1,
-                                  subframeP,
-                                  aggregation,
-                                  rnti)) {
-      LOG_W(MAC, "%d.%d: Dropping Allocation for RNTI 0x%04x/UE %d\n",
-            frameP,
-            subframeP,
-            rnti,
-            UE_id);
+    /* verify it is the right UE */
+    nfapi_dl_config_request_pdu_t *dci = &dl_req->dl_config_pdu_list[dci_dl_pdu_idx];
+    nfapi_dl_config_request_pdu_t *dlsch = &dl_req->dl_config_pdu_list[dci_dl_pdu_idx + 1];
+    if (dci->pdu_type != NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE
+        || dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti != rnti
+        || dlsch->pdu_type != NFAPI_DL_CONFIG_DLSCH_PDU_TYPE
+        || dlsch->dlsch_pdu.dlsch_pdu_rel8.rnti != rnti) {
+      LOG_E(MAC, "illegal dl_config_pdu_list index %d for UE %d/RNTI %04x\n",
+            dci_dl_pdu_idx,
+            UE_id,
+            rnti);
       continue;
     }
 
@@ -691,150 +679,126 @@ schedule_ue_spec(module_id_t module_idP,
       const uint32_t rbc = allocate_prbs_sub(
           nb_rb, N_RB_DL, N_RBG, ue_sched_ctrl->rballoc_sub_UE[CC_id]);
 
-      if (nb_rb <= ue_sched_ctrl->pre_nb_available_rbs[CC_id]) {
-        /* CDRX */
-        ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
-
-        if (ue_sched_ctrl->cdrx_configured) {
-          ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-
-          /*
-           * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
-           */
-          if (harq_pid == 0) {
-            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
-          }
-        }
-
-        if (cc[CC_id].tdd_Config != NULL) {
-          ue_template->DAI++;
-          update_ul_dci(module_idP,
-                        CC_id,
-                        rnti,
-                        ue_template->DAI,
-                        subframeP);
-          LOG_D(MAC, "DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
-                CC_id,
-                subframeP,
-                UE_id,
-                ue_template->DAI);
-        }
-
-        nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-        memset(dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
-        switch (get_tmode(module_idP, CC_id, UE_id)) {
-          case 1:
-          case 2:
-          case 7:
-          default:
-            LOG_D(MAC, "retransmission DL_REQ: rnti:%x\n",
-                  rnti);
-            dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
-            dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level =
-              get_aggregation(get_bw_index(module_idP,
-                                           CC_id),
-                              ue_sched_ctrl->dl_cqi[CC_id],
-                              format1);
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = rnti;
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1; // CRNTI: see Table 4-10 from SCF082 - nFAPI specifications
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000; // equal to RS power
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = harq_pid;
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 1; // Don't adjust power when retransmitting
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = ue_template->oldNDI[harq_pid];
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = ue_template->oldmcs1[harq_pid];
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = round_DL & 3;
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = rbc;
-            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_allocation_type = 0;
-
-            // TDD
-            if (cc[CC_id].tdd_Config != NULL) {
-              dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.downlink_assignment_index = (ue_template->DAI - 1) & 3;
-              LOG_D(MAC, "[eNB %d] Retransmission CC_id %d : harq_pid %d, round %d, dai %d, mcs %d\n",
-                    module_idP,
-                    CC_id,
-                    harq_pid,
-                    round_DL,
-                    ue_template->DAI - 1,
-                    ue_template->oldmcs1[harq_pid]);
-            } else {
-              LOG_D(MAC, "[eNB %d] Retransmission CC_id %d : harq_pid %d, round %d, mcs %d\n",
-                    module_idP,
-                    CC_id,
-                    harq_pid,
-                    round_DL,
-                    ue_template->oldmcs1[harq_pid]);
-            }
-
-            if (!CCE_allocation_infeasible(module_idP,
-                                           CC_id,
-                                           1,
-                                           subframeP,
-                                           dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
-                                           rnti)) {
-              dl_req->number_dci++;
-              dl_req->number_pdu++;
-              dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
-              eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
-              eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-              fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dl_req->number_pdu],
-                                      TBS,
-                                      -1,   // retransmission, no pdu_index
-                                      rnti,
-                                      0,    // type 0 allocation from 7.1.6 in 36.213
-                                      0,    // virtual_resource_block_assignment_flag, unused here
-                                      rbc,  // resource_block_coding
-                                      getQm(ue_template->oldmcs1[harq_pid]),
-                                      round_DL & 3, // redundancy version
-                                      1,    // transport blocks
-                                      0,    // transport block to codeword swap flag
-                                      cc[CC_id].p_eNB == 1 ? 0 : 1,    // transmission_scheme
-                                      1,    // number of layers
-                                      1,    // number of subbands
-                                      //                      uint8_t codebook_index,
-                                      4,    // UE category capacity
-                                      ue_template->physicalConfigDedicated->pdsch_ConfigDedicated->p_a,
-                                      0,    // delta_power_offset for TM5
-                                      0,    // ngap
-                                      0,    // nprb
-                                      cc[CC_id].p_eNB == 1 ? 1 : 2,    // transmission mode
-                                      0,    //number of PRBs treated as one subband, not used here
-                                      0);   // number of beamforming vectors, not used here
-              dl_req->number_pdu++;
-              LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",
-                    eNB->pdu_index[CC_id],
-                    round_DL);
-              program_dlsch_acknak(module_idP,
-                                   CC_id,
-                                   UE_id,
-                                   frameP,
-                                   subframeP,
-                                   dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
-              // No TX request for retransmission (check if null request for FAPI)
-            } else {
-              LOG_W(MAC, "Frame %d, Subframe %d: Dropping DLSCH allocation for UE %d\%x, infeasible CCE allocation\n",
-                    frameP,
-                    subframeP,
-                    UE_id,
-                    rnti);
-            }
-        }
-
-        //eNB_UE_stats->dlsch_trials[round]++;
-        eNB_UE_stats->num_retransmission += 1;
-        eNB_UE_stats->rbs_used_retx = nb_rb;
-        eNB_UE_stats->total_rbs_used_retx += nb_rb;
-        eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->dlsch_mcs1;
-      } else {
+      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id]) {
         LOG_D(MAC,
               "[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
               module_idP,
               frameP,
               CC_id,
               UE_id);
+        continue;
       }
+
+      /* CDRX */
+      ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
+
+      if (ue_sched_ctrl->cdrx_configured) {
+        ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
+
+        /*
+         * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
+         */
+        if (harq_pid == 0) {
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
+        }
+      }
+
+      if (cc[CC_id].tdd_Config != NULL) {
+        ue_template->DAI++;
+        update_ul_dci(module_idP,
+                      CC_id,
+                      rnti,
+                      ue_template->DAI,
+                      subframeP);
+        LOG_D(MAC, "DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
+              CC_id,
+              subframeP,
+              UE_id,
+              ue_template->DAI);
+      }
+
+      nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dci_dl_pdu_idx];
+      switch (get_tmode(module_idP, CC_id, UE_id)) {
+        case 1:
+        case 2:
+        case 7:
+        default:
+          LOG_D(MAC, "retransmission DL_REQ: rnti:%x\n",
+                rnti);
+          dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1; // CRNTI: see Table 4-10 from SCF082 - nFAPI specifications
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000; // equal to RS power
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = harq_pid;
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 1; // Don't adjust power when retransmitting
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = ue_template->oldNDI[harq_pid];
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = ue_template->oldmcs1[harq_pid];
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = round_DL & 3;
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = rbc;
+          dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_allocation_type = 0;
+
+          // TDD
+          if (cc[CC_id].tdd_Config != NULL) {
+            dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.downlink_assignment_index = (ue_template->DAI - 1) & 3;
+            LOG_D(MAC, "[eNB %d] Retransmission CC_id %d : harq_pid %d, round %d, dai %d, mcs %d\n",
+                  module_idP,
+                  CC_id,
+                  harq_pid,
+                  round_DL,
+                  ue_template->DAI - 1,
+                  ue_template->oldmcs1[harq_pid]);
+          } else {
+            LOG_D(MAC, "[eNB %d] Retransmission CC_id %d : harq_pid %d, round %d, mcs %d\n",
+                  module_idP,
+                  CC_id,
+                  harq_pid,
+                  round_DL,
+                  ue_template->oldmcs1[harq_pid]);
+          }
+
+          dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+          eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+          eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
+          fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dci_dl_pdu_idx + 1],
+                                  TBS,
+                                  -1,   // retransmission, no pdu_index
+                                  rnti,
+                                  0,    // type 0 allocation from 7.1.6 in 36.213
+                                  0,    // virtual_resource_block_assignment_flag, unused here
+                                  rbc,  // resource_block_coding
+                                  getQm(ue_template->oldmcs1[harq_pid]),
+                                  round_DL & 3, // redundancy version
+                                  1,    // transport blocks
+                                  0,    // transport block to codeword swap flag
+                                  cc[CC_id].p_eNB == 1 ? 0 : 1,    // transmission_scheme
+                                  1,    // number of layers
+                                  1,    // number of subbands
+                                  //                      uint8_t codebook_index,
+                                  4,    // UE category capacity
+                                  ue_template->physicalConfigDedicated->pdsch_ConfigDedicated->p_a,
+                                  0,    // delta_power_offset for TM5
+                                  0,    // ngap
+                                  0,    // nprb
+                                  cc[CC_id].p_eNB == 1 ? 1 : 2,    // transmission mode
+                                  0,    //number of PRBs treated as one subband, not used here
+                                  0);   // number of beamforming vectors, not used here
+          LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",
+                eNB->pdu_index[CC_id],
+                round_DL);
+          program_dlsch_acknak(module_idP,
+                               CC_id,
+                               UE_id,
+                               frameP,
+                               subframeP,
+                               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
+          // No TX request for retransmission (check if null request for FAPI)
+      }
+
+      //eNB_UE_stats->dlsch_trials[round]++;
+      eNB_UE_stats->num_retransmission += 1;
+      eNB_UE_stats->rbs_used_retx = nb_rb;
+      eNB_UE_stats->total_rbs_used_retx += nb_rb;
+      eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->dlsch_mcs1;
     } else {
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
@@ -1115,18 +1079,9 @@ schedule_ue_spec(module_id_t module_idP,
           } // Po_PUCCH has been updated
         }
 
-        nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-        memset(dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
-        dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
+        nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dci_dl_pdu_idx];
         dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level =
-          get_aggregation(get_bw_index(module_idP,
-                                       CC_id),
-                          ue_sched_ctrl->dl_cqi[CC_id],
-                          format1);
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = rnti;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;    // equal to RS power
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = harq_pid;
@@ -1159,104 +1114,79 @@ schedule_ue_spec(module_id_t module_idP,
         LOG_D(MAC, "Checking feasibility pdu %d (new sdu)\n",
               dl_req->number_pdu);
 
-        if (!CCE_allocation_infeasible(module_idP,
-                                       CC_id,
-                                       1,
-                                       subframeP,
-                                       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
-                                       rnti)) {
-          ue_sched_ctrl->round[CC_id][harq_pid] = 0;
-          dl_req->number_dci++;
-          dl_req->number_pdu++;
-          dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
-          eNB->DL_req[CC_id].sfn_sf = frameP << 4 | subframeP;
-          eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-          /* CDRX */
-          ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
+        ue_sched_ctrl->round[CC_id][harq_pid] = 0;
+        dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+        eNB->DL_req[CC_id].sfn_sf = frameP << 4 | subframeP;
+        eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
+        /* CDRX */
+        ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
 
-          if (ue_sched_ctrl->cdrx_configured) {
-            ue_sched_ctrl->drx_inactivity_timer = 1; // restart drx inactivity timer when new transmission
-            ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
-            /*
-             * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
-             */
-            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) ue_sched_ctrl->drx_inactivity_timer);
+        if (ue_sched_ctrl->cdrx_configured) {
+          ue_sched_ctrl->drx_inactivity_timer = 1; // restart drx inactivity timer when new transmission
+          ue_sched_ctrl->drx_retransmission_timer[harq_pid] = 0; // stop drx retransmission
+          /*
+           * Note: contrary to the spec drx_retransmission_timer[harq_pid] is reset not stop.
+           */
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) ue_sched_ctrl->drx_inactivity_timer);
 
-            if (harq_pid == 0) {
-              VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
-            }
+          if (harq_pid == 0) {
+            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_RETRANSMISSION_HARQ0, (unsigned long) ue_sched_ctrl->drx_retransmission_timer[0]);
           }
-
-          // Toggle NDI for next time
-          LOG_D(MAC, "CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
-                CC_id,
-                frameP,
-                subframeP,
-                UE_id,
-                rnti,
-                harq_pid,
-                ue_template->oldNDI[harq_pid]);
-          ue_template->oldNDI[harq_pid] = 1 - ue_template->oldNDI[harq_pid];
-          ue_template->oldmcs1[harq_pid] = mcs;
-          ue_template->oldmcs2[harq_pid] = 0;
-          AssertFatal(ue_template->physicalConfigDedicated != NULL, "physicalConfigDedicated is NULL\n");
-          AssertFatal(ue_template->physicalConfigDedicated->pdsch_ConfigDedicated != NULL,
-                      "physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
-          fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dl_req->number_pdu],
-                                  TBS,
-                                  eNB->pdu_index[CC_id],
-                                  rnti,
-                                  0, // type 0 allocation from 7.1.6 in 36.213
-                                  0,  // virtual_resource_block_assignment_flag, unused here
-                                  rbc,// resource_block_coding
-                                  getQm(mcs),
-                                  0,  // redundancy version
-                                  1,  // transport blocks
-                                  0,  // transport block to codeword swap flag
-                                  cc[CC_id].p_eNB == 1 ? 0 : 1, // transmission_scheme
-                                  1,  // number of layers
-                                  1,  // number of subbands
-                                  //                       uint8_t codebook_index,
-                                  4,  // UE category capacity
-                                  ue_template->physicalConfigDedicated->pdsch_ConfigDedicated->p_a,
-                                  0,  // delta_power_offset for TM5
-                                  0,  // ngap
-                                  0,  // nprb
-                                  cc[CC_id].p_eNB == 1 ? 1 : 2, // transmission mode
-                                  0,  //number of PRBs treated as one subband, not used here
-                                  0); // number of beamforming vectors, not used here
-          dl_req->number_pdu++;
-          eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
-                                      (frameP * 10) + subframeP,
-                                      TBS,
-                                      eNB->pdu_index[CC_id],
-                                      dlsch_pdu->payload[0]);
-          LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",
-                eNB->pdu_index[CC_id]);
-          eNB->pdu_index[CC_id]++;
-          program_dlsch_acknak(module_idP,
-                               CC_id,
-                               UE_id,
-                               frameP,
-                               subframeP,
-                               dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
-        } else {
-          LOG_W(MAC, "Frame %d, Subframe %d: Dropping DLSCH allocation for UE %d/%x, infeasible CCE allocations\n",
-                frameP,
-                subframeP,
-                UE_id,
-                rnti);
         }
-      }
-    }
 
-    /* TODO this seems to not be necessary, we already do this above */
-    if (cc[CC_id].tdd_Config != NULL) {    // TDD
-      set_ul_DAI(module_idP,
-                 UE_id,
-                 CC_id,
-                 frameP,
-                 subframeP);
+        // Toggle NDI for next time
+        LOG_D(MAC, "CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
+              CC_id,
+              frameP,
+              subframeP,
+              UE_id,
+              rnti,
+              harq_pid,
+              ue_template->oldNDI[harq_pid]);
+        ue_template->oldNDI[harq_pid] = 1 - ue_template->oldNDI[harq_pid];
+        ue_template->oldmcs1[harq_pid] = mcs;
+        ue_template->oldmcs2[harq_pid] = 0;
+        AssertFatal(ue_template->physicalConfigDedicated != NULL, "physicalConfigDedicated is NULL\n");
+        AssertFatal(ue_template->physicalConfigDedicated->pdsch_ConfigDedicated != NULL,
+                    "physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
+        fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dci_dl_pdu_idx + 1],
+                                TBS,
+                                eNB->pdu_index[CC_id],
+                                rnti,
+                                0, // type 0 allocation from 7.1.6 in 36.213
+                                0,  // virtual_resource_block_assignment_flag, unused here
+                                rbc,// resource_block_coding
+                                getQm(mcs),
+                                0,  // redundancy version
+                                1,  // transport blocks
+                                0,  // transport block to codeword swap flag
+                                cc[CC_id].p_eNB == 1 ? 0 : 1, // transmission_scheme
+                                1,  // number of layers
+                                1,  // number of subbands
+                                //                       uint8_t codebook_index,
+                                4,  // UE category capacity
+                                ue_template->physicalConfigDedicated->pdsch_ConfigDedicated->p_a,
+                                0,  // delta_power_offset for TM5
+                                0,  // ngap
+                                0,  // nprb
+                                cc[CC_id].p_eNB == 1 ? 1 : 2, // transmission mode
+                                0,  //number of PRBs treated as one subband, not used here
+                                0); // number of beamforming vectors, not used here
+        eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
+                                    (frameP * 10) + subframeP,
+                                    TBS,
+                                    eNB->pdu_index[CC_id],
+                                    dlsch_pdu->payload[0]);
+        LOG_D(MAC, "Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",
+              eNB->pdu_index[CC_id]);
+        eNB->pdu_index[CC_id]++;
+        program_dlsch_acknak(module_idP,
+                             CC_id,
+                             UE_id,
+                             frameP,
+                             subframeP,
+                             dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
+      }
     }
   }     // UE_id loop
   stop_meas(&eNB->schedule_dlsch);

@@ -293,6 +293,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     ue_sched_ctrl->pre_nb_available_rbs[CC_id] = 0;
     ue_sched_ctrl->dl_pow_off[CC_id] = 2;
     memset(ue_sched_ctrl->rballoc_sub_UE[CC_id], 0, sizeof(ue_sched_ctrl->rballoc_sub_UE[CC_id]));
+    ue_sched_ctrl->pre_dci_dl_pdu_idx = -1;
 
     const rnti_t rnti = UE_RNTI(Mod_id, UE_id);
     if (rnti == NOT_A_RNTI) {

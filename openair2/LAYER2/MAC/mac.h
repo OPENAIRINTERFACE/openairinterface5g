@@ -933,6 +933,7 @@ typedef struct {
   uint8_t dl_pow_off[NFAPI_CC_MAX];
   uint16_t pre_nb_available_rbs[NFAPI_CC_MAX];
   unsigned char rballoc_sub_UE[NFAPI_CC_MAX][N_RBG_MAX];
+  int pre_dci_dl_pdu_idx;
   uint16_t ta_timer;
   int16_t ta_update;
   uint16_t ul_consecutive_errors;
