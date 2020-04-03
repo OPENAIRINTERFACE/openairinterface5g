@@ -1619,8 +1619,7 @@ fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
 
 //------------------------------------------------------------------------------
 void
-fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
-                        nfapi_dl_config_request_body_t *dl_req,
+fill_nfapi_dlsch_config(nfapi_dl_config_request_pdu_t *dl_config_pdu,
                         uint16_t length,
                         int16_t pdu_index,
                         uint16_t rnti,
@@ -1646,7 +1645,6 @@ fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
                         uint8_t num_bf_vector)
 //------------------------------------------------------------------------------
 {
-  nfapi_dl_config_request_pdu_t *dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
   memset((void *) dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
   dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
   dl_config_pdu->pdu_size                                                        = (uint8_t) (2 + sizeof(nfapi_dl_config_dlsch_pdu));
@@ -1673,7 +1671,6 @@ fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = transmission_mode;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = num_bf_prb_per_subband;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = num_bf_vector;
-  dl_req->number_pdu++;
   return;
 }
 

@@ -1030,7 +1030,11 @@ generate_Msg4(module_id_t module_idP,
           memcpy((void *) &mac->UE_info.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0][(unsigned char)offset],
                  &cc[CC_idP].CCCH_pdu.payload[0], rrc_sdu_length);
           // DLSCH Config
-          fill_nfapi_dlsch_config(mac, dl_req_body, ra->msg4_TBsize, mac->pdu_index[CC_idP], ra->rnti, 2, // resource_allocation_type : format 1A/1B/1D
+          fill_nfapi_dlsch_config(&dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu],
+                                  ra->msg4_TBsize,
+                                  mac->pdu_index[CC_idP],
+                                  ra->rnti,
+                                  2, // resource_allocation_type : format 1A/1B/1D
                                   0,  // virtual_resource_block_assignment_flag : localized
                                   getRIV(N_RB_DL, first_rb, 4), // resource_block_coding : RIV, 4 PRB
                                   2,  // modulation: QPSK
@@ -1049,6 +1053,7 @@ generate_Msg4(module_id_t module_idP,
                                   (cc->p_eNB == 1) ? 1 : 2, // transmission mode
                                   1,  // num_bf_prb_per_subband
                                   1); // num_bf_vector
+          dl_req_body->number_pdu++;
           LOG_D(MAC,
                 "Filled DLSCH config, pdu number %d, non-dci pdu_index %d\n",
                 dl_req_body->number_pdu, mac->pdu_index[CC_idP]);
@@ -1173,7 +1178,8 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
           // DLSCH Config
           //DJP - fix this pdu_index = -1
           LOG_D(MAC, "check_Msg4_retransmission() before fill_nfapi_dlsch_config() with pdu_index = -1 \n");
-          fill_nfapi_dlsch_config(mac, dl_req_body, ra->msg4_TBsize,
+          fill_nfapi_dlsch_config(&dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu],
+                                  ra->msg4_TBsize,
                                   -1
                                   /* retransmission, no pdu_index */
                                   , ra->rnti, 2,  // resource_allocation_type : format 1A/1B/1D
@@ -1195,6 +1201,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
                                   (cc->p_eNB == 1) ? 1 : 2, // transmission mode
                                   1,  // num_bf_prb_per_subband
                                   1); // num_bf_vector
+          dl_req_body->number_pdu++;
 
           if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR) {
             set_dl_ue_select_msg4(CC_idP, 4, UE_id, ra->rnti);

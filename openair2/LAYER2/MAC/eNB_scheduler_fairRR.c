@@ -1493,7 +1493,9 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                 dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
                 eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
                 eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-                fill_nfapi_dlsch_config(eNB, dl_req, TBS, -1
+                fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dl_req->number_pdu],
+                                        TBS,
+                                        -1
                                         /* retransmission, no pdu_index */
                                         , rnti, 0,  // type 0 allocation from 7.1.6 in 36.213
                                         0,  // virtual_resource_block_assignment_flag, unused here
@@ -1513,6 +1515,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                         0,  //number of PRBs treated as one subband, not used here
                                         0 // number of beamforming vectors, not used here
                                        );
+                dl_req->number_pdu++;
                 LOG_D(MAC,
                       "Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",
                       eNB->pdu_index[CC_id], round);
@@ -2077,7 +2080,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
             UE_info->UE_template[CC_id][UE_id].oldmcs2[harq_pid] = 0;
             AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated is NULL\n");
             AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated!=NULL,"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
-            fill_nfapi_dlsch_config(eNB,dl_req,
+            fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dl_req->number_pdu],
                                     TBS,
                                     eNB->pdu_index[CC_id],
                                     rnti,
@@ -2101,6 +2104,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                     0, //number of PRBs treated as one subband, not used here
                                     0 // number of beamforming vectors, not used here
                                    );
+            dl_req->number_pdu++;
             eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
                                         (frameP*10)+subframeP,
                                         TBS,

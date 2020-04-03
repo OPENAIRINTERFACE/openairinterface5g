@@ -141,8 +141,7 @@ schedule_ue_spec_phy_test(
       AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated is NULL\n");
       AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated!=NULL,"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
       */
-      fill_nfapi_dlsch_config(eNB,
-                              dl_req,
+      fill_nfapi_dlsch_config(&dl_req->dl_config_pdu_list[dl_req->number_pdu],
                               TBS,
                               eNB->pdu_index[CC_id],
                               rnti,
@@ -166,6 +165,7 @@ schedule_ue_spec_phy_test(
                               0, //number of PRBs treated as one subband, not used here
                               0 // number of beamforming vectors, not used here
                              );
+      dl_req->number_pdu++;
       eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
                                   (frameP*10)+subframeP,
                                   TBS,
