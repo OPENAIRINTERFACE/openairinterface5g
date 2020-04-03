@@ -596,8 +596,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
 
     case NR_DL_DCI_FORMAT_1_1:
       // Format identifier
-      dci_pdu->format_indicator.nbits=1;
-      size = dci_pdu->format_indicator.nbits;
+      size = 1;
       // Carrier indicator
       if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
         dci_pdu->carrier_indicator.nbits=3;
@@ -651,32 +650,23 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       dci_pdu->zp_csi_rs_trigger.nbits = (int)ceil(log2(nZP+1));
       size += dci_pdu->zp_csi_rs_trigger.nbits;
       // TB1- MCS 5, NDI 1, RV 2
-      dci_pdu->mcs[0].nbits = 5;
-      dci_pdu->ndi[0].nbits = 1;
-      dci_pdu->rv[0].nbits = 2;
-      size += (dci_pdu->mcs[0].nbits + dci_pdu->ndi[0].nbits + dci_pdu->rv[0].nbits);
+      size += 8;
       // TB2
       long *maxCWperDCI = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI;
-      if ((maxCWperDCI != NULL) && (maxCWperDCI == 2)) {
-        dci_pdu->mcs[1].nbits = 5;
-        dci_pdu->ndi[1].nbits = 1;
-        dci_pdu->rv[1].nbits = 2;
-        size += (dci_pdu->mcs[1].nbits + dci_pdu->ndi[1].nbits + dci_pdu->rv[1].nbits);
+      if ((maxCWperDCI != NULL) && (*maxCWperDCI == 2)) {
+        size += 8;
       }
       // HARQ PID
-      dci_pdu->harq_pid.nbits = 4;
-      size += dci_pdu->harq_pid.nbits;
+      size += 4;
       // DAI
       if (secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook == 1) { // at this point the UE has multiple serving cells
-        dci_pdu->dai.nbits = 4;
-        size += dci_pdu->dai.nbits;
+        dci_pdu->dai[0].nbits = 4;
+        size += dci_pdu->dai[0].nbits;
       }
       // TPC PUCCH
-      dci_pdu->tpc.nbits = 2;
-      size += dci_pdu->tpc.nbits;
+      size += 2;
       // PUCCH resource indicator
-      dci_pdu->pucch_resource_indicator.nbits = 3;
-      size += dci_pdu->pucch_resource_indicator.nbits;
+      size += 3;
       // PDSCH to HARQ timing indicator
       uint8_t I = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.count;
       dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits = (int)ceil(log2(I));
@@ -710,8 +700,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
         size += dci_pdu->cbgfi.nbits;
       }
       // DMRS sequence init
-      dci_pdu->dmrs_sequence_initialization.nbits = 1;
-      size += dci_pdu->dmrs_sequence_initialization.nbits; 
+      size += 1;
       break;
 
     case NR_DL_DCI_FORMAT_2_0:
