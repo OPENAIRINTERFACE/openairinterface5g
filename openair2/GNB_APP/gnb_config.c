@@ -237,7 +237,6 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
     scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0;
     for (int i=0; i<8; i++)
       scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] |= (((ssbmap>>(7-i))&0x01)<<i); 
-    //scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0x80; //ssbmap;
   }else {
     scc->ssb_PositionsInBurst->choice.longBitmap.size = 8;
     scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;

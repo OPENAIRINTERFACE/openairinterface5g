@@ -87,6 +87,7 @@ void nr_ulsch_unscrambling(int16_t* llr,
                            uint8_t q,
                            uint32_t Nid,
                            uint32_t n_RNTI) {
+
   uint8_t reset;
   uint32_t x1, x2, s=0;
 

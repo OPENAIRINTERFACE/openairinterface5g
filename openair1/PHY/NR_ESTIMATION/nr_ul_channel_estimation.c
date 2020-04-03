@@ -36,7 +36,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char symbol,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu) {
-printf("nr_pusch_channel_estimation Ns %d p %d symbol %d\n", Ns, p, symbol);
 
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -491,19 +490,6 @@ printf("nr_pusch_channel_estimation Ns %d p %d symbol %d\n", Ns, p, symbol);
 #ifdef DEBUG_CH
   fclose(debug_ch_est);
 #endif
-
-{
-  char name[128];
-  FILE *f;
-  sprintf(name, "ch_estimate.%d.%d.raw", gNB->proc.frame_rx, symbol);
-  f = fopen(name, "w"); if (f == NULL) exit(1);
-  fwrite(&ul_ch_estimates[0][symbol_offset], nb_rb_pusch*12*4, 1, f);
-  fclose(f);
-  sprintf(name, "ch_estimate_time.%d.%d.raw", gNB->proc.frame_rx, symbol);
-  f = fopen(name, "w"); if (f == NULL) exit(1);
-  fwrite(ul_ch_estimates_time[0], 1536*4, 1, f);
-  fclose(f);
-}
 
   return(0);
 }

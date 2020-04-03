@@ -94,6 +94,7 @@ void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)
 
     nr_du[u] = ((p<(N_ZC>>1)) ? p : (N_ZC-p));
   }
+
 }
 
 void compute_nr_prach_seq(uint8_t short_sequence,
@@ -148,7 +149,6 @@ void compute_nr_prach_seq(uint8_t short_sequence,
     for (k=0; k<N_ZC; k++) {
       // multiply by inverse of 2 (required since ru is exp[j 2\pi n])
       X_u[i][k] = ((uint32_t*)nr_ru)[(((k*(1+(inv_u*k)))%N_ZC)*nr_ZC_inv[2])%N_ZC];
-if (k < 16) printf("u %d k %d I %d Q %d index %d\n", u, k, (short)(X_u[i][k]&65535), (short)((X_u[i][k] >> 16) & 65535), (((k*(1+(inv_u*k)))%N_ZC)*70)%N_ZC);
     }
   }
 
