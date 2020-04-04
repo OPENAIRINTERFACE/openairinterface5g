@@ -3321,7 +3321,7 @@ try_again:
 
       if (fCCE == -1) {
         if (DL_req->number_pdcch_ofdm_symbols == max_symbol) {
-          LOG_I(MAC, "subframe %d: Dropping Allocation for RNTI %x\n",
+          LOG_D(MAC, "subframe %d: Dropping Allocation for RNTI %x\n",
                 subframeP,
                 dl_config_pduLoop->dci_dl_pdu.dci_dl_pdu_rel8.rnti);
 
