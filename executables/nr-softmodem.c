@@ -402,7 +402,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
 
-    if (EPC_MODE_ENABLED) {
+    if (EPC_MODE_ENABLED && get_softmodem_params()->phy_test<0) {
         if (gnb_nb > 0) {
           /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
             LOG_E(SCTP, "Create task for SCTP failed\n");
@@ -413,6 +413,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
             LOG_E(S1AP, "Create task for S1AP failed\n");
             return -1;
           }*/
+
           if(!emulate_rf){
             if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
               LOG_E(UDP_, "Create task for UDP failed\n");
@@ -827,7 +828,7 @@ int main( int argc, char **argv )
   }
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
-  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
 
 #if T_TRACER
   T_Config_Init();

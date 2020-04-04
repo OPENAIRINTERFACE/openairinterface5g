@@ -111,8 +111,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
-  uint8_t inde_list[m->nb_e_rabs_tobeadded];
-  memset(inde_list, 0, m->nb_e_rabs_tobeadded*sizeof(uint8_t));
   protocol_ctxt_t ctxt;
 
 // NR RRCReconfiguration
@@ -143,6 +141,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   generate_CG_Config(rrc,CG_Config,ue_context_p->ue_context.reconfig,ue_context_p->ue_context.rb_config);
 
   if(m!=NULL){
+	  uint8_t inde_list[m->nb_e_rabs_tobeadded];
+	  memset(inde_list, 0, m->nb_e_rabs_tobeadded*sizeof(uint8_t));
+
 	  if (m->nb_e_rabs_tobeadded>0){
 		  for (int i=0; i<m->nb_e_rabs_tobeadded; i++){
 			  // Add the new E-RABs at the corresponding rrc ue context of the gNB
