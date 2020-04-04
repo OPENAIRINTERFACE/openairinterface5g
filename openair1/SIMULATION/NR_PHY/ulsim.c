@@ -353,7 +353,8 @@ int main(int argc, char **argv)
   T_stdout = 1;
 
   get_softmodem_params()->phy_test = 1;
-    
+  get_softmodem_params()->do_ra = 0;
+
   if (snr1set == 0)
     snr1 = snr0 + 10;
 

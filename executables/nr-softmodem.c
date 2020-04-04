@@ -822,6 +822,9 @@ int main( int argc, char **argv )
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
 
+  if (get_softmodem_params()->do_ra)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
+
 #if T_TRACER
   T_Config_Init();
 #endif

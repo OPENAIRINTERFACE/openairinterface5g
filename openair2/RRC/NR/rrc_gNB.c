@@ -204,7 +204,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          );
 
 
-  if (get_softmodem_params()->phy_test > 0) {
+  if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     FILE *fd;
 

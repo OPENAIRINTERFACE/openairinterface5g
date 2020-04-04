@@ -53,7 +53,7 @@
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
-
+#include "executables/softmodem-common.h"
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
@@ -2255,24 +2255,24 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-
-  nr_ue_pusch_common_procedures(ue,
-                                harq_pid,
-                                slot_tx,
-                                thread_id,
-                                gNB_id,
-                                &ue->frame_parms);
+    nr_ue_pusch_common_procedures(ue,
+                                  harq_pid,
+                                  slot_tx,
+                                  thread_id,
+                                  gNB_id,
+                                  &ue->frame_parms);
   }
 
 
   /* RACH */
-  if ((ue->UE_mode[gNB_id] == PRACH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
+  if (get_softmodem_params()->do_ra==1) {
+    if ((ue->UE_mode[gNB_id] == PRACH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
+    }
+    else {
+      ue->prach_resources[gNB_id]->generate_nr_prach = 0;
+    }
   }
-  else {
-    ue->prach_resources[gNB_id]->generate_nr_prach = 0;
-  }
-
   LOG_I(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);

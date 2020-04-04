@@ -360,7 +360,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       gNB->ta_len = 2;
     }
 
-    nr_schedule_RA(module_idP, frame_txP, slot_txP);
+    if (get_softmodem_params()->phy_test == 0)
+      nr_schedule_RA(module_idP, frame_txP, slot_txP);
     
     // Phytest scheduling
     if (get_softmodem_params()->phy_test && slot_txP==1){
@@ -380,10 +381,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
 
-    schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
-
-    nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
-
+    if (get_softmodem_params()->phy_test == 0) {
+      schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
+      nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
+    }
     if (get_softmodem_params()->phy_test && slot_rxP==8){
       nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
     }

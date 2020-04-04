@@ -716,6 +716,9 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
 
+  if (get_softmodem_params()->do_ra)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
     frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
@@ -741,11 +744,6 @@ int main( int argc, char **argv ) {
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
-
-    if (get_softmodem_params()->phy_test==1)
-      UE[CC_id]->mac_enabled = 0;
-    else
-      UE[CC_id]->mac_enabled = 1;
 
     UE[CC_id]->mac_enabled = 1;
     UE[CC_id]->if_inst = nr_ue_if_module_init(0);
