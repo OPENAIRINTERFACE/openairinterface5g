@@ -90,12 +90,18 @@ int round_robin_dl(module_id_t Mod_id,
     const uint8_t round = ue_ctrl->round[CC_id][harq_pid];
     if (round != 8) { // retransmission: allocate
       int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-      if (nb_rb % RBGsize != 0) {
+      if (nb_rb == 0)
+        continue;
+      if (nb_rb % RBGsize != 0)
         nb_rb += nb_rb % RBGsize; // should now divide evenly
-      }
       int nb_rbg = nb_rb / RBGsize;
       if (nb_rbg > n_rbg_sched) // needs more RBGs than we can allocate
         continue;
+      const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
+      const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
+      if (idx < 0)
+        continue; // cannot allocate CCE
+      ue_ctrl->pre_dci_dl_pdu_idx = idx;
       // retransmissions: directly allocate
       n_rbg_sched -= nb_rbg;
       ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
@@ -155,8 +161,16 @@ int round_robin_dl(module_id_t Mod_id,
   while (num_ue_sched < max_num_ue) {
     while (rb_required[UE_id] == 0)
       UE_id = next_ue_list_looped(UE_list, UE_id);
-    /* TODO: check that CCE allocation is feasible. If it is not, reduce
-     * num_ue_req anyway because this would have been one opportunity */
+    const uint8_t cqi = UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
+    const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
+    if (idx < 0) {
+      LOG_D(MAC, "cannot allocate CCE for UE %d, skipping\n", UE_id);
+      num_ue_req--;
+      max_num_ue = min(min(max_num_ue, num_ue_req), n_rbg_sched);
+      UE_id = next_ue_list_looped(UE_list, UE_id); // next candidate
+      continue;
+    }
+    UE_info->UE_sched_ctrl[UE_id].pre_dci_dl_pdu_idx = idx;
     *cur_UE = UE_id;
     cur_UE = &UE_sched.next[UE_id];
     rb_required_total += rb_required[UE_id];
@@ -347,7 +361,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
                  frameP,
                  subframeP,
                  &UE_to_sched,
-                 3, // max_num_ue
+                 4, // max_num_ue
                  n_rbg_sched,
                  rbgalloc_mask);
 
