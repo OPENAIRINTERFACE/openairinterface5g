@@ -982,7 +982,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   /* Allocate CCEs for good after scheduling is done */
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].tdd_Config == NULL || !(is_UL_sf(&cc[CC_id],subframeP))) {
-      allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
+      int rc = allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
+      if (rc < 0)
+        LOG_E(MAC, "%s() %4d.%d ERROR ALLOCATING CCEs\n", __func__, frameP, subframeP);
     }
   }
 
