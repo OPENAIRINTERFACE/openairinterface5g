@@ -1353,7 +1353,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     if (UE_template_ptr->pre_allocated_nb_rb_ul < 1)
       continue;
 
-    int dci_ul_pdu_idx = -1;
+    int dci_ul_pdu_idx = UE_template_ptr->pre_dci_ul_pdu_idx;
     if (dci_ul_pdu_idx < 0) {
       dci_ul_pdu_idx = CCE_try_allocate_ulsch(
           module_idP, CC_id, subframeP, UE_id, UE_sched_ctrl_ptr->dl_cqi[CC_id]);

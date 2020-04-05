@@ -509,6 +509,11 @@ int round_robin_ul(module_id_t Mod_id,
               UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid]);
         continue;
       }
+      const uint8_t cqi = UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
+      const int idx = CCE_try_allocate_ulsch(Mod_id, CC_id, subframe, UE_id, cqi);
+      if (idx < 0)
+        continue; // cannot allocate CCE
+      UE_template->pre_dci_ul_pdu_idx = idx;
       if (rbs[0].length >= nb_rb) { // fits in first contiguous region
         UE_template->pre_first_nb_rb_ul = rbs[0].start;
         rbs[0].length -= nb_rb;
@@ -531,6 +536,8 @@ int round_robin_ul(module_id_t Mod_id,
               "cannot allocate UL retransmission for UE %d (nb_rb %d)\n",
               UE_id,
               nb_rb);
+        UE_template->pre_dci_ul_pdu_idx = -1; // do not need CCE
+        RC.mac[Mod_id]->HI_DCI0_req[CC_id][subframe].hi_dci0_request_body.number_of_dci--;
         continue;
       }
       LOG_D(MAC, "%4d.%d UE %d retx %d RBs at start %d\n",
@@ -640,8 +647,15 @@ int round_robin_ul(module_id_t Mod_id,
     while (num_ue_sched < nr[r]) {
       while (rb_idx_required[sUE_id] == 0)
         sUE_id = next_ue_list_looped(UE_list, sUE_id);
-      /* TODO: check that CCE allocated is feasible. If it is not, reduce
-       * nr[r] by one as this would been one opportunity */
+      const int cqi = UE_info->UE_sched_ctrl[sUE_id].dl_cqi[CC_id];
+      const int idx = CCE_try_allocate_ulsch(Mod_id, CC_id, subframe, sUE_id, cqi);
+      if (idx < 0) {
+        LOG_D(MAC, "cannot allocate CCE for UE %d, skipping\n", sUE_id);
+        nr[r]--;
+        sUE_id = next_ue_list_looped(UE_list, sUE_id); // next candidate
+        continue;
+      }
+      UE_info->UE_template[CC_id][sUE_id].pre_dci_ul_pdu_idx = idx;
       *cur_UE = sUE_id;
       cur_UE = &UE_sched.next[sUE_id];
       rb_idx_given[sUE_id] = min(start_idx, rb_idx_required[sUE_id]);
@@ -729,6 +743,7 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
     UE_template->pre_allocated_nb_rb_ul = 0;
     UE_template->pre_allocated_rb_table_index_ul = -1;
     UE_template->pre_first_nb_rb_ul = 0;
+    UE_template->pre_dci_ul_pdu_idx = -1;
 
     const rnti_t rnti = UE_RNTI(Mod_id, UE_id);
     if (rnti == NOT_A_RNTI) {
@@ -775,7 +790,7 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
                  sched_frameP,
                  sched_subframeP,
                  &UE_to_sched,
-                 3, // max_num_ue
+                 4, // max_num_ue
                  n_contig,
                  rbs);
 

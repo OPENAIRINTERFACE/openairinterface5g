@@ -831,6 +831,9 @@ typedef struct {
   /// index of Allocated RBs by the ulsch preprocessor
   int8_t pre_allocated_rb_table_index_ul;
 
+  /// index of allocated HI_DCI0
+  int pre_dci_ul_pdu_idx;
+
   /// total allocated RBs
   int8_t total_allocated_rbs;
 
