@@ -420,6 +420,13 @@ int CCE_try_allocate_dlsch(int module_id,
                            int UE_id,
                            uint8_t dl_cqi);
 
+/* tries to allocate a CCE for UL. If it succeeds, reserves the NFAPI DCI */
+int CCE_try_allocate_ulsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi);
+
 void set_ue_dai(sub_frame_t subframeP,
                 int UE_id,
                 uint8_t CC_id, uint8_t tdd_config, UE_info_t *UE_info);

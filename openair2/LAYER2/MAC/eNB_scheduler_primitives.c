@@ -3571,6 +3571,60 @@ int CCE_try_allocate_dlsch(int module_id,
   return DL_req->number_pdu - 2;
 }
 
+int CCE_try_allocate_ulsch(int module_id,
+                           int CC_id,
+                           int subframe,
+                           int UE_id,
+                           uint8_t dl_cqi) {
+  const rnti_t rnti = RC.mac[module_id]->UE_info.UE_template[CC_id][UE_id].rnti;
+  nfapi_hi_dci0_request_body_t *HI_DCI0_req = &RC.mac[module_id]->HI_DCI0_req[CC_id][subframe].hi_dci0_request_body;
+
+  if (HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi >= MAX_NUM_HI_DCI0_PDU) {
+    LOG_W(MAC, "Subframe %d: FAPI UL structure is full, skip scheduling UE %d\n", subframe, rnti);
+    return -1;
+  }
+
+  int aggregation = 2;
+  const uint8_t tm = get_tmode(module_id, CC_id, UE_id);
+  switch (tm) {
+    case 1:
+    case 2:
+    case 7:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format1);
+      break;
+
+    case 3:
+      aggregation = get_aggregation(get_bw_index(module_id, CC_id),
+                                    dl_cqi,
+                                    format2A);
+      break;
+
+    default:
+      AssertFatal(0, "Unsupported transmission mode %d\n", tm);
+      break;
+  }
+
+  const int idx = HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi;
+  nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &HI_DCI0_req->hi_dci0_pdu_list[idx];
+  memset(hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+  hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
+  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
+  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
+  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
+  HI_DCI0_req->number_of_dci++;
+  LOG_D(MAC, "%s() sf %d: Checking CCE feasibility format 2: RNTI %04x, agg %d\n",
+        __func__, subframe, rnti, aggregation);
+
+  if (allocate_CCEs(module_id, CC_id, 0, subframe, 0) < 0) {
+    HI_DCI0_req->number_of_dci--;
+    return -1;
+  }
+
+  return idx;
+}
+
 //------------------------------------------------------------------------------
 void
 get_retransmission_timing(LTE_TDD_Config_t *tdd_Config,

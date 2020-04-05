@@ -1273,7 +1273,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                     frame_t       frameP,
                     sub_frame_t   subframeP,
                     unsigned char sched_subframeP) {
-  const uint8_t aggregation = 2;
   /* TODO: does this need to be static? */
   static int32_t tpc_accumulated = 0;
   /* values from 0 to 7 can be used for mapping the cyclic shift
@@ -1344,19 +1343,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
                 round_index,
                 UE_id,
                 rnti);
-    LOG_D(MAC,
-          "[eNB %d] %d.%d (sched %d.%d), "
-          "Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d\n",
-          module_idP,
-          frameP,
-          subframeP,
-          sched_frame,
-          sched_subframeP,
-          harq_pid,
-          UE_id,
-          rnti,
-          CC_id,
-          aggregation);
+
     /* Seems unused, only for debug */
     RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP] =
         UE_template_ptr->estimated_ul_buffer;
@@ -1366,15 +1353,25 @@ schedule_ulsch_rnti(module_id_t   module_idP,
     if (UE_template_ptr->pre_allocated_nb_rb_ul < 1)
       continue;
 
-    if (CCE_allocation_infeasible(module_idP, CC_id, 2, subframeP, aggregation, rnti)) {
-      LOG_W(MAC,
-            "[eNB %d] %d.%d, UE %d/%x CC %d: not enough CCE\n",
-            module_idP,
-            frameP,
-            subframeP,
+    int dci_ul_pdu_idx = -1;
+    if (dci_ul_pdu_idx < 0) {
+      dci_ul_pdu_idx = CCE_try_allocate_ulsch(
+          module_idP, CC_id, subframeP, UE_id, UE_sched_ctrl_ptr->dl_cqi[CC_id]);
+      if (dci_ul_pdu_idx < 0) {
+        LOG_W(MAC ,"%4d.%d: Dropping UL Allocation for RNTI 0x%04x/UE %d\n",
+              frameP, subframeP, rnti, UE_id);
+        continue;
+      }
+    }
+
+    /* verify it is the right UE */
+    hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[dci_ul_pdu_idx];
+    if (hi_dci0_pdu->pdu_type != NFAPI_HI_DCI0_DCI_PDU_TYPE
+        || hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti != rnti) {
+      LOG_E(MAC, "illegal hi_dci0_pdu_list index %d for UE %d/RNTI %04x\n",
+            dci_ul_pdu_idx,
             UE_id,
-            rnti,
-            CC_id);
+            rnti);
       continue;
     }
 
@@ -1429,7 +1426,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
         tpc_accumulated++;
       }
     }
-
     if (tpc != 1) {
       LOG_D(MAC,
             "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, "
@@ -1562,15 +1558,9 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       /* Save it for a potential retransmission */
       UE_template_ptr->cshift[harq_pid] = cshift;
       /* Setting DCI0 NFAPI struct */
-      hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
-      memset((void *)hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
-      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
+      hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[dci_ul_pdu_idx];
       hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_dci_pdu);
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag =
-          NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format = NFAPI_UL_DCI_FORMAT_0;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = UE_template_ptr->pre_first_nb_rb_ul;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block =
@@ -1584,7 +1574,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index =
           UE_template_ptr->DAI_ul[sched_subframeP];
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid = harq_pid;
-      hi_dci0_req_body->number_of_dci++;
       hi_dci0_req_body->sfnsf =
           sfnsf_add_subframe(sched_frame, sched_subframeP, 0);
       hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
@@ -1746,14 +1735,9 @@ schedule_ulsch_rnti(module_id_t   module_idP,
             sched_frame,
             sched_subframeP);
 
-      hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
-      memset((void *)hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
-      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_DCI_PDU_TYPE;
+      hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[dci_ul_pdu_idx];
       hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_dci_pdu);
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format = NFAPI_UL_DCI_FORMAT_0;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
-      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block = nb_rb;
@@ -1765,7 +1749,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request = UE_template_ptr->cqi_req[harq_pid];
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index = UE_template_ptr->DAI_ul[sched_subframeP];
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid = harq_pid;
-      hi_dci0_req_body->number_of_dci++;
 
       uint16_t ul_req_index = 0;
       uint8_t dlsch_flag = 0;
