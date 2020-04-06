@@ -152,7 +152,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ulsch_ue->Nid_cell    = Nid_cell;
     ulsch_ue->nb_re_dmrs  = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4);
 
-    N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs*number_dmrs_symbols - N_PRB_oh;
+    N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs*ulsch_ue->length_dmrs - N_PRB_oh;
 
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
 
@@ -217,16 +217,16 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
 
+    unsigned int G = nr_get_G(harq_process_ul_ue->nb_rb, harq_process_ul_ue->number_of_symbols,
+                              ulsch_ue->nb_re_dmrs, ulsch_ue->length_dmrs, mod_order, harq_process_ul_ue->Nl);
 
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
+    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
     ////////////////////////////////////////////////////////////////////
 
     /////////////////////////ULSCH scrambling/////////////////////////
     ///////////
-
-    mod_order      = nr_get_Qm_ul(harq_process_ul_ue->mcs, 0);
 
     available_bits = nr_get_G(harq_process_ul_ue->nb_rb,
                               harq_process_ul_ue->number_of_symbols,

@@ -461,9 +461,10 @@ int main(int argc, char **argv)
 
   /////////////////////////ULSCH coding/////////////////////////
   ///////////
+  unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
 
   if (input_fd == NULL) {
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
+    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
   }
   
   printf("\n");

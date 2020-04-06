@@ -217,12 +217,13 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
 
 int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                       NR_DL_FRAME_PARMS* frame_parms,
-                      uint8_t harq_pid)
+                      uint8_t harq_pid,
+                      unsigned int G)
 {
 /////////////////////////parameters and variables declaration/////////////////////////
 ///////////
 
-  unsigned int G,crc;
+  unsigned int crc;
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
   uint8_t nb_symb_sch ;
@@ -235,8 +236,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   uint32_t E,Kb;
   uint8_t Ilbrm; 
   uint32_t Tbslbrm; 
-  uint8_t nb_re_dmrs; 
-  uint16_t length_dmrs;
   uint16_t R;
   float Coderate;
 
@@ -250,7 +249,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   crc = 1;
   harq_process = ulsch->harq_processes[harq_pid];
   nb_rb = harq_process->nb_rb;
-  nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
   mod_order = nr_get_Qm_ul(harq_process->mcs,0);
@@ -261,8 +259,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   F=0;
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
-  nb_re_dmrs = ulsch->nb_re_dmrs;
-  length_dmrs = ulsch->length_dmrs;
   Coderate = 0.0;
 
 ///////////
@@ -271,10 +267,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"ulsch coding nb_rb %d nb_symb_sch %d nb_re_dmrs %d, length_dmrs %d, harq_process->Nl = %d\n", nb_rb,nb_symb_sch, nb_re_dmrs,length_dmrs, harq_process->Nl);
-
-
-  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,harq_process->Nl);
+  LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->Nl);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
