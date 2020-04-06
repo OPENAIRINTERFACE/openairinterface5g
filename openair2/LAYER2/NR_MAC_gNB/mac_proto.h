@@ -148,9 +148,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                         NR_BWP_Downlink_t *bwp);
 
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
-                        nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
-                        nfapi_nr_pusch_pdu_t  *pusch_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
                         int *rnti_types);
@@ -192,9 +190,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
 int get_num_dmrs(uint16_t dmrs_mask );
 
-uint16_t nr_dci_size(nr_dci_format_t format,
-                         nr_rnti_type_t rnti_type,
-                         uint16_t N_RB);
+uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
+                     dci_pdu_rel15_t *dci_pdu,
+                     nr_dci_format_t format,
+                     nr_rnti_type_t rnti_type,
+                     uint16_t N_RB);
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int bwp_id,
