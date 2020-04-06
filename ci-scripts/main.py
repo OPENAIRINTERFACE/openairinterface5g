@@ -751,11 +751,7 @@ class OaiCiTest():
 				else:
 					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\' | grep -m 1 mDataConnectionState', '\$', 60)
 				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
-				print("\n")
-				print(SSH.getBefore())
-				print("\n")
-				print(result)
-				print("\n")
+				print(SSH.getBefore()) #GP debugging
 				if result is None:
 					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
 					lock.acquire()
@@ -765,8 +761,6 @@ class OaiCiTest():
 					lock.release()
 					break
 				mDataConnectionState = int(result.group('state'))
-				print(mDataConnectionState)
-				print("\n")
 				if mDataConnectionState == 2:
 					logging.debug('\u001B[1mUE (' + device_id + ') Attach Completed\u001B[0m')
 					lock.acquire()
