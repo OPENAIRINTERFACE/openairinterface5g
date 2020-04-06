@@ -401,34 +401,31 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-
-    if (EPC_MODE_ENABLED && get_softmodem_params()->phy_test<0) {
-        if (gnb_nb > 0) {
-          /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-            LOG_E(SCTP, "Create task for SCTP failed\n");
-            return -1;
-          }
-
-          if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
-            LOG_E(S1AP, "Create task for S1AP failed\n");
-            return -1;
-          }*/
-
-          if(!emulate_rf){
-            if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-              LOG_E(UDP_, "Create task for UDP failed\n");
-              return -1;
-            }
-          }
-
-          if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
-            LOG_E(GTPU, "Create task for GTPV1U failed\n");
-            return -1;
-          }
-
+  if (EPC_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+    if (gnb_nb > 0) {
+      /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+          LOG_E(SCTP, "Create task for SCTP failed\n");
+          return -1;
         }
 
-    }
+        if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
+          LOG_E(S1AP, "Create task for S1AP failed\n");
+          return -1;
+        }*/
+
+        if(!emulate_rf){
+          if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
+            LOG_E(UDP_, "Create task for UDP failed\n");
+            return -1;
+          }
+        }
+
+        if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
+          LOG_E(GTPU, "Create task for GTPV1U failed\n");
+          return -1;
+        }
+      }
+  }
 
 
   if (gnb_nb > 0) {
