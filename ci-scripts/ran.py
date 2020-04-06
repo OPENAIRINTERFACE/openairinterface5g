@@ -95,6 +95,15 @@ class RANManagement():
 # Setters and Getters
 #-----------------------------------------------------------
 
+	def SetIPAddress(self, ipaddress):
+		self.EPCIPAddress = ipaddress
+	def SetUserName(self, username):
+		self.EPCUserName = username
+	def SetPassword(self, password):
+		self.EPCPassword = password
+	def SetSourceCodePath(self, sourcecodepath):
+		self.EPCSourceCodePath = sourcecodepath
+
 
 	def SettestCase_id(self,tcid):
 		self.testCase_id = tcid
@@ -463,15 +472,15 @@ class RANManagement():
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if result is not None:
-			mySSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+			mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
 				EPC.Set_PcapFileName('enb_' + self.testCase_id + '_s1log.pcap')
-				mySSH.command('echo ' + EPC.GetPassword() + ' | sudo -S rm -f /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + EPC.Get_PcapFileName()  + ' > /tmp/tshark.log 2>&1 &', EPC.GetUserName(), 5)
+				mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
+				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + EPC.Get_PcapFileName()  + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			mySSH.close()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
@@ -510,7 +519,7 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + EPC.GetIPAddress() + '/\' ' + ci_full_config_file, '\$', 2);
+		mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -563,16 +572,16 @@ class RANManagement():
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if result is not None:
-					mySSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+					mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-					mySSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+					mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 					if EPC.Get_PcapFileName()  != '':
 						time.sleep(0.5)
-						mySSH.command('echo ' + EPC.GetPassword() + ' | sudo -S chmod 666 /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
+						mySSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
 					mySSH.close()
 					time.sleep(1)
 					if EPC.Get_PcapFileName()  != '':
-						copyin_res = mySSH.copyin(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), '/tmp/' + EPC.Get_PcapFileName() , '.')
+						copyin_res = mySSH.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + EPC.Get_PcapFileName() , '.')
 						if (copyin_res == 0):
 							mySSH.copyout(lIpAddr, lUserName, lPassWord, EPC.Get_PcapFileName() , lSourcePath + '/cmake_targets/.')
 				self.prematureExit = True
@@ -691,13 +700,13 @@ class RANManagement():
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if result is not None:
-			mySSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+			mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-			mySSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
 			if EPC.Get_PcapFileName()  != '':
-				mySSH.command('echo ' + EPC.GetPassword() + ' | sudo -S chmod 666 /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
-				mySSH.copyin(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), '/tmp/' + EPC.Get_PcapFileName() , '.')
+				mySSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
+				mySSH.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + EPC.Get_PcapFileName() , '.')
 				mySSH.copyout(lIpAddr, lUserName, lPassWord, EPC.Get_PcapFileName() , lSourcePath + '/cmake_targets/.')
 			mySSH.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')

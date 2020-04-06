@@ -3289,15 +3289,19 @@ while len(argvs) > 1:
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetIPAddress(matchReg.group(1))
+		RAN.SetIPAddress(matchReg.group(1))
 	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetUserName(matchReg.group(1))
+		RAN.SetUserName(matchReg.group(1))
 	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetPassword(matchReg.group(1))
+		RAN.SetPassword(matchReg.group(1))
 	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetSourceCodePath(matchReg.group(1))
+		RAN.SetSourceCodePath(matchReg.group(1))
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
 		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
