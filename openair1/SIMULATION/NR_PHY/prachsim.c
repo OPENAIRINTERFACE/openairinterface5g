@@ -617,7 +617,7 @@ int main(int argc, char **argv){
 
   rx_prach_start = subframe*frame_parms->get_samples_per_slot(subframe,frame_parms);
 
-  for (SNR=snr0; SNR<snr1; SNR+=.2) {
+  for (SNR=snr0; SNR<snr1; SNR+=.1) {
     for (ue_speed=ue_speed0; ue_speed<ue_speed1; ue_speed+=10) {
       delay_avg = 0.0;
       // max Doppler shift
@@ -684,10 +684,13 @@ int main(int argc, char **argv){
         }
       }
       printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n", SNR, ue_speed, prach_errors, n_frames, delay_avg/(double)(n_frames-prach_errors));
-      //printf("(%f,%f)\n",ue_speed,(double)prach_errors/(double)n_frames);
+      if (prach_errors)
+        break;
     } // UE Speed loop
-    //printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
-    //  printf("(%f,%f)\n",SNR,(double)prach_errors/(double)n_frames);
+    if (!prach_errors) {
+      printf("PRACH test OK\n");
+      break;
+    }
   } //SNR loop
 
   for (i=0; i<2; i++) {
