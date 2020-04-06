@@ -68,7 +68,6 @@ class OaiCiTest():
 		self.ADBCentralized = True
 		self.testCase_id = ''
 		self.testXMLfiles = []
-		#self.nbTestXMLfiles = 0
 		self.desc = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
@@ -86,12 +85,7 @@ class OaiCiTest():
 		self.UEDevicesRebootCmd = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
-		self.htmlFile = ''
-	#	self.htmlHeaderCreated = False
-	#	self.htmlFooterCreated = False
 		self.htmlUEConnected = -1
-		self.htmleNBFailureMsg = ''
-		self.htmlUEFailureMsg = ''
 		self.picocom_closure = False
 		self.idle_sleep_time = 0
 		self.x2_ho_options = 'network'
@@ -116,8 +110,6 @@ class OaiCiTest():
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
 		self.clean_repository = True
-		self.flexranCtrlInstalled = False
-		self.flexranCtrlStarted = False
 		self.expectedNbOfConnectedUEs = 0
 		self.startTime = 0
 
@@ -232,13 +224,12 @@ class OaiCiTest():
 		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
-			self.flexranCtrlInstalled = True
 			RAN.SetflexranCtrlInstalled(True)
 			logging.debug('Flexran Controller is installed')
 		SSH.close()
 
 	def InitializeFlexranCtrl(self):
-		if self.flexranCtrlInstalled == False:
+		if RAN.GetflexranCtrlInstalled() == False:
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
 			GenericHelp(Version)
@@ -253,7 +244,6 @@ class OaiCiTest():
 		result = re.search('rt_controller -c ', SSH.getBefore())
 		if result is not None:
 			logging.debug('\u001B[1m Initialize FlexRan Controller Completed\u001B[0m')
-			self.flexranCtrlStarted = True
 			RAN.SetflexranCtrlStarted(True)
 		SSH.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
@@ -487,12 +477,12 @@ class OaiCiTest():
 		else:
 			if RAN.Getair_interface() == 'lte':
 				if RAN.GeteNBmbmsEnables[0]:
-					self.htmlUEFailureMsg = 'oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
+					HTML.SethtmlUEFailureMsg('oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured')
 				else:
-					self.htmlUEFailureMsg = 'oaitun_ue1 interface is either NOT mounted or NOT configured'
+					HTML.SethtmlUEFailureMsg('oaitun_ue1 interface is either NOT mounted or NOT configured')
 				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			else:
-				self.htmlUEFailureMsg = 'nr-uesoftmodem did NOT synced'
+				HTML.SethtmlUEFailureMsg('nr-uesoftmodem did NOT synced')
 				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
@@ -1176,7 +1166,7 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+		if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
 			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 			SSH.command('cd /opt/flexran_rtc', '\$', 5)
 			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
@@ -2340,7 +2330,7 @@ class OaiCiTest():
 					if logStatus < 0:
 						result = logStatus
 					RAN.SeteNBLogFiles[0] = ''
-				if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+				if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
 					self.TerminateFlexranCtrl()
 			return result
 
@@ -2416,7 +2406,7 @@ class OaiCiTest():
 		nrFoundDCI = 0
 		nrCRCOK = 0
 		mbms_messages = 0
-		self.htmlUEFailureMsg = ''
+		HTML.SethtmlUEFailureMsg('')
 		for line in ue_log_file.readlines():
 			result = re.search('nr_synchro_time', str(line))
 			if result is not None:
@@ -2485,22 +2475,22 @@ class OaiCiTest():
 			if result is not None and (not mib_found):
 				try:
 					mibMsg = "MIB Information: " + result.group(1) + ', ' + result.group(2)
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    nidcell = " + result.group('nidcell')
-					self.htmlUEFailureMsg += mibMsg
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg)
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    n_rb_dl = " + result.group('n_rb_dl')
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    phich_duration = " + result.group('phich_duration')
-					self.htmlUEFailureMsg += mibMsg
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg)
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    phich_resource = " + result.group('phich_resource')
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    tx_ant = " + result.group('tx_ant')
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mib_found = True
 				except Exception as e:
@@ -2509,7 +2499,7 @@ class OaiCiTest():
 			if result is not None and (not frequency_found):
 				try:
 					mibMsg = "Measured Carrier Frequency = " + result.group('measured_carrier_frequency') + ' Hz'
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					frequency_found = True
 				except Exception as e:
@@ -2518,7 +2508,7 @@ class OaiCiTest():
 			if result is not None and (not plmn_found):
 				try:
 					mibMsg = 'PLMN MCC = ' + result.group('mcc') + ' MNC = ' + result.group('mnc')
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					plmn_found = True
 				except Exception as e:
@@ -2527,7 +2517,7 @@ class OaiCiTest():
 			if result is not None:
 				try:
 					mibMsg = "The operator is: " + result.group('operator')
-					self.htmlUEFailureMsg += mibMsg + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "Operator name not found" + '\033[0m')
@@ -2535,7 +2525,7 @@ class OaiCiTest():
 			if result is not None:
 				try:
 					mibMsg = "SIB5 InterFreqCarrierFreq element " + result.group(1) + '/' + result.group(2)
-					self.htmlUEFailureMsg += mibMsg + ' -> '
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + ' -> ')
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
@@ -2545,7 +2535,7 @@ class OaiCiTest():
 					freq = result.group('carrier_frequency')
 					new_freq = re.sub('/[0-9]+','',freq)
 					float_freq = float(new_freq) / 1000000
-					self.htmlUEFailureMsg += 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz'
+					HTMLSethtmlUEFailureMsg(HTMLGethtmlUEFailureMsg() + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz')
 					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + freq + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "    DL Carrier Frequency not found" + '\033[0m')
@@ -2553,7 +2543,7 @@ class OaiCiTest():
 			if result is not None:
 				try:
 					prb = result.group('allowed_bandwidth')
-					self.htmlUEFailureMsg += ' -- PRB: ' + prb + '\n'
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + ' -- PRB: ' + prb + '\n')
 					logging.debug('\033[94m' + "    AllowedMeasBandwidth: " + prb + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
@@ -2561,48 +2551,48 @@ class OaiCiTest():
 		if rrcConnectionRecfgComplete > 0:
 			statMsg = 'UE connected to eNB (' + str(rrcConnectionRecfgComplete) + ' RRCConnectionReconfigurationComplete message(s) generated)'
 			logging.debug('\033[94m' + statMsg + '\033[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if nrUEFlag:
 			if nrDecodeMib > 0:
 				statMsg = 'UE showed ' + str(nrDecodeMib) + ' MIB decode message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				self.htmlUEFailureMsg += statMsg + '\n'
+				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 			if nrFoundDCI > 0:
 				statMsg = 'UE showed ' + str(nrFoundDCI) + ' DCI found message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				self.htmlUEFailureMsg += statMsg + '\n'
+				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 			if nrCRCOK > 0:
 				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				self.htmlUEFailureMsg += statMsg + '\n'
+				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 			if not frequency_found:
 				statMsg = 'NR-UE could NOT synch!'
 				logging.error('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				self.htmlUEFailureMsg += statMsg + '\n'
+				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if pdcpDataReqFailedCount > 0:
 			statMsg = 'UE showed ' + str(pdcpDataReqFailedCount) + ' "PDCP data request failed" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if badDciCount > 0:
 			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1(A)" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if f1aRetransmissionCount > 0:
 			statMsg = 'UE showed ' + str(f1aRetransmissionCount) + ' "Format1A Retransmission but TBS are different" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if fatalErrorCount > 0:
 			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "FATAL ERROR:" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if macBsrTimerExpiredCount > 0:
 			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if RAN.GeteNBmbmsEnables[0]:
 			if mbms_messages > 0:
 				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
@@ -2610,7 +2600,7 @@ class OaiCiTest():
 			else:
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += statMsg + '\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			if not nrUEFlag:
@@ -2620,7 +2610,7 @@ class OaiCiTest():
 					return CONST.OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
-			self.htmlUEFailureMsg += 'UE showed an assertion!\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE showed an assertion!\n')
 			if not nrUEFlag:
 				if not mib_found or not frequency_found:
 					return CONST.OAI_UE_PROCESS_ASSERTION
@@ -2629,7 +2619,7 @@ class OaiCiTest():
 					return CONST.OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
-			self.htmlUEFailureMsg += 'UE faced real time issues!\n'
+			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE faced real time issues!\n')
 			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if nrUEFlag:
 			if not frequency_found:
@@ -2637,13 +2627,13 @@ class OaiCiTest():
 		else:
 			if no_cell_sync_found and not mib_found:
 				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
-				self.htmlUEFailureMsg += 'UE could not synchronize!\n'
+				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE could not synchronize!\n')
 				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		return 0
 
 
 	def TerminateFlexranCtrl(self):
-		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
+		if RAN.GetflexranCtrlInstalled() == False or RAN.GetflexranCtrlStarted() == False:
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
 			GenericHelp(Version)
@@ -2654,7 +2644,7 @@ class OaiCiTest():
 		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
 		time.sleep(1)
 		SSH.close()
-		self.flexranCtrlStarted = False
+		RAN.SetflexranCtrlStarted(False)
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateUE_common(self, device_id, idx):
@@ -2720,7 +2710,7 @@ class OaiCiTest():
 			copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
 			if (copyin_res == -1):
 				logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
-				self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
+				HTML.SethtmlUEFailureMsg('Could not copy UE logfile to analyze it!')
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
 				self.UELogFile = ''
 				return
@@ -2733,7 +2723,7 @@ class OaiCiTest():
 				ueAction = 'Connection'
 			if (logStatus < 0):
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
-				self.htmlUEFailureMsg = '<b>' + ueAction + ' Failed</b>\n' + self.htmlUEFailureMsg
+				HTML.SethtmlUEFailureMsg('<b>' + ueAction + ' Failed</b>\n' + HTML.GethtmlUEFailureMsg())
 				HTML.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
 				if RAN.Getair_interface() == 'lte':
 					# In case of sniffing on commercial eNBs we have random results
@@ -2747,7 +2737,7 @@ class OaiCiTest():
 						self.AutoTerminateUEandeNB()
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
-				self.htmlUEFailureMsg = '<b>' + ueAction + ' Completed</b>\n' + self.htmlUEFailureMsg
+				HTML.SethtmlUEFailureMsg('<b>' + ueAction + ' Completed</b>\n' + HTML.GethtmlUEFailureMsg())
 				HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
@@ -2773,7 +2763,7 @@ class OaiCiTest():
 			self.ShowTestID()
 			RAN.SeteNB_instance('0')
 			RAN.TerminateeNB()
-		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+		if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			RAN.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of FlexRan CTL'
@@ -2835,7 +2825,7 @@ class OaiCiTest():
 		logging.debug(msg)
 		fullMessage += msg + '\n'
 		if self.x2_ho_options == 'network':
-			if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
 				self.x2ENBBsIds = []
 				self.x2ENBConnectedUEs = []
 				self.x2ENBBsIds.append([])
@@ -3207,7 +3197,6 @@ EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 
-
 argvs = sys.argv
 argc = len(argvs)
 cwd = os.getcwd()
@@ -3300,10 +3289,6 @@ while len(argvs) > 1:
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetIPAddress(matchReg.group(1))
-#GP250220: do we still need EPCBranch? it's not used anywhere
-	elif re.match('^\-\-EPCBranch=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCBranch=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.EPCBranch = matchReg.group(1)
 	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetUserName(matchReg.group(1))
@@ -3370,7 +3355,7 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	RAN.SeteNB_serverId('0')
 	RAN.SeteNB_instance('0')
 	RAN.SeteNBSourceCodePath('/tmp/')
-	CiTestObj.TerminateeNB()
+	RAN.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
 		GenericHelp(Version)

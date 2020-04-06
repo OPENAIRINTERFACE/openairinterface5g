@@ -45,7 +45,8 @@ from multiprocessing import Process, Lock, SimpleQueue
 class HTMLManagement():
 
 	def __init__(self):
-		
+	
+		self.htmlFile = ''
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
 		self.ranAllowMerge = False
@@ -54,10 +55,18 @@ class HTMLManagement():
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
 		self.testXMLfiles = []
+		self.htmleNBFailureMsg = ''
+		self.htmlUEFailureMsg = ''
 
 #-----------------------------------------------------------
 # Setters and Getters
 #-----------------------------------------------------------
+	def SethtmlUEFailureMsg(self,huefa):
+                self.htmlUEFailureMsg = huefa
+	def GethtmlUEFailureMsg(self):
+		return huefa
+
+
 	def SetreseNB(self,rsenb):
 		self.reseNB = rsenb
 	def SetresUE(self,rsue):

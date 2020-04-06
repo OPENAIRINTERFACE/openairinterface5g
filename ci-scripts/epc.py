@@ -55,7 +55,7 @@ class EPCManagement():
 
 	def __init__(self):
 		
-		self.IPAddress = ''
+		self.EPCIPAddress = ''
 		self.UserName = ''
 		self.Password = ''
 		self.SourceCodePath = ''
@@ -130,7 +130,8 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-		HTML.CreateHtmlTestRow(self.EPCType, 'OK', CONST.ALL_PROCESSES_OK)
+		myHTML = HTML.HTMLManagement()
+		myHTML.CreateHtmlTestRow(self.EPCType, 'OK', CONST.ALL_PROCESSES_OK)
 
 	def InitializeMME(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -163,7 +164,8 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-		HTML.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
+		myHTML = HTML.HTMLManagement()
+		myHTML.CreateHtmlTestRow(self.EPCType, 'OK', CONST.ALL_PROCESSES_OK)
 
 	def InitializeSPGW(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -194,7 +196,8 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-		HTML.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
+		myHTML = HTML.HTMLManagement()
+		myHTML.CreateHtmlTestRow(self.EPCType, 'OK', CONST.ALL_PROCESSES_OK)
 
 
 	def CheckHSSProcess(self, status_queue):
@@ -294,7 +297,8 @@ class EPCManagement():
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		myHTML = HTML.HTMLManagement()
+		myHTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateMME(self):
 		mySSH = SSH.SSHConnection() 
@@ -313,7 +317,8 @@ class EPCManagement():
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
-		HTML.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		myHTML = HTML.HTMLManagement()
+		myHTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateSPGW(self):
 		mySSH = SSH.SSHConnection() 
@@ -344,7 +349,8 @@ class EPCManagement():
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		myHTML = HTML.HTMLManagement()
+		myHTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 
 	def LogCollectHSS(self):

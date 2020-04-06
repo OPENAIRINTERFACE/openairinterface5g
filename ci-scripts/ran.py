@@ -87,6 +87,9 @@ class RANManagement():
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
 		self.eNBmbmsEnables = [False, False, False]
+		self.eNBstatuses = [-1, -1, -1]
+		self.flexranCtrlInstalled = False
+		self.flexranCtrlStarted = False
 
 #-----------------------------------------------------------
 # Setters and Getters
@@ -97,8 +100,12 @@ class RANManagement():
 		self.testCase_id = tcid
 	def SetflexranCtrlInstalled(self,fxrctin):
 		self.flexranCtrlInstalled = fxrctin
+	def GetflexranCtrlInstalled(self):
+		return self.flexranCtrlInstalled
 	def SetflexranCtrlStarted(self,fxrctst):
 		self.flexranCtrlStarted = fxrctst
+	def GetflexranCtrlStarted(self):
+		return self.flexranCtrlStarted
 	def SetpStatus(self, pSt):
 		self.pStatus = pSt
 	def SetranRepository(self, repository):
@@ -175,21 +182,11 @@ class RANManagement():
 	def GeteNBLogFiles(self):
 		return self.eNBLogFiles
 
-	def SeteNBOptions(self, enbopt):
-		self.eNBOptions = enbopt
-	def GeteNBOptions(self):
-		return self.eNBOptions
-
 	def SeteNBmbmsEnables(self, enbmbms):
 		self.eNBmbmsEnables = enbmbms
 	def GeteNBmbmsEnables(self):
 		return self.eNBmbmsEnables
 
-	def SeteNBstatuses(self, enbstatus):
-		self.eNBstatuses = enbstatus
-	def GeteNBstatuses(self):
-		return self.eNBstatuses
-		self.eNB1IPAddress = enb1ip
 	def SeteNB1IPAddress(self,enb1ip):
 		self.eNB1IPAddress = enb1ip
 	def GeteNB1IPAddress(self):
@@ -339,6 +336,7 @@ class RANManagement():
 			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
 			return
 		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
+		mySSH.close()
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
 
 
@@ -374,11 +372,13 @@ class RANManagement():
 			else:
 				count -= 1
 				time.sleep(30)
+		mySSH.close()
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)])
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
 		myHTML = HTML.HTMLManagement()
 		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
 		mySSH.command('ls ran_build/build', '\$', 3)
 		mySSH.command('ls ran_build/build', '\$', 3)
@@ -909,7 +909,7 @@ class RANManagement():
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
 		self.htmleNBFailureMsg = ''
-		if self.air_interface() == 'lte':
+		if self.air_interface == 'lte':
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
