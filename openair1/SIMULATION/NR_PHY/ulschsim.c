@@ -402,7 +402,6 @@ int main(int argc, char **argv)
   rel15_ul->mcs_index           = Imcs;
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
-  //rel15_ul->length_dmrs       = length_dmrs;
   rel15_ul->target_code_rate    = code_rate;
   rel15_ul->pusch_data.tb_size  = TBS>>3;
   ///////////////////////////////////////////////////
@@ -427,8 +426,6 @@ int main(int argc, char **argv)
 
   /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
   ///////////
-  ulsch_ue->nb_re_dmrs = nb_re_dmrs;
-  ulsch_ue->length_dmrs =  length_dmrs;
   ulsch_ue->rnti = n_rnti;
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////

@@ -161,10 +161,6 @@ typedef struct {
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
-  /// number of DMRS resource elements
-  uint8_t nb_re_dmrs;
-  /// DMRS length
-  uint8_t length_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)
