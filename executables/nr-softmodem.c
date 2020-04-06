@@ -402,7 +402,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
 
-    if (EPC_MODE_ENABLED && get_softmodem_params()->phy_test<0) {
+    if (EPC_MODE_ENABLED && get_softmodem_params()->phy_test<1) {
         if (gnb_nb > 0) {
           /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
             LOG_E(SCTP, "Create task for SCTP failed\n");
