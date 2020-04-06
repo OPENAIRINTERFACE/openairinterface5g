@@ -110,7 +110,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t dmrs_type, nb_dmrs_re_per_rb;
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
-  uint16_t n_rnti;
+  uint16_t n_rnti, ul_dmrs_symb_pos;
   uint8_t data_existing =0;
   uint8_t L_ptrs, K_ptrs; // PTRS parameters
   uint16_t beta_ptrs; // PTRS parameter related to power control
@@ -135,14 +135,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
     start_symbol = harq_process_ul_ue->start_symbol;
+    ul_dmrs_symb_pos = harq_process_ul_ue->ul_dmrs_symb_pos;
 
     for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++) {
 
-      // [hna] Temporary implementation until nFAPI structs are adopted at UE side
-      // --------------------------
-      if((mapping_type ? (i - start_symbol) : i) == start_symbol)
+      if((ul_dmrs_symb_pos >> (mapping_type ? (i - start_symbol) : i)) & 0x01)
         number_dmrs_symbols += 1;
-      // --------------------------
 
     }
 
@@ -295,6 +293,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                       dmrs_type,
                       L_ptrs,
                       number_dmrs_symbols,
+                      ul_dmrs_symb_pos,
                       frame_parms->ofdm_symbol_size);
   }
 
@@ -326,13 +325,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   for (l = start_symbol; l < start_symbol + harq_process_ul_ue->number_of_symbols; l++) {
 
-    // [hna] Temporary implementation until nFAPI structs are adopted at UE side
-    // --------------------------
-    if(((mapping_type)?l-start_symbol:l) == start_symbol)
+    if((ul_dmrs_symb_pos >> ((mapping_type)?l-start_symbol:l)) & 0x01)
       is_dmrs = 1;
     else
       is_dmrs = 0;
-    // --------------------------
 
     if (is_dmrs == 1)
       nb_re_dmrs_per_rb = nb_dmrs_re_per_rb;
@@ -392,13 +388,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         is_dmrs = 0;
         is_ptrs = 0;
 
-        // [hna] Temporary implementation until nFAPI structs are adopted at UE side
-        // --------------------------
-        if(l_ref == start_symbol) {
+        if((ul_dmrs_symb_pos >> l_ref) & 0x01) {
           if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%frame_parms->ofdm_symbol_size))
             is_dmrs = 1;
         }
-        // --------------------------
 
         if (UE->ptrs_configured == 1){
           is_ptrs = is_ptrs_symbol(l,

@@ -592,6 +592,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
       ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
       ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
+      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ul_dmrs_symb_pos = l_prime_mask;
       ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
       ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
       ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;

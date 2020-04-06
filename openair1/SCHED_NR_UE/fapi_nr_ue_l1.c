@@ -122,6 +122,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
 	  ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
 	  ulsch0->harq_processes[current_harq_pid]->number_of_symbols = pusch_config_pdu->number_symbols;
 	  ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
+	  ulsch0->harq_processes[current_harq_pid]->ul_dmrs_symb_pos = pusch_config_pdu->ul_dmrs_symb_pos;
 	  ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
 	  ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
 	  ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;

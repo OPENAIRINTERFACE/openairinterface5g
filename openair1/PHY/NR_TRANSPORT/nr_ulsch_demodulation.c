@@ -1055,6 +1055,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                         rel15_ul->dmrs_config_type,
                         L_ptrs,
                         1, // only dmrs of length 1 is currently supported
+                        rel15_ul->ul_dmrs_symb_pos,
                         frame_parms->ofdm_symbol_size);
     }
   }

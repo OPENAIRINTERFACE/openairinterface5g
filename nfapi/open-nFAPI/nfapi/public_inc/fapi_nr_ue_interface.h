@@ -276,6 +276,8 @@ typedef struct {
         int8_t absolute_delta_PUSCH;
         uint8_t n_layers;
         uint8_t tpmi;
+        //DMRS
+        uint16_t  ul_dmrs_symb_pos;
         uint8_t n_dmrs_cdm_groups;
         uint8_t dmrs_ports[4];
         uint8_t n_front_load_symb;

@@ -133,6 +133,7 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t dmrs_type,
                        uint8_t L_ptrs,
                        uint8_t pusch_maxLength,
+                       uint16_t ul_dmrs_symb_pos,
                        uint16_t ofdm_symbol_size) {
   uint8_t i, last_symbol, is_dmrs_symbol1, is_dmrs_symbol2;
   int16_t l_ref;
@@ -145,14 +146,11 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
 
   while ( (l_ref + i*L_ptrs) <= last_symbol) {
 
-    // [hna] Temporary implementation until nFAPI structs are adopted at UE side
-    // --------------------------
-    if(max((l_ref + (i-1)*L_ptrs + 1), l_ref) == start_symbol)
+    if((ul_dmrs_symb_pos >> max((l_ref + (i-1)*L_ptrs + 1), l_ref)) & 0x01)
       is_dmrs_symbol1 = 1;
 
-    if(l_ref + i*L_ptrs == start_symbol)
+    if((ul_dmrs_symb_pos >> (l_ref + i*L_ptrs)) & 0x01)
       is_dmrs_symbol2 = 0;
-    // --------------------------
 
     if ( is_dmrs_symbol1 + is_dmrs_symbol2 > 0 ) {
       if (pusch_maxLength == 2)

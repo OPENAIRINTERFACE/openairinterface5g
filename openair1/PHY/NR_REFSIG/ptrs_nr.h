@@ -57,6 +57,7 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t dmrs_type,
                        uint8_t L_ptrs,
                        uint8_t pusch_maxLength,
+                       uint16_t ul_dmrs_symb_pos,
                        uint16_t ofdm_symbol_size);
 
 uint8_t get_L_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint8_t I_mcs);

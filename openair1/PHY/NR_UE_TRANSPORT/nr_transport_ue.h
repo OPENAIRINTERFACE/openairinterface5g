@@ -156,6 +156,7 @@ typedef struct {
   uint8_t number_of_symbols;
   // This is "S" in  TS 38.214 V15.4.0 subclause 6.1.2.1
   uint8_t start_symbol;
+  uint16_t ul_dmrs_symb_pos;
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;

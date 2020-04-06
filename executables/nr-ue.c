@@ -359,7 +359,7 @@ static void UE_synch(void *arg) {
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   uint32_t nb_rb, start_rb;
   uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
-  uint16_t n_rnti;
+  uint16_t n_rnti, l_prime_mask;
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
@@ -390,6 +390,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     mcs = 9;
     harq_pid = 0;
     rvidx = 0;
+    l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, pusch_len1);
     //------------------------------------------------------------------------------//
 
     scheduled_response.ul_config->slot = 8;
@@ -400,6 +401,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
+    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ul_dmrs_symb_pos = l_prime_mask;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = mcs;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
