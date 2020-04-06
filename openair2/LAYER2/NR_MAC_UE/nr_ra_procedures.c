@@ -124,7 +124,10 @@ void nr_get_prach_resources(module_id_t mod_id,
   rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
 
   Msg3_size = mac->RA_Msg3_size;
-  numberOfRA_Preambles = *nr_rach_ConfigCommon->totalNumberOfRA_Preambles;
+
+  numberOfRA_Preambles = 64;
+  if(nr_rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
+    numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
 
   if (!nr_rach_ConfigCommon->groupBconfigured) {
     noGroupB = 1;
@@ -249,7 +252,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   // - Extend RA_rnti computation (e.g. f_id selection, ul_carrier_id are hardcoded)
 
   if (mac->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
-    mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
+    mac->RA_PREAMBLE_POWER_RAMPING_COUNTER++;
 
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
@@ -409,7 +412,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       num_sdus = 1;
       post_padding = 1;
 
-      if (!IS_SOFTMODEM_NOS1){
+      if (IS_SOFTMODEM_NOS1){
         // initialisation by RRC
         // CCCH PDU
         mac_sdus = &payload[sizeof(NR_MAC_SUBHEADER_SHORT)];
@@ -423,10 +426,12 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         //                                           0);
         LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
       } else {
+        uint8_t sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
         // fill ulsch_buffer with random data
         for (int i = 0; i < TBS_bytes; i++){
-          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+          sdus[i] = (unsigned char) (lrand48()&0xff);
         }
+        mac_sdus = sdus;
         //Sending SDUs with size 1
         //Initialize elements of sdu_lcids and sdu_lengths
         sdu_lcids[0] = lcid;
