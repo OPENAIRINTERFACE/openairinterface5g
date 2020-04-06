@@ -87,7 +87,7 @@ class SSHConnection():
 		if connect_status:
 			pass
 		else:
-			sys.exit('CiTestObj.Connection Failed')
+			sys.exit('SSH Connection Failed')
 
 
 	def command(self, commandline, expectedline, timeout):
