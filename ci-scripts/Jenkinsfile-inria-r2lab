@@ -142,6 +142,12 @@ pipeline {
         stage ("Load Images") {
             steps {
                 script {
+                    // Adding a tempo after booking leases
+                    sh "sleep 10"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'rleases --check'"
+                    sh "ssh -t inria_oaici@faraday.inria.fr 'all-off'"
+                    sh "sleep 10"
+
                     echo '\u2705 \u001B[32mLoad Image for Python Executor\u001B[0m'
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labPythonExeIdx}'"
