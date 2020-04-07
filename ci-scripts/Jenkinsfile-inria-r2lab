@@ -149,12 +149,32 @@ pipeline {
                     sh "sleep 10"
 
                     echo '\u2705 \u001B[32mLoad Image for Python Executor\u001B[0m'
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labPythonExeIdx}'"
+                    try {
+                       //sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
+                       sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx}'"
+                    } catch (Exception e) {
+                       echo "Why is it wrong?"
+                    }
+                    try {
+                       //sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labPythonExeIdx}'"
+                       sh "ssh -t inria_oaici@faraday.inria.fr 'rwait ${r2labPythonExeIdx}'"
+                    } catch (Exception e) {
+                       echo "Why is it wrong?"
+                    }
 
                     echo '\u2705 \u001B[32mLoad Image for two (2) eNBs\u001B[0m'
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx} > /dev/null 2>&1'"
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx},${r2labENB1Idx}'"
+                    try {
+                      //sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx} > /dev/null 2>&1'"
+                      sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx}"
+                    } catch (Exception e) {
+                       echo "Why is it wrong?"
+                    }
+                    try {
+                       //sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx},${r2labENB1Idx}'"
+                       sh "ssh -t inria_oaici@faraday.inria.fr 'rwait ${r2labENB0Idx},${r2labENB1Idx}'"
+                    } catch (Exception e) {
+                       echo "Why is it wrong?"
+                    }
                     sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx},${r2labENB1Idx}'"
                     sh "sleep 5"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'uon ${r2labENB0Idx},${r2labENB1Idx}'"
