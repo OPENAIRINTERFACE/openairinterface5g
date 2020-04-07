@@ -72,7 +72,7 @@ int nr_rrc_mac_config_req_ue(
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     //NR_ServingCellConfigCommon_t    *sccP,
-    NR_SpCellConfig_t               *spCell_ConfigP);
+    NR_CellGroupConfig_t            *cell_group_config);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);

@@ -62,14 +62,15 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot) {
 
   // check if DL slot
+  dci_pdu_rel15_t dci_pdu_rel15;
   if (is_nr_DL_slot(mac->scc,slot)==1) {
     
     // get BWP 1, Coreset 0, SearchSpace 0  
     if (mac->DLbwp[0]==NULL) {
-      AssertFatal(mac->scd->downlinkBWP_ToAddModList!=NULL,"downlinkBWP_ToAddModList is null\n");
-      AssertFatal(mac->scd->downlinkBWP_ToAddModList->list.count==1,"downlinkBWP_ToAddModList->list->count is %d\n",
-		  mac->scd->downlinkBWP_ToAddModList->list.count);
-      mac->DLbwp[0]      = mac->scd->downlinkBWP_ToAddModList->list.array[0];
+      AssertFatal(mac->scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList!=NULL,"downlinkBWP_ToAddModList is null\n");
+      AssertFatal(mac->scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count==1,"downlinkBWP_ToAddModList->list->count is %d\n",
+		  mac->scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+      mac->DLbwp[0]      = mac->scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
       AssertFatal(mac->DLbwp[0]->bwp_Dedicated!=NULL,"bwp_Dedicated is null\n");
       AssertFatal(mac->DLbwp[0]->bwp_Dedicated->pdcch_Config!=NULL,"pdcch_Config is null\n");
       AssertFatal(mac->DLbwp[0]->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList!=NULL,"controlResourceSetToAddModList is null\n");
@@ -96,10 +97,10 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
       }
     }
     if (mac->ULbwp[0]==NULL) {
-      AssertFatal(mac->scd->uplinkConfig->uplinkBWP_ToAddModList!=NULL,"uplinkBWP_ToAddModList is null\n");
-      AssertFatal(mac->scd->uplinkConfig->uplinkBWP_ToAddModList->list.count==1,"uplinkBWP_ToAddModList->list->count is %d\n",
-		  mac->scd->uplinkConfig->uplinkBWP_ToAddModList->list.count);
-      mac->ULbwp[0]      = mac->scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
+      AssertFatal(mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList!=NULL,"uplinkBWP_ToAddModList is null\n");
+      AssertFatal(mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count==1,"uplinkBWP_ToAddModList->list->count is %d\n",
+		  mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count);
+      mac->ULbwp[0]      = mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
       AssertFatal(mac->ULbwp[0]->bwp_Dedicated!=NULL,"bwp_Dedicated is null\n");
     }
     // check search spaces
@@ -171,7 +172,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->scc->physCellId;
       fill_dci_search_candidates(mac->SSpace[0][0][ss_id],rel15);
       rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
-      rel15->dci_length = nr_dci_size(rel15->dci_format,NR_RNTI_C,rel15->BWPSize);
+      rel15->dci_length = nr_dci_size(mac->scg,&dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize);
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;
     }

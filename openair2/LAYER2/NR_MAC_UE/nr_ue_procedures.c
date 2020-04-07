@@ -658,7 +658,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(const module_id_t module_id,
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     
   //  check type0 from 38.213 13 if we have no CellGroupConfig
-  if ( mac->scd == NULL) {
+  if ( mac->scg == NULL) {
     if( ssb_index != -1){
 	
       if(mac->type0_pdcch_ss_mux_pattern == 1){
@@ -2725,10 +2725,10 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   AssertFatal(rnti_type!=-1,"no identified/handled rnti\n");
   AssertFatal(mac->DLbwp[0] != NULL, "DLbwp[0] shouldn't be null here!\n");
   AssertFatal(mac->ULbwp[0] != NULL, "ULbwp[0] shouldn't be null here!\n");
-  int N_RB = (mac->scd != NULL) ? 
+  int N_RB = (mac->scg != NULL) ? 
     NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275) :
     NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
-  int N_RB_UL = (mac->scd != NULL) ? 
+  int N_RB_UL = (mac->scg != NULL) ? 
     NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275) :
     NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
 

@@ -281,7 +281,7 @@ int nr_rrc_mac_config_req_ue(
     //    NR_ServingCellConfigCommon_t    *sccP,
     //    NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
     //    NR_PhysicalCellGroupConfig_t    *phy_cell_group_configP,
-    NR_SpCellConfig_t               *spCell_ConfigP ){
+    NR_CellGroupConfig_t            *cell_group_config ){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -294,15 +294,15 @@ int nr_rrc_mac_config_req_ue(
     }
     
     
-    if(spCell_ConfigP != NULL ){
-      mac->servCellIndex = *spCell_ConfigP->servCellIndex;
-      if (spCell_ConfigP->reconfigurationWithSync) {
-	mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
+    if(cell_group_config != NULL ){
+      mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
+      if (cell_group_config->spCellConfig->reconfigurationWithSync) {
+	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
 	config_common_ue(mac,module_id,cc_idP);
-	mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
+	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
 	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
-      mac->scd = spCell_ConfigP->spCellConfigDedicated;
+      mac->scg = cell_group_config;
 
       /*      
       if(mac_cell_group_configP != NULL){

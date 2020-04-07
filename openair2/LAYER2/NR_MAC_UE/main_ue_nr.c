@@ -52,7 +52,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
     if (rrc_inst) {
-      nr_rrc_mac_config_req_ue(0,0,0,NULL,rrc_inst->cell_group_config->spCellConfig);
+      nr_rrc_mac_config_req_ue(0,0,0,NULL,rrc_inst->cell_group_config);
       
       if (IS_SOFTMODEM_NOS1){
         if (rlc_module_init(0) != 0) {
