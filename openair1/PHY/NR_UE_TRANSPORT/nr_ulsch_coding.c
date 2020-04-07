@@ -248,11 +248,11 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   crc = 1;
   harq_process = ulsch->harq_processes[harq_pid];
-  nb_rb = harq_process->nb_rb;
-  A = harq_process->TBS;
+  nb_rb = harq_process->pusch_pdu.rb_size;
+  A = harq_process->pusch_pdu.pusch_data.tb_size;
   pz = &Z;
-  mod_order = nr_get_Qm_ul(harq_process->mcs,0);
-  R = nr_get_code_rate_ul(harq_process->mcs, 0);
+  mod_order = nr_get_Qm_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
+  R = nr_get_code_rate_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
   Kr=0;
   r_offset=0;
   BG = 1;
@@ -267,7 +267,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->Nl);
+  LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
@@ -424,15 +424,15 @@ opp_enabled=0;
 
     //start_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
-  printf("rvidx in encoding = %d\n", harq_process->rvidx);
+  printf("rvidx in encoding = %d\n", harq_process->pusch_pdu.pusch_data.rv_index);
 #endif
 
 ///////////////////////// d---->| Rate matching bit selection |---->e /////////////////////////
 ///////////
 
-    E = nr_get_E(G, harq_process->C, mod_order, harq_process->Nl, r);
+    E = nr_get_E(G, harq_process->C, mod_order, harq_process->pusch_pdu.nrOfLayers, r);
 
-    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->Nl,harq_process->C);
+    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->pusch_pdu.nrOfLayers,harq_process->C);
 
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
@@ -443,7 +443,7 @@ opp_enabled=0;
                           harq_process->C,
 			  F,
                           Kr-F-2*(*pz),
-                          harq_process->rvidx,
+                          harq_process->pusch_pdu.pusch_data.rv_index,
                           E);
 
 

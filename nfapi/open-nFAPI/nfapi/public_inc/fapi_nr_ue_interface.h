@@ -22,6 +22,8 @@
 #include "fapi_nr_ue_constants.h"
 #include "PHY/impl_defs_nr.h"
 
+#define NFAPI_UE_MAX_NUM_CB 8
+
 /*
   typedef unsigned int	   uint32_t;
   typedef unsigned short	   uint16_t;
@@ -260,7 +262,127 @@ typedef struct {
     typedef struct{
     uint8_t aperiodicSRS_ResourceTrigger;
     } fapi_nr_ul_srs_config_t;
-    typedef struct {
+
+typedef struct
+{
+  uint8_t  rv_index;
+  uint8_t  harq_process_id;
+  uint8_t  new_data_indicator;
+  uint32_t tb_size;
+  uint16_t num_cb;
+  uint8_t cb_present_and_position[(NFAPI_UE_MAX_NUM_CB+7) / 8];
+
+} nfapi_nr_ue_pusch_data_t;
+
+typedef struct
+{
+  uint16_t harq_ack_bit_length;
+  uint16_t csi_part1_bit_length;
+  uint16_t csi_part2_bit_length;
+  uint8_t  alpha_scaling;
+  uint8_t  beta_offset_harq_ack;
+  uint8_t  beta_offset_csi1;
+  uint8_t  beta_offset_csi2;
+
+} nfapi_nr_ue_pusch_uci_t;
+
+typedef struct
+{
+  uint16_t ptrs_port_index;//PT-RS antenna ports [TS38.214, sec6.2.3.1 and 38.212, section 7.3.1.1.2] Bitmap occupying the 12 LSBs with: bit 0: antenna port 0 bit 11: antenna port 11 and for each bit 0: PTRS port not used 1: PTRS port used
+  uint8_t  ptrs_dmrs_port;//DMRS port corresponding to PTRS.
+  uint8_t  ptrs_re_offset;//PT-RS resource element offset value taken from 0~11
+} nfapi_nr_ue_ptrs_ports_t;
+
+typedef struct
+{
+  uint8_t  num_ptrs_ports;
+  nfapi_nr_ue_ptrs_ports_t* ptrs_ports_list;
+  uint8_t  ptrs_time_density;
+  uint8_t  ptrs_freq_density;
+  uint8_t  ul_ptrs_power;
+
+}nfapi_nr_ue_pusch_ptrs_t;
+
+typedef struct
+{
+  uint8_t  low_papr_group_number;//Group number for Low PAPR sequence generation.
+  uint16_t low_papr_sequence_number;//[TS38.211, sec 5.2.2] For DFT-S-OFDM.
+  uint8_t  ul_ptrs_sample_density;//Number of PTRS groups [But I suppose this sentence is misplaced, so as the next one. --Chenyu]
+  uint8_t  ul_ptrs_time_density_transform_precoding;//Number of samples per PTRS group
+
+} nfapi_nr_ue_dfts_ofdm_t;
+
+typedef struct
+{
+  uint16_t beam_idx;//Index of the digital beam weight vector pre-stored at cell configuration. The vector maps this input port to output TXRUs. Value: 0->65535
+
+}nfapi_nr_ue_dig_bf_interface_t;
+
+typedef struct
+{
+  nfapi_nr_ue_dig_bf_interface_t* dig_bf_interface_list;
+
+} nfapi_nr_ue_ul_beamforming_number_of_prgs_t;
+
+typedef struct
+{
+  uint16_t num_prgs;
+  uint16_t prg_size;
+  //watchout: dig_bf_interface here, in table 3-43 it's dig_bf_interfaces
+  uint8_t  dig_bf_interface;
+  nfapi_nr_ue_ul_beamforming_number_of_prgs_t* prgs_list;//
+
+} nfapi_nr_ue_ul_beamforming_t;
+
+typedef struct
+{
+  uint16_t pdu_bit_map;//Bitmap indicating presence of optional PDUs (see above)
+  uint16_t rnti;
+  uint32_t handle;//An opaque handling returned in the RxData.indication and/or UCI.indication message
+  //BWP
+  uint16_t bwp_size;
+  uint16_t bwp_start;
+  uint8_t  subcarrier_spacing;
+  uint8_t  cyclic_prefix;
+  //pusch information always include
+  uint16_t target_code_rate;
+  uint8_t  qam_mod_order;
+  uint8_t  mcs_index;
+  uint8_t  mcs_table;
+  uint8_t  transform_precoding;
+  uint16_t data_scrambling_id;
+  uint8_t  nrOfLayers;
+  //DMRS
+  uint16_t  ul_dmrs_symb_pos;
+  uint8_t  dmrs_config_type;
+  uint16_t ul_dmrs_scrambling_id;
+  uint8_t  scid;
+  uint8_t  num_dmrs_cdm_grps_no_data;
+  uint16_t dmrs_ports;//DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
+  //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
+  uint8_t  resource_alloc;
+  uint8_t  rb_bitmap[36];//
+  uint16_t rb_start;
+  uint16_t rb_size;
+  uint8_t  vrb_to_prb_mapping;
+  uint8_t  frequency_hopping;
+  uint16_t tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
+  uint8_t  uplink_frequency_shift_7p5khz;
+  //Resource Allocation in time domain
+  uint8_t  start_symbol_index;
+  uint8_t  nr_of_symbols;
+  //Optional Data only included if indicated in pduBitmap
+  nfapi_nr_ue_pusch_data_t pusch_data;
+  nfapi_nr_ue_pusch_uci_t  pusch_uci;
+  nfapi_nr_ue_pusch_ptrs_t pusch_ptrs;
+  nfapi_nr_ue_dfts_ofdm_t dfts_ofdm;
+  //beamforming
+  nfapi_nr_ue_ul_beamforming_t beamforming;
+
+} nfapi_nr_ue_pusch_pdu_t;
+
+typedef struct {
+        uint32_t TBS;
         uint8_t bandwidth_part_ind;
         uint16_t number_rbs;
         uint16_t start_rb;
@@ -269,6 +391,7 @@ typedef struct {
         uint16_t start_symbol;
         pusch_freq_hopping_t pusch_freq_hopping;
         uint8_t mcs;
+        uint8_t mcs_table;
         uint8_t ndi;
         uint8_t rv;
         uint8_t harq_process_nbr;
@@ -286,7 +409,7 @@ typedef struct {
         uint8_t maxCodeBlockGroupsPerTransportBlock;
         uint8_t ptrs_dmrs_association_port;
         uint8_t beta_offset_ind;
-    } fapi_nr_ul_config_pusch_pdu_rel15_t;
+} fapi_nr_ul_config_pusch_pdu_rel15_t;
 
 typedef struct {
   uint16_t rnti;
