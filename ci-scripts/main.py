@@ -1235,7 +1235,6 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		idx = 0
 		for device_id in self.UEDevices:
-			print('UE status attched'+CONST.UE_STATUS_ATTACHED)
 			if self.UEDevicesStatus[idx] != CONST.UE_STATUS_ATTACHED:
 				idx += 1
 				continue

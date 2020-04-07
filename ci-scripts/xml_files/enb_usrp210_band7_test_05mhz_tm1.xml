@@ -108,7 +108,7 @@
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].plmn_list.[0].mnc 93</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030102">
