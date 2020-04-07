@@ -790,6 +790,8 @@ void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
     // dmrs sequence initialization
     dci_pdu_rel15->dmrs_sequence_initialization = 0; // FIXME no information on what this bit should be in 38.212
     break;
+  default :
+    AssertFatal(1==0,"Prepare dci currently only implemented for 1_1 \n");
   }
 }
 

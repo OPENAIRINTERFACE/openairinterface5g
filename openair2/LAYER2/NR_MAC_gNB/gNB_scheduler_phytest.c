@@ -267,7 +267,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
 
   int TBS;
-  bwp_id=1;
+  int bwp_id=1;
   int UE_id = 0;
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
@@ -851,7 +851,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 
   config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
   
-  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types);
+  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,bwp_id);
   
 }
 
