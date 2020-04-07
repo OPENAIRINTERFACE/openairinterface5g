@@ -334,7 +334,8 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                     int nr_tti_tx){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *mac_sdus, *payload, ra_ResponseWindow;
+  uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
+  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload, ra_ResponseWindow;
   uint8_t config_index, mu;
   int is_nr_prach_slot;
   uint16_t size_sdu = 0;
@@ -412,10 +413,9 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       num_sdus = 1;
       post_padding = 1;
 
-      if (IS_SOFTMODEM_NOS1){
+      if (0){
         // initialisation by RRC
         // CCCH PDU
-        mac_sdus = &payload[sizeof(NR_MAC_SUBHEADER_SHORT)];
         // size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
         //                                           CC_id,
         //                                           frame,
@@ -426,12 +426,10 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         //                                           0);
         LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
       } else {
-        uint8_t sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
         // fill ulsch_buffer with random data
         for (int i = 0; i < TBS_bytes; i++){
-          sdus[i] = (unsigned char) (lrand48()&0xff);
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
         }
-        mac_sdus = sdus;
         //Sending SDUs with size 1
         //Initialize elements of sdu_lcids and sdu_lengths
         sdu_lcids[0] = lcid;
