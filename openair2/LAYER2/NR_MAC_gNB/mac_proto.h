@@ -151,7 +151,13 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
-                        int *rnti_types);
+                        int *rnti_types,
+                        int bwp_id);
+
+void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
+                 dci_pdu_rel15_t *dci_pdu_rel15,
+                 nr_dci_format_t format,
+                 int bwp_id);
 
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_ServingCellConfigCommon_t *scc,
@@ -194,7 +200,8 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
-                     uint16_t N_RB);
+                     uint16_t N_RB,
+                     int bwp_id);
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int bwp_id,

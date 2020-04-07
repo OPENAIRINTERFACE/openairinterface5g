@@ -267,7 +267,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
 
   int TBS;
-  int bwp_id=1;
+  bwp_id=1;
   int UE_id = 0;
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
@@ -343,24 +343,37 @@ int configure_fapi_dl_pdu(int Mod_idP,
 
   dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15));
   
-  dci_pdu_rel15[0].frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize, 
-										   pdsch_pdu_rel15->rbStart, 
-										   NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
+  // bwp indicator
+  int n_dl_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+  if (n_dl_bwp < 4)
+    dci_pdu_rel15[0].bwp_indicator.val = bwp_id;
+  else
+    dci_pdu_rel15[0].bwp_indicator.val = bwp_id - 1; // as per table 7.3.1.1.2-1 in 38.212
+  // frequency domain assignment
+  if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation==NR_PDSCH_Config__resourceAllocation_resourceAllocationType1)
+    dci_pdu_rel15[0].frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
+                                                                                         pdsch_pdu_rel15->rbStart,
+										         NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275));
+  else
+    AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
+  // time domain assignment
   dci_pdu_rel15[0].time_domain_assignment.val = time_domain_assignment; // row index used here instead of SLIV;
-  dci_pdu_rel15[0].vrb_to_prb_mapping.val = 1;
+  // mcs ndi and rv
   dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
-  dci_pdu_rel15[0].tb_scaling = 1;
-  
-  dci_pdu_rel15[0].ra_preamble_index = 25;
-  dci_pdu_rel15[0].format_indicator = 1;
   dci_pdu_rel15[0].ndi = 1;
   dci_pdu_rel15[0].rv = 0;
+  // harq pid
   dci_pdu_rel15[0].harq_pid = 0;
+  // DAI
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
-  dci_pdu_rel15[0].tpc = 2;
+  // TPC for PUCCH
+  dci_pdu_rel15[0].tpc = 1; // table 7.2.1-1 in 38.213
+  // PUCCH resource indicator
   dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
+  // PDSCH to HARQ TI
   dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = pucch_sched->timing_indicator;
-
+  // antenna ports
+  dci_pdu_rel15[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
   
   LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment.val,
@@ -392,7 +405,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
   rnti_types[0]   = NR_RNTI_C;
 
-  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types);
+  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,bwp_id);
 
   LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",

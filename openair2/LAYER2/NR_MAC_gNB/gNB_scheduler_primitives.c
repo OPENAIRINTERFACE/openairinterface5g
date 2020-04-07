@@ -544,24 +544,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
   }
 }
 
-void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
-                 dci_pdu_rel15_t *dci_pdu_rel15,
-                 nr_dci_format_t format) {
 
-  switch(format) {
-    case NR_DL_DCI_FORMAT_1_1:
-    //carrier indicator  
-    //bwp indicator
-    //vrb to prb mapping
-    //bundling size indicator
-    //rate matching indicator
-    //ZP CSI-RS trigger
-    //dai
-    //antenna ports
-    //srs resource set
-    break;
-  }
-}
 
 // This function configures pucch pdu fapi structure
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
@@ -747,11 +730,75 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
 }
 
+
+void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
+                 dci_pdu_rel15_t *dci_pdu_rel15,
+                 nr_dci_format_t format,
+                 int bwp_id) {
+
+  NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+
+  switch(format) {
+    case NR_DL_DCI_FORMAT_1_1:
+      // format indicator
+      dci_pdu_rel15->format_indicator = 1;
+      // carrier indicator
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL)
+        AssertFatal(1==0,"Cross Carrier Scheduling Config currently not supported\n");
+      //vrb to prb mapping
+      if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->vrb_ToPRB_Interleaver==NULL)
+        dci_pdu_rel15->vrb_to_prb_mapping.val = 0;
+      else
+        dci_pdu_rel15->vrb_to_prb_mapping.val = 1;
+      //bundling size indicator
+      if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present == NR_PDSCH_Config__prb_BundlingType_PR_dynamicBundling)
+        AssertFatal(1==0,"Dynamic PRB bundling type currently not supported\n");
+      //rate matching indicator
+      uint16_t msb = (bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup1==NULL)?0:1;
+      uint16_t lsb = (bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2==NULL)?0:1;
+      dci_pdu_rel15->rate_matching_indicator.val = lsb | (msb<<1);
+      // aperiodic ZP CSI-RS trigger
+      if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList != NULL)
+        AssertFatal(1==0,"Aperiodic ZP CSI-RS currently not supported\n");
+      // transmission configuration indication
+      if (bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI != NULL)
+        AssertFatal(1==0,"TCI in DCI currently not supported\n");
+      //srs resource set
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->carrierSwitching!=NULL) {
+        NR_SRS_CarrierSwitching_t *cs = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->carrierSwitching->choice.setup;
+        if (cs->srs_TPC_PDCCH_Group!=NULL){
+          switch(cs->srs_TPC_PDCCH_Group->present) {
+            case NR_SRS_CarrierSwitching__srs_TPC_PDCCH_Group_PR_NOTHING:
+              dci_pdu_rel15->srs_request.val = 0;
+              break;
+            case NR_SRS_CarrierSwitching__srs_TPC_PDCCH_Group_PR_typeA:
+              AssertFatal(1==0,"SRS TPC PRCCH group type A currently not supported\n");
+              break;
+            case NR_SRS_CarrierSwitching__srs_TPC_PDCCH_Group_PR_typeB:
+              AssertFatal(1==0,"SRS TPC PRCCH group type B currently not supported\n");
+              break;
+          }
+        }
+        else
+          dci_pdu_rel15->srs_request.val = 0;
+      }
+      else
+        dci_pdu_rel15->srs_request.val = 0;
+    // CBGTI and CBGFI
+    if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL)
+      AssertFatal(1==0,"CBG transmission currently not supported\n");
+    // dmrs sequence initialization
+    dci_pdu_rel15->dmrs_sequence_initialization = 0; // FIXME no information on what this bit should be in 38.212
+    break;
+  }
+}
+
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
-                        int *rnti_types) {
+                        int *rnti_types,
+                        int bwp_id) {
   
   uint16_t N_RB = pdcch_pdu_rel15->BWPSize;
   uint8_t fsize=0, pos=0;
@@ -760,10 +807,10 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 
     uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->Payload[d];
-    int dci_size = nr_dci_size(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],pdcch_pdu_rel15->BWPSize);
+    int dci_size = nr_dci_size(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],pdcch_pdu_rel15->BWPSize,bwp_id);
     pdcch_pdu_rel15->PayloadSizeBits[d] = dci_size;
     AssertFatal(pdcch_pdu_rel15->PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
-    prepare_dci(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d]);
+    prepare_dci(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],bwp_id);
     pos = 0;
     
     /// Payload generation
