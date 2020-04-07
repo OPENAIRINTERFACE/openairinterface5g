@@ -94,7 +94,15 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
 
-  if(pucch_pdu->bit_len_harq==1){
+  AssertFatal(pucch_pdu->bit_len_harq > 0 || pucch_pdu->sr_flag > 0,
+	      "Either bit_len_harq (%d) or sr_flag (%d) must be > 0\n",
+	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
+
+  if(pucch_pdu->bit_len_harq==0){
+    mcs=table1_mcs;
+    nr_sequences=1;
+  }
+  else if(pucch_pdu->bit_len_harq==1){
     mcs=table1_mcs;
     nr_sequences=4>>(1-pucch_pdu->sr_flag);
   }
@@ -275,6 +283,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       maxpos=i;
     }
   }
+
+  uint8_t xrtmag_dB = dB_fixed(xrtmag);
   
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
@@ -288,21 +298,45 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_pdu->ul_cqi = 0xff; // currently not valid
   uci_pdu->timing_advance = 0xffff; // currently not valid
   uci_pdu->rssi = 0xffff; // currently not valid
-  if (pucch_pdu->sr_flag) {
-  //currently not supported
-  }
-  else
-    uci_pdu->sr = NULL;
-  if (pucch_pdu->bit_len_harq>0) {
-    uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
-    uci_pdu->harq->num_harq = pucch_pdu->bit_len_harq;
-    uci_pdu->harq->harq_confidence_level = 0xff; // currently not valid
-    uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(uci_pdu->harq->num_harq);
-    for (i=0; i<uci_pdu->harq->num_harq; i++) // FIXME for non present
-      uci_pdu->harq->harq_list[i].harq_value = (index>>i)&0x01;
-  }
-  else
+
+  if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
+    uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
+    if (xrtmag_dB>(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres)) {
+      uci_pdu->sr->sr_indication = 1;
+      uci_pdu->sr->sr_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    } else {
+      uci_pdu->sr->sr_indication = 0;
+      uci_pdu->sr->sr_confidence_level = (gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres)-xrtmag_dB;
+    }
+  }
+  else if (pucch_pdu->bit_len_harq==1) {
+    uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
+    uci_pdu->harq->num_harq = 1;
+    uci_pdu->harq->harq_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
+    uci_pdu->harq->harq_list[0].harq_value = index&0x01;
+    if (pucch_pdu->sr_flag == 1) {
+      uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
+      uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
+      uci_pdu->sr->sr_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    }
+  }
+  else {
+    uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
+    uci_pdu->harq->num_harq = 2;
+    uci_pdu->harq->harq_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
+
+    uci_pdu->harq->harq_list[0].harq_value = index&0x01;
+    uci_pdu->harq->harq_list[1].harq_value = (index>>1)&0x01;
+
+    if (pucch_pdu->sr_flag == 1) {
+      uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
+      uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
+      uci_pdu->sr->sr_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    }
+  }
 }
 
 

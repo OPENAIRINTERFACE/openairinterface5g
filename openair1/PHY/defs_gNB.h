@@ -568,13 +568,13 @@ typedef struct {
   //! estimated avg noise power (dB)
   short n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
-  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][100];
+  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
-  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][100];
+  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB (dB)
-  short n0_subband_power_tot_dB[100];
+  short n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
-  short n0_subband_power_tot_dBm[100];
+  short n0_subband_power_tot_dBm[275];
   // gNB measurements (per user)
   //! estimated received spatial signal power (linear)
   unsigned int   rx_spatial_power[NUMBER_OF_NR_DLSCH_MAX][2][2];
@@ -594,13 +594,13 @@ typedef struct {
   /// Wideband CQI (sum of all RX antennas, in dB)
   char           wideband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][100];
+  int            subband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][275];
   /// Total Subband CQI and RB (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX][100];
+  int            subband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX][275];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][100];
+  int            subband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][275];
   /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_NR_DLSCH_MAX][100];
+  int            subband_cqi_tot_dB[NUMBER_OF_NR_DLSCH_MAX][275];
   /// PRACH background noise level
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
@@ -707,6 +707,7 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
+  int pucch0_thres;
   /*
   time_stats_t phy_proc;
   */
