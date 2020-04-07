@@ -138,9 +138,8 @@ void nr_decode_pucch1(int32_t **rxdataF,
                       uint8_t timeDomainOCC,
                       uint8_t nr_bit);
 
-void nr_decode_pucch0(int32_t **rxdataF,
-                      NR_DL_FRAME_PARMS *frame_parms,
-                      int slot,
+void nr_decode_pucch0(PHY_VARS_gNB *gNB,
+		      int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 

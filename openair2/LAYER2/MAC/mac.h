@@ -411,8 +411,9 @@ typedef struct {
 #define BCCH_SIB1_BR 6    // SIB1_BR
 /*!\brief Values of BCCH SIB_BR logical channel (fake) */
 #define BCCH_SI_BR 7    // SI-BR
-/*!\brief Values of BCCH SIB1_BR logical channel (fake) */
+/*!\brief Values of BCCH SIB1_MBMS logical channel (fake) */
 #define BCCH_SIB1_MBMS 60              // SIB1_MBMS //TODO better armonize index
+/*!\brief Values of BCCH SI_MBMS logical channel (fake) */
 #define BCCH_SI_MBMS 61                // SIB_MBMS //TODO better armonize index
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0      // srb0
@@ -424,7 +425,8 @@ typedef struct {
 #define DTCH 3      // LCID
 /*!\brief MCCH logical channel */
 //#define MCCH 4
-#define MCCH 62
+//#define MCCH 62
+#define MCCH 11
 /*!\brief MTCH logical channel */
 #define MTCH 1
 // DLSCH LCHAN ID
@@ -904,10 +906,8 @@ typedef struct {
   uint16_t mpdcch_repetition_cnt;
   frame_t Msg2_frame;
   sub_frame_t Msg2_subframe;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Repetition column in pusch_repetition Table 8.2.b in TS36.213
   uint8_t pusch_repetition_levels;
-#endif
   LTE_PhysicalConfigDedicated_t *physicalConfigDedicated;
 } UE_TEMPLATE;
 
@@ -1115,10 +1115,8 @@ typedef struct {
   uint8_t msg2_narrowband;
   uint8_t msg34_narrowband;
   int     msg4_rrc_sdu_length;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Repetition column in pusch_repetition Table 8.2.b in TS36.213
   uint8_t pusch_repetition_levels;
-#endif
   int32_t  crnti_rrc_mui;
   int8_t   crnti_harq_pid;
 } RA_t;

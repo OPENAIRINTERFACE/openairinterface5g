@@ -166,7 +166,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
   int k,l,k_prime,dci_idx, dmrs_idx;
   /*First iteration: single DCI*/
 
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15; 
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15=NULL;
 
 
   // find coreset descriptor
@@ -243,8 +243,8 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
     
     for (int i=0; i<encoded_length>>5; i++)
-      printf("[%d]->0x%08x \t", i,encoder_output[i]);
-    
+      printf("[%d]->0x%08x \t", i,encoder_output[i]);    
+
     printf("\n");
 #endif
     /// Scrambling
@@ -273,9 +273,10 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     
     /*Reorder REG list for a freq first mapping*/
     uint8_t nb_regs = pdcch_pdu_rel15->AggregationLevel[d]*NR_NB_REG_PER_CCE;
+    uint8_t reg_idx0 = pdcch_pdu_rel15->CceIndex[d]*NR_NB_REG_PER_CCE;
 
     /*Mapping the encoded DCI along with the DMRS */
-    for (int reg_idx=0; reg_idx<nb_regs; reg_idx++) {
+    for (int reg_idx=reg_idx0; reg_idx<(nb_regs+reg_idx0); reg_idx++) {
       k = cset_start_sc + (12*reg_idx/cset_nsymb);
       
       if (k >= frame_parms.ofdm_symbol_size)

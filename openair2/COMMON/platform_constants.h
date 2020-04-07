@@ -84,9 +84,9 @@
     #else
       #define MAX_MOBILES_PER_ENB         4
       #define MAX_MOBILES_PER_ENB_NB_IoT  4
-      #define MAX_MOBILES_PER_GNB         4
-      #define MAX_eNB                     2
-      #define MAX_gNB                     2
+      #define MAX_MOBILES_PER_GNB         2//16
+      #define MAX_eNB                      2
+      #define MAX_gNB                      2
     #endif
   #endif
 #else
@@ -118,7 +118,8 @@
 #define NB_RAB_MAX     LTE_maxDRB       /* was 8, now 11 */
 #define RAB_SHIFT1     9
 #define RAB_SHIFT2     3
-#define RAB_OFFSET     0x0007
+//#define RAB_OFFSET     0x0007
+#define RAB_OFFSET     0x000F
 #define RAB_OFFSET1    0x7E00
 #define RAB_OFFSET2    0x01F8
 #define DIR_OFFSET     0x8000

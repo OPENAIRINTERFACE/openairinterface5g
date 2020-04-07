@@ -36,13 +36,9 @@
 #include "gnb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
-#   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-# endif
-#endif
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
@@ -216,23 +212,40 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 
   int ssbmaplen = (int)scc->ssb_PositionsInBurst->present;
+  uint8_t curr_bit;
+
   AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
+
+  // changing endianicity of ssbmap and filling the ssb_PositionsInBurst buffers
   if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
     scc->ssb_PositionsInBurst->choice.shortBitmap.size = 1;
     scc->ssb_PositionsInBurst->choice.shortBitmap.bits_unused = 4;
     scc->ssb_PositionsInBurst->choice.shortBitmap.buf = CALLOC(1,1);
-    scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = ssbmap;
+    scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = 0;
+    for (int i=0; i<8; i++) {
+      if (i<scc->ssb_PositionsInBurst->choice.shortBitmap.bits_unused)
+        curr_bit = 0;
+      else
+        curr_bit = (ssbmap>>(7-i))&0x01;
+      scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] |= curr_bit<<i;   
+    }
   }else if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
 	  scc->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
 	  scc->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.mediumBitmap.buf = CALLOC(1,1);
-    scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = ssbmap;
+    scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0;
+    for (int i=0; i<8; i++)
+      scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] |= (((ssbmap>>(7-i))&0x01)<<i); 
   }else {
     scc->ssb_PositionsInBurst->choice.longBitmap.size = 8;
     scc->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
     scc->ssb_PositionsInBurst->choice.longBitmap.buf = CALLOC(1,8);
-    for (int i=0; i<8; i++)
-      scc->ssb_PositionsInBurst->choice.longBitmap.buf[i] = (ssbmap>>(i<<3))&(0xff);
+    for (int j=0; j<8; j++) {
+       scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-j] = 0;
+       curr_bit = (ssbmap>>(j<<3))&(0xff);
+       for (int i=0; i<8; i++)
+         scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-j] |= (((curr_bit>>(7-i))&0x01)<<i);
+    }
   }
 
   // fix UL absolute frequency
@@ -328,11 +341,10 @@ void RCconfig_nr_flexran()
     /* gNB ID from configuration, as read in by RCconfig_RRC() */
     if (!GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr) {
       // Calculate a default gNB ID
-# if defined(ENABLE_USE_MME)
+    if (EPC_MODE_ENABLED) 
       gnb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
-# else
+    else
       gnb_id = i;
-# endif
     } else {
         gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
@@ -452,8 +464,6 @@ void RCconfig_nr_macrlc() {
 
     for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
       RC.nb_nr_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
-      //RC.nrmac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
-      //printf("PHY_TEST = %d,%d\n", RC.nrmac[j]->phy_test, j);
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
   // check number of instances is same as RRC/PDCP
@@ -483,7 +493,7 @@ void RCconfig_nr_macrlc() {
         RC.nrmac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
 
-        //sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+        //sf_ahead = 2; // Cannot cope with 4 subframes between RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
         configure_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
@@ -510,7 +520,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
-  int ssb_SubcarrierOffset = 0;
+  int ssb_SubcarrierOffset = 31;
   int pdsch_AntennaPorts = 1;
   uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
@@ -530,6 +540,24 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal (i<num_gnbs,"Failed to parse config file no %ith element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
 
+  /*
+  if (EPC_MODE_ENABLED) {
+    if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    } else if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 1;
+    } else if (strcasecmp(*(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr) , GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 2;
+    } else {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    }
+  }
+  */
+
   if (num_gnbs>0) {
 
 
@@ -538,14 +566,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
     
     if (GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr == NULL) {
-      // Calculate a default gNB ID
-# if defined(ENABLE_USE_MME)
-      uint32_t hash;
-      hash = s1ap_generate_eNB_id ();
-      gnb_id = i + (hash & 0xFFFF8);
-# else
-      gnb_id = i;
-# endif
+    // Calculate a default gNB ID
+      if (EPC_MODE_ENABLED) { 
+        uint32_t hash;
+        hash = s1ap_generate_eNB_id ();
+        gnb_id = i + (hash & 0xFFFF8);
+      } else {
+        gnb_id = i;
+      }
     } else {
       gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
     }
@@ -570,10 +598,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	    (int)scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
 	    (int)scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower);
       fix_scc(scc,ssb_bitmap);
-
     }
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
-    
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -667,7 +693,7 @@ int RCconfig_nr_gtpu(void ) {
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   
-  paramdef_t GTPUParams[]  = GNBGTPUPARAMS_DESC;
+  paramdef_t GTPUParams[] = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
 /* get number of active eNodeBs */
@@ -722,7 +748,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
 
   /*
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
     if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
       asn_debug      = 0;
       asn1_xer_print = 0;
@@ -736,7 +762,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
       asn_debug      = 0;
       asn1_xer_print = 0;
     }
-#endif
+  }
   */
   
     AssertFatal (i<GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
@@ -956,7 +982,7 @@ void NRRCConfig(void) {
   
 /* get global parameters, defined outside any section in the config file */
  
-  printf("Getting GNBSParams\n");
+  LOG_I(GNB_APP, "Getting GNBSParams\n");
  
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
@@ -977,3 +1003,188 @@ void NRRCConfig(void) {
     
 
 }
+
+int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
+  int   J, l;
+  char *address = NULL;
+  char *cidr    = NULL;
+
+  //int                    num_gnbs                                                      = 0;
+  //int                    num_component_carriers                                        = 0;
+  int                    j,k                                                           = 0;
+  int32_t                gnb_id                                                        = 0;
+
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+  /* get global parameters, defined outside any section in the config file */
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL);
+
+  //paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
+
+  AssertFatal(i < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
+              "Failed to parse config file %s, %uth attribute %s \n",
+              RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+
+  if (GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt > 0) {
+    // Output a list of all gNBs.
+    config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
+
+    if (GNBParamList.numelt > 0) {
+      for (k = 0; k < GNBParamList.numelt; k++) {
+        if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {
+          // Calculate a default eNB ID
+          if (EPC_MODE_ENABLED) {
+            uint32_t hash;
+            hash = s1ap_generate_eNB_id ();
+            gnb_id = k + (hash & 0xFFFF8);
+          } else {
+            gnb_id = k;
+          }
+        } else {
+          gnb_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
+        }
+
+        // search if in active list
+        for (j = 0; j < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt; j++) {
+          if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[j], *(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr)) == 0) {
+            paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
+            paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
+            paramdef_t X2Params[]  = X2PARAMS_DESC;
+            paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
+            paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+            paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
+            /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
+            /* this is most probably a problem with the config module */
+            char aprefix[MAX_OPTNAME_SIZE*80 + 8];
+            sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
+            /* Some default/random parameters */
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = gnb_id;
+
+            if (strcmp(*(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
+              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_GNB;
+            }else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                           RC.config_file_name, i, *(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr));
+            }
+
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).tac              = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
+            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                          PLMNParamList.numelt);
+
+            if (PLMNParamList.numelt > 1)
+              LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
+
+            X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+            AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
+                        || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
+                        "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                        X2AP_REGISTER_ENB_REQ(msg_p).mnc);
+
+            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = 1;
+            J = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = 78; //ccparams_nr_x2.nr_band; //78
+            X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = 3600000000; //ccparams_nr_x2.downlink_frequency; //3600000000
+            X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = 0; //(unsigned int) ccparams_nr_x2.uplink_frequency_offset; //0
+            X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= 0; //ccparams_nr_x2.Nid_cell; //0
+            X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= 106; //ccparams_nr_x2.N_RB_DL; //106
+
+            X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
+
+            //Temp out
+            /*X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
+              X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);*/
+
+            sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
+            config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
+            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
+            X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
+
+            for (l = 0; l < X2ParamList.numelt; l++) {
+              X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
+
+              if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 0;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 0;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              }
+            }
+
+            // timers
+            {
+              int t_reloc_prep = 0;
+              int tx2_reloc_overall = 0;
+              paramdef_t p[] = {
+                { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 }
+              };
+              config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
+
+              if (t_reloc_prep <= 0 || t_reloc_prep > 10000 ||
+                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000) {
+                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000]\n");
+                exit(1);
+              }
+
+              X2AP_REGISTER_ENB_REQ (msg_p).t_reloc_prep = t_reloc_prep;
+              X2AP_REGISTER_ENB_REQ (msg_p).tx2_reloc_overall = tx2_reloc_overall;
+            }
+            // SCTP SETTING
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
+
+            if (EPC_MODE_ENABLED) {
+              sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
+              config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+              X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+              X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+            }
+
+            sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+            // NETWORK_INTERFACES
+            config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[GNB_PORT_FOR_X2C_IDX].uptr);
+
+            //temp out
+            if ((NETParams[GNB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
+              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
+              exit(1);
+            }
+
+            cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
+            address = strtok(cidr, "/");
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
+            strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
+          }
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+

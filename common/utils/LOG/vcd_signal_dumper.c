@@ -470,6 +470,8 @@ const char* eurecomFunctionsNames[] = {
   "pdcp_fifo_read_buffer",
   "pdcp_fifo_flush",
   "pdcp_fifo_flush_buffer",
+  "pdcp_mbms_fifo_read",
+  "pdcp_mbms_fifo_read_buffer",
   /* RRC signals  */
   "rrc_rx_tx",
   "rrc_mac_config_req",
@@ -632,9 +634,6 @@ inline static uint32_t vcd_get_write_index(void)
   return write_index;
 }
 
-#if defined(ENABLE_ITTI)
-int signal_mask(void);
-#endif
 
 void *vcd_dumper_thread_rt(void *args)
 {
@@ -643,9 +642,7 @@ void *vcd_dumper_thread_rt(void *args)
   struct sched_param sched_param;
   uint32_t data_ready_wait;
 
-# if defined(ENABLE_ITTI)
   return 0; //signal_mask(); //function defined at common/utils/ocp_itti/intertask_interface.cpp
-# endif
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
   sched_setscheduler(0, SCHED_FIFO, &sched_param);

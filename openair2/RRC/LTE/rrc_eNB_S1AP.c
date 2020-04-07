@@ -58,7 +58,7 @@
 #include "TLVDecoder.h"
 #include "S1AP_NAS-PDU.h"
 #include "flexran_agent_common_internal.h"
-
+#include "executables/softmodem-common.h"
 extern RAN_CONTEXT_t RC;
 
 extern int
@@ -540,9 +540,10 @@ rrc_pdcp_config_security(
   derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                      ue_context_pP->ue_context.kenb,
                      &kRRCint);
-#if !defined(USRP_REC_PLAY)
+ if (!IS_SOFTMODEM_IQPLAYER) {
   SET_LOG_DUMP(DEBUG_SECURITY) ;
-#endif
+ }
+
 
   if ( LOG_DUMPFLAG( DEBUG_SECURITY ) ) {
     if (print_keys ==1 ) {
@@ -1686,6 +1687,9 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
   memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
   eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
   nb_e_rabs_torelease = S1AP_E_RAB_RELEASE_COMMAND (msg_p).nb_e_rabs_torelease;
+  if (nb_e_rabs_torelease > S1AP_MAX_E_RAB) {
+    return -1;
+  }
   ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
 
   if(ue_context_p != NULL) {

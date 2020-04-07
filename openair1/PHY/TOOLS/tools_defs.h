@@ -29,6 +29,10 @@
 
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "PHY/sse_intrin.h"
 
@@ -68,6 +72,10 @@ void multadd_real_vector_complex_scalar(int16_t *x,
                                         int16_t *alpha,
                                         int16_t *y,
                                         uint32_t N);
+
+void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
+                                                     int16_t *alpha,
+                                                     int16_t *y);
 
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
@@ -438,5 +446,9 @@ void idft8192(int16_t *x,int16_t *y,int scale);
 double interp(double x, double *xs, double *ys, int count);
 
 int write_output(const char *fname,const char *vname,void *data,int length,int dec,char format);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__PHY_TOOLS_DEFS__H__

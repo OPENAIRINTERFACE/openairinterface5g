@@ -44,8 +44,8 @@
 #include "rrc_vars.h"
 #include "mac_proto.h"
 
+#include "executables/softmodem-common.h"
 
-extern int phy_test;
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -319,7 +319,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ResourceConfig_list, NR_maxNrofCSI_ResourceConfigurations);
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
 
-	if (phy_test==1) {
+	if (get_softmodem_params()->phy_test==1) {
 	  // read in files for RRCReconfiguration and RBconfig
 	  FILE *fd;
 	  char filename[1024];
@@ -329,6 +329,11 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
 	    sprintf(filename,"reconfig.raw");
 	  fd = fopen(filename,"r");
           char buffer[1024];
+	  AssertFatal(fd,
+	              "cannot read file %s: errno %d, %s\n",
+	              filename,
+	              errno,
+	              strerror(errno));
 	  int msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
@@ -337,6 +342,11 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
 	  else
 	    sprintf(filename,"rbconfig.raw");
 	  fd = fopen(filename,"r");
+	  AssertFatal(fd,
+	              "cannot read file %s: errno %d, %s\n",
+	              filename,
+	              errno,
+	              strerror(errno));
 	  msg_len=fread(buffer,1,1024,fd);
 	  fclose(fd);
 	  process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 
@@ -477,14 +487,14 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                     case NR_DL_DCCH_MessageType__c1_PR_spare2:
                     case NR_DL_DCCH_MessageType__c1_PR_spare1:
                     default:
-                        //  not support or unuse
+                        //  not supported or unused
                         break;
                 }   
                 break;
             case NR_DL_DCCH_MessageType_PR_NOTHING:
             case NR_DL_DCCH_MessageType_PR_messageClassExtension:
             default:
-                //  not support or unuse
+                //  not supported or unused
                 break;
         }
         

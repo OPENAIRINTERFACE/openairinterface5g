@@ -85,13 +85,15 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
   cg_Config->criticalExtensions.choice.c1->present = NR_CG_Config__criticalExtensions__c1_PR_cg_Config;
   cg_Config->criticalExtensions.choice.c1->choice.cg_Config = calloc(1,sizeof(NR_CG_Config_IEs_t));
   char buffer[1024];
+  int total_size;
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, (void *)reconfig, buffer, 1024);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   cg_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig = calloc(1,sizeof(OCTET_STRING_t));
   OCTET_STRING_fromBuf(cg_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig,
 		       (const char *)buffer,
-		       (enc_rval.encoded+7)>>3); 
+		       (enc_rval.encoded+7)>>3);
+  total_size = (enc_rval.encoded+7)>>3;
 
   LOG_I(RRC,"Dumping NR_RRCReconfiguration message (%jd bytes)\n",(enc_rval.encoded+7)>>3);
   for (int i=0;i<(enc_rval.encoded+7)>>3;i++) {
@@ -117,8 +119,9 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
   fd = fopen("rbconfig.raw","w");
   fwrite((void*)buffer,1,(size_t)((enc_rval.encoded+7)>>3),fd);
   fclose(fd);
+  total_size = total_size + ((enc_rval.encoded+7)>>3);
 
-  return(0);
+  return(total_size);
 }
 
 #endif

@@ -54,7 +54,7 @@
 #include "common/ran_context.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "targets/ARCH/COMMON/common_lib.h"
@@ -64,6 +64,8 @@
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
+
+#include "NR_TAG.h"
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -121,7 +123,7 @@ typedef struct {
 
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
-  NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
+  UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   int next[MAX_MOBILES_PER_GNB];
   int head;
   int next_ul[MAX_MOBILES_PER_GNB];
@@ -144,10 +146,16 @@ typedef struct gNB_MAC_INST_s {
   /// frame counter
   frame_t                         frame;
   /// slot counter
-  int                             slot;  
+  int                             slot;
+  /// timing advance group
+  NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
-    /// Common cell resources
+  /// TA command
+  int                             ta_command;
+  /// MAC CE flag indicating TA length
+  int                             ta_len;
+  /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
@@ -155,13 +163,14 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
-  nfapi_nr_dl_tti_request_t      DL_req[NFAPI_CC_MAX];
+  nfapi_nr_dl_tti_request_t         DL_req[NFAPI_CC_MAX];
   /// NFAPI UL TTI Request Structure (this is from the new SCF specs)
   nfapi_nr_ul_tti_request_t         UL_tti_req[NFAPI_CC_MAX];
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
-  nfapi_nr_tx_data_request_t       TX_req[NFAPI_CC_MAX];
+  nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
+
   NR_UE_list_t UE_list;
 
   /// UL handle
@@ -193,64 +202,62 @@ typedef struct gNB_MAC_INST_s {
 } gNB_MAC_INST;
 
 typedef struct {
-
-
-uint8_t format_indicator; //1 bit
-uint16_t frequency_domain_assignment; //up to 16 bits
-uint8_t time_domain_assignment; // 4 bits
-uint8_t frequency_hopping_flag; //1 bit
-
-uint8_t ra_preamble_index; //6 bits
-uint8_t ss_pbch_index; //6 bits
-uint8_t prach_mask_index; //4 bits
-
-uint8_t vrb_to_prb_mapping; //0 or 1 bit
-uint8_t mcs; //5 bits
-uint8_t ndi; //1 bit
-uint8_t rv; //2 bits
-uint8_t harq_pid; //4 bits
-uint8_t dai; //0, 2 or 4 bits
-uint8_t dai1; //1 or 2 bits
-uint8_t dai2; //0 or 2 bits
-uint8_t tpc; //2 bits
-uint8_t pucch_resource_indicator; //3 bits
-uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
-
-uint8_t short_messages_indicator; //2 bits
-uint8_t short_messages; //8 bits
-uint8_t tb_scaling; //2 bits
-
-uint8_t carrier_indicator; //0 or 3 bits
-uint8_t bwp_indicator; //0, 1 or 2 bits
-uint8_t prb_bundling_size_indicator; //0 or 1 bits
-uint8_t rate_matching_indicator; //0, 1 or 2 bits
-uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
-uint8_t transmission_configuration_indication; //0 or 3 bits
-uint8_t srs_request; //2 bits
-uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
-uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
-uint8_t dmrs_sequence_initialization; //0 or 1 bit
-
-uint8_t srs_resource_indicator;
-uint8_t precoding_information;
-uint8_t csi_request;
-uint8_t ptrs_dmrs_association;
-uint8_t beta_offset_indicator; //0 or 2 bits
-
-uint8_t slot_format_indicator_count;
-uint8_t *slot_format_indicators;
-
-uint8_t pre_emption_indication_count;
-uint16_t *pre_emption_indications; //14 bit
-
-uint8_t block_number_count;
-uint8_t *block_numbers;
-
-uint8_t ul_sul_indicator; //0 or 1 bit
-uint8_t antenna_ports;
-
-uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
-uint16_t padding;
+  uint8_t format_indicator; //1 bit
+  uint16_t frequency_domain_assignment; //up to 16 bits
+  uint8_t time_domain_assignment; // 4 bits
+  uint8_t frequency_hopping_flag; //1 bit
+  
+  uint8_t ra_preamble_index; //6 bits
+  uint8_t ss_pbch_index; //6 bits
+  uint8_t prach_mask_index; //4 bits
+  
+  uint8_t vrb_to_prb_mapping; //0 or 1 bit
+  uint8_t mcs; //5 bits
+  uint8_t ndi; //1 bit
+  uint8_t rv; //2 bits
+  uint8_t harq_pid; //4 bits
+  uint8_t dai; //0, 2 or 4 bits
+  uint8_t dai1; //1 or 2 bits
+  uint8_t dai2; //0 or 2 bits
+  uint8_t tpc; //2 bits
+  uint8_t pucch_resource_indicator; //3 bits
+  uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
+  
+  uint8_t short_messages_indicator; //2 bits
+  uint8_t short_messages; //8 bits
+  uint8_t tb_scaling; //2 bits
+  
+  uint8_t carrier_indicator; //0 or 3 bits
+  uint8_t bwp_indicator; //0, 1 or 2 bits
+  uint8_t prb_bundling_size_indicator; //0 or 1 bits
+  uint8_t rate_matching_indicator; //0, 1 or 2 bits
+  uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
+  uint8_t transmission_configuration_indication; //0 or 3 bits
+  uint8_t srs_request; //2 bits
+  uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
+  uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
+  uint8_t dmrs_sequence_initialization; //0 or 1 bit
+  
+  uint8_t srs_resource_indicator;
+  uint8_t precoding_information;
+  uint8_t csi_request;
+  uint8_t ptrs_dmrs_association;
+  uint8_t beta_offset_indicator; //0 or 2 bits
+  
+  uint8_t slot_format_indicator_count;
+  uint8_t *slot_format_indicators;
+  
+  uint8_t pre_emption_indication_count;
+  uint16_t *pre_emption_indications; //14 bit
+  
+  uint8_t block_number_count;
+  uint8_t *block_numbers;
+  
+  uint8_t ul_sul_indicator; //0 or 1 bit
+  uint8_t antenna_ports;
+  
+  uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+  uint16_t padding;
 
 } dci_pdu_rel15_t;
 

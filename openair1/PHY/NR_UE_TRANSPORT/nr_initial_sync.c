@@ -255,7 +255,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
 	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
 	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
-	int start = ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
+	int start = is*fp->samples_per_frame+ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
   	int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
 
 	for(int n=start; n<end; n++){  	
@@ -281,10 +281,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
     /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
       for(int i=0; i<4;i++)
-        nr_slot_fep(ue,
+        nr_slot_fep_init_sync(ue,
 	            i,
 	            0,
-	            ue->ssb_offset,
+	            is*fp->samples_per_frame+ue->ssb_offset,
 	            0);
 
 #ifdef DEBUG_INITIAL_SYNCH
@@ -303,7 +303,13 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
         sync_pos_frame = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)+((ue->symbol_offset)-1)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+
+        if (ue->ssb_offset < sync_pos_frame)
+          ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
+        else
+          ue->rx_offset = ue->ssb_offset - sync_pos_frame;
+
+        ue->init_sync_frame = is;
       }   
 
       nr_gold_pdcch(ue,0, 2);

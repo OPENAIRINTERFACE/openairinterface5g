@@ -59,12 +59,12 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch,uint8_t N_RB_DL);
     @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
 */
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag);
 
 
 void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
 
-NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
+NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
 
 void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
 
@@ -90,7 +90,7 @@ void dump_mch(PHY_VARS_NR_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qpsk_qpsk(int16_t *stream0_in,
+void nr_qpsk_qpsk(int16_t *stream0_in,
                int16_t *stream1_in,
                int16_t *stream0_out,
                int16_t *rho01,
@@ -126,7 +126,7 @@ int32_t nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qpsk_qam16(int16_t *stream0_in,
+void nr_qpsk_qam16(int16_t *stream0_in,
                 int16_t *stream1_in,
                 short *ch_mag_i,
                 int16_t *stream0_out,
@@ -164,7 +164,7 @@ int32_t nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qpsk_qam64(int16_t *stream0_in,
+void nr_qpsk_qam64(int16_t *stream0_in,
                 int16_t *stream1_in,
                 short *ch_mag_i,
                 int16_t *stream0_out,
@@ -202,7 +202,7 @@ int32_t nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam16_qpsk(short *stream0_in,
+void nr_qam16_qpsk(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag,
                 short *stream0_out,
@@ -240,7 +240,7 @@ int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam16_qam16(short *stream0_in,
+void nr_qam16_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -283,7 +283,7 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam16_qam64(short *stream0_in,
+void nr_qam16_qam64(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -324,7 +324,7 @@ int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam64_qpsk(short *stream0_in,
+void nr_qam64_qpsk(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag,
                 short *stream0_out,
@@ -363,7 +363,7 @@ int nr_dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam64_qam16(short *stream0_in,
+void nr_qam64_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -1078,6 +1078,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
+                               uint8_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id);
@@ -1539,7 +1540,7 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,NR_DL_FRAME
 void pdcch_interleaving(NR_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
 
 void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t slot,
-                           int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id);
+                           int16_t *z, int16_t *z2,uint32_t length, uint16_t pdcch_DMRS_scrambling_id);
 
 
 

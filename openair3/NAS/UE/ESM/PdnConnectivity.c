@@ -61,9 +61,7 @@ Description Defines the PDN connectivity ESM procedure executed by the
 
 #include "emm_sap.h"
 
-#if defined(ENABLE_ITTI)
 # include "assertions.h"
-#endif
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/

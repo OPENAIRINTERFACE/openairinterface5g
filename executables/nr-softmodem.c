@@ -71,9 +71,7 @@ unsigned short config_frames[4] = {2,9,11,13};
   #include "UTIL/OTG/otg_vars.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #include "PHY/INIT/phy_init.h"
 
@@ -86,6 +84,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 #include "NB_IoT_interface.h"
+#include "x2ap_eNB.h"
 
 short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,16384,16384,-16384,-16384,16384,16384,16384,-16384,-16384,16384,-16384,-16384,7327,7327,7327,21981,21981,7327,21981,21981,7327,-7327,7327,-21981,21981,-7327,21981,-21981,-7327,7327,-7327,21981,-21981,7327,-21981,21981,-7327,-7327,-7327,-21981,-21981,-7327,-21981,-21981,10726,10726,10726,3576,3576,10726,3576,3576,10726,17876,10726,25027,3576,17876,3576,25027,17876,10726,17876,3576,25027,10726,25027,3576,17876,17876,17876,25027,25027,17876,25027,25027,10726,-10726,10726,-3576,3576,-10726,3576,-3576,10726,-17876,10726,-25027,3576,-17876,3576,-25027,17876,-10726,17876,-3576,25027,-10726,25027,-3576,17876,-17876,17876,-25027,25027,-17876,25027,-25027,-10726,10726,-10726,3576,-3576,10726,-3576,3576,-10726,17876,-10726,25027,-3576,17876,-3576,25027,-17876,10726,-17876,3576,-25027,10726,-25027,3576,-17876,17876,-17876,25027,-25027,17876,-25027,25027,-10726,-10726,-10726,-3576,-3576,-10726,-3576,-3576,-10726,-17876,-10726,-25027,-3576,-17876,-3576,-25027,-17876,-10726,-17876,-3576,-25027,-10726,-25027,-3576,-17876,-17876,-17876,-25027,-25027,-17876,-25027,-25027,8886,8886,8886,12439,12439,8886,12439,12439,8886,5332,8886,1778,12439,5332,12439,1778,5332,8886,5332,12439,1778,8886,1778,12439,5332,5332,5332,1778,1778,5332,1778,1778,8886,19547,8886,15993,12439,19547,12439,15993,8886,23101,8886,26655,12439,23101,12439,26655,5332,19547,5332,15993,1778,19547,1778,15993,5332,23101,5332,26655,1778,23101,1778,26655,19547,8886,19547,12439,15993,8886,15993,12439,19547,5332,19547,1778,15993,5332,15993,1778,23101,8886,23101,12439,26655,8886,26655,12439,23101,5332,23101,1778,26655,5332,26655,1778,19547,19547,19547,15993,15993,19547,15993,15993,19547,23101,19547,26655,15993,23101,15993,26655,23101,19547,23101,15993,26655,19547,26655,15993,23101,23101,23101,26655,26655,23101,26655,26655,8886,-8886,8886,-12439,12439,-8886,12439,-12439,8886,-5332,8886,-1778,12439,-5332,12439,-1778,5332,-8886,5332,-12439,1778,-8886,1778,-12439,5332,-5332,5332,-1778,1778,-5332,1778,-1778,8886,-19547,8886,-15993,12439,-19547,12439,-15993,8886,-23101,8886,-26655,12439,-23101,12439,-26655,5332,-19547,5332,-15993,1778,-19547,1778,-15993,5332,-23101,5332,-26655,1778,-23101,1778,-26655,19547,-8886,19547,-12439,15993,-8886,15993,-12439,19547,-5332,19547,-1778,15993,-5332,15993,-1778,23101,-8886,23101,-12439,26655,-8886,26655,-12439,23101,-5332,23101,-1778,26655,-5332,26655,-1778,19547,-19547,19547,-15993,15993,-19547,15993,-15993,19547,-23101,19547,-26655,15993,-23101,15993,-26655,23101,-19547,23101,-15993,26655,-19547,26655,-15993,23101,-23101,23101,-26655,26655,-23101,26655,-26655,-8886,8886,-8886,12439,-12439,8886,-12439,12439,-8886,5332,-8886,1778,-12439,5332,-12439,1778,-5332,8886,-5332,12439,-1778,8886,-1778,12439,-5332,5332,-5332,1778,-1778,5332,-1778,1778,-8886,19547,-8886,15993,-12439,19547,-12439,15993,-8886,23101,-8886,26655,-12439,23101,-12439,26655,-5332,19547,-5332,15993,-1778,19547,-1778,15993,-5332,23101,-5332,26655,-1778,23101,-1778,26655,-19547,8886,-19547,12439,-15993,8886,-15993,12439,-19547,5332,-19547,1778,-15993,5332,-15993,1778,-23101,8886,-23101,12439,-26655,8886,-26655,12439,-23101,5332,-23101,1778,-26655,5332,-26655,1778,-19547,19547,-19547,15993,-15993,19547,-15993,15993,-19547,23101,-19547,26655,-15993,23101,-15993,26655,-23101,19547,-23101,15993,-26655,19547,-26655,15993,-23101,23101,-23101,26655,-26655,23101,-26655,26655,-8886,-8886,-8886,-12439,-12439,-8886,-12439,-12439,-8886,-5332,-8886,-1778,-12439,-5332,-12439,-1778,-5332,-8886,-5332,-12439,-1778,-8886,-1778,-12439,-5332,-5332,-5332,-1778,-1778,-5332,-1778,-1778,-8886,-19547,-8886,-15993,-12439,-19547,-12439,-15993,-8886,-23101,-8886,-26655,-12439,-23101,-12439,-26655,-5332,-19547,-5332,-15993,-1778,-19547,-1778,-15993,-5332,-23101,-5332,-26655,-1778,-23101,-1778,-26655,-19547,-8886,-19547,-12439,-15993,-8886,-15993,-12439,-19547,-5332,-19547,-1778,-15993,-5332,-15993,-1778,-23101,-8886,-23101,-12439,-26655,-8886,-26655,-12439,-23101,-5332,-23101,-1778,-26655,-5332,-26655,-1778,-19547,-19547,-19547,-15993,-15993,-19547,-15993,-15993,-19547,-23101,-19547,-26655,-15993,-23101,-15993,-26655,-23101,-19547,-23101,-15993,-26655,-19547,-26655,-15993,-23101,-23101,-23101,-26655,-26655,-23101,-26655,-26655};
 
@@ -101,9 +100,7 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
-#if defined(ENABLE_ITTI)
-  volatile int             start_gNB = 0;
-#endif
+volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
 
 static int wait_for_sync = 0;
@@ -116,12 +113,10 @@ static int8_t threequarter_fs=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-//Temp fix for inexisting NR upper layer
+//Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-#if defined(ENABLE_ITTI)
-  static char                    *itti_dump_file = NULL;
-#endif
+static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -148,11 +143,9 @@ double bw = 10.0e6;
 
 static int tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
-char rf_config_file[1024]="/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
 int chain_offset=0;
-int phy_test = 0;
-uint8_t usim_test = 0;
+
 
 uint8_t dci_Format = 0;
 uint8_t agregation_Level =0xFF;
@@ -176,7 +169,6 @@ int otg_enabled;
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
@@ -189,7 +181,6 @@ int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
 
-static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
@@ -270,39 +261,13 @@ unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
   return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
 }
 
-#if !defined(ENABLE_ITTI)
-void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
 
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    printf("trying to exit gracefully...\n");
-    oai_exit = 1;
-  }
-}
-#endif
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-#if defined(ENABLE_ITTI)
-void signal_handler_itti(int sig) {
-  // Call exit function
-  char msg[256];
-  memset(msg, 0, 256);
-  sprintf(msg, "caught signal %s\n", strsignal(sig));
-  exit_function(__FILE__, __FUNCTION__, __LINE__, msg);
-}
-#endif
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int ru_id;
@@ -329,13 +294,10 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-#if defined(ENABLE_ITTI)
-  itti_terminate_tasks (TASK_UNKNOWN);
-#endif
   exit(1);
 }
 
-#if defined(ENABLE_ITTI)
+
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -354,7 +316,7 @@ void *l2l1_task(void *arg) {
 
     switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
-        /* Start eNB thread */
+        /* Start gNB thread */
         LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
         start_gNB = 1;
         break;
@@ -408,10 +370,9 @@ void *l2l1_task(void *arg) {
   */
   return NULL;
 }
-#endif
 
 int create_gNB_tasks(uint32_t gnb_nb) {
-  LOG_D(GNB_APP, "%s(gnb_nb:%d\n", __FUNCTION__, gnb_nb);
+  LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
 
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
@@ -425,10 +386,22 @@ int create_gNB_tasks(uint32_t gnb_nb) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");
       return -1;
     }
+    if(itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0){
+    	LOG_E(SCTP, "Create task for SCTP failed\n");
+    	return -1;
+    }
+    if (is_x2ap_enabled()) {
+    	if(itti_create_task(TASK_X2AP, x2ap_task, NULL) < 0){
+    		LOG_E(X2AP, "Create task for X2AP failed\n");
+    	}
+    }
+    else {
+    	LOG_I(X2AP, "X2AP is disabled.\n");
+    }
   }
 
   /*
-  #   if defined(ENABLE_USE_MME)
+    if (EPC_MODE_ENABLED) {
         if (gnb_nb > 0) {
           if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
             LOG_E(SCTP, "Create task for SCTP failed\n");
@@ -452,7 +425,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
           }
         }
 
-  #      endif
+    }
   */
 
   if (gnb_nb > 0) {
@@ -469,36 +442,13 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
 
 static void get_options(void) {
-  int tddflag, nonbiotflag;
-  uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
-  uint32_t start_telnetsrv = 0;
-  uint32_t noS1;
-  uint32_t nokrnmod;
+
+
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
-  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC_NR ;
+
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
 
-
-  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-    set_glog_onlinelog(online_log_messages);
-  }
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-    set_glog(glog_level);
-  }
-
-  if (start_telnetsrv) {
-    load_module_shlib("telnetsrv",NULL,0,NULL);
-  }
-
-#if T_TRACER
-  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
-  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);
-#endif
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
     memset((void *)&RC,0,sizeof(RC));
@@ -506,7 +456,7 @@ static void get_options(void) {
     NRRCConfig();
     NB_gNB_INST = RC.nb_nr_inst;
     NB_RU   = RC.nb_RU;
-    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
+    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %hhu\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
   }
 
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
@@ -514,14 +464,6 @@ static void get_options(void) {
   if(worker_config != NULL) set_worker_conf(worker_config);
 
 }
-
-
-#if T_TRACER
-  int T_nowait = 0;     /* by default we wait for the tracer */
-  int T_port = 2021;    /* default port to listen to to wait for the tracer */
-  int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
-#endif
-
 
 
 void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
@@ -653,7 +595,7 @@ void init_openair0(void) {
       openair0_cfg[card].rx_gain[i] = RC.gNB[0]->rx_total_gain_dB;
 
 
-      openair0_cfg[card].configFilename = rf_config_file;
+      openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
        card,i, openair0_cfg[card].tx_gain[i],
        openair0_cfg[card].rx_gain[i],
@@ -699,12 +641,11 @@ void wait_gNBs(void) {
   printf("gNB L1 are configured\n");
 }
 
-#if defined(ENABLE_ITTI)
 /*
  * helper function to terminate a certain ITTI task
  */
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
-  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
+  LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
   msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
@@ -714,11 +655,11 @@ void terminate_task(task_id_t task_id, module_id_t mod_id) {
 extern void  nr_phy_free_RU(RU_t *);
 
 int stop_L1L2(module_id_t gnb_id) {
-  LOG_W(ENB_APP, "stopping nr-softmodem\n");
+  LOG_W(GNB_APP, "stopping nr-softmodem\n");
   oai_exit = 1;
 
   if (!RC.ru) {
-    LOG_F(ENB_APP, "no RU configured\n");
+    LOG_F(GNB_APP, "no RU configured\n");
     return -1;
   }
 
@@ -726,28 +667,28 @@ int stop_L1L2(module_id_t gnb_id) {
   if (RC.ru[gnb_id]) {
     if (RC.ru[gnb_id]->rfdevice.trx_stop_func) {
       RC.ru[gnb_id]->rfdevice.trx_stop_func(&RC.ru[gnb_id]->rfdevice);
-      LOG_I(ENB_APP, "turned off RU rfdevice\n");
+      LOG_I(GNB_APP, "turned off RU rfdevice\n");
     } else {
-      LOG_W(ENB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceding anyway!\n");
+      LOG_W(GNB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceeding anyway!\n");
     }
 
     if (RC.ru[gnb_id]->ifdevice.trx_stop_func) {
       RC.ru[gnb_id]->ifdevice.trx_stop_func(&RC.ru[gnb_id]->ifdevice);
-      LOG_I(ENB_APP, "turned off RU ifdevice\n");
+      LOG_I(GNB_APP, "turned off RU ifdevice\n");
     } else {
-      LOG_W(ENB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceding anyway!\n");
+      LOG_W(GNB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceeding anyway!\n");
     }
   } else {
-    LOG_W(ENB_APP, "no RU found for index %d\n", gnb_id);
+    LOG_W(GNB_APP, "no RU found for index %d\n", gnb_id);
     return -1;
   }
 
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, gnb_id);
   terminate_task(TASK_L2L1, gnb_id);
-  LOG_I(ENB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
+  LOG_I(GNB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
-  LOG_I(ENB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
+  LOG_I(GNB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
   kill_NR_RU_proc(gnb_id);
   oai_exit = 0;
 
@@ -767,7 +708,7 @@ int restart_L1L2(module_id_t gnb_id) {
   RU_t *ru = RC.ru[gnb_id];
   int cc_id;
   MessageDef *msg_p = NULL;
-  LOG_W(ENB_APP, "restarting nr-softmodem\n");
+  LOG_W(GNB_APP, "restarting nr-softmodem\n");
   /* block threads */
   sync_var = -1;
 
@@ -779,7 +720,7 @@ int restart_L1L2(module_id_t gnb_id) {
   /* TODO this should be done for all RUs associated to this gNB */
   memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
-  LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
+  LOG_I(GNB_APP, "attempting to create ITTI tasks\n");
 
   if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
     LOG_E(RRC, "Create task for RRC eNB failed\n");
@@ -815,7 +756,6 @@ int restart_L1L2(module_id_t gnb_id) {
   pthread_mutex_unlock(&sync_mutex);
   return 0;
 }
-#endif
 
 static  void wait_nfapi_init(char *thread_name) {
   printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
@@ -862,7 +802,7 @@ int main( int argc, char **argv )
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+  set_softmodem_sighandler();
 #ifdef DEBUG_CONSOLE
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -874,7 +814,7 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
-  get_common_options();
+  get_common_options(SOFTMODEM_GNB_BIT );
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -895,26 +835,22 @@ int main( int argc, char **argv )
   }
 
   cpuf=get_cpu_freq_GHz();
-#if defined(ENABLE_ITTI)
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-#endif
+
 
 init_opt();
 
 
 #ifdef PDCP_USE_NETLINK
+if(!IS_SOFTMODEM_NOS1)
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
 #endif
 #endif
-#if !defined(ENABLE_ITTI)
-  // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-#endif
+
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
@@ -922,7 +858,6 @@ init_opt();
 
   if(IS_SOFTMODEM_NOS1)
 	  init_pdcp();
-
 
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
@@ -932,8 +867,6 @@ init_opt();
     RCconfig_L1();
   }
 
-
-  
   /* Start the agent. If it is turned off in the configuration, it won't start */
   /*
   RCconfig_nr_flexran();
@@ -999,7 +932,7 @@ init_opt();
 
   if (RC.nb_RU >0) {
     printf("Initializing RU threads\n");
-    init_NR_RU(rf_config_file);
+    init_NR_RU(get_softmodem_params()->rf_config_file);
 
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
@@ -1047,20 +980,34 @@ init_opt();
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-#if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
-#else
 
-  while (oai_exit==0)
-    sleep(1);
+  // stop threads
+/*#ifdef XFORMS
 
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
-  // stop threads  
+    printf("waiting for XFORMS thread\n");
+
+    if (do_forms==1) {
+      pthread_join(forms_thread,&status);
+      fl_hide_form(form_stats->stats_form);
+      fl_free_form(form_stats->stats_form);
+
+        fl_hide_form(form_stats_l2->stats_form);
+        fl_free_form(form_stats_l2->stats_form);
+
+        for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      fl_hide_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
+      fl_free_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
+    }
+        }
+    }
+
+#endif*/
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);

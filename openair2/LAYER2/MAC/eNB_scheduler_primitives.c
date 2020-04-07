@@ -48,10 +48,8 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
-
+#include "intertask_interface.h"
+#include "executables/softmodem-common.h"
 #include "T.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
@@ -1587,6 +1585,39 @@ fill_nfapi_uci_acknak(module_id_t module_idP,
 }
 
 //------------------------------------------------------------------------------
+
+void
+fill_nfapi_mch_config(nfapi_dl_config_request_body_t *dl_req,
+                  uint16_t length,
+                  uint16_t pdu_index,
+                  uint16_t rnti,
+                  uint8_t resource_allocation_type,
+                  uint16_t resource_block_coding,
+                  uint8_t modulation,
+                  uint16_t transmission_power,
+                  uint8_t mbsfn_area_id){
+  nfapi_dl_config_request_pdu_t *dl_config_pdu =
+    &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+  memset((void *) dl_config_pdu, 0,
+         sizeof(nfapi_dl_config_request_pdu_t));
+  dl_config_pdu->pdu_type                                                    = NFAPI_DL_CONFIG_MCH_PDU_TYPE;
+  dl_config_pdu->pdu_size                                                    = (uint8_t) (2 + sizeof(nfapi_dl_config_mch_pdu));
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.tl.tag                                 = NFAPI_DL_CONFIG_REQUEST_MCH_PDU_REL8_TAG;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.length                                 = length;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.pdu_index                              = pdu_index;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.rnti                                   = rnti;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.resource_allocation_type               = resource_allocation_type;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.resource_block_coding                  = resource_block_coding;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.modulation                             = modulation;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.transmission_power                     = transmission_power;
+  dl_config_pdu->mch_pdu.mch_pdu_rel8.mbsfn_area_id                          = mbsfn_area_id;
+  dl_req->number_pdu++;
+}
+
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
 void
 fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
                         nfapi_dl_config_request_body_t *dl_req,
@@ -2151,9 +2182,8 @@ add_new_ue(module_id_t mod_idP,
     UE_list->ordered_ULCCids[0][UE_id] = cc_idP;
     UE_list->num_UEs++;
     UE_list->active[UE_id] = TRUE;
-#if defined(USRP_REC_PLAY) // not specific to record/playback ?
-    UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
-#endif
+    if (IS_SOFTMODEM_IQPLAYER)// not specific to record/playback ?
+      UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
     UE_list->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type;
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,

@@ -27,6 +27,7 @@
 #include "assertions.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/defs.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 //#include "common/utils/threadPool/thread-pool.h"
@@ -82,7 +83,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 /* Callbacks, globals and object handlers */
 
 extern void reset_stats( FL_OBJECT *, long );
-//extern void initTpool(char *params,tpool_t *pool, bool performanceMeas);
+//extern void initTpool(char *params, tpool_t *pool, bool performanceMeas);
 
 /* Forms and Objects */
 
@@ -111,6 +112,16 @@ static pthread_t forms_thread; //xforms
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+// Raphael : missing
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+uint16_t sf_ahead=6; //??? value ???
+pthread_cond_t sync_cond;
+pthread_mutex_t sync_mutex;
+int sync_var=-1; //!< protected by mutex \ref sync_mutex.
+int config_sync_var=-1;
+
 RAN_CONTEXT_t RC;
 volatile int             start_eNB = 0;
 volatile int             start_UE = 0;
@@ -124,6 +135,7 @@ int                      threequarter_fs=0;
 
 uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+//int32_t					 uplink_counter = 0;
 
 
 extern int16_t nr_dlsch_demod_shift;
@@ -152,11 +164,9 @@ double bw = 10.0e6;
 
 static int  tx_max_power[MAX_NUM_CCs] = {0};
 
-char rf_config_file[1024];
 
 int chain_offset=0;
-int phy_test = 0;
-uint8_t usim_test = 0;
+
 
 uint8_t dci_Format = 0;
 uint8_t agregation_Level =0xFF;
@@ -167,7 +177,6 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-static softmodem_params_t softmodem_params;
 
 static char *parallel_config = NULL;
 static char *worker_config = NULL;
@@ -186,7 +195,6 @@ int16_t node_synch_ref[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
@@ -206,6 +214,10 @@ int oaisim_flag=0;
 int emulate_rf = 0;
 
 tpool_t *Tpool;
+#ifdef UE_DLSCH_PARALLELISATION
+tpool_t *Tpool_dl;
+#endif
+
 
 char *usrp_args=NULL;
 
@@ -260,7 +272,7 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-  itti_terminate_tasks (TASK_UNKNOWN);
+  exit(1);
 }
 
 
@@ -323,8 +335,6 @@ void init_scope(void) {
 
 }
 
-
-#if defined(ENABLE_ITTI)
 void *l2l1_task(void *arg) {
   MessageDef *message_p = NULL;
   int         result;
@@ -364,7 +374,7 @@ void *l2l1_task(void *arg) {
 
   return NULL;
 }
-#endif
+
 
 int16_t dlsch_demod_shift;
 
@@ -373,28 +383,12 @@ static void get_options(void) {
   int tddflag=0, nonbiotflag, vcdflag=0;
   char *loopfile=NULL;
   int dumpframe=0;
-  uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
-  uint32_t start_telnetsrv=0;
+
   //uint32_t noS1;
   //uint32_t nokrnmod;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC_UE ;
-  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC_NR ;
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
-  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-    set_glog_onlinelog(online_log_messages);
-  }
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-    set_glog(glog_level);
-  }
-
-  if (start_telnetsrv) {
-    load_module_shlib("telnetsrv",NULL,0,NULL);
-  }
 
   paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
   paramdef_t cmdline_ueparams[] = CMDLINE_NRUEPARAMS_DESC;
@@ -435,19 +429,19 @@ static void get_options(void) {
   /*if (frame_parms[0]->N_RB_DL !=0) {
       if ( frame_parms[0]->N_RB_DL < 6 ) {
        frame_parms[0]->N_RB_DL = 6;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 100 ) {
        frame_parms[0]->N_RB_DL = 100;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
        frame_parms[0]->N_RB_DL = 50;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
       }
       if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
        frame_parms[0]->N_RB_DL = 25;
-       printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
+       printf ( "%i: Invalid number of resource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
       }
       UE_scan = 0;
       frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
@@ -463,10 +457,6 @@ static void get_options(void) {
     tx_gain[0][CC_id] = tx_gain[0][0];
   }
 
-#if T_TRACER
-  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
-  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);
-#endif
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
     // Here the configuration file is the XER encoded UE capabilities
@@ -477,11 +467,6 @@ static void get_options(void) {
   } /* UE with config file  */
 }
 
-#if T_TRACER
-  int T_nowait = 0;       /* by default we wait for the tracer */
-  int T_port = 2021;    /* default port to listen to to wait for the tracer */
-  int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
-#endif
 
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
@@ -527,6 +512,14 @@ void init_openair0(void) {
           LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
           exit(-1);
         }
+    }else if(frame_parms[0]->N_RB_DL == 32) {
+      if (numerology==3) {
+          openair0_cfg[card].sample_rate=61.44e6;
+          openair0_cfg[card].samples_per_frame = 614400;
+        } else {
+          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
+          exit(-1);
+        }
     }else if(frame_parms[0]->N_RB_DL == 217) {
       if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
@@ -566,7 +559,7 @@ void init_openair0(void) {
      } else if (numerology==1) {
         if (frame_parms[0]->threequarter_fs) {
 	  openair0_cfg[card].sample_rate=46.08e6;
-	  openair0_cfg[card].samples_per_frame = 480800;
+	  openair0_cfg[card].samples_per_frame = 460800;
 	}
 	else {
 	  openair0_cfg[card].sample_rate=61.44e6;
@@ -599,7 +592,7 @@ void init_openair0(void) {
     else //FDD
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
-    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
+    printf("HW: Configuring card %d, nb_antennas_tx/rx %hhu/%hhu\n",card,
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx,
            PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
     openair0_cfg[card].Mod_id = 0;
@@ -622,7 +615,7 @@ void init_openair0(void) {
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
-      openair0_cfg[card].configFilename = rf_config_file;
+      openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
@@ -665,7 +658,7 @@ int main( int argc, char **argv ) {
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-
+  set_softmodem_sighandler();
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   set_default_frame_parms(frame_parms);
   mode = normal_txrx;
@@ -675,7 +668,7 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
   get_options (); //Command-line options, enb_properties
-  get_common_options();
+  get_common_options(SOFTMODEM_5GUE_BIT );
 #if T_TRACER
   T_Config_Init();
 #endif
@@ -685,10 +678,17 @@ int main( int argc, char **argv ) {
   Tpool = &pool;
   char params[]="-1,-1"; 
   initTpool(params, Tpool, false);
+#ifdef UE_DLSCH_PARALLELISATION
+  tpool_t pool_dl;
+  Tpool_dl = &pool_dl;
+  char params_dl[]="-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1"; 
+  initTpool(params_dl, Tpool_dl, false);
+#endif
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   init_opt() ;
+  load_nrLDPClib();
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
@@ -725,6 +725,7 @@ int main( int argc, char **argv ) {
     LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
 
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
@@ -734,8 +735,17 @@ int main( int argc, char **argv ) {
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
+    
+    // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0)
+      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
+
+    if (get_softmodem_params()->phy_test==1)
+      UE[CC_id]->mac_enabled = 0;
+    else
+      UE[CC_id]->mac_enabled = 1;
 
     UE[CC_id]->mac_enabled = 1;
     UE[CC_id]->if_inst = nr_ue_if_module_init(0);

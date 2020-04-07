@@ -34,7 +34,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/LOG/log.h"
@@ -51,9 +51,7 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
-#endif
 
 #include "T.h"
 #include "NR_PDCCH-ConfigCommon.h"
@@ -757,34 +755,24 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 	fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
 	pos=fsize;
 	*dci_pdu |= ((dci_pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment,fsize,N_RB,dci_size-pos,*dci_pdu);
-#endif
 	// Time domain assignment
 	pos+=4;
 	*dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment&0xf) << (dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment,dci_size-pos,*dci_pdu);
-#endif
 	// VRB to PRB mapping
 	
 	pos++;
 	*dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping&0x1)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping,dci_size-pos,*dci_pdu);
-#endif
 	// MCS
 	pos+=5;
 	*dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs&0x1f)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"mcs %d  (5 bits)=> %d (0x%lx)\n",dci_pdu_rel15->mcs,dci_size-pos,*dci_pdu);
-#endif
 	// TB scaling
 	pos+=2;
 	*dci_pdu |= ((uint64_t)dci_pdu_rel15->tb_scaling&0x3)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"tb_scaling %d  (2 bits)=> %d (0x%lx)\n",dci_pdu_rel15->tb_scaling,dci_size-pos,*dci_pdu);
-#endif
 	break;
 	
       case NR_RNTI_C:
@@ -792,18 +780,14 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 	// indicating a DL DCI format 1bit
 	pos++;
 	*dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator&1)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
-#endif
 	
 	// Freq domain assignment (275rb >> fsize = 16)
 	fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
 	pos+=fsize;
 	*dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_size-pos));
 	
-#ifdef DEBUG_FILL_DCI
 	LOG_D(MAC,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment,fsize,dci_size-pos,*dci_pdu);
-#endif
 	
 	uint16_t is_ra = 1;
 	for (int i=0; i<fsize; i++)
@@ -837,72 +821,52 @@ void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 	  
 	  pos+=4;
 	  *dci_pdu |= ((dci_pdu_rel15->time_domain_assignment&0xf) << (dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"Time domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment,4,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // VRB to PRB mapping  1bit
 	  pos++;
 	  *dci_pdu |= (dci_pdu_rel15->vrb_to_prb_mapping&1)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"VRB to PRB %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping,1,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // MCS 5bit  //bit over 32, so dci_pdu ++
 	  pos+=5;
 	  *dci_pdu |= (dci_pdu_rel15->mcs&0x1f)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"MCS %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->mcs,5,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // New data indicator 1bit
 	  pos++;
 	  *dci_pdu |= (dci_pdu_rel15->ndi&1)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"NDI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->ndi,1,dci_size-pos,*dci_pdu);
-#endif      
 	  
 	  // Redundancy version  2bit
 	  pos+=2;
 	  *dci_pdu |= (dci_pdu_rel15->rv&0x3)<<(dci_size-pos);
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"RV %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->rv,2,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // HARQ process number  4bit
 	  pos+=4;
 	  *dci_pdu  |= ((dci_pdu_rel15->harq_pid&0xf)<<(dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_pid,4,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // Downlink assignment index  2bit
 	  pos+=2;
 	  *dci_pdu |= ((dci_pdu_rel15->dai&3)<<(dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"DAI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->dai,2,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // TPC command for scheduled PUCCH  2bit
 	  pos+=2;
 	  *dci_pdu |= ((dci_pdu_rel15->tpc&3)<<(dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"TPC %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->tpc,2,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // PUCCH resource indicator  3bit
 	  pos+=3;
 	  *dci_pdu |= ((dci_pdu_rel15->pucch_resource_indicator&0x7)<<(dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"PUCCH RI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pucch_resource_indicator,3,dci_size-pos,*dci_pdu);
-#endif
 	  
 	  // PDSCH-to-HARQ_feedback timing indicator 3bit
 	  pos+=3;
 	  *dci_pdu |= ((dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator&0x7)<<(dci_size-pos));
-#ifdef DEBUG_FILL_DCI
 	  LOG_D(MAC,"PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator,3,dci_size-pos,*dci_pdu);
-#endif
 	  
 	} //end else
 	break;
@@ -1141,28 +1105,6 @@ int extract_length(int startSymbolAndLength) {
   if (tmp > 0 && tmp < (14-tmp2)) return(tmp);
   else                            return(15-tmp2);
 }
- 
-void fill_initialBWPDLtimeDomainAllocaion(nfapi_nr_config_request_t *cfg,int time_domain_assignment,int *k0,int *mappingType,int *start_symbol,int *length) {
-  AssertFatal(time_domain_assignment < cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value,"DL time_domain_assignment %d >= %d\n",
-	      time_domain_assignment,cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value);
-  *k0           = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_k0[time_domain_assignment].value;
-  *mappingType = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[time_domain_assignment].value;
-  *start_symbol = extract_startSymbol(cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-  *length       = extract_length(cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-
-}
-
-
-
-void fill_initialBWPULtimeDomainAllocaion(nfapi_nr_config_request_t *cfg,int time_domain_assignment,int *k2, int *mappingType, int *start_symbol,int *length) {
-  AssertFatal(time_domain_assignment < cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value,"UL time_domain_assignment %d >= %d\n",
-	      time_domain_assignment,cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value);
-
-  *k2           = cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[time_domain_assignment].value;
-  *mappingType = cfg->pusch_config.PUSCHTimeDomainResourceAllocation_mappingType[time_domain_assignment].value;
-  *start_symbol = extract_startSymbol(cfg->pusch_config.PUSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-  *length       = extract_length(cfg->pusch_config.PUSCHTimeDomainResourceAllocation_startSymbolAndLength[time_domain_assignment].value);
-}
 
 /*
  * Dump the UL or DL UE_list into LOG_T(MAC)
@@ -1189,9 +1131,7 @@ dump_nr_ue_list(NR_UE_list_t *listP,
   return;
 }
 
-int
-find_nr_UE_id(module_id_t mod_idP,
-           rnti_t rntiP)
+int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
   int UE_id;
@@ -1207,9 +1147,8 @@ find_nr_UE_id(module_id_t mod_idP,
 
   return -1;
 }
- 
-int add_new_nr_ue(module_id_t mod_idP,
-		  rnti_t rntiP){
+
+int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   int UE_id;
   int i;
@@ -1716,8 +1655,3 @@ void nr_update_pucch_scheduling(int Mod_idP,
   }
 }
 */
-
-
-
-
-

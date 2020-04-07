@@ -357,6 +357,7 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 }
 #endif
 
+#if 0
 void phy_config_harq_ue(module_id_t Mod_id,
                         int CC_id,
                         uint8_t eNB_id,
@@ -368,6 +369,7 @@ void phy_config_harq_ue(module_id_t Mod_id,
     for (num_of_code_words=0; num_of_code_words<NR_MAX_NB_CODEWORDS; num_of_code_words++)
       phy_vars_ue->ulsch[num_of_threads][eNB_id][num_of_code_words]->Mlimit = max_harq_tx;
 }
+#endif
 
 extern uint16_t beta_cqi[16];
 
@@ -649,11 +651,14 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l,slot,symb,q;
   int eNB_id;
   int th_id;
-  int k_ssb=0;
   uint32_t ****pusch_dmrs;
   uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
   int n_scid;
   abstraction_flag = 0;
+  fp->nb_antennas_tx = 1;
+  fp->nb_antennas_rx=1;
+  dmrs_UplinkConfig_t *dmrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig;
+  ptrs_UplinkConfig_t *ptrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   phy_init_nr_top(ue);
@@ -696,14 +701,24 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   for (i=0; i<MAX_NR_OF_UL_ALLOCATIONS; i++) {
     ue->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeA;
+    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
+  }
+
+  for (i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++){
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (NR_PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = typeA;
   }
 
   //------------- config DMRS parameters--------------//
-  ue->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
-  ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  ue->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
+  dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
+  dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
+  ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
+  ue->dmrs_DownlinkConfig.pdsch_maxLength = pdsch_len1;
+  //-------------------------------------------------//
+
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
@@ -724,6 +739,23 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   }
 
   nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+  ///////////
+  ////////////////////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////PUSCH PTRS init/////////////////////////
+  ///////////
+
+  ue->ptrs_configured = 0; // flag to be toggled by RCC
+
+  //------------- config PTRS parameters--------------//
+  ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 0; // setting MCS values to 0 indicate abscence of time_density field in the configuration
+  ptrs_Uplink_Config->timeDensity.ptrs_mcs2 = 0;
+  ptrs_Uplink_Config->timeDensity.ptrs_mcs3 = 0;
+  ptrs_Uplink_Config->frequencyDensity.n_rb0 = 0;     // setting N_RB values to 0 indicate abscence of frequency_density field in the configuration
+  ptrs_Uplink_Config->frequencyDensity.n_rb1 = 0;
+  ptrs_Uplink_Config->resourceElementOffset = 0;
+  //-------------------------------------------------//
+
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 

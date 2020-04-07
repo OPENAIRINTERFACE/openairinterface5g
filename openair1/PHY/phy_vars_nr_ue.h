@@ -64,7 +64,6 @@ unsigned char NB_RN_INST=0;
 unsigned char NB_INST=0;
 #endif
 
-unsigned int ULSCH_max_consecutive_errors = 20;
 
 int number_of_cards;
 
@@ -141,4 +140,6 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
 uint8_t max_ldpc_iterations=4;
+uint8_t max_turbo_iterations=4;
+
 #endif /*__PHY_VARS_H__ */

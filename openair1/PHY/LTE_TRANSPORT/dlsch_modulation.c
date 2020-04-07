@@ -1946,11 +1946,11 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
       case 2:  //QPSK
 
       //            LOG_I(PHY,"%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
-      ((int16_t*)&txdataF[4][tti_offset])[0] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
+      ((int16_t*)&txdataF[0][tti_offset])[0] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
       *jj = *jj + 1;
 
-      ((int16_t*)&txdataF[4][tti_offset])[1] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
+      ((int16_t*)&txdataF[0][tti_offset])[1] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
 
       *jj = *jj + 1;
 
@@ -1989,8 +1989,8 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
     *jj=*jj+1;
 
 
-    ((int16_t *)&txdataF[4][tti_offset])[0]=qam_table_s[qam16_table_offset_re];//(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-    ((int16_t *)&txdataF[4][tti_offset])[1]=qam_table_s[qam16_table_offset_im];//(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+    ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s[qam16_table_offset_re];//(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+    ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s[qam16_table_offset_im];//(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 
     break;
 
@@ -2029,8 +2029,8 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
 
     *jj=*jj+1;
 
-    ((int16_t *)&txdataF[4][tti_offset])[0]=qam_table_s[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-    ((int16_t *)&txdataF[4][tti_offset])[1]=qam_table_s[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+    ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+    ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
     break;
     default:

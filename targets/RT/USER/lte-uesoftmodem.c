@@ -79,10 +79,7 @@
   #include "UTIL/OTG/otg_vars.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "create_tasks.h"
-#endif
-
+#include "create_tasks.h"
 #include "system.h"
 
 
@@ -123,7 +120,7 @@ clock_source_t clock_source = internal,time_source=internal;
 unsigned int                    mmapped_dma=0;
 
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
@@ -169,7 +166,6 @@ int                      rx_input_level_dBm;
 
 static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 
-uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 // prototypes from function implemented in lte-ue.c, probably should be elsewhere in a include file.
@@ -264,26 +260,6 @@ unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
 }
 
 
-
-void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
-
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    char msg[64];
-    sprintf(msg,"Received linux signal %s...\n",strsignal(sig));
-    exit_function(__FILE__, __FUNCTION__, __LINE__,msg);
-  }
-}
-
-
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int CC_id;
   logClean();
@@ -321,7 +297,7 @@ static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
      after all init have been performed                         */
-  get_common_options();
+  get_common_options(SOFTMODEM_4GUE_BIT );
   get_uethreads_params();
   paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
   paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
@@ -596,9 +572,6 @@ int main( int argc, char **argv ) {
 
   get_options ();
 
-  if (is_nos1exec(argv[0]) )
-    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
-
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
 
@@ -645,10 +618,7 @@ int main( int argc, char **argv ) {
   printf ("PDCP PC5S socket\n");
   pdcp_pc5_socket_init();
   // to make a graceful exit when ctrl-c is pressed
-  signal(SIGSEGV, signal_handler);
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGABRT, signal_handler);
+  set_softmodem_sighandler();
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
@@ -807,19 +777,11 @@ int main( int argc, char **argv ) {
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-#if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
-#else
-
-  while (oai_exit==0)
-    rt_sleep_ns(100000000ULL);
-
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
 
   // stop threads
   if(IS_SOFTMODEM_DOFORMS)

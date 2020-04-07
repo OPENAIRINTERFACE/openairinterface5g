@@ -2,19 +2,31 @@ set(TELNETROOT ${OPENAIR_DIR}/common/utils/telnetsrv )
 
 set(TELNETSRV_SOURCE
     ${TELNETROOT}/telnetsrv.c
-    ${TELNETROOT}/telnetsrv_phycmd.c
     ${TELNETROOT}/telnetsrv_proccmd.c
     ${TELNETROOT}/telnetsrv_loader.c
     ${TELNETROOT}/telnetsrv_measurements.c
     )
-
-#set(TELNETSRV_ETHDEVCMD_SOURCE
-#    ${APPROOT}/telnetsrv/telnetsrv_ethdevcmd.c
-#    )
-
+    
 add_library(telnetsrv MODULE ${TELNETSRV_SOURCE} )
-#add_library(telnetsrv_ethdevcmd MODULE ${TELNETSRV_ETHDEVCMD_SOURCE} )
 target_link_libraries(telnetsrv PRIVATE history)
+
+foreach(TELNETLIB enb gnb 4gUE 5gUE)
+    set(TELNETLIB_SRCS "")
+    foreach(TELNETLIB_ASRC measurements phycmd)
+       set(TELNETLIB_SRC ${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_${TELNETLIB}_${TELNETLIB_ASRC}.c)
+       if (EXISTS ${TELNETLIB_SRC})
+          set( TELNETLIB_SRCS "${TELNETLIB_SRC};${TELNETLIB_SRCS}")
+       endif()
+    endforeach()
+    if(NOT "${TELNETLIB_SRCS}" STREQUAL "")
+       message("Add ${TELNETLIB} specific telnet functions in libtelnetsrv_${TELNETLIB}.so")
+       add_library(telnetsrv_${TELNETLIB} MODULE ${TELNETLIB_SRCS} )
+       add_dependencies(telnetsrv telnetsrv_${TELNETLIB})
+       install(TARGETS  telnetsrv_${TELNETLIB} DESTINATION bin)
+    else()
+       message("No specific telnet functions for ${TELNETLIB}")
+    endif()  
+endforeach()
 
 install(TARGETS telnetsrv DESTINATION bin)
 

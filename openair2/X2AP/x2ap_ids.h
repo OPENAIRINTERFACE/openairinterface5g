@@ -37,7 +37,8 @@
 typedef enum {
   X2ID_STATE_SOURCE_PREPARE,
   X2ID_STATE_SOURCE_OVERALL,
-  X2ID_STATE_TARGET
+  X2ID_STATE_TARGET,
+  X2ID_STATE_NSA_PREPARE,
 } x2id_state_t;
 
 typedef struct {

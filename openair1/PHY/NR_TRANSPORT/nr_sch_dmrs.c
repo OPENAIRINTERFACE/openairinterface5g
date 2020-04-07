@@ -32,7 +32,6 @@
 
 #include "nr_sch_dmrs.h"
 
-
 /*Table 7.4.1.1.2-1 and 7.4.1.1.2-2 38211 Columns: ap - CDM group - Delta - Wf(0) - Wf(1) - Wt(0) - Wt(1)*/
 /*Table 6.4.1.1.3-1 is identical to Table 7.4.1.1.2-1 and Table 6.4.1.1.3-2 is identical to Table 7.4.1.1.2-2. UL DMRS can reuse these tables*/
 int8_t pdsch_dmrs_1[8][7] = {{0,0,0,1,1,1,1},
@@ -56,11 +55,6 @@ int8_t pdsch_dmrs_2[12][7] = {{0,0,0,1,1,1,1},
                               {9,1,2,1,-1,1,-1},
                               {10,2,4,1,1,1,-1},
                               {11,2,4,1,-1,1,-1}};
-
-void get_l_prime(uint8_t *l_prime, uint8_t n_symbs) {
-  for (int i=0; i<n_symbs; i++)
-    *(l_prime+i) = i;
-}
 
 void get_antenna_ports(uint8_t *ap, uint8_t n_symbs, uint8_t config) {
   if (config == NFAPI_NR_DMRS_TYPE1)

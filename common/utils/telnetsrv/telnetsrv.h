@@ -35,7 +35,7 @@
 
 #define TELNET_PORT               9090
 #define TELNET_MAX_MSGLENGTH      2048
-#define TELNET_PROMPT             "softmodem> "
+#define TELNET_PROMPT_PREFIX      "softmodem"
 #define TELNET_MAXCMD             20
 #define TELNET_CMD_MAXSIZE        20
 #define TELNET_HELPSTR_SIZE       80

@@ -1147,7 +1147,6 @@ int device_init(openair0_device *device,
     device->trx_set_gains_func   = trx_brf_set_gains;
     device->openair0_cfg = openair0_cfg;
     device->priv = (void *)brf;
-    device->uhd_set_thread_priority = NULL;
 
     calibrate_rf(device);
 

@@ -811,6 +811,16 @@ typedef struct UE_NR_SCAN_INFO_s {
   int32_t freq_offset_Hz[3][10];
 } UE_NR_SCAN_INFO_t;
 
+typedef struct NR_UL_TIME_ALIGNMENT {
+  /// flag used by MAC to inform PHY about a TA to be applied
+  unsigned char    apply_ta;
+  /// frame and slot when to apply the TA as stated in TS 38.213 setion 4.2
+  int16_t          ta_frame;
+  char             ta_slot;
+  /// TA command and TAGID received from the gNB
+  uint8_t          ta_command;
+  uint8_t          tag_id;
+} NR_UL_TIME_ALIGNMENT_t;
 
 #include "NR_IF_Module.h"
 
@@ -888,7 +898,7 @@ typedef struct {
   //fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
-  uint8_t current_thread_id[40];
+  uint8_t current_thread_id[NR_MAX_SLOTS_PER_FRAME];
 
   t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
@@ -943,6 +953,9 @@ typedef struct {
 
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
+
+  /// flag to indicate if PTRS is configured
+  uint8_t ptrs_configured;
 
   uint32_t X_u[64][839];
 
@@ -1002,15 +1015,21 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
+  uint8_t               init_sync_frame;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
   uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              time_sync_cell;
-  int              timing_advance; ///timing advance signalled from eNB
-  int              hw_timing_advance;
-  int              N_TA_offset; ///timing offset used in TDD
+
+  /// Timing Advance updates variables
+  /// Timing advance update computed from the TA command signalled from gNB
+  int                      timing_advance;
+  int                      hw_timing_advance;
+  int                      N_TA_offset; ///timing offset used in TDD
+  NR_UL_TIME_ALIGNMENT_t   ul_time_alignment[NUMBER_OF_CONNECTED_gNB_MAX];
+
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue;
   /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
@@ -1070,7 +1089,6 @@ typedef struct {
 
   crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
   supplementaryUplink_t supplementaryUplink;
-  dmrs_UplinkConfig_t dmrs_UplinkConfig;
   dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
   csi_MeasConfig_t csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;

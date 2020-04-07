@@ -45,10 +45,8 @@
 #define GNB_CONF_STRING_OTG_APP_TYPE              "app_type"
 #define GNB_CONF_STRING_OTG_BG_TRAFFIC            "bg_traffic"
 
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
 extern int asn_debug;
 extern int asn1_xer_print;
-#endif
 
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long
@@ -113,6 +111,29 @@ typedef enum {
 #define GNB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
 #define GNB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
 
+typedef struct ccparams_nr_x2 {
+  char             *frame_type;
+  int32_t           tdd_config;
+  int32_t           tdd_config_s;
+  int32_t           nr_band;
+  long long int     downlink_frequency;
+  int32_t           uplink_frequency_offset;
+  int32_t           Nid_cell;
+  int32_t           N_RB_DL;
+  } ccparams_nr_x2_t;
+
+
+#define CCPARAMS_NR_X2_DESC(ccparams) {         \
+    {ENB_CONFIG_STRING_FRAME_TYPE,                                   NULL,   0,           strptr:&ccparams.frame_type,                             defstrval:"TDD",           TYPE_STRING,     0},  \
+    {ENB_CONFIG_STRING_TDD_CONFIG,                                   NULL,   0,           iptr:&ccparams.tdd_config,                               defintval:3,               TYPE_UINT,       0},  \
+    {ENB_CONFIG_STRING_TDD_CONFIG_S,                                 NULL,   0,           iptr:&ccparams.tdd_config_s,                             defintval:0,               TYPE_UINT,       0},  \
+    {ENB_CONFIG_STRING_EUTRA_BAND,                                   NULL,   0,           iptr:&ccparams.nr_band,                               defintval:78,               TYPE_UINT,       0},  \
+    {ENB_CONFIG_STRING_DOWNLINK_FREQUENCY,                           NULL,   0,           i64ptr:(int64_t *)&ccparams.downlink_frequency,          defint64val:3600000000,    TYPE_UINT64,     0},  \
+    {ENB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                      NULL,   0,           iptr:&ccparams.uplink_frequency_offset,                  defintval:0,      TYPE_INT,        0},  \
+    {ENB_CONFIG_STRING_NID_CELL,                                     NULL,   0,           iptr:&ccparams.Nid_cell,                                 defintval:0,               TYPE_UINT,       0},  \
+    {ENB_CONFIG_STRING_N_RB_DL,                                      NULL,   0,           iptr:&ccparams.N_RB_DL,                                  defintval:106,              TYPE_UINT,       0}  \
+}
+
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -122,8 +143,8 @@ typedef enum {
 {GNB_CONFIG_STRING_CELL_TYPE,                    NULL,   0,            strptr:NULL, defstrval:"CELL_MACRO_GNB",  TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_GNB_NAME,                     NULL,   0,            strptr:NULL, defstrval:"OAIgNodeB",       TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_TRACKING_AREA_CODE,           NULL,   0,            strptr:NULL, defstrval:"0",               TYPE_STRING,    0},  \
-{GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE_OLD,      NULL,   0,            strptr:NULL, defstrval:NULL,               TYPE_STRING,    0},  \
-{GNB_CONFIG_STRING_MOBILE_NETWORK_CODE_OLD,      NULL,   0,            strptr:NULL, defstrval:NULL,               TYPE_STRING,    0},  \
+{GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE_OLD,      NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
+{GNB_CONFIG_STRING_MOBILE_NETWORK_CODE_OLD,      NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_TRANSPORT_S_PREFERENCE,       NULL,   0,            strptr:NULL, defstrval:"local_mac",       TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_LOCAL_S_IF_NAME,              NULL,   0,            strptr:NULL, defstrval:"lo",              TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_LOCAL_S_ADDRESS,              NULL,   0,            strptr:NULL, defstrval:"127.0.0.1",       TYPE_STRING,    0},  \
@@ -262,6 +283,8 @@ typedef enum {
 #define GNB_INTERFACE_NAME_FOR_S1U_IDX             2
 #define GNB_IPV4_ADDR_FOR_S1U_IDX                  3
 #define GNB_PORT_FOR_S1U_IDX                       4
+#define GNB_IPV4_ADDR_FOR_X2C_IDX      			   5
+#define GNB_PORT_FOR_X2C_IDX         			   6
 
 /* S1 interface configuration parameters names   */
 #define GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1_MME "GNB_INTERFACE_NAME_FOR_S1_MME"
@@ -269,6 +292,10 @@ typedef enum {
 #define GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U    "GNB_INTERFACE_NAME_FOR_S1U"
 #define GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_S1U         "GNB_IPV4_ADDRESS_FOR_S1U"
 #define GNB_CONFIG_STRING_GNB_PORT_FOR_S1U              "GNB_PORT_FOR_S1U"
+
+/* X2 interface configuration parameters names */
+#define GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C	        "GNB_IPV4_ADDRESS_FOR_X2C"
+#define GNB_CONFIG_STRING_ENB_PORT_FOR_X2C				"GNB_PORT_FOR_X2C"
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            S1 interface configuration parameters                                                                 */
@@ -279,7 +306,9 @@ typedef enum {
 {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1_MME,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
+{GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
+{GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0}      \
 }   
 
 
@@ -355,7 +384,6 @@ typedef enum {
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
-#define CONFIG_STRING_MACRLC_PHY_TEST_MODE                 "phy_test_mode"
 
 
 #define MACRLC_CC_IDX                                          0
@@ -376,7 +404,6 @@ typedef enum {
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
 #define MACRLC_SCHED_MODE_IDX                                  17
-#define MACRLC_PHY_TEST_IDX                                    18
 
 
 /* thread configuration parameters section name */

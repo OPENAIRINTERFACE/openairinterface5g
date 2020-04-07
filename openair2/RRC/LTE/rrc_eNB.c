@@ -83,6 +83,7 @@
 
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
+#include "rrc_eNB_M2AP.h"
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
@@ -112,6 +113,8 @@ extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t 
 extern int rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, security_capabilities_t *security_capabilities_pP);
 extern void process_eNB_security_key (const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, uint8_t *security_key_pP);
 extern int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl, const bool is_rel8_only, uint8_t *kenb_star);
+extern int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt, rrc_eNB_ue_context_t *ue_context, unsigned char *buffer, int buffer_size, OCTET_STRING_t *scg_group_config, OCTET_STRING_t *scg_RB_config);
+extern struct rrc_eNB_ue_context_s * get_first_ue_context(eNB_RRC_INST *rrc_instance_pP);
 
 pthread_mutex_t      rrc_release_freelist;
 RRC_release_list_t   rrc_release_info;
@@ -151,21 +154,15 @@ init_SI(
           (int)configuration->N_RB_DL[CC_id]);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
     do_MIB_FeMBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
-#ifdef ENABLE_ITTI
                   configuration->N_RB_DL[CC_id],
-                  0 //additionalNonMBSFN
-#else
-                  50,0
-#endif
-                  ,0);
+                  0, //additionalNonMBSFN
+                  0);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = 0;
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS = (uint8_t *) malloc16(32);
     AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1_MBMS allocated\n",
                 PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = do_SIB1_MBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
-#if defined(ENABLE_ITTI)
-        , configuration
-#endif
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = do_SIB1_MBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id,
+         configuration
                                                                               );
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB1-MBMS\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP)
@@ -891,7 +888,6 @@ rrc_eNB_free_mem_UE_context(
   //uint8_t                            Status;
   //rnti_t                             rnti;
   //uint64_t                           random_ue_identity;
-#if defined(ENABLE_ITTI)
   //UE_S_TMSI                          Initialue_identity_s_TMSI;
   //EstablishmentCause_t               establishment_cause;
   //ReestablishmentCause_t             reestablishment_cause;
@@ -903,7 +899,6 @@ rrc_eNB_free_mem_UE_context(
   //uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   //transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   //rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
-#endif
 #endif
 }
 
@@ -1270,6 +1265,52 @@ rrc_eNB_generate_UECapabilityEnquiry(
     buffer,
     size,
     MSC_AS_TIME_FMT" rrcUECapabilityEnquiry UE %x MUI %d size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_context.rnti,
+    rrc_eNB_mui,
+    size);
+  rrc_data_req(
+    ctxt_pP,
+    DCCH,
+    rrc_eNB_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
+}
+
+//-----------------------------------------------------------------------------
+void
+rrc_eNB_generate_NR_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP
+)
+//-----------------------------------------------------------------------------
+{
+  uint8_t                             buffer[100];
+  uint8_t                             size;
+  T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  size = do_NR_UECapabilityEnquiry(
+           ctxt_pP,
+           buffer,
+           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  LOG_I(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size);
+  LOG_D(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (NR UECapabilityEnquiry MUI %d) --->[PDCP][RB %02d]\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        size,
+        rrc_eNB_mui,
+        DCCH);
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_RRC_UE,
+    buffer,
+    size,
+    MSC_AS_TIME_FMT" rrcNRUECapabilityEnquiry UE %x MUI %d size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
@@ -2790,6 +2831,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   uint8_t   buffer[RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
+  MessageDef *message_p = NULL;
+
   /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
   eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
   struct LTE_PhysicalConfigDedicated    **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
@@ -2813,11 +2856,14 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   LTE_MAC_MainConfig_t                   *mac_MainConfig                   = NULL;
   LTE_MeasObjectToAddModList_t           *MeasObj_list                     = NULL;
   LTE_MeasObjectToAddMod_t               *MeasObj                          = NULL;
+  LTE_MeasObjectToAddMod_t               *MeasObj2                         = NULL;
   LTE_ReportConfigToAddModList_t         *ReportConfig_list                = NULL;
   LTE_ReportConfigToAddMod_t             *ReportConfig_per, *ReportConfig_A1,
                                          *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
+  LTE_ReportConfigToAddMod_t             *ReportConfig_NR                  = NULL;
   LTE_MeasIdToAddModList_t               *MeasId_list                      = NULL;
   LTE_MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
+  LTE_MeasIdToAddMod_t                   *MeasId6;
   long                                   *sr_ProhibitTimer_r9              = NULL;
   long                                   *logicalchannelgroup              = NULL;
   long                                   *logicalchannelgroup_drb          = NULL;
@@ -2972,43 +3018,28 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer =
     LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
+  /* CDRX Configuration */
+  mac_MainConfig->drx_Config = NULL;
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+  LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
 
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX Configuration */
-    // Need to check if UE is a BR UE
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
-    int UE_id = find_UE_id(module_id, rnti);
-    eNB_MAC_INST *mac = RC.mac[module_id];
-    UE_list_t *UE_list = &(mac->UE_list);
+  /* Process the IE drx_Config */    
+  if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
+    mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
 
-    if (UE_id != -1) {
-      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) &&
-          (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-        // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-        LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
-
-        /* Process the IE drx_Config */
-        if (cc_id < MAX_NUM_CCs) {
-          mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-        } else {
-          LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-        }
-
-        /* Set timers and thresholds values in local MAC context of UE */
-        eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
-        LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        mac_MainConfig->drx_Config = NULL;
-      }
-    } else { // UE_id invalid
-      LOG_E(RRC, "Invalid UE_id found!\n");
-      mac_MainConfig->drx_Config = NULL;
+    if (mac_MainConfig->drx_Config == NULL) {
+      LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+    } else {
+      /* Send DRX configuration to MAC task to configure timers of local UE context */
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
+      RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+      itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
+      LOG_D(RRC, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
     }
-  } else { // No CDRX with the CU/DU split in this version
-    LOG_E(RRC, "CU/DU split activated\n");
-    mac_MainConfig->drx_Config = NULL;
   }
+  /* End of CDRX configuration */
 
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2 = 2*SR
@@ -3114,6 +3145,16 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   MeasId5->measObjectId = 1;
   MeasId5->reportConfigId = 6;
   ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId5);
+
+  if (ue_context_pP->ue_context.does_nr) {
+    MeasId6 = calloc(1, sizeof(LTE_MeasIdToAddMod_t));
+    if (MeasId6 == NULL) exit(1);
+    MeasId6->measId = 7;
+    MeasId6->measObjectId = 2;
+    MeasId6->reportConfigId = 7;
+    ASN_SEQUENCE_ADD(&MeasId_list->list, MeasId6);
+  }
+
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measIdToAddModList = MeasId_list;
   // Add one EUTRA Measurement Object
   MeasObj_list = CALLOC(1, sizeof(*MeasObj_list));
@@ -3163,6 +3204,27 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj);
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->measObjectToAddModList = MeasObj_list;
 
+  if (ue_context_pP->ue_context.does_nr) {
+    MeasObj2 = calloc(1, sizeof(LTE_MeasObjectToAddMod_t));
+    if (MeasObj2 == NULL) exit(1);
+    MeasObj2->measObjectId = 2;
+    MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 = 642256; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
+    MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz30;
+    MeasObj2->measObject.choice.measObjectNR_r15.quantityConfigSet_r15 = 1;
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1));
+    if (MeasObj2->measObject.choice.measObjectNR_r15.ext1 == NULL) exit(1);
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1__bandNR_r15));
+    if (MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15 == NULL) exit(1);
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->present = LTE_MeasObjectNR_r15__ext1__bandNR_r15_PR_setup;
+    MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 78;
+
+    ASN_SEQUENCE_ADD(&MeasObj_list->list, MeasObj2);
+  }
+
   if (!ue_context_pP->ue_context.measurement_info->events) {
     ue_context_pP->ue_context.measurement_info->events = CALLOC(1,sizeof(*(ue_context_pP->ue_context.measurement_info->events)));
   }
@@ -3175,6 +3237,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ReportConfig_A3 = CALLOC(1, sizeof(*ReportConfig_A3));
   ReportConfig_A4 = CALLOC(1, sizeof(*ReportConfig_A4));
   ReportConfig_A5 = CALLOC(1, sizeof(*ReportConfig_A5));
+  if (ue_context_pP->ue_context.does_nr) {
+    ReportConfig_NR = CALLOC(1, sizeof(*ReportConfig_NR));
+  }
   ReportConfig_per->reportConfigId = 1;
   ReportConfig_per->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA;
   ReportConfig_per->reportConfig.choice.reportConfigEUTRA.triggerType.present =
@@ -3280,6 +3345,30 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
   ReportConfig_A5->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
+
+  if (ue_context_pP->ue_context.does_nr) {
+    ReportConfig_NR->reportConfigId = 7;
+    ReportConfig_NR->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present = LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.present = LTE_ThresholdNR_r15_PR_nr_RSRP_r15;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 46;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.reportOnLeave_r15 = FALSE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis = 2;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger = LTE_TimeToTrigger_ms80;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.maxReportCells = 4;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportInterval = LTE_ReportInterval_ms120;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.reportAmount = LTE_ReportConfigInterRAT__reportAmount_infinity;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 = calloc(1, sizeof(struct LTE_ReportConfigInterRAT__ext7));
+    if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7 == NULL) exit(1);
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 = calloc(1, sizeof(struct LTE_ReportQuantityNR_r15));
+    if (ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15 == NULL) exit(1);
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrp = TRUE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrq = TRUE;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_sinr = TRUE;
+    ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_NR);
+  }
+
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
 
   /* A3 event update */
@@ -3445,6 +3534,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   uint8_t   buffer[RRC_BUF_SIZE];
   uint16_t  size;
   int       i;
+  MessageDef *message_p = NULL;
+
   /* Configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE */
   eNB_RRC_INST                           *rrc_inst = RC.rrc[ctxt_pP->module_id];
   struct LTE_PhysicalConfigDedicated    **physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
@@ -3490,8 +3581,34 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
   int                                    measurements_enabled;
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
-  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
-  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
+
+#ifdef CBA // Contention Based Access
+  uint8_t                            *cba_RNTI_buf;
+  cba_RNTI = CALLOC(1, sizeof(LTE_C_RNTI_t));
+  cba_RNTI_buf = CALLOC(1, 2 * sizeof(uint8_t));
+  cba_RNTI->buf = cba_RNTI_buf;
+  cba_RNTI->size = 2;
+  cba_RNTI->bits_unused = 0;
+
+  /* Associate UEs to the CBA groups as a function of their UE id */
+  if (rrc_inst->num_active_cba_groups) {
+    cba_RNTI->buf[0] = rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups] & 0xff;
+    cba_RNTI->buf[1] = 0xff;
+    LOG_D(RRC, "[eNB %d] Frame %d: cba_RNTI = %x in group %d is attribued to UE %d\n",
+          enb_mod_idP,
+          frameP,
+          rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups],
+          ue_mod_idP % rrc_inst->num_active_cba_groups, ue_mod_idP);
+  } else {
+    cba_RNTI->buf[0] = 0x0;
+    cba_RNTI->buf[1] = 0x0;
+    LOG_D(RRC, "[eNB %d] Frame %d: no cba_RNTI is configured for UE %d\n",
+          enb_mod_idP,
+          frameP,
+          ue_mod_idP);
+  }
+#endif
+
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION,
     T_INT(ctxt_pP->module_id),
     T_INT(ctxt_pP->frame),
@@ -3627,42 +3744,30 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
     LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf200; // sf20 = 20 subframes // LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf1000
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
 
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX Configuration */
-    // Need to check if UE is a BR UE
-    rnti_t rnti = ue_context_pP->ue_id_rnti;
-    module_id_t module_id = ctxt_pP->module_id;
-    int UE_id = find_UE_id(module_id, rnti);
-    eNB_MAC_INST *mac = RC.mac[module_id];
-    UE_list_t *UE_list = &(mac->UE_list);
-
-    if (UE_id != -1) {
-      if ((rrc_inst->carrier[cc_id].sib1->tdd_Config == NULL) &&
-          (UE_list->UE_template[ue_context_pP->ue_context.primaryCC_id][UE_id].rach_resource_type == 0)) {
-        // CDRX can be only configured in case of FDD and non BR UE (09/04/19)
-        LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
-
-        /* Process the IE drx_Config */
-        if (cc_id < MAX_NUM_CCs) {
-          mac_MainConfig->drx_Config = do_DrxConfig(module_id, cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
-        } else {
-          LOG_E(RRC, "Invalid CC_id for DRX configuration\n");
-        }
-
-        /* Set timers and thresholds values in local MAC context of UE */
-        eNB_Config_Local_DRX(module_id, ue_context_pP->ue_id_rnti, mac_MainConfig->drx_Config);
-        LOG_D(RRC, "DRX configured in mac main config for RRC Connection Reconfiguration\n");
-      } else { // CDRX not implemented for TDD and LTE-M (09/04/19)
-        mac_MainConfig->drx_Config = NULL;
-      }
-    } else { // UE_id invalid
-      LOG_E(RRC, "Invalid UE_id found!\n");
-      mac_MainConfig->drx_Config = NULL;
+  /* CDRX Configuration */
+  mac_MainConfig->drx_Config = NULL;
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+  uint8_t cc_id = ue_context_pP->ue_context.primaryCC_id;
+  LTE_UE_EUTRA_Capability_t *UEcap = ue_context_pP->ue_context.UE_Capability;
+  LOG_D(RRC, "Processing the DRX configuration in RRC Connection Reconfiguration\n");
+  
+  /* Process the IE drx_Config */
+  if (NODE_IS_MONOLITHIC(rrc_inst->node_type)) {
+    mac_MainConfig->drx_Config = do_DrxConfig(cc_id, &rrc_inst->configuration, UEcap); // drx_Config IE
+  
+    if (mac_MainConfig->drx_Config == NULL) {
+      LOG_W(RRC, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
+    } else {
+      /* Send DRX configuration to MAC task to configure timers of local UE context */
+      message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_MAC_DRX_CONFIG_REQ);
+      RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = rnti;
+      RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
+      itti_send_msg_to_task(TASK_MAC_ENB, module_id, message_p);
+      LOG_D(RRC, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
     }
-  } else { // No CDRX with the CU/DU split in this version
-    LOG_E(RRC, "CU/DU split activated\n");
-    mac_MainConfig->drx_Config = NULL;
   }
+  /* End of CDRX configuration */
 
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2 = 2*SR
@@ -4234,6 +4339,10 @@ rrc_eNB_process_MeasurementReport(
               ctxt_pP->subframe);
         break;
 
+      case 7:
+        LOG_D(RRC, "NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
+        break;
+
       default:
         LOG_D(RRC,"Other event report frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
         break;
@@ -4245,6 +4354,22 @@ rrc_eNB_process_MeasurementReport(
           ue_context_pP->ue_context.measResults->measResultPCell.rsrpResult-140);
     LOG_D(RRC, "[eNB %d]Frame %d: UE %x (Measurement Id %d): RSRQ of Source %ld\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId,
           ue_context_pP->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
+  }
+
+  /* TODO: improve NR triggering */
+  if (measResults2->measId == 7) {
+    if (ue_context_pP->ue_context.Status != RRC_NR_NSA) {
+      MessageDef      *msg;
+      ue_context_pP->ue_context.Status = RRC_NR_NSA;
+
+      msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+      LOG_I(RRC,
+            "[eNB %d] frame %d subframe %d: UE rnti %x switching to NSA mode\n",
+            ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->subframe, ctxt_pP->rnti);
+      itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+      return;
+    }
   }
 
   if (measResults2->measResultNeighCells == NULL)
@@ -4754,7 +4879,6 @@ check_handovers(
     if (ue_context_p->ue_context.Status == RRC_RECONFIGURED
         && ue_context_p->ue_context.handover_info != NULL &&
         ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_NO_EMPTY ) {
-#if defined(ENABLE_ITTI)
       MessageDef   *msg_p;
       int    result;
       protocol_ctxt_t  ctxt;
@@ -4885,7 +5009,6 @@ check_handovers(
 
       ue_context_p->ue_context.handover_info->endmark_state = ENDMARK_EMPTY;
       ue_context_p->ue_context.handover_info->state = HO_FORWARDING_COMPLETE;
-#endif
     }
   }
 }
@@ -5801,7 +5924,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   securityConfigHO->handoverType.choice.intraLTE.securityAlgorithmConfig = NULL; /* TODO: to be checked */
   securityConfigHO->handoverType.choice.intraLTE.keyChangeIndicator = 0;
   securityConfigHO->handoverType.choice.intraLTE.nextHopChainingCount = 0;
-#if defined(ENABLE_ITTI)
   /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
@@ -5834,7 +5956,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     dedicatedInfoNASList = NULL;
   }
 
-#endif
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
   memset(buffer, 0, RRC_BUF_SIZE);
@@ -5883,7 +6004,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   *_size = size = ho_size;
   LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
               "[MSG] RRC Connection Reconfiguration handover\n");
-#if defined(ENABLE_ITTI)
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_e_rabs; i++) {
@@ -5893,8 +6013,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
       ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer = NULL;
     }
   }
-
-#endif
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration handover (bytes %d, UE id %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -6034,26 +6152,31 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   LTE_DRB_ToReleaseList_t            *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   LTE_DRB_Identity_t                 *drb_id_p      = NULL;
+
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // reset rrc inactivity timer
 
-  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-    /* CDRX: activated if ack was expected */
-    int UE_id_mac = find_UE_id(ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
+  /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
+  rnti_t rnti = ue_context_pP->ue_id_rnti;
+  module_id_t module_id = ctxt_pP->module_id;
+
+  if (NODE_IS_MONOLITHIC(RC.rrc[module_id]->node_type)) {
+    int UE_id_mac = find_UE_id(module_id, rnti);
 
     if (UE_id_mac == -1) {
-      LOG_E(RRC,PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_RRCConnectionReconfigurationComplete without UE_id(MAC) rnti %x, let's return\n",PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ue_context_pP->ue_context.rnti);
+      LOG_E(RRC, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
       return;
     }
 
-    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
 
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
       UE_scheduling_control->cdrx_waiting_ack = FALSE;
-      UE_scheduling_control->cdrx_configured = TRUE;
+      UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration is received
       LOG_I(RRC, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
     }
-  } // No CDRX with the CU/DU split in this version of the code
+  }
+  /* End of CDRX processing */
 
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE,
     T_INT(ctxt_pP->module_id),
@@ -6304,6 +6427,16 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     free(DRB_Release_configList2);
     ue_context_pP->ue_context.DRB_Release_configList2[xid] = NULL;
   }
+
+  /* let's request NR capabilities if the UE supports NR
+   * maybe not the right place/time to request
+   */
+  if (ue_context_pP->ue_context.does_nr &&
+      !ue_context_pP->ue_context.nr_capabilities_requested) {
+    ue_context_pP->ue_context.nr_capabilities_requested = 1;
+    rrc_eNB_generate_NR_UECapabilityEnquiry(ctxt_pP, ue_context_pP);
+  }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -7123,6 +7256,48 @@ rrc_eNB_decode_ccch(
 }
 
 //-----------------------------------------------------------------------------
+static int
+is_en_dc_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
+//-----------------------------------------------------------------------------
+{
+  /* to be refined - check that the eNB is connected to a gNB, check that
+   * the bands supported by the UE include the band of the gNB
+   */
+#define NCE nonCriticalExtension
+  return c != NULL
+      && c->NCE != NULL
+      && c->NCE->NCE != NULL
+      && c->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 != NULL
+      && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 == LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
+#undef NCE
+}
+
+//-----------------------------------------------------------------------------
 int
 rrc_eNB_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
@@ -7651,6 +7826,22 @@ rrc_eNB_decode_dcch(
 
         LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
 
+        int eutra_index = -1;
+
+        for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
+          if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type == LTE_RAT_Type_eutra) {
+            if (eutra_index != -1) {
+              LOG_E(RRC, "fatal: more than 1 eutra capability\n");
+              exit(1);
+            }
+            eutra_index = i;
+          }
+        }
+
+        /* do nothing if no EUTRA capabilities (TODO: may be NR capabilities, to be processed somehow) */
+        if (eutra_index == -1)
+          break;
+
         if (ue_context_p->ue_context.UE_Capability) {
           LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
           ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
@@ -7661,15 +7852,10 @@ rrc_eNB_decode_dcch(
         dec_rval = uper_decode(NULL,
                                &asn_DEF_LTE_UE_EUTRA_Capability,
                                (void **)&ue_context_p->ue_context.UE_Capability,
-                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
-                               choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
-                               array[0]->ueCapabilityRAT_Container.buf,
-                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
-                               choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
-                               array[0]->ueCapabilityRAT_Container.size, 0, 0);
-        ue_context_p->ue_context.UE_Capability_size = ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
-            choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
-            array[0]->ueCapabilityRAT_Container.size;
+                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.buf,
+                               ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.size,
+                               0, 0);
+        ue_context_p->ue_context.UE_Capability_size = ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.size;
 
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_LTE_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
@@ -7683,6 +7869,9 @@ rrc_eNB_decode_dcch(
                           ue_context_p->ue_context.UE_Capability);
           ue_context_p->ue_context.UE_Capability = 0;
         }
+
+        if (dec_rval.code == RC_OK)
+          ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
 
         if (EPC_MODE_ENABLED) {
           rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
@@ -8247,6 +8436,100 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
 }
 
+void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
+
+
+	NR_CG_Config_t *CG_Config = NULL;
+
+	{
+		int i;
+		printf("%d: ", m->rrc_buffer_size);
+		for (i=0; i<m->rrc_buffer_size; i++) printf("%2.2x", (unsigned char)m->rrc_buffer[i]);
+		printf("\n");
+
+	}
+    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+						      &asn_DEF_NR_CG_Config,
+						      (void **)&CG_Config,
+						      (uint8_t *)m->rrc_buffer,
+						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      AssertFatal(1==0,"NR_UL_DCCH_MESSAGE decode error\n");
+	// free the memory
+	SEQUENCE_free( &asn_DEF_NR_CG_Config, CG_Config, 1 );
+	return;
+    }
+    xer_fprint(stdout,&asn_DEF_NR_CG_Config, CG_Config);
+    // recreate enough of X2 EN-DC Container
+
+    AssertFatal(CG_Config->criticalExtensions.choice.c1->present == NR_CG_Config__criticalExtensions__c1_PR_cg_Config,
+		  "CG_Config not present\n");
+
+    OCTET_STRING_t *scg_CellGroupConfig = NULL;
+    OCTET_STRING_t *nr1_conf = NULL;
+
+    if(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig){
+    	scg_CellGroupConfig = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig;
+#ifdef DEBUG_SCG_CONFIG
+    	{
+    		int size_s = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->size;
+    		int i;
+    		LOG_I(RRC, "Dumping scg_CellGroupConfig: %d", size_s);
+    		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_CellGroupConfig->buf[i]);
+    		printf("\n");
+
+    	}
+#endif
+
+    }
+    else{
+    	LOG_W(RRC, "SCG Cell group configuration is not present in the Addition Response message \n");
+    	return;
+    }
+    if(CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config){
+    	nr1_conf = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config;
+#ifdef DEBUG_SCG_CONFIG
+    	{
+    		int size_s = CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->size;
+    		int i;
+    		LOG_I(RRC, "Dumping scg_RB_Config: %d", size_s);
+    		for (i=0; i<size_s; i++) printf("%2.2x", (unsigned char)CG_Config->criticalExtensions.choice.c1->choice.cg_Config->scg_RB_Config->buf[i]);
+    		printf("\n");
+
+    	}
+#endif
+    }
+    else{
+    	LOG_W(RRC, "SCG RB configuration is not present in the Addition Response message \n");
+    	return;
+    }
+
+    protocol_ctxt_t ctxt;
+    rrc_eNB_ue_context_t *ue_context;
+    unsigned char buffer[8192];
+    int size;
+
+    ue_context = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], m->rnti);
+
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                    0,
+                                    ENB_FLAG_YES,
+                                    m->rnti,
+                                    0, 0);
+
+    size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, scg_CellGroupConfig, nr1_conf);
+
+    rrc_data_req(&ctxt,
+                   DCCH,
+                   rrc_eNB_mui++,
+                   SDU_CONFIRM_NO,
+                   size,
+                   buffer,
+                   PDCP_TRANSMISSION_MODE_CONTROL);
+}
+
+
 //-----------------------------------------------------------------------------
 void *rrc_enb_process_itti_msg(void *notUsed) {
   MessageDef                         *msg_p;
@@ -8525,6 +8808,12 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
     }
 
+    case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
+    	rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
+    	break;
+    }
+
+
     /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
       LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p, &RRC_CONFIGURATION_REQ(msg_p));
@@ -8542,6 +8831,43 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
     case RRC_SUBFRAME_PROCESS:
       rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
       break;
+
+    case M2AP_SETUP_RESP:
+       rrc_eNB_process_M2AP_SETUP_RESP(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_SETUP_RESP(msg_p));
+      break;
+
+    case M2AP_MBMS_SCHEDULING_INFORMATION:
+       rrc_eNB_process_M2AP_MBMS_SCHEDULING_INFORMATION(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_MBMS_SCHEDULING_INFORMATION(msg_p));
+       break;
+
+    case M2AP_MBMS_SESSION_START_REQ:
+       rrc_eNB_process_M2AP_MBMS_SESSION_START_REQ(&ctxt,0/*CC_id*/,ENB_INSTANCE_TO_MODULE_ID(instance),&M2AP_MBMS_SESSION_START_REQ(msg_p));
+       break;
+
+    case M2AP_MBMS_SESSION_STOP_REQ:
+       rrc_eNB_process_M2AP_MBMS_SESSION_STOP_REQ(&ctxt,&M2AP_MBMS_SESSION_STOP_REQ(msg_p));
+       break;
+
+    case M2AP_RESET:
+       rrc_eNB_process_M2AP_RESET(&ctxt,&M2AP_RESET(msg_p));
+       break;
+
+    case M2AP_ENB_CONFIGURATION_UPDATE_ACK:
+       rrc_eNB_process_M2AP_ENB_CONFIGURATION_UPDATE_ACK(&ctxt,&M2AP_ENB_CONFIGURATION_UPDATE_ACK(msg_p));
+       break;
+
+    case M2AP_ERROR_INDICATION:
+       rrc_eNB_process_M2AP_ERROR_INDICATION(&ctxt,&M2AP_ERROR_INDICATION(msg_p));
+       break;
+
+    case M2AP_MBMS_SERVICE_COUNTING_REQ:
+       rrc_eNB_process_M2AP_MBMS_SERVICE_COUNTING_REQ(&ctxt,&M2AP_MBMS_SERVICE_COUNTING_REQ(msg_p));
+       break;
+
+    case M2AP_MCE_CONFIGURATION_UPDATE:
+       rrc_eNB_process_M2AP_MCE_CONFIGURATION_UPDATE(&ctxt,&M2AP_MCE_CONFIGURATION_UPDATE(msg_p));
+       break;
+
 
     default:
       LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);
@@ -8566,11 +8892,17 @@ rrc_enb_task(
 //-----------------------------------------------------------------------------
 {
   rrc_enb_init();
+
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
 
   while (1) {
     (void) rrc_enb_process_itti_msg(NULL);
+{
+  //extern volatile int go_nr;
+  void rrc_go_nr(void);
+  //if (go_nr) rrc_go_nr();
+}
   }
 }
 

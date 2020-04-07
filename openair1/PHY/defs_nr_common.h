@@ -223,7 +223,13 @@ typedef struct {
   NR_PRACH_CONFIG_INFO prach_ConfigInfo;
 } NR_PRACH_CONFIG_COMMON;
 
-typedef struct NR_DL_FRAME_PARMS {
+typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
+
+typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
+
+typedef uint32_t (*get_samples_slot_timestamp_t)(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead);
+
+struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
   //  /// Placeholder to replace overlapping fields below
@@ -270,12 +276,18 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t symbols_per_slot;
   /// Number of slots per subframe
   uint16_t slots_per_subframe;
-    /// Number of slots per frame
+  /// Number of slots per frame
   uint16_t slots_per_frame;
   /// Number of samples in a subframe
   uint32_t samples_per_subframe;
-  /// Number of samples in a slot
-  uint32_t samples_per_slot;
+  /// Number of samples in current slot
+  get_samples_per_slot_t get_samples_per_slot;
+  /// Number of samples before slot
+  get_samples_slot_timestamp_t get_samples_slot_timestamp;
+  /// Number of samples in 0th and center slot of a subframe
+  uint32_t samples_per_slot0;
+  /// Number of samples in other slots of the subframe
+  uint32_t samples_per_slotN0;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
@@ -339,7 +351,7 @@ typedef struct NR_DL_FRAME_PARMS {
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 
-} NR_DL_FRAME_PARMS;
+};
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)

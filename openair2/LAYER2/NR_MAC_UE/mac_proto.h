@@ -125,25 +125,45 @@ uint32_t get_ssb_slot(uint32_t ssb_index);
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
 
-void nr_ue_process_mac_pdu(
-    module_id_t module_idP,
-    uint8_t CC_id,
-    uint8_t *pduP, 
-    uint16_t mac_pdu_len, 
-    uint8_t gNB_index);
+
+/* \brief Get payload (MAC PDU) from UE PHY
+@param module_idP Instance id of UE in machine
+@param CC_id Component Carrier index
+@param frameP Current Rx frame
+@param slotP Current Rx slot
+@param pdu Pointer to the MAC PDU
+@param pdu_len Length of the MAC PDU
+@param gNB_id Index of gNB that UE is attached to
+@param ul_time_alignment of struct handling the timing advance parameters
+@returns void
+*/
+void nr_ue_send_sdu(module_id_t module_idP, 
+                    uint8_t CC_id,
+                    frame_t frameP,
+                    int slotP,
+                    uint8_t * pdu,
+                    uint16_t pdu_len,
+                    uint8_t gNB_index,
+                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
+
+void nr_ue_process_mac_pdu(module_id_t module_idP,
+                           uint8_t CC_id,
+                           frame_t frameP,
+                           uint8_t *pduP, 
+                           uint16_t mac_pdu_len,
+                           uint8_t gNB_index,
+                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
-
-void nr_ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframeP, uint8_t * sdu, uint16_t sdu_len, uint8_t gNB_index);
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot);
 
 void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-	 		 int dci_format,
-		 	 uint8_t dci_length,
-			 uint16_t rnti,
-			 uint64_t *dci_pdu,
-			 nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
+                         int dci_format,
+                         uint8_t dci_length,
+                         uint16_t rnti,
+                         uint64_t *dci_pdu,
+                         nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
 
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,

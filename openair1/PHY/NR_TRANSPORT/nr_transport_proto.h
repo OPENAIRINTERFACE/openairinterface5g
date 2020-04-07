@@ -62,17 +62,14 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
+    @param is_dmrs_symbol, flag to indicate wether this OFDM symbol contains DMRS symbols or not.
 
 */
-void nr_ulsch_extract_rbs_single(int **rxdataF,
-                                 int **ul_ch_estimates,
-                                 int **rxdataF_ext,
-                                 int **ul_ch_estimates_ext,
-                                 uint32_t rxdataF_ext_offset,
-                                 // unsigned int *rb_alloc, [hna] Resource Allocation Type 1 is assumed only for the moment
+void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
+                                 NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
-                                 unsigned short start_rb,
-                                 unsigned short nb_rb_pusch,
+                                 uint8_t is_dmrs_symbol,
+                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
@@ -80,7 +77,8 @@ void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_gNB_ULSCH_t **ulsch_gNB,
                             uint8_t symbol,
                             uint8_t start_symbol,
-                            uint16_t nb_rb);
+                            uint16_t nb_rb,
+                            pusch_dmrs_type_t pusch_dmrs_type);
 
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
@@ -118,7 +116,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                 int **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 unsigned char symbol,
-                                uint8_t pilots,
+                                uint8_t is_dmrs_symbol,
                                 unsigned char mod_order,
                                 unsigned short nb_rb,
                                 unsigned char output_shift);

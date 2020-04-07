@@ -39,7 +39,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 
-void nr_gold_pusch(PHY_VARS_gNB* gNB, unsigned short lbar,unsigned short *n_idDMRS, unsigned short length_dmrs);
+void nr_gold_pusch(PHY_VARS_gNB* gNB, uint32_t *Nid);
 
 int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned int Ns,
@@ -47,5 +47,6 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      int32_t *output,
                      unsigned short p,
                      unsigned char lp,
-                     unsigned short nb_pusch_rb);
+                     unsigned short nb_pusch_rb,
+                     uint8_t dmrs_type);
 #endif

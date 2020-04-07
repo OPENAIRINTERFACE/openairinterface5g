@@ -59,6 +59,7 @@
 #include "UTIL/MATH/oml.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
+#include "lte-softmodem.h"
 #include "common/config/config_userapi.h"
 #include "T.h"
 
@@ -87,7 +88,7 @@ extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 extern void multicast_link_start(void (*rx_handlerP) (unsigned int, char *),
                                  unsigned char _multicast_group, char *multicast_ifname);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
-extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
+extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
@@ -208,10 +209,10 @@ char uecap_xer[1024];
 
 
 void init_thread(int sched_runtime,
-		         int sched_deadline,
-				 int sched_fifo,
-				 cpu_set_t *cpuset,
-				 char *name)
+                 int sched_deadline,
+                 int sched_fifo,
+                 cpu_set_t *cpuset,
+                 char *name)
 {
 #ifdef DEADLINE_SCHEDULER
 
@@ -255,16 +256,16 @@ void init_thread(int sched_runtime,
 }
 
 void init_UE(int nb_inst,
-		     int eMBMS_active,
-			 int uecap_xer_in,
-			 int timing_correction,
-			 int phy_test,
-			 int UE_scan,
-			 int UE_scan_carrier,
-			 runmode_t mode,
-			 int rxgain,
-			 int txpowermax,
-			 LTE_DL_FRAME_PARMS *fp0)
+             int eMBMS_active,
+             int uecap_xer_in,
+             int timing_correction,
+             int phy_test,
+             int UE_scan,
+             int UE_scan_carrier,
+             runmode_t mode,
+             int rxgain,
+             int txpowermax,
+             LTE_DL_FRAME_PARMS *fp0)
 {
   PHY_VARS_UE *UE;
   int         inst;
@@ -397,9 +398,9 @@ void init_UE(int nb_inst,
 // Initiating all UEs within a single set of threads for PHY_STUB. Future extensions -> multiple
 // set of threads for multiple UEs.
 void init_UE_stub_single_thread(int nb_inst,
-		                        int eMBMS_active,
-								int uecap_xer_in,
-								char *emul_iface)
+                                int eMBMS_active,
+                                int uecap_xer_in,
+                                char *emul_iface)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization, nb_inst: %d \n", nb_inst);
@@ -423,9 +424,9 @@ void init_UE_stub_single_thread(int nb_inst,
 
 
 void init_UE_stub(int nb_inst,
-		          int eMBMS_active,
-				  int uecap_xer_in,
-				  char *emul_iface)
+                  int eMBMS_active,
+                  int uecap_xer_in,
+                  char *emul_iface)
 {
   int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
@@ -899,7 +900,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
 unsigned int emulator_absSF;
 
 void ue_stub_rx_handler(unsigned int num_bytes,
-		                char *rx_buffer)
+                        char *rx_buffer)
 {
   PHY_VARS_UE *UE;
   UE = PHY_vars_UE_g[0][0];
@@ -991,6 +992,19 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
   UE = rtd->UE;
 
+  UL_INFO = (UL_IND_t *)malloc(sizeof(UL_IND_t));
+  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_rx_indication_pdu_t));
+  UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_crc_indication_pdu_t));
+  UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_harq_indication_pdu_t));
+  UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_sr_indication_pdu_t));
+  UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list =  calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_raw_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
+
   if(ue_thread_id == 0) {
     phy_stub_ticking->ticking_var = -1;
     proc->subframe_rx=proc->sub_frame_start;
@@ -1063,20 +1077,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         initRefTimes(t3);
         pickTime(current);
         updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");*/
-      // Not sure whether we should put the memory allocation here and not sure how much memory
-      //we should allocate for each subframe cycle.
-      UL_INFO = (UL_IND_t *)malloc(sizeof(UL_IND_t));
-      UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = (nfapi_rx_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_rx_indication_pdu_t));
-      UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
-      UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = (nfapi_crc_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_crc_indication_pdu_t));
-      UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
-      UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = (nfapi_harq_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_harq_indication_pdu_t));
-      UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
-      UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = (nfapi_sr_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_sr_indication_pdu_t));
-      UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list =  (nfapi_cqi_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_cqi_indication_pdu_t));
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = (nfapi_cqi_indication_raw_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_cqi_indication_raw_pdu_t));
-      UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
       if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
         LOG_E( MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
@@ -1252,6 +1252,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
       }
 
+      if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
+        oai_nfapi_cqi_indication(&UL_INFO->cqi_ind);
+        UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
+      }
+
       if(UL_INFO->harq_ind.harq_indication_body.number_of_harqs>0) {
         //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
         oai_nfapi_harq_indication(&UL_INFO->harq_ind);
@@ -1265,30 +1270,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
         UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
       }
-
-      // Free UL_INFO messages
-      //if(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list != NULL){
-      free(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list);
-      UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = NULL;
-      //}
-      //if(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list != NULL){
-      free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list);
-      UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = NULL;
-      //}
-      //if(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list !=NULL){
-      free(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list);
-      UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = NULL;
-      //}
-      //if(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list!=NULL){
-      free(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list);
-      UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = NULL;
-      //}
-      free(UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list);
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = NULL;
-      free(UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list);
-      UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = NULL;
-      free(UL_INFO);
-      UL_INFO = NULL;
 
       // De-allocate memory of nfapi requests copies before next subframe round
       if(dl_config_req!=NULL) {
@@ -1307,6 +1288,13 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
 
       if(tx_request_pdu_list!=NULL) {
+        for (int i = 0; i < tx_req_num_elems; i++) {
+          for (int j = 0; j < tx_request_pdu_list[i].num_segments; j++) {
+            free(tx_request_pdu_list[i].segments[j].segment_data);
+            tx_request_pdu_list[i].segments[j].segment_data = NULL;
+          }
+        }
+        tx_req_num_elems = 0;
         free(tx_request_pdu_list);
         tx_request_pdu_list = NULL;
       }
@@ -1332,6 +1320,22 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
     }
   }
+
+  // Free UL_INFO messages
+  free(UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list);
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = NULL;
+  free(UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list);
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = NULL;
+  free(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list);
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = NULL;
+  free(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list);
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = NULL;
+  free(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list);
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = NULL;
+  free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list);
+  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = NULL;
+  free(UL_INFO);
+  UL_INFO = NULL;
 
   // thread finished
   free(arg);
@@ -1511,6 +1515,23 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
  * \param arg unused
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
+void write_dummy(PHY_VARS_UE *UE,  openair0_timestamp timestamp) {
+  // we have to write to tell explicitly to the eNB, else it will wait for us forever
+  // we write the next subframe (always write in future of what we received)
+  //
+  struct complex16 v= {0};
+  void *samplesVoid[UE->frame_parms.nb_antennas_tx];
+  
+  for ( int i=0; i < UE->frame_parms.nb_antennas_tx; i++)
+    samplesVoid[i]=(void *)&v;
+  
+  AssertFatal(1 == UE->rfdevice.trx_write_func(&UE->rfdevice,
+                      timestamp+2*UE->frame_parms.samples_per_tti,
+                      samplesVoid, 
+                      1,
+                      UE->frame_parms.nb_antennas_tx,
+                      1),"");
+}
 
 void *UE_thread(void *arg)
 {
@@ -1564,16 +1585,32 @@ void *UE_thread(void *arg)
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
-        for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-          rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
 
-        if (UE->mode != loop_through_memory)
-          AssertFatal( UE->frame_parms.samples_per_tti*10 ==
-                       UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                                  &timestamp,
-                                                  rxp,
-                                                  UE->frame_parms.samples_per_tti*10,
-                                                  UE->frame_parms.nb_antennas_rx), "");
+        if (UE->mode != loop_through_memory) {
+          if (IS_SOFTMODEM_RFSIM) {
+            for(int sf=0; sf<10; sf++) {
+              for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+                rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
+
+              AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
+                              &timestamp,
+                              rxp,
+                              UE->frame_parms.samples_per_tti,
+                              UE->frame_parms.nb_antennas_rx), "");
+              write_dummy(UE, timestamp);
+            }
+          } else {
+            for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+              rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
+
+            AssertFatal( UE->frame_parms.samples_per_tti*10 ==
+                         UE->rfdevice.trx_read_func(&UE->rfdevice,
+                                                    &timestamp,
+                                                    rxp,
+                                                    UE->frame_parms.samples_per_tti*10,
+                                                    UE->frame_parms.nb_antennas_rx), "");
+          }
+        }
 
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         instance_cnt_synch = ++UE->proc.instance_cnt_synch;
@@ -1591,21 +1628,22 @@ void *UE_thread(void *arg)
         (void)dummy_rx; /* avoid gcc warnings */
         usleep(500);
 #else
-
         // grab 10 ms of signal into dummy buffer
         if (UE->mode != loop_through_memory) {
           for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
             rxp[i] = (void *)&dummy_rx[i][0];
 
-          for (int sf=0; sf<10; sf++)
+          for (int sf=0; sf<10; sf++) {
             //      printf("Reading dummy sf %d\n",sf);
             UE->rfdevice.trx_read_func(&UE->rfdevice,
                                        &timestamp,
                                        rxp,
                                        UE->frame_parms.samples_per_tti,
                                        UE->frame_parms.nb_antennas_rx);
+            if (IS_SOFTMODEM_RFSIM )
+              write_dummy(UE, timestamp);
+          }
         }
-
 #endif
       }
     } // UE->is_synchronized==0
@@ -1616,12 +1654,17 @@ void *UE_thread(void *arg)
         if (UE->mode != loop_through_memory) {
           if (UE->no_timing_correction==0) {
             LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-            AssertFatal(UE->rx_offset ==
-                        UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                                   &timestamp,
-                                                   (void **)UE->common_vars.rxdata,
-                                                   UE->rx_offset,
-                                                   UE->frame_parms.nb_antennas_rx),"");
+            while ( UE->rx_offset ) {
+              size_t s=min(UE->rx_offset,UE->frame_parms.samples_per_tti);
+              AssertFatal(s == UE->rfdevice.trx_read_func(&UE->rfdevice,
+                             &timestamp,
+                             (void **)UE->common_vars.rxdata,
+                             s,
+                             UE->frame_parms.nb_antennas_rx),"");
+              if (IS_SOFTMODEM_RFSIM )
+                write_dummy(UE, timestamp);
+              UE->rx_offset-=s;
+            }
           }
 
           UE->rx_offset=0;
@@ -1662,6 +1705,7 @@ void *UE_thread(void *arg)
 
             pthread_mutex_unlock(&proc->mutex_rxtx);
           }
+          usleep(300);
         }
 
         LOG_D(PHY,"Process Subframe %d thread Idx %d \n", sub_frame, UE->current_thread_id[sub_frame]);
@@ -2014,7 +2058,7 @@ void fill_ue_band_info(void)
 #endif
 
 int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
-		             openair0_config_t *openair0_cfg)
+                     openair0_config_t *openair0_cfg)
 {
   int i, CC_id;
   LTE_DL_FRAME_PARMS *frame_parms;
@@ -2206,8 +2250,8 @@ int init_timer_thread(void)
  * fix it somehow
  */
 int8_t find_dlsch(uint16_t rnti,
-		          PHY_VARS_eNB *eNB,
-				  find_type_t type)
+                  PHY_VARS_eNB *eNB,
+                  find_type_t type)
 {
   printf("you cannot read this\n");
   abort();

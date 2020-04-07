@@ -155,30 +155,30 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
 		   RU_t *phy_vars_ru,
                    int UE_id)
 {
-  int i,i2,arx,atx,ind,k;
+  int i, arx; //int i,i2,arx,atx,ind,k;
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_gnb->frame_parms;
   int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
   int16_t **rxsig_t, **rxsig_f;
-  int16_t **chest_t=NULL;
-  int16_t **chest_f=NULL;
-  int16_t *pusch_llr=NULL;
-  int32_t *pusch_comp=NULL;
-  int32_t *pucch1_comp=NULL;
-  int32_t *pucch1_thres=NULL;
-  int32_t *pucch1ab_comp=NULL;
-  float Re,Im,ymax;
+  // int16_t **chest_t=NULL;
+  // int16_t **chest_f=NULL;
+  // int16_t *pusch_llr=NULL;
+  // int32_t *pusch_comp=NULL;
+  // int32_t *pucch1_comp=NULL;
+  // int32_t *pucch1_thres=NULL;
+  // int32_t *pucch1ab_comp=NULL;
+  // float Re,Im,ymax;
   float *llr, *bit;
-  float I[nsymb_ce*2], Q[nsymb_ce*2];
-  float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240],C_pucch[10240];
+  // float I[nsymb_ce*2], Q[nsymb_ce*2];
+  // float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240],C_pucch[10240];
   float *rxsig_t_dB[nb_antennas_rx];
   float *rxsig_f_dB[nb_antennas_rx];
   float time[frame_parms->samples_per_frame];
-  float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-//  uint32_t total_dlsch_bitrate = phy_vars_gnb->total_dlsch_bitrate;
+  // float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
+  // uint32_t total_dlsch_bitrate = phy_vars_gnb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
-  uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
+  // uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
   int Qm = 2;
 
   /*

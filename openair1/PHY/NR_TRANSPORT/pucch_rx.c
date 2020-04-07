@@ -17,13 +17,77 @@
 
 #include "T.h"
 
-#define DEBUG_NR_PUCCH_RX 1
+//#define DEBUG_NR_PUCCH_RX 1
 
-void nr_decode_pucch0(int32_t **rxdataF,
-                      NR_DL_FRAME_PARMS *frame_parms,
+int get_pucch0_cs_lut_index(PHY_VARS_gNB *gNB,nfapi_nr_pucch_pdu_t* pucch_pdu) {
+
+  int i=0;
+
+#ifdef DEBUG_NR_PUCCH_RX
+  printf("getting index for LUT with %d entries, Nid %d\n",gNB->pucch0_lut.nb_id, pucch_pdu->hopping_id);
+#endif
+
+  for (i=0;i<gNB->pucch0_lut.nb_id;i++) {
+    if (gNB->pucch0_lut.Nid[i] == pucch_pdu->hopping_id) break;
+  }
+#ifdef DEBUG_NR_PUCCH_RX
+  printf("found index %d\n",i);
+#endif
+  if (i<gNB->pucch0_lut.nb_id) return(i);
+
+#ifdef DEBUG_NR_PUCCH_RX
+  printf("Initializing PUCCH0 LUT index %i with Nid %d\n",i, pucch_pdu->hopping_id);
+#endif
+  // initialize
+  gNB->pucch0_lut.Nid[gNB->pucch0_lut.nb_id]=pucch_pdu->hopping_id;
+  for (int slot=0;slot<10<<pucch_pdu->subcarrier_spacing;slot++)
+    for (int symbol=0;symbol<14;symbol++)
+      gNB->pucch0_lut.lut[gNB->pucch0_lut.nb_id][slot][symbol] = (int)floor(nr_cyclic_shift_hopping(pucch_pdu->hopping_id,0,0,symbol,0,slot)/0.5235987756);
+  gNB->pucch0_lut.nb_id++;
+  return(gNB->pucch0_lut.nb_id-1);
+}
+
+
+  
+int16_t idft12_re[12][12] = {
+  {23170,23170,23170,23170,23170,23170,23170,23170,23170,23170,23170,23170},
+  {23170,20066,11585,0,-11585,-20066,-23170,-20066,-11585,0,11585,20066},
+  {23170,11585,-11585,-23170,-11585,11585,23170,11585,-11585,-23170,-11585,11585},
+  {23170,0,-23170,0,23170,0,-23170,0,23170,0,-23170,0},
+  {23170,-11585,-11585,23170,-11585,-11585,23170,-11585,-11585,23170,-11585,-11585},
+  {23170,-20066,11585,0,-11585,20066,-23170,20066,-11585,0,11585,-20066},
+  {23170,-23170,23170,-23170,23170,-23170,23170,-23170,23170,-23170,23170,-23170},
+  {23170,-20066,11585,0,-11585,20066,-23170,20066,-11585,0,11585,-20066},
+  {23170,-11585,-11585,23170,-11585,-11585,23170,-11585,-11585,23170,-11585,-11585},
+  {23170,0,-23170,0,23170,0,-23170,0,23170,0,-23170,0},
+  {23170,11585,-11585,-23170,-11585,11585,23170,11585,-11585,-23170,-11585,11585},
+  {23170,20066,11585,0,-11585,-20066,-23170,-20066,-11585,0,11585,20066}
+};
+
+int16_t idft12_im[12][12] = {
+  {0,0,0,0,0,0,0,0,0,0,0,0},
+  {0,11585,20066,23170,20066,11585,0,-11585,-20066,-23170,-20066,-11585},
+  {0,20066,20066,0,-20066,-20066,0,20066,20066,0,-20066,-20066},
+  {0,23170,0,-23170,0,23170,0,-23170,0,23170,0,-23170},
+  {0,20066,-20066,0,20066,-20066,0,20066,-20066,0,20066,-20066},
+  {0,11585,-20066,23170,-20066,11585,0,-11585,20066,-23170,20066,-11585},
+  {0,0,0,0,0,0,0,0,0,0,0,0},
+  {0,-11585,20066,-23170,20066,-11585,0,11585,-20066,23170,-20066,11585},
+  {0,-20066,20066,0,-20066,20066,0,-20066,20066,0,-20066,20066},
+  {0,-23170,0,23170,0,-23170,0,23170,0,-23170,0,23170},
+  {0,-20066,-20066,0,20066,20066,0,-20066,-20066,0,20066,20066},
+  {0,-11585,-20066,-23170,-20066,-11585,0,11585,20066,23170,20066,11585}
+};
+
+
+void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
+
+
+  int32_t **rxdataF = gNB->common_vars.rxdataF;
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
 
   int nr_sequences;
   const uint8_t *mcs;
@@ -38,6 +102,8 @@ void nr_decode_pucch0(int32_t **rxdataF,
     mcs=table2_mcs;
     nr_sequences=8>>(1-pucch_pdu->sr_flag);
   }
+
+  int cs_ind = get_pucch0_cs_lut_index(gNB,pucch_pdu);
   /*
    * Implement TS 38.211 Subclause 6.3.2.3.1 Sequence generation
    *
@@ -72,17 +138,25 @@ void nr_decode_pucch0(int32_t **rxdataF,
   uint8_t n_hop = 0;  // Frequnecy hopping not implemented FIXME!!
 
   // x_n contains the sequence r_u_v_alpha_delta(n)
-  int16_t x_n_re[nr_sequences][24],x_n_im[nr_sequences][24];
+
   int n,i,l;
+  nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,n_hop,slot,&u,&v); // calculating u and v value
+
+  uint32_t re_offset=0;
+  uint8_t l2;
+
+#ifdef OLD_IMPL
+  int16_t x_n_re[nr_sequences][24],x_n_im[nr_sequences][24];
+
   for(i=0;i<nr_sequences;i++){ 
   // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
     for (l=0; l<pucch_pdu->nr_of_symbols; l++){
-
-      nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,n_hop,slot,&u,&v); // calculating u and v value
       alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
 #ifdef DEBUG_NR_PUCCH_RX
       printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d/%d,mcs %d)\n",u,v,alpha,l,l+pucch_pdu->start_symbol_index,mcs[i]);
+      printf("lut output %d\n",gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index]);
 #endif
+      alpha=0.0;
       for (n=0; n<12; n++){
         x_n_re[i][(12*l)+n] = (int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
                                   - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))); // Re part of base sequence shifted by alpha
@@ -100,10 +174,7 @@ void nr_decode_pucch0(int32_t **rxdataF,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources
    */
-  uint32_t re_offset=0;
-  uint8_t l2;
 
-#ifdef OLD_IMPL
   int16_t r_re[24],r_im[24];
 
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
@@ -151,14 +222,14 @@ void nr_decode_pucch0(int32_t **rxdataF,
   }
 #else
 
-  int16_t *x_re = x_n_re[0],*x_im = x_n_im[0];
-  int16_t xr[32]  __attribute__((aligned(32)));
-  int16_t xrt[32] __attribute__((aligned(32)));
+  int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
+  int16_t xr[24]  __attribute__((aligned(32)));
+  int16_t xrt[24] __attribute__((aligned(32)));
   int32_t xrtmag=0;
   int maxpos=0;
   int n2=0;
   uint8_t index=0;
-  memset((void*)xr,0,32*sizeof(int16_t));
+  memset((void*)xr,0,24*sizeof(int16_t));
 
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
 
@@ -169,34 +240,47 @@ void nr_decode_pucch0(int32_t **rxdataF,
   
     AssertFatal(re_offset+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
 
-    n2=0;
     int16_t *r=(int16_t*)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size+re_offset)];
-    if (l==0) for (n=0;n<12;n++,n2+=2) {
-	xr[n2]  =((int32_t)x_re[n]*r[n2]+(int32_t)x_im[n]*r[n2+1])>>15;
-	xr[n2+1]=((int32_t)x_re[n]*r[n2+1]-(int32_t)x_im[n]*r[n2])>>15;
-	printf("x (%d,%d), r (%d,%d), xr (%d,%d)\n",
-	       x_re[n],x_im[n],r[n2],r[n2+1],xr[n2],xr[n2+1]);
-      }
-    else for (n=0;n<12;n++,n2+=2) {
-	xr[n2]  +=((int32_t)x_re[n]*r[n2]+(int32_t)x_im[n]*r[n2+1])>>15;
-	xr[n2+1]+=((int32_t)x_re[n]*r[n2+1]-(int32_t)x_im[n]*r[n2])>>15;
-      }
-    x_re+=12;
-    x_im+=12;
-  }
-  idft16f(xr,xrt);
-  n2=0;
-  int32_t temp;
-  for (n=0;n<16;n++,n2+=2) {
+    for (n=0;n<12;n++,n2+=2) {
+      xr[n2]  =(int16_t)(((int32_t)x_re[n]*r[n2]+(int32_t)x_im[n]*r[n2+1])>>15);
+      xr[n2+1]=(int16_t)(((int32_t)x_re[n]*r[n2+1]-(int32_t)x_im[n]*r[n2])>>15);
 #ifdef DEBUG_NR_PUCCH_RX
-    printf("PUCCH IDFT[%d] = (%d,%d)\n",n,xrt[n2],xrt[n2+1]);
+      printf("x (%d,%d), r (%d,%d), xr (%d,%d)\n",
+	     x_re[n],x_im[n],r[n2],r[n2+1],xr[n2],xr[n2+1]);
 #endif
-    if ((temp=(int32_t)xrt[n2]*xrt[n2]+(int32_t)xrt[n2+1]*xrt[n2+1])<xrtmag) {
-      xrtmag=temp;
-      maxpos=n;
     }
   }
-  exit(-1);
+  int32_t corr_re,corr_im,temp;
+  int seq_index;
+
+  for(i=0;i<nr_sequences;i++){
+    corr_re=0;corr_im=0;
+    n2=0;
+    for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
+
+       seq_index = (pucch_pdu->initial_cyclic_shift+
+		   mcs[i]+
+		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
+      for (n=0;n<12;n++,n2+=2) {
+	corr_re+=(xr[n2]*idft12_re[seq_index][n]+xr[n2+1]*idft12_im[seq_index][n])>>15;
+	corr_im+=(xr[n2]*idft12_im[seq_index][n]-xr[n2+1]*idft12_re[seq_index][n])>>15;
+      }
+    }
+
+#ifdef DEBUG_NR_PUCCH_RX
+    printf("PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re,corr_im,10*log10(corr_re*corr_re + corr_im*corr_im));
+#endif
+    if ((temp=corr_re*corr_re + corr_im*corr_im)>xrtmag) {
+      xrtmag=temp;
+      maxpos=i;
+    }
+  }
+  
+#ifdef DEBUG_NR_PUCCH_RX
+  printf("PUCCH 0 : maxpos %d\n",maxpos);
+#endif
+
+  index=maxpos;
 #endif
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pdu_bit_map = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
