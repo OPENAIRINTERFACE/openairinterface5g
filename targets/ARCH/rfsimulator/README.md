@@ -1,3 +1,10 @@
+# :construction: **WORK IN PROGRESS** :exclamation:
+
+# **PLEASE IGNORE THE FOLLOWING PAGE** :exclamation:
+
+
+
+
 # General
 This is an RF simulator that allows to test OAI without an RF board. It replaces an actual RF board driver.
 
