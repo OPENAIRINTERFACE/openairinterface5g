@@ -258,11 +258,6 @@ typedef struct {
 
     } fapi_nr_ul_config_pucch_pdu;
 
-    typedef enum {pusch_freq_hopping_disabled = 0 , pusch_freq_hopping_enabled = 1}pusch_freq_hopping_t;
-    typedef struct{
-    uint8_t aperiodicSRS_ResourceTrigger;
-    } fapi_nr_ul_srs_config_t;
-
 typedef struct
 {
   uint8_t  rv_index;
@@ -378,43 +373,9 @@ typedef struct
   nfapi_nr_ue_dfts_ofdm_t dfts_ofdm;
   //beamforming
   nfapi_nr_ue_ul_beamforming_t beamforming;
-
+  //OAI specific
+  int8_t absolute_delta_PUSCH;
 } nfapi_nr_ue_pusch_pdu_t;
-
-typedef struct {
-        uint32_t TBS;
-        uint8_t bandwidth_part_ind;
-        uint16_t number_rbs;
-        uint16_t start_rb;
-        uint8_t frame_offset;
-        uint16_t number_symbols;
-        uint16_t start_symbol;
-        pusch_freq_hopping_t pusch_freq_hopping;
-        uint8_t mcs;
-        uint8_t mcs_table;
-        uint8_t ndi;
-        uint8_t rv;
-        uint8_t harq_process_nbr;
-        int8_t accumulated_delta_PUSCH;
-        int8_t absolute_delta_PUSCH;
-        uint8_t n_layers;
-        uint8_t tpmi;
-        //DMRS
-        uint16_t  ul_dmrs_symb_pos;
-        uint8_t n_dmrs_cdm_groups;
-        uint8_t dmrs_ports[4];
-        uint8_t n_front_load_symb;
-        fapi_nr_ul_srs_config_t srs_config;
-        uint8_t csi_reportTriggerSize;
-        uint8_t maxCodeBlockGroupsPerTransportBlock;
-        uint8_t ptrs_dmrs_association_port;
-        uint8_t beta_offset_ind;
-} fapi_nr_ul_config_pusch_pdu_rel15_t;
-
-typedef struct {
-  uint16_t rnti;
-  fapi_nr_ul_config_pusch_pdu_rel15_t ulsch_pdu_rel15;
-} fapi_nr_ul_config_pusch_pdu;
 
 typedef struct {
 
@@ -425,7 +386,7 @@ typedef struct {
   union {
     fapi_nr_ul_config_prach_pdu prach_config_pdu;
     fapi_nr_ul_config_pucch_pdu pucch_config_pdu;
-    fapi_nr_ul_config_pusch_pdu ulsch_config_pdu;
+    nfapi_nr_ue_pusch_pdu_t     pusch_config_pdu;
     fapi_nr_ul_config_srs_pdu srs_config_pdu;
   };
 } fapi_nr_ul_config_request_pdu_t;
@@ -466,7 +427,6 @@ typedef struct {
   uint8_t SubcarrierSpacing;  
   uint16_t number_rbs;
   uint16_t start_rb;
-  uint8_t frame_offset;
   uint16_t number_symbols;
   uint16_t start_symbol;
   uint16_t dlDmrsSymbPos;  

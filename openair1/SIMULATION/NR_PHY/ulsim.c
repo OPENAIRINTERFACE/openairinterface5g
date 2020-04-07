@@ -587,21 +587,21 @@ int main(int argc, char **argv)
       ul_config.slot = slot;
       ul_config.number_pdus = 1;
       ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-      ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ul_dmrs_symb_pos = l_prime_mask;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs_table = 0;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.TBS = TBS;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
+      ul_config.ul_config_list[0].pusch_config_pdu.rnti = n_rnti;
+      ul_config.ul_config_list[0].pusch_config_pdu.rb_size = nb_rb;
+      ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
+      ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
+      ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
+      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
+      ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
+      ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
-      //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
       // set FAPI parameters for UE, put them in the scheduled response and call
       nr_ue_scheduled_response(&scheduled_response);

@@ -357,9 +357,9 @@ static void UE_synch(void *arg) {
 }
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
-  uint32_t nb_rb, start_rb;
-  uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
-  uint16_t n_rnti, l_prime_mask;
+  uint32_t rb_size, rb_start;
+  uint8_t nr_of_symbols, start_symbol_index, mcs_index, mcs_table, nrOfLayers, harq_process_id, rv_index;
+  uint16_t rnti, l_prime_mask;
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
@@ -381,34 +381,34 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
     //--------------------------Temporary configuration-----------------------------//
-    n_rnti = 0x1234;
-    nb_rb = 50;
-    start_rb = 0;
-    nb_symb_sch = 12;
-    start_symbol = 2;
-    precod_nbr_layers = 1;
-    mcs = 9;
+    rnti = 0x1234;
+    rb_size = 50;
+    rb_start = 0;
+    nr_of_symbols = 12;
+    start_symbol_index = 2;
+    nrOfLayers = 1;
+    mcs_index = 9;
     mcs_table = 0;
-    harq_pid = 0;
-    rvidx = 0;
-    l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, pusch_len1);
+    harq_process_id = 0;
+    rv_index = 0;
+    l_prime_mask = get_l_prime(nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
     //------------------------------------------------------------------------------//
 
     scheduled_response.ul_config->slot = 8;
     scheduled_response.ul_config->number_pdus = 1;
     scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ul_dmrs_symb_pos = l_prime_mask;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = mcs;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs_table = mcs_table;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
 
     nr_ue_scheduled_response(&scheduled_response);
     
@@ -595,7 +595,6 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash)
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-    void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
     *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {

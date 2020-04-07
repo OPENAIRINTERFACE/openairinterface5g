@@ -116,22 +116,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
       for(i=0; i<ul_config->number_pdus; ++i){
 	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH){
 	  // pusch config pdu
-	  fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
-	  uint8_t current_harq_pid = pusch_config_pdu->harq_process_nbr;
+	  nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+	  uint8_t current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
 	  nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch0->harq_processes[current_harq_pid]->pusch_pdu;
 
-	  pusch_pdu->rnti                          = ul_config->ul_config_list[i].ulsch_config_pdu.rnti;
-	  pusch_pdu->rb_size                       = pusch_config_pdu->number_rbs;
-	  pusch_pdu->rb_start                      = pusch_config_pdu->start_rb;
-	  pusch_pdu->nr_of_symbols                 = pusch_config_pdu->number_symbols;
-	  pusch_pdu->start_symbol_index            = pusch_config_pdu->start_symbol;
-	  pusch_pdu->ul_dmrs_symb_pos              = pusch_config_pdu->ul_dmrs_symb_pos;
-	  pusch_pdu->mcs_index                     = pusch_config_pdu->mcs;
-	  pusch_pdu->mcs_table                     = pusch_config_pdu->mcs_table;
-	  pusch_pdu->nrOfLayers                    = pusch_config_pdu->n_layers;
-	  pusch_pdu->pusch_data.new_data_indicator = pusch_config_pdu->ndi;
-	  pusch_pdu->pusch_data.rv_index           = pusch_config_pdu->rv;
-	  pusch_pdu->pusch_data.tb_size            = pusch_config_pdu->TBS;
+	  memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
 
 	  ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 	}

@@ -423,13 +423,6 @@ int main(int argc, char **argv)
   for (i = 0; i < TBS / 8; i++)
     test_input[i] = (unsigned char) rand();
 
-
-  /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
-  ///////////
-  ulsch_ue->pusch_pdu.rnti = n_rnti;
-  ///////////
-  ////////////////////////////////////////////////////////////////////////////////////////////
-
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
   NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
@@ -439,6 +432,7 @@ int main(int argc, char **argv)
 
   if (harq_process_ul_ue) {
 
+    harq_process_ul_ue->pusch_pdu.rnti = n_rnti;
     harq_process_ul_ue->pusch_pdu.mcs_index = Imcs;
     harq_process_ul_ue->pusch_pdu.nrOfLayers = Nl;
     harq_process_ul_ue->pusch_pdu.rb_size = nb_rb;
