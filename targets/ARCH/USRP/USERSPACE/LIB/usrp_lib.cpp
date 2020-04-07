@@ -441,6 +441,7 @@ static int trx_usrp_write(openair0_device *device,
     }
 
     if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+    return ret;
   }
   else{
     pthread_mutex_lock(&write_thread->mutex_write);
@@ -464,9 +465,9 @@ static int trx_usrp_write(openair0_device *device,
     write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
     pthread_cond_signal(&write_thread->cond_write);
     pthread_mutex_unlock(&write_thread->mutex_write);
+    return 0;
   }
 
-  return 0;
 }
 
 //-----------------------start--------------------------
