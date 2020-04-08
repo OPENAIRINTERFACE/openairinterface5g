@@ -541,7 +541,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     CCEIndices,
-                                    dl_req, 
+                                    dl_req,
+				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
