@@ -359,10 +359,18 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
     container = &pdu->choice.initiatingMessage.value.choice.DownlinkNASTransport;
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     mme_ue_s1ap_id = ie->value.choice.MME_UE_S1AP_ID;
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     enb_ue_s1ap_id = ie->value.choice.ENB_UE_S1AP_ID;
 
     if ((ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance,
@@ -417,6 +425,10 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_NAS_PDU, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     /* Forward the NAS PDU to RRC */
     s1ap_eNB_itti_send_nas_downlink_ind(s1ap_eNB_instance->instance,
                                         ue_desc_p->ue_initial_id,

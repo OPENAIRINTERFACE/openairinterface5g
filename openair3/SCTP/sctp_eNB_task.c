@@ -943,10 +943,12 @@ sctp_eNB_read_from_socket(
                      &sinfo, &flags);
 
     if (n < 0) {
-        if (errno == ENOTCONN) {
+        if( (errno == ENOTCONN) || (errno == ECONNRESET) || (errno == ETIMEDOUT) || (errno == ECONNREFUSED) )
+        {
             itti_unsubscribe_event_fd(TASK_SCTP, sctp_cnx->sd);
 
             SCTP_DEBUG("Received not connected for sd %d\n", sctp_cnx->sd);
+            SCTP_ERROR("sctp_recvmsg (fd %d, len %d ): %s:%d\n", sctp_cnx->sd, n, strerror(errno), errno);
 
             sctp_itti_send_association_resp(
                 sctp_cnx->task_id, sctp_cnx->instance, -1,

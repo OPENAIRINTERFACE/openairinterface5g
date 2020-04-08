@@ -62,6 +62,10 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
                  S1AP_OverloadResponse_PR_overloadAction,
                  S1AP_OverloadResponse_PR_overloadAction, 0, 0);
     }
+    else
+    {
+        return -1;
+    }
     /* Non UE-associated signalling -> stream 0 */
     if (stream != 0) {
       S1AP_ERROR("[SCTP %d] Received s1 overload start on stream != 0 (%d)\n",

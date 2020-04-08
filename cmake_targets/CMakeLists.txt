@@ -540,6 +540,7 @@ add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB_overload.c
   ${S1AP_DIR}/s1ap_eNB_trace.c
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
+  ${S1AP_DIR}/s1ap_eNB_timer.c
   )
 add_dependencies(S1AP_ENB rrc_flag s1ap_flag)
 

@@ -2426,6 +2426,65 @@ int RCconfig_S1(
                         "to\n"
                         "    tracking_area_code  =  1; // no string!!\n"
                         "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
+            if(*ENBParamList.paramarray[k][ENB_S1SETUP_RSP_TIMER_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setuprsp_wait_timer = *ENBParamList.paramarray[k][ENB_S1SETUP_RSP_TIMER_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "s1setup_rsp_timer value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_S1SETUP_RSP_TIMER_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setuprsp_wait_timer = 5;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_S1SETUP_REQ_TIMER_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_wait_timer = *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_TIMER_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "s1setup_req_timer value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_TIMER_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_wait_timer = 5;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_S1SETUP_REQ_COUNT_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_count = *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_COUNT_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "s1setup_req_count value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_COUNT_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_count = 0xffff;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_SCTP_REQ_TIMER_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_timer = *ENBParamList.paramarray[k][ENB_SCTP_REQ_TIMER_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "sctp_req_timer value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_SCTP_REQ_TIMER_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_timer = 180;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_SCTP_REQ_COUNT_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_count = *ENBParamList.paramarray[k][ENB_SCTP_REQ_COUNT_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "sctp_req_count value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_SCTP_REQ_COUNT_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_count = 0xffff;
+            }
             config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
 
             if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6) {

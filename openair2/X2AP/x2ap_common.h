@@ -84,7 +84,7 @@ extern int asn1_xer_print;
         break; \
       } \
     } \
-    if (mandatory) DevAssert(ie != NULL); \
+/*    if (mandatory) DevAssert(ie != NULL); \*/ \
   } while(0)
 
 /** \brief Function callback prototype.
