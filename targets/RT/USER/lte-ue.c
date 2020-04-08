@@ -1108,6 +1108,45 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
     }
 
+    if (dl_config_req && tx_request_pdu_list) {
+      nfapi_dl_config_request_body_t* dl_config_req_body = &dl_config_req->dl_config_request_body;
+      for (int i = 0; i < dl_config_req_body->number_pdu; ++i) {
+        nfapi_dl_config_request_pdu_t* pdu = &dl_config_req_body->dl_config_pdu_list[i];
+        if (pdu->pdu_type ==  NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE) {
+          i += 1;
+          AssertFatal(i < dl_config_req->dl_config_request_body.number_pdu,
+                      "Need PDU following DCI at index %d, but not found\n",
+                      i);
+          nfapi_dl_config_request_pdu_t *dlsch = &dl_config_req_body->dl_config_pdu_list[i];
+          if (dlsch->pdu_type != NFAPI_DL_CONFIG_DLSCH_PDU_TYPE) {
+            LOG_E(MAC, "expected DLSCH PDU at index %d\n", i);
+            continue;
+          }
+          dl_config_req_UE_MAC_dci(NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),
+                                   NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
+                                   pdu,
+                                   dlsch,
+                                   ue_num);
+        } else if (pdu->pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE) {
+          dl_config_req_UE_MAC_bch(NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),
+                                   NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
+                                   pdu,
+                                   ue_num);
+        }
+      }
+    }
+
+    if (hi_dci0_req) {
+      nfapi_hi_dci0_request_body_t *hi_dci0_body = &hi_dci0_req->hi_dci0_request_body;
+      for (int i = 0; i < hi_dci0_body->number_of_dci + hi_dci0_body->number_of_hi; i++) {
+        nfapi_hi_dci0_request_pdu_t* pdu = &hi_dci0_body->hi_dci0_pdu_list[i];
+        hi_dci0_req_UE_MAC(NFAPI_SFNSF2SFN(hi_dci0_req->sfn_sf),
+                           NFAPI_SFNSF2SF(hi_dci0_req->sfn_sf),
+                           pdu,
+                           ue_num);
+      }
+    }
+
     //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++) {
     for (ue_index=0; ue_index < ue_num; ue_index++) {
       ue_Mod_id = ue_thread_id + NB_THREAD_INST*ue_index;
@@ -1135,15 +1174,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         }
 
         phy_procedures_UE_SL_RX(UE,proc);
-
-        if (dl_config_req!=NULL && tx_request_pdu_list!=NULL) {
-          //if(dl_config_req!= NULL) {
-          dl_config_req_UE_MAC(dl_config_req, ue_Mod_id);
-        }
-
-        if (hi_dci0_req!=NULL && hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL) {
-          hi_dci0_req_UE_MAC(hi_dci0_req, ue_Mod_id);
-        }
 
         if(NFAPI_MODE!=NFAPI_UE_STUB_PNF)
           phy_procedures_UE_SL_TX(UE,proc);
@@ -1413,12 +1443,14 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
       oai_subframe_ind(timer_frame, timer_subframe);
 
       if(dl_config_req!= NULL) {
-        dl_config_req_UE_MAC(dl_config_req, Mod_id);
+        AssertFatal(0, "dl_config_req_UE_MAC() not handled\n");
+        //dl_config_req_UE_MAC(dl_config_req, Mod_id);
       }
 
       //if(UE_mac_inst[Mod_id].hi_dci0_req!= NULL){
       if (hi_dci0_req!=NULL && hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL) {
-        hi_dci0_req_UE_MAC(hi_dci0_req, Mod_id);
+        AssertFatal(0, "hi_dci0_req_UE_MAC() not handled\n");
+        //hi_dci0_req_UE_MAC(hi_dci0_req, Mod_id);
         //if(UE_mac_inst[Mod_id].hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL){
         free(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list);
         hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list = NULL;
