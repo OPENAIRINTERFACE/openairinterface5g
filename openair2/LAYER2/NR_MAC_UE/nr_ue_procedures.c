@@ -65,6 +65,8 @@
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 #define DEBUG_EXTRACT_DCI 1
 
+extern dci_pdu_rel15_t *def_dci_pdu_rel15;
+
 extern void mac_rlc_data_ind     (
 				  const module_id_t         module_idP,
 				  const rnti_t              rntiP,
@@ -1910,16 +1912,15 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
 int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index,fapi_nr_dci_indication_pdu_t *dci) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  nr_dci_pdu_rel15_t dci_pdu_rel15;
 
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
-  nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,&dci_pdu_rel15);
-  nr_ue_process_dci(module_id, cc_id, gNB_index, &dci_pdu_rel15, dci->rnti, dci->dci_format);
+  nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,def_dci_pdu_rel15);
+  nr_ue_process_dci(module_id, cc_id, gNB_index, def_dci_pdu_rel15, dci->rnti, dci->dci_format);
 }
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
@@ -1957,16 +1958,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-    nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+    nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     nr_ue_process_dci_time_dom_resource_assignment(mac,
 						   ulsch_config_pdu_0_0,NULL,
-						   dci->time_dom_resource_assignment);
+						   dci->time_domain_assignment.val);
 
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
-      ulsch_config_pdu_0_0->pusch_freq_hopping = (dci->freq_hopping_flag == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
+      ulsch_config_pdu_0_0->pusch_freq_hopping = (dci->frequency_hopping_flag.val == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
     /* MCS */
     ulsch_config_pdu_0_0->mcs = dci->mcs;
     /* NDI */
@@ -1974,22 +1975,22 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* RV */
     ulsch_config_pdu_0_0->rv = dci->rv;
     /* HARQ_PROCESS_NUMBER */
-    ulsch_config_pdu_0_0->harq_process_nbr = dci->harq_process_number;
+    ulsch_config_pdu_0_0->harq_process_nbr = dci->harq_pid;
     /* TPC_PUSCH */
     // according to TS 38.213 Table Table 7.1.1-1
-    if (dci->tpc_pusch == 0) {
+    if (dci->tpc == 0) {
       ulsch_config_pdu_0_0->accumulated_delta_PUSCH = -1;
       ulsch_config_pdu_0_0->absolute_delta_PUSCH = -4;
     }
-    if (dci->tpc_pusch == 1) {
+    if (dci->tpc == 1) {
       ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 0;
       ulsch_config_pdu_0_0->absolute_delta_PUSCH = -1;
     }
-    if (dci->tpc_pusch == 2) {
+    if (dci->tpc == 2) {
       ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 1;
       ulsch_config_pdu_0_0->absolute_delta_PUSCH = 1;
     }
-    if (dci->tpc_pusch == 3) {
+    if (dci->tpc == 3) {
       ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 3;
       ulsch_config_pdu_0_0->absolute_delta_PUSCH = 4;
     }
@@ -2034,16 +2035,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* CARRIER_IND */
     /* SUL_IND_0_1 */
     /* BANDWIDTH_PART_IND */
-    ulsch_config_pdu_0_1->bandwidth_part_ind = dci->bandwidth_part_ind;
+    ulsch_config_pdu_0_1->bandwidth_part_ind = dci->bwp_indicator.val;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-    nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+    nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     nr_ue_process_dci_time_dom_resource_assignment(mac,ulsch_config_pdu_0_1,NULL,
-						   dci->time_dom_resource_assignment);
+						   dci->time_domain_assignment.val);
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
-      ulsch_config_pdu_0_1->pusch_freq_hopping = (dci->freq_hopping_flag == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
+      ulsch_config_pdu_0_1->pusch_freq_hopping = (dci->frequency_hopping_flag.val == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
     /* MCS */
     ulsch_config_pdu_0_1->mcs = dci->mcs;
     /* NDI */
@@ -2051,24 +2052,24 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* RV */
     ulsch_config_pdu_0_1->rv = dci->rv;
     /* HARQ_PROCESS_NUMBER */
-    ulsch_config_pdu_0_1->harq_process_nbr = dci->harq_process_number;
+    ulsch_config_pdu_0_1->harq_process_nbr = dci->harq_pid;
     /* FIRST_DAI */ //To be implemented, FIXME!!!
     /* SECOND_DAI */ //To be implemented, FIXME!!!
     /* TPC_PUSCH */
     // according to TS 38.213 Table Table 7.1.1-1
-    if (dci->tpc_pusch == 0) {
+    if (dci->tpc == 0) {
       ulsch_config_pdu_0_1->accumulated_delta_PUSCH = -1;
       ulsch_config_pdu_0_1->absolute_delta_PUSCH = -4;
     }
-    if (dci->tpc_pusch == 1) {
+    if (dci->tpc == 1) {
       ulsch_config_pdu_0_1->accumulated_delta_PUSCH = 0;
       ulsch_config_pdu_0_1->absolute_delta_PUSCH = -1;
     }
-    if (dci->tpc_pusch == 2) {
+    if (dci->tpc == 2) {
       ulsch_config_pdu_0_1->accumulated_delta_PUSCH = 1;
       ulsch_config_pdu_0_1->absolute_delta_PUSCH = 1;
     }
-    if (dci->tpc_pusch == 3) {
+    if (dci->tpc == 3) {
       ulsch_config_pdu_0_1->accumulated_delta_PUSCH = 3;
       ulsch_config_pdu_0_1->absolute_delta_PUSCH = 4;
     }
@@ -2087,16 +2088,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 		(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 3) ||
 		(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 4))){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][0];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][1];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][0];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][1];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_partialAndNonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][2];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][3];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][2];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][3];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][4];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][5];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][4];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][5];
 	  }
 	}
 	// Table 7.3.1.1.2-3: transformPrecoder= enabled, or transformPrecoder=disabled and maxRank = 1
@@ -2104,16 +2105,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	     || (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled))
 	    && (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 1)){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][6];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][7];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][6];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][7];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_partialAndNonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][8];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][9];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][8];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][9];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][10];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][11];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][10];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][11];
 	  }
 	}
       }
@@ -2122,12 +2123,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled)
 	    && (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 2)){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][12];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][13];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][12];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][13];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][14];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][15];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][14];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][15];
 	  }
 	}
 	// Table 7.3.1.1.2-5: transformPrecoder= enabled, or transformPrecoder= disabled and maxRank = 1
@@ -2135,12 +2136,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	     || (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled))
 	    && (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 1)){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][16];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][17];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][16];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][17];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][18];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][19];
+	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][18];
+	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][19];
 	  }
 	}
       }
@@ -2151,26 +2152,26 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-6
       ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-      ulsch_config_pdu_0_1->dmrs_ports[0] = dci->antenna_ports;
+      ulsch_config_pdu_0_1->dmrs_ports[0] = dci->antenna_ports.val;
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-7
       ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-      ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 3)?(dci->antenna_ports-4):(dci->antenna_ports);
-      ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 3)?2:1;
+      ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports.val > 3)?(dci->antenna_ports.val-4):(dci->antenna_ports.val);
+      ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports.val > 3)?2:1;
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-8/9/10/11
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 1)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports-2):(dci->antenna_ports);
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 1)?2:1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val-2):(dci->antenna_ports.val);
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?0:2):0;
-	ulsch_config_pdu_0_1->dmrs_ports[1] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?2:3):1;
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 0)?2:1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val > 2 ?0:2):0;
+	ulsch_config_pdu_0_1->dmrs_ports[1] = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val > 2 ?2:3):1;
       }
       if (rank == 3){
 	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
@@ -2190,52 +2191,52 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-12/13/14/15
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 1)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 5 ?(dci->antenna_ports-6):(dci->antenna_ports-2)):dci->antenna_ports;
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 6)?2:1;
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 1)?2:1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val > 5 ?(dci->antenna_ports.val-6):(dci->antenna_ports.val-2)):dci->antenna_ports.val;
+	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports.val > 6)?2:1;
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_13[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_13[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 3)?2:1;
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 0)?2:1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_13[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_13[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports.val > 3)?2:1;
       }
       if (rank == 3){
 	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_14[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_14[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_14[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 1)?2:1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_14[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_14[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_14[dci->antenna_ports.val][3];
+	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports.val > 1)?2:1;
       }
       if (rank == 4){
 	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_15[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_15[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_15[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_15[dci->antenna_ports][4];
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 1)?2:1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_15[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_15[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_15[dci->antenna_ports.val][3];
+	ulsch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_15[dci->antenna_ports.val][4];
+	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports.val > 1)?2:1;
       }
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 2) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-16/17/18/19
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 1)?((dci->antenna_ports > 5)?3:2):1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 5 ?(dci->antenna_ports-6):(dci->antenna_ports-2)):dci->antenna_ports;
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 1)?((dci->antenna_ports.val > 5)?3:2):1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val > 5 ?(dci->antenna_ports.val-6):(dci->antenna_ports.val-2)):dci->antenna_ports.val;
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?((dci->antenna_ports > 2)?3:2):1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_17[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_17[dci->antenna_ports][2];
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 0)?((dci->antenna_ports.val > 2)?3:2):1;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_17[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_17[dci->antenna_ports.val][2];
       }
       if (rank == 3){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?3:2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_18[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_18[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_18[dci->antenna_ports][3];
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports.val > 0)?3:2;
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_18[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_18[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_18[dci->antenna_ports.val][3];
       }
       if (rank == 4){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = dci->antenna_ports + 2;
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = dci->antenna_ports.val + 2;
 	ulsch_config_pdu_0_1->dmrs_ports[0] = 0;
 	ulsch_config_pdu_0_1->dmrs_ports[1] = 1;
 	ulsch_config_pdu_0_1->dmrs_ports[2] = 2;
@@ -2246,50 +2247,50 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 2) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-20/21/22/23
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_20[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_20[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_20[dci->antenna_ports][2];
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_20[dci->antenna_ports.val][0];
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_20[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_20[dci->antenna_ports.val][2];
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_21[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_21[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_21[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_21[dci->antenna_ports][3];
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_21[dci->antenna_ports.val][0];
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_21[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_21[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_21[dci->antenna_ports.val][3];
       }
       if (rank == 3){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_22[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_22[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_22[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_22[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_22[dci->antenna_ports][4];
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_22[dci->antenna_ports.val][0];
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_22[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_22[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_22[dci->antenna_ports.val][3];
+	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_22[dci->antenna_ports.val][4];
       }
       if (rank == 4){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_23[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_23[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_23[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_23[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_23[dci->antenna_ports][4];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_23[dci->antenna_ports][5];
+	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_23[dci->antenna_ports.val][0];
+	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_23[dci->antenna_ports.val][1];
+	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_23[dci->antenna_ports.val][2];
+	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_23[dci->antenna_ports.val][3];
+	ulsch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_23[dci->antenna_ports.val][4];
+	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_23[dci->antenna_ports.val][5];
       }
     }
     /* SRS_REQUEST */
     // if SUL is supported in the cell, there is an additional bit in thsi field and the value of this bit represents table 7.1.1.1-1 TS 38.212 FIXME!!!
-    ulsch_config_pdu_0_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212
+    ulsch_config_pdu_0_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request.val & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212
     /* CSI_REQUEST */
-    ulsch_config_pdu_0_1->csi_reportTriggerSize = dci->csi_request;
+    ulsch_config_pdu_0_1->csi_reportTriggerSize = dci->csi_request.val;
     /* CBGTI */
-    ulsch_config_pdu_0_1->maxCodeBlockGroupsPerTransportBlock = dci->cbgti;
+    ulsch_config_pdu_0_1->maxCodeBlockGroupsPerTransportBlock = dci->cbgti.val;
     /* PTRS_DMRS */
     if (((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	 (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.ptrs_uplink_config == 0)) ||
 	((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	 (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 1))){
     } else {
-      ulsch_config_pdu_0_1->ptrs_dmrs_association_port = dci->ptrs_dmrs;
+      ulsch_config_pdu_0_1->ptrs_dmrs_association_port = dci->ptrs_dmrs_association.val;
     }
     /* BETA_OFFSET_IND */
     // Table 9.3-3 in [5, TS 38.213]
-    ulsch_config_pdu_0_1->beta_offset_ind = dci->beta_offset_ind;
+    ulsch_config_pdu_0_1->beta_offset_ind = dci->beta_offset_indicator.val;
     /* DMRS_SEQ_INI */
     // FIXME!!
     /* UL_SCH_IND */
@@ -2359,10 +2360,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
+    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,
-						   dci->time_dom_resource_assignment);
+						   dci->time_domain_assignment.val);
 
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
@@ -2370,7 +2371,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 							 dlsch_config_pdu_1_0->number_symbols);
     dlsch_config_pdu_1_0->dmrsConfigType = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 1 : 2;
     /* VRB_TO_PRB_MAPPING */
-    dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
+    dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* MCS */
     dlsch_config_pdu_1_0->mcs = dci->mcs;
     /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -2378,9 +2379,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
     dlsch_config_pdu_1_0->rv = dci->rv;
     /* HARQ_PROCESS_NUMBER (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
-    dlsch_config_pdu_1_0->harq_process_nbr = dci->harq_process_number;
+    dlsch_config_pdu_1_0->harq_process_nbr = dci->harq_pid;
     /* DAI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
-    dlsch_config_pdu_1_0->dai = dci ->dai;
+    dlsch_config_pdu_1_0->dai = dci->dai[0].val;
     /* TB_SCALING (only if CRC scrambled by P-RNTI or RA-RNTI) */
     // according to TS 38.214 Table 5.1.3.2-3
     if (dci->tb_scaling == 0) dlsch_config_pdu_1_0->scaling_factor_S = 1;
@@ -2389,32 +2390,32 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     if (dci->tb_scaling == 3) dlsch_config_pdu_1_0->scaling_factor_S = 0; // value not defined in table
     /* TPC_PUCCH (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
     // according to TS 38.213 Table 7.2.1-1
-    if (dci->tpc_pucch == 0) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = -1;
-    if (dci->tpc_pucch == 1) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 0;
-    if (dci->tpc_pucch == 2) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 1;
-    if (dci->tpc_pucch == 3) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 3;
+    if (dci->tpc == 0) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = -1;
+    if (dci->tpc == 1) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 0;
+    if (dci->tpc == 2) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 1;
+    if (dci->tpc == 3) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 3;
     /* PUCCH_RESOURCE_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
-    //if (dci->pucch_resource_ind == 0) dlsch_config_pdu_1_0->pucch_resource_id = 1; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
-    //if (dci->pucch_resource_ind == 1) dlsch_config_pdu_1_0->pucch_resource_id = 2; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
-    //if (dci->pucch_resource_ind == 2) dlsch_config_pdu_1_0->pucch_resource_id = 3; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
-    //if (dci->pucch_resource_ind == 3) dlsch_config_pdu_1_0->pucch_resource_id = 4; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
-    //if (dci->pucch_resource_ind == 4) dlsch_config_pdu_1_0->pucch_resource_id = 5; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
-    //if (dci->pucch_resource_ind == 5) dlsch_config_pdu_1_0->pucch_resource_id = 6; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
-    //if (dci->pucch_resource_ind == 6) dlsch_config_pdu_1_0->pucch_resource_id = 7; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
-    //if (dci->pucch_resource_ind == 7) dlsch_config_pdu_1_0->pucch_resource_id = 8; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
-    dlsch_config_pdu_1_0->pucch_resource_id = dci->pucch_resource_ind;
+    //if (dci->pucch_resource_indicator == 0) dlsch_config_pdu_1_0->pucch_resource_id = 1; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
+    //if (dci->pucch_resource_indicator == 1) dlsch_config_pdu_1_0->pucch_resource_id = 2; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
+    //if (dci->pucch_resource_indicator == 2) dlsch_config_pdu_1_0->pucch_resource_id = 3; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
+    //if (dci->pucch_resource_indicator == 3) dlsch_config_pdu_1_0->pucch_resource_id = 4; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
+    //if (dci->pucch_resource_indicator == 4) dlsch_config_pdu_1_0->pucch_resource_id = 5; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
+    //if (dci->pucch_resource_indicator == 5) dlsch_config_pdu_1_0->pucch_resource_id = 6; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
+    //if (dci->pucch_resource_indicator == 6) dlsch_config_pdu_1_0->pucch_resource_id = 7; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
+    //if (dci->pucch_resource_indicator == 7) dlsch_config_pdu_1_0->pucch_resource_id = 8; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
+    dlsch_config_pdu_1_0->pucch_resource_id = dci->pucch_resource_indicator;
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
-    dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_time_ind;
+    dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_timing_indicator.val;
 
     LOG_D(MAC,"(nr_ue_procedures.c) rnti=%d dl_config->number_pdus=%d\n",
 	  dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
 	  dl_config->number_pdus);
     LOG_D(MAC,"(nr_ue_procedures.c) frequency_domain_resource_assignment=%d \t number_rbs=%d \t start_rb=%d\n",
-	  dci->freq_dom_resource_assignment_DL,
+	  dci->frequency_domain_assignment.val,
 	  dlsch_config_pdu_1_0->number_rbs,
 	  dlsch_config_pdu_1_0->start_rb);
     LOG_D(MAC,"(nr_ue_procedures.c) time_domain_resource_assignment=%d \t number_symbols=%d \t start_symbol=%d\n",
-	  dci->time_dom_resource_assignment,
+	  dci->time_domain_assignment.val,
 	  dlsch_config_pdu_1_0->number_symbols,
 	  dlsch_config_pdu_1_0->start_symbol);
     LOG_D(MAC,"(nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
@@ -2475,145 +2476,145 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* BANDWIDTH_PART_IND */
     //    dlsch_config_pdu_1_1->bandwidth_part_ind = dci->bandwidth_part_ind;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
+    nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,
-						   dci->time_dom_resource_assignment);
+						   dci->time_domain_assignment.val);
     /* VRB_TO_PRB_MAPPING */
     if (mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.resource_allocation != 0)
-      dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
+      dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* PRB_BUNDLING_SIZE_IND */
-    dlsch_config_pdu_1_1->prb_bundling_size_ind = dci->prb_bundling_size_ind;
+    dlsch_config_pdu_1_1->prb_bundling_size_ind = dci->prb_bundling_size_indicator.val;
     /* RATE_MATCHING_IND */
-    dlsch_config_pdu_1_1->rate_matching_ind = dci->rate_matching_ind;
+    dlsch_config_pdu_1_1->rate_matching_ind = dci->rate_matching_indicator.val;
     /* ZP_CSI_RS_TRIGGER */
-    dlsch_config_pdu_1_1->zp_csi_rs_trigger = dci->zp_csi_rs_trigger;
+    dlsch_config_pdu_1_1->zp_csi_rs_trigger = dci->zp_csi_rs_trigger.val;
     /* MCS (for transport block 1)*/
-    dlsch_config_pdu_1_1->mcs = dci->tb1_mcs;
+    dlsch_config_pdu_1_1->mcs = dci->mcs;
     /* NDI (for transport block 1)*/
-    dlsch_config_pdu_1_1->ndi = dci->tb1_ndi;
+    dlsch_config_pdu_1_1->ndi = dci->ndi;
     /* RV (for transport block 1)*/
-    dlsch_config_pdu_1_1->rv = dci->tb1_rv;
+    dlsch_config_pdu_1_1->rv = dci->rv;
     /* MCS (for transport block 2)*/
-    dlsch_config_pdu_1_1->tb2_mcs = dci->tb2_mcs;
+    dlsch_config_pdu_1_1->tb2_mcs = dci->mcs2.val;
     /* NDI (for transport block 2)*/
-    dlsch_config_pdu_1_1->tb2_ndi = dci->tb2_ndi;
+    dlsch_config_pdu_1_1->tb2_ndi = dci->ndi2.val;
     /* RV (for transport block 2)*/
-    dlsch_config_pdu_1_1->tb2_rv = dci->tb2_rv;
+    dlsch_config_pdu_1_1->tb2_rv = dci->rv2.val;
     /* HARQ_PROCESS_NUMBER */
-    dlsch_config_pdu_1_1->harq_process_nbr = dci->harq_process_number;
+    dlsch_config_pdu_1_1->harq_process_nbr = dci->harq_pid;
     /* DAI */
-    dlsch_config_pdu_1_1->dai = dci ->dai;
+    dlsch_config_pdu_1_1->dai = dci->dai[0].val;
     /* TPC_PUCCH */
     // according to TS 38.213 Table 7.2.1-1
-    if (dci->tpc_pucch == 0) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = -1;
-    if (dci->tpc_pucch == 1) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 0;
-    if (dci->tpc_pucch == 2) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 1;
-    if (dci->tpc_pucch == 3) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 3;
+    if (dci->tpc == 0) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = -1;
+    if (dci->tpc == 1) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 0;
+    if (dci->tpc == 2) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 1;
+    if (dci->tpc == 3) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 3;
     /* PUCCH_RESOURCE_IND */
-    if (dci->pucch_resource_ind == 0) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
-    if (dci->pucch_resource_ind == 1) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
-    if (dci->pucch_resource_ind == 2) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
-    if (dci->pucch_resource_ind == 3) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
-    if (dci->pucch_resource_ind == 4) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
-    if (dci->pucch_resource_ind == 5) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
-    if (dci->pucch_resource_ind == 6) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
-    if (dci->pucch_resource_ind == 7) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 0) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
+    if (dci->pucch_resource_indicator == 1) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 2) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 3) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 4) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 5) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 6) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
+    if (dci->pucch_resource_indicator == 7) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
     // according to TS 38.213 Table 9.2.3-1
-    dlsch_config_pdu_1_1-> pdsch_to_harq_feedback_time_ind = mac->phy_config.config_req.ul_bwp_dedicated.pucch_config_dedicated.dl_data_to_ul_ack[dci->pdsch_to_harq_feedback_time_ind];
+    dlsch_config_pdu_1_1-> pdsch_to_harq_feedback_time_ind = mac->phy_config.config_req.ul_bwp_dedicated.pucch_config_dedicated.dl_data_to_ul_ack[dci->pdsch_to_harq_feedback_timing_indicator.val];
     /* ANTENNA_PORTS */
     uint8_t n_codewords = 1; // FIXME!!!
     if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 1)){
       // Table 7.3.1.2.2-1: Antenna port(s) (1000 + DMRS port), dmrs-Type=1, maxLength=1
-      dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_1[dci->antenna_ports][0];
-      dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_1[dci->antenna_ports][1];
-      dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_1[dci->antenna_ports][2];
-      dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_1[dci->antenna_ports][3];
-      dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_1[dci->antenna_ports][4];
+      dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_1[dci->antenna_ports.val][0];
+      dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_1[dci->antenna_ports.val][1];
+      dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_1[dci->antenna_ports.val][2];
+      dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_1[dci->antenna_ports.val][3];
+      dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_1[dci->antenna_ports.val][4];
     }
     if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 2)){
       // Table 7.3.1.2.2-2: Antenna port(s) (1000 + DMRS port), dmrs-Type=1, maxLength=2
       if (n_codewords == 1) {
-	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports][0];
-	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports][1];
-	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports][2];
-	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports][3];
-	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports][4];
-	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports][5];
+	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][0];
+	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][1];
+	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][2];
+	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][3];
+	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][4];
+	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][5];
       }
       if (n_codewords == 1) {
-	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][0];
-	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][1];
-	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][2];
-	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][3];
-	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][4];
-	dlsch_config_pdu_1_1->dmrs_ports[4]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][5];
-	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][6];
-	dlsch_config_pdu_1_1->dmrs_ports[6]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][7];
-	dlsch_config_pdu_1_1->dmrs_ports[7]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][8];
-	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports][9];
+	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][0];
+	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][1];
+	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][2];
+	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][3];
+	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][4];
+	dlsch_config_pdu_1_1->dmrs_ports[4]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][5];
+	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][6];
+	dlsch_config_pdu_1_1->dmrs_ports[6]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][7];
+	dlsch_config_pdu_1_1->dmrs_ports[7]     = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][8];
+	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][9];
       }
     }
     if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 2) &&
 	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 1)){
       // Table 7.3.1.2.2-3: Antenna port(s) (1000 + DMRS port), dmrs-Type=2, maxLength=1
       if (n_codewords == 1) {
-	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports][0];
-	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports][1];
-	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports][2];
-	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports][3];
-	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports][4];
+	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][0];
+	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][1];
+	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][2];
+	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][3];
+	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][4];
       }
       if (n_codewords == 1) {
-	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][0];
-	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][1];
-	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][2];
-	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][3];
-	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][4];
-	dlsch_config_pdu_1_1->dmrs_ports[4]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][5];
-	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports][6];
+	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][0];
+	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][1];
+	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][2];
+	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][3];
+	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][4];
+	dlsch_config_pdu_1_1->dmrs_ports[4]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][5];
+	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][6];
       }
     }
     if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 2) &&
 	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 2)){
       // Table 7.3.1.2.2-4: Antenna port(s) (1000 + DMRS port), dmrs-Type=2, maxLength=2
       if (n_codewords == 1) {
-	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports][0];
-	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports][1];
-	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports][2];
-	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports][3];
-	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports][4];
-	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports][5];
+	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][0];
+	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][1];
+	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][2];
+	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][3];
+	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][4];
+	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][5];
       }
       if (n_codewords == 1) {
-	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][0];
-	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][1];
-	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][2];
-	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][3];
-	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][4];
-	dlsch_config_pdu_1_1->dmrs_ports[4]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][5];
-	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][6];
-	dlsch_config_pdu_1_1->dmrs_ports[6]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][7];
-	dlsch_config_pdu_1_1->dmrs_ports[7]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][8];
-	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports][9];
+	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][0];
+	dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][1];
+	dlsch_config_pdu_1_1->dmrs_ports[1]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][2];
+	dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][3];
+	dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][4];
+	dlsch_config_pdu_1_1->dmrs_ports[4]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][5];
+	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][6];
+	dlsch_config_pdu_1_1->dmrs_ports[6]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][7];
+	dlsch_config_pdu_1_1->dmrs_ports[7]     = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][8];
+	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][9];
       }
     }
     /* TCI */
     if (mac->dl_config_request.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.tci_present_in_dci == 1){
       // 0 bit if higher layer parameter tci-PresentInDCI is not enabled
       // otherwise 3 bits as defined in Subclause 5.1.5 of [6, TS38.214]
-      dlsch_config_pdu_1_1->tci_state = dci->tci;
+      dlsch_config_pdu_1_1->tci_state = dci->transmission_configuration_indication.val;
     }
     /* SRS_REQUEST */
     // if SUL is supported in the cell, there is an additional bit in this field and the value of this bit represents table 7.1.1.1-1 TS 38.212 FIXME!!!
-    dlsch_config_pdu_1_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212
+    dlsch_config_pdu_1_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request.val & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212
     /* CBGTI */
-    dlsch_config_pdu_1_1->cbgti = dci->cbgti;
+    dlsch_config_pdu_1_1->cbgti = dci->cbgti.val;
     /* CBGFI */
-    dlsch_config_pdu_1_1->codeBlockGroupFlushIndicator = dci->cbgfi;
+    dlsch_config_pdu_1_1->codeBlockGroupFlushIndicator = dci->cbgfi.val;
     /* DMRS_SEQ_INI */
     //FIXME!!!
 
@@ -2713,7 +2714,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 			 uint8_t dci_size,
 			 uint16_t rnti,
 			 uint64_t *dci_pdu,
-			 nr_dci_pdu_rel15_t *dci_pdu_rel15) {
+			 dci_pdu_rel15_t *dci_pdu_rel15) {
   int rnti_type=-1;
 
   if       (rnti == mac->ra_rnti) rnti_type = NR_RNTI_RA;
@@ -2742,22 +2743,22 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       // Freq domain assignment
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos=fsize;
-      dci_pdu_rel15->freq_dom_resource_assignment_DL = *dci_pdu>>(dci_size-pos)&((1<<fsize)-1);
+      dci_pdu_rel15->frequency_domain_assignment.val = *dci_pdu>>(dci_size-pos)&((1<<fsize)-1);
 #ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",dci_pdu_rel15->freq_dom_resource_assignment_DL,fsize,N_RB,dci_size-pos,*dci_pdu);
+      LOG_D(MAC,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,N_RB,dci_size-pos,*dci_pdu);
 #endif
       // Time domain assignment
       pos+=4;
-      dci_pdu_rel15->time_dom_resource_assignment = (*dci_pdu >> (dci_size-pos))&0xf;
+      dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu >> (dci_size-pos))&0xf;
 #ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_dom_resource_assignment,dci_size-pos,*dci_pdu);
+      LOG_D(MAC,"time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment.val,dci_size-pos,*dci_pdu);
 #endif
       // VRB to PRB mapping
 	
       pos++;
-      dci_pdu_rel15->vrb_to_prb_mapping = (*dci_pdu>>(dci_size-pos))&0x1;
+      dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&0x1;
 #ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping,dci_size-pos,*dci_pdu);
+      LOG_D(MAC,"vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping.val,dci_size-pos,*dci_pdu);
 #endif
       // MCS
       pos+=5;
@@ -2777,23 +2778,23 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	
       // indicating a DL DCI format 1bit
       pos++;
-      dci_pdu_rel15->identifier_dci_formats = (*dci_pdu>>(dci_size-pos))&1;
+      dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
 #ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->identifier_dci_formats,1,N_RB,dci_size-pos,*dci_pdu);
+      LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif
   	
       // Freq domain assignment (275rb >> fsize = 16)
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
-      dci_pdu_rel15->freq_dom_resource_assignment_DL = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
+      dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
   	
 #ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->freq_dom_resource_assignment_DL,fsize,dci_size-pos,*dci_pdu);
+      LOG_D(MAC,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,dci_size-pos,*dci_pdu);
 #endif
     	
       uint16_t is_ra = 1;
       for (int i=0; i<fsize; i++)
-	if (!((dci_pdu_rel15->freq_dom_resource_assignment_DL>>i)&1)) {
+	if (!((dci_pdu_rel15->frequency_domain_assignment.val>>i)&1)) {
 	  is_ra = 0;
 	  break;
 	}
@@ -2805,7 +2806,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	    
 	  // UL/SUL indicator  1 bit
 	  pos++;
-	  dci_pdu_rel15->sul_ind_0_1 = (*dci_pdu>>(dci_size-pos))&1;
+	  dci_pdu_rel15->ul_sul_indicator.val = (*dci_pdu>>(dci_size-pos))&1;
 	    
 	  // SS/PBCH index  6 bits
 	  pos+=6;
@@ -2821,16 +2822,16 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	// Time domain assignment 4bit
 		  
 	pos+=4;
-	dci_pdu_rel15->time_dom_resource_assignment = (*dci_pdu>>(dci_size-pos))&0xf;
+	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"Time domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_dom_resource_assignment,4,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"Time domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment.val,4,dci_size-pos,*dci_pdu);
 #endif
 	  
 	// VRB to PRB mapping  1bit
 	pos++;
-	dci_pdu_rel15->vrb_to_prb_mapping = (*dci_pdu>>(dci_size-pos))&1;
+	dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&1;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"VRB to PRB %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping,1,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"VRB to PRB %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping.val,1,dci_size-pos,*dci_pdu);
 #endif
 	
 	// MCS 5bit  //bit over 32, so dci_pdu ++
@@ -2856,37 +2857,37 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	  
 	// HARQ process number  4bit
 	pos+=4;
-	dci_pdu_rel15->harq_process_number  = (*dci_pdu>>(dci_size-pos))&0xf;
+	dci_pdu_rel15->harq_pid  = (*dci_pdu>>(dci_size-pos))&0xf;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_process_number,4,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_pid,4,dci_size-pos,*dci_pdu);
 #endif
 	  
 	// Downlink assignment index  2bit
 	pos+=2;
-	dci_pdu_rel15->dai = (*dci_pdu>>(dci_size-pos))&3;
+	dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"DAI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->dai,2,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"DAI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->dai[0].val,2,dci_size-pos,*dci_pdu);
 #endif
 	  
 	// TPC command for scheduled PUCCH  2bit
 	pos+=2;
-	dci_pdu_rel15->tpc_pucch = (*dci_pdu>>(dci_size-pos))&3;
+	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"TPC %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->tpc_pucch,2,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"TPC %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->tpc,2,dci_size-pos,*dci_pdu);
 #endif
 	  
 	// PUCCH resource indicator  3bit
 	pos+=3;
-	dci_pdu_rel15->pucch_resource_ind = (*dci_pdu>>(dci_size-pos))&0x7;
+	dci_pdu_rel15->pucch_resource_indicator = (*dci_pdu>>(dci_size-pos))&0x7;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"PUCCH RI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pucch_resource_ind,3,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"PUCCH RI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pucch_resource_indicator,3,dci_size-pos,*dci_pdu);
 #endif
 	  
 	// PDSCH-to-HARQ_feedback timing indicator 3bit
 	pos+=3;
-	dci_pdu_rel15->pdsch_to_harq_feedback_time_ind = (*dci_pdu>>(dci_size-pos))&0x7;
+	dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&0x7;
 #ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pdsch_to_harq_feedback_time_ind,3,dci_size-pos,*dci_pdu);
+	LOG_D(MAC,"PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val,3,dci_size-pos,*dci_pdu);
 #endif
 	  
       } //end else
@@ -2908,7 +2909,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       for (int i=0; i<4; i++)
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
       // VRB to PRB mapping 1 bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping&1)<<(dci_size-pos++);
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
       // MCS 5 bit
       for (int i=0; i<5; i++)
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
@@ -2930,7 +2931,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       for (int i=0; i<4; i++)
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
       // VRB to PRB mapping 1 bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping&1)<<(dci_size-pos++);
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
       // MCS 5bit  //bit over 32, so dci_pdu ++
       for (int i=0; i<5; i++)
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
@@ -2943,16 +2944,16 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     case NR_RNTI_TC:
       // indicating a DL DCI format 1bit
       pos++;
-      dci_pdu_rel15->identifier_dci_formats = (*dci_pdu>>(dci_size-pos))&1;
+      dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
       // Freq domain assignment 0-16 bit
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
-      dci_pdu_rel15->freq_dom_resource_assignment_DL = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
+      dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
       // Time domain assignment 4 bit
       pos+=4;
-      dci_pdu_rel15->time_dom_resource_assignment = (*dci_pdu>>(dci_size-pos))&0xf;
+      dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
       // VRB to PRB mapping 1 bit
-      dci_pdu_rel15->vrb_to_prb_mapping = (*dci_pdu>>(dci_size-pos))&1;
+      dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&1;
       // MCS 5bit  //bit over 32, so dci_pdu ++
       pos+=5;
       dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
@@ -2963,16 +2964,16 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&3;
       // HARQ process number  4bit
       pos+=4;
-      dci_pdu_rel15->harq_process_number = (*dci_pdu>>(dci_size-pos))&0xf;
+      dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
       // Downlink assignment index – 2 bits
       pos+=2;
-      dci_pdu_rel15->dai = (*dci_pdu>>(dci_size-pos))&3;
+      dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
       // TPC command for scheduled PUCCH – 2 bits
       pos+=2;
-      dci_pdu_rel15->tpc_pucch  = (*dci_pdu>>(dci_size-pos))&3;
+      dci_pdu_rel15->tpc  = (*dci_pdu>>(dci_size-pos))&3;
       // PDSCH-to-HARQ_feedback timing indicator – 3 bits
       pos+=3;
-      dci_pdu_rel15->pdsch_to_harq_feedback_time_ind = (*dci_pdu>>(dci_size-pos))&7;
+      dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&7;
        
       break;
     }
@@ -2983,17 +2984,17 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       {
       case NR_RNTI_C:
 	// indicating a DL DCI format 1bit
-	dci_pdu_rel15->identifier_dci_formats = (*dci_pdu>>(dci_size-pos))&1;
+	dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
 	// Freq domain assignment  max 16 bit
 	fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );
 	pos+=fsize;
-	dci_pdu_rel15->freq_dom_resource_assignment_UL = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
+	dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
 	// Time domain assignment 4bit
 	pos+=4;
-	dci_pdu_rel15->time_dom_resource_assignment = (*dci_pdu>>(dci_size-pos))&0xf;
+	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
 	// Frequency hopping flag – 1 bit
 	pos++;
-	dci_pdu_rel15->freq_hopping_flag= (*dci_pdu>>(dci_size-pos))&1;
+	dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
 	// MCS  5 bit
 	pos+=5;
 	dci_pdu_rel15->mcs= (*dci_pdu>>(dci_size-pos))&0x1f;
@@ -3005,10 +3006,10 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	dci_pdu_rel15->rv= (*dci_pdu>>(dci_size-pos))&3;
 	// HARQ process number  4bit
 	pos+=4;
-	dci_pdu_rel15->harq_process_number = (*dci_pdu>>(dci_size-pos))&0xf;
+	dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
 	// TPC command for scheduled PUSCH – 2 bits
 	pos+=2;
-	dci_pdu_rel15->tpc_pusch = (*dci_pdu>>(dci_size-pos))&3;
+	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
 	// UL/SUL indicator – 1 bit
 	/* commented for now (RK): need to get this from BWP descriptor
 	   if (cfg->pucch_config.pucch_GroupHopping.value)

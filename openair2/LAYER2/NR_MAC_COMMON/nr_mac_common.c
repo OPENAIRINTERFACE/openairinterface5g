@@ -609,6 +609,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
+      // General note: 0 bits condition is ignored as default nbits is 0.
       // Format identifier
       size = 1;
       // Carrier indicator
@@ -647,7 +648,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
         num_entries = pdsch_config->pdsch_TimeDomainAllocationList->choice.setup->list.count;
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       size += dci_pdu->time_domain_assignment.nbits;
-      // VRB to PRB mapping  FIXME (38.212 also says 0 bits if not configured by higher layers
+      // VRB to PRB mapping 
       if (pdsch_config->resourceAllocation == 1) {
         dci_pdu->vrb_to_prb_mapping.nbits = 1;
         size += dci_pdu->vrb_to_prb_mapping.nbits;

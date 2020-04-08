@@ -44,6 +44,7 @@
 #endif
 #define LOG_DCI_PARM(a...) LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci)" a)
 
+dci_pdu_rel15_t *def_dci_pdu_rel15;
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
 
@@ -61,8 +62,10 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot) {
 
+  def_dci_pdu_rel15 = calloc(1,sizeof(dci_pdu_rel15_t));
+
+  int bwp_id = 1; // FIXME
   // check if DL slot
-  dci_pdu_rel15_t dci_pdu_rel15;
   if (is_nr_DL_slot(mac->scc,slot)==1) {
     
     // get BWP 1, Coreset 0, SearchSpace 0  
@@ -172,7 +175,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->scc->physCellId;
       fill_dci_search_candidates(mac->SSpace[0][0][ss_id],rel15);
       rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
-      rel15->dci_length = nr_dci_size(mac->scg,&dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize);
+      rel15->dci_length = nr_dci_size(mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;
     }

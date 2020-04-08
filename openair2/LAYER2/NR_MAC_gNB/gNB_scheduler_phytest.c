@@ -341,7 +341,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 						     scc->dmrs_TypeA_Position,
 						     pdsch_pdu_rel15->NrOfSymbols);
 
-  dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15));
+  dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
   
   // bwp indicator
   int n_dl_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;

@@ -812,7 +812,10 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
     int dci_size = nr_dci_size(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],pdcch_pdu_rel15->BWPSize,bwp_id);
     pdcch_pdu_rel15->PayloadSizeBits[d] = dci_size;
     AssertFatal(pdcch_pdu_rel15->PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
-    prepare_dci(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],bwp_id);
+
+    if(dci_formats[d]==NR_DL_DCI_FORMAT_1_1)
+      prepare_dci(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],bwp_id);
+
     pos = 0;
     
     /// Payload generation
@@ -1136,7 +1139,7 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val&((1<<dci_pdu_rel15->frequency_domain_assignment.nbits)-1)) << (dci_size-pos);
 
       // Time domain resource assignment
-      pos+=nbits;
+      pos+=dci_pdu_rel15->time_domain_assignment.nbits;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->time_domain_assignment.val&((1<<dci_pdu_rel15->time_domain_assignment.nbits)-1)) << (dci_size-pos);
 
       // VRB-to-PRB mapping

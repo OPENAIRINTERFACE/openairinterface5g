@@ -92,7 +92,7 @@ typedef struct {
     uint8_t TAGID:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_CE_TA;
 
-// DCI pdu structures. Used in UE by nr_dci_size(but not filled in UE)
+// DCI pdu structures. Used by both gNB and UE.
 typedef struct {
   uint16_t val;
   uint8_t nbits;
