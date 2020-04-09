@@ -428,7 +428,7 @@ int main(int argc, char **argv)
 	uint8_t is_crnti = 0, llr8_flag = 0;
 	unsigned int TBS = 8424;
 	unsigned int available_bits;
-	uint8_t nb_re_dmrs = 6;
+	uint8_t nb_re_dmrs = 12;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
 	unsigned char mod_order;
         uint16_t rate;
