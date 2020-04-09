@@ -42,6 +42,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 //#define DEBUG_DLSCH_DECODING
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
