@@ -59,6 +59,15 @@ int next_ue_list_looped(UE_list_t* list, int UE_id) {
   return list->next[UE_id] < 0 ? list->head : list->next[UE_id];
 }
 
+int get_rbg_size_last(module_id_t Mod_id, int CC_id) {
+  const int RBGsize = get_min_rb_unit(Mod_id, CC_id);
+  const int N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  if (N_RB_DL == 15 || N_RB_DL == 25 || N_RB_DL == 50 || N_RB_DL == 75)
+    return RBGsize - 1;
+  else
+    return RBGsize;
+}
+
 int g_start_ue_dl = -1;
 int round_robin_dl(module_id_t Mod_id,
                    int CC_id,
@@ -70,7 +79,9 @@ int round_robin_dl(module_id_t Mod_id,
                    uint8_t *rbgalloc_mask) {
   DevAssert(UE_list->head >= 0);
   DevAssert(n_rbg_sched > 0);
+  const int N_RBG = to_rbg(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
   const int RBGsize = get_min_rb_unit(Mod_id, CC_id);
+  const int RBGlastsize = get_rbg_size_last(Mod_id, CC_id);
   int num_ue_req = 0;
   UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
 
@@ -89,14 +100,26 @@ int round_robin_dl(module_id_t Mod_id,
     UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const uint8_t round = ue_ctrl->round[CC_id][harq_pid];
     if (round != 8) { // retransmission: allocate
-      int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+      const int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
       if (nb_rb == 0)
         continue;
-      if (nb_rb % RBGsize != 0)
-        nb_rb += nb_rb % RBGsize; // should now divide evenly
-      int nb_rbg = nb_rb / RBGsize;
-      if (nb_rbg > n_rbg_sched) // needs more RBGs than we can allocate
+      int nb_rbg = (nb_rb + (nb_rb % RBGsize)) / RBGsize;
+      // needs more RBGs than we can allocate
+      if (nb_rbg > n_rbg_sched) {
+        LOG_D(MAC,
+              "retransmission of UE %d needs more RBGs (%d) than we have (%d)\n",
+              UE_id, nb_rbg, n_rbg_sched);
         continue;
+      }
+      // ensure that the number of RBs can be contained by the RBGs (!), i.e.
+      // if we allocate the last RBG this one should have the full RBGsize
+      if ((nb_rb % RBGsize) == 0 && nb_rbg == n_rbg_sched
+          && rbgalloc_mask[N_RBG - 1] && RBGlastsize != RBGsize) {
+        LOG_D(MAC,
+              "retransmission of UE %d needs %d RBs, but the last RBG %d is too small (%d, normal %d)\n",
+              UE_id, nb_rb, N_RBG - 1, RBGlastsize, RBGsize);
+        continue;
+      }
       const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
       const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
       if (idx < 0)
@@ -186,9 +209,10 @@ int round_robin_dl(module_id_t Mod_id,
       continue;
     UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
-    ue_ctrl->pre_nb_available_rbs[CC_id] += RBGsize;
-    rb_required[UE_id] -= RBGsize;
-    rb_required_total -= RBGsize;
+    const int sRBG = rbg == N_RBG - 1 ? RBGlastsize : RBGsize;
+    ue_ctrl->pre_nb_available_rbs[CC_id] += sRBG;
+    rb_required[UE_id] -= sRBG;
+    rb_required_total -= sRBG;
     if (rb_required_total <= 0)
       break;
     n_rbg_sched--;
