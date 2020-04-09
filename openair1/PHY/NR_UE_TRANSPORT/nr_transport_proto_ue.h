@@ -37,6 +37,9 @@
 #include <math.h>
 #include "nfapi_interface.h"
 
+#define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
+#define NR_PUSCH_y 3 // UCI placeholder bit
+
 // Functions below implement 36-211 and 36-212
 
 /** @addtogroup _PHY_TRANSPORT_
@@ -65,24 +68,6 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
 
 NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
-
-void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
-
-int rx_pmch(PHY_VARS_NR_UE *phy_vars_ue,
-            unsigned char eNB_id,
-            uint8_t subframe,
-            unsigned char symbol);
-
-/** \brief Dump OCTAVE/MATLAB files for PMCH debugging
-    @param phy_vars_ue Pointer to UE variables
-    @param eNB_id index of eNB in ue variables
-    @param coded_bits_per_codeword G from 36.211
-    @param subframe Index of subframe
-    @returns 0 on success
-*/
-void dump_mch(PHY_VARS_NR_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int subframe);
-
-
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
