@@ -317,12 +317,12 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
           
           if( itti_send_msg_to_task(TASK_RRC_ENB, ue_p->eNB_instance->instance, message_p) < 0 )
           {
-            S1AP_ERROR("UE Context Release Command Transmission Failure: eNB_ue_s1ap_id=%d\n", ue_p->eNB_ue_s1ap_id);
+            S1AP_ERROR("UE Context Release Command Transmission Failure: eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
           }
         }
         else
         {
-          S1AP_ERROR("Invalid message_p : eNB_ue_s1ap_id=%d\n", ue_p->eNB_ue_s1ap_id);
+          S1AP_ERROR("Invalid message_p : eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
         }
       }
     }

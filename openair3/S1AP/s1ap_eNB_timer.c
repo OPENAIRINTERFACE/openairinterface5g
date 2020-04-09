@@ -82,11 +82,11 @@ int s1ap_timer_timeout(sigval_t info)
   
   if( pthread_mutex_unlock(&timer_desc.timer_list_mutex) != 0 )
   {
-    S1AP_ERROR("Failed to mutex unlock timeout=%x\n", timer_kind);
+    S1AP_ERROR("Failed to mutex unlock timeout=0x%x\n", timer_kind);
   }
   if (timer_p == NULL)
   {
-    S1AP_ERROR("Didn't find timer 0x%lx in list\n", timer_kind);
+    S1AP_ERROR("Didn't find timer 0x%x in list\n", timer_kind);
     
     return -1;
   }
