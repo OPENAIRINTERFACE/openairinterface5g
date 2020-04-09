@@ -96,14 +96,14 @@ int s1ap_timer_timeout(sigval_t info)
   instance = timer_p->instance;
   message_p = itti_alloc_new_message(TASK_UNKNOWN, TIMER_HAS_EXPIRED);
   
-  timer_expired_p = &message_p->ittiMsg.timer_has_expired;
+  timer_expired_p = (s1ap_timer_has_expired_t *)(&message_p->ittiMsg.timer_has_expired);
   
   timer_expired_p->timer_id   = (long)timer_p->timer;
   timer_expired_p->timer_kind = timer_p->timer_kind;
   timer_expired_p->arg        = timer_p->timer_arg;
   
   /* Timer is a one shot timer, remove it */
-  if( timer_p->type == S1AP_TIMER_ONE_SHOT )
+  if( (int)timer_p->type == (int)S1AP_TIMER_ONE_SHOT )
   {
     if( s1ap_timer_remove((long)timer_p->timer) != 0 )
     {
@@ -143,7 +143,7 @@ int s1ap_timer_setup(
     return -1;
   }
   
-  if( type >= S1AP_TIMER_TYPE_MAX )
+  if( (int)type >= (int)S1AP_TIMER_TYPE_MAX )
   {
     S1AP_ERROR("Invalid timer type (%d/%d)!\n", type, TIMER_TYPE_MAX);
     return -1;
@@ -196,7 +196,7 @@ int s1ap_timer_setup(
   its.it_value.tv_sec  = interval_sec;
   its.it_value.tv_nsec = interval_us * 1000;
   
-  if( type == S1AP_TIMER_PERIODIC )
+  if( (int)type == (int)S1AP_TIMER_PERIODIC )
   {
     /* Asked for periodic timer. We set the interval time */
     its.it_interval.tv_sec  = interval_sec;
@@ -253,7 +253,7 @@ int s1ap_timer_remove(long timer_id)
   if( pthread_mutex_lock(&timer_desc.timer_list_mutex) != 0 )
   {
     S1AP_ERROR("Failed to mutex lock\n");
-    if( timer_delete(timer_id) < 0 )
+    if( timer_delete((timer_t)timer_id) < 0 )
     {
       S1AP_ERROR("Failed to delete timer 0x%lx\n", (long)timer_id);
     }
