@@ -329,7 +329,13 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     for( ; cnt > 0 ; )
     {
       cnt--;
-      s1ap_ue_context_release( instance, (uint32_t)enb_s1ap_id[cnt] );
+      struct s1ap_eNB_ue_context_s *ue_context_p = NULL;
+      struct s1ap_eNB_ue_context_s *s1ap_ue_context_p = NULL;
+      ue_context_p = s1ap_eNB_get_ue_context(instance_p, (uint32_t)enb_s1ap_id[cnt]);
+      if (ue_context_p != NULL) {
+        s1ap_ue_context_p = RB_REMOVE(s1ap_ue_map, &instance_p->s1ap_ue_head, ue_context_p);
+        s1ap_eNB_free_ue_context(s1ap_ue_context_p);
+      }
     }
     s1ap_mme_data_p->mme_name = 0;
     s1ap_mme_data_p->overload_state = S1AP_NO_OVERLOAD;
