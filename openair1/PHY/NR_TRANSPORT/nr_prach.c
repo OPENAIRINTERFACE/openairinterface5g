@@ -31,7 +31,7 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
 
 extern uint16_t prach_root_sequence_map_0_3[838];
