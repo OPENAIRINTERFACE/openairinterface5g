@@ -41,7 +41,6 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"

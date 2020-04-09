@@ -23,7 +23,6 @@
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"

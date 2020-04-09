@@ -30,9 +30,14 @@
 * \warning
 */
 
+#ifndef __NR_TRANSPORT__H__
+#define __NR_TRANSPORT__H__
+
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_gNB.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
+#define NR_PBCH_PDU_BITS 24
 
 /*!
 \fn int nr_generate_pss
@@ -307,3 +312,5 @@ int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
+
+#endif /*__NR_TRANSPORT__H__*/

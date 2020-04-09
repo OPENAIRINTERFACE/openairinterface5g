@@ -30,7 +30,6 @@
  */
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nr_transport_proto_ue.h"
 //#include "SCHED/defs.h"
