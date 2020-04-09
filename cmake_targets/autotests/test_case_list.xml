@@ -1178,10 +1178,7 @@
     <testCase id="015109">
       <class>execution</class>
       <desc>nr_pucchsim Test cases. (Test1: Format 0 1-bit ACK miss 106 PRB),
-                                    (Test2: Format 0 2-bit ACK miss 106 PRB),
-                                    (Test3: Format 1 ACK miss 106 PRB),
-				                    (Test4: Format 1 ACK miss 273 PRB),
-			                        (Test5: Format 1 NACKtoACK 106 PRB)</desc>
+                                    (Test2: Format 0 2-bit ACK miss 106 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1190,9 +1187,7 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pucchsim.Rel15</main_exec>
       <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s-7 -n1000
                       -R 106 -i 1 -P 0 -b 2 -s-7 -n1000
-	              -R 106 -i 14 -P 1 -b 1 -s-6 -n100
-                      -R 273 -i 14 -P 1 -b 1 -s-6 -n100
-                      -R 106 -i 14 -P 1 -b 1 -s-6 -T 0.001 -n1000</main_exec_args>
+                      </main_exec_args>
       <tags>nr_pucchsim.test1 nr_pucchsim.test2 </tags>
       <search_expr_true>PUCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
