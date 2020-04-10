@@ -66,7 +66,7 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;
   uint8_t snr1set=0;
-  int **txdata;
+  int **txdataF,**rxdataF;
   double **s_re,**s_im,**r_re,**r_im;
   //int sync_pos, sync_pos_slot;
   //FILE *rx_frame_file;
@@ -93,7 +93,6 @@ int main(int argc, char **argv)
   uint8_t nrofSymbols=1; //number of OFDM symbols can be 1-2 for format 1
   uint8_t startingSymbolIndex=0; // resource allocated see 9.2.1, 38.213 for more info.should be actually present in the resource set provided
   uint16_t startingPRB=0,startingPRB_intraSlotHopping=0; //PRB number not sure see 9.2.1, 38.213 for more info. Should be actually present in the resource set provided
-  uint32_t hoppingId=40;
   uint8_t timeDomainOCC=0;
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
   
@@ -335,7 +334,7 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
-
+  memset((void*)gNB,0,sizeof(*gNB));
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -401,8 +400,10 @@ int main(int argc, char **argv)
   s_im = malloc(2*sizeof(double*));
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
-  txdata = malloc(2*sizeof(int*));
-
+  txdataF = malloc(2*sizeof(int*));
+  rxdataF = malloc(2*sizeof(int*));
+  gNB->common_vars.rxdataF=rxdataF;
+  memcpy((void*)&gNB->frame_parms,(void*)frame_parms,sizeof(frame_parms));
   for (i=0; i<2; i++) {
 
     s_re[i] = malloc(frame_length_complex_samples*sizeof(double));
@@ -415,17 +416,18 @@ int main(int argc, char **argv)
     r_im[i] = malloc(frame_length_complex_samples*sizeof(double));
     bzero(r_im[i],frame_length_complex_samples*sizeof(double));
 
-    printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
-    txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(int));
-  
+    printf("Allocating %d samples for txdataF/rxdataF\n",14*frame_parms->ofdm_symbol_size);
+    txdataF[i] = malloc(14*frame_parms->ofdm_symbol_size*sizeof(int));
+    bzero(txdataF[i],14*frame_parms->ofdm_symbol_size*sizeof(int));
+    rxdataF[i] = malloc(14*frame_parms->ofdm_symbol_size*sizeof(int));
+    bzero(rxdataF[i],14*frame_parms->ofdm_symbol_size*sizeof(int));
   }
 
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  UE->pucch_config_common_nr->hoppingId = hoppingId;
+  UE->pucch_config_common_nr->hoppingId = Nid_cell;
   //phy_init_nr_top(UE); //called from init_nr_ue_signal
                       
   UE->perfect_ce = 0;
@@ -454,41 +456,53 @@ int main(int argc, char **argv)
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     ack_nack_errors=0;
     n_errors = 0;
-    sigma2_dB = 20*log10((double)amp/32767)-SNR;
-    sigma2 = pow(10,sigma2_dB/10);
     for (trial=0; trial<n_trials; trial++) {
-      bzero(txdata[0],frame_length_complex_samples*sizeof(int));
+      bzero(txdataF[aa],frame_parms->ofdm_symbol_size*sizeof(int));
       if(format==0){
-        nr_generate_pucch0(UE,txdata,frame_parms,UE->pucch_config_dedicated,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
+        nr_generate_pucch0(UE,txdataF,frame_parms,UE->pucch_config_dedicated,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
       }
       else{
-        nr_generate_pucch1(UE,txdata,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	
+        nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	
       }
-      for(i=0; i<frame_length_complex_samples; i++) {
-        r_re[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)])/32767 + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-        r_im[aa][i]=((double)(((int16_t *)txdata[0])[(i<<1)+1])/32767+ sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-        r_re[aa][i]=r_re[0][i]/(sqrt(sigma2/2)+1);
-        r_im[aa][i]=r_im[0][i]/(sqrt(sigma2/2)+1);
-        if(r_re[aa][i]<-1)
-          r_re[aa][i]=-1; 
-        else if(r_re[aa][i]>1)
-          r_re[aa][i]=1;
-        if(r_im[aa][i]<-1)
-          r_im[aa][i]=-1;
-        else if(r_im[aa][i]>1)
-          r_im[aa][i]=1;	
-        ((int16_t *)txdata[aa])[(i<<1)]  = (int16_t)round(r_re[aa][i]*32767);
-        ((int16_t *)txdata[aa])[(i<<1)+1] =(int16_t)round(r_im[aa][i]*32767);
+      
+      int txlev = signal_energy(&txdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
+				frame_parms->ofdm_symbol_size);
+      //      printf("txlev %d (%d dB), offset %d\n",txlev,dB_fixed(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size);
+	    
+      // note : this scaling is for 1 PRB, to be updated for PUCCH 2
+      sigma2_dB = 10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12)-SNR;
+      sigma2 = pow(10,sigma2_dB/10);
+      
+      for(i=startingSymbolIndex*frame_parms->ofdm_symbol_size; i<(startingSymbolIndex+1)*frame_parms->ofdm_symbol_size; i++) {
+        ((int16_t*)rxdataF[aa])[i<<1] = (int16_t)(100.0*((double)(((int16_t *)txdataF[aa])[(i<<1)]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0))/sqrt((double)txlev));
+        ((int16_t*)rxdataF[aa])[1+(i<<1)]=(int16_t)(100.0*((double)(((int16_t *)txdataF[aa])[(i<<1)+1])+ sqrt(sigma2/2)*gaussdouble(0.0,1.0))/sqrt((double)txlev));
       }
+      int rxlev = signal_energy(&rxdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
+				frame_parms->ofdm_symbol_size);
+      //      printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
-        nr_decode_pucch0(txdata,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,nr_bit);
+	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
+	nfapi_nr_pucch_pdu_t pucch_pdu;
+	pucch_pdu.subcarrier_spacing    = 1;
+	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
+	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
+	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.sr_flag               = 0;
+	pucch_pdu.nr_of_symbols         = nrofSymbols;
+	pucch_pdu.hopping_id            = n_id;
+	pucch_pdu.initial_cyclic_shift  = 0;
+	pucch_pdu.start_symbol_index    = startingSymbolIndex;
+	pucch_pdu.prb_start             = startingPRB;
+        nr_decode_pucch0(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
         if(nr_bit==1)
-          ack_nack_errors+=(((actual_payload^payload_received)&2)>>1);
+          ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
         else
-          ack_nack_errors+=(((actual_payload^payload_received)&2)>>1) + (((actual_payload^payload_received)&4)>>2);
+          ack_nack_errors+=((actual_payload^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
+	free(uci_pdu.harq->harq_list);
       }
       else{
-        nr_decode_pucch1(txdata,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
+	
+        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
         if(nr_bit==1)
           ack_nack_errors+=((actual_payload^payload_received)&1);
         else
@@ -496,8 +510,7 @@ int main(int argc, char **argv)
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
-    printf("Decoded payload is %ld\n",payload_received);
-    printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,n_errors);
+    printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
     if((float)ack_nack_errors/(float)(nr_bit*n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");
       break;
@@ -509,13 +522,15 @@ int main(int argc, char **argv)
     free(s_im[i]);
     free(r_re[i]);
     free(r_im[i]);
-    free(txdata[i]);
+    free(txdataF[i]);
+    free(rxdataF[i]);
   }
   free(s_re);
   free(s_im);
   free(r_re);
   free(r_im);
-  free(txdata);
+  free(txdataF);
+  free(rxdataF);
 
   if (output_fd) fclose(output_fd);
   if (input_fd)  fclose(input_fd);

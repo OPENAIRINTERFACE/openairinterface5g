@@ -1468,7 +1468,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
   }
   else {  // to be tested
     curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
-    if (curr_pucch->dai_c<11) {     // we are scheduling at most 11 harq-ack in the same pucch
+    if (curr_pucch->dai_c<MAX_ACK_BITS) {     // we are scheduling at most MAX_UCI_BITS harq-ack in the same pucch
       while (i<8 && found == 0)  {  // look if timing indicator is among allowed values for current pucch
         if (pdsch_to_harq_feedback[i]==(curr_pucch->ul_slot % slots_per_tdd)-(slotP % slots_per_tdd))
           found = 1;
@@ -1480,7 +1480,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
         sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
       }
     }
-    if (curr_pucch->dai_c==11 || found == 0) { // if current pucch is full or no timing indicator allowed
+    if (curr_pucch->dai_c==MAX_ACK_BITS || found == 0) { // if current pucch is full or no timing indicator allowed
       // look for pucch occasions in other UL of mixed slots
       for (k=scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots; k<slots_per_tdd; k++) { // for each possible UL or mixed slot
         if (k!=(curr_pucch->ul_slot % slots_per_tdd)) { // skip current scheduled slot (already checked)
@@ -1514,7 +1514,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
                 curr_pucch->next_sched_pucch = sched_pucch;
               }
               else {
-                if (curr_pucch->dai_c==11)
+                if (curr_pucch->dai_c==MAX_ACK_BITS)
                   found = 0; // if pucch at index k is already full we have to find a new one in a following occasion
                 else { // scheduling this harq-ack in current pucch
                   sched_pucch = curr_pucch;

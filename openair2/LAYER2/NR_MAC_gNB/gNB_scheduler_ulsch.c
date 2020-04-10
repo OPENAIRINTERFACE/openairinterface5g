@@ -222,7 +222,10 @@ void nr_process_mac_pdu(
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
-        AssertFatal(pdu_len >= 0, "[MAC] nr_process_mac_pdu, residual mac pdu length < 0!\n");
+        if (pdu_len < 0) {
+          LOG_E(MAC, "%s() residual mac pdu length < 0!\n", __func__);
+          return;
+        }
     }
 }
 

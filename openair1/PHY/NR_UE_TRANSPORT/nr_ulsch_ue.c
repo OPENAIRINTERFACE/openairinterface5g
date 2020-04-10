@@ -194,7 +194,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     		}
       }
       //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-      else if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+      if (!IS_SOFTMODEM_NOS1 || !data_existing) {
         //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
         //and block this traffic from being forwarded to the upper layers at the gNB
         uint16_t payload_offset = 5;

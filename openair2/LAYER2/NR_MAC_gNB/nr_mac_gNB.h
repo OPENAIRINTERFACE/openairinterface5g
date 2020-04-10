@@ -203,4 +203,5 @@ typedef struct gNB_MAC_INST_s {
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 } gNB_MAC_INST;
 
+
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

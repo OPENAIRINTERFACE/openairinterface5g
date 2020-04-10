@@ -249,10 +249,11 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
+
 int configure_fapi_dl_pdu(int Mod_idP,
                           int *CCEIndex,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
-                          NR_sched_pucch *pucch_sched,
+			  NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
                           uint16_t *rbSize,
                           uint16_t *rbStart) {
@@ -557,7 +558,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     CCEIndices,
                                     dl_req,
-                                    pucch_sched,
+				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);

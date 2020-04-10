@@ -371,7 +371,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   //printf("gNB_dlsch_ulsch_scheduler frameRX %d slotRX %d frameTX %d slotTX %d\n",frame_rxP,slot_rxP,frame_txP,slot_txP);
 			       
   protocol_ctxt_t   ctxt;
-
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame_txP, slot_txP,module_idP);
+ 
   int               CC_id;
   int UE_id;
   uint64_t *dlsch_in_slot_bitmap=NULL;
@@ -386,9 +387,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   int num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])>>(7-scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
-
-  //nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config = NULL;
-
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -448,7 +446,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       } //END if (UE_list->active[i])
     } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
     */
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
     // This schedules MIB
     if((slot_txP == 0) && (frame_txP & 7) == 0){

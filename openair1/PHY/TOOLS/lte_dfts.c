@@ -2437,6 +2437,10 @@ static inline void idft16(int16_t *x,int16_t *y)
 #endif
 }
 
+void idft16f(int16_t *x,int16_t *y) {
+  idft16(x,y);
+}
+
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
 // Does two 16-point IDFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs) 

@@ -35,6 +35,8 @@
 #include "PHY/defs_gNB.h"
 #include "NR_TAG-Id.h"
 
+#define MAX_ACK_BITS 2 //only format 0 is available for now
+
 void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
@@ -80,7 +82,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP);
 
-
 int configure_fapi_dl_pdu(int Mod_id,
                          int *CCEIndeces,
                          nfapi_nr_dl_tti_request_body_t *dl_req,
@@ -88,7 +89,6 @@ int configure_fapi_dl_pdu(int Mod_id,
                          uint8_t *mcsIndex,
                          uint16_t *rbSize,
                          uint16_t *rbStart);
-
 
 void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types);
 
@@ -140,13 +140,24 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           uint16_t slot,
                           nfapi_nr_config_request_scf_t cfg);
 */
+<<<<<<< HEAD
 
 
+=======
+void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+			NR_ServingCellConfigCommon_t *scc,
+			NR_BWP_Uplink_t *bwp,
+                        uint8_t pucch_resource,
+                        uint16_t O_uci,
+                        uint16_t O_ack,
+                        uint8_t SR_flag);
+>>>>>>> nr_pucch
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                         int ss_type,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp);
 
+<<<<<<< HEAD
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
@@ -168,6 +179,12 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         uint8_t SR_flag);
 
 
+=======
+void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                        dci_pdu_rel15_t *dci_pdu_rel15,
+                        int *dci_formats,
+                        int *rnti_types);
+>>>>>>> nr_pucch
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
 int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);

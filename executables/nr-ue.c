@@ -633,7 +633,7 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   return 0;
 }
 
-inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+static inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   if (fp->numerology_index == 0)
     return fp->nb_prefix_samples0 + fp->ofdm_symbol_size;
   int num_samples = (slot%(fp->slots_per_subframe/2)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
@@ -641,7 +641,7 @@ inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   return num_samples;
 }
 
-inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
+static inline int get_readBlockSize(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   int rem_samples = fp->get_samples_per_slot(slot, fp) - get_firstSymSamp(slot, fp);
   int next_slot_first_symbol = 0;
   if (slot < (fp->slots_per_frame-1))
