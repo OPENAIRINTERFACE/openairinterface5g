@@ -1093,7 +1093,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
-
+  start_meas(&gNB->ulsch_channel_estimation_stats);
   if (dmrs_symbol_flag == 1)
     nr_pusch_channel_estimation(gNB,
                                 nr_tti_rx,
@@ -1101,17 +1101,19 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 symbol,
                                 bwp_start_subcarrier,
                                 rel15_ul);
-
+  stop_meas(&gNB->ulsch_channel_estimation_stats);
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
 
+  start_meas(&gNB->ulsch_rbs_extraction_stats);
   nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                               gNB->pusch_vars[UE_id],
                               symbol,
                               dmrs_symbol_flag,
                               rel15_ul,
                               frame_parms);
+  stop_meas(&gNB->ulsch_rbs_extraction_stats);
 
   nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                          frame_parms,
@@ -1140,6 +1142,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   }
 
+  start_meas(&gNB->ulsch_channel_compensation_stats);
   nr_ulsch_channel_compensation(gNB->pusch_vars[UE_id]->rxdataF_ext,
                                 gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                                 gNB->pusch_vars[UE_id]->ul_ch_mag0,
@@ -1152,6 +1155,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul->qam_mod_order,
                                 rel15_ul->rb_size,
                                 gNB->pusch_vars[UE_id]->log2_maxh);
+  stop_meas(&gNB->ulsch_channel_compensation_stats);
 
 #ifdef NR_SC_FDMA
   nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
@@ -1160,7 +1164,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //-------------------- LLRs computation --------------------
   //----------------------------------------------------------
-
+  start_meas(&gNB->ulsch_llr_stats);
   nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_comp[0][symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB],
                        gNB->pusch_vars[UE_id]->ul_ch_mag0,
                        gNB->pusch_vars[UE_id]->ul_ch_magb0,
@@ -1169,6 +1173,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                        nb_re_pusch,
                        symbol,
                        rel15_ul->qam_mod_order);
+  stop_meas(&gNB->ulsch_llr_stats);
 
   gNB->pusch_vars[UE_id]->rxdataF_ext_offset = gNB->pusch_vars[UE_id]->rxdataF_ext_offset +  nb_re_pusch - gNB->pusch_vars[UE_id]->ptrs_sc_per_ofdm_symbol;
   
