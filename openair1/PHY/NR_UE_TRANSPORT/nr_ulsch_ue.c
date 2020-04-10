@@ -209,7 +209,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       #ifdef DEBUG_MAC_PDU
       LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", harq_process_ul_ue->TBS/8);
       for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
-        printf("0x%02x",harq_process_ul_ue->a[i]);
+        printf("%02x",harq_process_ul_ue->a[i]);
       }
       printf("\n");
 	  #endif

@@ -1,5 +1,4 @@
-/*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+/* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
@@ -19,21 +18,20 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_gNB_GTPV1U.h
- * \brief rrc GTPV1U procedures for gNB
- * \author Lionel GAUTHIER, Panos MATZAKOS
- * \version 1.0
- * \company Eurecom
- * \email: lionel.gauthier@eurecom.fr, panagiotis.matzakos@eurecom.fr
- */
+/*! \file gtpv1u_gNB_task.h
+* \brief
+* \author Lionel Gauthier Panos Matzakos
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
+*/
 
-#ifndef RRC_GNB_GTPV1U_H_
-#define RRC_GNB_GTPV1U_H_
+#ifndef GTPV1U_GNB_TASK_H_
+#define GTPV1U_GNB_TASK_H_
+
+int   gtpv1u_gNB_init(void);
+
+void *gtpv1u_gNB_task(void *args);
 
 
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-);
+#endif /* GTPV1U_GNB_TASK_H_ */
+

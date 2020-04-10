@@ -421,7 +421,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
         }
       }
 
-      if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
+      if (itti_create_task (TASK_GTPV1_U, &gtpv1u_gNB_task, NULL) < 0) {
         LOG_E(GTPU, "Create task for GTPV1U failed\n");
         return -1;
       }
