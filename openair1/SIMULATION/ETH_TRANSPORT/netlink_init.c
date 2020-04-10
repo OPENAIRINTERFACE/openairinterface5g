@@ -58,7 +58,7 @@ struct iovec nas_iov_rx = {nl_rx_buf, sizeof(nl_rx_buf)};
 
 int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
-int nas_sock_mbms_fd[8];
+int nas_sock_mbms_fd;
 
 struct msghdr nas_msg_tx;
 struct msghdr nas_msg_rx;
@@ -95,21 +95,20 @@ static int tun_alloc(char *dev) {
 }
 
 
-int netlink_init_mbms_tun(char *ifprefix, int num_if) {
+int netlink_init_mbms_tun(char *ifprefix) {
   int ret;
   char ifname[64];
 
-  int i= num_if-1;
-    sprintf(ifname, "oaitun_%.3s%d",ifprefix,i+1);
-    nas_sock_mbms_fd[i] = tun_alloc(ifname);
+    sprintf(ifname, "oaitun_%.3s1",ifprefix); // added "1": for historical reasons
+    nas_sock_mbms_fd = tun_alloc(ifname);
 
-    if (nas_sock_mbms_fd[i] == -1) {
+    if (nas_sock_mbms_fd == -1) {
       printf("[NETLINK] Error opening socket %s (%d:%s)\n",ifname,errno, strerror(errno));
       exit(1);
     }
 
-    printf("[NETLINK]Opened socket %s with fd %d\n",ifname,nas_sock_mbms_fd[i]);
-    ret = fcntl(nas_sock_mbms_fd[i],F_SETFL,O_NONBLOCK);
+    printf("[NETLINK]Opened socket %s with fd %d\n",ifname,nas_sock_mbms_fd);
+    ret = fcntl(nas_sock_mbms_fd,F_SETFL,O_NONBLOCK);
 
     if (ret == -1) {
       printf("[NETLINK] Error fcntl (%d:%s)\n",errno, strerror(errno));
@@ -123,7 +122,7 @@ int netlink_init_mbms_tun(char *ifprefix, int num_if) {
     nas_src_addr.nl_family = AF_NETLINK;
     nas_src_addr.nl_pid = 1;//getpid();  /* self pid */
     nas_src_addr.nl_groups = 0;  /* not in mcast groups */
-    ret = bind(nas_sock_mbms_fd[i], (struct sockaddr *)&nas_src_addr, sizeof(nas_src_addr));
+    ret = bind(nas_sock_mbms_fd, (struct sockaddr *)&nas_src_addr, sizeof(nas_src_addr));
     memset(&nas_dest_addr, 0, sizeof(nas_dest_addr));
     nas_dest_addr.nl_family = AF_NETLINK;
     nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
@@ -165,7 +164,8 @@ int netlink_init_tun(char *ifprefix, int num_if) {
       exit(1);
     }
 
-    printf("[NETLINK]Opened socket %s with fd %d\n",ifname,nas_sock_fd[i]);
+    printf("[NETLINK]Opened socket %s with fd nas_sock_fd[%d]=%d\n",
+           ifname, i, nas_sock_fd[i]);
     ret = fcntl(nas_sock_fd[i],F_SETFL,O_NONBLOCK);
 
     if (ret == -1) {

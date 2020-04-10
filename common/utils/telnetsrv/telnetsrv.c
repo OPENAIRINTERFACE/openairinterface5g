@@ -377,6 +377,14 @@ int setgetvar(int moduleindex,char getorset,char *params) {
             client_printf("%hi\n",*(short *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
             break;
 
+          case TELNET_VARTYPE_INT8:
+            client_printf("%i\n",(int)(*(int8_t *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr)));
+            break;
+            
+          case TELNET_VARTYPE_UINT:
+            client_printf("%u\n",*(unsigned int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
+            break;
+            
           case TELNET_VARTYPE_DOUBLE:
             client_printf("%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
             break;
@@ -405,7 +413,17 @@ int setgetvar(int moduleindex,char getorset,char *params) {
             *(short *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr) = (short)strtol(varval,NULL,0);
             client_printf("%hi\n",*(short *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
             break;
-
+            
+          case TELNET_VARTYPE_INT8:
+            *(char *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr) = (char)strtol(varval,NULL,0);
+            client_printf("%i\n",*(int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
+            break;
+            
+          case TELNET_VARTYPE_UINT:
+            *(unsigned int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr) = (unsigned int)strtol(varval,NULL,0);
+            client_printf("%u\n",*(unsigned int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
+            break;
+ 
           case TELNET_VARTYPE_DOUBLE:
             *(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr) = strtod(varval,NULL);
             client_printf("%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));

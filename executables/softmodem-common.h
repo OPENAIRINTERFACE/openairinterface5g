@@ -117,7 +117,7 @@ extern "C"
     {"clock",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
     {"wait-for-sync",        NULL,                    PARAMFLAG_BOOL, iptr:&WAIT_FOR_SYNC,                defintval:0,           TYPE_INT,    0},                     \
     {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
-    {"C" ,                   CONFIG_HLP_DLF,          0,              uptr:&(downlink_frequency[0][0]),   defuintval:2680000000, TYPE_UINT,   0},                     \
+    {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]), defuintval:0, TYPE_UINT64,   0},                     \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
@@ -198,7 +198,7 @@ extern "C"
 
 typedef struct {
   uint64_t       optmask;
-  THREAD_STRUCT  thread_struct;
+  //THREAD_STRUCT  thread_struct;
   char           rf_config_file[1024];
   char           split73[1024];
   char           threadPoolConfig[1024];
@@ -223,7 +223,7 @@ extern void get_common_options(uint32_t execmask);
 extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 #define SOFTMODEM_RTSIGNAL  (SIGRTMIN+1)
 extern void set_softmodem_sighandler(void);
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 #ifdef __cplusplus
 }
 #endif

@@ -23,7 +23,7 @@
 /*! \file PHY/NR_TRANSPORT/nr_transport_common_proto.h
 * \brief Some support routines
 * \author
-* \date 2018
+* \date 2019
 * \version 0.1
 * \company Eurecom
 * \email:
@@ -36,29 +36,13 @@
 
 #include "PHY/defs_nr_common.h"
 
-#define MAX_NUM_NR_DLSCH_SEGMENTS 16
-#define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
-
-#define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)
-#define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
-
-#define MAX_NUM_NR_CHANNEL_BITS (14*273*12*6)  // 14 symbols, 273 RB
-#define MAX_NUM_NR_RE (14*273*12)
 
 #define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
 #define NR_PUSCH_y 3 // UCI placeholder bit 
 
-/** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
-uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
-uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
 
-/** \brief Computes Q based on I_MCS PDSCH and table_idx for uplink. Implements MCS Tables from 38.214. */
-uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
-uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
-void nr_get_tbs_dl(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
-                   nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                   nfapi_nr_config_request_t config);
+
 
 /** \brief Computes available bits G. */
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint16_t length_dmrs, uint8_t Qm, uint8_t Nl);

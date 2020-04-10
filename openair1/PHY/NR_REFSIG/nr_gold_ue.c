@@ -100,7 +100,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
           x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
           ue->nr_gold_pdcch[0][ns][l][n] = x1^x2;
-            //printf("n=%d : c %x\n",n,x1^x2);
+	  // if (ns==1 && l==0) printf("n=%d : c %x\n",n,x1^x2);
         }
       }
     }
@@ -133,7 +133,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
 
     	x2tmp0 = ((14*ns+(lbar+l)+1)*((nid<<1)+1))<<17;
         x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
-        
+	LOG_D(PHY,"UE DMRS slot %d, symb %d, lbar %d, x2 %x, nscid %d\n",ns,l,lbar,x2,nscid);
                 //printf("ns %d gold pdsch x2 %d\n",ns,x2);
 
         x1 = 1+ (1<<31);

@@ -487,10 +487,10 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
 
   
   macro_segment = 8*macro_num;
-  // macro_segment_end = (n_segments > 8*(macro_num+1)) ? 8*(macro_num+1) : n_segments;
-  macro_segment_end = macro_segment + (n_segments > 8 ? 8 : n_segments);
-  ///printf("macro_segment: %d\n", macro_segment);
-  ///printf("macro_segment_end: %d\n", macro_segment_end );
+  macro_segment_end = (n_segments > 8*(macro_num+1)) ? 8*(macro_num+1) : n_segments;
+  //macro_segment_end = macro_segment + (n_segments > 8 ? 8 : n_segments);
+  //printf("macro_segment: %d\n", macro_segment);
+  //printf("macro_segment_end: %d\n", macro_segment_end );
 
 #ifdef __AVX2__
   __m256i shufmask = _mm256_set_epi64x(0x0303030303030303, 0x0202020202020202,0x0101010101010101, 0x0000000000000000);
@@ -564,7 +564,7 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   for (i=0; i<block_length>>5; i++) {
     c256 = _mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)test_input[macro_segment])[i]), shufmask),andmask),zero256),masks[0]);
     //for (j=1; j<n_segments; j++) {
-    for (j=macro_segment+1; j < macro_segment_end; j++) {    
+    for (j=macro_segment+1; j < macro_segment_end; j++) {
       c256 = _mm256_or_si256(_mm256_and_si256(_mm256_cmpeq_epi8(_mm256_andnot_si256(_mm256_shuffle_epi8(_mm256_set1_epi32(((uint32_t*)test_input[j])[i]), shufmask),andmask),zero256),masks[j-macro_segment]),c256);
     }
     ((__m256i *)c)[i] = c256;

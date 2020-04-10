@@ -84,8 +84,14 @@ uint16_t get_dmrs_freq_idx(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t d
   return dmrs_idx;
 }
 
-uint8_t get_l0(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
+uint8_t get_l0(uint16_t dlDmrsSymbPos) {
 
-  return ((mapping_type==NFAPI_NR_PDSCH_MAPPING_TYPE_A)?dmrs_typeA_position:0);
-
+  uint16_t mask=dlDmrsSymbPos;
+  int l0;
+  for (l0=0;l0<14;l0++) {
+    if ((mask&1) == 1) break;
+    mask>>=1;
+  }
+  AssertFatal(l0 < 4,"impossible l0 %d\n",l0);
+  return (l0);
 }

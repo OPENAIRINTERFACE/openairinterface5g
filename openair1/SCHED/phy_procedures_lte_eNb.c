@@ -441,7 +441,6 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
-
       else
         harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
 

@@ -120,7 +120,7 @@ clock_source_t clock_source = internal,time_source=internal;
 unsigned int                    mmapped_dma=0;
 
 
-uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
+uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
@@ -545,7 +545,8 @@ void init_pdcp(void) {
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB
-void *rrc_enb_process_itti_msg(void *notUsed) {
+void *rrc_enb_process_msg(void *notUsed) {
+AssertFatal(false,"");
 	return NULL;
 }
 
@@ -607,7 +608,6 @@ int main( int argc, char **argv ) {
   pthread_mutex_init(&sync_mutex, NULL);
 
   printf("ITTI init\n");
-#define UE
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI

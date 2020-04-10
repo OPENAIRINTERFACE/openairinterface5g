@@ -613,8 +613,11 @@ function start_epc {
         echo "############################################################"
         echo "echo \"cd /opt/hss_sim0609\"" > $LOC_EPC_VM_CMDS
         echo "cd /opt/hss_sim0609" >> $LOC_EPC_VM_CMDS
-        echo "echo \"sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real\"" >> $LOC_EPC_VM_CMDS
-        echo "sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real" >> $LOC_EPC_VM_CMDS
+        echo "sudo rm -f hss.log" >> $LOC_EPC_VM_CMDS
+        #echo "echo \"sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real\"" >> $LOC_EPC_VM_CMDS
+        #echo "sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real" >> $LOC_EPC_VM_CMDS
+        echo "echo \"screen -dm -S simulated_hss ./starthss_real\"" >> $LOC_EPC_VM_CMDS
+        echo "sudo su -c \"screen -dm -S simulated_hss ./starthss_real\"" >> $LOC_EPC_VM_CMDS
 
         echo "echo \"cd /opt/ltebox/tools/\"" >> $LOC_EPC_VM_CMDS
         echo "cd /opt/ltebox/tools/" >> $LOC_EPC_VM_CMDS
@@ -870,9 +873,9 @@ function start_l2_sim_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread $LOC_NB_UES --nokrnmod 1 --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread $LOC_NB_UES --nokrnmod 1 --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -905,8 +908,9 @@ function start_l2_sim_ue {
     else
         echo "L2-SIM UE is sync'ed w/ eNB"
     fi
-    local max_interfaces_to_check=1
-    if [ $LOC_S1_CONFIGURATION -eq 0 ]; then max_interfaces_to_check=$LOC_NB_UES; fi
+    local max_interfaces_to_check=$LOC_NB_UES
+    #local max_interfaces_to_check=1
+    #if [ $LOC_S1_CONFIGURATION -eq 0 ]; then max_interfaces_to_check=$LOC_NB_UES; fi
     local j="1"
     while [ $j -le $max_interfaces_to_check ]
     do
@@ -1195,7 +1199,7 @@ function start_rf_sim_gnb {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim\" > ./my-nr-softmodem-run.sh " >> $1
+        echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
     echo "cat ./my-nr-softmodem-run.sh" >> $1
@@ -1270,7 +1274,7 @@ function start_rf_sim_nr_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --numerology 1 -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/ci-scripts/rrc-files --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
     echo "cat ./my-nr-softmodem-run.sh" >> $1
@@ -1281,7 +1285,7 @@ function start_rf_sim_nr_ue {
     rm $1
 
     local i="0"
-    echo "egrep -c \"rfsimulator: Success\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    echo "egrep -c \"Initial sync: pbch decoded sucessfully\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
@@ -2214,15 +2218,41 @@ function run_test_on_vm {
 
                 if [ $S1_NOS1_CFG -eq 1 ]
                 then
-                    get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR 1
 
                     echo "############################################################"
                     echo "${CN_CONFIG} : Pinging the EPC from UE(s)"
                     echo "############################################################"
-                    PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_epc.log
-                    ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE 1 0
-                    scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
-                    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                    echo " --- Sequentially ---"
+                    local j="1"
+                    while [ $j -le $INT_NB_UES ]
+                    do
+                        PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_epc_seq_from_ue${j}.log
+                        ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE ${j} 0
+                        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                        j=$[$j+1]
+                    done
+                    if [ $INT_NB_UES -gt 1 ]
+                    then
+                        echo " --- In parallel ---"
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_epc_para_from_ue${j}.log
+                            ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE ${j} 1
+                            j=$[$j+1]
+                        done
+                        sleep 25
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_epc_para_from_ue${j}.log
+                            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                            tail -3 $ARCHIVES_LOC/$PING_LOG_FILE
+                            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                            j=$[$j+1]
+                        done
+                    fi
                 else
                     get_enb_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
 
@@ -2267,10 +2297,38 @@ function run_test_on_vm {
                     echo "############################################################"
                     echo "${CN_CONFIG} : Pinging the UE(s) from EPC"
                     echo "############################################################"
-                    PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_ue.log
-                    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
-                    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
-                    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                    echo " --- Sequentially ---"
+                    local j="1"
+                    while [ $j -le $INT_NB_UES ]
+                    do
+                        get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                        PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_from_epc_seq_ue${j}.log
+                        ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 0
+                        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                        j=$[$j+1]
+                    done
+                    if [ $INT_NB_UES -gt 1 ]
+                    then
+                        echo " --- In parallel ---"
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $j
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_from_epc_para_ue${j}.log
+                            ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE 1
+                            j=$[$j+1]
+                        done
+                        sleep 25
+                        j="1"
+                        while [ $j -le $INT_NB_UES ]
+                        do
+                            PING_LOG_FILE=${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping_from_epc_para_ue${j}.log
+                            scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+                            check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+                            j=$[$j+1]
+                        done
+                    fi
                 else
                     echo "############################################################"
                     echo "${CN_CONFIG} : Pinging the UE(s) from eNB"
@@ -2310,7 +2368,7 @@ function run_test_on_vm {
                     fi
                 fi
 
-                if [ $S1_NOS1_CFG -eq 2 ]
+                if [ $S1_NOS1_CFG -eq 0 ]
                 then
                     get_enb_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
                     echo "############################################################"

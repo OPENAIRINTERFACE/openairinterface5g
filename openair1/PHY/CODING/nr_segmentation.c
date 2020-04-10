@@ -30,13 +30,13 @@
 //#define DEBUG_SEGMENTATION
 
 int32_t nr_segmentation(unsigned char *input_buffer,
-                     unsigned char **output_buffers,
-                     unsigned int B,
-                     unsigned int *C,
-                     unsigned int *K,
-                     unsigned int *Zout, // [hna] Zout is Zc
-                     unsigned int *F,
-                     uint8_t BG)
+                        unsigned char **output_buffers,
+                        unsigned int B,
+                        unsigned int *C,
+                        unsigned int *K,
+                        unsigned int *Zout, // [hna] Zout is Zc
+                        unsigned int *F,
+                        uint8_t BG)
 {
 
   unsigned int L,Bprime,Z,r,Kcb,Kb,k,s,crc,Kprime;
@@ -63,7 +63,7 @@ int32_t nr_segmentation(unsigned char *input_buffer,
 #endif
   }
 
-  if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
+  if ((*C)>MAX_NUM_NR_DLSCH_SEGMENTS) {
     LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
     return(-1);
   }

@@ -53,7 +53,7 @@ volatile int oai_exit = 0;
 double cpuf;
 uint16_t sf_ahead=4;
 int otg_enabled;
-uint32_t  downlink_frequency[MAX_NUM_CCs][4];
+uint64_t  downlink_frequency[MAX_NUM_CCs][4];
 int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];
 int split73;
 char * split73_config;

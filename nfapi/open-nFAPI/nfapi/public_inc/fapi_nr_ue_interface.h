@@ -1,5 +1,4 @@
-/*
- * Copyright 2017 Cisco Systems, Inc.
+/*Copyright 2017 Cisco Systems, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,77 +31,7 @@
   typedef signed char		   int8_t;
 */
 
-typedef struct {
-  uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:
-  uint8_t carrier_ind                     ; // 1  CARRIER_IND: 0 or 3 bits, as defined in Subclause x.x of [5, TS38.213]
-  uint8_t sul_ind_0_1                     ; // 2  SUL_IND_0_1:
-  uint8_t slot_format_ind                 ; // 3  SLOT_FORMAT_IND: size of DCI format 2_0 is configurable by higher layers up to 128 bits, according to Subclause 11.1.1 of [5, TS 38.213]
-  uint8_t pre_emption_ind                 ; // 4  PRE_EMPTION_IND: size of DCI format 2_1 is configurable by higher layers up to 126 bits, according to Subclause 11.2 of [5, TS 38.213]. Each pre-emption indication is 14 bits
-  uint8_t block_number                    ; // 5  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
-  uint8_t close_loop_ind                  ; // 6  CLOSE_LOOP_IND:
-  uint8_t bandwidth_part_ind              ; // 7  BANDWIDTH_PART_IND:
-  uint8_t short_message_ind               ; // 8  SHORT_MESSAGE_IND:
-  uint8_t short_messages                  ; // 9  SHORT_MESSAGES:
-  uint16_t freq_dom_resource_assignment_UL; // 10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
-  //    (NOTE 1) If DCI format 0_0 is monitored in common search space
-  //    and if the number of information bits in the DCI format 0_0 prior to padding
-  //    is larger than the payload size of the DCI format 1_0 monitored in common search space
-  //    the bitwidth of the frequency domain resource allocation field in the DCI format 0_0
-  //    is reduced such that the size of DCI format 0_0 equals to the size of the DCI format 1_0
-  uint16_t freq_dom_resource_assignment_DL; // 11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
-  uint8_t time_dom_resource_assignment    ; // 12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
-  //    where I the number of entries in the higher layer parameter pusch-AllocationList
-  uint8_t vrb_to_prb_mapping              ; // 13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
-  uint8_t prb_bundling_size_ind           ; // 14 PRB_BUNDLING_SIZE_IND:0 bit if the higher layer parameter PRB_bundling is not configured or is set to 'static', or 1 bit if the higher layer parameter PRB_bundling is set to 'dynamic' according to Subclause 5.1.2.3 of [6, TS 38.214]
-  uint8_t rate_matching_ind               ; // 15 RATE_MATCHING_IND: 0, 1, or 2 bits according to higher layer parameter rate-match-PDSCH-resource-set
-  uint8_t zp_csi_rs_trigger               ; // 16 ZP_CSI_RS_TRIGGER:
-  uint8_t freq_hopping_flag               ; // 17 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
-  uint8_t tb1_mcs                         ; // 18 TB1_MCS:
-  uint8_t tb1_ndi                         ; // 19 TB1_NDI:
-  uint8_t tb1_rv                          ; // 20 TB1_RV:
-  uint8_t tb2_mcs                         ; // 21 TB2_MCS:
-  uint8_t tb2_ndi                         ; // 22 TB2_NDI:
-  uint8_t tb2_rv                          ; // 23 TB2_RV:
-  uint8_t mcs                             ; // 24 MCS:
-  uint8_t ndi                             ; // 25 NDI:
-  uint8_t rv                              ; // 26 RV:
-  uint8_t harq_process_number             ; // 27 HARQ_PROCESS_NUMBER:
-  uint8_t dai                             ; // 28 DAI: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
-  //    2 if one serving cell is configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 bits are the counter DAI
-  //    0 otherwise
-  uint8_t first_dai                       ; // 29 FIRST_DAI: (1 or 2 bits) 1 bit for semi-static HARQ-ACK
-  uint8_t second_dai                      ; // 30 SECOND_DAI: (0 or 2 bits) 2 bits for dynamic HARQ-ACK codebook with two HARQ-ACK sub-codebooks
-  uint8_t tb_scaling                      ; // 31 TB_SCALING:
-  uint8_t tpc_pusch                       ; // 32 TPC_PUSCH:
-  uint8_t tpc_pucch                       ; // 33 TPC_PUCCH:
-  uint8_t pucch_resource_ind              ; // 34 PUCCH_RESOURCE_IND:
-  uint8_t pdsch_to_harq_feedback_time_ind ; // 35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
-  uint8_t srs_resource_ind                ; // 36 SRS_RESOURCE_IND:
-  uint8_t precod_nbr_layers               ; // 37 PRECOD_NBR_LAYERS:
-  uint8_t antenna_ports                   ; // 38 ANTENNA_PORTS:
-  uint8_t tci                             ; // 39 TCI: 0 bit if higher layer parameter tci-PresentInDCI is not enabled; otherwise 3 bits
-  uint8_t srs_request                     ; // 40 SRS_REQUEST:
-  uint8_t tpc_cmd                         ; // 41 TPC_CMD:
-  uint8_t csi_request                     ; // 42 CSI_REQUEST:
-  uint8_t cbgti                           ; // 43 CBGTI: 0, 2, 4, 6, or 8 bits determined by higher layer parameter maxCodeBlockGroupsPerTransportBlock for the PDSCH
-  uint8_t cbgfi                           ; // 44 CBGFI: 0 or 1 bit determined by higher layer parameter codeBlockGroupFlushIndicator
-  uint8_t ptrs_dmrs                       ; // 45 PTRS_DMRS:
-  uint8_t beta_offset_ind                 ; // 46 BETA_OFFSET_IND:
-  uint8_t dmrs_seq_ini                    ; // 47 DMRS_SEQ_INI: 1 bit if the cell has two ULs and the number of bits for DCI format 1_0 before padding
-  //    is larger than the number of bits for DCI format 0_0 before padding; 0 bit otherwise
-  uint8_t ul_sch_ind                      ; // 48 UL_SCH_IND:  value of "1" indicates UL-SCH shall be transmitted on the PUSCH and a value of "0" indicates UL-SCH shall not be transmitted on the PUSCH
-  uint16_t padding_nr_dci                 ; // 49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
-  //    and if the number of information bits in the DCI format 0_0 prior to padding
-  //    is less than the payload size of the DCI format 1_0 monitored in common search space
-  //    zeros shall be appended to the DCI format 0_0
-  //    until the payload size equals that of the DCI format 1_0
-  uint8_t sul_ind_0_0                     ; // 50 SUL_IND_0_0:
-  uint8_t ra_preamble_index               ; // 51 RA_PREAMBLE_INDEX:
-  uint8_t sul_ind_1_0                     ; // 52 SUL_IND_1_0:
-  uint8_t ss_pbch_index                   ; // 53 SS_PBCH_INDEX
-  uint8_t prach_mask_index                ; // 54 PRACH_MASK_INDEX
-  uint8_t reserved_nr_dci                 ; // 55 RESERVED_NR_DCI
-} fapi_nr_dci_pdu_rel15_t;
+
 
 
 
@@ -121,16 +50,14 @@ typedef struct {
 
 typedef struct {
   /// frequency_domain_resource;
-  //uint32_t rb_start;
-  //uint32_t rb_end;
-  uint64_t frequency_domain_resource;
-  uint16_t rb_offset;
-
+  uint8_t frequency_domain_resource[6];
+  uint8_t StartSymbolIndex;
   uint8_t duration;
-  uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
-  uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
-  uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
-  uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
+  uint8_t CceRegMappingType; //  interleaved or noninterleaved
+  uint8_t RegBundleSize;     //  valid if CCE to REG mapping type is interleaved type
+  uint8_t InterleaverSize;   //  valid if CCE to REG mapping type is interleaved type
+  uint8_t ShiftIndex;        //  valid if CCE to REG mapping type is interleaved type
+  uint8_t CoreSetType;
   uint8_t precoder_granularity;
   uint16_t pdcch_dmrs_scrambling_id;
 
@@ -155,13 +82,16 @@ typedef struct {
   int n_CCE;
   // N_CCE is L, or number of CCEs for DCI
   int N_CCE;
-  fapi_nr_dci_pdu_rel15_t dci;
+  uint8_t payloadSize;
+  uint8_t payloadBits[16];
+  //fapi_nr_dci_pdu_rel15_t dci;
 } fapi_nr_dci_indication_pdu_t;
 
 
 ///
 typedef struct {
-  uint32_t sfn_slot;
+  uint16_t SFN;
+  uint8_t slot;
   uint16_t number_of_dcis;
   fapi_nr_dci_indication_pdu_t dci_list[10];
 } fapi_nr_dci_indication_t;
@@ -199,7 +129,8 @@ typedef struct {
 ///
 #define NFAPI_RX_IND_MAX_PDU 100
 typedef struct {
-  uint32_t sfn_slot;
+  uint16_t sfn;
+  uint16_t slot;
   uint16_t number_pdus;
   fapi_nr_rx_indication_body_t rx_indication_body[NFAPI_RX_IND_MAX_PDU];
 } fapi_nr_rx_indication_t;
@@ -218,7 +149,8 @@ typedef struct {
 
 ///
 typedef struct {
-  uint32_t sfn_slot;
+  uint16_t sfn;
+  uint16_t slot;
   fapi_nr_tx_config_t tx_config;
   uint16_t number_of_pdus;
   fapi_nr_tx_request_body_t *tx_request_body;
@@ -374,7 +306,8 @@ typedef struct {
 } fapi_nr_ul_config_request_pdu_t;
 
 typedef struct {
-  uint32_t sfn_slot;
+  uint16_t sfn;
+  uint16_t slot;
   uint8_t number_pdus;
   fapi_nr_ul_config_request_pdu_t ul_config_list[FAPI_NR_UL_CONFIG_LIST_NUM];
 } fapi_nr_ul_config_request_t;
@@ -382,16 +315,15 @@ typedef struct {
 
 typedef struct {
   uint16_t rnti;
-  
+  uint16_t BWPSize;
+  uint16_t BWPStart;
+  uint8_t SubcarrierSpacing;
   fapi_nr_coreset_t coreset;
-  uint16_t N_RB_BWP;
-  uint32_t duration;
-  uint8_t number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16 
-  uint16_t monitoring_symbols_within_slot;
-  //  DCI foramt-specific
-  uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
-  uint8_t format_2_3_monitorying_periodicity;
-  uint8_t format_2_3_number_of_candidates;
+  uint8_t number_of_candidates;
+  uint16_t CCE[64];
+  uint8_t L[64];
+  uint8_t dci_length;
+  uint8_t dci_format;
 } fapi_nr_dl_config_dci_dl_pdu_rel15_t;
 
 typedef struct {
@@ -404,12 +336,16 @@ typedef struct{
 typedef enum{vrb_to_prb_mapping_non_interleaved = 0, vrb_to_prb_mapping_interleaved = 1} vrb_to_prb_mapping_t;
 //typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
 typedef struct {
-  uint8_t bandwidth_part_ind;
+  uint16_t BWPSize;
+  uint16_t BWPStart;
+  uint8_t SubcarrierSpacing;  
   uint16_t number_rbs;
   uint16_t start_rb;
   uint8_t frame_offset;
   uint16_t number_symbols;
   uint16_t start_symbol;
+  uint16_t dlDmrsSymbPos;  
+  uint8_t dmrsConfigType;
   uint8_t prb_bundling_size_ind;
   uint8_t rate_matching_ind;
   uint8_t zp_csi_rs_trigger;
@@ -450,7 +386,8 @@ typedef struct {
 } fapi_nr_dl_config_request_pdu_t;
 
 typedef struct {
-  uint32_t sfn_slot;
+  uint16_t sfn;
+  uint16_t slot;
   uint8_t number_pdus;
   fapi_nr_dl_config_request_pdu_t dl_config_list[FAPI_NR_DL_CONFIG_LIST_NUM];
 } fapi_nr_dl_config_request_t;
@@ -543,20 +480,6 @@ typedef struct {
   uint8_t hopping_id;
   uint8_t p0_nominal;
 } fapi_nr_pucch_config_common_t;
-
-typedef struct {
-
-  uint8_t subcarrier_spacing_common;
-  uint8_t ssb_subcarrier_offset;
-  uint8_t dmrs_type_a_position;
-  uint8_t pdcch_config_sib1;
-  uint8_t cell_barred;
-  uint8_t intra_frequency_reselection;
-
-  uint16_t system_frame_number;
-  uint8_t ssb_index;
-  uint8_t half_frame_bit;
-} fapi_nr_pbch_config_t;
 
 typedef struct {
         
@@ -907,10 +830,115 @@ typedef struct {
 #define FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_DEDICATED    0x08
 #define FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_DEDICATED    0x10
 
+typedef struct 
+{
+  uint16_t dl_bandwidth;//Carrier bandwidth for DL in MHz [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+  uint32_t dl_frequency; //Absolute frequency of DL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+  uint16_t dl_k0[5];//𝑘_{0}^{𝜇} for each of the numerologies [38.211, sec 5.3.1] Value: 0 ->23699
+  uint16_t dl_grid_size[5];//Grid size 𝑁_{𝑔𝑟𝑖𝑑}^{𝑠𝑖𝑧𝑒,𝜇} for each of the numerologies [38.211, sec 4.4.2] Value: 0->275 0 = this numerology not used
+  uint16_t num_tx_ant;//Number of Tx antennas
+  uint16_t uplink_bandwidth;//Carrier bandwidth for UL in MHz. [38.104, sec 5.3.2] Values: 5, 10, 15, 20, 25, 30, 40,50, 60, 70, 80,90,100,200,400
+  uint32_t uplink_frequency;//Absolute frequency of UL point A in KHz [38.104, sec5.2 and 38.211 sec 4.4.4.2] Value: 450000 -> 52600000
+  uint16_t ul_k0[5];//𝑘0 𝜇 for each of the numerologies [38.211, sec 5.3.1] Value: : 0 ->23699
+  uint16_t ul_grid_size[5];//Grid size 𝑁𝑔𝑟𝑖𝑑 𝑠𝑖𝑧𝑒,𝜇 for each of the numerologies [38.211, sec 4.4.2]. Value: 0->275 0 = this numerology not used
+  uint16_t num_rx_ant;//
+  uint8_t  frequency_shift_7p5khz;//Indicates presence of 7.5KHz frequency shift. Value: 0 = false 1 = true
+
+} fapi_nr_ue_carrier_config_t; 
+
+typedef struct 
+{
+  uint8_t phy_cell_id;//Physical Cell ID, 𝑁_{𝐼𝐷}^{𝑐𝑒𝑙𝑙} [38.211, sec 7.4.2.1] Value: 0 ->1007
+  uint8_t frame_duplex_type;//Frame duplex type Value: 0 = FDD 1 = TDD
+
+} fapi_nr_cell_config_t;
+
+typedef struct 
+{
+  uint32_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  uint8_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
+  uint8_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
+
+} fapi_nr_ssb_config_t;
+
+typedef struct 
+{
+  uint32_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
+
+} fapi_nr_ssb_mask_size_2_t;
+
+typedef struct 
+{
+  int8_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+
+} fapi_nr_ssb_mask_size_64_t;
+
+typedef struct 
+{
+  uint16_t ssb_offset_point_a;//Offset of lowest subcarrier of lowest resource block used for SS/PBCH block. Given in PRB [38.211, section 4.4.4.2] Value: 0->2199
+  uint8_t  beta_pss;//PSS EPRE to SSS EPRE in a SS/PBCH block [38.213, sec 4.1] Values: 0 = 0dB
+  uint8_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
+  uint8_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
+  uint32_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
+  fapi_nr_ssb_mask_size_2_t ssb_mask_list[2];
+  fapi_nr_ssb_mask_size_64_t* ssb_beam_id_list;//64
+  uint8_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+  uint8_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
+
+} fapi_nr_ssb_table_t;
+
+typedef struct 
+{
+  uint8_t slot_config;//For each symbol in each slot a uint8_t value is provided indicating: 0: DL slot 1: UL slot 2: Guard slot
+
+} fapi_nr_max_num_of_symbol_per_slot_t;
+
+typedef struct 
+{
+  fapi_nr_max_num_of_symbol_per_slot_t* max_num_of_symbol_per_slot_list;
+
+} fapi_nr_max_tdd_periodicity_t;
+
+typedef struct 
+{
+  uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 8: ms3 9: ms4
+  fapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
+
+} fapi_nr_tdd_table_t;
+
+typedef struct 
+{
+  uint8_t  num_prach_fd_occasions;
+  uint16_t prach_root_sequence_index;//Starting logical root sequence index, 𝑖, equivalent to higher layer parameter prach-RootSequenceIndex [38.211, sec 6.3.3.1] Value: 0 -> 837
+  uint8_t  num_root_sequences;//Number of root sequences for a particular FD occasion that are required to generate the necessary number of preambles
+  uint16_t k1;//Frequency offset (from UL bandwidth part) for each FD. [38.211, sec 6.3.3.2] Value: from 0 to 272
+  uint8_t  prach_zero_corr_conf;//PRACH Zero CorrelationZone Config which is used to dervive 𝑁𝑐𝑠 [38.211, sec 6.3.3.1] Value: from 0 to 15
+  uint8_t  num_unused_root_sequences;//Number of unused sequences available for noise estimation per FD occasion. At least one unused root sequence is required per FD occasion.
+  uint8_t* unused_root_sequences_list;//Unused root sequence or sequences per FD occasion. Required for noise estimation.
+
+} fapi_nr_num_prach_fd_occasions_t;
+
+typedef struct 
+{
+  uint8_t prach_sequence_length;//RACH sequence length. Only short sequence length is supported for FR2. [38.211, sec 6.3.3.1] Value: 0 = Long sequence 1 = Short sequence
+  uint8_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
+  uint8_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
+  uint8_t num_prach_fd_occasions;//Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+  fapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
+  uint8_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
+  uint8_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
+
+} fapi_nr_prach_config_t;
+
 typedef struct {
   uint32_t config_mask;
 
-  fapi_nr_pbch_config_t pbch_config;  //  MIB
+  fapi_nr_ue_carrier_config_t carrier_config;
+  fapi_nr_cell_config_t cell_config;
+  fapi_nr_ssb_config_t ssb_config;
+  fapi_nr_ssb_table_t ssb_table;
+  fapi_nr_tdd_table_t tdd_table;
+  fapi_nr_prach_config_t prach_config;
 
   fapi_nr_dl_bwp_common_config_t     dl_bwp_common;
   fapi_nr_dl_bwp_dedicated_config_t  dl_bwp_dedicated;
@@ -921,3 +949,4 @@ typedef struct {
 } fapi_nr_config_request_t;
 
 #endif
+

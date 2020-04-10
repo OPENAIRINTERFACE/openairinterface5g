@@ -51,10 +51,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
     uint8_t cc_id = scheduled_response->CC_id;
     uint32_t i;
     int slot = scheduled_response->slot; 	
-    
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     uint8_t thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
-    NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
+    NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
     //NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
@@ -66,40 +65,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
 
+      LOG_D(PHY,"Received %d DL pdus\n",dl_config->number_pdus);
+      pdcch_vars->nb_search_space = 0;
       for(i=0; i<dl_config->number_pdus; ++i){
 	if(dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI){
-	  pdcch_vars2->nb_search_space = pdcch_vars2->nb_search_space + 1;
-	  fapi_nr_dl_config_dci_dl_pdu_rel15_t *dci_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
-             
-	  pdcch_vars2->n_RB_BWP[i] = dci_config->N_RB_BWP;
-	  pdcch_vars2->searchSpace[i].monitoringSymbolWithinSlot = dci_config->monitoring_symbols_within_slot;
-                    
-	  pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel1  = dci_config->number_of_candidates[0];
-	  pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel2  = dci_config->number_of_candidates[1];
-	  pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel4  = dci_config->number_of_candidates[2];
-	  pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel8  = dci_config->number_of_candidates[3];
-	  pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel16 = dci_config->number_of_candidates[4];
-
-	  pdcch_vars2->coreset[i].duration = dci_config->coreset.duration;
-                    
-	  pdcch_vars2->coreset[i].frequencyDomainResources = dci_config->coreset.frequency_domain_resource;
-	  pdcch_vars2->coreset[i].rb_offset = dci_config->coreset.rb_offset;
-
-	  if(dci_config->coreset.cce_reg_mapping_type == CCE_REG_MAPPING_TYPE_INTERLEAVED){
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = dci_config->coreset.cce_reg_interleaved_shift_index;
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = dci_config->coreset.cce_reg_interleaved_reg_bundle_size;
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = dci_config->coreset.cce_reg_interleaved_interleaver_size;
-	  }else{  //CCE_REG_MAPPING_TYPE_NON_INTERLEAVED
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = 0;
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = 6;
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = 1;
-	  }
-                    
-	  pdcch_vars2->coreset[i].precoderGranularity = dci_config->coreset.precoder_granularity;
-	  //pdcch_vars2->coreset[i].tciStatesPDCCH;
-	  //pdcch_vars2->coreset[i].tciPresentInDCI;
-	  pdcch_vars2->coreset[i].pdcchDMRSScramblingID = dci_config->coreset.pdcch_dmrs_scrambling_id;
-
+	  fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
+	  memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
+	  pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
+	  LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
 	}else{  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
 	  //  dlsch config pdu
 
@@ -113,11 +86,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
                     
 	  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
-                    
+	  dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
+	  dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
 	  dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
 	  dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
 	  dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
 	  dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
+	  dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
+	  dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
 	  dlsch0_harq->mcs = dlsch_config_pdu->mcs;
 	  dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
 	  dlsch0_harq->rvidx = dlsch_config_pdu->rv;
@@ -132,7 +108,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
 	}
       }
     }else{
-      pdcch_vars2->nb_search_space = 0;
+      pdcch_vars->nb_search_space = 0;
     }
 
     if(scheduled_response->ul_config != NULL){
@@ -218,43 +194,10 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
   
-  if(phy_config != NULL){
-    if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_PBCH){
-      LOG_I(MAC,"[L1][IF module][PHY CONFIG]\n");
-      LOG_I(MAC,"subcarrier spacing:          %d\n", phy_config->config_req.pbch_config.subcarrier_spacing_common);
-      LOG_I(MAC,"ssb carrier offset:          %d\n", phy_config->config_req.pbch_config.ssb_subcarrier_offset);
-      LOG_I(MAC,"dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
-      LOG_I(MAC,"pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
-      LOG_I(MAC,"cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
-      LOG_I(MAC,"intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
-      LOG_I(MAC,"system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
-      LOG_I(MAC,"ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
-      LOG_I(MAC,"half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
-      LOG_I(MAC,"-------------------------------\n");
-
-      memcpy(&nrUE_config->pbch_config,&phy_config->config_req.pbch_config,sizeof(fapi_nr_pbch_config_t));
-      
-    }
-        
-    if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_COMMON){
-            
-    }
-
-    if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_COMMON){
-            
-    }
-
-    if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_DEDICATED){
-            
-    }
-
-    if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_DEDICATED){
-            
-    }
-  }
+  if(phy_config != NULL)
+      memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
     
-  
-
   return 0;
 }
+
 

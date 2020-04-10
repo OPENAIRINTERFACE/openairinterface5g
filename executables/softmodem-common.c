@@ -144,7 +144,6 @@ void get_common_options(uint32_t execmask) {
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
 }
-
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
   struct rusage usage;
   struct timespec stop;
@@ -204,3 +203,4 @@ void set_softmodem_sighandler(void) {
   signal(SIGTERM, signal_handler);
   signal(SIGABRT, signal_handler);
 }
+
