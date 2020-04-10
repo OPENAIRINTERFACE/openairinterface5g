@@ -2809,7 +2809,6 @@ update_bsr(module_id_t module_idP, frame_t frameP,
 
       rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
                                       lcid,
-                                      0xFFFF, //TBS is not used in RLC at this step, set a special value for debug
                                       0, 0
                                      );
       lcid_bytes_in_buffer[lcid] = rlc_status.bytes_in_buffer;
@@ -3176,7 +3175,7 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_
         for (int j = 0; j < ue->numCommFlows; j++) {
           if ((ue->sourceL2Id > 0) && (ue->destinationList[j] >0) ) {
             rlc_status = mac_rlc_status_ind(module_idP, 0x1234,0,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
-                                            ue->SL_LCID[i], 0xFFFF, ue->sourceL2Id, ue->destinationList[j]);
+                                            ue->SL_LCID[i], ue->sourceL2Id, ue->destinationList[j]);
 
             if (rlc_status.bytes_in_buffer > 2) {
               LOG_I(MAC,"SFN.SF %d.%d: Scheduling for %d bytes in Sidelink buffer\n",frameP,subframeP,rlc_status.bytes_in_buffer);

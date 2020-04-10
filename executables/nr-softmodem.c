@@ -49,8 +49,6 @@
 #include "PHY/phy_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "LAYER2/MAC/mac_vars.h"
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
