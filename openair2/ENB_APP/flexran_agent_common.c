@@ -893,31 +893,34 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexEnbConfigReply *enb_config = input->enb_config_reply_msg;
 
-  if (enb_config->n_cell_config == 0) {
-    LOG_W(FLEXRAN_AGENT,
-          "received enb_config_reply message does not contain a cell_config\n");
-    *msg = NULL;
-    return 0;
-  }
-
   if (enb_config->n_cell_config > 1)
     LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
 
-  if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
-    prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-  } else if (enb_config->cell_config[0]->has_eutra_band
-          && enb_config->cell_config[0]->has_dl_freq
-          && enb_config->cell_config[0]->has_ul_freq
-          && enb_config->cell_config[0]->has_dl_bandwidth) {
-    initiate_soft_restart(mod_id, enb_config->cell_config[0]);
-  } else if (flexran_agent_get_rrc_xface(mod_id)
-          && enb_config->cell_config[0]->has_x2_ho_net_control) {
-    LOG_I(FLEXRAN_AGENT,
-          "setting X2 HO NetControl to %d\n",
-          enb_config->cell_config[0]->x2_ho_net_control);
-    const int rc = flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control);
-    if (rc < 0)
-      LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
+  if (enb_config->n_cell_config > 0) {
+    if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
+      prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
+    }
+    if (enb_config->cell_config[0]->has_eutra_band
+        && enb_config->cell_config[0]->has_dl_freq
+        && enb_config->cell_config[0]->has_ul_freq
+        && enb_config->cell_config[0]->has_dl_bandwidth) {
+      initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+    }
+    if (flexran_agent_get_rrc_xface(mod_id)
+        && enb_config->cell_config[0]->has_x2_ho_net_control) {
+      LOG_I(FLEXRAN_AGENT,
+            "setting X2 HO NetControl to %d\n",
+            enb_config->cell_config[0]->x2_ho_net_control);
+      const int rc = flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control);
+      if (rc < 0)
+        LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
+    }
+  }
+
+  if (flexran_agent_get_s1ap_xface(mod_id) && enb_config->s1ap) {
+    flexran_agent_handle_mme_update(mod_id,
+                                    enb_config->s1ap->n_mme,
+                                    enb_config->s1ap->mme);
   }
 
   *msg = NULL;
