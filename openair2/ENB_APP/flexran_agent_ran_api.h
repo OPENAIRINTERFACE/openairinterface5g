@@ -832,6 +832,12 @@ int flexran_get_s1ap_mme_conf(mid_t mod_id, mid_t mme_index, Protocol__FlexS1apM
 /* Get the S1AP UE conf */
 int flexran_get_s1ap_ue(mid_t mod_id, rnti_t rnti, Protocol__FlexS1apUe * ue_conf);
 
+/* Add MMEs and re-issue S1AP Registration Request */
+int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4);
+
+/* Remove MMEs and and cut SCTP to MME */
+int flexran_remove_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4);
+
 /********************* general information *****************/
 /* get an ID for this BS (or part of a BS) */
 uint64_t flexran_get_bs_id(mid_t mod_id);
