@@ -435,22 +435,23 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
         nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[i].pucch_pdu;
         switch (pucch_pdu->format_type) {
-        case 0:
-	  uci_indication->uci_list[uci_indication->num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
-          uci_indication->uci_list[uci_indication->num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
-          nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &uci_indication->uci_list[uci_indication->num_ucis].pucch_pdu_format_0_1;
+          case 0:
+	    uci_indication->uci_list[uci_indication->num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+            uci_indication->uci_list[uci_indication->num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+            nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &uci_indication->uci_list[uci_indication->num_ucis].pucch_pdu_format_0_1;
 
-          nr_decode_pucch0(gNB,
-                           slot_rx,
-                           uci_pdu_format0,
-                           pucch_pdu);
+            nr_decode_pucch0(gNB,
+                             slot_rx,
+                             uci_pdu_format0,
+                             pucch_pdu);
 
-          uci_indication->num_ucis += 1;
-	  break;
-        case 1:
-	  break;
-      default:
-	AssertFatal(1==0,"Only PUCCH format 0 and 1 are currently supported\n");
+            uci_indication->num_ucis += 1;
+            break;
+          case 1:
+	    break;
+        default:
+	  AssertFatal(1==0,"Only PUCCH format 0 and 1 are currently supported\n");
+      }
     }
   }
 }

@@ -140,10 +140,7 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           uint16_t slot,
                           nfapi_nr_config_request_scf_t cfg);
 */
-<<<<<<< HEAD
 
-
-=======
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 			NR_ServingCellConfigCommon_t *scc,
 			NR_BWP_Uplink_t *bwp,
@@ -151,13 +148,12 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         uint16_t O_uci,
                         uint16_t O_ack,
                         uint8_t SR_flag);
->>>>>>> nr_pucch
+
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                         int ss_type,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp);
 
-<<<<<<< HEAD
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
@@ -179,12 +175,6 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         uint8_t SR_flag);
 
 
-=======
-void fill_dci_pdu_rel15(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
-                        dci_pdu_rel15_t *dci_pdu_rel15,
-                        int *dci_formats,
-                        int *rnti_types);
->>>>>>> nr_pucch
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
 int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
