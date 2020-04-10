@@ -988,7 +988,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,
 void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   crcTableInit();
-  init_dfts();
+  load_dftslib();
   init_context_synchro_nr(frame_parms);
   generate_ul_reference_signal_sequences(SHRT_MAX);
   // Polar encoder init for PBCH
