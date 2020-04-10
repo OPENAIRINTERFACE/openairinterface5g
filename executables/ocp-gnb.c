@@ -185,29 +185,21 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   return(0);
 }
 
-void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, struct RU_t_s *ru) {
-  gNB_L1_proc_t *proc           = &gNB->proc;
+void gNB_top(gNB_L1_proc_t *proc, struct RU_t_s *ru) {
   gNB_L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *ru_proc=&ru->proc;
-  proc->frame_rx    = frame_rx;
-  proc->slot_rx = slot_rx;
   sl_ahead = sf_ahead*fp->slots_per_subframe;
-
-  if (!oai_exit) {
-    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
-    L1_proc->frame_rx     = ru_proc->frame_rx;
-    L1_proc->slot_rx      = ru_proc->tti_rx;
-    L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-    L1_proc->slot_tx      = (L1_proc->slot_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
-
-    if (rxtx(gNB,L1_proc->frame_rx,L1_proc->slot_rx,L1_proc->frame_tx,L1_proc->slot_tx) < 0)
-      LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
-
-    ru_proc->timestamp_tx = L1_proc->timestamp_tx;
-    ru_proc->tti_tx       = L1_proc->slot_tx;
-    ru_proc->frame_tx     = L1_proc->frame_tx;
-  }
+  L1_proc->frame_rx = proc->frame_rx = proc->frame_prach = ru_proc->frame_rx =
+                                         (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+  L1_proc->slot_rx = proc->slot_rx = proc->slot_prach =
+                                       ru_proc->tti_rx; // computed before
+  L1_proc->timestamp_tx = proc->timestamp_tx = ru_proc->timestamp_tx =
+                            ru_proc->timestamp_rx + sl_ahead;
+  L1_proc->frame_tx  = proc->frame_rx = ru_proc->frame_rx =
+                                          (proc->timestamp_tx / (fp->samples_per_subframe*10))&1023;
+  L1_proc->slot_tx   =  ru_proc->tti_tx =
+                          (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 }
 
 static void *process_stats_thread(void *param) {
@@ -536,55 +528,37 @@ void RCconfig_RU(void) {
   return;
 }
 
-void rx_rf(RU_t *ru,int *frame,int *slot) {
+int rx_rf(RU_t *ru, int lastReadSz) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   void *rxp[ru->nb_rx];
-  unsigned int rxs;
-  int i;
-  uint32_t samples_per_slot = fp->get_samples_per_slot(*slot,fp);
-  openair0_timestamp ts,old_ts;
-  AssertFatal(*slot<fp->slots_per_frame && *slot>=0, "slot %d is illegal (%d)\n",*slot,fp->slots_per_frame);
+  uint32_t samples_per_slot = fp->get_samples_per_slot(proc->tti_rx,fp);
 
-  for (i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(*slot,fp,0)];
+  for (int i=0; i<ru->nb_rx; i++)
+    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(proc->tti_rx,fp,0)];
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-  old_ts = proc->timestamp_rx;
-  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,*slot,rxp[0]);
-  rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-                                   &ts,
-                                   rxp,
-                                   samples_per_slot,
-                                   ru->nb_rx);
-  proc->timestamp_rx = ts-ru->ts_offset;
+  openair0_timestamp old_ts = proc->timestamp_rx;
+  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,proc->tti_rx,rxp[0]);
+  unsigned int rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
+                     & proc->timestamp_rx,
+                     rxp,
+                     samples_per_slot,
+                     ru->nb_rx);
 
-  //AssertFatal(rxs == fp->samples_per_subframe,
-  //"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_subframe,rxs);
-  if (rxs != samples_per_slot) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
+  if (rxs != samples_per_slot)
+    LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
 
-  if (proc->first_rx == 1) {
-    ru->ts_offset = proc->timestamp_rx;
-    proc->timestamp_rx = 0;
-  } else {
-    if (proc->timestamp_rx - old_ts != fp->get_samples_per_slot((*slot-1)%fp->slots_per_frame,fp)) {
-      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - samples_per_slot,ru->ts_offset);
-      ru->ts_offset += (proc->timestamp_rx - old_ts - samples_per_slot);
-      proc->timestamp_rx = ts-ru->ts_offset;
-    }
-  }
+  // In case we need offset, between RU or any other need
+  // The sync system can put a offset to use betwwen RF boards
+  proc->timestamp_rx+=ru->ts_offset;
 
-  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-  uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-  proc->tti_rx = (idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
-  *frame = proc->frame_rx;
-  *slot  = proc->tti_rx;
-  proc->first_rx = 0;
+  if (lastReadSz && proc->timestamp_rx - old_ts != lastReadSz)
+    LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",
+          proc->timestamp_rx - old_ts - samples_per_slot,ru->ts_offset);
 
-  if (rxs != samples_per_slot) {
-    LOG_E(PHY, "problem receiving samples\n");
-  }
+  return rxs;
 }
+
 void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
@@ -797,8 +771,6 @@ static void *ru_thread( void *param ) {
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
   NR_DL_FRAME_PARMS  *fp      = ru->nr_frame_parms;
-  int                slot     = fp->slots_per_frame-1;
-  int                frame    = 1023;
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
   fp->threequarter_fs=threequarter_fs;
   nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
@@ -807,50 +779,28 @@ static void *ru_thread( void *param ) {
   nr_phy_init_RU(ru);
   AssertFatal(openair0_device_load(&ru->rfdevice,&ru->openair0_cfg)==0,"Cannot connect to local radio\n");
   AssertFatal(ru->rfdevice.trx_start_func(&ru->rfdevice) == 0,"Could not start the RF device\n");
-
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
+  int lastReadSz=0;
+
   while (!oai_exit) {
-    // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
-    // They are set on the first rx/tx in the underly FH routines.
-    if (slot==(fp->slots_per_frame-1)) {
-      slot=0;
-      frame++;
-      frame&=1023;
-    } else {
-      slot++;
-    }
-
     // synchronization on input FH interface, acquire signals/data and block
-    LOG_D(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
-    rx_rf(ru,&frame,&slot);
-    LOG_D(PHY,"AFTER rx_rf - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
-          frame,slot,
-          proc->frame_rx,proc->tti_rx,
-          proc->frame_tx,proc->tti_tx,
-          RC.gNB[0][0].proc.frame_rx,RC.gNB[0][0].proc.slot_rx,
-          RC.gNB[0][0].proc.frame_tx);
-    /*
-          LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
-              ru->do_prach,
-              is_prach_subframe(fp, proc->frame_rx, proc->tti_rx),
-              proc->frame_rx,proc->tti_rx);
-
-        if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->tti_rx)==1)) {
-          wakeup_prach_ru(ru);
-        }*/
-
-    // adjust for timing offset between RU
-    //printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->frame_rx, proc->tti_rx);
-    if (ru->idx!=0)
-      proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
-
+    lastReadSz=rx_rf(ru, lastReadSz);
     // do RX front-end processing (frequency-shift, dft) if needed
+    uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
+    uint32_t offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
+    proc->tti_rx = (idx_sf * fp->slots_per_subframe +
+                    lroundf((float)offsetInSubframe / fp->samples_per_slot0))%(fp->slots_per_frame);
 
     if (proc->tti_rx == NR_UPLINK_SLOT || fp->frame_type == FDD) {
       nr_fep_full(ru,proc->tti_rx);
     }
 
-    gNB_top(&RC.gNB[0][0], frame, slot, ru);
+    gNB_top(&RC.gNB[0][0].proc, ru);
+    gNB_L1_rxtx_proc_t *L1_proc = &RC.gNB[0][0].proc.L1_proc;
+
+    if (rxtx(&RC.gNB[0][0],L1_proc->frame_rx,L1_proc->slot_rx,L1_proc->frame_tx,L1_proc->slot_tx) < 0)
+      LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",RC.gNB[0][0].Mod_id,RC.gNB[0][0].CC_id);
+
     // do TX front-end processing if needed (precoding and/or IDFTs)
     //ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
     nr_feptx_prec(ru,proc->frame_tx,proc->tti_tx);
