@@ -667,8 +667,10 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
         dci_pdu->rate_matching_indicator.nbits = 1;
       size += dci_pdu->rate_matching_indicator.nbits;
       // ZP CSI-RS trigger
-      uint8_t nZP = pdsch_config->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList->list.count;
-      dci_pdu->zp_csi_rs_trigger.nbits = (int)ceil(log2(nZP+1));
+      if (pdsch_config->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList != NULL) {
+        uint8_t nZP = pdsch_config->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList->list.count;
+        dci_pdu->zp_csi_rs_trigger.nbits = (int)ceil(log2(nZP+1));
+      }
       size += dci_pdu->zp_csi_rs_trigger.nbits;
       // TB1- MCS 5, NDI 1, RV 2
       size += 8;
@@ -716,11 +718,11 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
         uint8_t maxCW = (maxCWperDCI_rrc == NULL) ? 1 : *maxCWperDCI_rrc;
         dci_pdu->cbgti.nbits = maxCBGperTB * maxCW;
         size += dci_pdu->cbgti.nbits;
-      }
-      // CBGFI
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
-        dci_pdu->cbgfi.nbits = 1;
-        size += dci_pdu->cbgfi.nbits;
+        // CBGFI
+        if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
+          dci_pdu->cbgfi.nbits = 1;
+          size += dci_pdu->cbgfi.nbits;
+        }
       }
       // DMRS sequence init
       size += 1;
