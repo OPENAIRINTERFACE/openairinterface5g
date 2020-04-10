@@ -963,12 +963,13 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
     gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
     memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
     LOG_I(PHY,"Setting indication lists\n");
-    /*gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = gNB->rx_pdu_list;
-    gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = gNB->crc_pdu_list;
-    gNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = gNB->sr_pdu_list;
-    gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = gNB->harq_pdu_list;
-    gNB->UL_INFO.cqi_ind.cqi_pdu_list = gNB->cqi_pdu_list;
-    gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;*/
+    gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list = calloc(NFAPI_RX_IND_MAX_PDU,sizeof(nfapi_rx_indication_pdu_t));
+    gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = calloc(NFAPI_CRC_IND_MAX_PDU,sizeof(nfapi_crc_indication_pdu_t));
+    gNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = calloc(NFAPI_SR_IND_MAX_PDU,sizeof(nfapi_sr_indication_pdu_t));
+    gNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = calloc(NFAPI_HARQ_IND_MAX_PDU,sizeof(nfapi_harq_indication_pdu_t));
+    gNB->UL_INFO.cqi_ind.cqi_pdu_list = calloc(NFAPI_CQI_IND_MAX_PDU,sizeof(nfapi_cqi_indication_pdu_t));
+    gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = calloc(NFAPI_CQI_IND_MAX_PDU,sizeof(nfapi_cqi_indication_raw_pdu_t));
+
     gNB->prach_energy_counter = 0;
   }
   
