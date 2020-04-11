@@ -3724,6 +3724,77 @@ int flexran_remove_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
   return 0;
 }
 
+int flexran_set_new_plmn_id(mid_t mod_id, int CC_id, size_t n_plmn, Protocol__FlexPlmn **plmn_id) {
+  if (!rrc_is_present(mod_id))
+    return -1;
+  s1ap_eNB_instance_t *s1ap = s1ap_eNB_get_instance(mod_id);
+  if (!s1ap)
+    return -2;
+
+  eNB_RRC_INST *rrc = RC.rrc[CC_id];
+  RrcConfigurationReq *conf = &rrc->configuration;
+
+  uint8_t num_plmn_old = conf->num_plmn;
+  uint16_t mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  for (int i = 0; i < num_plmn_old; ++i) {
+    mcc[i] = conf->mcc[i];
+    mnc[i] = conf->mnc[i];
+    mnc_digit_length[i] = conf->mnc_digit_length[i];
+  }
+
+  conf->num_plmn = (uint8_t) n_plmn;
+  for (int i = 0; i < conf->num_plmn; ++i) {
+    conf->mcc[i] = plmn_id[i]->mcc;
+    conf->mnc[i] = plmn_id[i]->mnc;
+    conf->mnc_digit_length[i] = plmn_id[i]->mnc_length;
+  }
+
+  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[CC_id];
+  extern uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
+                         int Mod_id,
+                         int CC_id,
+                         BOOLEAN_t brOption,
+                         RrcConfigurationReq *configuration);
+  carrier->sizeof_SIB1 = do_SIB1(carrier, mod_id, CC_id, FALSE, conf);
+  if (carrier->sizeof_SIB1 < 0)
+    return -1337; /* SIB1 encoding failed, hell will probably break loose */
+
+  s1ap->num_plmn = (uint8_t) n_plmn;
+  for (int i = 0; i < conf->num_plmn; ++i) {
+    s1ap->mcc[i] = plmn_id[i]->mcc;
+    s1ap->mnc[i] = plmn_id[i]->mnc;
+    s1ap->mnc_digit_length[i] = plmn_id[i]->mnc_length;
+  }
+
+  int bpn_failed = 0;
+  struct s1ap_eNB_mme_data_s *mme = NULL;
+  RB_FOREACH(mme, s1ap_mme_map, &s1ap->s1ap_mme_head) {
+    for (int i = 0; i < mme->broadcast_plmn_num; ++i) {
+      /* search the new index and update. If we don't find, we count this using
+       * bpn_failed to now how many broadcast_plmns could not be updated */
+      int idx = mme->broadcast_plmn_index[i];
+      int omcc = mcc[idx];
+      int omnc = mnc[idx];
+      int omncl = mnc_digit_length[idx];
+      int j = 0;
+      for (j = 0; j < s1ap->num_plmn; ++j) {
+        if (s1ap->mcc[j] == omcc
+            && s1ap->mnc[j] == omnc
+            && s1ap->mnc_digit_length[j] == omncl) {
+          mme->broadcast_plmn_index[i] = j;
+          break;
+        }
+      }
+      if (j == s1ap->num_plmn) /* could not find the old PLMN in the new ones */
+        bpn_failed++;
+    }
+  }
+  if (bpn_failed > 0)
+    return -10000 - bpn_failed;
+  return 0;
+}
 
 int flexran_get_s1ap_ue(mid_t mod_id, rnti_t rnti, Protocol__FlexS1apUe * ue_conf){
   if (!rrc_is_present(mod_id)) return -1;

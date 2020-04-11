@@ -65,6 +65,12 @@ void flexran_agent_handle_mme_update(mid_t mod_id,
                                      size_t n_mme,
                                      Protocol__FlexS1apMme **mme);
 
+/* Set a new PLMN configuration */
+void flexran_agent_handle_plmn_update(mid_t mod_id,
+                                      int CC_id,
+                                      size_t n_plmn,
+                                      Protocol__FlexPlmn **plmn_id);
+
 /* Register technology specific interface callbacks */
 int flexran_agent_register_s1ap_xface(mid_t mod_id);
 

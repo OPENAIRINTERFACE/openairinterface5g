@@ -915,6 +915,12 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
       if (rc < 0)
         LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
     }
+    if (flexran_agent_get_rrc_xface(mod_id) && enb_config->cell_config[0]->n_plmn_id > 0) {
+      flexran_agent_handle_plmn_update(mod_id,
+                                       0,
+                                       enb_config->cell_config[0]->n_plmn_id,
+                                       enb_config->cell_config[0]->plmn_id);
+    }
   }
 
   if (flexran_agent_get_s1ap_xface(mod_id) && enb_config->s1ap) {
