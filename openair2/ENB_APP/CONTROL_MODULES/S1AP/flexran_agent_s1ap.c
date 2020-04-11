@@ -158,6 +158,30 @@ void flexran_agent_handle_mme_update(mid_t mod_id,
   }
 }
 
+void flexran_agent_handle_plmn_update(mid_t mod_id,
+                                      int CC_id,
+                                      size_t n_plmn,
+                                      Protocol__FlexPlmn **plmn_id) {
+  if (n_plmn < 1 || n_plmn > 6) {
+    LOG_E(FLEXRAN_AGENT, "cannot handle %lu PLMNs\n", n_plmn);
+    return;
+  }
+
+  /* We assume the controller has checked all the parameters within each
+   * plmn_id */
+  int rc = flexran_set_new_plmn_id(mod_id, CC_id, n_plmn, plmn_id);
+  if (rc == 0) {
+    LOG_I(FLEXRAN_AGENT, "set %lu new PLMNs:\n", n_plmn);
+    for (int i = 0; i < (int)n_plmn; ++i)
+      LOG_I(FLEXRAN_AGENT, "    MCC %d MNC %d MNC length %d\n",
+            plmn_id[i]->mcc, plmn_id[i]->mnc, plmn_id[0]->mnc_length);
+  } else {
+    LOG_W(FLEXRAN_AGENT,
+          "could not set new PLMN configuration: flexran_set_new_plmn_id() returned %d\n",
+          rc);
+  }
+}
+
 int flexran_agent_register_s1ap_xface(mid_t mod_id) {
   if (agent_s1ap_xface[mod_id]) {
     LOG_E(FLEXRAN_AGENT, "S1AP agent CM for eNB %d is already registered\n", mod_id);

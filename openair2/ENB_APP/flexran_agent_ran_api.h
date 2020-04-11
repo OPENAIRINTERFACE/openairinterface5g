@@ -838,6 +838,9 @@ int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4);
 /* Remove MMEs and and cut SCTP to MME */
 int flexran_remove_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4);
 
+/* Set a new PLMN configuration */
+int flexran_set_new_plmn_id(mid_t mod_id, int CC_id, size_t n_plmn, Protocol__FlexPlmn **plmn_id);
+
 /********************* general information *****************/
 /* get an ID for this BS (or part of a BS) */
 uint64_t flexran_get_bs_id(mid_t mod_id);
