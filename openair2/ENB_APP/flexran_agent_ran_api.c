@@ -3644,7 +3644,7 @@ int flexran_get_s1ap_ue(mid_t mod_id, rnti_t rnti, Protocol__FlexS1apUe * ue_con
   RB_FOREACH(ue, s1ap_ue_map, &s1ap->s1ap_ue_head){
     if (ue->eNB_ue_s1ap_id == enb_ue_s1ap_id) break;
   }
-  if (ue == NULL) return -1;
+  if (!ue) return 0; // UE does not exist: it might be connected but CN did not answer
 
   if (ue->mme_ref->mme_s1_ip.ipv4)
     ue_conf->mme_s1_ip = (char*) &ue->mme_ref->mme_s1_ip.ipv4_address[0];
