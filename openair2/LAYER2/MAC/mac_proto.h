@@ -187,8 +187,6 @@ void add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
 
 void init_UE_info(UE_info_t *UE_info);
 
-void init_slice_info(slice_info_t *sli);
-
 int mac_top_init(int eMBMS_active, char *uecap_xer,
                  uint8_t cba_group_active, uint8_t HO_active);
 
