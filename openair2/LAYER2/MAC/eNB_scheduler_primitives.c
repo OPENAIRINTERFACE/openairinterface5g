@@ -2131,33 +2131,36 @@ dump_ue_list(UE_list_t *listP) {
  * Add a UE to UE_list listP
  */
 inline void add_ue_list(UE_list_t *listP, int UE_id) {
-  if (listP->head == -1) {
-    listP->head = UE_id;
-    listP->next[UE_id] = -1;
-  } else {
-    int i = listP->head;
-    while (listP->next[i] >= 0)
-      i = listP->next[i];
-    listP->next[i] = UE_id;
-    listP->next[UE_id] = -1;
-  }
+  int *cur = &listP->head;
+  while (*cur >= 0)
+    cur = &listP->next[*cur];
+  *cur = UE_id;
 }
 
 //------------------------------------------------------------------------------
 /*
- * Remove a UE from the UE_list listP, return the previous element
+ * Remove a UE from the UE_list listP
  */
 inline int remove_ue_list(UE_list_t *listP, int UE_id) {
-  listP->next[UE_id] = -1;
-  if (listP->head == UE_id) {
-    listP->head = listP->next[UE_id];
-    return -1;
-  }
+  int *cur = &listP->head;
+  while (*cur != -1 && *cur != UE_id)
+    cur = &listP->next[*cur];
+  if (*cur == -1)
+    return 0;
+  int *next = &listP->next[*cur];
+  *cur = listP->next[*cur];
+  *next = -1;
+  return 1;
+}
 
-  int previous = prev(listP, UE_id);
-  if (previous != -1)
-    listP->next[previous] = listP->next[UE_id];
-  return previous;
+//------------------------------------------------------------------------------
+/*
+ * Initialize the UE_list listP
+ */
+inline void init_ue_list(UE_list_t *listP) {
+  listP->head = -1;
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
+    listP->next[i] = -1;
 }
 
 //------------------------------------------------------------------------------
