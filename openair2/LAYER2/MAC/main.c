@@ -45,11 +45,8 @@ extern RAN_CONTEXT_t RC;
 
 void init_UE_info(UE_info_t *UE_info)
 {
-  int list_el;
   UE_info->num_UEs = 0;
-  UE_info->list.head = -1;
-  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB; list_el++)
-    UE_info->list.next[list_el] = -1;
+  init_ue_list(&UE_info->list);
   memset(UE_info->DLSCH_pdu, 0, sizeof(UE_info->DLSCH_pdu));
   memset(UE_info->UE_template, 0, sizeof(UE_info->UE_template));
   memset(UE_info->eNB_UE_stats, 0, sizeof(UE_info->eNB_UE_stats));
