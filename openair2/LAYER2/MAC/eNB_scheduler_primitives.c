@@ -2199,6 +2199,12 @@ add_new_ue(module_id_t mod_idP,
     UE_info->active[UE_id] = TRUE;
     add_ue_list(&UE_info->list, UE_id);
     dump_ue_list(&UE_info->list);
+    pp_impl_param_t* dl = &RC.mac[mod_idP]->pre_processor_dl;
+    if (dl->slices) // inform slice implementation about new UE
+      dl->add_UE(dl->slices, UE_id);
+    pp_impl_param_t* ul = &RC.mac[mod_idP]->pre_processor_ul;
+    if (ul->slices) // inform slice implementation about new UE
+      ul->add_UE(ul->slices, UE_id);
     if (IS_SOFTMODEM_IQPLAYER)// not specific to record/playback ?
       UE_info->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
     UE_info->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type;
@@ -2262,6 +2268,12 @@ rrc_mac_remove_ue(module_id_t mod_idP,
   UE_info->num_UEs--;
 
   remove_ue_list(&UE_info->list, UE_id);
+  pp_impl_param_t* dl = &RC.mac[mod_idP]->pre_processor_dl;
+  if (dl->slices) // inform slice implementation about new UE
+    dl->remove_UE(dl->slices, UE_id);
+  pp_impl_param_t* ul = &RC.mac[mod_idP]->pre_processor_ul;
+  if (ul->slices) // inform slice implementation about new UE
+    ul->remove_UE(ul->slices, UE_id);
 
   /* Clear all remaining pending transmissions */
   memset(&UE_info->UE_template[pCC_id][UE_id], 0, sizeof(UE_TEMPLATE));

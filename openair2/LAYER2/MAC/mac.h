@@ -540,7 +540,6 @@ typedef enum {
   SCHED_MODE_FAIR_RR      /// fair raund robin
 } SCHEDULER_MODES;
 
-
 /*! \brief temporary struct for ULSCH sched */
 typedef struct {
   rnti_t rnti;
@@ -1199,6 +1198,56 @@ typedef struct {
   void *data;
 } default_sched_ul_algo_t;
 
+typedef void (*pp_impl_dl)(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frame,
+                           sub_frame_t subframe);
+typedef void (*pp_impl_ul)(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frame,
+                           sub_frame_t subframe,
+                           frame_t sched_frame,
+                           sub_frame_t sched_subframe);
+
+struct slice_info_s;
+typedef struct {
+  int algorithm;
+
+  /// inform the slice algorithm about a new UE
+  void (*add_UE)(struct slice_info_s *s, int UE_id);
+  /// inform the slice algorithm about a UE that disconnected
+  void (*remove_UE)(struct slice_info_s *s, int UE_id);
+  /// move a UE to a slice in DL/UL, -1 means don't move (no-op).
+  void (*move_UE)(struct slice_info_s *s, int UE_id, int idx);
+
+  /// Adds a new slice through admission control. slice_params are
+  /// algorithm-specific parameters. sched is either a default_sched_ul_algo_t
+  /// or default_sched_dl_algo_t, depending on whether this implementation
+  /// handles UL/DL. If slice at index exists, updates existing
+  /// slice. Returns index of new slice or -1 on failure.
+  int (*addmod_slice)(struct slice_info_s *s,
+                      int id,
+                      char *label,
+                      void *sched,
+                      void *slice_params);
+  /// Returns slice through slice_idx. 1 if successful, 0 if not.
+  int (*remove_slice)(struct slice_info_s *s, uint8_t slice_idx);
+
+  union {
+    pp_impl_dl dl;
+    pp_impl_ul ul;
+  };
+
+  union {
+    default_sched_ul_algo_t ul_algo;
+    default_sched_dl_algo_t dl_algo;
+  };
+
+  void (*destroy)(struct slice_info_s **s);
+
+  struct slice_info_s *slices;
+} pp_impl_param_t;
+
 /*! \brief eNB common channels */
 typedef struct {
   int physCellId;
@@ -1354,9 +1403,11 @@ typedef struct eNB_MAC_INST_s {
   UE_free_list_t UE_free_list;
   /// for scheduling selection
   SCHEDULER_MODES scheduler_mode;
-  /// scheduling algorithm used in default scheduler
-  default_sched_dl_algo_t dl_algo;
-  default_sched_ul_algo_t ul_algo;
+  /// Default scheduler: Pre-processor implementation. Algorithms for UL/DL
+  /// are called by ULSCH/DLSCH, respectively. Pro-processor implementation can
+  /// encapsulate slicing.
+  pp_impl_param_t pre_processor_dl;
+  pp_impl_param_t pre_processor_ul;
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;

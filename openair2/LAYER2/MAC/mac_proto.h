@@ -674,10 +674,10 @@ void set_ul_DAI(int module_idP,
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int CC_id,
-                                   int frameP,
+                                   frame_t frameP,
                                    sub_frame_t subframeP,
-                                   int sched_frameP,
-                                   unsigned char sched_subframeP);
+                                   frame_t sched_frameP,
+                                   sub_frame_t sched_subframeP);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
 

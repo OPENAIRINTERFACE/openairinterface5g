@@ -573,10 +573,7 @@ schedule_ue_spec(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_IN);
   start_meas(&eNB->schedule_dlsch_preprocessor);
-  dlsch_scheduler_pre_processor(module_idP,
-                                CC_id,
-                                frameP,
-                                subframeP);
+  eNB->pre_processor_dl.dl(module_idP, CC_id, frameP, subframeP);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_OUT);
