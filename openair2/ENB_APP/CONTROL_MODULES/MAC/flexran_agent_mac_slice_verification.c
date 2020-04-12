@@ -132,7 +132,7 @@ int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existin
     /* else "only" an update */
   }
 
-  if (n < 1 || n > MAX_NUM_SLICES) {
+  if (n < 1 || n > 10) {
     LOG_E(FLEXRAN_AGENT, "[%d] Illegal number of resulting DL slices (%d -> %d)\n",
           mod_id, n_ex, n);
     return 0;
@@ -253,7 +253,7 @@ int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existin
     /* else "only" an update */
   }
 
-  if (n < 1 || n > MAX_NUM_SLICES) {
+  if (n < 1 || n > 10) {
     LOG_E(FLEXRAN_AGENT, "[%d] Illegal number of resulting UL slices (%d -> %d)\n",
           mod_id, n_ex, n);
     return 0;

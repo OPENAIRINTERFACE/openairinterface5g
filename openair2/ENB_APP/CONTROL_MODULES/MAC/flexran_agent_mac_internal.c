@@ -33,14 +33,6 @@
 #include "flexran_agent_mac_internal.h"
 #include "flexran_agent_mac_slice_verification.h"
 
-/* from flexran_agent_mac.c */
-extern Protocol__FlexSliceConfig *slice_config[MAX_NUM_SLICES];
-extern Protocol__FlexSliceConfig *sc_update[MAX_NUM_SLICES];
-extern int perform_slice_config_update_count;
-extern Protocol__FlexUeConfig *ue_slice_assoc_update[MAX_NUM_SLICES];
-extern int n_ue_slice_assoc_updates;
-extern pthread_mutex_t sc_update_mtx;
-
 Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
 									Protocol__FlexranMessage *old_message) {
 
@@ -1040,12 +1032,12 @@ Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul)
   if (!fsc) return NULL;
   protocol__flex_slice_config__init(fsc);
 
-  /* say there are n_dl slices but reserve memory for up to MAX_NUM_SLICES so
+  /* say there are n_dl slices but reserve memory for up to 10 so
    * we don't need to reserve again later */
   fsc->n_dl = n_dl;
-  fsc->dl = calloc(MAX_NUM_SLICES, sizeof(Protocol__FlexDlSlice *));
+  fsc->dl = calloc(10, sizeof(Protocol__FlexDlSlice *));
   if (!fsc->dl) fsc->n_dl = 0;
-  for (i = 0; i < MAX_NUM_SLICES; i++) {
+  for (i = 0; i < 10; i++) {
     fsc->dl[i] = malloc(sizeof(Protocol__FlexDlSlice));
     if (!fsc->dl[i]) continue;
     protocol__flex_dl_slice__init(fsc->dl[i]);
@@ -1053,9 +1045,9 @@ Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul)
 
   /* as above */
   fsc->n_ul = m_ul;
-  fsc->ul = calloc(MAX_NUM_SLICES, sizeof(Protocol__FlexUlSlice *));
+  fsc->ul = calloc(10, sizeof(Protocol__FlexUlSlice *));
   if (!fsc->ul) fsc->n_ul = 0;
-  for (i = 0; i < MAX_NUM_SLICES; i++) {
+  for (i = 0; i < 10; i++) {
     fsc->ul[i] = malloc(sizeof(Protocol__FlexUlSlice));
     if (!fsc->ul[i]) continue;
     protocol__flex_ul_slice__init(fsc->ul[i]);
@@ -1401,8 +1393,8 @@ Protocol__FlexDlSlice *create_new_dl_slice(mid_t mod_id, int id)
         mod_id, id);
   Protocol__FlexDlSlice *to = sc_update[mod_id]->dl[sc_update[mod_id]->n_dl];
   sc_update[mod_id]->n_dl++;
-  AssertFatal(sc_update[mod_id]->n_dl <= MAX_NUM_SLICES,
-              "cannot create more than MAX_NUM_SLICES\n");
+  AssertFatal(sc_update[mod_id]->n_dl <= 10,
+              "cannot create more than 10\n");
   to->id = id;
   return to;
 }
@@ -1468,8 +1460,8 @@ Protocol__FlexUlSlice *create_new_ul_slice(mid_t mod_id, int id)
         mod_id, id);
   Protocol__FlexUlSlice *to = sc_update[mod_id]->ul[sc_update[mod_id]->n_ul];
   sc_update[mod_id]->n_ul++;
-  AssertFatal(sc_update[mod_id]->n_ul <= MAX_NUM_SLICES,
-              "cannot create more than MAX_NUM_SLICES\n");
+  AssertFatal(sc_update[mod_id]->n_ul <= 10,
+              "cannot create more than 10\n");
   to->id = id;
   return to;
 }
@@ -1698,7 +1690,7 @@ int apply_new_slice_ul_config(mid_t mod_id, Protocol__FlexUlSlice *oldc, Protoco
 
 void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config)
 {
-  if (n_ue_slice_assoc_updates == MAX_NUM_SLICES) {
+  if (n_ue_slice_assoc_updates == 10) {
     LOG_E(FLEXRAN_AGENT,
           "[%d] can not handle flex_ue_config message, buffer is full; try again later\n",
           mod_id);

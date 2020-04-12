@@ -155,9 +155,6 @@
 /*!\brief minimum MAC data needed for transmitting 1 min RLC PDU size + 1 byte MAC subHeader */
 #define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
-/*!\brief maximum number of slices / groups */
-#define MAX_NUM_SLICES 10
-
 
 #define U_PLANE_INACTIVITY_VALUE 0   /* defined 10ms order (zero means infinity) */
 
@@ -1150,9 +1147,6 @@ typedef struct {
   UE_list_t list;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_ENB];
-
-  /// Sorting criteria for the UE list in the MAC preprocessor
-  uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
 } UE_info_t;
 
 /*! \brief deleting control information*/
@@ -1170,101 +1164,6 @@ typedef struct {
   int head_freelist; ///the head position of the delete list
   int tail_freelist; ///the tail position of the delete list
 } UE_free_list_t;
-
-/**
- * slice specific scheduler for the DL
- */
-typedef void (*slice_scheduler_dl)(module_id_t mod_id,
-                                   int         slice_idx,
-                                   frame_t     frame,
-                                   sub_frame_t subframe,
-                                   int        *mbsfn_flag);
-
-typedef struct {
-  slice_id_t id;
-
-  /// RB share for each slice
-  float     pct;
-
-  /// whether this slice is isolated from the others
-  int       isol;
-
-  int       prio;
-
-  /// Frequency ranges for slice positioning
-  int       pos_low;
-  int       pos_high;
-
-  // max mcs for each slice
-  int       maxmcs;
-
-  /// criteria for sorting policies of the slices
-  uint32_t  sorting;
-
-  /// Accounting policy (just greedy(1) or fair(0) setting for now)
-  int       accounting;
-
-  /// name of available scheduler
-  char     *sched_name;
-
-  /// pointer to the slice specific scheduler in DL
-  slice_scheduler_dl sched_cb;
-
-} slice_sched_conf_dl_t;
-
-typedef void (*slice_scheduler_ul)(module_id_t   mod_id,
-                                   int           slice_idx,
-                                   frame_t       frame,
-                                   sub_frame_t   subframe,
-                                   unsigned char sched_subframe,
-                                   uint16_t     *first_rb);
-
-typedef struct {
-  slice_id_t id;
-
-  /// RB share for each slice
-  float     pct;
-
-  // MAX MCS for each slice
-  int       maxmcs;
-
-  /// criteria for sorting policies of the slices
-  uint32_t  sorting;
-
-  /// starting RB (RB offset) of UL scheduling
-  int       first_rb;
-
-  /// name of available scheduler
-  char     *sched_name;
-
-  /// pointer to the slice specific scheduler in UL
-  slice_scheduler_ul sched_cb;
-
-} slice_sched_conf_ul_t;
-
-
-typedef struct {
-  /// counter used to indicate when all slices have pre-allocated UEs
-  //int      slice_counter;
-
-  /// indicates whether remaining RBs after first intra-slice allocation will
-  /// be allocated to UEs of the same slice
-  int       intraslice_share_active;
-  /// indicates whether remaining RBs after slice allocation will be
-  /// allocated to UEs of another slice. Isolated slices will be ignored
-  int       interslice_share_active;
-
-  /// number of active DL slices
-  int      n_dl;
-  slice_sched_conf_dl_t dl[MAX_NUM_SLICES];
-
-  /// number of active UL slices
-  int      n_ul;
-  slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
-
-  /// common rb allocation list between slices
-  uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
-} slice_info_t;
 
 /**
  * describes contiguous RBs
@@ -1420,9 +1319,6 @@ typedef struct eNB_MAC_INST_s {
   /// UL handle
   uint32_t ul_handle;
   UE_info_t UE_info;
-
-  /// slice-related configuration
-  slice_info_t slice_info;
 
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;

@@ -49,19 +49,6 @@ struct lfds700_misc_prng_state ps[NUM_MAX_ENB];
 struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 
-/* the slice config as kept in the underlying system */
-Protocol__FlexSliceConfig *slice_config[MAX_NUM_SLICES];
-/* a structure that keeps updates which will be reflected in slice_config later */
-Protocol__FlexSliceConfig *sc_update[MAX_NUM_SLICES];
-/* indicates whether sc_update contains new data */
-int perform_slice_config_update_count = 1;
-/* queue of incoming new UE<>slice association commands */
-Protocol__FlexUeConfig *ue_slice_assoc_update[MAX_NUM_SLICES];
-int n_ue_slice_assoc_updates = 0;
-/* mutex for sc_update: do not receive new config and write it at the same time */
-pthread_mutex_t sc_update_mtx = PTHREAD_MUTEX_INITIALIZER;
-
-
 int flexran_agent_mac_stats_reply_ue(mid_t mod_id,
                                     Protocol__FlexUeStatsReport **ue_report,
                                     int      n_ue,
