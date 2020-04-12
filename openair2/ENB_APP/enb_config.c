@@ -266,10 +266,11 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
       void *d = dlsym(NULL, s);
       AssertFatal(d, "%s(): no default scheduler DL algo '%s' found\n", __func__, s);
       // release default, add new
-      RC.mac[j]->dl_algo.unset(&RC.mac[j]->dl_algo.data);
-      RC.mac[j]->dl_algo = *(default_sched_dl_algo_t *) d;
-      RC.mac[j]->dl_algo.data = RC.mac[j]->dl_algo.setup();
-      LOG_I(ENB_APP, "using default scheduler DL algo '%s'\n", RC.mac[j]->dl_algo.name);
+      pp_impl_param_t *dl_pp = &RC.mac[j]->pre_processor_dl;
+      dl_pp->dl_algo.unset(&dl_pp->dl_algo.data);
+      dl_pp->dl_algo = *(default_sched_dl_algo_t *) d;
+      dl_pp->dl_algo.data = dl_pp->dl_algo.setup();
+      LOG_I(ENB_APP, "using default scheduler DL algo '%s'\n", dl_pp->dl_algo.name);
     }// j=0..num_inst
   } /*else {// MacRLC_ParamList.numelt > 0 // ignore it
 

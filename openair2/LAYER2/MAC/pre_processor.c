@@ -691,15 +691,15 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     n_rbg_sched += rbgalloc_mask[i];
   }
 
-  mac->dl_algo.run(Mod_id,
-                   CC_id,
-                   frameP,
-                   subframeP,
-                   &UE_to_sched,
-                   4, // max_num_ue
-                   n_rbg_sched,
-                   rbgalloc_mask,
-                   mac->dl_algo.data);
+  mac->pre_processor_dl.dl_algo.run(Mod_id,
+                                    CC_id,
+                                    frameP,
+                                    subframeP,
+                                    &UE_to_sched,
+                                    4, // max_num_ue
+                                    n_rbg_sched,
+                                    rbgalloc_mask,
+                                    mac->pre_processor_dl.dl_algo.data);
 
   // the following block is meant for validation of the pre-processor to check
   // whether all UE allocations are non-overlapping and is not necessary for
@@ -1068,10 +1068,10 @@ default_sched_ul_algo_t round_robin_ul = {
 
 void ulsch_scheduler_pre_processor(module_id_t Mod_id,
                                    int CC_id,
-                                   int frameP,
+                                   frame_t frameP,
                                    sub_frame_t subframeP,
-                                   int sched_frameP,
-                                   unsigned char sched_subframeP) {
+                                   frame_t sched_frameP,
+                                   sub_frame_t sched_subframeP) {
   eNB_MAC_INST *mac = RC.mac[Mod_id];
   UE_info_t *UE_info = &mac->UE_info;
   const int N_RB_UL = to_prb(mac->common_channels[CC_id].ul_Bandwidth);
@@ -1128,17 +1128,17 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
     }
   }
 
-  mac->ul_algo.run(Mod_id,
-                   CC_id,
-                   frameP,
-                   subframeP,
-                   sched_frameP,
-                   sched_subframeP,
-                   &UE_to_sched,
-                   4, // max_num_ue
-                   n_contig,
-                   rbs,
-                   mac->ul_algo.data);
+  mac->pre_processor_ul.ul_algo.run(Mod_id,
+                                    CC_id,
+                                    frameP,
+                                    subframeP,
+                                    sched_frameP,
+                                    sched_subframeP,
+                                    &UE_to_sched,
+                                    4, // max_num_ue
+                                    n_contig,
+                                    rbs,
+                                    mac->pre_processor_ul.ul_algo.data);
 
   // the following block is meant for validation of the pre-processor to check
   // whether all UE allocations are non-overlapping and is not necessary for
