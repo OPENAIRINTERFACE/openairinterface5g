@@ -43,26 +43,18 @@
 
 extern RAN_CONTEXT_t RC;
 
-void init_UE_list(UE_list_t *UE_list)
+void init_UE_info(UE_info_t *UE_info)
 {
   int list_el;
-  UE_list->num_UEs = 0;
-  UE_list->head = -1;
-  UE_list->head_ul = -1;
-  UE_list->avail = 0;
-  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
-    UE_list->next[list_el] = list_el + 1;
-    UE_list->next_ul[list_el] = list_el + 1;
-  }
-  UE_list->next[list_el] = -1;
-  UE_list->next_ul[list_el] = -1;
-  memset(UE_list->DLSCH_pdu, 0, sizeof(UE_list->DLSCH_pdu));
-  memset(UE_list->UE_template, 0, sizeof(UE_list->UE_template));
-  memset(UE_list->eNB_UE_stats, 0, sizeof(UE_list->eNB_UE_stats));
-  memset(UE_list->UE_sched_ctrl, 0, sizeof(UE_list->UE_sched_ctrl));
-  memset(UE_list->active, 0, sizeof(UE_list->active));
-  memset(UE_list->assoc_dl_slice_idx, 0, sizeof(UE_list->assoc_dl_slice_idx));
-  memset(UE_list->assoc_ul_slice_idx, 0, sizeof(UE_list->assoc_ul_slice_idx));
+  UE_info->num_UEs = 0;
+  UE_info->list.head = -1;
+  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB; list_el++)
+    UE_info->list.next[list_el] = -1;
+  memset(UE_info->DLSCH_pdu, 0, sizeof(UE_info->DLSCH_pdu));
+  memset(UE_info->UE_template, 0, sizeof(UE_info->UE_template));
+  memset(UE_info->eNB_UE_stats, 0, sizeof(UE_info->eNB_UE_stats));
+  memset(UE_info->UE_sched_ctrl, 0, sizeof(UE_info->UE_sched_ctrl));
+  memset(UE_info->active, 0, sizeof(UE_info->active));
 }
 
 void init_slice_info(slice_info_t *sli)
@@ -137,7 +129,7 @@ void mac_top_init_eNB(void)
 
     mac[i]->if_inst = IF_Module_init(i);
 
-    init_UE_list(&mac[i]->UE_list);
+    init_UE_info(&mac[i]->UE_info);
     init_slice_info(&mac[i]->slice_info);
   }
 
@@ -163,12 +155,12 @@ void mac_init_cell_params(int Mod_idP, int CC_idP)
 
     memset(&RC.mac[Mod_idP]->eNB_stats, 0, sizeof(eNB_STATS));
     UE_template =
-	(UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_list.UE_template[CC_idP][0];
+	(UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_info.UE_template[CC_idP][0];
 
     for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 	UE_template[j].rnti = 0;
 	// initiallize the eNB to UE statistics
-	memset(&RC.mac[Mod_idP]->UE_list.eNB_UE_stats[CC_idP][j], 0,
+	memset(&RC.mac[Mod_idP]->UE_info.eNB_UE_stats[CC_idP][j], 0,
 	       sizeof(eNB_UE_STATS));
     }
 

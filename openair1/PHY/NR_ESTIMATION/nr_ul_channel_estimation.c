@@ -430,55 +430,55 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
       switch (gNB->frame_parms.ofdm_symbol_size) {
         case 128:
-          idft128((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_128,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 256:
-          idft256((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_256,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 512:
-          idft512((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_512,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 1024:
-          idft1024((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_1024,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 1536:
-          idft1536((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_1536,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 2048:
-          idft2048((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_2048,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 4096:
-          idft4096((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_4096,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         case 8192:
-          idft8192((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_8192,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;
 
         default:
-          idft512((int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+          idft(IDFT_512,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
                  (int16_t*) ul_ch_estimates_time[aarx],
                  1);
           break;

@@ -390,7 +390,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
         LOG_USEDINLOG_VAR(mac_rlc_status_resp_t,rlc_status)=mac_rlc_status_ind(module_idP,
             UE_mac_inst[module_idP].crnti,
             eNB_indexP, frameP, subframeP,
-            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,0, 0
+            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 0, 0
                                                                               );
 
         if (UE_mac_inst[module_idP].crnti_before_ho)
@@ -406,7 +406,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                 module_idP, frameP, rlc_status.bytes_in_buffer,
                 dcch_header_len);
 
-        sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6, //not used
+        sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,
                                        (char *) &ulsch_buff[0],0,
                                        0
                                       );

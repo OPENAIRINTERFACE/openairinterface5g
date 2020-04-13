@@ -152,7 +152,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP,
   const uint32_t sourceL2Id,
   const uint32_t destinationL2Id
   )
@@ -189,7 +188,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
-    ue->saved_status_ind_tb_size[channel_idP - 1] = tb_sizeP;
   } else {
     ret.bytes_in_buffer = 0;
   }

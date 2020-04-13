@@ -824,10 +824,15 @@ typedef struct {
   uint16_t cshift[8];   // num_max_harq
 
   /// Number of Allocated RBs by the ulsch preprocessor
-  uint8_t pre_allocated_nb_rb_ul[MAX_NUM_SLICES];
+  uint8_t pre_allocated_nb_rb_ul;
+  /// Start of Allocated RBs by the USLCH preprocessor
+  uint8_t pre_first_nb_rb_ul;
 
   /// index of Allocated RBs by the ulsch preprocessor
   int8_t pre_allocated_rb_table_index_ul;
+
+  /// index of allocated HI_DCI0
+  int pre_dci_ul_pdu_idx;
 
   /// total allocated RBs
   int8_t total_allocated_rbs;
@@ -852,10 +857,10 @@ typedef struct {
 
   // Logical channel info for link with RLC
 
-  /// LCGID mapping
+  /// LCGID mapping (UL)
   long lcgidmap[11];
 
-  ///UE logical channel priority
+  ///UE logical channel priority (UL)
   long lcgidpriority[11];
 
   /// phr information
@@ -913,31 +918,12 @@ typedef struct {
 
 /*! \brief scheduling control information set through an API (not used)*/
 typedef struct {
-  ///UL transmission bandwidth in RBs
-  uint8_t ul_bandwidth[MAX_NUM_LCID];
-  ///DL transmission bandwidth in RBs
-  uint8_t dl_bandwidth[MAX_NUM_LCID];
-
-  //To do GBR bearer
-  uint8_t min_ul_bandwidth[MAX_NUM_LCID];
-
-  uint8_t min_dl_bandwidth[MAX_NUM_LCID];
-
-  ///aggregated bit rate of non-gbr bearer per UE
-  uint64_t ue_AggregatedMaximumBitrateDL;
-  ///aggregated bit rate of non-gbr bearer per UE
-  uint64_t ue_AggregatedMaximumBitrateUL;
-  ///CQI scheduling interval in subframes.
-  uint16_t cqiSchedInterval;
-  ///Contention resolution timer used during random access
-  uint8_t mac_ContentionResolutionTimer;
-
-  uint16_t max_rbs_allowed_slice[NFAPI_CC_MAX][MAX_NUM_SLICES];
-  uint16_t max_rbs_allowed_slice_uplink[NFAPI_CC_MAX][MAX_NUM_SLICES];
-
-  uint8_t max_mcs[MAX_NUM_LCID];
-
-  uint16_t priority[MAX_NUM_LCID];
+  /// number of active DL LCs
+  uint8_t dl_lc_num;
+  /// order in which DLSCH scheduler should allocate LCs
+  uint8_t dl_lc_ids[MAX_NUM_LCID];
+  /// number of bytes to schedule for each LC
+  uint32_t dl_lc_bytes[MAX_NUM_LCID];
 
   // resource scheduling information
 
@@ -950,6 +936,7 @@ typedef struct {
   uint8_t dl_pow_off[NFAPI_CC_MAX];
   uint16_t pre_nb_available_rbs[NFAPI_CC_MAX];
   unsigned char rballoc_sub_UE[NFAPI_CC_MAX][N_RBG_MAX];
+  int pre_dci_dl_pdu_idx;
   uint16_t ta_timer;
   int16_t ta_update;
   uint16_t ul_consecutive_errors;
@@ -1130,7 +1117,15 @@ typedef struct {
   uint8_t sb_size;
   uint8_t nb_active_sb;
 } SBMAP_CONF;
-/*! \brief UE list used by eNB to order UEs/CC for scheduling*/
+
+/*! \brief UE_list_t is a "list" of users within UE_info_t. Especial useful in
+ * the scheduler and to keep "classes" of users. */
+typedef struct {
+  int head;
+  int next[MAX_MOBILES_PER_ENB];
+} UE_list_t;
+
+/*! \brief UE info used by eNB to order UEs/CC for scheduling*/
 typedef struct {
 
   DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
@@ -1152,21 +1147,13 @@ typedef struct {
   eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
   /// scheduling control info
   UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_ENB];
-  int next[MAX_MOBILES_PER_ENB];
-  int head;
-  int next_ul[MAX_MOBILES_PER_ENB];
-  int head_ul;
-  int avail;
+  UE_list_t list;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_ENB];
 
   /// Sorting criteria for the UE list in the MAC preprocessor
   uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
-  uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
-
-  int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
-  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
-} UE_list_t;
+} UE_info_t;
 
 /*! \brief deleting control information*/
 typedef struct {
@@ -1183,20 +1170,6 @@ typedef struct {
   int head_freelist; ///the head position of the delete list
   int tail_freelist; ///the tail position of the delete list
 } UE_free_list_t;
-
-/// Structure for saving the output of each pre_processor instance
-typedef struct {
-  uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint8_t  slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
-  uint8_t  MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX];
-
-  uint32_t bytes_lcid[MAX_MOBILES_PER_ENB][MAX_NUM_LCID];
-  uint32_t wb_pmi[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-  uint8_t  mcs[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-
-} pre_processor_results_t;
 
 /**
  * slice specific scheduler for the DL
@@ -1289,11 +1262,17 @@ typedef struct {
   int      n_ul;
   slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
 
-  pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
-
   /// common rb allocation list between slices
   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
 } slice_info_t;
+
+/**
+ * describes contiguous RBs
+ */
+typedef struct {
+  int start;
+  int length;
+} contig_rbs_t;
 
 /*! \brief eNB common channels */
 typedef struct {
@@ -1414,7 +1393,7 @@ typedef struct eNB_MAC_INST_s {
   nfapi_ue_release_request_t UE_release_req;
   /// UL handle
   uint32_t ul_handle;
-  UE_list_t UE_list;
+  UE_info_t UE_info;
 
   /// slice-related configuration
   slice_info_t slice_info;
