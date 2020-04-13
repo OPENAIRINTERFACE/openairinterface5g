@@ -418,7 +418,7 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
 			NR_BWP_Downlink_t *bwp){
 
   int CCEIndex = -1;
-  
+  int cid;
   NR_ControlResourceSet_t *coreset = NULL;
 
   if (bwp) { // This is not the InitialBWP
@@ -439,6 +439,7 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
         temp_coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
         if (coresetid==temp_coreset->controlResourceSetId) {
           coreset = temp_coreset;
+          cid = i;
           break;
         }
       }
@@ -517,7 +518,7 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
 
     CCEIndex = allocate_nr_CCEs(nr_mac,
                                 1, // bwp_id
-                                coresetid,
+                                cid,
                                 aggregation_level,
                                 ss->searchSpaceType->present-1, // search_space, 0 common, 1 ue-specific
                                 0, // UE-id
