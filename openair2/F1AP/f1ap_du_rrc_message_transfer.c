@@ -697,7 +697,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
           break;
         }
         
-        UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_list.UE_sched_ctrl[UE_id_mac]);
+        UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
         
         if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
           UE_scheduling_control->cdrx_waiting_ack = FALSE;

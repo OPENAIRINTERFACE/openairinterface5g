@@ -443,7 +443,7 @@ int restart_L1L2(module_id_t enb_id) {
   set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
-  init_UE_list(&RC.mac[enb_id]->UE_list);
+  init_UE_info(&RC.mac[enb_id]->UE_info);
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
 
   // No more rrc thread, as many race conditions are hidden behind
@@ -665,16 +665,16 @@ int main ( int argc, char **argv )
   wait_eNBs();
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
 
-    // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
-    // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
-    // some initialization is necessary and init_ru_vnf do this.
-    if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
-      printf("Initializing RU threads\n");
-    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
-
-      for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
-        RC.ru[ru_id]->rf_map.card=0;
-        RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
+  // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
+  // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
+  // some initialization is necessary and init_ru_vnf do this.
+  if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
+    printf("Initializing RU threads\n");
+    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
+    
+    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+      RC.ru[ru_id]->rf_map.card=0;
+      RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
     }
 
     config_sync_var=0;

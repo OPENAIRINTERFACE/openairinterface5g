@@ -657,6 +657,10 @@ uci_procedures(PHY_VARS_eNB *eNB,
     uci = &(eNB->uci_vars[i]);
 
     if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
+      if (uci->ue_id > MAX_MOBILES_PER_ENB) {
+        LOG_W(PHY, "UCI for UE %d and/or but is not active in MAC\n", uci->ue_id);
+        continue;
+      }
       LOG_D(PHY,"Frame %d, subframe %d: Running uci procedures (type %d) for %d \n",
             frame,
             subframe,
@@ -1311,7 +1315,121 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
                            ulsch_harq->V_UL_DAI,
                            ulsch_harq->nb_rb>20 ? 1 : 0);
       stop_meas(&eNB->ulsch_decoding_stats);
-    }
+      LOG_D(PHY,
+            "[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d ulsch_harq->cqi_crc_status:%d ackBits:%d ulsch_decoding_stats[t:%lld max:%lld]\n",
+            eNB->Mod_id,harq_pid,
+            frame,subframe,
+            ulsch->rnti,
+            dB_fixed(eNB->pusch_vars[i]->ulsch_power[0]),
+            dB_fixed(eNB->pusch_vars[i]->ulsch_power[1]),
+            30,//eNB->measurements.n0_power_dB[0],
+            30,//eNB->measurements.n0_power_dB[1],
+            ulsch_harq->o_ACK[0],
+            ulsch_harq->o_ACK[1],
+            ret,
+            ulsch_harq->cqi_crc_status,
+            ulsch_harq->O_ACK,
+            eNB->ulsch_decoding_stats.p_time, eNB->ulsch_decoding_stats.max);
+      if (ulsch_harq->repetition_number < ulsch_harq->total_number_of_repetitions){
+    	  ulsch_harq->rvidx = rvidx_tab[(ulsch_harq->repetition_number%4)] ;  			// Set the correct rvidx for the next emtc repetitions
+    	  ulsch_harq->repetition_number +=1  ; 							// Increment repetition_number for the next ULSCH allocation
+      }
+      //compute the expected ULSCH RX power (for the stats)
+      ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
+
+      if (RC.mac != NULL) { /* ulsim does not use RC.mac context. */
+        if (ulsch_harq->cqi_crc_status == 1) {
+#ifdef DEBUG_PHY_PROC
+          //if (((frame%10) == 0) || (frame < 50))
+          print_CQI(ulsch_harq->o,ulsch_harq->uci_format,0,fp->N_RB_DL);
+#endif
+          fill_ulsch_cqi_indication(eNB,frame,subframe,ulsch_harq,ulsch->rnti);
+          RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
+        } else {
+          if(RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_flag & (1 << subframe) ) {
+            RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
+            RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_timer=30;
+            LOG_D(PHY,"Frame %d,Subframe %d, We're supposed to get a cqi here. Set cqi_req_timer to 30.\n",frame,subframe);
+          }
+        }
+      }
+
+      if (ret == (1+MAX_TURBO_ITERATIONS)) {
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(ulsch->rnti),
+          T_INT(harq_pid));
+        fill_crc_indication(eNB,i,frame,subframe,1); // indicate NAK to MAC
+        fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
+        LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
+              eNB->Mod_id,harq_pid,
+              frame,subframe, i,
+              ulsch_harq->round,
+              ulsch->Mlimit,
+              ulsch_harq->o_ACK[0],
+              ulsch_harq->o_ACK[1]);
+
+        if (ulsch_harq->round >= 3)  {
+          ulsch_harq->status  = SCH_IDLE;
+          ulsch_harq->handled = 0;
+          ulsch->harq_mask   &= ~(1 << harq_pid);
+          ulsch_harq->round   = 0;
+        }
+
+        MSC_LOG_RX_DISCARDED_MESSAGE(
+          MSC_PHY_ENB,MSC_PHY_UE,
+          NULL,0,
+          "%05u:%02u ULSCH received rnti %x harq id %u round %d",
+          frame,subframe,
+          ulsch->rnti,harq_pid,
+          ulsch_harq->round-1
+        );
+        /* Mark the HARQ process to release it later if max transmission reached
+         * (see below).
+         * MAC does not send the max transmission count, we have to deal with it
+         * locally in PHY.
+         */
+        ulsch_harq->handled = 1;
+      }                         // ulsch in error
+      else if(ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions){
+        fill_crc_indication(eNB,i,frame,subframe,0); // indicate ACK to MAC
+        fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
+        ulsch_harq->status = SCH_IDLE;
+        ulsch->harq_mask &= ~(1 << harq_pid);
+        T (T_ENB_PHY_ULSCH_UE_ACK, T_INT (eNB->Mod_id), T_INT (frame), T_INT (subframe), T_INT (ulsch->rnti), T_INT (harq_pid));
+        MSC_LOG_RX_MESSAGE(
+          MSC_PHY_ENB,MSC_PHY_UE,
+          NULL,0,
+          "%05u:%02u ULSCH received rnti %x harq id %u",
+          frame,subframe,
+          ulsch->rnti,harq_pid
+        );
+#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_ULSCH
+        LOG_D(PHY,"[eNB] Frame %d, Subframe %d : ULSCH SDU (RX harq_pid %d) %d bytes:",frame,subframe,
+              harq_pid,ulsch_harq->TBS>>3);
+
+        for (j=0; j<ulsch_harq->TBS>>3; j++)
+          LOG_T(PHY,"%x.",ulsch->harq_processes[harq_pid]->b[j]);
+
+        LOG_T(PHY,"\n");
+#endif
+#endif
+      }  // ulsch not in error
+
+      if (ulsch_harq->O_ACK>0) fill_ulsch_harq_indication(eNB,ulsch_harq,ulsch->rnti,frame,subframe,ulsch->bundling);
+
+      LOG_D(PHY,"[eNB %d] Frame %d subframe %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",
+            eNB->Mod_id,frame,subframe,
+            harq_pid,
+            i,
+            ret,
+            ulsch_harq->cqi_crc_status,
+            ulsch_harq->o_ACK[0],
+            ulsch_harq->o_ACK[1],
+            eNB->UE_stats[i].ulsch_errors[harq_pid],
+            eNB->UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
+    } //     if ((ulsch) &&
+    //         (ulsch->rnti>0) &&
+    //         (ulsch_harq->status == ACTIVE))
     else if ((ulsch) &&
              (ulsch->rnti>0) &&
              (ulsch_harq->status == ACTIVE) &&
