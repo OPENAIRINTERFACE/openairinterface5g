@@ -58,7 +58,7 @@ int rrc_gNB_compare_ue_rnti_id(
   struct rrc_gNB_ue_context_s* c2_pP
 );
 
-RB_PROTOTYPE(rrc_ue_tree_s, rrc_gNB_ue_context_s, entries, rrc_gNB_compare_ue_rnti_id);
+RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries, rrc_gNB_compare_ue_rnti_id);
 
 struct rrc_gNB_ue_context_s*
 rrc_gNB_allocate_new_UE_context(

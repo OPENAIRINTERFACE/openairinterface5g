@@ -463,6 +463,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 			uint16_t nb_symb_sch,
 			uint16_t nb_dmrs_prb,
                         uint16_t nb_rb_oh,
+                        uint8_t tb_scaling,
 			uint8_t Nl);
 
 uint32_t nr_compute_tbslbrm(uint16_t table,

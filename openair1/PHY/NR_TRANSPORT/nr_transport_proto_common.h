@@ -1648,8 +1648,6 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
 */
 uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
 
-uint16_t get_nr_prach_fmt(int prach_ConfigIndex,lte_frame_type_t frame_type, nr_frequency_range_e fr);
-
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
   @param frame_parms Pointer to NR_DL_FRAME_PARMS structure
@@ -1673,8 +1671,13 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
 		       lte_frame_type_t frame_type,
 		       uint32_t X_u[64][839]);
 
+void compute_nr_prach_seq(uint8_t short_sequence,
+                          uint8_t num_sequences,
+                          uint8_t rootSequenceIndex,
+                          uint32_t X_u[64][839]);
 
 void init_prach_tables(int N_ZC);
+void init_nr_prach_tables(int N_ZC);
 
 void init_unscrambling_lut(void);
 void init_scrambling_lut(void);

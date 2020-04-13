@@ -1624,7 +1624,7 @@ add_library(PHY_MEX ${PHY_MEX_UE} ${CONFIG_LIB})
 #Layer 2 library
 #####################
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
-set(NR_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
+set(NR_GNB_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
 set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
 set(NR_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_PHY_INTERFACE)
@@ -1775,14 +1775,15 @@ set (MAC_SRC
 
 set (MAC_NR_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
-  ${NR_MAC_DIR}/main.c
-  ${NR_MAC_DIR}/config.c
-  ${NR_MAC_DIR}/gNB_scheduler.c
-  ${NR_MAC_DIR}/gNB_scheduler_bch.c
-  ${NR_MAC_DIR}/gNB_scheduler_dlsch.c
-  ${NR_MAC_DIR}/gNB_scheduler_ulsch.c
-  ${NR_MAC_DIR}/gNB_scheduler_primitives.c
-  ${NR_MAC_DIR}/gNB_scheduler_phytest.c
+  ${NR_GNB_MAC_DIR}/main.c
+  ${NR_GNB_MAC_DIR}/config.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_bch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_dlsch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_ulsch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_primitives.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_phytest.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_RA.c
  )
 
 
@@ -1794,7 +1795,6 @@ set (MAC_SRC_UE
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
-  
  )
  
 set (MAC_NR_SRC_UE
@@ -1804,6 +1804,9 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
   ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
+  ${NR_UE_MAC_DIR}/nr_l1_helpers.c
+  ${NR_UE_MAC_DIR}/nr_ra_procedures.c
+  ${NR_UE_MAC_DIR}/rar_tools_nrUE.c
 )
 
 set (ENB_APP_SRC
@@ -1867,7 +1870,7 @@ add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_compute_tbs_common.c)
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
-include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")
+include_directories("${OPENAIR2_DIR}/LAYER2")
 include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
 #include_directories("${NFAPI_USER_DIR}"")
 
@@ -1894,6 +1897,19 @@ set (GTPV1U_SRC
 )
 add_library(GTPV1U ${GTPV1U_SRC})
 add_dependencies(GTPV1U rrc_flag)
+
+#NR case
+set (NR_GTPV1U_SRC
+  ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c
+  ${RRC_DIR}/rrc_eNB_GTPV1U.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTrxn.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uMsg.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1u.c
+  ${GTPV1U_DIR}/gtpv1u_teid_pool.c
+)
+add_library(NR_GTPV1U ${NR_GTPV1U_SRC})
+add_dependencies(NR_GTPV1U rrc_flag)
 
 set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_app.c
@@ -2605,6 +2621,7 @@ add_executable(nr-softmodem
   ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -2618,7 +2635,7 @@ add_executable(nr-softmodem
 
 target_link_libraries (nr-softmodem
   -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
+  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
@@ -2662,9 +2679,9 @@ add_executable(nr-uesoftmodem
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
+  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
-  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS L2_UE NR_L2_UE MAC_NR_COMMON S1AP_LIB S1AP_ENB
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -2821,7 +2838,7 @@ add_executable(nr_prachsim
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
-   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB RRC_LIB NR_RRC_LIB L2_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB MAC_UE_NR SCHED_NR_UE_LIB RRC_LIB NR_RRC_LIB L2_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c

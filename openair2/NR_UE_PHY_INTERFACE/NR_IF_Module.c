@@ -32,9 +32,9 @@
 
 #include "PHY/defs_nr_UE.h"
 #include "NR_IF_Module.h"
-#include "mac_proto.h"
+#include "NR_MAC_UE/mac_proto.h"
 #include "assertions.h"
-#include "LAYER2/NR_MAC_UE/mac_extern.h"
+#include "NR_MAC_UE/mac_extern.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "executables/softmodem-common.h"
 
@@ -93,6 +93,14 @@ int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_n
   */
 }
 
+int8_t handle_rar (nr_downlink_indication_t *dl_info){
+
+  LOG_D(MAC, "handling RAR at MAC layer \n");
+  nr_process_rar (dl_info);
+  return 0;
+
+}
+
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   NR_UE_L2_STATE_t ret;
@@ -105,14 +113,17 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   mac->dl_config_request.number_pdus = 0;
   // clean previous FAPI messages
 
-  ret = nr_ue_scheduler(
-			ul_info->module_id,
-			ul_info->gNB_index,
-			ul_info->cc_id,
-			ul_info->frame,
-			ul_info->slot,
-			ul_info->ssb_index, 
-			0, 0); //  TODO check tx/rx frame/slot is need for NR version
+  ret = nr_ue_scheduler(ul_info->module_id,
+                        ul_info->gNB_index,
+                        ul_info->cc_id,
+                        ul_info->frame_rx,
+                        ul_info->slot_rx,
+                        ul_info->ssb_index,
+                        ul_info->frame_tx,
+                        ul_info->slot_tx);
+
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
+    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -126,7 +137,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   default:
     break;
   }
-
 
   mac->if_module->scheduled_response(&mac->scheduled_response);
 
@@ -231,11 +241,11 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 					     dl_info->rx_ind->rx_indication_body[i].mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;*/
 	break;
       case FAPI_NR_RX_PDU_TYPE_SIB:
-	ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-				       (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
-				       (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
-				       (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
-	break;
+      ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                  (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
+                  (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
+                  (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
+      break;
       case FAPI_NR_RX_PDU_TYPE_DLSCH:
 	//                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
 	ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
@@ -249,17 +259,14 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 	  dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
 	  dl_config->number_pdus = dl_config->number_pdus + 1;
 	  */
+      break;
 
-	/*ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
-					  dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu,
-					  dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length, dl_info->frame, dl_info->slot)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+      case FAPI_NR_RX_PDU_TYPE_RAR:
+        ret_mask |= (handle_rar(dl_info)) << FAPI_NR_RX_PDU_TYPE_RAR;
+      break;
 
-	*/
-	break;
       default:
-
-	break;
-
+	    break;
       }
     }
   }

@@ -55,8 +55,9 @@ void print_ints(char *s,int *x)
 }
 #endif
 
-int16_t get_nr_PL(PHY_VARS_NR_UE *ue,uint8_t gNB_index)
-{
+int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
+
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   /*
   if (ue->frame_parms.mode1_flag == 1)
@@ -74,9 +75,6 @@ int16_t get_nr_PL(PHY_VARS_NR_UE *ue,uint8_t gNB_index)
                     //        dB_fixed_times10(RSoffset*12*ue_g[Mod_id][CC_id]->frame_parms.N_RB_DL) +
                     //(ue->frame_parms.pdsch_config_common.referenceSignalPower*10))/10));
 }
-
-
-
 
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                          unsigned int subframe_offset,

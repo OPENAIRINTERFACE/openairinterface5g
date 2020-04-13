@@ -34,9 +34,9 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*MAC*/
-#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac.h"
+#include "NR_MAC_gNB/nr_mac_gNB.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac.h"
 
 /*NFAPI*/
@@ -44,6 +44,9 @@
 /*TAG*/
 #include "NR_TAG-Id.h"
 
+////////////////////////////////////////////////////////
+/////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////
+////////////////////////////////////////////////////////
 
 int nr_generate_dlsch_pdu(module_id_t module_idP,
                           unsigned char *sdus_payload,
@@ -61,7 +64,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   unsigned char * dlsch_buffer_ptr = sdus_payload;
   uint8_t last_size = 0;
   int offset = 0, mac_ce_size, i, timing_advance_cmd, tag_id = 0;
-
   // MAC CEs 
   uint8_t mac_header_control_elements[16], *ce_ptr;
   ce_ptr = &mac_header_control_elements[0];
@@ -97,6 +99,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     }
 
     LOG_D(MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
+
     mac_ce_size = sizeof(NR_MAC_CE_TA);
 
     // Copying  bytes for MAC CEs to the mac pdu pointer
@@ -104,7 +107,6 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     ce_ptr += mac_ce_size;
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
-
 
   // Contention resolution fixed subheader and MAC CE
   if (ue_cont_res_id) {
@@ -130,8 +132,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     mac_pdu_ptr += (unsigned char) mac_ce_size;
   }
 
-
-  // 2) Generation of DLSCH MAC SDU subheaders
+  // 2) Generation of DLSCH MAC subPDUs including subheaders and MAC SDUs
   for (i = 0; i < num_sdus; i++) {
     LOG_D(MAC, "[gNB] Generate DLSCH header num sdu %d len sdu %d\n", num_sdus, sdu_lengths[i]);
 
@@ -152,14 +153,14 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
 
     mac_pdu_ptr += last_size;
 
-    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in   
+    // 3) cycle through SDUs, compute each relevant and place dlsch_buffer in
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr+= sdu_lengths[i]; 
     mac_pdu_ptr += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
-  if (post_padding > 0) {    
+  if (post_padding > 0) {
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = DL_SCH_LCID_PADDING;
     mac_pdu_ptr++;
@@ -170,7 +171,7 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
 
   // compute final offset
   offset = ((unsigned char *) mac_pdu_ptr - mac_pdu);
-    
+
   //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
 
   return offset;

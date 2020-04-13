@@ -157,9 +157,9 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
 {
   int i, arx; //int i,i2,arx,atx,ind,k;
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_gnb->frame_parms;
-  int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
+  //int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
+  //uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
   int16_t **rxsig_t, **rxsig_f;
   // int16_t **chest_t=NULL;
   // int16_t **chest_f=NULL;
@@ -966,7 +966,7 @@ FD_stats_form * create_form_stats_form( void ) {
 }
 
 void startScope(scopeParms_t * p) {
-  FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
+  //FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
   char title[255];
   fl_initialize (p->argc, p->argv, NULL, 0, 0);
   /*

@@ -363,7 +363,7 @@ typedef struct x2ap_ENDC_sgnb_addition_req_ACK_s {
   uint8_t nb_e_rabs_admitted_tobeadded;
 
  /* list of e_rab to be added by RRC layers */
-  e_rab_tobe_added_t e_rabs_admitted_tobeadded[S1AP_MAX_E_RAB];
+  e_rab_admitted_tobe_added_t e_rabs_admitted_tobeadded[S1AP_MAX_E_RAB];
 
   /* list of e_rab to be setup by RRC layers */
   e_rab_t  e_rab_param[S1AP_MAX_E_RAB];

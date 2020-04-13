@@ -382,6 +382,7 @@ typedef enum e_rab_satus_e {
   E_RAB_STATUS_DONE, // from the eNB perspective
   E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
   E_RAB_STATUS_REESTABLISHED, // after HO
+  E_RAB_STATUS_TOMODIFY,      // ENDC NSA
   E_RAB_STATUS_FAILED,
   E_RAB_STATUS_TORELEASE  // to release DRB between eNB and UE
 } e_rab_status_t;
@@ -613,6 +614,7 @@ typedef struct eNB_RRC_UE_s {
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
+  uint8_t							 nb_of_modify_endc_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
@@ -627,6 +629,10 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+  // LG: For GTPV1 TUNNELS ENDC
+  uint32_t                           gnb_gtp_endc_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             gnb_gtp_endc_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_endc_ebi[S1AP_MAX_E_RAB];
   /* Total number of e_rab already setup in the list */
   uint8_t                            nb_x2u_e_rabs;
   // LG: For GTPV1 TUNNELS(X2U)

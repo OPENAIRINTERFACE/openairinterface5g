@@ -87,9 +87,13 @@ typedef struct {
     /// component carrier id
     int cc_id;
     /// frame 
-    frame_t frame;
-    /// slot
-    uint32_t slot;
+    frame_t frame_rx;
+    /// slot rx
+    uint32_t slot_rx;
+    /// frame tx
+    frame_t frame_tx;
+    /// slot tx
+    uint32_t slot_tx;
     /// ssb_index, if ssb is not present in current TTI, thie value set to -1
     int ssb_index;
     /// dci reception indication structure
