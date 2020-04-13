@@ -161,6 +161,8 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (frame_parms->frame_type == TDD) set_S_config(frame_parms);
 
+  frame_parms->samples_per_subframe=frame_parms->samples_per_tti;
+  frame_parms->samples_per_slot=frame_parms->samples_per_tti>>1;
   //  frame_parms->tdd_config=3;
   return(0);
 }

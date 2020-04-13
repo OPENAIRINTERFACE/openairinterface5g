@@ -27,6 +27,7 @@
 * \company Eurecom
 * \email: desouza@eurecom.fr
 * \note
+
 * \warning
 */
 
@@ -46,6 +47,7 @@ uint8_t nr_pdsch_default_time_alloc_C_L[15] = {2,2,2,2,2,4,4,4,4,4,7,12,11,6,6};
 
   /// Time domain allocation routines
 
+/*
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
                                         nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
                                         nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu) {
@@ -73,9 +75,9 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
 
     case NFAPI_NR_RNTI_RA:
     case NFAPI_NR_RNTI_TC:
-      /*AssertFatal(dci_alloc.pdcch_params.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
-      "Invalid common search space type %d for RNTI %d, expected %d\n",dci_alloc.pdcch_params.common_search_space_type,
-      NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1, dci_alloc.rnti_type);*/
+      //AssertFatal(dci_alloc.pdcch_params.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
+      //"Invalid common search space type %d for RNTI %d, expected %d\n",dci_alloc.pdcch_params.common_search_space_type,
+      //NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1, dci_alloc.rnti_type);
       *alloc_type = (alloc_list_flag) ? NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST : NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A;
       break;
 
@@ -94,6 +96,7 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
   }
 }
 
+
 uint16_t get_SLIV(uint8_t S, uint8_t L) {
   return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
@@ -104,26 +107,26 @@ static inline uint8_t get_K0(uint8_t row_idx, uint8_t time_alloc_type) {
   ((row_idx==6)||(row_idx==7)||(row_idx==15))? 1 : 0);
 }
 
-/*ideally combine the calculation of L in the same function once the right struct is defined*/
-uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_typeA_position) {
+// ideally combine the calculation of L in the same function once the right struct is defined
+uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_TypeA_Position) {
 
   uint8_t idx;
   //uint8_t S;
 
   switch(time_alloc_type) {
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A:
-      idx = (row_idx>7)? (row_idx+6) : (((row_idx-1)<<1)-1+((dmrs_typeA_position==2)?0:1));
+      idx = (row_idx>7)? (row_idx+6) : (((row_idx-1)<<1)-1+((dmrs_TypeA_Position==2)?0:1));
       return ((CP==NFAPI_CP_NORMAL)?nr_pdsch_default_time_alloc_A_S_nCP[idx] : nr_pdsch_default_time_alloc_A_S_eCP[idx]);
       break;
 
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_B:
-      idx = (row_idx<14)? (row_idx-1) : (row_idx == 14)? row_idx-1+((dmrs_typeA_position==2)?0:1) : 15;
+      idx = (row_idx<14)? (row_idx-1) : (row_idx == 14)? row_idx-1+((dmrs_TypeA_Position==2)?0:1) : 15;
       return (nr_pdsch_default_time_alloc_B_S[idx]);
       break;
 
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C:
       AssertFatal((row_idx!=6)&&(row_idx!=7)&&(row_idx<17), "Invalid row index %d in %s %s\n", row_idx, __FUNCTION__, __FILE__);
-      idx = (row_idx<6)? (row_idx-1) : (row_idx<14)? (row_idx-3) : (row_idx == 14)? row_idx-3+((dmrs_typeA_position==2)?0:1) : (row_idx-2);
+      idx = (row_idx<6)? (row_idx-1) : (row_idx<14)? (row_idx-3) : (row_idx == 14)? row_idx-3+((dmrs_TypeA_Position==2)?0:1) : (row_idx-2);
       break;
 
   default:
@@ -132,16 +135,17 @@ uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t d
   return 0; // temp warning fix
 }
 
-void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config) {
 
-  switch (config.subframe_config.dl_cyclic_prefix_type.value) {
+void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg) {
+
+  switch (cfg->subframe_config.dl_cyclic_prefix_type.value) {
     case NFAPI_CP_NORMAL:
-      if (config.pdsch_config.mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
+      if (rel15->mapping_type == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
         AssertFatal(S<4, "Invalid value of S(%d) for mapping type A and normal CP\n", S);
 
         if (S==3)
-          AssertFatal(config.pdsch_config.mapping_type.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
-          S, config.pdsch_config.dmrs_typeA_position.value);
+          AssertFatal(rel15->dmrs_TypeA_Position == 3, "Invalid S %d for dmrs_TypeA_Position %d\n",
+          S, rel15->dmrs_TypeA_Position);
 
         AssertFatal((L>2)&&(L<15), "Invalid L %d for mapping type A and normal CP\n", L);
 
@@ -157,12 +161,12 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
       break;
 
     case NFAPI_CP_EXTENDED:
-      if (config.pdsch_config.mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
+      if (rel15->mapping_type == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
         AssertFatal(S<4, "Invalid value of S(%d) for mapping type A and extended CP\n", S);
 
         if (S==3)
-          AssertFatal(config.pdsch_config.dmrs_typeA_position.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
-          S, config.pdsch_config.dmrs_typeA_position.value);
+          AssertFatal(rel15->dmrs_TypeA_Position == 3, "Invalid S %d for dmrs_TypeA_Position %d\n",
+          S, rel15->dmrs_TypeA_Position);
 
         AssertFatal((L>2)&&(L<13), "Invalid L %d for mapping type A and extended CP\n", L);
 
@@ -241,6 +245,7 @@ void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t p
   LOG_I(PHY, "PRG parameters for BWP %d location %d N_RB %d:\n", bwp->bwp_id, bwp->location, bwp->N_RB);
   LOG_I(PHY, "P_prime %d\t start size %d\t endsize %d\t N_PRG %d\n", prg_parms->P_prime, prg_parms->start_size, prg_parms->end_size, prg_parms->N_PRG);
 }
+*/
 
   /// Payload emulation
 void nr_emulate_dlsch_payload(uint8_t* pdu, uint16_t size) {
@@ -292,10 +297,10 @@ int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
+                   nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    uint8_t *sdu) {
 
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch_pdu->dlsch_pdu_rel15;
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
  
   int dlsch_id = find_nr_dlsch(rel15->rnti,gNB,SEARCH_EXIST);
   AssertFatal( (dlsch_id>=0) && (dlsch_id<NUMBER_OF_NR_DLSCH_MAX),
@@ -303,7 +308,8 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
   NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
   NR_DL_gNB_HARQ_t **harq  = dlsch->harq_processes;
   /// DLSCH struct
-  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
+  memcpy((void*)&harq[dlsch->harq_ids[frame%2][slot]]->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
+  gNB->num_pdsch_rnti++;
   AssertFatal(sdu!=NULL,"sdu is null\n");
   harq[dlsch->harq_ids[frame%2][slot]]->pdu = sdu;
 
@@ -327,23 +333,9 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   ulsch->harq_mask |= 1<<harq_pid;
   ulsch->harq_process_id[slot] = harq_pid;
 
-  nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch->harq_processes[harq_pid]->ulsch_pdu;
+  memcpy((void*)&ulsch->harq_processes[harq_pid]->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
 
   LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
- 
-  
-  //FK this is still a bad hack. We need to replace the L1 FAPI structures with the new scf ones as well.
-  rel15_ul->rnti                           = ulsch_pdu->rnti;
-  rel15_ul->ulsch_pdu_rel15.start_rb       = ulsch_pdu->rb_start;
-  rel15_ul->ulsch_pdu_rel15.number_rbs     = ulsch_pdu->rb_size;
-  rel15_ul->ulsch_pdu_rel15.start_symbol   = ulsch_pdu->start_symbol_index;
-  rel15_ul->ulsch_pdu_rel15.number_symbols = ulsch_pdu->nr_of_symbols;
-  rel15_ul->ulsch_pdu_rel15.length_dmrs    = gNB->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
-  rel15_ul->ulsch_pdu_rel15.Qm             = ulsch_pdu->qam_mod_order;
-  rel15_ul->ulsch_pdu_rel15.mcs            = ulsch_pdu->mcs_index;
-  rel15_ul->ulsch_pdu_rel15.rv             = ulsch_pdu->pusch_data.rv_index;
-  rel15_ul->ulsch_pdu_rel15.n_layers       = ulsch_pdu->nrOfLayers;
-  rel15_ul->ulsch_pdu_rel15.R              = ulsch_pdu->target_code_rate;
 
 }
 

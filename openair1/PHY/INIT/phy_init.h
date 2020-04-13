@@ -392,10 +392,9 @@ void phy_config_update_sib13_request(PHY_Config_t *phy_config);
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
-int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp, uint8_t i_ssb, uint8_t half_frame_index);
-int nr_is_ssb_slot(nfapi_nr_config_request_t *cfg, int slot, int frame);
-int nr_init_frame_parms(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
-int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *frame_parms,int mu,int Ncp,int N_RB_DL,int n_ssb_crb,int ssb_subcarrier_offset);
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp);
+int nr_init_frame_parms(nfapi_nr_config_request_scf_t *config, NR_DL_FRAME_PARMS *frame_parms);
+int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *frame_parms,fapi_nr_config_request_t *config,int Ncp);
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue,int nb_connected_eNB,uint8_t abstraction_flag);
 void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag);
 void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms);

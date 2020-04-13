@@ -589,7 +589,7 @@ static void *UE_thread_synch(void *arg)
         LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
         if (initial_sync( UE, UE->mode ) == 0) {
-          LOG_I( HW, "Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
+          LOG_I( HW, "Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %lu, UL %lu), UE_scan_carrier %d\n",
                  (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti,
                  freq_offset,
                  UE->rx_total_gain_dB,
@@ -714,7 +714,7 @@ static void *UE_thread_synch(void *arg)
             }
           }
 
-          LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
+          LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %lu, UL %lu)\n",
                 freq_offset,
                 UE->rx_total_gain_dB,
                 downlink_frequency[0][0]+freq_offset,
@@ -2070,7 +2070,7 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
     txdata = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t *) );
 
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      LOG_I(PHY, "Mapping UE CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n",
+      LOG_I(PHY, "Mapping UE CC_id %d, rx_ant %d, freq %lu on card %d, chain %d\n",
             CC_id, i, downlink_frequency[CC_id][i], phy_vars_ue[CC_id]->rf_map.card, (phy_vars_ue[CC_id]->rf_map.chain)+i );
       free( phy_vars_ue[CC_id]->common_vars.rxdata[i] );
       rxdata[i] = (int32_t *)malloc16_clear( 307200*sizeof(int32_t) );
@@ -2078,7 +2078,7 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
     }
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-      LOG_I(PHY, "Mapping UE CC_id %d, tx_ant %d, freq %u on card %d, chain %d\n",
+      LOG_I(PHY, "Mapping UE CC_id %d, tx_ant %d, freq %lu on card %d, chain %d\n",
             CC_id, i, downlink_frequency[CC_id][i], phy_vars_ue[CC_id]->rf_map.card, (phy_vars_ue[CC_id]->rf_map.chain)+i );
       free( phy_vars_ue[CC_id]->common_vars.txdata[i] );
       txdata[i] = (int32_t *)malloc16_clear( 307200*sizeof(int32_t) );

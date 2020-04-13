@@ -123,9 +123,6 @@ uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB){
 * NAME :         set_ptrs_symb_idx
 *
 * PARAMETERS :   ptrs_symbols           PTRS OFDM symbol indicies bit mask
-*                ptrs_UplinkConfig      PTRS uplink configuration
-*                dmrs_UplinkConfig      DMRS uplink configuration
-*                mapping_type           PUSCH time domain mapping type
 *                duration_in_symbols    number of scheduled PUSCH ofdm symbols
 *                start_symbol           first ofdm symbol of PUSCH within slot
 *                L_ptrs                 the parameter L_ptrs
@@ -138,64 +135,61 @@ uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB){
 *********************************************************************/
 
 void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
-                       ptrs_UplinkConfig_t *ptrs_UplinkConfig,
-                       dmrs_UplinkConfig_t *dmrs_UplinkConfig,
-                       uint8_t mapping_type,
                        uint8_t duration_in_symbols,
                        uint8_t start_symbol,
+                       uint8_t dmrs_type,
                        uint8_t L_ptrs,
+                       uint8_t pusch_maxLength,
                        uint16_t ofdm_symbol_size) {
 
-	uint8_t i, last_symbol, is_dmrs_symbol1, is_dmrs_symbol2;
-	int16_t l_ref;
+  uint8_t i, last_symbol, is_dmrs_symbol1, is_dmrs_symbol2;
+  int16_t l_ref;
 
-	*ptrs_symbols = 0;
-	i = 0;
-	is_dmrs_symbol1 = 0;
-	is_dmrs_symbol2 = 0;
-	l_ref = start_symbol;
-	last_symbol = start_symbol + duration_in_symbols - 1;
+  *ptrs_symbols = 0;
+  i = 0;
+  is_dmrs_symbol1 = 0;
+  is_dmrs_symbol2 = 0;
+  l_ref = start_symbol;
+  last_symbol = start_symbol + duration_in_symbols - 1;
 
-	while ( (l_ref + i*L_ptrs) <= last_symbol) {
+  while ( (l_ref + i*L_ptrs) <= last_symbol) {
 
-		is_dmrs_symbol1 = is_dmrs_symbol(max((l_ref + (i-1)*L_ptrs + 1), l_ref),
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         duration_in_symbols,
-                                         dmrs_UplinkConfig,
-                                         mapping_type,
-                                         ofdm_symbol_size);
+    is_dmrs_symbol1 = is_dmrs_symbol(max((l_ref + (i-1)*L_ptrs + 1), l_ref),
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     duration_in_symbols,
+                                     dmrs_type,
+                                     ofdm_symbol_size);
 
-		is_dmrs_symbol2 = is_dmrs_symbol(l_ref + i*L_ptrs,
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         duration_in_symbols,
-                                         dmrs_UplinkConfig,
-                                         mapping_type,
-                                         ofdm_symbol_size);
+    is_dmrs_symbol2 = is_dmrs_symbol(l_ref + i*L_ptrs,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     duration_in_symbols,
+                                     dmrs_type,
+                                     ofdm_symbol_size);
 
-		if ( is_dmrs_symbol1 + is_dmrs_symbol2 > 0 ) {
+    if ( is_dmrs_symbol1 + is_dmrs_symbol2 > 0 ) {
 
-			if (dmrs_UplinkConfig->pusch_maxLength == 2)
-				l_ref = l_ref + i*L_ptrs + 1;
-			else
-				l_ref = l_ref + i*L_ptrs;
+      if (pusch_maxLength == 2)
+        l_ref = l_ref + i*L_ptrs + 1;
+      else
+        l_ref = l_ref + i*L_ptrs;
 
-			i = 1;
+       i = 1;
 
-			continue;
+       continue;
 
-		}
+    }
 
-		*ptrs_symbols = *ptrs_symbols | (1<<(l_ref + i*L_ptrs));
-		i++;
-	}
+    *ptrs_symbols = *ptrs_symbols | (1<<(l_ref + i*L_ptrs));
+    i++;
+  }
 }
 
 /*******************************************************************
@@ -313,7 +307,7 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t start_sc,
                        uint16_t ofdm_symbol_size,
                        pusch_dmrs_type_t pusch_dmrs_type,
-                       ptrs_UplinkConfig_t *ptrs_UplinkConfig) {
+                       uint8_t resourceElementOffset) {
 
   uint8_t is_ptrs_freq, is_ptrs_time;
   int16_t k_RE_ref;
@@ -321,7 +315,7 @@ uint8_t is_ptrs_symbol(uint8_t l,
   is_ptrs_freq = 0;
   is_ptrs_time = 0;
 
-  k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, ptrs_UplinkConfig->resourceElementOffset);
+  k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
 
   is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
 

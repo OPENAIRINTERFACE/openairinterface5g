@@ -651,8 +651,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l,slot,symb,q;
   int eNB_id;
   int th_id;
-  int n_ssb_crb=(fp->N_RB_DL-20);
-  int k_ssb=0;
   uint32_t ****pusch_dmrs;
   uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
   int n_scid;
@@ -663,7 +661,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ptrs_UplinkConfig_t *ptrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
-  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,k_ssb);
   phy_init_nr_top(ue);
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
@@ -952,7 +949,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ue->init_averaging = 1;
 
   // default value until overwritten by RRCConnectionReconfiguration
-  if (fp->nb_antenna_ports_eNB==2)
+  if (fp->nb_antenna_ports_gNB==2)
     ue->pdsch_config_dedicated->p_a = dBm3;
   else
     ue->pdsch_config_dedicated->p_a = dB0;
@@ -963,7 +960,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   // enable MIB/SIB decoding by default
   ue->decode_MIB = 1;
   ue->decode_SIB = 1;
-  ue->ssb_periodicity = 5; // initialization of ssb periodicity to 5ms according to TS38.213 section 4.1
   init_prach_tables(839);
   return 0;
 }
@@ -982,7 +978,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,
 
     ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
     ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
-    ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_eNB==1 ? 1 : 2;
+    ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_gNB==1 ? 1 : 2;
   }
 
   //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
@@ -1009,51 +1005,54 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
 
 void set_default_frame_parms_single(nfapi_nr_config_request_t *config,
                                     NR_DL_FRAME_PARMS *frame_parms) {
-  //int CC_id;
-  //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-  /* Set some default values that may be overwritten while reading options */
-  frame_parms = (NR_DL_FRAME_PARMS *) malloc(sizeof(NR_DL_FRAME_PARMS));
-  config = (nfapi_nr_config_request_t *) malloc(sizeof(nfapi_nr_config_request_t));
+        /* Set some default values that may be overwritten while reading options */
+  frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
+  config = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
   config->subframe_config.numerology_index_mu.value =1;
   config->subframe_config.duplex_mode.value = 1; //FDD
   config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-  config->rf_config.dl_carrier_bandwidth.value = 106;
-  config->rf_config.ul_carrier_bandwidth.value = 106;
+  config->rf_config.dl_carrier_bandwidth.value = 100;
+  config->rf_config.ul_carrier_bandwidth.value = 100;
   config->sch_config.physical_cell_id.value = 0;
+  
   frame_parms->frame_type          = FDD;
-  frame_parms->tdd_config          = 3;
   //frame_parms[CC_id]->tdd_config_S        = 0;
-  frame_parms->N_RB_DL             = 100;
-  frame_parms->N_RB_UL             = 100;
+  frame_parms->N_RB_DL             = 106;
+  frame_parms->N_RB_UL             = 106;
   frame_parms->Ncp                 = NORMAL;
   //frame_parms[CC_id]->Ncp_UL              = NORMAL;
   frame_parms->Nid_cell            = 0;
   //frame_parms[CC_id]->num_MBSFN_config    = 0;
-  frame_parms->nb_antenna_ports_eNB  = 1;
+  frame_parms->nb_antenna_ports_gNB  = 1;
   frame_parms->nb_antennas_tx      = 1;
   frame_parms->nb_antennas_rx      = 1;
+  
   //frame_parms[CC_id]->nushift             = 0;
+  
   ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
   //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
+  
   // UL RS Config
   /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
-  frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
-  frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-  frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-
-  frame_parms[CC_id]->pusch_config_common.n_SB = 1;
-  frame_parms[CC_id]->pusch_config_common.hoppingMode = 0;
-  frame_parms[CC_id]->pusch_config_common.pusch_HoppingOffset = 0;
-  frame_parms[CC_id]->pusch_config_common.enable64QAM = 0;
-
-  frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
-  frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
-  frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
-  frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
-  frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;*/
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+    
+    frame_parms[CC_id]->pusch_config_common.n_SB = 1;
+    frame_parms[CC_id]->pusch_config_common.hoppingMode = 0;
+    frame_parms[CC_id]->pusch_config_common.pusch_HoppingOffset = 0;
+    frame_parms[CC_id]->pusch_config_common.enable64QAM = 0;
+    
+    frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;*/
+  
   // NR: Init to legacy LTE 20Mhz params
-  frame_parms->numerology_index = 0;
-  frame_parms->ttis_per_subframe  = 1;
-  frame_parms->slots_per_tti    = 2;
-  //}
+  frame_parms->numerology_index	= 0;
+  frame_parms->ttis_per_subframe	= 1;
+  frame_parms->slots_per_tti		= 2;
+  
+  
 }

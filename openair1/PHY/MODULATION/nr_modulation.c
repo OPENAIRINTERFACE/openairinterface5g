@@ -51,9 +51,10 @@ void nr_modulation(uint32_t *in,
 }
 
 void nr_layer_mapping(int16_t **mod_symbs,
-                         uint8_t n_layers,
-                         uint16_t n_symbs,
-                         int16_t **tx_layers) {
+		      uint8_t n_layers,
+		      uint16_t n_symbs,
+		      int16_t **tx_layers) {
+  LOG_D(PHY,"Doing layer mapping for %d layers, %d symbols\n",n_layers,n_symbs);
 
   switch (n_layers) {
 

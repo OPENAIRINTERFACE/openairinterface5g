@@ -222,7 +222,10 @@ void nr_process_mac_pdu(
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
-        AssertFatal(pdu_len >= 0, "[MAC] nr_process_mac_pdu, residual mac pdu length < 0!\n");
+        if (pdu_len < 0) {
+          LOG_E(MAC, "%s() residual mac pdu length < 0!\n", __func__);
+          return;
+        }
     }
 }
 
@@ -241,20 +244,18 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi){
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
-  UE_list_t *UE_list = NULL;
+  NR_UE_list_t *UE_list = NULL;
   UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   current_rnti = rntiP;
-  UE_id = find_nrUE_id(gnb_mod_idP, current_rnti);
+  UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
   gNB_mac = RC.nrmac[gnb_mod_idP];
   UE_list = &gNB_mac->UE_list;
-
-  UE_id = 0;
 
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
 
-    LOG_D(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,

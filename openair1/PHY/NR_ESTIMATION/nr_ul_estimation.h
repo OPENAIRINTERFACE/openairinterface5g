@@ -39,14 +39,12 @@
 \param nb_rb_pusch, number of allocated RBs for this UE
 */
 
- int32_t nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
-                                     uint8_t gNB_offset,
-				                     unsigned char Ns,
-				                     unsigned short p,
-				                     unsigned char symbol,
-				                     unsigned short bwp_start_subcarrier,
-				                     unsigned short nb_rb_pusch,
-				                     dmrs_UplinkConfig_t *dmrs_UplinkConfig);
+int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
+                                unsigned char Ns,
+                                unsigned short p,
+                                unsigned char symbol,
+                                unsigned short bwp_start_subcarrier,
+                                nfapi_nr_pusch_pdu_t *pusch_pdu);
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 

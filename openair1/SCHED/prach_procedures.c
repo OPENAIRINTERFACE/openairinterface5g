@@ -106,15 +106,6 @@ void prach_procedures(PHY_VARS_eNB *eNB,
         eNB->prach_energy_counter,
         eNB->measurements.prach_I0+eNB->prach_DTX_threshold,
         eNB->measurements.prach_I0);
-	if (max_preamble_energy[0] > 100 && br_flag==0)
-	  LOG_W(PHY,"[RAPROC] Frame %d, subframe %d : BR %d  Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d), threshold %d, I0 %d\n",
-        frame,subframe,br_flag,
-        max_preamble[0],
-        max_preamble_energy[0]/10,
-        max_preamble_delay[0],
-        eNB->prach_energy_counter,
-        eNB->measurements.prach_I0+eNB->prach_DTX_threshold,
-        eNB->measurements.prach_I0);
 
   if (br_flag==1) {
     int             prach_mask;

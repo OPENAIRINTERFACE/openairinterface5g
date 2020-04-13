@@ -469,6 +469,8 @@ typedef struct RU_t_s {
   int nb_rx;
   /// number of TX paths on device
   int nb_tx;
+  /// number of logical antennas at TX beamformer input
+  int nb_log_antennas;
   /// maximum PDSCH RS EPRE
   int max_pdschReferenceSignalPower;
   /// maximum RX gain
@@ -605,6 +607,8 @@ typedef struct RU_t_s {
   int wakeup_L1_sleeptime;
   /// maximum number of sleeps
   int wakeup_L1_sleep_cnt_max;
+  /// DL IF frequency in Hz
+  uint64_t if_frequency;
 } RU_t;
 
 

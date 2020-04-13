@@ -58,8 +58,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 
   
   macro_segment = 8*impp->macro_num;
-  // macro_segment_end = (n_segments > 8*(macro_num+1)) ? 8*(macro_num+1) : n_segments;
-  macro_segment_end = macro_segment + (impp->n_segments > 8 ? 8 : impp->n_segments);
+  macro_segment_end = (impp->n_segments > 8*(impp->macro_num+1)) ? 8*(impp->macro_num+1) : impp->n_segments;
   ///printf("macro_segment: %d\n", macro_segment);
   ///printf("macro_segment_end: %d\n", macro_segment_end );
 

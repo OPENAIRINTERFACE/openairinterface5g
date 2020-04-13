@@ -341,7 +341,7 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
     pss_rxF_ext = &pss_ext[aarx][0];
     sss_rxF_ext = &sss_ext[aarx][0];
 
-    unsigned int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; 
+    unsigned int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56;
     if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
 
     for (int i=0; i < LENGTH_PSS_NR; i++) {

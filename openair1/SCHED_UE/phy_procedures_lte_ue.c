@@ -74,7 +74,7 @@ extern double cpuf;
 void Msg1_transmitted(module_id_t module_idP, uint8_t CC_id, frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP, uint8_t CC_id, frame_t frameP, uint8_t eNB_id);
 
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 void get_dumpparam(PHY_VARS_UE *ue,
                    UE_rxtx_proc_t *proc,

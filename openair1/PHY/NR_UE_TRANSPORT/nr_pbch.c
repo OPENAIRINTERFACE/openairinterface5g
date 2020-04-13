@@ -430,7 +430,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //uint32_t pbch_a_prime;
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
-  uint8_t nushift,n_hf,ssb_index;
+  uint8_t nushift;
   uint16_t M;
   uint8_t Lmax=frame_parms->Lmax; 
   //uint16_t crc;
@@ -538,7 +538,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
-  const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
   decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,0,currentPtr);
 
   if(decoderState) return(decoderState);
@@ -578,15 +578,21 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int i=0; i<3; i++)
     decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
-  n_hf = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+  frame_parms->half_frame_bit = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
 
-  ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
+  frame_parms->ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
   if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
     for (int i=0; i<3; i++)
-      ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
+      frame_parms->ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
-  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
+
+  uint8_t frame_number_4lsb = 0;
+  for (int i=0; i<4; i++)
+    frame_number_4lsb |= ((nr_ue_pbch_vars->xtra_byte>>i)&1)<<(3-i);
+
+  proc->decoded_frame_rx = frame_number_4lsb;
 
 #ifdef DEBUG_PBCH
   printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);
@@ -602,7 +608,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     
   dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
   dl_indication.dci_ind = NULL; 
-  dl_indication.proc=proc;        // needed to signal back the frame number -> FIXME
+  dl_indication.proc=proc;
   dl_indication.module_id=0;
   dl_indication.cc_id=proc->CC_id;
 

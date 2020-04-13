@@ -40,7 +40,8 @@ static int intcmp(const void *p1,const void *p2) {
 static void nr_polar_init(t_nrPolar_params * *polarParams,
                           int8_t messageType,
                           uint16_t messageLength,
-                          uint8_t aggregation_level) {
+                          uint8_t aggregation_level,
+			  int decoder_flag) {
   t_nrPolar_params *currentPtr = *polarParams;
   uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
 
@@ -150,7 +151,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
                                          newPolarInitNode->i_bil,
                                          newPolarInitNode->encoderLength);
     free(J);
-    build_decoder_tree(newPolarInitNode);
+    if (decoder_flag == 1) build_decoder_tree(newPolarInitNode);
     build_polar_tables(newPolarInitNode);
     init_polar_deinterleaver_table(newPolarInitNode);
     //printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
@@ -183,10 +184,13 @@ void nr_polar_print_polarParams(t_nrPolar_params *polarParams) {
 
 t_nrPolar_params *nr_polar_params (int8_t messageType,
                                    uint16_t messageLength,
-                                   uint8_t aggregation_level) {
+                                   uint8_t aggregation_level,
+	 		           int decoding_flag,
+				   t_nrPolar_params **polarList_ext) {
   static t_nrPolar_params *polarList = NULL;
-  nr_polar_init(&polarList, messageType,messageLength,aggregation_level);
-  t_nrPolar_params *polarParams=polarList;
+  nr_polar_init(polarList_ext != NULL ? polarList_ext : &polarList, 
+		messageType,messageLength,aggregation_level,decoding_flag);
+  t_nrPolar_params *polarParams=polarList_ext != NULL ? *polarList_ext : polarList;
   const int tag=messageType * messageLength * nr_polar_aggregation_prime(aggregation_level);
 
   while (polarParams != NULL) {
