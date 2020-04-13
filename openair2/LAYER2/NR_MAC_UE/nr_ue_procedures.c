@@ -2480,6 +2480,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,
 						   dci->time_domain_assignment.val);
+    /* dmrs symbol positions*/
+    dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
+							 mac->scc->dmrs_TypeA_Position,
+							 dlsch_config_pdu_1_1->number_symbols);
+    dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 1 : 2;
     /* VRB_TO_PRB_MAPPING */
     if (mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.resource_allocation != 0)
       dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;

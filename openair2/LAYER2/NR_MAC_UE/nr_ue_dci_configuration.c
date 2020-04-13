@@ -174,7 +174,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
       else
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->scc->physCellId;
       fill_dci_search_candidates(mac->SSpace[0][0][ss_id],rel15);
-      rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
+      rel15->dci_format = NR_DL_DCI_FORMAT_1_1;
       rel15->dci_length = nr_dci_size(mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;
