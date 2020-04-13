@@ -597,7 +597,6 @@ void handle_uci_sr_pdu(PHY_VARS_eNB *eNB,
   uci->subframe            = subframe;
   uci->rnti                = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti;
   uci->ue_id               = find_ulsch(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(uci->ue_id < MAX_MOBILES_PER_ENB, "illegal UE_id %d\n", uci->ue_id);
   uci->type                = SR;
   uci->pucch_fmt           = pucch_format1;
   uci->num_antenna_ports   = 1;
@@ -624,7 +623,6 @@ void handle_uci_sr_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_
   uci->subframe            = subframe;
   uci->rnti                = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti;
   uci->ue_id               = find_ulsch(ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(uci->ue_id < MAX_MOBILES_PER_ENB, "illegal UE_id %d\n", uci->ue_id);
   uci->type                = HARQ_SR;
   uci->num_antenna_ports   = 1;
   uci->num_pucch_resources = 1;
@@ -647,7 +645,6 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
   uci->subframe          = subframe;
   uci->rnti              = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
   uci->ue_id             = find_ulsch(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(uci->ue_id < MAX_MOBILES_PER_ENB, "illegal UE_id %d\n", uci->ue_id);
   uci->type              = HARQ;
   uci->srs_active        = srs_active;
   uci->num_antenna_ports = ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel11.num_ant_ports;
