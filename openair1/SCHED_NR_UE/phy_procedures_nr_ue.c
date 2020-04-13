@@ -2482,8 +2482,11 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
     ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
 
     // Switch to PRACH state if it is first PBCH after initial synch and no timing correction is performed
-    if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1)
+    if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1){
       ue->UE_mode[gNB_id] = PRACH;
+      ue->prach_resources[gNB_id]->sync_frame = frame_rx;
+      ue->prach_resources[gNB_id]->init_msg1 = 0;
+    }
 
 #ifdef DEBUG_PHY_PROC
     uint16_t frame_tx;
@@ -4079,6 +4082,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
         nr_adjust_synch_ue(fp,
       		           ue,
   			   eNB_id,
+                           frame_rx,
   			   nr_tti_rx,
   			   0,
   			   16384);
@@ -4523,7 +4527,10 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     }
   }
 
-  if (ue->prach_resources[gNB_id] != NULL && prach_resources->generate_nr_prach == 1) {
+  if (!prach_resources->init_msg1 && (frame_tx > ue->prach_resources[gNB_id]->sync_frame + 150))
+    prach_resources->init_msg1 = 1;
+
+  if (ue->prach_resources[gNB_id] != NULL && prach_resources->generate_nr_prach == 1 && prach_resources->init_msg1) {
 
     ue->prach_cnt = 0;
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);

@@ -501,6 +501,7 @@ int main(int argc, char **argv){
     printf("raPreamble %d\n",preamble_tx);
 
   UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
+  UE->prach_resources[0]->init_msg1 = 1;
 
   // Configure channel
   bw = N_RB_UL*(180e3)*(1 << frame_parms->numerology_index);
