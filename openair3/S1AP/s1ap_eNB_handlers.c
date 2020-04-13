@@ -38,6 +38,9 @@
 #include "s1ap_eNB_defs.h"
 #include "s1ap_eNB_handlers.h"
 #include "s1ap_eNB_decoder.h"
+#include "s1ap_eNB_encoder.h"
+
+#include "s1ap_eNB_itti_messaging.h"
 
 #include "s1ap_eNB_ue_context.h"
 #include "s1ap_eNB_trace.h"
@@ -818,7 +821,7 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
   if (ie) {
     if( ie->value.choice.CriticalityDiagnostics.procedureCode )
     {
-      S1AP_WARN("Received S1 Error indication CriticalityDiagnostics procedureCode = %d\n", *ie->value.choice.CriticalityDiagnostics.procedureCode);
+      S1AP_WARN("Received S1 Error indication CriticalityDiagnostics procedureCode = %ld\n", *ie->value.choice.CriticalityDiagnostics.procedureCode);
     }
     // TODO continue
   }

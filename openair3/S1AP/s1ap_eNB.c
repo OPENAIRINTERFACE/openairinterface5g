@@ -105,7 +105,7 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
   s1ap_eNB_mme_data_t        *s1ap_mme_data_p             = NULL;
-  struct s1ap_eNB_mme_data_s *mme                         = NULL;
+//  struct s1ap_eNB_mme_data_s *mme                         = NULL;
   DevAssert(instance_p != NULL);
   DevAssert(mme_ip_address != NULL);
   message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
@@ -666,7 +666,7 @@ void *s1ap_eNB_process_itti_msg(void *notUsed) {
     case TIMER_HAS_EXPIRED:
     {
       s1ap_eNB_timer_expired(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                             &TIMER_HAS_EXPIRED(received_msg));
+                             (s1ap_timer_has_expired_t *) &TIMER_HAS_EXPIRED(received_msg));
     }
     break;
 
