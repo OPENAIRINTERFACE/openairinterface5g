@@ -230,7 +230,6 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
     uint16_t n_RNTI = pdcch_pdu_rel15->RNTI[d];
     uint16_t Nid    = pdcch_pdu_rel15->ScramblingId[d];
-    
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
 						   pdcch_pdu_rel15->PayloadSizeBits[d], 
 						   pdcch_pdu_rel15->AggregationLevel[d],

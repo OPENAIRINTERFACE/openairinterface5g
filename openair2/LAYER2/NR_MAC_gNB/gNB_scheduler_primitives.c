@@ -182,8 +182,8 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   }
   int first_cce = aggregation * (( Y + (m*N_cce)/(aggregation*M_s_max) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
-  for (int i=0;i<aggregation;i++) 
-    if (cce_list[first_cce+i] != 0) return(-1);
+ // for (int i=0;i<aggregation;i++)
+   // if (cce_list[first_cce+i] != 0) return(-1);
   
   for (int i=0;i<aggregation;i++) cce_list[first_cce+i] = 1;
 
@@ -409,11 +409,15 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 }
 
-void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-			int ss_type,
+void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
+                        uint16_t rnti,
+			NR_SearchSpace_t *ss,
 			NR_ServingCellConfigCommon_t *scc,
 			NR_BWP_Downlink_t *bwp){
-  
+
+  int CCEIndex = -1;
+
   if (bwp) { // This is not the InitialBWP
     /// coreset
     
@@ -421,28 +425,37 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     //  pdcch_pdu->config_type = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList!=NULL,
 		"controlResourceSetToAddModList is null\n");
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count>0,
+    int num_list = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
+    AssertFatal(num_list>0,
 		"controlResourceSetToAddModList is empty\n");
-    NR_ControlResourceSet_t *coreset0 = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0];
-    
-    
+    NR_ControlResourceSet_t *coreset;
+    int coresetid=-1;
+    for (int i=0;i<num_list;i++) {
+      coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
+      if (coreset->controlResourceSetId == *ss->controlResourceSetId) {
+        coresetid = i;
+        break;
+      }
+    }
+    AssertFatal(coresetid>-1,"Couldn't find a coreset with ID %ld\n",*ss->controlResourceSetId);
+
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
     
-    pdcch_pdu->DurationSymbols  = coreset0->duration;
+    pdcch_pdu->DurationSymbols  = coreset->duration;
     
     //frequencyDomainResources
     /*    uint8_t count=0, start=0, start_set=0;
     // find coreset descriptor
     
-    uint64_t bitmap = (((uint64_t)coreset0->frequencyDomainResources.buf[0])<<37)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[1])<<29)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[2])<<21)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[3])<<13)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[4])<<5)|
-	(((uint64_t)coreset0->frequencyDomainResources.buf[5])>>3);
+    uint64_t bitmap = (((uint64_t)coreset->frequencyDomainResources.buf[0])<<37)|
+	(((uint64_t)coreset->frequencyDomainResources.buf[1])<<29)|
+	(((uint64_t)coreset->frequencyDomainResources.buf[2])<<21)|
+	(((uint64_t)coreset->frequencyDomainResources.buf[3])<<13)|
+	(((uint64_t)coreset->frequencyDomainResources.buf[4])<<5)|
+	(((uint64_t)coreset->frequencyDomainResources.buf[5])>>3);
 	
 	for (int i=0; i<45; i++)
 	if ((bitmap>>(44-i))&1) {
@@ -456,18 +469,18 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 	pdcch_pdu->n_rb = 6*count;
     */
     for (int i=0;i<6;i++)
-      pdcch_pdu->FreqDomainResource[i] = coreset0->frequencyDomainResources.buf[i];
+      pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
     //duration
     
     
     //cce-REG-MappingType
-    pdcch_pdu->CceRegMappingType = coreset0->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
+    pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
       NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
     if (pdcch_pdu->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-      pdcch_pdu->RegBundleSize = (coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
-      pdcch_pdu->InterleaverSize = (coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize);
+      pdcch_pdu->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
+      pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
       AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
-      pdcch_pdu->ShiftIndex = coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
+      pdcch_pdu->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
     }
     else {
       pdcch_pdu->RegBundleSize = 0;
@@ -478,55 +491,26 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     pdcch_pdu->CoreSetType = 1; 
     
     //precoderGranularity
-    pdcch_pdu->precoderGranularity = coreset0->precoderGranularity;
+    pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
     
     //TCI states
     // 
     /*
     //TCI present
-    if (coreset0->tci_PresentInDCI != NULL) {
-    AssertFatal(coreset0->tci_StatesPDCCH_ToAddList != NULL,"tci_StatesPDCCH_ToAddList is null\n");
-    AssertFatal(coreset0->tci_StatesPDCCH_ToAddList->list.count>0,"TCI state list is empty\n");
-    for (int i=0;i<coreset0->tci_StatesPDCCH_ToAddList->list.count;i++) {
+    if (coreset->tci_PresentInDCI != NULL) {
+    AssertFatal(coreset->tci_StatesPDCCH_ToAddList != NULL,"tci_StatesPDCCH_ToAddList is null\n");
+    AssertFatal(coreset->tci_StatesPDCCH_ToAddList->list.count>0,"TCI state list is empty\n");
+    for (int i=0;i<coreset->tci_StatesPDCCH_ToAddList->list.count;i++) {
     
     }
     */
     
-    for (int i=0;i<pdcch_pdu->numDlDci;i++) {
-      //pdcch-DMRS-ScramblingID
-      AssertFatal(coreset0->pdcch_DMRS_ScramblingID != NULL,"coreset0->pdcch_DMRS_ScramblingID is null\n");
-      pdcch_pdu->ScramblingId[i] = *coreset0->pdcch_DMRS_ScramblingID;
-    }    
-    
-    /// SearchSpace
+    AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
+    AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
     
     // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
     int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
-    
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
-    AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
-		"searchPsacesToAddModList is empty\n");
-    NR_SearchSpace_t *ss;
-    int found=0;
-    int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-    if (ss_type == 1) { 
-      target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    } 
-    
-    for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
-      ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
-      AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
-      AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
-      if (*ss->controlResourceSetId == coreset0->controlResourceSetId && 
-	  ss->searchSpaceType->present == target_ss) {
-	found=1;
-	break;
-      }
-    }
-    AssertFatal(found==1,"Couldn't find a searchspace corresponding to coreset0\n");
-    AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
-    AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
     
     // for SPS=14 8 MSBs in positions 13 downto 6,  
     uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | 
@@ -537,13 +521,49 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 	pdcch_pdu->StartSymbolIndex=i;
 	break;
       }
+
+    pdcch_pdu->RNTI[pdcch_pdu->numDlDci]=rnti;
+
+    if (coreset->pdcch_DMRS_ScramblingID != NULL &&
+        ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+      pdcch_pdu->ScramblingId[pdcch_pdu->numDlDci] = *coreset->pdcch_DMRS_ScramblingID;
+      pdcch_pdu->ScramblingRNTI[pdcch_pdu->numDlDci]=rnti;
+    }
+    else {
+      pdcch_pdu->ScramblingId[pdcch_pdu->numDlDci] = *scc->physCellId;
+      pdcch_pdu->ScramblingRNTI[pdcch_pdu->numDlDci]=0;
+    }
+
+   uint8_t nr_of_candidates,aggregation_level;
+
+   find_aggregation_candidates(&aggregation_level,
+                               &nr_of_candidates,
+                               ss);
+
+    CCEIndex = allocate_nr_CCEs(nr_mac,
+                                1, // bwp_id
+                                coresetid,
+                                aggregation_level,
+                                ss->searchSpaceType->present-1, // search_space, 0 common, 1 ue-specific
+                                0, // UE-id
+                                0); // m
+
+    AssertFatal(CCEIndex>=0,"CCEIndex is negative \n");
+
+    pdcch_pdu->AggregationLevel[pdcch_pdu->numDlDci] = aggregation_level;
+    pdcch_pdu->CceIndex[pdcch_pdu->numDlDci] = CCEIndex;
+
+    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats==NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0)
+      pdcch_pdu->beta_PDCCH_1_0[pdcch_pdu->numDlDci]=0;
+
+    pdcch_pdu->powerControlOffsetSS[pdcch_pdu->numDlDci]=1;
+    pdcch_pdu->numDlDci++;
   }
 
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
   }
 }
-
 
 
 // This function configures pucch pdu fapi structure
@@ -1386,28 +1406,33 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
       pdsch_to_harq_feedback[i] = i+1;
   }
   else {
+
     // searching for a ue specific search space
     int found=0;
-
+ 
     for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
       ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
       AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
       AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
       if (ss->searchSpaceType->present == ss_type) {
-	found=1;
-	break;
+       found=1;
+       break;
       }
     }
     AssertFatal(found==1,"Couldn't find a ue specific searchspace\n");
+
+
     if (ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
       for (int i=0; i<8; i++)
         pdsch_to_harq_feedback[i] = i+1;
     }
     else {
-      if(ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK != NULL)
-        pdsch_to_harq_feedback = (uint8_t *)ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK;
+      if(ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK != NULL) {
+        for (int i=0; i<8; i++)
+          pdsch_to_harq_feedback[i] = *ubwp->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[i];
+      }
       else
-        AssertFatal(found==1,"There is no allocated dl_DataToUL_ACK for pdsch to harq feedback\n");
+        AssertFatal(0==1,"There is no allocated dl_DataToUL_ACK for pdsch to harq feedback\n");
     }
   }
 }
@@ -1530,6 +1555,32 @@ void nr_update_pucch_scheduling(int Mod_idP,
   }
 }
 
+
+void find_aggregation_candidates(uint8_t *aggregation_level,
+                                 uint8_t *nr_of_candidates,
+                                 NR_SearchSpace_t *ss) {
+
+  if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
+    *aggregation_level = 1;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
+  }
+  if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
+    *aggregation_level = 2;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
+  }
+  if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
+    *aggregation_level = 4;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
+  }
+  if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
+    *aggregation_level = 8;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
+  }
+  if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
+    *aggregation_level = 16;
+    *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
+  }
+}
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
