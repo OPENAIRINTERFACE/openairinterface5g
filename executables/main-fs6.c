@@ -416,8 +416,8 @@ void pusch_procedures_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-        (ulsch_harq->frame == frame) &&
-        (ulsch_harq->subframe == subframe) &&
+        ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
+        ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
         (ulsch_harq->handled == 0)) {
       // UE has ULSCH scheduling
       for (int rb=0;

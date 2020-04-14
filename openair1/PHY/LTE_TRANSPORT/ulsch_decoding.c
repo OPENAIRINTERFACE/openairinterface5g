@@ -314,7 +314,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
     unsigned int Kr_bytes = Kr>>3;
     
 #ifdef DEBUG_ULSCH_DECODING
-    printf("Rate Matching Segment %u (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, Nl %d, r_offset %d)...\n",
+    printf("Rate Matching Segment %d (coded bits (G) %d,unpunctured/repeated bits %u, Q_m %d, Nl %d, r_offset %u)...\n",
            r, G,
            Kr*3,
            ulsch_harq->Qm,

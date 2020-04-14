@@ -399,7 +399,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       // This is after cyclic prefix (Ncp<<1 samples for 30.72 Ms/s, Ncp<<2 samples for 61.44 Ms/s
       prach2 = prach+(Ncp<<1);
       if (prach_fmt == 0) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-	idft49152(prachF,prach2,1);
+	idft(IDFT_49152,prachF,prach2,1);
 	// here we have |empty | Prach49152|
 	memmove(prach,prach+(49152<<1),(Ncp<<3));
 	// here we have |Prefix | Prach49152|
@@ -407,7 +407,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	dftlen=49152;
       }
       else if (prach_fmt == 1) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-	idft49152(prachF,prach2,1);
+	idft(IDFT_49152,prachF,prach2,1);
 	memmove(prach2+(49152<<1),prach2,(49152<<2));
 	// here we have |empty | Prach49152 | Prach49152|
 	memmove(prach,prach+(49152<<2),(Ncp<<3));
@@ -416,7 +416,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	dftlen=49152;
       }
       else if (prach_fmt == 2) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-	idft49152(prachF,prach2,1);
+	idft(IDFT_49152,prachF,prach2,1);
 	memmove(prach2+(49152<<1),prach2,(49152<<2));
 	// here we have |empty | Prach49152 | Prach49152| empty49152 | empty49152
 	memmove(prach2+(49152<<2),prach2,(49152<<3));
@@ -427,7 +427,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	dftlen=49152;
       }
       else if (prach_fmt == 3) { // //6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
-	idft12288(prachF,prach2,1);
+	idft(IDFT_12288,prachF,prach2,1);
 	memmove(prach2+(12288<<1),prach2,(12288<<2));
 	// here we have |empty | Prach12288 | Prach12288| empty12288 | empty12288
 	memmove(prach2+(12288<<2),prach2,(12288<<3));
@@ -439,7 +439,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
 	prach2 = prach+(Ncp<<1);
-	idft2048(prachF,prach2,1);
+	idft(IDFT_2048,prachF,prach2,1);
 	dftlen=2048;
 	// here we have |empty | Prach2048 |
 	if (prach_fmt != 0xc0) {
@@ -451,7 +451,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	// here we have |Prefix | Prach2048 | Prach2048 (if ! 0xc0)  | 
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 6x2048
-	idft2048(prachF,prach2,1);
+	idft(IDFT_2048,prachF,prach2,1);
 	dftlen=2048;
 	// here we have |empty | Prach2048 |
 	memmove(prach2+(2048<<1),prach2,(2048<<2));
@@ -464,7 +464,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x2048
 	prach2 = prach+(Ncp<<1);
-	idft2048(prachF,prach2,1);
+	idft(IDFT_2048,prachF,prach2,1);
 	dftlen=2048;
 	// here we have |empty | Prach2048 |
 	memmove(prach2+(2048<<1),prach2,(2048<<2));
@@ -478,7 +478,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (2048*6)+Ncp; 
       }
       else if (prach_fmt == 0xb4) { // 12x2048
-	idft2048(prachF,prach2,1);
+	idft(IDFT_2048,prachF,prach2,1);
 	dftlen=2048;
 	// here we have |empty | Prach2048 |
 	memmove(prach2+(2048<<1),prach2,(2048<<2));
@@ -499,7 +499,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       Ncp = (Ncp*3)/2;
       prach2 = prach+(Ncp<<1);
       if (prach_fmt == 0) {
-	idft36864(prachF,prach2,1);
+	idft(IDFT_36864,prachF,prach2,1);
 	dftlen=36864;
 	// here we have |empty | Prach73728|
 	memmove(prach,prach+(36864<<1),(Ncp<<2));
@@ -507,7 +507,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (36864*1)+Ncp;
       }
       else if (prach_fmt == 1) {
-	idft36864(prachF,prach2,1);
+	idft(IDFT_36864,prachF,prach2,1);
 	dftlen=36864;
 	memmove(prach2+(36864<<1),prach2,(36864<<2));
 	// here we have |empty | Prach73728 | Prach73728|
@@ -516,7 +516,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (36864*2)+Ncp;
       }
       if (prach_fmt == 2) {
-	idft36864(prachF,prach2,1);
+	idft(IDFT_36864,prachF,prach2,1);
 	dftlen=36864;
 	memmove(prach2+(36864<<1),prach2,(36864<<2));
 	// here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
@@ -527,7 +527,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (36864*4)+Ncp;
       }
       else if (prach_fmt == 3) {
-	idft9216(prachF,prach2,1);
+	idft(IDFT_9216,prachF,prach2,1);
 	dftlen=36864;
 	memmove(prach2+(9216<<1),prach2,(9216<<2));
 	// here we have |empty | Prach9216 | Prach9216| empty9216 | empty9216
@@ -538,7 +538,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (9216*4)+Ncp;
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	idft1536(prachF,prach2,1);
+	idft(IDFT_1536,prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
 	if (prach_fmt != 0xc0)
@@ -548,7 +548,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (1536*2)+Ncp;
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 6x1536
-	idft1536(prachF,prach2,1);
+	idft(IDFT_1536,prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
 	memmove(prach2+(1536<<1),prach2,(1536<<2));
@@ -560,7 +560,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (1536*4)+Ncp; 
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x1536
-	idft1536(prachF,prach2,1);
+	idft(IDFT_1536,prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
 	memmove(prach2+(1536<<1),prach2,(1536<<2));
@@ -574,7 +574,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (1536*6)+Ncp; 
       }
       else if (prach_fmt == 0xb4) { // 12x1536
-	idft1536(prachF,prach2,1);
+	idft(IDFT_1536,prachF,prach2,1);
 	dftlen=1536;
 	// here we have |empty | Prach1536 |
 	memmove(prach2+(1536<<1),prach2,(1536<<2));
@@ -596,7 +596,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       Ncp<<=2;
       prach2 = prach+(Ncp<<1);
       if (prach_fmt == 0) { //24576 samples @ 30.72 Ms/s, 98304 samples @ 122.88 Ms/s
-	idft98304(prachF,prach2,1);
+	idft(IDFT_98304,prachF,prach2,1);
 	dftlen=98304;
 	// here we have |empty | Prach98304|
 	memmove(prach,prach+(98304<<1),(Ncp<<2));
@@ -604,7 +604,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (98304*1)+Ncp;
       }
       else if (prach_fmt == 1) {
-	idft98304(prachF,prach2,1);
+	idft(IDFT_98304,prachF,prach2,1);
 	dftlen=98304;
 	memmove(prach2+(98304<<1),prach2,(98304<<2));
 	// here we have |empty | Prach98304 | Prach98304|
@@ -613,7 +613,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (98304*2)+Ncp;
       }
       else if (prach_fmt == 2) {
-	idft98304(prachF,prach2,1);
+	idft(IDFT_98304,prachF,prach2,1);
 	dftlen=98304;
 	memmove(prach2+(98304<<1),prach2,(98304<<2));
 	// here we have |empty | Prach98304 | Prach98304| empty98304 | empty98304
@@ -624,7 +624,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (98304*4)+Ncp;
       }
       else if (prach_fmt == 3) { // 4x6144, Ncp 3168
-	idft24576(prachF,prach2,1);
+	idft(IDFT_24576,prachF,prach2,1);
 	dftlen=24576;
 	memmove(prach2+(24576<<1),prach2,(24576<<2));
 	// here we have |empty | Prach24576 | Prach24576| empty24576 | empty24576
@@ -635,7 +635,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (24576*4)+(Ncp<<1);
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	idft4096(prachF,prach2,1);
+	idft(IDFT_4096,prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
 	if (prach_fmt != 0xc0) {
@@ -648,7 +648,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 4x4096
-	idft4096(prachF,prach2,1);
+	idft(IDFT_4096,prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
 	memmove(prach2+(4096<<1),prach2,(4096<<2));
@@ -660,7 +660,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (4096*4)+Ncp;  
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x4096
-	idft4096(prachF,prach2,1);
+	idft(IDFT_4096,prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
 	memmove(prach2+(4096<<1),prach2,(4096<<2));
@@ -674,7 +674,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (4096*6)+Ncp; 
       }
       else if (prach_fmt == 0xb4) { // 12x4096
-	idft4096(prachF,prach2,1);
+	idft(IDFT_4096,prachF,prach2,1);
 	dftlen=4096;
 	// here we have |empty | Prach4096 |
 	memmove(prach2+(4096<<1),prach2,(4096<<2));
@@ -694,7 +694,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       Ncp = (Ncp*3);
       prach2 = prach+(Ncp<<1);
       if (prach_fmt == 0) {
-	idft73728(prachF,prach2,1);
+	idft(IDFT_73728,prachF,prach2,1);
 	dftlen=73728;
 	// here we have |empty | Prach73728|
 	memmove(prach,prach+(73728<<1),(Ncp<<4));
@@ -702,7 +702,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (73728*1)+Ncp;
       }
       else if (prach_fmt == 1) {
-	idft73728(prachF,prach2,1);
+	idft(IDFT_73728,prachF,prach2,1);
 	dftlen=73728;
 	memmove(prach2+(73728<<1),prach2,(73728<<2));
 	// here we have |empty | Prach73728 | Prach73728|
@@ -711,7 +711,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (73728*2)+Ncp;
       }
       if (prach_fmt == 2) {
-	idft73728(prachF,prach2,1);
+	idft(IDFT_73728,prachF,prach2,1);
 	dftlen=73728;
 	memmove(prach2+(73728<<1),prach2,(73728<<2));
 	// here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
@@ -722,7 +722,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (73728*4)+Ncp;
       }
       else if (prach_fmt == 3) {
-	idft18432(prachF,prach2,1);
+	idft(IDFT_18432,prachF,prach2,1);
 	dftlen=18432;
 	memmove(prach2+(18432<<1),prach2,(18432<<2));
 	// here we have |empty | Prach18432 | Prach18432| empty18432 | empty18432
@@ -733,7 +733,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (18432*4)+Ncp;
       }
       else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	idft3072(prachF,prach2,1);
+	idft(IDFT_3072,prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
 	if (prach_fmt != 0xc0) {
@@ -745,7 +745,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	// here we have |Prefix | Prach3072 | Prach3072 (if ! 0xc0)  | 
       }
       else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x3072
-	idft3072(prachF,prach2,1);
+	idft(IDFT_3072,prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
 	memmove(prach2+(3072<<1),prach2,(3072<<2));
@@ -759,7 +759,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (3072*6)+Ncp;
       }
       else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 4x3072
-	idft3072(prachF,prach2,1);
+	idft(IDFT_3072,prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
 	memmove(prach2+(3072<<1),prach2,(3072<<2));
@@ -771,7 +771,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
 	prach_len = (3072*4)+Ncp;
       }
       else if (prach_fmt == 0xb4) { // 12x3072
-	idft3072(prachF,prach2,1);
+	idft(IDFT_3072,prachF,prach2,1);
 	dftlen=3072;
 	// here we have |empty | Prach3072 |
 	memmove(prach2+(3072<<1),prach2,(3072<<2));

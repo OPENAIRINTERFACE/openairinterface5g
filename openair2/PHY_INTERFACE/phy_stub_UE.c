@@ -708,200 +708,148 @@ int tx_req_UE_MAC(nfapi_tx_request_t *req) {
   return 0;
 }
 
-int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id) {
-  int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
-  int sf = NFAPI_SFNSF2SF(req->sfn_sf);
+void dl_config_req_UE_MAC_dci(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *dci,
+                              nfapi_dl_config_request_pdu_t *dlsch,
+                              int num_ue) {
+  DevAssert(dci->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE);
+  DevAssert(dlsch->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE);
 
-  nfapi_dl_config_request_pdu_t* dl_config_pdu_list = req->dl_config_request_body.dl_config_pdu_list;
+  const rnti_t rnti = dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti;
+  const int rnti_type = dci->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
+  if (rnti != dlsch->dlsch_pdu.dlsch_pdu_rel8.rnti) {
+    LOG_E(MAC,
+          "%s(): sfn/sf %d.%d DLSCH PDU RNTI %x does not match DCI RNTI %x\n",
+          __func__, sfn, sf, rnti, dlsch->dlsch_pdu.dlsch_pdu_rel8.rnti);
+    return;
+  }
 
-  for (int i = 0; i < req->dl_config_request_body.number_pdu; i++) {
-    if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE) {
-      const rnti_t rnti = dl_config_pdu_list[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti;
-      const int rnti_type = dl_config_pdu_list[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti_type;
-      /* We assume the DCI DL PDU is followed by the DLSCH (the standard is
-       * more free), so advance by one more and directly process the
-       * following DLSCH PDU */
-      i++;
-      AssertFatal(i < req->dl_config_request_body.number_pdu,
-                  "Need PDU following DCI at index %d, but not found\n",
-                  i);
-      nfapi_dl_config_request_pdu_t *dl_config_pdu_tmp = &dl_config_pdu_list[i];
-      if (dl_config_pdu_tmp->pdu_type != NFAPI_DL_CONFIG_DLSCH_PDU_TYPE) {
-        LOG_E(MAC, "expected DLSCH PDU at index %d\n", i);
-        continue;
-      }
-      if (rnti != dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.rnti) {
-        LOG_I(MAC,
-              "%s(): sfn/sf %d DLSCH PDU RNTI %x does not match DCI RNTI %x\n",
-              __func__,
-              NFAPI_SFNSF2DEC(req->sfn_sf),
-              rnti,
-              dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.rnti);
-        continue;
-      }
-      const int pdu_index = dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
-      if (pdu_index < 0 && pdu_index >= tx_req_num_elems) {
-        LOG_E(MAC,
-              "dl_config_req_UE_MAC 2: Problem with receiving data: "
-              "sfn/sf:%d PDU[%d] size:%d, TX_PDU index: %d\n",
-              NFAPI_SFNSF2DEC(req->sfn_sf),
-              i,
-              dl_config_pdu_list[i].pdu_size,
-              dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
-        continue;
-      }
-      if (rnti_type == 1) {
-        // C-RNTI (Normal DLSCH case)
-        if (UE_mac_inst[Mod_id].crnti != rnti) {
-          LOG_D(MAC,
-                "sfn/sf %d/%d DCI not for UE %d/RNTI %x but for RNTI %x, "
-                "skipping\n",
-                sfn, sf, Mod_id, UE_mac_inst[Mod_id].crnti, rnti);
-          continue;
-        }
+  const int pdu_index = dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
+  if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
+    LOG_E(MAC,
+          "%s(): Problem with receiving data: "
+          "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
+          __func__,
+          sfn, sf, dci->pdu_size, dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+    return;
+  }
 
+  if (rnti_type == 1) { // C-RNTI (Normal DLSCH case)
+    for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+      if (UE_mac_inst[ue_id].crnti == rnti) {
         LOG_D(MAC,
-              "%s() Received data: sfn/sf:%d PDU[%d] "
+              "%s() Received data: sfn/sf:%d.%d "
               "size:%d, TX_PDU index: %d, tx_req_num_elems: %d \n",
               __func__,
-              NFAPI_SFNSF2DEC(req->sfn_sf),
-              i,
-              dl_config_pdu_list[i].pdu_size,
-              dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
+              sfn, sf, dci->pdu_size,
+              dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index,
               tx_req_num_elems);
-        ue_send_sdu(Mod_id, 0, sfn, sf,
+        ue_send_sdu(ue_id, 0, sfn, sf,
             tx_request_pdu_list[pdu_index].segments[0].segment_data,
             tx_request_pdu_list[pdu_index].segments[0].segment_length,
             0);
-      } else if (rnti_type == 2) {
-        if (rnti == 0xFFFF) { /* SI-RNTI */
-          if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED) {
-            /* this check is in the code before refactoring, but I don't know
-             * why. Leave it in here for the moment */
-            continue;
-          }
-
-          ue_decode_si(Mod_id, 0, sfn, 0,
-              tx_request_pdu_list[pdu_index].segments[0].segment_data,
-              tx_request_pdu_list[pdu_index].segments[0].segment_length);
-        } else if (rnti == 0xFFFE) { /* PI-RNTI */
-          LOG_I(MAC, "%s() Received paging message: sfn/sf:%d PDU[%d]\n",
-                __func__, NFAPI_SFNSF2DEC(req->sfn_sf), i);
-          ue_decode_p(Mod_id, 0, sfn, 0,
-                      tx_request_pdu_list[pdu_index].segments[0].segment_data,
-                      tx_request_pdu_list[pdu_index].segments[0].segment_length);
-        } else if (rnti == 0x0002) { /* RA-RNTI */
-          LOG_E(MAC, "%s(): Received RAR?\n", __func__);
-          // RNTI parameter not actually used. Provided only to comply with
-          // existing function definition.  Not sure about parameters to fill
-          // the preamble index.
-          const rnti_t ra_rnti = UE_mac_inst[Mod_id].RA_prach_resources.ra_RNTI;
-          DevAssert(ra_rnti == 0x0002);
-          if (UE_mac_inst[Mod_id].UE_mode[0] != PUSCH
-              && UE_mac_inst[Mod_id].RA_prach_resources.Msg3 != NULL
-              && ra_rnti == dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.rnti) {
-            LOG_E(MAC,
-                  "dl_config_req_UE_MAC 5 Received RAR, PreambleIndex: %d \n",
-                  UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex);
-            ue_process_rar(Mod_id, 0, sfn,
-                ra_rnti, //RA-RNTI
-                tx_request_pdu_list[pdu_index].segments[0].segment_data,
-                &dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.rnti, //t-crnti
-                UE_mac_inst[Mod_id].RA_prach_resources.ra_PreambleIndex,
-                tx_request_pdu_list[pdu_index].segments[0].segment_data);
-            UE_mac_inst[Mod_id].UE_mode[0] = RA_RESPONSE;
-            // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
-            // ULSCH Txon for the UE)
-            UE_mac_inst[Mod_id].first_ULSCH_Tx = 1;
-          }
-        } else {
-          LOG_W(MAC, "can not handle special RNTI %x\n", rnti);
-        }
-      }
-    } else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE) {
-      // BCH case: Last parameter is 1 if first time synchronization and zero
-      // otherwise.  Not sure which value to put for our case.
-      if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED){
-        dl_phy_sync_success(Mod_id, sfn, 0, 1);
-        LOG_E(MAC,
-              "%s(): Received MIB: UE_mode: %d, sfn/sf: %d.%d\n",
-              __func__,
-              UE_mac_inst[Mod_id].UE_mode[0],
-              sfn,
-              sf);
-        UE_mac_inst[Mod_id].UE_mode[0] = PRACH;
-      } else {
-        dl_phy_sync_success(Mod_id, sfn, 0, 0);
+        return;
       }
     }
+  } else if (rnti_type == 2) {
+    if (rnti == 0xFFFF) { /* SI-RNTI */
+      for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+        if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED)
+          continue;
+
+        ue_decode_si(ue_id, 0, sfn, 0,
+            tx_request_pdu_list[pdu_index].segments[0].segment_data,
+            tx_request_pdu_list[pdu_index].segments[0].segment_length);
+      }
+    } else if (rnti == 0xFFFE) { /* PI-RNTI */
+      for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+        LOG_I(MAC, "%s() Received paging message: sfn/sf:%d.%d\n",
+              __func__, sfn, sf);
+        ue_decode_p(ue_id, 0, sfn, 0,
+                    tx_request_pdu_list[pdu_index].segments[0].segment_data,
+                    tx_request_pdu_list[pdu_index].segments[0].segment_length);
+      }
+    } else if (rnti == 0x0002) { /* RA-RNTI */
+      for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+        if (UE_mac_inst[ue_id].UE_mode[0] != RA_RESPONSE) {
+          LOG_D(MAC, "UE %d not awaiting RAR, is in mode %d\n",
+                ue_id, UE_mac_inst[ue_id].UE_mode[0]);
+          continue;
+        }
+        // RNTI parameter not actually used. Provided only to comply with
+        // existing function definition.  Not sure about parameters to fill
+        // the preamble index.
+        const rnti_t ra_rnti = UE_mac_inst[ue_id].RA_prach_resources.ra_RNTI;
+        DevAssert(ra_rnti == 0x0002);
+        if (UE_mac_inst[ue_id].UE_mode[0] != PUSCH
+            && UE_mac_inst[ue_id].RA_prach_resources.Msg3 != NULL
+            && ra_rnti == dlsch->dlsch_pdu.dlsch_pdu_rel8.rnti) {
+          LOG_E(MAC,
+                "%s(): Received RAR, PreambleIndex: %d\n",
+                __func__, UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex);
+          ue_process_rar(ue_id, 0, sfn,
+              ra_rnti, //RA-RNTI
+              tx_request_pdu_list[pdu_index].segments[0].segment_data,
+              &UE_mac_inst[ue_id].crnti, //t-crnti
+              UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
+              tx_request_pdu_list[pdu_index].segments[0].segment_data);
+          UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
+          // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
+          // ULSCH Txon for the UE)
+          UE_mac_inst[ue_id].first_ULSCH_Tx = 1;
+        }
+      }
+    } else {
+      LOG_W(MAC, "can not handle special RNTI %x\n", rnti);
+    }
   }
-  return 0;
 }
 
-int hi_dci0_req_UE_MAC(nfapi_hi_dci0_request_t *req, module_id_t Mod_id) {
-  if (req != NULL && req->hi_dci0_request_body.hi_dci0_pdu_list != NULL) {
-    LOG_D(PHY,
-          "[UE-PHY_STUB] hi dci0 request sfn_sf:%d number_of_dci:%d "
-          "number_of_hi:%d\n",
-          NFAPI_SFNSF2DEC(req->sfn_sf),
-          req->hi_dci0_request_body.number_of_dci,
-          req->hi_dci0_request_body.number_of_hi);
+void dl_config_req_UE_MAC_bch(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *bch,
+                              int num_ue) {
+  DevAssert(bch->pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE);
 
-    for (int i = 0; i < req->hi_dci0_request_body.number_of_dci
-                            + req->hi_dci0_request_body.number_of_hi;
-         i++) {
-      LOG_D(PHY,
-            "[UE-PHY_STUB] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n",
-            NFAPI_SFNSF2DEC(req->sfn_sf),
-            i);
-
-      if (req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type
-          == NFAPI_HI_DCI0_DCI_PDU_TYPE) {
-        LOG_D(PHY,
-              "[UE-PHY_STUB] HI_DCI0_REQ sfn_sf:%d PDU[%d] - "
-              "NFAPI_HI_DCI0_DCI_PDU_TYPE\n",
-              NFAPI_SFNSF2DEC(req->sfn_sf),
-              i);
-        const nfapi_hi_dci0_dci_pdu_rel8_t *dci =
-            &req->hi_dci0_request_body.hi_dci0_pdu_list[i].dci_pdu.dci_pdu_rel8;
-        if (dci->rnti != UE_mac_inst[Mod_id].crnti)
-          continue;
-        const int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
-        const int sf = NFAPI_SFNSF2SF(req->sfn_sf);
-        if (dci->cqi_csi_request)
-          fill_ulsch_cqi_indication_UE_MAC(Mod_id, sfn, sf, UL_INFO, dci->rnti);
-      } else if (req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type
-                 == NFAPI_HI_DCI0_HI_PDU_TYPE) {
-        nfapi_hi_dci0_request_pdu_t *hi_dci0_req_pdu =
-            &req->hi_dci0_request_body.hi_dci0_pdu_list[i];
-
-        // This is meaningful only after ACKnowledging the first ULSCH Txon
-        // (i.e. Msg3)
-        if (hi_dci0_req_pdu->hi_pdu.hi_pdu_rel8.hi_value == 1
-            && UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) {
-          // LOG_I(MAC,"[UE-PHY_STUB] HI_DCI0_REQ 2 sfn_sf:%d PDU[%d] -
-          // NFAPI_HI_DCI0_HI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
-          // UE_mac_inst[Mod_id].UE_mode[0] = PUSCH;
-          // UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
-        }
-
-      } else {
-        LOG_E(PHY,
-              "[UE-PHY_STUB] HI_DCI0_REQ sfn_sf:%d PDU[%d] - unknown pdu "
-              "type:%d\n",
-              NFAPI_SFNSF2DEC(req->sfn_sf),
-              i,
-              req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type);
-      }
+  for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+    if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED){
+      dl_phy_sync_success(ue_id, sfn, 0, 1);
+      LOG_E(MAC,
+            "%s(): Received MIB: UE_mode: %d, sfn/sf: %d.%d\n",
+            __func__,
+            UE_mac_inst[ue_id].UE_mode[0],
+            sfn,
+            sf);
+      UE_mac_inst[ue_id].UE_mode[0] = PRACH;
+    } else {
+      dl_phy_sync_success(ue_id, sfn, 0, 0);
     }
   }
+}
 
-  return 0;
+void hi_dci0_req_UE_MAC(int sfn,
+                        int sf,
+                        nfapi_hi_dci0_request_pdu_t* hi_dci0,
+                        int num_ue) {
+  if (hi_dci0->pdu_type != NFAPI_HI_DCI0_DCI_PDU_TYPE)
+    return;
+
+  const nfapi_hi_dci0_dci_pdu_rel8_t *dci = &hi_dci0->dci_pdu.dci_pdu_rel8;
+  if (!dci->cqi_csi_request)
+    return;
+  for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+    if (dci->rnti == UE_mac_inst[ue_id].crnti) {
+      fill_ulsch_cqi_indication_UE_MAC(ue_id, sfn, sf, UL_INFO, dci->rnti);
+      return;
+    }
+  }
 }
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7,
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
   dl_config_req = (nfapi_dl_config_request_t *)malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -929,9 +877,13 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7,
   return 0;
 }
 
-int memcpy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7,
-                         nfapi_ul_config_request_t *req) {
-  ul_config_req = malloc(sizeof(nfapi_ul_config_request_t));
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
+{
+
+	//for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++){
+
+		ul_config_req = (nfapi_ul_config_request_t*)malloc(sizeof(nfapi_ul_config_request_t));
+
 
   ul_config_req->sfn_sf = req->sfn_sf;
   ul_config_req->vendor_extension = req->vendor_extension;
