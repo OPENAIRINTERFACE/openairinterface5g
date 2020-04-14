@@ -381,7 +381,6 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
           dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
           rel8->length
          );
-
     dlsch0->active = 1;
     harq_pid        = dlsch0->harq_ids[frame%2][proc->subframe_tx];
     dlsch0->harq_mask |= (1<<harq_pid);

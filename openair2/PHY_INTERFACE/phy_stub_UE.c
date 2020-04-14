@@ -863,7 +863,6 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
   dl_config_req->dl_config_request_body.number_pdsch_rnti = req->dl_config_request_body.number_pdsch_rnti;
   dl_config_req->dl_config_request_body.number_pdu = req->dl_config_request_body.number_pdu;
 
-
   dl_config_req->dl_config_request_body.tl.tag = req->dl_config_request_body.tl.tag;
   dl_config_req->dl_config_request_body.tl.length = req->dl_config_request_body.tl.length;
 
@@ -1044,7 +1043,6 @@ void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,
                           nfapi_dl_config_request_pdu_t *dl_config_pdu,
                           uint8_t *sdu) {
 }
-
 
 void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,
                             int frame,

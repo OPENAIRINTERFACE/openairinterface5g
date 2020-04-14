@@ -1617,14 +1617,14 @@ void *UE_thread(void *arg)
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
+
         if (UE->mode != loop_through_memory) {
           if (IS_SOFTMODEM_RFSIM ) {
 	    for(int sf=0; sf<10; sf++) {
 	      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 		rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
 	      
-	      AssertFatal( UE->frame_parms.samples_per_tti ==
-			   UE->rfdevice.trx_read_func(&UE->rfdevice,
+              AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
 						      &timestamp,
 						      rxp,
 						      UE->frame_parms.samples_per_tti,
@@ -1643,6 +1643,7 @@ void *UE_thread(void *arg)
                                                     UE->frame_parms.nb_antennas_rx), "");
 	      }
 	}
+
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         instance_cnt_synch = ++UE->proc.instance_cnt_synch;
 

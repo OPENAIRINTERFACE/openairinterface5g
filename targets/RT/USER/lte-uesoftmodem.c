@@ -605,7 +605,6 @@ int main( int argc, char **argv ) {
   pthread_mutex_init(&sync_mutex, NULL);
 
   printf("ITTI init\n");
-#define UE
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI

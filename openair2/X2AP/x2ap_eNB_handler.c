@@ -1771,9 +1771,9 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
 		  X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer, true);
 
+  X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
   //X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
-
-    if (ie->value.choice.MeNBtoSgNBContainer.size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
+    if (container->size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
       { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
 
     memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer, ie->value.choice.MeNBtoSgNBContainer.buf, ie->value.choice.MeNBtoSgNBContainer.size);
