@@ -219,13 +219,13 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         /// Nfapi ULSCH PDU
         //nfapi_nr_ul_config_ulsch_pdu ulsch_pdu;
         ulsch->harq_processes[i]->frame=0;
-        ulsch->harq_processes[i]->subframe=0;
+        ulsch->harq_processes[i]->slot=0;
         ulsch->harq_processes[i]->round=0;
         ulsch->harq_processes[i]->TPC=0;
         ulsch->harq_processes[i]->mimo_mode=0;
         ulsch->harq_processes[i]->dci_alloc=0;
         ulsch->harq_processes[i]->rar_alloc=0;
-        ulsch->harq_processes[i]->status=0;
+        ulsch->harq_processes[i]->status=NR_SCH_IDLE;
         ulsch->harq_processes[i]->subframe_scheduling_flag=0;
         ulsch->harq_processes[i]->subframe_cba_scheduling_flag=0;
         ulsch->harq_processes[i]->phich_active=0;
@@ -421,7 +421,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #ifdef DEBUG_ULSCH_DECODING
     printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
     if (!frame%100)
-      printf("K %d C %d Z %d\n", harq_process->K, harq_process->C, harq_process->Z);
+      printf("K %d C %d Z %d \n", harq_process->K, harq_process->C, harq_process->Z);
 #endif
   }
   p_decParams->Z = harq_process->Z;
@@ -677,8 +677,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       ulsch->harq_mask &= ~(1 << harq_pid);
     }
 
-    //  LOG_D(PHY,"[gNB %d] ULSCH: Setting NACK for nr_tti_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
-       //     phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->status,harq_process->round,ulsch->Mlimit,harq_process->TBS);
+    //   LOG_D(PHY,"[gNB %d] ULSCH: Setting NACK for nr_tti_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
+    //         phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->status,harq_process->round,ulsch->Mlimit,harq_process->TBS);
 
     harq_process->handled  = 1;
     ret = ulsch->max_ldpc_iterations + 1;
@@ -699,6 +699,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     // harq_process->harq_ack.send_harq_status = 1;
 
     //  LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d (pid %d, round %d, TBS %d)\n",phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->round,harq_process->TBS);
+
 
     // Reassembly of Transport block here
     offset = 0;

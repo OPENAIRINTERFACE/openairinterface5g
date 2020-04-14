@@ -69,7 +69,6 @@ s1ap_eNB_config_t s1ap_config;
 static int s1ap_eNB_generate_s1_setup_request(
   s1ap_eNB_instance_t *instance_p, s1ap_eNB_mme_data_t *s1ap_mme_data_p);
 
-
 void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *s1ap_register_eNB);
 
 void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
@@ -361,6 +360,12 @@ void *s1ap_eNB_process_itti_msg(void *notUsed) {
     }
     break;
 
+    case S1AP_E_RAB_MODIFICATION_IND: {
+    	s1ap_eNB_generate_E_RAB_Modification_Indication(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    	                               &S1AP_E_RAB_MODIFICATION_IND(received_msg));
+    }
+    break;
+
     case S1AP_UE_CONTEXT_RELEASE_COMPLETE: {
       s1ap_ue_context_release_complete(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                        &S1AP_UE_CONTEXT_RELEASE_COMPLETE(received_msg));
@@ -508,3 +513,7 @@ static int s1ap_eNB_generate_s1_setup_request(
   s1ap_eNB_itti_send_sctp_data_req(instance_p->instance, s1ap_mme_data_p->assoc_id, buffer, len, 0);
   return ret;
 }
+
+
+
+

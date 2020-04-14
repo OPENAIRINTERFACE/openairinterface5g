@@ -41,6 +41,10 @@
 
 #define NR_BCCH_BCH 5    // MIB
 
+#define CCCH_PAYLOAD_SIZE_MAX 128
+
+#define RAR_PAYLOAD_SIZE_MAX  128
+
 //  For both DL/UL-SCH
 //  Except:
 //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -86,11 +90,87 @@ typedef struct {
     uint8_t R:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
+// BSR MAC CEs
+// TS 38.321 ch. 6.1.3.1
+// Short BSR for a specific logical channel group ID
+typedef struct {
+  uint8_t Buffer_size:5;   // octet 1 LSB
+  uint8_t LcgID:3;         // octet 1 MSB
+} __attribute__ ((__packed__)) NR_BSR_SHORT;
+
+typedef NR_BSR_SHORT NR_BSR_SHORT_TRUNCATED;
+
+// Long BSR for all logical channel group ID
+typedef struct {
+  uint8_t Buffer_size7:8;
+  uint8_t Buffer_size6:8;
+  uint8_t Buffer_size5:8;
+  uint8_t Buffer_size4:8;
+  uint8_t Buffer_size3:8;
+  uint8_t Buffer_size2:8;
+  uint8_t Buffer_size1:8;
+  uint8_t Buffer_size0:8;
+  uint8_t LcgID0:1;
+  uint8_t LcgID1:1;
+  uint8_t LcgID2:1;
+  uint8_t LcgID3:1;
+  uint8_t LcgID4:1;
+  uint8_t LcgID5:1;
+  uint8_t LcgID6:1;
+  uint8_t LcgID7:1;
+} __attribute__ ((__packed__)) NR_BSR_LONG;
+
+typedef NR_BSR_LONG NR_BSR_LONG_TRUNCATED;
+
 // 38.321 ch. 6.1.3.4
 typedef struct {
     uint8_t TA_COMMAND:6;   // octet 1 [5:0]
     uint8_t TAGID:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_CE_TA;
+
+// single Entry PHR MAC CE
+// TS 38.321 ch. 6.1.3.8
+typedef struct {
+  uint8_t PH:6;
+  uint8_t R1:2;
+  uint8_t PCMAX:6;
+  uint8_t R2:6;
+} __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
+
+//* RAR MAC subheader // TS 38.321 ch. 6.1.5, 6.2.2 *//
+// - E: The Extension field is a flag indicating if the MAC subPDU including this MAC subheader is the last MAC subPDU or not in the MAC PDU
+// - T: The Type field is a flag indicating whether the MAC subheader contains a Random Access Preamble ID or a Backoff Indicator (0, BI) (1, RAPID)
+// - R: Reserved bit, set to "0"
+// - BI: The Backoff Indicator field identifies the overload condition in the cell.
+// - RAPID: The Random Access Preamble IDentifier field identifies the transmitted Random Access Preamble
+
+/*!\brief RAR MAC subheader with RAPID */
+typedef struct {
+    uint8_t RAPID:6;
+    uint8_t T:1;
+    uint8_t E:1;
+} __attribute__ ((__packed__)) NR_RA_HEADER_RAPID;
+
+/*!\brief RAR MAC subheader with Backoff Indicator */
+typedef struct {
+    uint8_t BI:4;
+    uint8_t R:2;
+    uint8_t T:1;
+    uint8_t E:1;
+} __attribute__ ((__packed__)) NR_RA_HEADER_BI;
+
+// TS 38.321 ch. 6.2.3
+typedef struct {
+    uint8_t TA1:7;          // octet 1 [6:0]
+    uint8_t R:1;            // octet 1 [7]
+    uint8_t UL_GRANT_1:3;   // octet 2 [2:0]
+    uint8_t TA2:5;          // octet 2 [7:3]
+    uint8_t UL_GRANT_2:8;   // octet 3 [7:0]
+    uint8_t UL_GRANT_3:8;   // octet 4 [7:0]
+    uint8_t UL_GRANT_4:8;   // octet 5 [7:0]
+    uint8_t TCRNTI_1:8;     // octet 6 [7:0]
+    uint8_t TCRNTI_2:8;     // octet 7 [7:0]
+} __attribute__ ((__packed__)) NR_MAC_RAR;
 
 // DCI pdu structures. Used by both gNB and UE.
 typedef struct {
@@ -100,59 +180,59 @@ typedef struct {
 
 typedef struct {
 
-uint8_t     format_indicator; //1 bit
-uint8_t     ra_preamble_index; //6 bits
-uint8_t     ss_pbch_index; //6 bits
-uint8_t     prach_mask_index; //4 bits
-uint8_t     mcs; //5 bits
-uint8_t     ndi; //1 bit
-uint8_t     rv; //2 bits
-uint8_t     harq_pid; //4 bits
-uint8_t     tpc; //2 bits
-uint8_t     short_messages_indicator; //2 bits
-uint8_t     short_messages; //8 bits
-uint8_t     tb_scaling; //2 bits
-uint8_t     pucch_resource_indicator; //3 bits
-uint8_t     dmrs_sequence_initialization; //1 bit
-uint8_t     system_info_indicator; //1 bit
+  uint8_t     format_indicator; //1 bit
+  uint8_t     ra_preamble_index; //6 bits
+  uint8_t     ss_pbch_index; //6 bits
+  uint8_t     prach_mask_index; //4 bits
+  uint8_t     mcs; //5 bits
+  uint8_t     ndi; //1 bit
+  uint8_t     rv; //2 bits
+  uint8_t     harq_pid; //4 bits
+  uint8_t     tpc; //2 bits
+  uint8_t     short_messages_indicator; //2 bits
+  uint8_t     short_messages; //8 bits
+  uint8_t     tb_scaling; //2 bits
+  uint8_t     pucch_resource_indicator; //3 bits
+  uint8_t     dmrs_sequence_initialization; //1 bit
+  uint8_t     system_info_indicator; //1 bit
 
-uint8_t     slot_format_indicator_count;
-uint8_t     *slot_format_indicators;
+  uint8_t     slot_format_indicator_count;
+  uint8_t     *slot_format_indicators;
  
-uint8_t     pre_emption_indication_count;
-uint16_t    *pre_emption_indications; //14 bit each
+  uint8_t     pre_emption_indication_count;
+  uint16_t    *pre_emption_indications; //14 bit each
  
-uint8_t     block_number_count;
-uint8_t     *block_numbers;
-uint8_t     padding;
+  uint8_t     block_number_count;
+  uint8_t     *block_numbers;
+  uint8_t     padding;
 
-dci_field_t mcs2; //variable
-dci_field_t ndi2; //variable
-dci_field_t rv2; //variable
-dci_field_t frequency_domain_assignment; //variable
-dci_field_t time_domain_assignment; //variable
-dci_field_t frequency_hopping_flag; //variable
-dci_field_t vrb_to_prb_mapping; //variable
-dci_field_t dai[2]; //variable
-dci_field_t pdsch_to_harq_feedback_timing_indicator; //variable
-dci_field_t carrier_indicator; //variable
-dci_field_t bwp_indicator; //variable
-dci_field_t prb_bundling_size_indicator; //variable
-dci_field_t rate_matching_indicator; //variable
-dci_field_t zp_csi_rs_trigger; //variable
-dci_field_t transmission_configuration_indication; //variable
-dci_field_t srs_request; //variable
-dci_field_t cbgti; //variable
-dci_field_t cbgfi; //variable
-dci_field_t srs_resource_indicator; //variable
-dci_field_t precoding_information; //variable
-dci_field_t csi_request; //variable
-dci_field_t ptrs_dmrs_association; //variable
-dci_field_t beta_offset_indicator; //variable
-dci_field_t cloded_loop_indicator; //variable
-dci_field_t ul_sul_indicator; //variable
-dci_field_t antenna_ports; //variable
-dci_field_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+  dci_field_t mcs2; //variable
+  dci_field_t ndi2; //variable
+  dci_field_t rv2; //variable
+  dci_field_t frequency_domain_assignment; //variable
+  dci_field_t time_domain_assignment; //variable
+  dci_field_t frequency_hopping_flag; //variable
+  dci_field_t vrb_to_prb_mapping; //variable
+  dci_field_t dai[2]; //variable
+  dci_field_t pdsch_to_harq_feedback_timing_indicator; //variable
+  dci_field_t carrier_indicator; //variable
+  dci_field_t bwp_indicator; //variable
+  dci_field_t prb_bundling_size_indicator; //variable
+  dci_field_t rate_matching_indicator; //variable
+  dci_field_t zp_csi_rs_trigger; //variable
+  dci_field_t transmission_configuration_indication; //variable
+  dci_field_t srs_request; //variable
+  dci_field_t cbgti; //variable
+  dci_field_t cbgfi; //variable
+  dci_field_t srs_resource_indicator; //variable
+  dci_field_t precoding_information; //variable
+  dci_field_t csi_request; //variable
+  dci_field_t ptrs_dmrs_association; //variable
+  dci_field_t beta_offset_indicator; //variable
+  dci_field_t cloded_loop_indicator; //variable
+  dci_field_t ul_sul_indicator; //variable
+  dci_field_t antenna_ports; //variable
+  dci_field_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
 
 } dci_pdu_rel15_t;
 
@@ -182,8 +262,8 @@ dci_field_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI:
 #define UL_SCH_LCID_CCCH                           0x00
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
-#define UL_SCH_LCID_DTCH						   0x03
-#define UL_SCH_LCID_SRB3                           0x04
+#define UL_SCH_LCID_SRB3                           0x03
+#define UL_SCH_LCID_DTCH                           0x04
 #define UL_SCH_LCID_CCCH_MSG3                      0x21
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36

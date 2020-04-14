@@ -35,8 +35,8 @@
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_NR_UE *ue,
-                      module_id_t eNB_id,
-					  uint8_t subframe,
+                      module_id_t gNB_id,
+                      uint8_t subframe,
                       unsigned char clear,
                       short coef)
 {
@@ -60,8 +60,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->pbch_vars[eNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
-      Im = ((int16_t*)ue->pbch_vars[eNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
+      Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
+      Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -111,11 +111,11 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
           }
       }
 
-      if ( ue->rx_offset < 0 )
-	ue->rx_offset += frame_parms->samples_per_frame;
+      if (ue->rx_offset < 0)
+        ue->rx_offset += frame_parms->samples_per_frame;
 
-      if ( ue->rx_offset >= frame_parms->samples_per_frame )
-          ue->rx_offset -= frame_parms->samples_per_frame;
+      if (ue->rx_offset >= frame_parms->samples_per_frame)
+        ue->rx_offset -= frame_parms->samples_per_frame;
 
 
 

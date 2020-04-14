@@ -782,6 +782,8 @@ typedef struct {
   int16_t amp;
   int16_t *prachF;
   int16_t *prach;
+  fapi_nr_ul_config_prach_pdu prach_pdu;
+  uint8_t prach_Config_enabled;
 } NR_UE_PRACH;
 
 // structure used for multiple SSB detection
@@ -930,7 +932,7 @@ typedef struct {
   uint8_t               pucch_sel[10];
   uint8_t               pucch_payload[22];
 
-  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  UE_MODE_t           UE_mode[NUMBER_OF_CONNECTED_gNB_MAX];
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
@@ -968,12 +970,13 @@ typedef struct {
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_gNB_MAX];
+  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_gNB_MAX];
+  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_gNB_MAX];
+  uint8_t Msg3_startSymbol[NUMBER_OF_CONNECTED_gNB_MAX];
+  uint8_t Msg3_Length[NUMBER_OF_CONNECTED_gNB_MAX];
 
-
-  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
-  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
+  NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   /// \brief ?.
   /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
@@ -1008,8 +1011,6 @@ typedef struct {
   int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint8_t               generate_prach;
-  uint8_t               generate_nr_prach;
   uint8_t               prach_cnt;
   uint8_t               prach_PreambleIndex;
   //  uint8_t               prach_timer;

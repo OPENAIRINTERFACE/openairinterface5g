@@ -30,8 +30,8 @@
 
 #include "nr_mac_gNB.h"
 #include "SCHED_NR/sched_nr.h"
-#include "mac_proto.h"
-#include "nr_mac_common.h"
+#include "NR_MAC_gNB/mac_proto.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/nr-softmodem.h"
@@ -251,7 +251,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 
 int configure_fapi_dl_pdu(int Mod_idP,
-                          int *CCEIndex,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
 			  NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
@@ -279,6 +278,9 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
 
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+              "searchPsacesToAddModList is empty\n");
 
   dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -387,30 +389,50 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	dci_pdu_rel15[0].tb_scaling,
 	dci_pdu_rel15[0].ndi, 
 	dci_pdu_rel15[0].rv);
+
+  NR_SearchSpace_t *ss;
+  int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+              "searchPsacesToAddModList is empty\n");
+
+  int found=0;
+
+  for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
+    ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+    AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
+    AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
+    if (ss->searchSpaceType->present == target_ss) {
+      found=1;
+      break;
+    }
+  }
+  AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
     
-  nr_configure_pdcch(pdcch_pdu_rel15,
+  nr_configure_pdcch(nr_mac,
+                     pdcch_pdu_rel15,
+                     UE_list->rnti[UE_id],
 		     1, // ue-specific
+		     ss,
 		     scc,
 		     bwp);
-  
-  pdcch_pdu_rel15->numDlDci = 1;
-  pdcch_pdu_rel15->AggregationLevel[0] = 4;  
-  pdcch_pdu_rel15->RNTI[0]=UE_list->rnti[0];
-  pdcch_pdu_rel15->CceIndex[0] = CCEIndex[0];
-  pdcch_pdu_rel15->beta_PDCCH_1_0[0]=0;
-  pdcch_pdu_rel15->powerControlOffsetSS[0]=1;
   
   int dci_formats[2];
   int rnti_types[2];
   
-  dci_formats[0]  = NR_DL_DCI_FORMAT_1_1;
+  if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
+    dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
+  else
+    dci_formats[0]  = NR_DL_DCI_FORMAT_1_1;
+
   rnti_types[0]   = NR_RNTI_C;
 
-  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,bwp_id);
+  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,bwp_id);
 
   LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
-	pdcch_pdu_rel15->RNTI[0],
+	pdcch_pdu_rel15->dci_pdu.RNTI[0],
 	rnti_types[0],
 	dci_formats[0],
 	(unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
@@ -418,7 +440,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	pdcch_pdu_rel15->DurationSymbols);
 
   int x_Overhead = 0; // should be 0 for initialBWP
-  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead);
+  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead,1,0);
 
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
@@ -453,7 +475,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
   dci_pdu_rel15->tpc = 2;
   
   LOG_D(MAC, "[gNB scheduler phytest] ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
-	pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci],
+	pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci],
 	dci_pdu_rel15->frequency_domain_assignment.val,
 	dci_pdu_rel15->time_domain_assignment.val,
 	dci_pdu_rel15->frequency_hopping_flag.val,
@@ -500,7 +522,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
   tx_req->num_TLV = 1;
   tx_req->TLVs[0].length = tbs_bytes +2;
 
-  memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0], tbs_bytes);;
+  memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0], tbs_bytes);
 
   nr_mac->TX_req[CC_id].Number_of_PDUs++;
   nr_mac->TX_req[CC_id].SFN = frameP;
@@ -517,7 +539,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int lcid, offset, i, header_length_last, TBS_bytes;
-  int UE_id = 0, CCEIndex = -1, CC_id = 0;
+  int UE_id = 0, CC_id = 0;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
@@ -541,22 +563,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   ta_len = gNB_mac->ta_len;
 
-  CCEIndex = allocate_nr_CCEs(gNB_mac,
-                              1, // bwp_id
-                              0, // coreset_id
-                              4, // aggregation,
-                              1, // search_space, 0 common, 1 ue-specific
-                              UE_id,
-                              0); // m
-
-  if (CCEIndex == -1) return;
-
-  AssertFatal(CCEIndex>0,"CCEIndex is negative\n");
-  int CCEIndices[2];
-  CCEIndices[0] = CCEIndex;
-
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
-                                    CCEIndices,
                                     dl_req,
 				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
@@ -634,7 +641,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       //mac_sdus[i] = (unsigned char) rand(); 
       ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
     }
-
     //Sending SDUs with size 1
     //Initialize elements of sdu_lcids and sdu_lengths
     sdu_lcids[0] = 0x05; // DRB
@@ -734,6 +740,9 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
   nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[Mod_idP]->UL_dci_req[0];
 
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+              "searchPsacesToAddModList is empty\n");
 
   uint16_t rnti = UE_list->rnti[UE_id];
   nfapi_nr_ul_dci_request_pdus_t  *ul_dci_request_pdu;
@@ -808,7 +817,9 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 						 pusch_pdu->nr_of_symbols,
 						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
+                                                 0,
 						 pusch_pdu->nrOfLayers)>>3;
+
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;
   //pusch_pdu->pusch_uci;
@@ -827,32 +838,47 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   int dci_formats[2];
   int rnti_types[2];
 
-  int CCEIndex = allocate_nr_CCEs(nr_mac,
-				  1, // bwp_id
-				  0, // coreset_id
-				  4, // aggregation,
-				  1, // search_space, 0 common, 1 ue-specific
-				  UE_id,
-				  0); // m
+  NR_SearchSpace_t *ss;
+  int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
-  dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
+  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
+              "searchPsacesToAddModList is empty\n");
+
+  int found=0;
+
+  for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
+    ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+    AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
+    AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
+    if (ss->searchSpaceType->present == target_ss) {
+      found=1;
+      break;
+    }
+  }
+  AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
+
+  if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
+    dci_formats[0]  = NR_UL_DCI_FORMAT_0_1;
+  else
+    dci_formats[0]  = NR_UL_DCI_FORMAT_0_0;
+
   rnti_types[0]   = NR_RNTI_C;
   LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
-  nr_configure_pdcch(pdcch_pdu_rel15,
-		     1, // ue-specific,
+
+  nr_configure_pdcch(nr_mac,
+                     pdcch_pdu_rel15,
+                     UE_list->rnti[UE_id],
+                     1, // ue-specific,
+		     ss,
 		     scc,
 		     bwp);
   
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
 
-  AssertFatal(CCEIndex>=0,"CCEIndex is negative \n");
-  pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci] = CCEIndex;
-
-  LOG_D(PHY,"CCEIndex %d\n",pdcch_pdu_rel15->CceIndex[pdcch_pdu_rel15->numDlDci]);
-
   config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
   
-  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,bwp_id);
+  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
   
 }
 

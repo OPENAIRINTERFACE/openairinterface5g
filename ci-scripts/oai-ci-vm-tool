@@ -186,7 +186,7 @@ function variant__v3__phy_sim {
     BUILD_OPTIONS="--phy_simulators"
     VM_MEMORY=8192
     VM_DISK=20
-    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510* 015111\" -q -np -b"
+    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510* 015111 015112\" -q -np -b"
 }
 
 function variant__v4__cppcheck {

@@ -62,9 +62,9 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
-    @param is_dmrs_symbol, flag to indicate wether this OFDM symbol contains DMRS symbols or not.
 
 */
+
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
@@ -205,10 +205,17 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
 
+void nr_fill_prach(PHY_VARS_gNB *gNB,
+		   int SFN,
+		   int Slot,
+		   nfapi_nr_prach_pdu_t *prach_pdu);
+
 void rx_nr_prach(PHY_VARS_gNB *gNB,
+		 nfapi_nr_prach_pdu_t *prach_pdu,
 		 int frame,
 		 int subframe,
 		 uint16_t *max_preamble,
 		 uint16_t *max_preamble_energy,
 		 uint16_t *max_preamble_delay
 		 );
+

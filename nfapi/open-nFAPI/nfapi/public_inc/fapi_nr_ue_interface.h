@@ -156,22 +156,29 @@ typedef struct {
   fapi_nr_tx_request_body_t *tx_request_body;
 } fapi_nr_tx_request_t;
 
-    typedef struct {
-        uint8_t preamble_index;
-        uint8_t prach_configuration_index;
-        uint16_t preamble_length;
-        uint8_t power_ramping_step;
-        uint16_t preamble_received_target_power;
-        uint8_t msg1_fdm;
-        uint8_t msg1_frequency_start;
-        uint8_t zero_correlation_zone_config;
-        uint8_t subcarrier_spacing;
-        uint8_t restrictedset_config;
-        uint16_t root_sequence_index;
-        uint16_t rsrp_threshold_ssb;
-        uint16_t rsrp_threshold_sul;
-        uint16_t prach_freq_offset;
-    } fapi_nr_ul_config_prach_pdu;
+/// This struct replaces:
+/// PRACH-ConfigInfo from 38.331 RRC spec
+/// PRACH-ConfigSIB or PRACH-Config
+typedef struct {
+  /// PHY cell ID
+  uint16_t phys_cell_id;
+  /// Num PRACH occasions
+  uint8_t  num_prach_ocas;
+  /// PRACH format
+  uint8_t  prach_format;
+  /// Num RA
+  uint8_t  num_ra;
+  uint8_t  prach_start_symbol;
+  /// 38.211 (NCS 38.211 6.3.3.1).
+  uint16_t num_cs;
+  /// Parameter: prach-rootSequenceIndex, see TS 38.211 (6.3.3.2).
+  uint16_t root_seq_id;
+  /// Parameter: High-speed-flag, see TS 38.211 (6.3.3.1). 1 corresponds to Restricted set and 0 to Unrestricted set.
+  uint8_t  restricted_set;
+  /// see TS 38.211 (6.3.3.2).
+  uint16_t freq_msg1;
+  // nfapi_nr_ul_beamforming_t beamforming;
+} fapi_nr_ul_config_prach_pdu;
 
 typedef struct {
 

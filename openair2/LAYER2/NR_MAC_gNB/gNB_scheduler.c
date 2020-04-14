@@ -33,9 +33,9 @@
 #include "assertions.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_gNB/mac_proto.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -59,9 +59,8 @@
 
 #include "executables/softmodem-common.h"
 
+const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
-
-uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
@@ -259,18 +258,6 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 }
 */
 
-/*
-void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
-
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-
-  // schedule PRACH for iniital BWP 
-
-  if (is_initialBWP_prach_subframe(frameP,subframeP)<0) return;
- 
-  // fill FAPI
-}
-*/
 
 /*
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
@@ -437,8 +424,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
       if (UE_list->active[i]) {
 
-        nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
-      
+        nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];      
       
         rnti = 0;//UE_RNTI(module_idP, i);
         CC_id = 0;//UE_PCCID(module_idP, i);
@@ -446,7 +432,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       } //END if (UE_list->active[i])
     } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
     */
-  
+
     // This schedules MIB
     if((slot_txP == 0) && (frame_txP & 7) == 0){
       schedule_nr_mib(module_idP, frame_txP, slot_txP);
@@ -466,6 +452,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       gNB->ta_len = 2;
     }
 
+    if (get_softmodem_params()->phy_test == 0)
+      nr_schedule_RA(module_idP, frame_txP, slot_txP);
+
     // Phytest scheduling
     if (get_softmodem_params()->phy_test && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,pucch_sched);
@@ -473,6 +462,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       // resetting ta flag
       gNB->ta_len = 0;
     }
+
 
     /*
     // Allocate CCEs for good after scheduling is done
@@ -484,6 +474,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
 
+    if (get_softmodem_params()->phy_test == 0) {
+      schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
+      nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
+    }
     if (get_softmodem_params()->phy_test){
       nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
       if (is_xlsch_in_slot(*ulsch_in_slot_bitmap,slot_rxP%num_slots_per_tdd)){

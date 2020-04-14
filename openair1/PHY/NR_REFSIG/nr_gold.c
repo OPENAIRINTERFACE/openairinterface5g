@@ -88,6 +88,7 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
   uint16_t N_n_scid[NR_MAX_NB_CODEWORDS]={Nid, Nid}; // Not correct, appropriate scrambling IDs have to be updated to support DCI 1_1
   uint8_t n_scid=0; // again works only for 1_0
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
+
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
         reset = 1;
         x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));

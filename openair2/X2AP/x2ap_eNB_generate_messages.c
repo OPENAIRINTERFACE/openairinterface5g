@@ -1496,7 +1496,7 @@ int x2ap_eNB_generate_ENDC_x2_setup_response(
 }
 
 int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
-  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id)
+  x2ap_eNB_instance_t *instance_p, x2ap_ENDC_sgnb_addition_req_t *x2ap_ENDC_sgnb_addition_req, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id)
 {
 	X2AP_X2AP_PDU_t                     	 pdu;
 	X2AP_SgNBAdditionRequest_t               *out;
@@ -1516,8 +1516,6 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	int uEaggregateMaximumBitRateDownlink = 100000000;
 	int uEaggregateMaximumBitRateUplink = 100000000;
 	int e_rabs_tobeadded = 1;
-	int e_RAB_ID = 1;
-	int drb_ID = 2;
 	long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
 	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;
@@ -1527,9 +1525,9 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	priority_level_t priority_level = PRIORITY_LEVEL_NO_PRIORITY;
 	e_rab_tobe_added_t e_MCG_rabs_tobeadded;
 	e_MCG_rabs_tobeadded.gtp_teid = 0;
-	e_MCG_rabs_tobeadded.eNB_addr.length = 24;
+	e_MCG_rabs_tobeadded.sgw_addr.length = 24;
 	uint8_t buf[20] = { 0 };
-	memcpy(e_MCG_rabs_tobeadded.eNB_addr.buffer, buf, 20*sizeof(uint8_t));
+	memcpy(e_MCG_rabs_tobeadded.sgw_addr.buffer, buf, 20*sizeof(uint8_t));
 
 	FILE *fd;
 	fd = fopen("../../../executables/uecap.raw","r");
@@ -1614,8 +1612,8 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     	e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.present = X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs__value_PR_E_RABs_ToBeAdded_SgNBAddReq_Item;
     	e_RABS_ToBeAdded_SgNBAddReq_Item = &e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.choice.E_RABs_ToBeAdded_SgNBAddReq_Item;
       {
-    	e_RABS_ToBeAdded_SgNBAddReq_Item->drb_ID = drb_ID;
-    	e_RABS_ToBeAdded_SgNBAddReq_Item->e_RAB_ID = e_RAB_ID;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->drb_ID = x2ap_ENDC_sgnb_addition_req->e_rabs_tobeadded[i].drb_ID;
+    	e_RABS_ToBeAdded_SgNBAddReq_Item->e_RAB_ID = x2ap_ENDC_sgnb_addition_req->e_rabs_tobeadded[i].e_rab_id;
     	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.pDCPatSgNB = pDCPatSgNB;
     	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.mCGresources = mCGresources;
     	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.sCGresources = sCGresources;
@@ -1628,14 +1626,14 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel = priority_level;
 
     		//Continue from filling the UL_GTPtunnelEndpointInformation inspired from how it is done for the HO case
-    		INT32_TO_OCTET_STRING(e_MCG_rabs_tobeadded.gtp_teid, &e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID);
-    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size = e_MCG_rabs_tobeadded.eNB_addr.length/8;
-    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.bits_unused = e_MCG_rabs_tobeadded.eNB_addr.length%8;
+    		INT32_TO_OCTET_STRING(x2ap_ENDC_sgnb_addition_req->e_rabs_tobeadded[i].gtp_teid, &e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID);
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size = x2ap_ENDC_sgnb_addition_req->e_rabs_tobeadded[i].sgw_addr.length/8;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.bits_unused = x2ap_ENDC_sgnb_addition_req->e_rabs_tobeadded[i].sgw_addr.length%8;
     		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf =
     				calloc(1, e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
 
     		memcpy (e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf,
-    				e_MCG_rabs_tobeadded.eNB_addr.buffer,
+    				x2ap_ENDC_sgnb_addition_req->e_rabs_tobeadded[i].sgw_addr.buffer,
     				e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
     	}
 
@@ -1691,13 +1689,7 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 
 		// Currently hardcoded (dummy) values filling the fields of SgNB_addition_request message. To be substituted
 		// with values coming from RRC.
-		uint16_t nRencryptionAlgorithms = 0;
-		uint16_t nRintegrityProtectionAlgorithms = 0;
-		uint8_t  SgNBSecurityKey[32] = { 0 };
-		int uEaggregateMaximumBitRateDownlink = 100000000;
-		int uEaggregateMaximumBitRateUplink = 100000000;
 		int e_rabs_admitted_tobeadded = 1;
-		int e_RAB_ID = 1;
 		long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 		long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
 		long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;
@@ -1748,21 +1740,21 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 	    	e_RABS_AdmittedToBeAdded_SgNBAddReq_ItemIEs->value.present = X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs__value_PR_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item;
 	    	e_RABS_AdmittedToBeAdded_SgNBAddReq_Item = &e_RABS_AdmittedToBeAdded_SgNBAddReq_ItemIEs->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item;
 	      {
-	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->e_RAB_ID = e_RAB_ID;
+	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->e_RAB_ID = x2ap_sgnb_addition_req_ACK->e_rabs_admitted_tobeadded[i].e_rab_id;
 	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.pDCPatSgNB = pDCPatSgNB;
 	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.mCGresources = mCGresources;
 	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.sCGresources = sCGresources;
 	    	if (pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
 	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.present = X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item__resource_configuration_PR_sgNBPDCPpresent;
 
-	    		INT32_TO_OCTET_STRING(e_SCG_rabs_tobeadded.gtp_teid, &e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.gTP_TEID);
-	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size  = e_SCG_rabs_tobeadded.eNB_addr.length/8;
-	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.bits_unused = e_SCG_rabs_tobeadded.eNB_addr.length%8;
+	    		INT32_TO_OCTET_STRING(x2ap_sgnb_addition_req_ACK->e_rabs_admitted_tobeadded[i].gtp_teid, &e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.gTP_TEID);
+	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size  = x2ap_sgnb_addition_req_ACK->e_rabs_admitted_tobeadded[i].gnb_addr.length/8;
+	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.bits_unused = x2ap_sgnb_addition_req_ACK->e_rabs_admitted_tobeadded[i].gnb_addr.length%8; 
 	    		e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf =
 	    				calloc(1, e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
 
 	    		memcpy (e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf,
-	    				e_SCG_rabs_tobeadded.eNB_addr.buffer,
+	    				x2ap_sgnb_addition_req_ACK->e_rabs_admitted_tobeadded[i].gnb_addr.buffer,
 	    				e_RABS_AdmittedToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
 	    	}
 

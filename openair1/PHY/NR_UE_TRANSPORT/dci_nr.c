@@ -814,6 +814,8 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
 
   x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
 
+  LOG_D(PHY,"PDCCH Unscrambling x2 %x : n_RNTI %x\n",x2,n_rnti);
+
   for (i = 0; i < length; i++) {
     if ((i & 0x1f) == 0) {
       s = lte_gold_generic(&x1, &x2, reset);

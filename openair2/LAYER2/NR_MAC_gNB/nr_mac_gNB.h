@@ -42,30 +42,106 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Commmon */
+#include "targets/ARCH/COMMON/common_lib.h"
+#include "COMMON/platform_constants.h"
+#include "common/ran_context.h"
+
+/* RRC */
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_MeasConfig.h"
 
+/* PHY */
+#include "PHY/defs_gNB.h"
+#include "PHY/TOOLS/time_meas.h"
+
+/* Interface */
 #include "nfapi_nr_interface_scf.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
-#include "COMMON/platform_constants.h"
-#include "common/ran_context.h"
+/* MAC */
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "PHY/defs_gNB.h"
-#include "PHY/TOOLS/time_meas.h"
-#include "targets/ARCH/COMMON/common_lib.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "NR_TAG.h"
 
-#include "nr_mac_common.h"
-
+/* Defs */
 #define MAX_NUM_BWP 2
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
+/*!\brief Maximum number of random access process */
+#define NR_NB_RA_PROC_MAX 4
 
-#include "NR_TAG.h"
+typedef enum {
+  RA_IDLE = 0,
+  Msg2 = 1,
+  WAIT_Msg3 = 2,
+  Msg4 = 3,
+  WAIT_Msg4_ACK = 4
+} RA_gNB_state_t;
+
+/*! \brief gNB template for the Random access information */
+typedef struct {
+  /// Flag to indicate this process is active
+  RA_gNB_state_t state;
+  /// BWP id of RA process
+  int bwp_id;
+  /// CORESET0 configured flag
+  int coreset0_configured;
+  /// Slot where preamble was received
+  uint8_t preamble_slot;
+  /// Subframe where Msg2 is to be sent
+  uint8_t Msg2_slot;
+  /// Frame where Msg2 is to be sent
+  frame_t Msg2_frame;
+  /// Subframe where Msg3 is to be sent
+  sub_frame_t Msg3_slot;
+  /// Frame where Msg3 is to be sent
+  frame_t Msg3_frame;
+  /// Msg3 time domain allocation index
+  uint8_t Msg3_tda_id;
+  /// Subframe where Msg4 is to be sent
+  sub_frame_t Msg4_slot;
+  /// Frame where Msg4 is to be sent
+  frame_t Msg4_frame;
+  /// harq_pid used for Msg4 transmission
+  uint8_t harq_pid;
+  /// UE RNTI allocated during RAR
+  rnti_t rnti;
+  /// RA RNTI allocated from received PRACH
+  uint16_t RA_rnti;
+  /// Received preamble_index
+  uint8_t preamble_index;
+  /// Received UE Contention Resolution Identifier
+  uint8_t cont_res_id[6];
+  /// Timing offset indicated by PHY
+  int16_t timing_offset;
+  /// Timeout for RRC connection
+  int16_t RRC_timer;
+  /// Msg3 first RB
+  uint8_t msg3_first_rb;
+  /// Msg3 number of RB
+  uint8_t msg3_nb_rb;
+  /// Msg3 TPC command
+  uint8_t msg3_TPC;
+  /// Msg3 ULdelay command
+  uint8_t msg3_ULdelay;
+  /// Msg3 cqireq command
+  uint8_t msg3_cqireq;
+  /// Round of Msg3 HARQ
+  uint8_t msg3_round;
+  /// Msg3 pusch pdu
+  nfapi_nr_pusch_pdu_t pusch_pdu;
+  /// TBS used for Msg4
+  int msg4_TBsize;
+  /// MCS used for Msg4
+  int msg4_mcs;
+  /// RA search space
+  NR_SearchSpace_t *ra_ss;
+} NR_RA_t;
 
 /*! \brief gNB common channels */
 typedef struct {
@@ -73,6 +149,7 @@ typedef struct {
   int p_gNB;
   int Ncp;
   int nr_band;
+  lte_frame_type_t frame_type;
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
@@ -93,7 +170,7 @@ typedef struct {
   /// Outgoing RAR pdu for PHY
   RAR_PDU RAR_pdu;
   /// Template for RA computations
-  RA_t ra[NB_RA_PROC_MAX];
+  NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels
   uint8_t vrb_map[100];
   /// VRB map for common channels and retransmissions by PHICH
@@ -120,9 +197,8 @@ typedef struct {
   int16_t ta_update;
 } NR_UE_sched_ctrl_t;
 
-/*! \brief UE list used by eNB to order UEs/CC for scheduling*/
+/*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
-
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
@@ -202,6 +278,5 @@ typedef struct gNB_MAC_INST_s {
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 } gNB_MAC_INST;
-
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

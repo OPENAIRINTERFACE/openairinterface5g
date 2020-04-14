@@ -21,7 +21,7 @@
 #include "executables/thread-common.h"
 #include "executables/nr-uesoftmodem.h"
 
-#include "LAYER2/NR_MAC_UE/mac.h"
+#include "NR_MAC_UE/mac.h"
 //#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 
@@ -32,7 +32,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
 //#ifndef NO_RAT_NR
@@ -142,15 +142,23 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t abstraction_flag)
 {
 
+  int nb_connected_gNB = 1, gNB_id;
+
   memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
 
+  // Setting UE mode to NOT_SYNCHED by default
+  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
+    ue->UE_mode[gNB_id] = NOT_SYNCHED;
+    ue->prach_resources[gNB_id] = (NR_PRACH_RESOURCES_t *)malloc16_clear(sizeof(NR_PRACH_RESOURCES_t));
+  }
+
   // initialize all signal buffers
-  init_nr_ue_signal(ue,1,abstraction_flag);
+  init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
   // intialize transport
-  init_nr_ue_transport(ue,abstraction_flag);
+  init_nr_ue_transport(ue, abstraction_flag);
 }
 
 /*!
@@ -360,14 +368,17 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   uint32_t nb_rb, start_rb;
   uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
   uint16_t n_rnti;
+  module_id_t mod_id;
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
 
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
-  if (proc->nr_tti_tx == 8 || UE->frame_parms.frame_type == FDD){
+  if (proc->nr_tti_tx == 8 || proc->nr_tti_tx == 19 || UE->frame_parms.frame_type == FDD){
 
-    dcireq.module_id = UE->Mod_id;
+    mod_id = UE->Mod_id;
+
+    dcireq.module_id = mod_id;
     dcireq.gNB_index = 0;
     dcireq.cc_id     = 0;
     dcireq.frame     = proc->frame_rx;
@@ -376,7 +387,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.dl_config = NULL;
     scheduled_response.ul_config = &dcireq.ul_config_req;
     scheduled_response.tx_request = NULL;
-    scheduled_response.module_id = UE->Mod_id;
+    scheduled_response.module_id = mod_id;
     scheduled_response.CC_id     = 0;
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
@@ -407,9 +418,9 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
 
     nr_ue_scheduled_response(&scheduled_response);
-    
+
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_tx];
+      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_tx];
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
     }
   }
@@ -470,23 +481,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       pdcp_run(&ctxt);
     }
   }
-
-  
-  // no UL for now
-  /*
-  if (UE->mac_enabled==1) {
-    //  trigger L2 to run ue_scheduler thru IF module
-    //  [TODO] mapping right after NR initial sync
-    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
-      UE->ul_indication.module_id = 0;
-      UE->ul_indication.gNB_index = 0;
-      UE->ul_indication.cc_id = 0;
-      UE->ul_indication.frame = proc->frame_rx;
-      UE->ul_indication.slot = proc->nr_tti_rx;
-      UE->if_inst->ul_indication(&UE->ul_indication);
-    }
-  }
-  */
 }
 
 /*!
@@ -503,11 +497,15 @@ typedef struct processingData_s {
 }  processingData_t;
 
 void UE_processing(void *arg) {
-  processingData_t *rxtxD=(processingData_t *) arg;
+  processingData_t *rxtxD = (processingData_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
 
-  uint8_t gNB_id = 0;
+  uint8_t gNB_id = 0, CC_id = 0;
+  module_id_t mod_id = 0;
+
+  nr_uplink_indication_t ul_indication;
+  memset((void*)&ul_indication, 0, sizeof(ul_indication));
 
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
@@ -533,6 +531,21 @@ void UE_processing(void *arg) {
   }
 
   processSlotRX(UE, proc);
+
+  if (UE->mac_enabled == 1) {
+    // trigger L2 to run ue_scheduler thru IF module
+    // [TODO] mapping right after NR initial sync
+    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
+      ul_indication.module_id = mod_id;
+      ul_indication.gNB_index = gNB_id;
+      ul_indication.cc_id     = CC_id;
+      ul_indication.frame_rx  = proc->frame_rx;
+      ul_indication.slot_rx   = proc->nr_tti_rx;
+      ul_indication.frame_tx  = proc->frame_tx;
+      ul_indication.slot_tx   = proc->nr_tti_tx;
+      UE->if_inst->ul_indication(&ul_indication);
+    }
+  }
 
   processSlotTX(UE, proc);
 
@@ -611,11 +624,6 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
-  if (IS_SOFTMODEM_RFSIM) {
-    LOG_E(PHY,"SET rx_offset %d \n",UE->rx_offset);
-    //UE->rx_offset_diff=0;
-    return 0;
-  }
 
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&

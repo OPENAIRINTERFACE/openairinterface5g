@@ -199,12 +199,12 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          rrc->carrier.pdsch_AntennaPorts,
                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			 0,
-			 0,
+			 0, // WIP hardcoded rnti
 			 (NR_CellGroupConfig_t *)NULL
                          );
 
 
-  if (get_softmodem_params()->phy_test > 0) {
+  if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
     FILE *fd;
 
@@ -245,13 +245,13 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
       OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
 			   (const char *)buffer,
 			   (enc_rval.encoded+7)>>3); 
-      parse_CG_ConfigInfo(rrc,CG_ConfigInfo);      
+      parse_CG_ConfigInfo(rrc,CG_ConfigInfo,NULL);
     }
     else {
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
       
       LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);    
-      rrc_add_nsa_user(rrc,ue_context_p);
+      rrc_add_nsa_user(rrc,ue_context_p,NULL);
     } 
   }
 }
@@ -310,12 +310,6 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
 						      (uint8_t *)m->rrc_buffer,
 						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
 
-/*    asn_dec_rval_t dec_rval = uper_decode( NULL,
-						      &asn_DEF_LTE_UL_DCCH_Message,
-						      (void **)&LTE_UL_DCCH_Message,
-						      (uint8_t *)m->rrc_buffer,
-						      (int) m->rrc_buffer_size, 0, 0);//m->rrc_buffer_size);
-*/
     gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
@@ -341,7 +335,7 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
     OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
 			   (const char *)m->rrc_buffer,
 			   (enc_rval.encoded+7)>>3);
-    parse_CG_ConfigInfo(rrc,CG_ConfigInfo);
+    parse_CG_ConfigInfo(rrc,CG_ConfigInfo,m);
    
 }
 
