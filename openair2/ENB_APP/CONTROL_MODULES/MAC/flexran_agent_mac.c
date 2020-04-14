@@ -1468,10 +1468,12 @@ void flexran_agent_fill_mac_ue_config(mid_t mod_id, mid_t ue_id,
   ue_conf->rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
   ue_conf->has_rnti = 1;
 
-  ue_conf->dl_slice_id = flexran_get_ue_dl_slice_id(mod_id, ue_id);
-  ue_conf->has_dl_slice_id = 1;
-  ue_conf->ul_slice_id = flexran_get_ue_ul_slice_id(mod_id, ue_id);
-  ue_conf->has_ul_slice_id = 1;
+  int dl_id = flexran_get_ue_dl_slice_id(mod_id, ue_id);
+  ue_conf->dl_slice_id = dl_id;
+  ue_conf->has_dl_slice_id = dl_id >= 0;
+  int ul_id = flexran_get_ue_ul_slice_id(mod_id, ue_id);
+  ue_conf->ul_slice_id = ul_id;
+  ue_conf->has_ul_slice_id = ul_id >= 0;
 
   ue_conf->ue_aggregated_max_bitrate_ul = flexran_get_ue_aggregated_max_bitrate_ul(mod_id, ue_id);
   ue_conf->has_ue_aggregated_max_bitrate_ul = 1;
@@ -1576,149 +1578,24 @@ void flexran_create_config_structures(mid_t mod_id)
   sc_update[mod_id] = flexran_agent_create_slice_config(n_dl, m_ul);
   if (!slice_config[mod_id] || !sc_update[mod_id]) return;
 
-  flexran_agent_read_slice_config(mod_id, slice_config[mod_id]);
-  flexran_agent_read_slice_config(mod_id, sc_update[mod_id]);
+  //flexran_agent_read_slice_config(mod_id, slice_config[mod_id]);
+  //flexran_agent_read_slice_config(mod_id, sc_update[mod_id]);
   for (i = 0; i < n_dl; i++) {
-    flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
-    flexran_agent_read_slice_dl_config(mod_id, i, sc_update[mod_id]->dl[i]);
+    //flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
+    //flexran_agent_read_slice_dl_config(mod_id, i, sc_update[mod_id]->dl[i]);
   }
   for (i = 0; i < m_ul; i++) {
-    flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
-    flexran_agent_read_slice_ul_config(mod_id, i, sc_update[mod_id]->ul[i]);
+    //flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
+    //flexran_agent_read_slice_ul_config(mod_id, i, sc_update[mod_id]->ul[i]);
   }
 }
 
 void flexran_check_and_remove_slices(mid_t mod_id)
 {
-  Protocol__FlexDlSlice **dl = sc_update[mod_id]->dl;
-  Protocol__FlexDlSlice **dlreal = slice_config[mod_id]->dl;
-  int i = 0;
-  while (i < sc_update[mod_id]->n_dl) {
-    /* remove slices whose percentage is zero */
-    if (dl[i]->percentage > 0) {
-      ++i;
-      continue;
-    }
-    if (flexran_remove_dl_slice(mod_id, i) < 1) {
-      LOG_W(FLEXRAN_AGENT, "[%d] can not remove slice index %d ID %d\n",
-            mod_id, i, dl[i]->id);
-      ++i;
-      continue;
-    }
-    LOG_I(FLEXRAN_AGENT, "[%d] removed slice index %d ID %d\n",
-          mod_id, i, dl[i]->id);
-    if (dl[i]->n_sorting > 0) free(dl[i]->sorting);
-    free(dl[i]->scheduler_name);
-    if (dlreal[i]->n_sorting > 0) {
-      dlreal[i]->n_sorting = 0;
-      free(dlreal[i]->sorting);
-    }
-    free(dlreal[i]->scheduler_name);
-    --sc_update[mod_id]->n_dl;
-    --slice_config[mod_id]->n_dl;
-    const size_t last = sc_update[mod_id]->n_dl;
-    /* we need to memcpy the higher slice to the position we just deleted */
-    memcpy(dl[i], dl[last], sizeof(*dl[last]));
-    memset(dl[last], 0, sizeof(*dl[last]));
-    memcpy(dlreal[i], dlreal[last], sizeof(*dlreal[last]));
-    memset(dlreal[last], 0, sizeof(*dlreal[last]));
-    /* dont increase i but recheck the slice which has been copied to here */
-  }
-  Protocol__FlexUlSlice **ul = sc_update[mod_id]->ul;
-  Protocol__FlexUlSlice **ulreal = slice_config[mod_id]->ul;
-  i = 0;
-  while (i < sc_update[mod_id]->n_ul) {
-    if (ul[i]->percentage > 0) {
-      ++i;
-      continue;
-    }
-    if (flexran_remove_ul_slice(mod_id, i) < 1) {
-      LOG_W(FLEXRAN_AGENT, "[%d] can not remove slice index %d ID %d\n",
-            mod_id, i, ul[i]->id);
-      ++i;
-      continue;
-    }
-    LOG_I(FLEXRAN_AGENT, "[%d] removed slice index %d ID %d\n",
-          mod_id, i, ul[i]->id);
-    free(ul[i]->scheduler_name);
-    free(ulreal[i]->scheduler_name);
-    --sc_update[mod_id]->n_ul;
-    --slice_config[mod_id]->n_ul;
-    const size_t last = sc_update[mod_id]->n_ul;
-    /* see DL remarks */
-    memcpy(ul[i], ul[last], sizeof(*ul[last]));
-    memset(ul[last], 0, sizeof(*ul[last]));
-    memcpy(ulreal[i], ulreal[last], sizeof(*ulreal[last]));
-    memset(ulreal[last], 0, sizeof(*ulreal[last]));
-    /* dont increase i but recheck the slice which has been copied to here */
-  }
 }
 
 void flexran_agent_slice_update(mid_t mod_id)
 {
-  int i;
-  int changes = 0;
-
-  if (perform_slice_config_update_count <= 0) return;
-  perform_slice_config_update_count--;
-
-  pthread_mutex_lock(&sc_update_mtx);
-
-  if (!slice_config[mod_id]) {
-    /* if the configuration does not exist for agent, create from eNB structure
-     * and exit */
-    flexran_create_config_structures(mod_id);
-    pthread_mutex_unlock(&sc_update_mtx);
-    return;
-  }
-
-  /********* read existing config *********/
-  /* simply update slice_config all the time and write new config
-   * (apply_new_slice_dl_config() only updates if changes are necessary) */
-  slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
-  slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
-  for (i = 0; i < slice_config[mod_id]->n_dl; i++) {
-    flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
-  }
-  for (i = 0; i < slice_config[mod_id]->n_ul; i++) {
-    flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
-  }
-
-  /********* write new config *********/
-  /* check for removal (sc_update[X]->dl[Y].percentage == 0)
-   * and update sc_update & slice_config accordingly */
-  flexran_check_and_remove_slices(mod_id);
-
-  /* create new DL and UL slices if necessary */
-  for (i = slice_config[mod_id]->n_dl; i < sc_update[mod_id]->n_dl; i++) {
-    flexran_create_dl_slice(mod_id, sc_update[mod_id]->dl[i]->id);
-  }
-  for (i = slice_config[mod_id]->n_ul; i < sc_update[mod_id]->n_ul; i++) {
-    flexran_create_ul_slice(mod_id, sc_update[mod_id]->ul[i]->id);
-  }
-  slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
-  slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
-  changes += apply_new_slice_config(mod_id, slice_config[mod_id], sc_update[mod_id]);
-  for (i = 0; i < slice_config[mod_id]->n_dl; i++) {
-    changes += apply_new_slice_dl_config(mod_id,
-                                         slice_config[mod_id]->dl[i],
-                                         sc_update[mod_id]->dl[i]);
-    flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
-  }
-  for (i = 0; i < slice_config[mod_id]->n_ul; i++) {
-    changes += apply_new_slice_ul_config(mod_id,
-                                         slice_config[mod_id]->ul[i],
-                                         sc_update[mod_id]->ul[i]);
-    flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
-  }
-  flexran_agent_read_slice_config(mod_id, slice_config[mod_id]);
-  if (n_ue_slice_assoc_updates > 0) {
-    changes += apply_ue_slice_assoc_update(mod_id);
-  }
-  if (changes > 0)
-    LOG_I(FLEXRAN_AGENT, "[%d] slice configuration: applied %d changes\n", mod_id, changes);
-
-  pthread_mutex_unlock(&sc_update_mtx);
 }
 
 Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id)
@@ -1727,69 +1604,10 @@ Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id)
   Protocol__FlexSliceConfig *config = NULL;
 
   pthread_mutex_lock(&sc_update_mtx);
-  config = flexran_agent_create_slice_config(slice_config[mod_id]->n_dl,
-                                             slice_config[mod_id]->n_ul);
   if (!config) {
     pthread_mutex_unlock(&sc_update_mtx);
     return NULL;
   }
-  config->has_intraslice_share_active = 1;
-  config->intraslice_share_active = slice_config[mod_id]->intraslice_share_active;
-  config->has_interslice_share_active = 1;
-  config->interslice_share_active = slice_config[mod_id]->interslice_share_active;
-  for (int i = 0; i < slice_config[mod_id]->n_dl; ++i) {
-    if (!config->dl[i]) continue;
-    config->dl[i]->has_id         = 1;
-    config->dl[i]->id             = slice_config[mod_id]->dl[i]->id;
-    config->dl[i]->has_label      = 1;
-    config->dl[i]->label          = slice_config[mod_id]->dl[i]->label;
-    config->dl[i]->has_percentage = 1;
-    config->dl[i]->percentage     = slice_config[mod_id]->dl[i]->percentage;
-    config->dl[i]->has_isolation  = 1;
-    config->dl[i]->isolation      = slice_config[mod_id]->dl[i]->isolation;
-    config->dl[i]->has_priority   = 1;
-    config->dl[i]->priority       = slice_config[mod_id]->dl[i]->priority;
-    config->dl[i]->has_position_low  = 1;
-    config->dl[i]->position_low   = slice_config[mod_id]->dl[i]->position_low;
-    config->dl[i]->has_position_high = 1;
-    config->dl[i]->position_high  = slice_config[mod_id]->dl[i]->position_high;
-    config->dl[i]->has_maxmcs     = 1;
-    config->dl[i]->maxmcs         = slice_config[mod_id]->dl[i]->maxmcs;
-    config->dl[i]->n_sorting      = slice_config[mod_id]->dl[i]->n_sorting;
-    config->dl[i]->sorting        = calloc(config->dl[i]->n_sorting, sizeof(Protocol__FlexDlSorting));
-    if (!config->dl[i]->sorting) config->dl[i]->n_sorting = 0;
-    for (int j = 0; j < config->dl[i]->n_sorting; ++j)
-      config->dl[i]->sorting[j]   = slice_config[mod_id]->dl[i]->sorting[j];
-    config->dl[i]->has_accounting = 1;
-    config->dl[i]->accounting     = slice_config[mod_id]->dl[i]->accounting;
-    config->dl[i]->scheduler_name = strdup(slice_config[mod_id]->dl[i]->scheduler_name);
-  }
-  for (int i = 0; i < slice_config[mod_id]->n_ul; ++i) {
-    if (!config->ul[i]) continue;
-    config->ul[i]->has_id         = 1;
-    config->ul[i]->id             = slice_config[mod_id]->ul[i]->id;
-    config->ul[i]->has_label      = 1;
-    config->ul[i]->label          = slice_config[mod_id]->ul[i]->label;
-    config->ul[i]->has_percentage = 1;
-    config->ul[i]->percentage     = slice_config[mod_id]->ul[i]->percentage;
-    config->ul[i]->has_isolation  = 1;
-    config->ul[i]->isolation      = slice_config[mod_id]->ul[i]->isolation;
-    config->ul[i]->has_priority   = 1;
-    config->ul[i]->priority       = slice_config[mod_id]->ul[i]->priority;
-    config->ul[i]->has_first_rb   = 1;
-    config->ul[i]->first_rb       = slice_config[mod_id]->ul[i]->first_rb;
-    config->ul[i]->has_maxmcs     = 1;
-    config->ul[i]->maxmcs         = slice_config[mod_id]->ul[i]->maxmcs;
-    config->ul[i]->n_sorting      = slice_config[mod_id]->ul[i]->n_sorting;
-    config->ul[i]->sorting        = calloc(config->ul[i]->n_sorting, sizeof(Protocol__FlexUlSorting));
-    if (!config->ul[i]->sorting) config->ul[i]->n_sorting = 0;
-    for (int j = 0; j < config->ul[i]->n_sorting; ++j)
-      config->ul[i]->sorting[j]   = slice_config[mod_id]->ul[i]->sorting[j];
-    config->ul[i]->has_accounting = 1;
-    config->ul[i]->accounting     = slice_config[mod_id]->ul[i]->accounting;
-    config->ul[i]->scheduler_name = strdup(slice_config[mod_id]->ul[i]->scheduler_name);
-  }
-
   pthread_mutex_unlock(&sc_update_mtx);
   return config;
 }
