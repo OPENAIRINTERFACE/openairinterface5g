@@ -2794,44 +2794,43 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
   LTE_SystemInformationBlockType1_t *sib1 = UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_IN );
   LOG_I( RRC, "[UE %d] : Dumping SIB 1\n", ctxt_pP->module_id );
-  LTE_PLMN_Identity_t *PLMN_identity = &sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->plmn_Identity;
-  int mccdigits = PLMN_identity->mcc->list.count;
-  int mncdigits = PLMN_identity->mnc.list.count;
-  int mcc;
+  const int n = sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count;
+  for (int i = 0; i < n; ++i) {
+    LTE_PLMN_Identity_t *PLMN_identity = &sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[i]->plmn_Identity;
+    int mccdigits = PLMN_identity->mcc->list.count;
+    int mncdigits = PLMN_identity->mnc.list.count;
 
-  if (mccdigits == 2) {
-    mcc = *PLMN_identity->mcc->list.array[0]*10 + *PLMN_identity->mcc->list.array[1];
-  } else {
-    mcc = *PLMN_identity->mcc->list.array[0]*100 + *PLMN_identity->mcc->list.array[1]*10 + *PLMN_identity->mcc->list.array[2];
+    int mcc;
+    if (mccdigits == 2) {
+      mcc = *PLMN_identity->mcc->list.array[0]*10 + *PLMN_identity->mcc->list.array[1];
+    } else {
+      mcc = *PLMN_identity->mcc->list.array[0]*100 + *PLMN_identity->mcc->list.array[1]*10 + *PLMN_identity->mcc->list.array[2];
+    }
+
+    int mnc;
+    if (mncdigits == 2) {
+      mnc = *PLMN_identity->mnc.list.array[0]*10 + *PLMN_identity->mnc.list.array[1];
+    } else {
+      mnc = *PLMN_identity->mnc.list.array[0]*100 + *PLMN_identity->mnc.list.array[1]*10 + *PLMN_identity->mnc.list.array[2];
+    }
+
+    LOG_I( RRC, "PLMN %d MCC %0*d, MNC %0*d\n", i + 1, mccdigits, mcc, mncdigits, mnc);
+    // search internal table for provider name
+    int plmn_ind = 0;
+
+    while (plmn_data[plmn_ind].mcc > 0) {
+      if ((plmn_data[plmn_ind].mcc == mcc) && (plmn_data[plmn_ind].mnc == mnc)) {
+        LOG_I( RRC, "Found %s (name from internal table)\n", plmn_data[plmn_ind].oper_short );
+        break;
+      }
+
+      plmn_ind++;
+    }
   }
-
-  int mnc;
-
-  if (mncdigits == 2) {
-    mnc = *PLMN_identity->mnc.list.array[0]*10 + *PLMN_identity->mnc.list.array[1];
-  } else {
-    mnc = *PLMN_identity->mnc.list.array[0]*100 + *PLMN_identity->mnc.list.array[1]*10 + *PLMN_identity->mnc.list.array[2];
-  }
-
-  LOG_I( RRC, "PLMN MCC %0*d, MNC %0*d, TAC 0x%04x\n", mccdigits, mcc, mncdigits, mnc,
+  LOG_I( RRC, "TAC 0x%04x\n",
          ((sib1->cellAccessRelatedInfo.trackingAreaCode.size == 2)?((sib1->cellAccessRelatedInfo.trackingAreaCode.buf[0]<<8) + sib1->cellAccessRelatedInfo.trackingAreaCode.buf[1]):0));
   LOG_I( RRC, "cellReservedForOperatorUse                 : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse,
          SIBreserved(sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0]->cellReservedForOperatorUse) );
-  // search internal table for provider name
-  int plmn_ind = 0;
-
-  while (plmn_data[plmn_ind].mcc > 0) {
-    if ((plmn_data[plmn_ind].mcc == mcc) && (plmn_data[plmn_ind].mnc == mnc)) {
-      LOG_I( RRC, "Found %s (name from internal table)\n", plmn_data[plmn_ind].oper_short );
-      break;
-    }
-
-    plmn_ind++;
-  }
-
-  if (plmn_data[plmn_ind].mcc < 0) {
-    LOG_I( RRC, "Found Unknown operator (no entry in internal table)\n" );
-  }
 
   LOG_I( RRC, "cellAccessRelatedInfo.cellIdentity         : raw:%"PRIu32" decoded:%02x.%02x.%02x.%02x\n",
          BIT_STRING_to_uint32( &sib1->cellAccessRelatedInfo.cellIdentity ),
