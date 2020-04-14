@@ -2108,6 +2108,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
   nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,&dci_pdu_rel15);
+
   return (nr_ue_process_dci(module_id, cc_id, gNB_index, &dci_pdu_rel15, dci->rnti, dci->dci_format));
 }
 

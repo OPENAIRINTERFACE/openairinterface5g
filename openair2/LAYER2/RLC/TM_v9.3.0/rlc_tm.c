@@ -151,12 +151,9 @@ struct mac_status_resp
 rlc_tm_mac_status_indication (
   const protocol_ctxt_t* const  ctxt_pP,
   void * const                  rlc_pP,
-  const tb_size_t               tb_sizeP,
   struct mac_status_ind         tx_statusP)
 {
   struct mac_status_resp status_resp;
-
-  ((rlc_tm_entity_t *) rlc_pP)->rlc_pdu_size = tb_sizeP;
 
   status_resp.buffer_occupancy_in_bytes = ((rlc_tm_entity_t *) rlc_pP)->buffer_occupancy;
   status_resp.buffer_occupancy_in_pdus = status_resp.buffer_occupancy_in_bytes / ((rlc_tm_entity_t *) rlc_pP)->rlc_pdu_size;

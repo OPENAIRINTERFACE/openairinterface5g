@@ -656,7 +656,7 @@ rrc_eNB_get_next_transaction_identifier(
 //    AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB index invalid (%d/%d)!", enb_mod_idP, NB_eNB_INST);
 //
 //    for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-//        if (RC.rrc[enb_mod_idP]->Info.UE_list[i] == UE_identity) {
+//        if (RC.rrc[enb_mod_idP]->Info.UE_info[i] == UE_identity) {
 //            // UE_identity already registered
 //            reg = TRUE;
 //            break;
@@ -1476,9 +1476,9 @@ rrc_eNB_generate_RRCConnectionReestablishment(
 
   if (UE_id != -1) {
     /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
-    RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+    RC.mac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
     /* Reject UE after 10 frames, LTE_RRCConnectionReestablishmentReject is triggered */
-    RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 100;
+    RC.mac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 100;
   } else {
     LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Generating LTE_RRCConnectionReestablishment without UE_id(MAC) rnti %x\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -2086,8 +2086,8 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
     int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
     if(UE_id != -1) {
-      RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
-      RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 20;
+      RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+      RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 20;
     } else {
       LOG_E(RRC,
             PROTOCOL_RRC_CTXT_UE_FMT" Generating LTE_RRCConnectionReestablishmentReject without UE_id(MAC) rnti %x\n",
@@ -6179,7 +6179,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
       return;
     }
 
-    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[module_id]->UE_list.UE_sched_ctrl[UE_id_mac]);
+    UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[module_id]->UE_info.UE_sched_ctrl[UE_id_mac]);
 
     if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
       UE_scheduling_control->cdrx_waiting_ack = FALSE;
@@ -6842,12 +6842,12 @@ rrc_eNB_decode_ccch(
             break;
           }
 
-          if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
-              (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)) {
+          if((RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
+              (RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)) {
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the c-rnti UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-            RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+            RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
             rrc_eNB_previous_SRB2(ue_context_p);
             ue_context_p->ue_context.ue_reestablishment_timer = 0;
           }
@@ -6873,12 +6873,12 @@ rrc_eNB_decode_ccch(
               break;
             }
 
-            if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
-                (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)) {
+            if((RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
+                (RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)) {
               LOG_E(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the Previous UE\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-              RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+              RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
               rrc_eNB_previous_SRB2(ue_context_p);
               ue_context_p->ue_context.ue_reestablishment_timer = 0;
             }
@@ -7450,12 +7450,12 @@ rrc_eNB_decode_dcch(
               AssertFatal(!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type),
                           "CU cannot decode DCCH: no access to RC.mac[]\n");
 
-              if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1) {
+              if(RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1) {
                 LOG_I(RRC,
                       PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld) C-RNTI Complete\n",
                       PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
                 dedicated_DRB = 2;
-                RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
+                RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               }
             } else if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION) {
               int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
@@ -7470,7 +7470,7 @@ rrc_eNB_decode_dcch(
               flexran_agent_handover = 1;
               RC.rrc[ctxt_pP->module_id]->Nb_ue++;
               dedicated_DRB = 3;
-              RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
+              RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               ue_context_p->ue_context.Status = RRC_RECONFIGURED;
 
               if(ue_context_p->ue_context.handover_info) {
@@ -7683,7 +7683,7 @@ rrc_eNB_decode_dcch(
             break;
           }
 
-          RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+          RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
           ue_context_p->ue_context.reestablishment_xid = -1;
 
           if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.present ==

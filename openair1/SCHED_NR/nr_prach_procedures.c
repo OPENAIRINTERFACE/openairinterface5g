@@ -77,7 +77,6 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
     }
   }
 
-
   rx_nr_prach(gNB,
 	      prach_pdu,
 	      frame,
@@ -136,3 +135,4 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
 }
+

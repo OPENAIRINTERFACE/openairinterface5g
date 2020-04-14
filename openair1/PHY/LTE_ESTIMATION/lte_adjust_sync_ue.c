@@ -23,7 +23,6 @@
 #include "PHY/defs_UE.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/impl_defs_top.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
