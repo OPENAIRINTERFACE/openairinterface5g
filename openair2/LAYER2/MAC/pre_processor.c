@@ -592,7 +592,6 @@ int round_robin_ul(module_id_t Mod_id,
       continue;
     }
 
-
     int mcs;
     int rb_table_index;
     int tx_power;
@@ -619,7 +618,6 @@ int round_robin_ul(module_id_t Mod_id,
             subframe,
             UE_id,
             CC_id,
-
             UE_template->pre_assigned_mcs_ul,
             UE_template->pre_allocated_rb_table_index_ul,
             UE_template->pre_allocated_nb_rb_ul,
@@ -866,11 +864,316 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
       t[UE_template->pre_first_nb_rb_ul + i] = UE_id + '0';
     }
   }
-  if (print)
-    LOG_D(MAC,
-          "%4d.%d UL scheduler allocation list: %s\n",
-          sched_frameP,
-          sched_subframeP,
-          t);
-#endif
+
+  // step 3: assigne RBS
+  for (UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
+    // if (continueTable[UE_id]) continue;
+    for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
+      // This is the actual CC_id in the list
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      UE_template = &UE_list->UE_template[CC_id][UE_id];
+      harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],
+                                  sched_frameP, sched_subframeP);
+
+      //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
+
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0) {
+        nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
+      } else {
+        nb_allocated_rbs[CC_id][UE_id] =
+          cmin(UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[slice_idx], average_rbs_per_user[CC_id]);
+      }
+
+      total_allocated_rbs[CC_id] += nb_allocated_rbs[CC_id][UE_id];
+      LOG_D(MAC, "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d, nb_rb_ul %d, %d ,%d, slice %d, round ul %d\n",
+            nb_allocated_rbs[CC_id][UE_id],
+            UE_id,
+            rntiTable[UE_id],
+            CC_id,
+            harq_pid,
+	    UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid],
+	    UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[slice_idx],
+	    average_rbs_per_user[CC_id],
+	    slice_idx,
+	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid]);
+    }
+  }
+
+  // step 4: assigne the remaining RBs and set the pre_allocated rbs accordingly
+  for (UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
+    // if (continueTable[UE_id]) continue;
+    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+    for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
+      // This is the actual CC_id in the list
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      UE_template = &UE_list->UE_template[CC_id][UE_id];
+      N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
+      first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
+      available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx], N_RB_UL - first_rb[CC_id] - first_rb_offset);
+      total_remaining_rbs[CC_id] = available_rbs - total_allocated_rbs[CC_id];
+
+      if (total_ue_count[CC_id] == 1) {
+        total_remaining_rbs[CC_id]++;
+      }
+
+      while (UE_template->pre_allocated_nb_rb_ul[slice_idx] > 0 &&
+             nb_allocated_rbs[CC_id][UE_id] < UE_template->pre_allocated_nb_rb_ul[slice_idx] &&
+             total_remaining_rbs[CC_id] > 0) {
+        nb_allocated_rbs[CC_id][UE_id] = cmin(nb_allocated_rbs[CC_id][UE_id] + 1, UE_template->pre_allocated_nb_rb_ul[slice_idx]);
+        total_remaining_rbs[CC_id]--;
+        total_allocated_rbs[CC_id]++;
+      }
+
+      UE_template->pre_allocated_nb_rb_ul[slice_idx] = nb_allocated_rbs[CC_id][UE_id];
+      LOG_D(MAC, "******************UL Scheduling Information for UE%d CC_id %d ************************\n",
+            UE_id,
+            CC_id);
+      LOG_D(MAC, "[eNB %d] total RB allocated for UE%d CC_id %d  = %d\n",
+            module_idP,
+            UE_id,
+            CC_id,
+            UE_template->pre_allocated_nb_rb_ul[slice_idx]);
+    }
+  }
+
+  return;
+}
+
+void
+assign_max_mcs_min_rb(module_id_t module_idP,
+                      int slice_idx,
+                      int frameP,
+                      sub_frame_t subframeP,
+                      uint16_t *first_rb) {
+  int i;
+  uint16_t n, UE_id;
+  uint8_t CC_id;
+  int mcs;
+  int rb_table_index = 0, tbs, tx_power;
+  eNB_MAC_INST *eNB = RC.mac[module_idP];
+  UE_list_t *UE_list = &eNB->UE_list;
+  slice_info_t *sli = &eNB->slice_info;
+  UE_TEMPLATE *UE_template;
+  UE_sched_ctrl_t *ue_sched_ctl;
+  int Ncp;
+  int N_RB_UL;
+  int first_rb_offset, available_rbs;
+
+  for (i = UE_list->head_ul; i >= 0; i = UE_list->next_ul[i]) {
+    if (UE_list->UE_sched_ctrl[i].phr_received == 1) {
+      /* if we've received the power headroom information the UE, we can go to
+       * maximum mcs */
+      mcs = cmin(20, sli->ul[slice_idx].maxmcs);
+    } else {
+      /* otherwise, limit to QPSK PUSCH */
+      mcs = cmin(10, sli->ul[slice_idx].maxmcs);
+    }
+
+    UE_id = i;
+
+    for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
+      // This is the actual CC_id in the list
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      AssertFatal(CC_id < RC.nb_mac_CC[module_idP], "CC_id %u should be < %u, loop n=%u < numactiveULCCs[%u]=%u",
+                  CC_id,
+                  NFAPI_CC_MAX,
+                  n,
+                  UE_id,
+                  UE_list->numactiveULCCs[UE_id]);
+      UE_template = &UE_list->UE_template[CC_id][UE_id];
+      UE_template->pre_assigned_mcs_ul = mcs;
+      ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+      Ncp = eNB->common_channels[CC_id].Ncp;
+      N_RB_UL = to_prb(eNB->common_channels[CC_id].ul_Bandwidth);
+      ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx] = nb_rbs_allowed_slice(sli->ul[slice_idx].pct, N_RB_UL);
+      int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
+
+      if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+
+      int bits_to_schedule = bytes_to_schedule * 8;
+
+      // if this UE has UL traffic
+      if (bits_to_schedule > 0) {
+        tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, 3) << 3; // 1 or 2 PRB with cqi enabled does not work well!
+        rb_table_index = 2;
+        // fixme: set use_srs flag
+        tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);
+
+        while ((UE_template->phr_info - tx_power < 0 || tbs > bits_to_schedule) && UE_template->pre_assigned_mcs_ul > 3) {
+          // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
+          UE_template->pre_assigned_mcs_ul--;
+          tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, rb_table[rb_table_index]) << 3;
+          tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);   // fixme: set use_srs
+        }
+
+        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
+        available_rbs =
+          cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx], N_RB_UL - first_rb[CC_id] - first_rb_offset);
+
+        while (tbs < bits_to_schedule &&
+               rb_table[rb_table_index] < available_rbs &&
+               UE_template->phr_info - tx_power > 0 &&
+               rb_table_index < 32) {
+          rb_table_index++;
+          tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, rb_table[rb_table_index]) << 3;
+          tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);
+        }
+
+        if (rb_table[rb_table_index] > (available_rbs - 1)) {
+          rb_table_index--;
+        }
+
+        // 1 or 2 PRB with cqi enabled does not work well
+        if (rb_table[rb_table_index] < 3) {
+          rb_table_index = 2; //3PRB
+        }
+
+        UE_template->pre_allocated_rb_table_index_ul = rb_table_index;
+        UE_template->pre_allocated_nb_rb_ul[slice_idx] = rb_table[rb_table_index];
+        LOG_D(MAC, "[eNB %d] frame %d subframe %d: for UE %d CC %d: pre-assigned mcs %d, pre-allocated rb_table[%d]=%d RBs (phr %d, tx power %d)\n",
+              module_idP,
+              frameP,
+              subframeP,
+              UE_id,
+              CC_id,
+              UE_template->pre_assigned_mcs_ul,
+              UE_template->pre_allocated_rb_table_index_ul,
+              UE_template->pre_allocated_nb_rb_ul[slice_idx],
+              UE_template->phr_info, tx_power);
+      } else {
+        /* if UE has pending scheduling request then pre-allocate 3 RBs */
+        //if (UE_template->ul_active == 1 && UE_template->ul_SR == 1) {
+        if (UE_is_to_be_scheduled(module_idP, CC_id, i)) {
+          /* use QPSK mcs */
+          UE_template->pre_assigned_mcs_ul = 10;
+          UE_template->pre_allocated_rb_table_index_ul = 2;
+          UE_template->pre_allocated_nb_rb_ul[slice_idx] = 3;
+        } else {
+          UE_template->pre_assigned_mcs_ul = 0;
+          UE_template->pre_allocated_rb_table_index_ul = -1;
+          UE_template->pre_allocated_nb_rb_ul[slice_idx] = 0;
+        }
+      }
+    }
+  }
+}
+
+struct sort_ue_ul_params {
+  int module_idP;
+  int sched_frameP;
+  int sched_subframeP;
+};
+
+static int ue_ul_compare(const void *_a, const void *_b, void *_params) {
+  struct sort_ue_ul_params *params = _params;
+  UE_list_t *UE_list = &RC.mac[params->module_idP]->UE_list;
+  int UE_id1 = *(const int *) _a;
+  int UE_id2 = *(const int *) _b;
+  int rnti1 = UE_RNTI(params->module_idP, UE_id1);
+  int pCCid1 = UE_PCCID(params->module_idP, UE_id1);
+  int round1 = maxround_ul(params->module_idP, rnti1, params->sched_frameP,
+                           params->sched_subframeP);
+  int rnti2 = UE_RNTI(params->module_idP, UE_id2);
+  int pCCid2 = UE_PCCID(params->module_idP, UE_id2);
+  int round2 = maxround_ul(params->module_idP, rnti2, params->sched_frameP,
+                           params->sched_subframeP);
+
+  if (round1 > round2)
+    return -1;
+
+  if (round1 < round2)
+    return 1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] >
+      UE_list->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
+    return -1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].ul_buffer_info[LCGID0] <
+      UE_list->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
+    return 1;
+
+  int bytes_to_schedule1 = UE_list->UE_template[pCCid1][UE_id1].estimated_ul_buffer - UE_list->UE_template[pCCid1][UE_id1].scheduled_ul_bytes;
+
+  if (bytes_to_schedule1 < 0) bytes_to_schedule1 = 0;
+
+  int bytes_to_schedule2 = UE_list->UE_template[pCCid2][UE_id2].estimated_ul_buffer - UE_list->UE_template[pCCid2][UE_id2].scheduled_ul_bytes;
+
+  if (bytes_to_schedule2 < 0) bytes_to_schedule2 = 0;
+
+  if (bytes_to_schedule1 > bytes_to_schedule2)
+    return -1;
+
+  if (bytes_to_schedule1 < bytes_to_schedule2)
+    return 1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul >
+      UE_list->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
+    return -1;
+
+  if (UE_list->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul <
+      UE_list->UE_template[pCCid2][UE_id2].pre_assigned_mcs_ul)
+    return 1;
+
+  if (UE_list->UE_sched_ctrl[UE_id1].cqi_req_timer >
+      UE_list->UE_sched_ctrl[UE_id2].cqi_req_timer)
+    return -1;
+
+  if (UE_list->UE_sched_ctrl[UE_id1].cqi_req_timer <
+      UE_list->UE_sched_ctrl[UE_id2].cqi_req_timer)
+    return 1;
+
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+/*
+ * This function sorts the UEs in order, depending on their ulsch buffer and CQI
+ */
+void sort_ue_ul(module_id_t module_idP,
+                int slice_idx,
+                int sched_frameP,
+                sub_frame_t sched_subframeP,
+                rnti_t *rntiTable)
+//-----------------------------------------------------------------------------
+{
+  int list[MAX_MOBILES_PER_ENB];
+  int list_size = 0;
+  struct sort_ue_ul_params params = { module_idP, sched_frameP, sched_subframeP };
+  UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
+  UE_sched_ctrl_t *UE_scheduling_control = NULL;
+
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    UE_scheduling_control = &(UE_list->UE_sched_ctrl[i]);
+
+    /* Check CDRX configuration and if UE is in active time for this subframe */
+    if (UE_scheduling_control->cdrx_configured == TRUE) {
+      if (UE_scheduling_control->in_active_time == FALSE) {
+        continue;
+      }
+    }
+
+    rntiTable[i] = UE_RNTI(module_idP, i);
+
+    // Valid element and is not the actual CC_id in the list
+    if (UE_list->active[i] == TRUE &&
+        rntiTable[i] != NOT_A_RNTI &&
+        UE_list->UE_sched_ctrl[i].ul_out_of_sync != 1 &&
+        ue_ul_slice_membership(module_idP, i, slice_idx)) {
+      list[list_size++] = i; // Add to list
+    }
+  }
+
+  qsort_r(list, list_size, sizeof(int), ue_ul_compare, &params);
+
+  if (list_size) { // At mimimum one list element
+    for (int i = 0; i < list_size - 1; i++) {
+      UE_list->next_ul[list[i]] = list[i + 1];
+    }
+
+    UE_list->next_ul[list[list_size - 1]] = -1;
+    UE_list->head_ul = list[0];
+  } else { // No element
+    UE_list->head_ul = -1;
+  }
 }
