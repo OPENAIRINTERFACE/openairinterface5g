@@ -821,6 +821,7 @@ add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGE
 # PDCP LAYER OPTIONS
 ##########################
 #add_boolean_option(PDCP_USE_NETLINK            False "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
+#add_boolean_option(PDCP_USE_NETLINK_QUEUES     False "When PDCP_USE_NETLINK is true, incoming IP packets are stored in queues")
 #add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
 #add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
 
@@ -2664,6 +2665,7 @@ target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (nr-softmodem pthread m ${CONFIG_LIB} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
+
 add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 
 add_executable(ocp-gnb

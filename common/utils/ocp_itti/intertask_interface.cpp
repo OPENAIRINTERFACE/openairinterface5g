@@ -7,6 +7,7 @@
 #include <sys/eventfd.h>
 
 
+extern "C" {
 #include <intertask_interface.h>
 #include <common/utils/system.h>
 
@@ -35,7 +36,6 @@ typedef struct task_list_s {
 int timer_expired(int fd);
 task_list_t tasks[TASK_MAX];
 
-extern "C" {
   void *pool_buffer_init (void) {
     return 0;
   }
