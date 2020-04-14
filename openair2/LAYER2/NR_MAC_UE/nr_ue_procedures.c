@@ -143,6 +143,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.transform_precoding = 0;
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 0;
     ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.dmrs_ports = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.dmrs_config_type = 0;
     //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.n_front_load_symb = 0; //FIXME
     //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.srs_config = 0; //FIXME
     //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.csi_reportTriggerSize = 0; //FIXME

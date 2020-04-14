@@ -133,9 +133,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
     harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
 
-    start_symbol = harq_process_ul_ue->pusch_pdu.start_symbol_index;
-    ul_dmrs_symb_pos = harq_process_ul_ue->pusch_pdu.ul_dmrs_symb_pos;
+    start_symbol      = harq_process_ul_ue->pusch_pdu.start_symbol_index;
+    ul_dmrs_symb_pos  = harq_process_ul_ue->pusch_pdu.ul_dmrs_symb_pos;
     number_of_symbols = harq_process_ul_ue->pusch_pdu.nr_of_symbols;
+    dmrs_type         = harq_process_ul_ue->pusch_pdu.dmrs_config_type;
 
     for (i = start_symbol; i < start_symbol + number_of_symbols; i++) {
 
@@ -146,7 +147,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    nb_dmrs_re_per_rb  = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4);
+    nb_dmrs_re_per_rb     = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
 
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
 
@@ -271,7 +272,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   n_dmrs = (nb_rb*nb_dmrs_re_per_rb*number_dmrs_symbols);
   int16_t mod_dmrs[n_dmrs<<1];
-  dmrs_type = UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type;
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -409,7 +409,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                    ulsch_ue->ptrs_symbols,
                                    start_sc,
                                    frame_parms->ofdm_symbol_size,
-                                   UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
+                                   dmrs_type,
                                    ptrs_Uplink_Config->resourceElementOffset);
         }
 

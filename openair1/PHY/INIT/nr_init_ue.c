@@ -657,7 +657,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
-  dmrs_UplinkConfig_t *dmrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig;
+  // dmrs_UplinkConfig_t *dmrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig;
   ptrs_UplinkConfig_t *ptrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
@@ -710,9 +710,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   }
 
   //------------- config DMRS parameters--------------//
-  dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
-  dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
+  // dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
+  // dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  // dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
   ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
   ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;

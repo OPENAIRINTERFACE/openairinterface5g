@@ -357,8 +357,9 @@ static void UE_synch(void *arg) {
 }
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+
   uint32_t rb_size, rb_start;
-  uint8_t nr_of_symbols, start_symbol_index, mcs_index, mcs_table, nrOfLayers, harq_process_id, rv_index;
+  uint8_t nr_of_symbols, start_symbol_index, mcs_index, mcs_table, nrOfLayers, harq_process_id, rv_index, dmrs_config_type;
   uint16_t rnti, l_prime_mask;
 
   nr_dcireq_t dcireq;
@@ -392,6 +393,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     harq_process_id = 0;
     rv_index = 0;
     l_prime_mask = get_l_prime(nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+    dmrs_config_type = 0;
     //------------------------------------------------------------------------------//
 
     scheduled_response.ul_config->slot = 8;
@@ -403,6 +405,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;

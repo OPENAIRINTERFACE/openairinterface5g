@@ -499,21 +499,18 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = 0;
   unsigned int available_bits;
   uint8_t nb_re_dmrs;
-  uint8_t length_dmrs = UE->pusch_config.dmrs_UplinkConfig.pusch_maxLength;
   unsigned char mod_order;
   uint16_t code_rate;
 
-  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type, pusch_dmrs_pos0, length_dmrs);
+  uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
+  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
 
   for (i = 0; i < nb_symb_sch; i++) {
     number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
   }
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
-  nb_re_dmrs     = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
 
   printf("\n");
 
@@ -570,7 +567,6 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.rv_index = 0;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
-      pusch_pdu->pusch_data.tb_size = TBS>>3;
       pusch_pdu->pusch_data.num_cb = 0;
 
 
@@ -593,16 +589,22 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
       ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
       ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
+      ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
-      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
+      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
+      available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
+
+      pusch_pdu->pusch_data.tb_size = TBS>>3;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
       // set FAPI parameters for UE, put them in the scheduled response and call
       nr_ue_scheduled_response(&scheduled_response);
 
