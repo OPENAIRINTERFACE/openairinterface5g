@@ -128,8 +128,13 @@ static int decode_SIB1_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t
  *  \param ctxt_pP Running context
  *  \param eNB_index Index of corresponding eNB/CH
  *  \param Transaction_id Transaction identifier
+ *  \param sel_plmn_id selected PLMN Identity
  */
-static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id );
+static void rrc_ue_generate_RRCConnectionSetupComplete(
+    const protocol_ctxt_t *const ctxt_pP,
+    const uint8_t eNB_index,
+    const uint8_t Transaction_id,
+    uint8_t sel_plmn_id);
 
 /** \brief Generates/Encodes RRCConnectionReconfigurationComplete message at UE
  *  \param ctxt_pP Running context
@@ -367,6 +372,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
   rrc_set_state (ue_mod_idP, RRC_STATE_INACTIVE);
   rrc_set_sub_state (ue_mod_idP, RRC_SUB_STATE_INACTIVE);
   LOG_I(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",ctxt.module_id,eNB_index);
+  UE_rrc_inst[ctxt.module_id].selected_plmn_identity = 1;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].State=RRC_IDLE;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].T300_active = 0;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].T304_active = 0;
@@ -490,7 +496,11 @@ rrc_t310_expiration(
 }
 
 //-----------------------------------------------------------------------------
-static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id ) {
+static void rrc_ue_generate_RRCConnectionSetupComplete(
+    const protocol_ctxt_t *const ctxt_pP,
+    const uint8_t eNB_index,
+    const uint8_t Transaction_id,
+    uint8_t sel_plmn_id) {
   uint8_t    buffer[100];
   uint8_t    size;
   const char *nas_msg;
@@ -504,7 +514,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t *c
     nas_msg_length  = sizeof(nas_attach_req_imsi);
   }
 
-  size = do_RRCConnectionSetupComplete(ctxt_pP->module_id, buffer, Transaction_id, nas_msg_length, nas_msg);
+  size = do_RRCConnectionSetupComplete(ctxt_pP->module_id, buffer, Transaction_id, sel_plmn_id, nas_msg_length, nas_msg);
   LOG_I(RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, eNB %d)\n",
         ctxt_pP->module_id,ctxt_pP->frame, size, eNB_index);
   LOG_D(RLC,
@@ -624,7 +634,8 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *co
           rrc_ue_generate_RRCConnectionSetupComplete(
             ctxt_pP,
             eNB_index,
-            dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup.rrc_TransactionIdentifier);
+            dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup.rrc_TransactionIdentifier,
+            UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
           rval = 0;
           break;
 
@@ -2969,6 +2980,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
           NAS_CELL_SELECTION_CNF (msg_p).rsrp = rsrp;
           itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
           cell_valid = 1;
+          UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity = plmn + 1;
           break;
         }
       }
@@ -2979,7 +2991,11 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
       MessageDef  *msg_p;
       msg_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_NEXT_CELL_REQ);
       itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
-      LOG_E(RRC, "Synched with a cell, but PLMN doesn't match our SIM, the message PHY_FIND_NEXT_CELL_REQ is sent but lost in current UE implementation! \n");
+      LOG_E(RRC,
+            "Synched with a cell, but PLMN doesn't match our SIM "
+            "(selected_plmn_identity %d), the message PHY_FIND_NEXT_CELL_REQ "
+            "is sent but lost in current UE implementation!\n",
+            UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
     }
   }
 
