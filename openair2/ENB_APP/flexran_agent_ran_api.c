@@ -3018,25 +3018,19 @@ int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id) {
   return 0;
 }
 
-void flexran_set_ue_dl_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return;
-}
-
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
   if (!mac_is_present(mod_id)) return -1;
   return 0;
 }
 
-void flexran_set_ue_ul_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_dl_slice_exists(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return 0;
-}
-
+/* TODO */
 int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return -1;
+  return -1;
+}
+
+/* TODO */
+int flexran_remove_dl_slice(mid_t mod_id, int slice_idx) {
   if (!mac_is_present(mod_id)) return -1;
   return -1;
 }
@@ -3046,114 +3040,22 @@ int flexran_find_dl_slice(mid_t mod_id, slice_id_t slice_id) {
   return -1;
 }
 
-int flexran_remove_dl_slice(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
+//int flexran_get_dl_slice(mid_t mod_id, int slice_idx, Protocol__FlexSlice *s) {
+//}
 
 int flexran_get_num_dl_slices(mid_t mod_id) {
   if (!mac_is_present(mod_id)) return -1;
   return 0;
 }
 
-int flexran_get_intraslice_sharing_active(mid_t mod_id) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_intraslice_sharing_active(mid_t mod_id, int intraslice_active) {
+/* TODO */
+void flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id) {
   if (!mac_is_present(mod_id)) return;
+  return;
 }
 
-int flexran_get_interslice_sharing_active(mid_t mod_id) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_interslice_sharing_active(mid_t mod_id, int interslice_active) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-slice_id_t flexran_get_dl_slice_id(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_id(mid_t mod_id, int slice_idx, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_percentage(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_percentage(mid_t mod_id, int slice_idx, int percentage) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_isolation(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_isolation(mid_t mod_id, int slice_idx, int is_isolated) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_priority(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_priority(mid_t mod_id, int slice_idx, int priority) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_position_low(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_position_low(mid_t mod_id, int slice_idx, int poslow) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_position_high(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_position_high(mid_t mod_id, int slice_idx, int poshigh) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_maxmcs(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_dl_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexDlSorting **sorting_list) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_dl_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexDlSorting *sorting_list, int n) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-Protocol__FlexDlAccountingPolicy flexran_get_dl_slice_accounting_policy(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return PROTOCOL__FLEX_DL_ACCOUNTING_POLICY__POL_FAIR;
-  return PROTOCOL__FLEX_DL_ACCOUNTING_POLICY__POL_FAIR;
-}
-void flexran_set_dl_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__FlexDlAccountingPolicy accounting) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-char *flexran_get_dl_slice_scheduler(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return NULL;
-  return NULL;
-}
-int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name) {
-  if (!mac_is_present(mod_id)) return 0;
-  return 0;
-}
-
-int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id) {
+/* TODO */
+int flexran_remove_ul_slice(mid_t mod_id, int slice_idx) {
   if (!mac_is_present(mod_id)) return -1;
   return -1;
 }
@@ -3163,62 +3065,14 @@ int flexran_find_ul_slice(mid_t mod_id, slice_id_t slice_id) {
   return -1;
 }
 
-int flexran_remove_ul_slice(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
+//int flexran_get_ul_slice(mid_t mod_id, int slice_idx, Protocol__FlexSlice *s) {
+//}
 
 int flexran_get_num_ul_slices(mid_t mod_id) {
   if (!mac_is_present(mod_id)) return -1;
   return 0;
 }
 
-int flexran_ul_slice_exists(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return 0;
-}
-
-slice_id_t flexran_get_ul_slice_id(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_ul_slice_id(mid_t mod_id, int slice_idx, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_ul_slice_percentage(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_ul_slice_percentage(mid_t mod_id, int slice_idx, int percentage) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_ul_slice_first_rb(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-
-void flexran_set_ul_slice_first_rb(mid_t mod_id, int slice_idx, int first_rb) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-int flexran_get_ul_slice_maxmcs(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return -1;
-  return -1;
-}
-void flexran_set_ul_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs) {
-  if (!mac_is_present(mod_id)) return;
-}
-
-char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx) {
-  if (!mac_is_present(mod_id)) return NULL;
-  return "";
-}
-int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name) {
-  if (!mac_is_present(mod_id)) return 0;
-  return 0;
-}
 
 /************************** S1AP **************************/
 int flexran_get_s1ap_mme_pending(mid_t mod_id){

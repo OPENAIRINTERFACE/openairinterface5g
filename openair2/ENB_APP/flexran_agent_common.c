@@ -316,25 +316,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
     }
 
     if (reply->cell_config[i]->slice_config) {
-      for (int j = 0; j < reply->cell_config[i]->slice_config->n_dl; ++j) {
-        if (reply->cell_config[i]->slice_config->dl[j]->n_sorting > 0)
-          free(reply->cell_config[i]->slice_config->dl[j]->sorting);
-
-        free(reply->cell_config[i]->slice_config->dl[j]->scheduler_name);
-        free(reply->cell_config[i]->slice_config->dl[j]);
-      }
-
-      free(reply->cell_config[i]->slice_config->dl);
-
-      for (int j = 0; j < reply->cell_config[i]->slice_config->n_ul; ++j) {
-        if (reply->cell_config[i]->slice_config->ul[j]->n_sorting > 0)
-          free(reply->cell_config[i]->slice_config->ul[j]->sorting);
-
-        free(reply->cell_config[i]->slice_config->ul[j]->scheduler_name);
-        free(reply->cell_config[i]->slice_config->ul[j]);
-      }
-
-      free(reply->cell_config[i]->slice_config->ul);
+      /* TODO */
       free(reply->cell_config[i]->slice_config);
     }
 
