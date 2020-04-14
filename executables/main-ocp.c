@@ -781,7 +781,7 @@ int init_rf(RU_t *ru) {
   return ret;
 }
 
-void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t time_source,int send_dmrssync) {
+void init_RU(char *rf_config_file, int send_dmrssync) {
   RU_t *ru;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
@@ -815,10 +815,6 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
 
     ru->cmd      = EMPTY;
     ru->south_out_cnt= 0;
-    // use eNB_list[0] as a reference for RU frame parameters
-    // NOTE: multiple CC_id are not handled here yet!
-    ru->openair0_cfg.clock_source  = clock_source;
-    ru->openair0_cfg.time_source = time_source;
 
     //    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
     if (ru->generate_dmrs_sync == 1) {
@@ -1109,7 +1105,7 @@ int restart_L1L2(module_id_t enb_id) {
   memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
-  init_UE_list(&RC.mac[enb_id]->UE_list);
+  init_UE_info(&RC.mac[enb_id]->UE_info);
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
   // No more rrc thread, as many race conditions are hidden behind
   rrc_enb_init();
@@ -1280,8 +1276,6 @@ int main ( int argc, char **argv ) {
   if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
     printf("Initializing RU threads\n");
     init_RU(get_softmodem_params()->rf_config_file,
-            get_softmodem_params()->clock_source,
-            get_softmodem_params()->timing_source,
             get_softmodem_params()->send_dmrs_sync);
 
     for (int ru_id=0; ru_id<RC.nb_RU; ru_id++) {

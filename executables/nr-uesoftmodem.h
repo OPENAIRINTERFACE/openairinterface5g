@@ -59,7 +59,6 @@
 /*   optname                helpstr                 paramflags      XXXptr                                 defXXXval              type         numelt */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_UE {  \
-  {"clock-source",          CONFIG_HLP_EXCCLK,      0,              iptr:&clock_source,                    defintval:0,           TYPE_INT,    0}, \
   {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,              defintval:1,           TYPE_INT,    0}, \
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
   {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \

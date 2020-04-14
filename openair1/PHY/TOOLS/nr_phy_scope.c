@@ -182,7 +182,7 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
   int Qm = 2;
 
   /*
-  if (!RC.nrmac[0]->UE_list.active[UE_id])
+  if (!RC.nrmac[0]->UE_info.active[UE_id])
     return;
   
   // choose max MCS to compute coded_bits_per_codeword

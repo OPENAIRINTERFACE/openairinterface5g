@@ -657,6 +657,10 @@ uci_procedures(PHY_VARS_eNB *eNB,
     uci = &(eNB->uci_vars[i]);
 
     if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
+      if (uci->ue_id > MAX_MOBILES_PER_ENB) {
+        LOG_W(PHY, "UCI for UE %d and/or but is not active in MAC\n", uci->ue_id);
+        continue;
+      }
       LOG_D(PHY,"Frame %d, subframe %d: Running uci procedures (type %d) for %d \n",
             frame,
             subframe,
@@ -1196,11 +1200,11 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
       if (RC.mac != NULL) { /* ulsim does not use RC.mac context. */
 	if (ulsch_harq->cqi_crc_status == 1) {
 	  fill_ulsch_cqi_indication(eNB,rdata->frame,rdata->subframe,ulsch_harq,ulsch->rnti);
-	  RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << rdata->subframe));
+	  RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << rdata->subframe));
 	} else {
-	  if(RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag & (1 << rdata->subframe) ) {
-	    RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << rdata->subframe));
-	    RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_timer=30;
+	  if(RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_flag & (1 << rdata->subframe) ) {
+	    RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << rdata->subframe));
+	    RC.mac[eNB->Mod_id]->UE_info.UE_sched_ctrl[i].cqi_req_timer=30;
 	    LOG_D(PHY,"Frame %d,Subframe %d, We're supposed to get a cqi here. Set cqi_req_timer to 30.\n",rdata->frame,rdata->subframe);
 	  }
 	}

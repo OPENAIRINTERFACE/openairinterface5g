@@ -391,7 +391,7 @@ void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t r
 * \param [in]     eNB_flagP        Flag to indicate eNB (1) or UE (0)
 * \param [in]     MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param [in]     rb_idP           Radio bearer identifier.
-* \param [in]     tb_sizeP         Available Tx TBS in bytes. For UE only.
+* \param [in]     tb_sizeP         Requested Tx TBS in bytes.
 * \param [in,out] bufferP          Memory area to fill with the bytes requested by MAC.
 * \return     A status about the processing, OK or error code.
 */
@@ -416,7 +416,7 @@ tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, con
 void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, const eNB_index_t,const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, char *, tb_size_t, num_tb_t,
     crc_t * );
 
-/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const sub_frame_t subframeP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, tb_size_t tb_sizeP)
+/*! \fn mac_rlc_status_resp_t mac_rlc_status_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const sub_frame_t subframeP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP)
 * \brief    Interface with MAC layer, request and set the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
 * \param[in]  mod_idP          Virtualized module identifier.
 * \param[in]  rntiP            UE identifier.
@@ -425,10 +425,9 @@ void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, con
 * \param[in]  eNB_flagP         Flag to indicate eNB operation (1 true, 0 false)
 * \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
 * \param[in]  rb_idP           Radio bearer identifier.
-* \param[in]  tb_sizeP         Size of a transport block set in bytes.
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
-mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t
+mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t
     ,const uint32_t sourceL2Id
     ,const uint32_t destinationL2Id
                                            );

@@ -72,9 +72,7 @@
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
 
-#include "LAYER2/MAC/mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
@@ -2298,6 +2296,24 @@ void RCconfig_RU(void)
         RC.ru[j]->openair0_cfg.clock_source = unset;
       }
 
+      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_TME_SRC)) {
+        if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "internal") == 0) {
+          RC.ru[j]->openair0_cfg.time_source = internal;
+          LOG_D(PHY, "RU time source set as internal\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "external") == 0) {
+          RC.ru[j]->openair0_cfg.time_source = external;
+          LOG_D(PHY, "RU time source set as external\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "gpsdo") == 0) {
+          RC.ru[j]->openair0_cfg.time_source = gpsdo;
+          LOG_D(PHY, "RU time source set as gpsdo\n");
+        } else {
+          LOG_E(PHY, "Erroneous RU time source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
+        }
+      }
+      else {
+	RC.ru[j]->openair0_cfg.time_source = unset;
+      }
+      
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
           RC.ru[j]->if_south                        = LOCAL_RF;

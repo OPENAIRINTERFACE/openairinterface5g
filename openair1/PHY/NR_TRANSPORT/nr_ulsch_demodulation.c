@@ -44,7 +44,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 
   switch (Msc_PUSCH) {
     case 12:
-      dft12((int16_t *)idft_in0, (int16_t *)idft_out0);
+      dft(DFT_12,(int16_t *)idft_in0, (int16_t *)idft_out0,0);
 
 #if defined(__x86_64__)||defined(__i386__)
       norm128 = _mm_set1_epi16(9459);
@@ -63,135 +63,135 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
       break;
 
     case 24:
-      dft24(idft_in0, idft_out0, 1);
+      dft(DFT_24,idft_in0, idft_out0, 1);
       break;
 
     case 36:
-      dft36(idft_in0, idft_out0, 1);
+      dft(DFT_36,idft_in0, idft_out0, 1);
       break;
 
     case 48:
-      dft48(idft_in0, idft_out0, 1);
+      dft(DFT_48,idft_in0, idft_out0, 1);
       break;
 
     case 60:
-      dft60(idft_in0, idft_out0, 1);
+      dft(DFT_60,idft_in0, idft_out0, 1);
       break;
 
     case 72:
-      dft72(idft_in0, idft_out0, 1);
+      dft(DFT_72,idft_in0, idft_out0, 1);
       break;
 
     case 96:
-      dft96(idft_in0, idft_out0, 1);
+      dft(DFT_96,idft_in0, idft_out0, 1);
       break;
 
     case 108:
-      dft108(idft_in0, idft_out0, 1);
+      dft(DFT_108,idft_in0, idft_out0, 1);
       break;
 
     case 120:
-      dft120(idft_in0, idft_out0, 1);
+      dft(DFT_120,idft_in0, idft_out0, 1);
       break;
 
     case 144:
-      dft144(idft_in0, idft_out0, 1);
+      dft(DFT_144,idft_in0, idft_out0, 1);
       break;
 
     case 180:
-      dft180(idft_in0, idft_out0, 1);
+      dft(DFT_180,idft_in0, idft_out0, 1);
       break;
 
     case 192:
-      dft192(idft_in0, idft_out0, 1);
+      dft(DFT_192,idft_in0, idft_out0, 1);
       break;
 
     case 216:
-      dft216(idft_in0, idft_out0, 1);
+      dft(DFT_216,idft_in0, idft_out0, 1);
       break;
 
     case 240:
-      dft240(idft_in0, idft_out0, 1);
+      dft(DFT_240,idft_in0, idft_out0, 1);
       break;
 
     case 288:
-      dft288(idft_in0, idft_out0, 1);
+      dft(DFT_288,idft_in0, idft_out0, 1);
       break;
 
     case 300:
-      dft300(idft_in0, idft_out0, 1);
+      dft(DFT_300,idft_in0, idft_out0, 1);
       break;
 
     case 324:
-      dft324((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_324,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 360:
-      dft360((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_360,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 384:
-      dft384((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_384,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 432:
-      dft432((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_432,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 480:
-      dft480((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_480,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 540:
-      dft540((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_540,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 576:
-      dft576((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_576,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 600:
-      dft600((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_600,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 648:
-      dft648((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_648,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 720:
-      dft720((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_720,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 768:
-      dft768((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_768,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 864:
-      dft864((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_864,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 900:
-      dft900((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_900,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 960:
-      dft960((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_960,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 972:
-      dft972((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_972,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 1080:
-      dft1080((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_1080,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 1152:
-      dft1152((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_1152,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 1200:
-      dft1200(idft_in0, idft_out0, 1);
+      dft(DFT_1200,idft_in0, idft_out0, 1);
       break;
 
     default:
@@ -1093,7 +1093,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
-
+  start_meas(&gNB->ulsch_channel_estimation_stats);
   if (dmrs_symbol_flag == 1)
     nr_pusch_channel_estimation(gNB,
                                 nr_tti_rx,
@@ -1101,17 +1101,19 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 symbol,
                                 bwp_start_subcarrier,
                                 rel15_ul);
-
+  stop_meas(&gNB->ulsch_channel_estimation_stats);
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
 
+  start_meas(&gNB->ulsch_rbs_extraction_stats);
   nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                               gNB->pusch_vars[UE_id],
                               symbol,
                               dmrs_symbol_flag,
                               rel15_ul,
                               frame_parms);
+  stop_meas(&gNB->ulsch_rbs_extraction_stats);
 
   nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                          frame_parms,
@@ -1140,6 +1142,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   }
 
+  start_meas(&gNB->ulsch_channel_compensation_stats);
   nr_ulsch_channel_compensation(gNB->pusch_vars[UE_id]->rxdataF_ext,
                                 gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                                 gNB->pusch_vars[UE_id]->ul_ch_mag0,
@@ -1152,6 +1155,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul->qam_mod_order,
                                 rel15_ul->rb_size,
                                 gNB->pusch_vars[UE_id]->log2_maxh);
+  stop_meas(&gNB->ulsch_channel_compensation_stats);
 
 #ifdef NR_SC_FDMA
   nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
@@ -1160,7 +1164,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //-------------------- LLRs computation --------------------
   //----------------------------------------------------------
-
+  start_meas(&gNB->ulsch_llr_stats);
   nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_comp[0][symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB],
                        gNB->pusch_vars[UE_id]->ul_ch_mag0,
                        gNB->pusch_vars[UE_id]->ul_ch_magb0,
@@ -1169,6 +1173,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                        nb_re_pusch,
                        symbol,
                        rel15_ul->qam_mod_order);
+  stop_meas(&gNB->ulsch_llr_stats);
 
   gNB->pusch_vars[UE_id]->rxdataF_ext_offset = gNB->pusch_vars[UE_id]->rxdataF_ext_offset +  nb_re_pusch - gNB->pusch_vars[UE_id]->ptrs_sc_per_ofdm_symbol;
   
