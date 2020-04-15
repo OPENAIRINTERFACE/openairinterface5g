@@ -295,11 +295,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     set_ptrs_symb_idx(&ulsch_ue->ptrs_symbols,
                       number_of_symbols,
                       start_symbol,
-                      dmrs_type,
                       L_ptrs,
-                      number_dmrs_symbols,
-                      ul_dmrs_symb_pos,
-                      frame_parms->ofdm_symbol_size);
+                      ul_dmrs_symb_pos);
   }
 
   ///////////

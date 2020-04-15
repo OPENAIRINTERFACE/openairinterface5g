@@ -54,11 +54,8 @@ uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB);
 void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t duration_in_symbols,
                        uint8_t start_symbol,
-                       uint8_t dmrs_type,
                        uint8_t L_ptrs,
-                       uint8_t pusch_maxLength,
-                       uint16_t ul_dmrs_symb_pos,
-                       uint16_t ofdm_symbol_size);
+                       uint16_t ul_dmrs_symb_pos);
 
 uint8_t get_L_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint8_t I_mcs);
 

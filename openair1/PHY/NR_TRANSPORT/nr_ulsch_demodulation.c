@@ -1052,11 +1052,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       set_ptrs_symb_idx(&gNB->pusch_vars[UE_id]->ptrs_symbols,
                         rel15_ul->nr_of_symbols,
                         rel15_ul->start_symbol_index,
-                        rel15_ul->dmrs_config_type,
                         L_ptrs,
-                        1, // only dmrs of length 1 is currently supported
-                        rel15_ul->ul_dmrs_symb_pos,
-                        frame_parms->ofdm_symbol_size);
+                        rel15_ul->ul_dmrs_symb_pos);
     }
   }
 

@@ -130,35 +130,30 @@ uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB) {
 void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t duration_in_symbols,
                        uint8_t start_symbol,
-                       uint8_t dmrs_type,
                        uint8_t L_ptrs,
-                       uint8_t pusch_maxLength,
-                       uint16_t ul_dmrs_symb_pos,
-                       uint16_t ofdm_symbol_size) {
-  uint8_t i, last_symbol, is_dmrs_symbol1, is_dmrs_symbol2;
-  int16_t l_ref;
-  *ptrs_symbols = 0;
-  i = 0;
-  is_dmrs_symbol1 = 0;
-  is_dmrs_symbol2 = 0;
-  l_ref = start_symbol;
-  last_symbol = start_symbol + duration_in_symbols - 1;
+                       uint16_t ul_dmrs_symb_pos) {
+
+  uint8_t i = 0, last_symbol, is_dmrs_symbol, l_ref;
+  int8_t l_counter;
+  l_ref         = start_symbol;
+  last_symbol   = start_symbol + duration_in_symbols - 1;
 
   while ( (l_ref + i*L_ptrs) <= last_symbol) {
 
-    if((ul_dmrs_symb_pos >> max((l_ref + (i-1)*L_ptrs + 1), l_ref)) & 0x01)
-      is_dmrs_symbol1 = 1;
+    is_dmrs_symbol = 0;
 
-    if((ul_dmrs_symb_pos >> (l_ref + i*L_ptrs)) & 0x01)
-      is_dmrs_symbol2 = 0;
+    for(l_counter = l_ref + i*L_ptrs; l_counter >= max(l_ref + (i-1)*L_ptrs + 1, l_ref); l_counter--) {
 
-    if ( is_dmrs_symbol1 + is_dmrs_symbol2 > 0 ) {
-      if (pusch_maxLength == 2)
-        l_ref = l_ref + i*L_ptrs + 1;
-      else
-        l_ref = l_ref + i*L_ptrs;
+      if((ul_dmrs_symb_pos >> l_counter) & 0x01) {
+        is_dmrs_symbol = 1;
+        break;
+      }
 
-      i = 1;
+    }
+
+    if (is_dmrs_symbol) {
+      l_ref = l_counter;
+      i     = 1;
       continue;
     }
 
