@@ -230,7 +230,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms)
 {
-  unsigned short start_re, re, nb_re_pusch;
+  unsigned short start_re, re, nb_re_pusch, k;
   unsigned char aarx;
   uint8_t K_ptrs;
   uint32_t rxF_ext_index = 0;
@@ -285,8 +285,14 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
         is_dmrs_re = 0;
 
       if ( ((pusch_pdu->pdu_bit_map)>>2)& 0x01 ) {
+
+        if(((start_re + re) % frame_parms->ofdm_symbol_size) < start_re)
+          k = start_re + re;
+        else
+          k = (start_re + re) % frame_parms->ofdm_symbol_size;
+
         is_ptrs_symbol_flag = is_ptrs_symbol(symbol,
-                                             (start_re + re)%frame_parms->ofdm_symbol_size,
+                                             k,
                                              n_rnti,
                                              pusch_pdu->rb_size,
                                              aarx,

@@ -221,9 +221,6 @@ uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t
   else
     k_RB_ref = n_rnti % (N_RB % K_ptrs);
 
-  if (k < (k_RE_ref + k_RB_ref*NR_NB_SC_PER_RB + start_sc))
-    return 0;
-
   if ((k - k_RE_ref - k_RB_ref*NR_NB_SC_PER_RB - start_sc) % (K_ptrs*NR_NB_SC_PER_RB) == 0)
     return 1;
 

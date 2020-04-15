@@ -106,7 +106,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int32_t **txdataF;
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l_prime[2], delta;
-  uint16_t rnti, n_dmrs, code_rate, number_dmrs_symbols, nb_rb, k;
+  uint16_t rnti, n_dmrs, code_rate, number_dmrs_symbols, nb_rb, k, k_temp;
   uint8_t dmrs_type, nb_dmrs_re_per_rb, number_of_symbols, mcs, Nl;
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
@@ -396,8 +396,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
 
         if (UE->ptrs_configured == 1){
+
+          if(k < start_sc)
+            k_temp = k + frame_parms->ofdm_symbol_size;
+          else
+            k_temp = k;
+
           is_ptrs = is_ptrs_symbol(l,
-                                   k,
+                                   k_temp,
                                    rnti,
                                    nb_rb,
                                    ap,
