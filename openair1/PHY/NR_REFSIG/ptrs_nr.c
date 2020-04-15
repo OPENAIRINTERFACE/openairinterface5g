@@ -119,7 +119,7 @@ uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB) {
 *                duration_in_symbols    number of scheduled PUSCH ofdm symbols
 *                start_symbol           first ofdm symbol of PUSCH within slot
 *                L_ptrs                 the parameter L_ptrs
-*                ofdm_symbol_size       FFT size
+*                ul_dmrs_symb_pos       bitmap of the time domain positions of the DMRS symbols in the scheduled PUSCH
 *
 * RETURN :       sets the bit map of PTRS ofdm symbol indicies
 *
@@ -205,7 +205,6 @@ uint8_t get_L_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint8_t I_mcs) {
 *              N_RB                   number of RBs scheduled for PUSCH
 *              k_RE_ref               the parameter k_RE_ref
 *              start_sc               first subcarrier index
-*              ofdm_symbol_size       FFT size
 *
 * RETURN :       1 if subcarrier k is PTRS, or 0 otherwise
 *
@@ -213,11 +212,9 @@ uint8_t get_L_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint8_t I_mcs) {
 *
 *********************************************************************/
 
-uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc, uint16_t ofdm_symbol_size) {
-  uint16_t k_RB_ref, i, sc;
-  i = 0;
-  sc = 0;
-  k_RB_ref = 0;
+uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc) {
+
+  uint16_t k_RB_ref;
 
   if (N_RB % K_ptrs == 0)
     k_RB_ref = n_rnti % K_ptrs;
@@ -227,7 +224,7 @@ uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t
   if (k < (k_RE_ref + k_RB_ref*NR_NB_SC_PER_RB + start_sc))
     return 0;
 
-  if ((k-k_RE_ref - k_RB_ref*NR_NB_SC_PER_RB - start_sc)%(K_ptrs*NR_NB_SC_PER_RB) == 0)
+  if ((k - k_RE_ref - k_RB_ref*NR_NB_SC_PER_RB - start_sc) % (K_ptrs*NR_NB_SC_PER_RB) == 0)
     return 1;
 
   return 0;
@@ -241,12 +238,10 @@ uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t
 *              k                      subcarrier index
 *              n_rnti                 UE CRNTI
 *              N_RB                   number of RBs scheduled for PUSCH
-*              duration_in_symbols    number of scheduled PUSCH ofdm symbols
 *              dmrs_antenna_port      DMRS antenna port
 *              K_ptrs                 the parameter K_ptrs
 *              ptrs_symbols           bit mask of ptrs
 *              start_sc               first subcarrier index
-*              ofdm_symbol_size       FFT size
 *              pusch_dmrs_type        PUSCH DMRS type (1 or 2)
 *              ptrs_UplinkConfig      PTRS uplink configuration
 *
@@ -260,17 +255,15 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t k,
                        uint16_t n_rnti,
                        uint16_t N_RB,
-                       uint8_t duration_in_symbols,
                        uint8_t dmrs_antenna_port,
                        uint8_t K_ptrs,
                        uint16_t ptrs_symbols,
                        uint16_t start_sc,
-                       uint16_t ofdm_symbol_size,
-                       pusch_dmrs_type_t pusch_dmrs_type,
+                       uint8_t pusch_dmrs_type,
                        uint8_t resourceElementOffset)
 {
   int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
-  uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
+  uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc);
 
   if (is_ptrs_freq == 0)
     return 0;

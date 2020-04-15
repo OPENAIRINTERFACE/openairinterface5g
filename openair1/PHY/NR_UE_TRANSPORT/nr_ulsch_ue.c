@@ -400,12 +400,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                    k,
                                    rnti,
                                    nb_rb,
-                                   number_of_symbols,
                                    ap,
                                    K_ptrs,
                                    ulsch_ue->ptrs_symbols,
                                    start_sc,
-                                   frame_parms->ofdm_symbol_size,
                                    dmrs_type,
                                    ptrs_Uplink_Config->resourceElementOffset);
         }
