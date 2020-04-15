@@ -123,10 +123,7 @@ tbs_size_t mac_rlc_data_req(
     rb->set_time(rb, nr_rlc_current_time);
     /* UE does not seem to use saved_status_ind_tb_size */
     is_enb = nr_rlc_manager_get_enb_flag(nr_rlc_ue_manager);
-    if (is_enb)
-      maxsize = ue->saved_status_ind_tb_size[channel_idP - 1];
-    else
-      maxsize = tb_sizeP;
+    maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
