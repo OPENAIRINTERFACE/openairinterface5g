@@ -199,10 +199,10 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t ptrs_symbols,
                        uint16_t start_sc,
                        uint8_t pusch_dmrs_type,
-                       uint8_t resourceElementOffset,
+                       uint8_t k_RE_ref,
                        uint16_t ofdm_symbol_size)
 {
-  int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
+  // int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
   uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
 
   if (is_ptrs_freq == 0)

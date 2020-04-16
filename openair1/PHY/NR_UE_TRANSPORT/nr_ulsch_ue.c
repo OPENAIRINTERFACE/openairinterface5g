@@ -120,7 +120,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
   uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
-  ptrs_UplinkConfig_t *ptrs_Uplink_Config = &UE->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
+  // ptrs_UplinkConfig_t *ptrs_Uplink_Config = &UE->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
 
   num_of_codewords = 1; // tmp assumption
   Nid_cell = 0;
@@ -405,7 +405,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                    ulsch_ue->ptrs_symbols,
                                    start_sc,
                                    dmrs_type,
-                                   ptrs_Uplink_Config->resourceElementOffset,
+                                   harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
                                    frame_parms->ofdm_symbol_size);
         }
 

@@ -66,7 +66,7 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t ptrs_symbols,
                        uint16_t start_sc,
                        uint8_t pusch_dmrs_type,
-                       uint8_t resourceElementOffset,
+                       uint8_t k_RE_ref,
                        uint16_t ofdm_symbol_size);
 
 
