@@ -65,7 +65,20 @@ uint8_t is_ptrs_subcarrier(uint16_t k,
                            uint16_t start_sc,
                            uint16_t ofdm_symbol_size);
 
-uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols);
+/*******************************************************************
+*
+* NAME :         is_ptrs_symbol
+*
+* PARAMETERS : l                      ofdm symbol index within slot
+*              ptrs_symbols           bit mask of ptrs
+*
+* RETURN :       1 if symbol is ptrs, or 0 otherwise
+*
+* DESCRIPTION :  3GPP TS 38.211 6.4.1.2 Phase-tracking reference signal for PUSCH
+*
+*********************************************************************/
+
+static inline uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols) { return ((ptrs_symbols >> l) & 1); }
 
 
 
