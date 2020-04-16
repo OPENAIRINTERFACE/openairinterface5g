@@ -606,29 +606,38 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 *
 * NAME :         get_L_ptrs
 *
-* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+* PARAMETERS :   mcs(i)                 higher layer parameter in PTRS-UplinkConfig
 *                I_mcs                  MCS index used for PUSCH
+*                mcs_table              0 for table 5.1.3.1-1, 1 for table 5.1.3.1-1
 *
 * RETURN :       the parameter L_ptrs
 *
-* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-1
+* DESCRIPTION :  3GPP TS 38.214 section 6.2.3.1
 *
 *********************************************************************/
 
-uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs) {
+uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table) {
 
-  if (mcs1 == 0 || mcs2 == 0 || mcs3 == 0)
-    return 1;
+  uint8_t mcs4;
+
+  if(mcs_table == 0)
+    mcs4 = 29;
+  else
+    mcs4 = 28;
 
   if (I_mcs < mcs1) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
-    return 0;
+    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    return -1;
   } else if (I_mcs >= mcs1 && I_mcs < mcs2)
-    return 4;
-  else if (I_mcs >= mcs2 && I_mcs < mcs3)
     return 2;
-  else
+  else if (I_mcs >= mcs2 && I_mcs < mcs3)
     return 1;
+  else if (I_mcs >= mcs3 && I_mcs < mcs4)
+    return 0;
+  else {
+    LOG_I(PHY, "PT-RS time-density determination is obtained from the DCI for the same transport block in the initial transmission\n");
+    return -1;
+  }
 }
 
 /*******************************************************************

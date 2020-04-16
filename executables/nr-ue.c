@@ -399,7 +399,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     ptrs_mcs3 = 10;
     n_rb0 = 25;
     n_rb1 = 75;
-    ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index);
+    ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, mcs_table);
     ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, rb_size);
     //------------------------------------------------------------------------------//
 
