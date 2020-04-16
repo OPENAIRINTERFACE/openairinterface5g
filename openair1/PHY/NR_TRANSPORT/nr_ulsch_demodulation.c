@@ -230,7 +230,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms)
 {
-  unsigned short start_re, re, nb_re_pusch, k;
+  unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx;
   uint8_t K_ptrs;
   uint32_t rxF_ext_index = 0;
@@ -286,13 +286,8 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
       if ( ((pusch_pdu->pdu_bit_map)>>2)& 0x01 ) {
 
-        if(((start_re + re) % frame_parms->ofdm_symbol_size) < start_re)
-          k = start_re + re;
-        else
-          k = (start_re + re) % frame_parms->ofdm_symbol_size;
-
         is_ptrs_symbol_flag = is_ptrs_symbol(symbol,
-                                             k,
+                                             (start_re + re) % frame_parms->ofdm_symbol_size,
                                              n_rnti,
                                              pusch_pdu->rb_size,
                                              aarx,
@@ -300,7 +295,8 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                              pusch_vars->ptrs_symbols,
                                              start_re,
                                              pusch_pdu->dmrs_config_type,
-                                             pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset);
+                                             pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                             frame_parms->ofdm_symbol_size);
 
         if (is_ptrs_symbol_flag == 1)
           num_ptrs_symbols++;
@@ -1082,7 +1078,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                       gNB->pusch_vars[UE_id]->ptrs_symbols,
                                       0,
                                       rel15_ul->dmrs_config_type,
-                                      rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset);
+                                      rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                      frame_parms->ofdm_symbol_size);
   }
 
   if (ptrs_symbol_flag == 1){

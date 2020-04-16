@@ -55,7 +55,7 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t L_ptrs,
                        uint16_t ul_dmrs_symb_pos);
 
-uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc);
+uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc, uint16_t ofdm_symbol_size);
 
 uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t k,
@@ -66,7 +66,8 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t ptrs_symbols,
                        uint16_t start_sc,
                        uint8_t pusch_dmrs_type,
-                       uint8_t resourceElementOffset);
+                       uint8_t resourceElementOffset,
+                       uint16_t ofdm_symbol_size);
 
 
 

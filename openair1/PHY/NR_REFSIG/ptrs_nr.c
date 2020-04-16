@@ -151,7 +151,7 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
 *
 *********************************************************************/
 
-uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc) {
+uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc, uint16_t ofdm_symbol_size) {
 
   uint16_t k_RB_ref;
 
@@ -159,6 +159,9 @@ uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t
     k_RB_ref = n_rnti % K_ptrs;
   else
     k_RB_ref = n_rnti % (N_RB % K_ptrs);
+
+  if (k < start_sc)
+    k += ofdm_symbol_size;
 
   if ((k - k_RE_ref - k_RB_ref*NR_NB_SC_PER_RB - start_sc) % (K_ptrs*NR_NB_SC_PER_RB) == 0)
     return 1;
@@ -196,10 +199,11 @@ uint8_t is_ptrs_symbol(uint8_t l,
                        uint16_t ptrs_symbols,
                        uint16_t start_sc,
                        uint8_t pusch_dmrs_type,
-                       uint8_t resourceElementOffset)
+                       uint8_t resourceElementOffset,
+                       uint16_t ofdm_symbol_size)
 {
   int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
-  uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc);
+  uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
 
   if (is_ptrs_freq == 0)
     return 0;
