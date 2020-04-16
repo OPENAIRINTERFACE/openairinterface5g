@@ -285,18 +285,16 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
         is_dmrs_re = 0;
 
       if ( ((pusch_pdu->pdu_bit_map)>>2)& 0x01 ) {
-
-        is_ptrs_symbol_flag = is_ptrs_symbol(symbol,
-                                             (start_re + re) % frame_parms->ofdm_symbol_size,
-                                             n_rnti,
-                                             pusch_pdu->rb_size,
-                                             aarx,
-                                             K_ptrs,
-                                             pusch_vars->ptrs_symbols,
-                                             start_re,
-                                             pusch_pdu->dmrs_config_type,
-                                             pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
-                                             frame_parms->ofdm_symbol_size);
+        if(is_ptrs_symbol(symbol, pusch_vars->ptrs_symbols))
+            is_ptrs_symbol_flag = is_ptrs_subcarrier((start_re + re) % frame_parms->ofdm_symbol_size,
+                                                     n_rnti,
+                                                     aarx,
+                                                     pusch_pdu->dmrs_config_type,
+                                                     K_ptrs,
+                                                     pusch_pdu->rb_size,
+                                                     pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                                     start_re,
+                                                     frame_parms->ofdm_symbol_size);
 
         if (is_ptrs_symbol_flag == 1)
           num_ptrs_symbols++;
@@ -1026,7 +1024,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char harq_pid)
 {
 
-  uint8_t first_symbol_flag, aarx, aatx, dmrs_symbol_flag, ptrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
+  uint8_t first_symbol_flag, aarx, aatx, dmrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   uint8_t L_ptrs = 0; // PTRS parameter
   int avgs;
@@ -1035,7 +1033,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->ulsch_pdu;
 
   dmrs_symbol_flag = 0;
-  ptrs_symbol_flag = 0;
   first_symbol_flag = 0;
   gNB->pusch_vars[UE_id]->ptrs_sc_per_ofdm_symbol = 0;
 
@@ -1069,21 +1066,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   }
 
   if ( ((rel15_ul->pdu_bit_map)>>2)& 0x01 ) {  // if there is ptrs pdu
-    ptrs_symbol_flag = is_ptrs_symbol(symbol,
-                                      0,
-                                      rel15_ul->rnti,
-                                      rel15_ul->rb_size,
-                                      0,
-                                      (rel15_ul->pusch_ptrs.ptrs_freq_density)?4:2,
-                                      gNB->pusch_vars[UE_id]->ptrs_symbols,
-                                      0,
-                                      rel15_ul->dmrs_config_type,
-                                      rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
-                                      frame_parms->ofdm_symbol_size);
-  }
-
-  if (ptrs_symbol_flag == 1){
-    gNB->pusch_vars[UE_id]->ptrs_symbol_index = symbol;
+    if(is_ptrs_symbol(symbol, gNB->pusch_vars[UE_id]->ptrs_symbols))
+      gNB->pusch_vars[UE_id]->ptrs_symbol_index = symbol;
   }
 
 

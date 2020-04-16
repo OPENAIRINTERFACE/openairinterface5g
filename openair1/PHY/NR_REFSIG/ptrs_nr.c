@@ -139,11 +139,14 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
 * NAME :         is_ptrs_subcarrier
 *
 * PARAMETERS : k                      subcarrier index
-*              K_ptrs                 the parameter K_ptrs
 *              n_rnti                 UE CRNTI
+*              dmrs_antenna_port      DMRS antenna port
+*              K_ptrs                 the parameter K_ptrs
+*              pusch_dmrs_type        the DMRS configuration type used for PUSCH
 *              N_RB                   number of RBs scheduled for PUSCH
 *              k_RE_ref               the parameter k_RE_ref
 *              start_sc               first subcarrier index
+*              ofdm_symbol_size       number of samples in an OFDM symbol
 *
 * RETURN :       1 if subcarrier k is PTRS, or 0 otherwise
 *
@@ -151,8 +154,17 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
 *
 *********************************************************************/
 
-uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc, uint16_t ofdm_symbol_size) {
-
+uint8_t is_ptrs_subcarrier(uint16_t k,
+                           uint16_t n_rnti,
+                           uint8_t dmrs_antenna_port,
+                           uint8_t pusch_dmrs_type,
+                           uint8_t K_ptrs,
+                           uint16_t N_RB,
+                           uint8_t k_RE_ref,
+                           uint16_t start_sc,
+                           uint16_t ofdm_symbol_size)
+{
+  // int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
   uint16_t k_RB_ref;
 
   if (N_RB % K_ptrs == 0)
@@ -174,39 +186,16 @@ uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t
 * NAME :         is_ptrs_symbol
 *
 * PARAMETERS : l                      ofdm symbol index within slot
-*              k                      subcarrier index
-*              n_rnti                 UE CRNTI
-*              N_RB                   number of RBs scheduled for PUSCH
-*              dmrs_antenna_port      DMRS antenna port
-*              K_ptrs                 the parameter K_ptrs
 *              ptrs_symbols           bit mask of ptrs
-*              start_sc               first subcarrier index
-*              pusch_dmrs_type        PUSCH DMRS type (1 or 2)
-*              ptrs_UplinkConfig      PTRS uplink configuration
 *
-* RETURN :       0 if symbol(k,l) is data, or 1 if symbol(k,l) is ptrs
+* RETURN :       1 if symbol is ptrs, or 0 otherwise
 *
 * DESCRIPTION :  3GPP TS 38.211 6.4.1.2 Phase-tracking reference signal for PUSCH
 *
 *********************************************************************/
 
-uint8_t is_ptrs_symbol(uint8_t l,
-                       uint16_t k,
-                       uint16_t n_rnti,
-                       uint16_t N_RB,
-                       uint8_t dmrs_antenna_port,
-                       uint8_t K_ptrs,
-                       uint16_t ptrs_symbols,
-                       uint16_t start_sc,
-                       uint8_t pusch_dmrs_type,
-                       uint8_t k_RE_ref,
-                       uint16_t ofdm_symbol_size)
+uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols)
 {
-  // int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
-  uint8_t is_ptrs_freq = is_ptrs_subcarrier(k, K_ptrs, n_rnti, N_RB, k_RE_ref, start_sc, ofdm_symbol_size);
-
-  if (is_ptrs_freq == 0)
-    return 0;
 
   if (((ptrs_symbols>>l)&1) == 1)
     return 1;

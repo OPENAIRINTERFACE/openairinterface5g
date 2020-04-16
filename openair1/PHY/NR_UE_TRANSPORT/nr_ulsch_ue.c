@@ -396,17 +396,16 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         if ((harq_process_ul_ue->pusch_pdu.pdu_bit_map >> 2) & 0x01){
 
-          is_ptrs = is_ptrs_symbol(l,
-                                   k,
-                                   rnti,
-                                   nb_rb,
-                                   ap,
-                                   K_ptrs,
-                                   ulsch_ue->ptrs_symbols,
-                                   start_sc,
-                                   dmrs_type,
-                                   harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
-                                   frame_parms->ofdm_symbol_size);
+          if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols))
+            is_ptrs = is_ptrs_subcarrier(k,
+                                         rnti,
+                                         ap,
+                                         dmrs_type,
+                                         K_ptrs,
+                                         nb_rb,
+                                         harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                         start_sc,
+                                         frame_parms->ofdm_symbol_size);
         }
 
         if (is_dmrs == 1) {
