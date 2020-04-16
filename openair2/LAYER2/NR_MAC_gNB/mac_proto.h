@@ -165,6 +165,9 @@ int get_num_dmrs(uint16_t dmrs_mask );
 uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position);
 int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength);
 
+uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs);
+uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
+
 uint16_t nr_dci_size(nr_dci_format_t format,
                          nr_rnti_type_t rnti_type,
                          uint16_t N_RB);

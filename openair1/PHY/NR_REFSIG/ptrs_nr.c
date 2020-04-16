@@ -81,35 +81,7 @@ int16_t get_kRE_ref(uint8_t dmrs_antenna_port, uint8_t pusch_dmrs_type, uint8_t 
 }
 
 
-/*******************************************************************
-*
-* NAME :         get_K_ptrs
-*
-* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
-*                N_RB                   number of RBs scheduled for PUSCH
-*
-* RETURN :       the parameter K_ptrs
-*
-* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-2
-*
-*********************************************************************/
 
-uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB) {
-  uint16_t nrb0, nrb1;
-  nrb0 = ptrs_UplinkConfig->frequencyDensity.n_rb0;
-  nrb1 = ptrs_UplinkConfig->frequencyDensity.n_rb1;
-
-  if (nrb0 == 0 || nrb0 == 0)
-    return 2;
-
-  if (N_RB < nrb0) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
-    return 0;
-  } else if (N_RB >= nrb0 && N_RB < nrb1)
-    return 2;
-  else
-    return 4;
-}
 
 /*******************************************************************
 *
@@ -160,39 +132,6 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
     *ptrs_symbols = *ptrs_symbols | (1<<(l_ref + i*L_ptrs));
     i++;
   }
-}
-
-/*******************************************************************
-*
-* NAME :         get_L_ptrs
-*
-* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
-*                I_mcs                  MCS index used for PUSCH
-*
-* RETURN :       the parameter L_ptrs
-*
-* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-1
-*
-*********************************************************************/
-
-uint8_t get_L_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint8_t I_mcs) {
-  uint8_t mcs1, mcs2, mcs3;
-  mcs1 = ptrs_UplinkConfig->timeDensity.ptrs_mcs1;
-  mcs2 = ptrs_UplinkConfig->timeDensity.ptrs_mcs2;
-  mcs3 = ptrs_UplinkConfig->timeDensity.ptrs_mcs3;
-
-  if (mcs1 == 0 || mcs2 == 0 || mcs3 == 0)
-    return 1;
-
-  if (I_mcs < mcs1) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
-    return 0;
-  } else if (I_mcs >= mcs1 && I_mcs < mcs2)
-    return 4;
-  else if (I_mcs >= mcs2 && I_mcs < mcs3)
-    return 2;
-  else
-    return 1;
 }
 
 /*******************************************************************

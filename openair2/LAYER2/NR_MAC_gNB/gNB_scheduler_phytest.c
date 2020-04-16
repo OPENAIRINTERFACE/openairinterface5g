@@ -785,6 +785,18 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
                            // and for each bit 0: DMRS port not used 1: DMRS port used
   // --------------------------------------------------------------------------------------------------------------------------------------------
 
+  // --------------------
+  // ------- PTRS -------
+  // --------------------
+  uint8_t ptrs_mcs1 = 2;
+  uint8_t ptrs_mcs2 = 4;
+  uint8_t ptrs_mcs3 = 10;
+  uint16_t n_rb0 = 25;
+  uint16_t n_rb1 = 75;
+  pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index);
+  pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = 0;

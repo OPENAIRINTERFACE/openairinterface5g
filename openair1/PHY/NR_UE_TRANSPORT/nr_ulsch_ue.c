@@ -284,9 +284,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   if (UE->ptrs_configured == 1) {
 
-    K_ptrs = get_K_ptrs(ptrs_Uplink_Config, nb_rb);
-
-    L_ptrs = get_L_ptrs(ptrs_Uplink_Config, mcs);
+    K_ptrs = harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density;
+    L_ptrs = harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
 
     beta_ptrs = 1; // temp value until power control is implemented
 

@@ -501,9 +501,15 @@ int main(int argc, char **argv)
   uint8_t nb_re_dmrs;
   unsigned char mod_order;
   uint16_t code_rate;
-
+  uint8_t ptrs_mcs1 = 2;
+  uint8_t ptrs_mcs2 = 4;
+  uint8_t ptrs_mcs3 = 10;
+  uint16_t n_rb0 = 25;
+  uint16_t n_rb1 = 75;
   uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
+  uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs);
+  uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
 
   for (i = 0; i < nb_symb_sch; i++) {
     number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
@@ -568,7 +574,8 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
       pusch_pdu->pusch_data.num_cb = 0;
-
+      pusch_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
+      pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
 
       // --------- setting parameters for UE --------
 
@@ -596,6 +603,8 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 

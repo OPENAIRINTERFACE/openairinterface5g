@@ -602,6 +602,62 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
   return l_prime;
 }
 
+/*******************************************************************
+*
+* NAME :         get_L_ptrs
+*
+* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+*                I_mcs                  MCS index used for PUSCH
+*
+* RETURN :       the parameter L_ptrs
+*
+* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-1
+*
+*********************************************************************/
+
+uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs) {
+
+  if (mcs1 == 0 || mcs2 == 0 || mcs3 == 0)
+    return 1;
+
+  if (I_mcs < mcs1) {
+    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    return 0;
+  } else if (I_mcs >= mcs1 && I_mcs < mcs2)
+    return 4;
+  else if (I_mcs >= mcs2 && I_mcs < mcs3)
+    return 2;
+  else
+    return 1;
+}
+
+/*******************************************************************
+*
+* NAME :         get_K_ptrs
+*
+* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+*                N_RB                   number of RBs scheduled for PUSCH
+*
+* RETURN :       the parameter K_ptrs
+*
+* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-2
+*
+*********************************************************************/
+
+uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
+
+  if (nrb0 == 0 || nrb0 == 0)
+    return 2;
+
+  if (N_RB < nrb0) {
+    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    return 0;
+  } else if (N_RB >= nrb0 && N_RB < nrb1)
+    return 2;
+  else
+    return 4;
+}
+
 uint16_t nr_dci_size(nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
 		     uint16_t N_RB) {
