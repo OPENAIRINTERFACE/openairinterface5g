@@ -655,16 +655,13 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
-  if (nrb0 == 0 || nrb0 == 0)
-    return 2;
-
   if (N_RB < nrb0) {
     LOG_I(PHY,"PUSH PT-RS is not present.\n");
-    return 0;
+    return -1;
   } else if (N_RB >= nrb0 && N_RB < nrb1)
-    return 2;
+    return 0;
   else
-    return 4;
+    return 1;
 }
 
 uint16_t nr_dci_size(nr_dci_format_t format,

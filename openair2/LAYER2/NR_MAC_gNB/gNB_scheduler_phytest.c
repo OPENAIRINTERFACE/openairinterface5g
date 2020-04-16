@@ -791,8 +791,8 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
   uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
   uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-  uint16_t n_rb0 = 25;
-  uint16_t n_rb1 = 75;
+  uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
+  uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
   pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
   pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
   // --------------------------------------------------------------------------------------------------------------------------------------------
