@@ -182,8 +182,8 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   }
   int first_cce = aggregation * (( Y + (m*N_cce)/(aggregation*M_s_max) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
- // for (int i=0;i<aggregation;i++)
-   // if (cce_list[first_cce+i] != 0) return(-1);
+  for (int i=0;i<aggregation;i++)
+    if (cce_list[first_cce+i] != 0) return(-1);
   
   for (int i=0;i<aggregation;i++) cce_list[first_cce+i] = 1;
 
