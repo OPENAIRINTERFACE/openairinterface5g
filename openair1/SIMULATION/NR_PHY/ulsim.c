@@ -507,14 +507,16 @@ int main(int argc, char **argv)
   uint16_t n_rb0 = 25;
   uint16_t n_rb1 = 75;
   uint8_t mcs_table = 0;
+  uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA | PUSCH_PDU_BITMAP_PUSCH_PTRS;
 
   uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
 
-  printf("time_density = %d\n", ptrs_time_density);
-  printf("freq_density = %d\n", ptrs_freq_density);
+  if(1<<ptrs_time_density >= nb_symb_sch)
+    pdu_bit_map = pdu_bit_map & 0xFFFB;
+
   for (i = 0; i < nb_symb_sch; i++) {
     number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
   }
@@ -553,7 +555,7 @@ int main(int argc, char **argv)
       UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
       memset(pusch_pdu,0,sizeof(nfapi_nr_pusch_pdu_t));
       
-      pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;  
+      pusch_pdu->pdu_bit_map = pdu_bit_map;
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
       pusch_pdu->mcs_table = mcs_table;
@@ -597,6 +599,7 @@ int main(int argc, char **argv)
       ul_config.number_pdus = 1;
       ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
       ul_config.ul_config_list[0].pusch_config_pdu.rnti = n_rnti;
+      ul_config.ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
       ul_config.ul_config_list[0].pusch_config_pdu.rb_size = nb_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;

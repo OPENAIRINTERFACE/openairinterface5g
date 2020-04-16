@@ -424,6 +424,11 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
+    if(1<<ptrs_time_density >= nr_of_symbols) {
+      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map =
+        scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map & 0xFFFB;
+    }
+
     nr_ue_scheduled_response(&scheduled_response);
     
     if (UE->mode != loop_through_memory) {
