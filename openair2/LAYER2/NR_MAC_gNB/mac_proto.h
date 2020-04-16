@@ -195,13 +195,13 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-                        uint16_t rnti,
-			int ss_type,
-                        NR_SearchSpace_t *ss,
-                        NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp);
+int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
+                       nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
+                       uint16_t rnti,
+                       int ss_type,
+                       NR_SearchSpace_t *ss,
+                       NR_ServingCellConfigCommon_t *scc,
+                       NR_BWP_Downlink_t *bwp);
 
 void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,

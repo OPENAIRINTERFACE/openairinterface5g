@@ -131,7 +131,7 @@ static inline uint8_t get_max_cces(uint8_t scs) {
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 		     int bwp_id,
-		     int coreset_id,
+		     int list_id,
 		     int aggregation,
 		     int search_space, // 0 common, 1 ue-specific
 		     int UE_id,
@@ -152,14 +152,14 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
 
   if (search_space == 1) {
-    coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[coreset_id];
+    coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[list_id];
   }
   else {
     coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
   }
 
+  int coreset_id = coreset->controlResourceSetId;
   int *cce_list = nr_mac->cce_list[bwp_id][coreset_id];
-
 
   int n_rb=0;
   for (int i=0;i<6;i++)
@@ -409,16 +409,16 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 }
 
-void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-                        uint16_t rnti,
-			int ss_type,
-			NR_SearchSpace_t *ss,
-			NR_ServingCellConfigCommon_t *scc,
-			NR_BWP_Downlink_t *bwp){
+int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
+                       nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
+                       uint16_t rnti,
+                       int ss_type,
+                       NR_SearchSpace_t *ss,
+                       NR_ServingCellConfigCommon_t *scc,
+                       NR_BWP_Downlink_t *bwp){
 
   int CCEIndex = -1;
-  int cid;
+  int cid = 0;
   NR_ControlResourceSet_t *coreset = NULL;
 
   if (bwp) { // This is not the InitialBWP
@@ -524,7 +524,8 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                                 0, // UE-id
                                 0); // m
 
-    AssertFatal(CCEIndex>=0,"CCEIndex is negative \n");
+    if (CCEIndex<0)
+     return (CCEIndex);
 
     pdcch_pdu->dci_pdu.AggregationLevel[pdcch_pdu->numDlDci] = aggregation_level;
     pdcch_pdu->dci_pdu.CceIndex[pdcch_pdu->numDlDci] = CCEIndex;
@@ -534,6 +535,7 @@ void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
 
     pdcch_pdu->dci_pdu.powerControlOffsetSS[pdcch_pdu->numDlDci]=1;
     pdcch_pdu->numDlDci++;
+    return (0);
   }
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");

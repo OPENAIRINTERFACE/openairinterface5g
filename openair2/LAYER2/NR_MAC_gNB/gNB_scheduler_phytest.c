@@ -410,14 +410,18 @@ int configure_fapi_dl_pdu(int Mod_idP,
   }
   AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
     
-  nr_configure_pdcch(nr_mac,
-                     pdcch_pdu_rel15,
-                     UE_list->rnti[UE_id],
-		     1, // ue-specific
-		     ss,
-		     scc,
-		     bwp);
-  
+  int ret = nr_configure_pdcch(nr_mac,
+                               pdcch_pdu_rel15,
+                               UE_list->rnti[UE_id],
+		               1, // ue-specific
+		               ss,
+		               scc,
+		               bwp);
+  if (ret < 0) {
+   LOG_I(MAC,"CCE list not empty, couldn't schedule PDSCH\n");
+   return (0);
+  }
+
   int dci_formats[2];
   int rnti_types[2];
   
@@ -569,6 +573,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
+
+  if (TBS_bytes == 0)
+   return;
  
   //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
   //through the LTE stack
@@ -866,19 +873,23 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   rnti_types[0]   = NR_RNTI_C;
   LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
 
-  nr_configure_pdcch(nr_mac,
-                     pdcch_pdu_rel15,
-                     UE_list->rnti[UE_id],
-                     1, // ue-specific,
-		     ss,
-		     scc,
-		     bwp);
-  
-  dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
+  int ret = nr_configure_pdcch(nr_mac,
+                               pdcch_pdu_rel15,
+                               UE_list->rnti[UE_id],
+                               1, // ue-specific,
+		               ss,
+		               scc,
+		               bwp);
 
-  config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
-  
-  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
-  
+  if (ret < 0) {
+   LOG_I(MAC,"CCE list not empty, couldn't schedule PUSCH\n");
+   UL_tti_req->n_pdus-=1;
+   return;
+  }
+  else {
+    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
+    config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
+    fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+  }
 }
 

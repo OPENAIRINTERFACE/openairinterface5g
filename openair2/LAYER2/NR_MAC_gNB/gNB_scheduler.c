@@ -366,7 +366,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   uint64_t *ulsch_in_slot_bitmap=NULL;
   NR_sched_pucch *pucch_sched = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
 
-  if (get_softmodem_params()->phy_test) UE_id=0;
+  UE_id=0;
+  int bwp_id = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &gNB->UE_list;
@@ -407,8 +408,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // Check if there are downlink symbols in the slot, 
   if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)) {
-
-    memset(RC.nrmac[module_idP]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
+    memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
+    memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       //mbsfn_status[CC_id] = 0;
 
