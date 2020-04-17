@@ -61,26 +61,20 @@ typedef struct {
   /// slot
   slot_t slot;
 
-  /// harq indication list
-  nfapi_harq_indication_t harq_ind;
-
   /// crc indication list
-  nfapi_crc_indication_t crc_ind;
-
-  /// SR indication list
-  nfapi_sr_indication_t sr_ind;
-
-  /// CQI indication list
-  nfapi_cqi_indication_body_t cqi_ind;
+  nfapi_nr_crc_indication_t crc_ind;
 
   /// RACH indication list
   nfapi_nr_rach_indication_t rach_ind;
 
   /// SRS indication list
-  nfapi_srs_indication_body_t srs_ind;
+  nfapi_nr_srs_indication_t srs_ind;
 
   /// RX indication
-  nfapi_rx_indication_t rx_ind;
+  nfapi_nr_rx_data_indication_t rx_ind;
+
+  /// UCI indication
+  nfapi_nr_uci_indication_t uci_ind;
 
 } NR_UL_IND_t;
 

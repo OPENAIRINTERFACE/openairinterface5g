@@ -1388,7 +1388,7 @@ typedef struct
   uint16_t timing_advance;//Timing advance 𝑇𝐴 measured for the UE [TS 38.213, Section 4.2] NTA_new = NTA_old + (TA − 31) ⋅ 16 ⋅ 64⁄2μ Value: 0 → 63 0xffff should be set if this field is invalid
   uint16_t rssi;
   //variable ! fixme
-  uint32_t pdu; //MAC PDU
+  uint8_t *pdu; //MAC PDU
 
 } nfapi_nr_rx_data_pdu_t;
 
