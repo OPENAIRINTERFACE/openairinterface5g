@@ -98,17 +98,14 @@ tbs_size_t mac_rlc_data_req(
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP,
-  char             *buffer_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
+  char             *buffer_pP,
+  const uint32_t sourceL2Id,
+  const uint32_t destinationL2Id
    )
 {
   int ret;
   rlc_ue_t *ue;
   rlc_entity_t *rb;
-  int is_enb;
   int maxsize;
 
   rlc_manager_lock(rlc_ue_manager);
@@ -122,12 +119,7 @@ tbs_size_t mac_rlc_data_req(
 
   if (rb != NULL) {
     rb->set_time(rb, rlc_current_time);
-    /* UE does not seem to use saved_status_ind_tb_size */
-    is_enb = rlc_manager_get_enb_flag(rlc_ue_manager);
-    if (is_enb)
-      maxsize = ue->saved_status_ind_tb_size[channel_idP - 1];
-    else
-      maxsize = tb_sizeP;
+    maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
@@ -153,11 +145,8 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t sourceL2Id
-  ,const uint32_t destinationL2Id
-#endif
+  const uint32_t sourceL2Id,
+  const uint32_t destinationL2Id
   )
 {
   rlc_ue_t *ue;
@@ -192,7 +181,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
-    ue->saved_status_ind_tb_size[channel_idP - 1] = tb_sizeP;
   } else {
     ret.bytes_in_buffer = 0;
   }
@@ -271,11 +259,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const mui_t        muiP,
                                   confirm_t    confirmP,
                                   sdu_size_t   sdu_sizeP,
-                                  mem_block_t *sdu_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t *const sourceL2Id
-  ,const uint32_t *const destinationL2Id
-#endif
+                                  mem_block_t *sdu_pP,
+                                  const uint32_t *const sourceL2Id,
+                                  const uint32_t *const destinationL2Id
                                  )
 {
   int rnti = ctxt_pP->rnti;
@@ -283,7 +269,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   rlc_entity_t *rb;
 
   LOG_D(RLC, "%s rnti %d srb_flag %d rb_id %d mui %d confirm %d sdu_size %d MBMS_flag %d\n",
-        __FUNCTION__, rnti, srb_flagP, rb_idP, muiP, confirmP, sdu_sizeP,
+        __FUNCTION__, rnti, srb_flagP, (int)rb_idP, muiP, confirmP, sdu_sizeP,
         MBMS_flagP);
 
   if (ctxt_pP->enb_flag)
@@ -801,12 +787,10 @@ static void add_drb(int rnti, int module_id, struct LTE_DRB_ToAddMod *s)
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
     const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const LTE_DRB_ToAddModList_t   * const drb2add_listP,
-    const LTE_DRB_ToReleaseList_t  * const drb2release_listP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-    ,const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP
-    ,const uint32_t sourceL2Id
-    ,const uint32_t destinationL2Id
-#endif
+    const LTE_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    const uint32_t sourceL2Id,
+    const uint32_t destinationL2Id
                                         )
 {
   int rnti = ctxt_pP->rnti;
@@ -879,24 +863,24 @@ rlc_op_status_t rrc_rlc_config_req   (
   }
   if ((srb_flagP && !(rb_idP >= 1 && rb_idP <= 2)) ||
       (!srb_flagP && !(rb_idP >= 1 && rb_idP <= 5))) {
-    LOG_E(RLC, "%s:%d:%s: bad rb_id (%d) (is_srb %d)\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP);
+    LOG_E(RLC, "%s:%d:%s: bad rb_id (%d) (is_srb %d)\n", __FILE__, __LINE__, __FUNCTION__, (int)rb_idP, srb_flagP);
     exit(1);
   }
   rlc_manager_lock(rlc_ue_manager);
-  LOG_D(RLC, "%s:%d:%s: remove rb %d (is_srb %d) for UE %d\n", __FILE__, __LINE__, __FUNCTION__, rb_idP, srb_flagP, ctxt_pP->rnti);
+  LOG_D(RLC, "%s:%d:%s: remove rb %d (is_srb %d) for UE %d\n", __FILE__, __LINE__, __FUNCTION__, (int)rb_idP, srb_flagP, ctxt_pP->rnti);
   ue = rlc_manager_get_ue(rlc_ue_manager, ctxt_pP->rnti);
   if (srb_flagP) {
     if (ue->srb[rb_idP-1] != NULL) {
       ue->srb[rb_idP-1]->delete(ue->srb[rb_idP-1]);
       ue->srb[rb_idP-1] = NULL;
     } else
-      LOG_W(RLC, "removing non allocated SRB %d, do nothing\n", rb_idP);
+      LOG_W(RLC, "removing non allocated SRB %d, do nothing\n", (int)rb_idP);
   } else {
     if (ue->drb[rb_idP-1] != NULL) {
       ue->drb[rb_idP-1]->delete(ue->drb[rb_idP-1]);
       ue->drb[rb_idP-1] = NULL;
     } else
-      LOG_W(RLC, "removing non allocated DRB %d, do nothing\n", rb_idP);
+      LOG_W(RLC, "removing non allocated DRB %d, do nothing\n", (int)rb_idP);
   }
   /* remove UE if it has no more RB configured */
   for (i = 0; i < 2; i++)

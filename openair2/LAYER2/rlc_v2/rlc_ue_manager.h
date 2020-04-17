@@ -29,10 +29,6 @@ typedef void rlc_ue_manager_t;
 typedef struct rlc_ue_t {
   int rnti;
   int module_id;   /* necesarry for the L2 simulator - not clean, to revise */
-  /* due to openair calling status_ind/data_req, we need to keep this.
-   * To be considered 'hackish'.
-   */
-  int saved_status_ind_tb_size[2+5];
   rlc_entity_t *srb[2];
   rlc_entity_t *drb[5];
 } rlc_ue_t;
