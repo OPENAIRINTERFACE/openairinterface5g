@@ -879,10 +879,7 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 
 int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
 {
-
-	//for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++){
-
-		ul_config_req = (nfapi_ul_config_request_t*)malloc(sizeof(nfapi_ul_config_request_t));
+  ul_config_req = malloc(sizeof(nfapi_ul_config_request_t));
 
 
   ul_config_req->sfn_sf = req->sfn_sf;
@@ -931,7 +928,7 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
 int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
 			nfapi_pnf_p7_config_t* pnf_p7, 
 			nfapi_hi_dci0_request_t* req) {
-
+  hi_dci0_req = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
 
 
