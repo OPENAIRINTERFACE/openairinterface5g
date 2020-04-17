@@ -62,44 +62,44 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned int rx_offset;
 
 
-  void (*dft)(int16_t *,int16_t *, int);
+  dft_size_idx_t dftsize;
   int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
 
   switch (frame_parms->ofdm_symbol_size) {
   case 128:
-    dft = dft128;
+    dftsize = DFT_128;
     break;
 
   case 256:
-    dft = dft256;
+    dftsize = DFT_256;
     break;
 
   case 512:
-    dft = dft512;
+    dftsize = DFT_512;
     break;
 
   case 1024:
-    dft = dft1024;
+    dftsize = DFT_1024;
     break;
 
   case 1536:
-    dft = dft1536;
+    dftsize = DFT_1536;
     break;
 
   case 2048:
-    dft = dft2048;
+    dftsize = DFT_2048;
     break;
 
   case 3072:
-    dft = dft3072;
+    dftsize = DFT_3072;
     break;
 
   case 4096:
-    dft = dft4096;
+    dftsize = DFT_4096;
     break;
 
   case 8192:
-    dft = dft8192;
+    dftsize = DFT_8192;
     break;
 
   default:
@@ -155,14 +155,14 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
         memcpy((void *)tmp_dft_in,
                (void *) &common_vars->rxdata[aa][rx_offset % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
-        dft((int16_t *)tmp_dft_in,
+        dft(dftsize,(int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 #if UE_TIMING_TRACE
           start_meas(&ue->rx_dft_stats);
 #endif
 
-        dft((int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
@@ -183,11 +183,11 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
         memcpy((void *)tmp_dft_in,
                (void *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
-        dft((int16_t *)tmp_dft_in,
+        dft(dftsize,(int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 
-        dft((int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE
@@ -237,44 +237,44 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
   unsigned int rx_offset;
 
 
-  void (*dft)(int16_t *,int16_t *, int);
+  dft_size_idx_t dftsize;
   int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
 
   switch (frame_parms->ofdm_symbol_size) {
   case 128:
-    dft = dft128;
+    dftsize = DFT_128;
     break;
 
   case 256:
-    dft = dft256;
+    dftsize = DFT_256;
     break;
 
   case 512:
-    dft = dft512;
+    dftsize = DFT_512;
     break;
 
   case 1024:
-    dft = dft1024;
+    dftsize = DFT_1024;
     break;
 
   case 1536:
-    dft = dft1536;
+    dftsize = DFT_1536;
     break;
 
   case 2048:
-    dft = dft2048;
+    dftsize = DFT_2048;
     break;
 
   case 3072:
-    dft = dft3072;
+    dftsize = DFT_3072;
     break;
 
   case 4096:
-    dft = dft4096;
+    dftsize = DFT_4096;
     break;
 
   case 8192:
-    dft = dft8192;
+    dftsize = DFT_8192;
     break;
 
   default:
@@ -330,14 +330,15 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
         memcpy((void *)tmp_dft_in,
                (void *) &common_vars->rxdata[aa][rx_offset],
                frame_parms->ofdm_symbol_size*sizeof(int));
-        dft((int16_t *)tmp_dft_in,
+        dft(dftsize,(int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
 #if UE_TIMING_TRACE
           start_meas(&ue->rx_dft_stats);
 #endif
 
-        dft((int16_t *) &common_vars->rxdata[aa][rx_offset],
+
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
@@ -358,11 +359,10 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
         memcpy((void *)tmp_dft_in,
                (void *) &common_vars->rxdata[aa][rx_offset],
                frame_parms->ofdm_symbol_size*sizeof(int));
-        dft((int16_t *)tmp_dft_in,
+        dft(dftsize,(int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
-
-        dft((int16_t *) &common_vars->rxdata[aa][rx_offset],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE
@@ -400,43 +400,43 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   unsigned int nb_prefix_samples  = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   
-  void (*dft)(int16_t *,int16_t *, int);
+  dft_size_idx_t dftsize;
 
   switch (frame_parms->ofdm_symbol_size) {
     case 128:
-      dft = dft128;
+      dftsize = DFT_128;
       break;
 
     case 256:
-      dft = dft256;
+      dftsize = DFT_256;
       break;
 
     case 512:
-      dft = dft512;
+      dftsize = DFT_512;
       break;
 
     case 1024:
-      dft = dft1024;
+      dftsize = DFT_1024;
       break;
 
     case 1536:
-      dft = dft1536;
+      dftsize = DFT_1536;
       break;
 
     case 2048:
-      dft = dft2048;
+      dftsize = DFT_2048;
       break;
 
     case 4096:
-      dft = dft4096;
+      dftsize = DFT_4096;
       break;
 
     case 8192:
-      dft = dft8192;
+      dftsize = DFT_8192;
       break;
 
     default:
-      dft = dft512;
+      dftsize = DFT_512;
       break;
   }
   
@@ -448,7 +448,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   else
     rxdata_offset = slot_offset + nb_prefix_samples0 + (symbol * (frame_parms->ofdm_symbol_size + nb_prefix_samples)) - SOFFSET;
 
-  dft((int16_t *)&rxdata[rxdata_offset],
+  dft(dftsize,(int16_t *)&rxdata[rxdata_offset],
        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
 
   return(0);

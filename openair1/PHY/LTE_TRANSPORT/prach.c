@@ -298,24 +298,24 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       switch (fp->N_RB_UL) {
         case 6:
           if (prach_fmt == 4) {
-            dft256(prach2,rxsigF[aa],1);
+            dft(DFT_256,prach2,rxsigF[aa],1);
           } else {
-            dft1536(prach2,rxsigF[aa],1);
+            dft(DFT_1536,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft1536(prach2+3072,rxsigF[aa]+3072,1);
+              dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
           }
 
           break;
 
         case 15:
           if (prach_fmt == 4) {
-            dft256(prach2,rxsigF[aa],1);
+            dft(DFT_256,prach2,rxsigF[aa],1);
           } else {
-            dft3072(prach2,rxsigF[aa],1);
+            dft(DFT_3072,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft3072(prach2+6144,rxsigF[aa]+6144,1);
+              dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
           }
 
           break;
@@ -323,13 +323,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         case 25:
         default:
           if (prach_fmt == 4) {
-            dft1024(prach2,rxsigF[aa],1);
+            dft(DFT_1024,prach2,rxsigF[aa],1);
             fft_size = 1024;
           } else {
-            dft6144(prach2,rxsigF[aa],1);
+            dft(DFT_6144,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft6144(prach2+12288,rxsigF[aa]+12288,1);
+              dft(DFT_6144,prach2+12288,rxsigF[aa]+12288,1);
 
             fft_size = 6144;
           }
@@ -338,24 +338,24 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
         case 50:
           if (prach_fmt == 4) {
-            dft2048(prach2,rxsigF[aa],1);
+            dft(DFT_2048,prach2,rxsigF[aa],1);
           } else {
-            dft12288(prach2,rxsigF[aa],1);
+            dft(DFT_12288,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft12288(prach2+24576,rxsigF[aa]+24576,1);
+              dft(DFT_12288,prach2+24576,rxsigF[aa]+24576,1);
           }
 
           break;
 
         case 75:
           if (prach_fmt == 4) {
-            dft3072(prach2,rxsigF[aa],1);
+            dft(DFT_3072,prach2,rxsigF[aa],1);
           } else {
-            dft18432(prach2,rxsigF[aa],1);
+            dft(DFT_18432,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft18432(prach2+36864,rxsigF[aa]+36864,1);
+              dft(DFT_18432,prach2+36864,rxsigF[aa]+36864,1);
           }
 
           break;
@@ -363,21 +363,21 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         case 100:
           if (fp->threequarter_fs==0) {
             if (prach_fmt == 4) {
-              dft4096(prach2,rxsigF[aa],1);
+              dft(DFT_4096,prach2,rxsigF[aa],1);
             } else {
-              dft24576(prach2,rxsigF[aa],1);
+              dft(DFT_24576,prach2,rxsigF[aa],1);
 
               if (prach_fmt>1)
-                dft24576(prach2+49152,rxsigF[aa]+49152,1);
+                dft(DFT_24576,prach2+49152,rxsigF[aa]+49152,1);
             }
           } else {
             if (prach_fmt == 4) {
-              dft3072(prach2,rxsigF[aa],1);
+              dft(DFT_3072,prach2,rxsigF[aa],1);
             } else {
-              dft18432(prach2,rxsigF[aa],1);
+              dft(DFT_18432,prach2,rxsigF[aa],1);
 
               if (prach_fmt>1)
-                dft18432(prach2+36864,rxsigF[aa]+36864,1);
+                dft(DFT_18432,prach2+36864,rxsigF[aa]+36864,1);
             }
           }
 
@@ -589,13 +589,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         // Now do IFFT of size 1024 (N_ZC=839) or 256 (N_ZC=139)
         if (N_ZC == 839) {
           log2_ifft_size = 10;
-          idft1024(prachF,prach_ifft_tmp,1);
+          idft(IDFT_1024,prachF,prach_ifft_tmp,1);
 
           // compute energy and accumulate over receive antennas and repetitions for BR
           for (i=0; i<2048; i++)
             prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>9;
         } else {
-          idft256(prachF,prach_ifft_tmp,1);
+          idft(IDFT_256,prachF,prach_ifft_tmp,1);
           log2_ifft_size = 8;
 
           // compute energy and accumulate over receive antennas and repetitions for BR
