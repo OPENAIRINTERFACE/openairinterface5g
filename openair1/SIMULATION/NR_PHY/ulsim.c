@@ -507,7 +507,7 @@ int main(int argc, char **argv)
   uint16_t n_rb0 = 25;
   uint16_t n_rb1 = 75;
   uint8_t mcs_table = 0;
-  uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA | PUSCH_PDU_BITMAP_PUSCH_PTRS;
+  uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
 
   uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
