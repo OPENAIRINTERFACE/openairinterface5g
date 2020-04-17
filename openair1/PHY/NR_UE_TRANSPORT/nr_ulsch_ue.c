@@ -282,7 +282,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int16_t mod_ptrs[(nb_rb/2)*(NR_SYMBOLS_PER_SLOT-1)*2]; // assume maximum number of PTRS per pusch allocation
   K_ptrs = 0; // just to avoid a warning
 
-  if ((harq_process_ul_ue->pusch_pdu.pdu_bit_map >> 2) & 0x01) {
+  if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
     K_ptrs = (harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density)?4:2;
     L_ptrs = 1<<harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
@@ -394,7 +394,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
             is_dmrs = 1;
         }
 
-        if ((harq_process_ul_ue->pusch_pdu.pdu_bit_map >> 2) & 0x01){
+        if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS){
 
           if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols))
             is_ptrs = is_ptrs_subcarrier(k,

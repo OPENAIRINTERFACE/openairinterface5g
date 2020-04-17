@@ -284,7 +284,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
       else
         is_dmrs_re = 0;
 
-      if ( ((pusch_pdu->pdu_bit_map)>>2)& 0x01 ) {
+      if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
         if(is_ptrs_symbol(symbol, pusch_vars->ptrs_symbols))
             is_ptrs_symbol_flag = is_ptrs_subcarrier((start_re + re) % frame_parms->ofdm_symbol_size,
                                                      n_rnti,
@@ -1043,7 +1043,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     gNB->pusch_vars[UE_id]->ptrs_symbols = 0;
     first_symbol_flag = 1;
 
-    if ( ((rel15_ul->pdu_bit_map)>>2)& 0x01 ) {  // if there is ptrs pdu
+    if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
       L_ptrs = 1<<(rel15_ul->pusch_ptrs.ptrs_time_density);
 
       set_ptrs_symb_idx(&gNB->pusch_vars[UE_id]->ptrs_symbols,
@@ -1065,7 +1065,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
   }
 
-  if ( ((rel15_ul->pdu_bit_map)>>2)& 0x01 ) {  // if there is ptrs pdu
+  if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
     if(is_ptrs_symbol(symbol, gNB->pusch_vars[UE_id]->ptrs_symbols))
       gNB->pusch_vars[UE_id]->ptrs_symbol_index = symbol;
   }

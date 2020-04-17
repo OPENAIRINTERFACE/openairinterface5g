@@ -515,7 +515,7 @@ int main(int argc, char **argv)
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
 
   if(1<<ptrs_time_density >= nb_symb_sch)
-    pdu_bit_map = pdu_bit_map & 0xFFFB;
+    pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
 
   for (i = 0; i < nb_symb_sch; i++) {
     number_dmrs_symbols += (l_prime_mask >> i) & 0x01;

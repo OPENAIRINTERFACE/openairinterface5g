@@ -799,7 +799,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
   if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
-    pusch_pdu->pdu_bit_map = pusch_pdu->pdu_bit_map & 0xFFFB;
+    pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
   // --------------------------------------------------------------------------------------------------------------------------------------------
 
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
