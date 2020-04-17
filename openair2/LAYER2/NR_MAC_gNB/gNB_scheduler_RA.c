@@ -244,19 +244,34 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
   NR_SearchSpace_t *ss;
-
+  int UE_id = 0;
   // ra_rnti from 5.1.3 in 38.321
   uint16_t ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
-
-
 
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &nr_mac->UE_list;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[0];
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_RA_t *ra = &cc->ra[0];
+
+  // if the preamble received correspond to one of the listed
+  // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
+  int pr_found=0;
+  for (int i=0;i<UE_list->preambles[UE_id].num_preambles;i++) {
+    if (preamble_index == UE_list->preambles[UE_id].preamble_list[i]) {
+      pr_found=1;
+      break;
+    }
+  }
+  if (pr_found)
+    UE_list->fiveG_connected[UE_id] = false;
+  else {
+    LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated for UE_id %d\n",
+          module_idP, preamble_index, UE_id);
+    return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
+  }
 
   // This should be handled differently when we use the initialBWP for RA
   ra->bwp_id=1;
@@ -307,7 +322,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
-
+    UE_list->tc_rnti[UE_id] = ra->rnti;
 
     LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x\n",
       module_idP,
@@ -405,6 +420,7 @@ void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frame
       ul_req->pdus_list[ul_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
       ul_req->pdus_list[ul_req->n_pdus].pusch_pdu = ra->pusch_pdu;
       ul_req->n_pdus+=1;
+      ra->state = RA_IDLE;
     }
   }
 }

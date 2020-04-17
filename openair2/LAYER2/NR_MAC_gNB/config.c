@@ -374,6 +374,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (add_ue == 1) {
       UE_id = add_new_nr_ue(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
+      UE_list->preambles[UE_id].num_preambles = num_preamble;
+      UE_list->preambles[UE_id].preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
+      for (int i=0; i<num_preamble; i++) {
+        UE_list->preambles[UE_id].preamble_list[i] = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.array[i]->ra_PreambleIndex;
+      }
       LOG_I(PHY,"Added new UE_id %d/%x with initial secondaryCellGroup\n",UE_id,rnti);
     }
     else { // secondaryCellGroup has been updated

@@ -197,6 +197,11 @@ typedef struct {
   int16_t ta_update;
 } NR_UE_sched_ctrl_t;
 
+typedef struct NR_preamble_ue {
+  uint8_t num_preambles;
+  uint8_t *preamble_list;
+} NR_preamble_ue;
+
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
@@ -209,7 +214,10 @@ typedef struct {
   int avail;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_GNB];
+  boolean_t fiveG_connected[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
+  rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
+  NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
 
