@@ -117,6 +117,11 @@ tbs_size_t mac_rlc_data_req(
   default:      rb = NULL;                     break;
   }
 
+  if (MBMS_flagP == MBMS_FLAG_YES) {
+    rb = ue->drb[channel_idP - 1];
+  }
+
+
   if (rb != NULL) {
     rb->set_time(rb, rlc_current_time);
     maxsize = tb_sizeP;
@@ -168,6 +173,10 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
   case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
   default:      rb = NULL;                     break;
+  }
+
+  if (MBMS_flagP == MBMS_FLAG_YES) {
+    rb = ue->drb[channel_idP - 1];
   }
 
   if (rb != NULL) {
@@ -268,6 +277,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   rlc_ue_t *ue;
   rlc_entity_t *rb;
 
+  if (MBMS_flagP == MBMS_FLAG_YES)
+    rnti = 0xfffd;
+
   LOG_D(RLC, "%s rnti %d srb_flag %d rb_id %d mui %d confirm %d sdu_size %d MBMS_flag %d\n",
         __FUNCTION__, rnti, srb_flagP, (int)rb_idP, muiP, confirmP, sdu_sizeP,
         MBMS_flagP);
@@ -286,6 +298,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
       rb = ue->srb[rb_idP - 1];
   } else {
     if (rb_idP >= 1 && rb_idP <= 5)
+      rb = ue->drb[rb_idP - 1];
+  }
+  if( MBMS_flagP == MBMS_FLAG_YES) {
       rb = ue->drb[rb_idP - 1];
   }
 
@@ -796,6 +811,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   int rnti = ctxt_pP->rnti;
   int module_id = ctxt_pP->module_id;
   int i;
+  int j;
 
   if (ctxt_pP->enb_flag == 1 &&
       (ctxt_pP->module_id != 0 || ctxt_pP->instance != 0)) {
@@ -814,8 +830,70 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   }
 
   if (pmch_InfoList_r9_pP != NULL) {
-    LOG_E(RLC, "%s: pmch_InfoList_r9_pP not handled\n", __FUNCTION__);
-    exit(1);
+    LTE_MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
+    LTE_MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
+    mbms_session_id_t             mbms_session_id;
+    mbms_service_id_t             mbms_service_id;
+    rb_id_t                       drb_id = 0;
+    logical_chan_id_t             lc_id  = 0;
+    //LTE_DRB_Identity_t     drb_id          = 0;
+    //LTE_DRB_Identity_t*    pdrb_id         = NULL;
+
+    for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
+      mbms_SessionInfoList_r9_p = &(pmch_InfoList_r9_pP->list.array[i]->mbms_SessionInfoList_r9);
+
+      for (j=0; j<mbms_SessionInfoList_r9_p->list.count; j++) {
+        MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
+        if (0/*MBMS_SessionInfo_p->sessionId_r9*/)
+          mbms_session_id  = MBMS_SessionInfo_p->sessionId_r9->buf[0];
+        else
+          mbms_session_id  = MBMS_SessionInfo_p->logicalChannelIdentity_r9;
+        lc_id              = mbms_session_id;
+        mbms_service_id    = MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
+//        mbms_service_id    = j;
+
+        // can set the mch_id = i
+        if (ctxt_pP->enb_flag) {
+          drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id;//+ (LTE_maxDRB + 3) * MAX_MOBILES_PER_ENB; // 1
+        } else {
+          drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id; // + (LTE_maxDRB + 3); // 15
+        }
+
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u, rnti %x\n",
+              PROTOCOL_CTXT_ARGS(ctxt_pP),
+              lc_id,
+              (int)drb_id,
+              mbms_session_id,
+              mbms_service_id,
+              rnti
+             );
+      }
+    }
+
+    rlc_entity_t            *rlc_um;
+    rlc_ue_t                *ue;
+
+    //drb_id = rb_id;
+
+    rlc_manager_lock(rlc_ue_manager);
+    ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+    if (ue->drb[drb_id-1] != NULL) {
+      LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+          __FILE__, __LINE__, __FUNCTION__, (int)drb_id, rnti);
+    } else {
+     rlc_um = new_rlc_entity_um(1000000,
+                                1000000,
+                                deliver_sdu, ue,
+                                0,//LTE_T_Reordering_ms0,//t_reordering,
+                                5//LTE_SN_FieldLength_size5//sn_field_length
+                               );
+     rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
+
+     LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
+          __FILE__, __LINE__, __FUNCTION__, (int)drb_id, rnti);
+   }
+    rlc_manager_unlock(rlc_ue_manager);
+
   }
 
   if (drb2release_listP != NULL) {
