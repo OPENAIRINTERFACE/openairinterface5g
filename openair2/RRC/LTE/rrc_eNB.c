@@ -96,6 +96,11 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#define ASN_MAX_ENCODE_SIZE 1000
+static int add_CG_ConfigInfo(char **enc_buf,rrc_eNB_ue_context_t *const ue_context_pP,int * enc_size);
+static int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
+static void free_rb_config(struct NR_RadioBearerConfig *rb_config);
+static void free_cg_configinfo(struct NR_CG_ConfigInfo *cg_configinfo);
 
 extern RAN_CONTEXT_t RC;
 
@@ -4334,6 +4339,8 @@ rrc_eNB_process_MeasurementReport(
   long ncell_max = -150;
   uint32_t earfcn_dl;
   uint8_t KeNB_star[32] = { 0 };
+  char *enc_buf = NULL;
+  int enc_size = 0;
   T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
@@ -4396,27 +4403,36 @@ rrc_eNB_process_MeasurementReport(
       MessageDef      *msg;
       ue_context_pP->ue_context.Status = RRC_NR_NSA;
 
-      msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
-      X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
-      //For the moment we have a single E-RAB which will be the one to be added to the gNB
-      //Not sure how to select bearers to be added if there are multiple.
-      X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
-      for (int e_rab=0; e_rab < X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded; e_rab++){
-    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
-    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].gtp_teid = ue_context_pP->ue_context.e_rab[e_rab].param.gtp_teid;
-    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].drb_ID = 1;
-    	  memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr,
+      if(is_en_dc_supported(ue_context_pP->ue_context.UE_Capability)) {
+/** to add gNB as Secondary node CG-ConfigInfo to be added as per 36.423 r15 **/
+	    if(add_CG_ConfigInfo(&enc_buf,ue_context_pP,&enc_size) == RRC_OK)
+	      LOG_I(RRC,"CG-ConfigInfo encoded successfully\n");
+          msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
+          X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
+	      memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
+	      X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
+		  X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
+			= measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
+
+		  //For the moment we have a single E-RAB which will be the one to be added to the gNB
+		  //Not sure how to select bearers to be added if there are multiple.
+		  X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
+		  for (int e_rab=0; e_rab < X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded; e_rab++){
+            X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+    	    X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].gtp_teid = ue_context_pP->ue_context.e_rab[e_rab].param.gtp_teid;
+    	    X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].drb_ID = 1;
+    	    memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[e_rab].sgw_addr,
     	               &ue_context_pP->ue_context.e_rab[e_rab].param.sgw_addr,
     	               sizeof(transport_layer_addr_t));
-      }
-      LOG_I(RRC,
+          }
+		  LOG_I(RRC,
             "[eNB %d] frame %d subframe %d: UE rnti %x switching to NSA mode\n",
             ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->subframe, ctxt_pP->rnti);
-      itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
-      return;
-    }
+          itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+          return;
+      }
   }
-
+}
   if (measResults2->measResultNeighCells == NULL)
     return;
 
@@ -4530,6 +4546,186 @@ rrc_eNB_process_MeasurementReport(
           ctxt_pP->rnti);
   }
 }
+
+
+//-----------------------------------------------------------------------------
+/**  
+ * @fn		:add_CG_ConfigInfo
+ * @param 	:enc_buf to store the encoded bits 
+ * @param   :ue_context_pP ue context used to fill CG-ConfigInfo
+ * @param   :enc_size to store thre size of encoded size
+ *			this api is to fill and encode CG-ConfigInfo
+ */
+int add_CG_ConfigInfo(
+  char **enc_buf,
+  rrc_eNB_ue_context_t *const ue_context_pP,
+  int * enc_size
+) {
+  struct NR_CG_ConfigInfo *cg_configinfo = NULL;
+  struct NR_RadioBearerConfig *rb_config = NULL;
+  asn_enc_rval_t enc_rval;
+  int RRC_OK = 1;
+  int index = 0;
+
+  rb_config = calloc(1,sizeof( struct NR_RadioBearerConfig));
+  AssertFatal(rb_config != NULL,"failed to allocate memory for rb_config");
+
+  if(ue_context_pP->ue_context.DRB_configList->list.count != 0) {
+    rb_config->drb_ToAddModList = calloc(1,sizeof(struct NR_DRB_ToAddModList ));
+	AssertFatal(rb_config->drb_ToAddModList != NULL,"failed to allocated memory for drbtoaddmodlist");
+	rb_config->drb_ToAddModList->list.count = ue_context_pP->ue_context.DRB_configList->list.count;
+	rb_config->drb_ToAddModList->list.array 
+		= calloc(ue_context_pP->ue_context.DRB_configList->list.count, sizeof(struct LTE_DRB_ToAddMod));
+	AssertFatal( rb_config->drb_ToAddModList->list.array != NULL,
+		"falied to allocate memory for list.array");
+	  for(index = 0;index < ue_context_pP->ue_context.DRB_configList->list.count;index++) {
+	    rb_config->drb_ToAddModList->list.array[index] 
+			= calloc(1,sizeof(struct LTE_DRB_ToAddMod));
+	    AssertFatal(rb_config->drb_ToAddModList->list.array[index] != NULL,
+			"failed to allocate memory for drb_toaddmod");
+	    rb_config->drb_ToAddModList->list.array[index]->drb_Identity
+			=ue_context_pP->ue_context.DRB_configList->list.array[index]->drb_Identity;
+		if(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity) {
+	      rb_config->drb_ToAddModList->list.array[index]->cnAssociation
+			  =calloc(1,sizeof(struct NR_DRB_ToAddMod__cnAssociation));
+	      AssertFatal(rb_config->drb_ToAddModList->list.array[index]->cnAssociation != NULL,
+			  "failed to allocate memory cnAssociation");
+	      rb_config->drb_ToAddModList->list.array[index]->cnAssociation->present
+			  =NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
+	      rb_config->drb_ToAddModList->list.array[index]->cnAssociation->choice.eps_BearerIdentity
+			  =*(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity);
+		}
+	  }
+  }
+
+  cg_configinfo = calloc(1,sizeof(struct NR_CG_ConfigInfo));
+  AssertFatal(cg_configinfo != NULL,"failed to allocate memory for cg_configinfo");
+  cg_configinfo->criticalExtensions.present = NR_CG_ConfigInfo__criticalExtensions_PR_c1;
+  cg_configinfo->criticalExtensions.choice.c1 
+      = calloc(1, sizeof(struct NR_CG_ConfigInfo__criticalExtensions__c1));
+  AssertFatal(cg_configinfo->criticalExtensions.choice.c1 != NULL,
+	  "failed to allocate memory for cg_configinfo->criticalExtensions.choice.c1");
+  cg_configinfo->criticalExtensions.choice.c1->present 
+	  = NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo;
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo 
+	  = calloc(1,sizeof(struct NR_CG_ConfigInfo_IEs));
+  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo != NULL,
+	  "failed to allocate memory for cg_configinfo_IEs");
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo 
+	  = calloc(1,sizeof( OCTET_STRING_t));
+  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
+	  ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->size 
+	  = ue_context_pP->ue_context.UE_Capability_size;
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf 
+	  = calloc(1,sizeof(ue_context_pP->ue_context.UE_Capability_size));
+  AssertFatal( cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
+	  ue_CapabilityInfo->buf  != NULL, "failed to allocate memory for buf");
+  memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf,
+	  ue_context_pP->ue_context.UE_Capability,ue_context_pP->ue_context.UE_Capability_size);
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config 
+	  = calloc(1,sizeof(OCTET_STRING_t));
+  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
+	  mcg_RB_Config != NULL, "failed to allocate memory for mcg_rb_config");
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->size 
+	  = sizeof( struct NR_RadioBearerConfig);
+  cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf 
+	  = calloc(1,sizeof(struct NR_RadioBearerConfig));
+  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
+	  mcg_RB_Config->buf != NULL,"failed to allocate memory for buf");
+  memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf,
+	  rb_config,sizeof(struct NR_RadioBearerConfig));
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_ConfigInfo,NULL,(void*)cg_configinfo,
+	  enc_buf,ASN_MAX_ENCODE_SIZE);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+	  enc_rval.failed_type->name, enc_rval.encoded);
+  *enc_size = (enc_rval.encoded+7)/8;
+  free_rb_config(rb_config);
+  free_cg_configinfo(cg_configinfo);
+  return RRC_OK;
+  }
+//-----------------------------------------------------------------------------
+
+
+
+/**
+ * @fn		:api to free the all the dynamically allocated memory
+ * @param	:cg_configinfo contains cellgroup configuration
+ */
+void free_cg_configinfo(
+  struct NR_CG_ConfigInfo *cg_configinfo
+) {
+  if(cg_configinfo){
+    if(cg_configinfo->criticalExtensions.choice.c1){
+      if(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo){
+        if(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo){
+          if(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf){
+            if(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config){
+              if(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf){
+				free(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf);
+				cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf =NULL;
+				free(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config);
+				cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config =NULL;
+				free(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf);
+				cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf = NULL;
+				free(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo);
+				cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo =NULL;
+				free(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo);
+				cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo =NULL;
+				free(cg_configinfo->criticalExtensions.choice.c1);
+				cg_configinfo->criticalExtensions.choice.c1 =NULL;
+				free(cg_configinfo);
+				cg_configinfo =NULL;
+			  }
+			}
+		  }			
+		}
+	  }
+    }   
+  }
+  return;
+}
+//-----------------------------------------------------------------------------
+
+
+
+//-----------------------------------------------------------------------------
+/**
+ * @fn		:api to free the all the dynamically allocated memory
+ * @param	:rb_config contains radiobearer configuration
+ */
+void free_rb_config(
+  struct NR_RadioBearerConfig *rb_config
+) {
+  int index = 0;
+   
+  if(rb_config) {
+    if(rb_config->drb_ToAddModList) {
+      if(rb_config->drb_ToAddModList->list.array) {
+        for(index = 0; index < rb_config->drb_ToAddModList->list.count; index++) {
+          if(rb_config->drb_ToAddModList->list.array[index]->cnAssociation) {
+	        free(rb_config->drb_ToAddModList->list.array[index]->cnAssociation);
+	        rb_config->drb_ToAddModList->list.array[index]->cnAssociation = NULL;
+		  }
+	      if(rb_config->drb_ToAddModList->list.array[index]) {
+	       free(rb_config->drb_ToAddModList->list.array[index]);
+	       rb_config->drb_ToAddModList->list.array[index] = NULL;
+		  }
+		}
+		free(rb_config->drb_ToAddModList->list.array);
+		rb_config->drb_ToAddModList->list.array = NULL;
+		free(rb_config->drb_ToAddModList);
+		rb_config->drb_ToAddModList = NULL;
+		free(rb_config);
+		rb_config = NULL;
+	  }
+	}
+  }
+  return;
+}
+//------------------------------------------------------------------------------
+
+
 
 //-----------------------------------------------------------------------------
 void
