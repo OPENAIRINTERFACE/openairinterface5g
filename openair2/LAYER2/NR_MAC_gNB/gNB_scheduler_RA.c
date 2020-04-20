@@ -686,7 +686,6 @@ void nr_generate_Msg2(module_id_t module_idP,
       pdcch_pdu_rel15->StartSymbolIndex,
       pdcch_pdu_rel15->DurationSymbols);
 
-    pdcch_pdu_rel15->numDlDci++;
     fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types,dci10_bw,ra->bwp_id);
 
     dl_req->nPDUs+=2;
