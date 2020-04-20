@@ -52,6 +52,8 @@ void mac_rlc_data_ind     (
 {
   rlc_ue_t *ue;
   rlc_entity_t *rb;
+  int rnti;
+  int channel_id;
 
   if (enb_flagP == 1 && module_idP != 0) {
     LOG_E(RLC, "%s:%d:%s: fatal, module_id must be 0 for eNB\n",
@@ -59,7 +61,7 @@ void mac_rlc_data_ind     (
     exit(1);
   }
 
-  if (/*module_idP != 0 ||*/ eNB_index != 0 || /*enb_flagP != 1 ||*/ MBMS_flagP != 0) {
+  if (/*module_idP != 0 ||*/ eNB_index != 0 /*|| enb_flagP != 1 || MBMS_flagP != 0*/) {
     LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
@@ -68,21 +70,35 @@ void mac_rlc_data_ind     (
     T(T_ENB_RLC_MAC_UL, T_INT(module_idP), T_INT(rntiP),
       T_INT(channel_idP), T_INT(tb_sizeP));
 
-  rlc_manager_lock(rlc_ue_manager);
-  ue = rlc_manager_get_ue(rlc_ue_manager, rntiP);
+  /* TODO: better handle mbms, maybe we should not change rnti here */
+  if (!enb_flagP && MBMS_flagP) {
+    rnti = 0xfffd;
+    /* TODO: handle channel_id properly */
+    if (channel_idP != 5) {
+      LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+      exit(1);
+    }
+    channel_id = 7;
+  } else {
+    rnti = rntiP;
+    channel_id = channel_idP;
+  }
 
-  switch (channel_idP) {
-  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
-  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
-  default:      rb = NULL;                     break;
+  rlc_manager_lock(rlc_ue_manager);
+  ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
+
+  switch (channel_id) {
+  case 1 ... 2: rb = ue->srb[channel_id - 1]; break;
+  case 3 ... 7: rb = ue->drb[channel_id - 3]; break;
+  default:      rb = NULL;                    break;
   }
 
   if (rb != NULL) {
     rb->set_time(rb, rlc_current_time);
     rb->recv_pdu(rb, buffer_pP, tb_sizeP);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: no RB found (channel ID %d)\n",
-          __FILE__, __LINE__, __FUNCTION__, channel_idP);
+    LOG_E(RLC, "%s:%d:%s: fatal: no RB found (rnti %d channel ID %d)\n",
+          __FILE__, __LINE__, __FUNCTION__, rnti, channel_id);
     exit(1);
   }
 
@@ -356,6 +372,10 @@ static void deliver_sdu(void *_ue, rlc_entity_t *entity, char *buf, int size)
   mem_block_t *memblock;
   int i;
   int is_enb;
+  int is_mbms;
+
+  /* TODO: be sure it's fine to check rnti for MBMS */
+  is_mbms = ue->rnti == 0xfffd;
 
   /* is it SRB? */
   for (i = 0; i < 2; i++) {
@@ -425,8 +445,10 @@ rb_found:
     }
   }
 
-  if (!get_pdcp_data_ind_func()(&ctx, is_srb, 0, rb_id, size, memblock, NULL, NULL)) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
+  if (!get_pdcp_data_ind_func()(&ctx, is_srb, is_mbms, rb_id, size, memblock, NULL, NULL)) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed (is_srb %d rb_id %d rnti %d)\n",
+          __FILE__, __LINE__, __FUNCTION__,
+          is_srb, rb_id, ue->rnti);
     /* what to do in case of failure? for the moment: nothing */
   }
 }
@@ -830,6 +852,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   }
 
   if (pmch_InfoList_r9_pP != NULL) {
+    int                           mbms_rnti = 0xfffd;
     LTE_MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
     LTE_MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
     mbms_session_id_t             mbms_session_id;
@@ -859,40 +882,41 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id; // + (LTE_maxDRB + 3); // 15
         }
 
-        LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u, rnti %x\n",
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u, mbms_rnti %x\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               lc_id,
               (int)drb_id,
               mbms_session_id,
               mbms_service_id,
-              rnti
+              mbms_rnti
              );
+
+        rlc_entity_t            *rlc_um;
+        rlc_ue_t                *ue;
+
+        //drb_id = rb_id;
+
+        rlc_manager_lock(rlc_ue_manager);
+        ue = rlc_manager_get_ue(rlc_ue_manager, mbms_rnti);
+        if (ue->drb[drb_id-1] != NULL) {
+          LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+              __FILE__, __LINE__, __FUNCTION__, (int)drb_id, mbms_rnti);
+        } else {
+          rlc_um = new_rlc_entity_um(1000000,
+                                     1000000,
+                                     deliver_sdu, ue,
+                                     0,//LTE_T_Reordering_ms0,//t_reordering,
+                                     5//LTE_SN_FieldLength_size5//sn_field_length
+                                    );
+          rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
+
+          LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
+                __FILE__, __LINE__, __FUNCTION__, (int)drb_id, mbms_rnti);
+        }
+        rlc_manager_unlock(rlc_ue_manager);
+
       }
     }
-
-    rlc_entity_t            *rlc_um;
-    rlc_ue_t                *ue;
-
-    //drb_id = rb_id;
-
-    rlc_manager_lock(rlc_ue_manager);
-    ue = rlc_manager_get_ue(rlc_ue_manager, rnti);
-    if (ue->drb[drb_id-1] != NULL) {
-      LOG_D(RLC, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
-          __FILE__, __LINE__, __FUNCTION__, (int)drb_id, rnti);
-    } else {
-     rlc_um = new_rlc_entity_um(1000000,
-                                1000000,
-                                deliver_sdu, ue,
-                                0,//LTE_T_Reordering_ms0,//t_reordering,
-                                5//LTE_SN_FieldLength_size5//sn_field_length
-                               );
-     rlc_ue_add_drb_rlc_entity(ue, drb_id, rlc_um);
-
-     LOG_D(RLC, "%s:%d:%s: added drb %d to ue %d\n",
-          __FILE__, __LINE__, __FUNCTION__, (int)drb_id, rnti);
-   }
-    rlc_manager_unlock(rlc_ue_manager);
 
   }
 
