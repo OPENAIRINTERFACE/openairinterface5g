@@ -2355,9 +2355,9 @@ void ulsch_scheduler_pre_ue_select_fairRR(
       UE_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
       rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
 
-      if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
+      if ( ((UE_sched_ctl->ul_inactivity_timer>64)&&(UE_sched_ctl->ul_scheduled==0))  ||
            ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(rrc_status < RRC_CONNECTED)) ||
-           ((UE_sched_ctl->cqi_req_timer>300)&&((rrc_status >= RRC_CONNECTED))) ) {
+           ((UE_sched_ctl->cqi_req_timer>64)&&((rrc_status >= RRC_CONNECTED))) ) {
         first_ue_id[CC_id][ue_first_num[CC_id]]= UE_id;
         first_ue_total[CC_id] [ue_first_num[CC_id]] = 0;
         ue_first_num[CC_id]++;
@@ -2468,9 +2468,9 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
 
     if ( (bytes_to_schedule > 0) || (UE_info->UE_template[CC_id][UE_id].ul_SR > 0) ||
-         ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
+         ((UE_sched_ctl->ul_inactivity_timer>64)&&(UE_sched_ctl->ul_scheduled==0))  ||
          ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(rrc_status < RRC_CONNECTED)) ||
-         ((UE_sched_ctl->cqi_req_timer>300)&&((rrc_status >= RRC_CONNECTED))) ) {
+         ((UE_sched_ctl->cqi_req_timer>64)&&((rrc_status >= RRC_CONNECTED))) ) {
       hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
       format_flag = 2;
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id),UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id],format0);
