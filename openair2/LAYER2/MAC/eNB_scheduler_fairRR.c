@@ -3111,7 +3111,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         UE_sched_ctrl->cqi_received = 0;
         UE_sched_ctrl->cqi_req_timer = 0;
         cqi_req = 0;
-      }else if (UE_sched_ctrl->cqi_req_timer>30) {
+      }else if (UE_sched_ctrl->cqi_req_timer>64) {
         cqi_req = 1;
 
         // To be safe , do not ask CQI in special SFs:36.213/7.2.3 CQI definition
