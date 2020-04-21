@@ -179,15 +179,13 @@ class RANManagement():
 	def GeteNB_instance(self):
 		return self.eNB_instance
 
-	def SeteNBLogFiles(self, enblogs):
-		self.eNBLogFiles = enblogs
-	def GeteNBLogFiles(self):
-		return self.eNBLogFiles
+	def SeteNBLogFile(self, enblog, idx):
+		self.eNBLogFiles[idx] = enblog
+	def GeteNBLogFile(self, idx):
+		return self.eNBLogFiles[idx]
 
-	def SeteNBmbmsEnables(self, enbmbms):
-		self.eNBmbmsEnables = enbmbms
-	def GeteNBmbmsEnables(self):
-		return self.eNBmbmsEnables
+	def GeteNBmbmsEnable(self, idx):
+		return self.eNBmbmsEnables[idx]
 
 	def SeteNB1IPAddress(self,enb1ip):
 		self.eNB1IPAddress = enb1ip
@@ -802,6 +800,7 @@ class RANManagement():
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		ulschReceiveOK = 0
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -914,6 +913,9 @@ class RANManagement():
 			result = re.search('ULSCH in error in round', str(line))
 			if result is not None:
 				ulschFailure += 1
+			result = re.search('ULSCH received ok', str(line))
+			if result is not None:
+				ulschReceiveOK += 1
 			result = re.search('BAD all_segments_received', str(line))
 			if result is not None:
 				rlcDiscardBuffer += 1
@@ -933,6 +935,11 @@ class RANManagement():
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
+		if self.air_interface == 'nr':
+			if ulschReceiveOK > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')

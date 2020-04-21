@@ -353,7 +353,7 @@ class OaiCiTest():
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
-		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
@@ -451,7 +451,7 @@ class OaiCiTest():
 					logging.debug(SSH.getBefore())
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
 					tunnelInterfaceStatus = False
-				if RAN.GeteNBmbmsEnables[0]:
+				if RAN.GeteNBmbmsEnable(0):
 					self.command('ifconfig oaitun_uem1', '\$', 4)
 					result = re.search('inet addr', SSH.getBefore())
 					if result is not None:
@@ -476,7 +476,7 @@ class OaiCiTest():
 				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 		else:
 			if RAN.Getair_interface() == 'lte':
-				if RAN.GeteNBmbmsEnables[0]:
+				if RAN.GeteNBmbmsEnable(0):
 					HTML.SethtmlUEFailureMsg('oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured')
 				else:
 					HTML.SethtmlUEFailureMsg('oaitun_ue1 interface is either NOT mounted or NOT configured')
@@ -2316,13 +2316,13 @@ class OaiCiTest():
 				if (status < 0):
 					result = status
 			if result == CONST.ENB_PROCESS_FAILED:
-				fileCheck = re.search('enb_', str(RAN.GeteNBLogFiles[0]))
+				fileCheck = re.search('enb_', str(RAN.GeteNBLogFile(0)))
 				if fileCheck is not None:
-					SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/' + RAN.GeteNBLogFiles[0], '.')
-					logStatus = self.AnalyzeLogFile_eNB(RAN.GeteNBLogFiles[0])
+					SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/' + RAN.GeteNBLogFile(0), '.')
+					logStatus = RAN.AnalyzeLogFile_eNB(RAN.GeteNBLogFile[0])
 					if logStatus < 0:
 						result = logStatus
-					RAN.SeteNBLogFiles[0] = ''
+					RAN.SeteNBLogFile('', 0)
 				if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
 					self.TerminateFlexranCtrl()
 			return result
@@ -2457,7 +2457,7 @@ class OaiCiTest():
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
 				no_cell_sync_found = True
-			if RAN.GeteNBmbmsEnables[0]:
+			if RAN.GeteNBmbmsEnable(0):
 				result = re.search('TRIED TO PUSH MBMS DATA', str(line))
 				if result is not None:
 					mbms_messages += 1
@@ -2583,7 +2583,7 @@ class OaiCiTest():
 			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
-		if RAN.GeteNBmbmsEnables[0]:
+		if RAN.GeteNBmbmsEnable(0):
 			if mbms_messages > 0:
 				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -3075,6 +3075,7 @@ def GetParametersFromXML(action):
 			CiTestObj.air_interface = 'lte'
 		else:
 			CiTestObj.air_interface = CiTestObj.air_interface.lower()
+		RAN.Setair_interface(CiTestObj.air_interface)
 
 	if action == 'Terminate_eNB':
 		RAN.SeteNB_instance(test.findtext('eNB_instance'))
@@ -3088,6 +3089,7 @@ def GetParametersFromXML(action):
 			CiTestObj.air_interface = 'lte'
 		else:
 			CiTestObj.air_interface = CiTestObj.air_interface.lower()
+		RAN.Setair_interface(CiTestObj.air_interface)
 
 	if action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
@@ -3120,7 +3122,7 @@ def GetParametersFromXML(action):
 		if (CiTestObj.air_interface is None):
 			CiTestObj.air_interface = 'lte'
 		else:
-			CiTestObj.air_interface = SSH.air_interface.lower()
+			CiTestObj.air_interface = CiTestObj.air_interface.lower()
 
 	if action == 'Terminate_OAI_UE':
 		RAN.SeteNB_instance(test.findtext('UE_instance'))
@@ -3378,17 +3380,17 @@ elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
 		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
-	CiTestObj.TerminateHSS()
+	EPC.TerminateHSS()
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
 		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
-	CiTestObj.TerminateMME()
+	EPC.TerminateMME()
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
 		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
-	CiTestObj.TerminateSPGW()
+	EPC.TerminateSPGW()
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
 	if (RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
 		GenericHelp(Version)
@@ -3398,7 +3400,7 @@ elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 	if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '':
 		GenericHelp(Version)
 		sys.exit('Insufficient Parameter')
-	CiTestObj.LogCollecteNB()
+	RAN.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
 		GenericHelp(Version)
@@ -3555,7 +3557,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	CiTestObj.FailReportCnt = 0
 	RAN.SetprematureExit(True)
-	HTML.SetstartTime(int(round(time.time() * 1000))
+	HTML.SetstartTime(int(round(time.time() * 1000)))
 	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and RAN.GetprematureExit():
 		RAN.SetprematureExit(False)
 		# At every iteratin of the retry loop, a separator will be added
