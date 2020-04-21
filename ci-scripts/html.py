@@ -69,6 +69,14 @@ class HTMLManagement():
 		self.testCase_id = ''
 		self.desc = ''
 
+		self.OsVersion = ['', '']
+		self.KernelVersion = ['', '']
+		self.UhdVersion = ['', '']
+		self.UsrpBoard = ['', '']
+		self.CpuNb = ['', '']
+		self.CpuModel = ['', '']
+		self.CpuMHz = ['', '']
+
 #-----------------------------------------------------------
 # Setters and Getters
 #-----------------------------------------------------------
@@ -90,8 +98,9 @@ class HTMLManagement():
 
 	def SettestCase_id(self, tcid):
 		self.testCase_id = tcid
+	def GettestCase_id(self):
+		return self.testCase_id
 
-	
 	def SetranRepository(self, repository):
 		self.ranRepository = repository
 	def GetranRepository(self):
@@ -101,7 +110,6 @@ class HTMLManagement():
 		self.ranAllowMerge = merge
 	def GetranAllowMerge(self):
 		return self.ranAllowMerge
-
 
 	def SetranBranch(self, branch):
 		self.ranBranch = branch
@@ -132,19 +140,29 @@ class HTMLManagement():
 	def GetnbTestXMLfiles(self):
 		return self.nbTestXMLfiles
 
-
 	def SettestXMLfiles(self, xmlFile):
 		self.testXMLfiles.append(xmlFile)
-
 	def SethtmlTabRefs(self, tabRef):
 		self.htmlTabRefs.append(tabRef)
-
 	def SethtmlTabNames(self, tabName):
 		self.htmlTabNames.append(tabName)
-
 	def SethtmlTabIcons(self, tabIcon):
 		self.htmlTabIcons.append(tabIcon)
 
+	def SetOsVersion(self, version, idx):
+		self.OsVersion[idx] = version
+	def SetKernelVersion(self, version, idx):
+		self.KernelVersion[idx] = version
+	def SetUhdVersion(self, version, idx):
+		self.UhdVersion[idx] = version
+	def SetUsrpBoard(self, version, idx):
+		self.UsrpBoard[idx] = version
+	def SetCpuNb(self, nb, idx):
+		self.CpuNb[idx] = nb
+	def SetCpuModel(self, model, idx):
+		self.CpuModel[idx] = model
+	def SetCpuMHz(self, freq, idx):
+		self.CpuMHz[idx] = freq
 
 #-----------------------------------------------------------
 # HTML structure creation functions
@@ -307,68 +325,40 @@ class HTMLManagement():
 
 	def CreateHtmlFooter(self, passStatus):
 		if (os.path.isfile('test_results.html')):
-			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-			logging.debug('\u001B[1m  Creating HTML footer \u001B[0m')
-			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('</div>\n')
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
 
-		#	GP machines = [ 'eNB', 'UE' ]
-		#	GP for machine in machines:
-				#GP This needs to move back to main and be called before CreateHtmlFooter
-			
-			res = self.reseNB
-			if res != -1:
+			machines = [ 'eNB', 'UE' ]
+			for machine in machines:
+				if machine == 'eNB':
+					idx = 0
+				else:
+					idx = 1
+				if self.OsVersion[idx] == '':
+					continue
+
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <th colspan=8>' + str('eNB') + ' Server Characteristics</th>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td>OS Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion[idx] + '</span></td>\n')
 				self.htmlFile.write('        <td>Kernel Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion[idx] + '</span></td>\n')
 				self.htmlFile.write('        <td>UHD Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion[idx] + '</span></td>\n')
 				self.htmlFile.write('        <td>USRP Board</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard[idx] + '</span></td>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td>Nb CPUs</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb[idx] + '</span></td>\n')
 				self.htmlFile.write('        <td>CPU Model Name</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel[idx] + '</span></td>\n')
 				self.htmlFile.write('        <td>CPU Frequency</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz + '</span></td>\n')
-				self.htmlFile.write('        <td></td>\n')
-				self.htmlFile.write('        <td></td>\n')
-				self.htmlFile.write('      </tr>\n')
-
-
-			res = self.resUE
-			if res != -1:
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <th colspan=8>' + str('UE') + ' Server Characteristics</th>\n')
-				self.htmlFile.write('      </tr>\n')
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <td>OS Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion + '</span></td>\n')
-				self.htmlFile.write('        <td>Kernel Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion + '</span></td>\n')
-				self.htmlFile.write('        <td>UHD Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion + '</span></td>\n')
-				self.htmlFile.write('        <td>USRP Board</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard + '</span></td>\n')
-				self.htmlFile.write('      </tr>\n')
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <td>Nb CPUs</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb + '</span></td>\n')
-				self.htmlFile.write('        <td>CPU Model Name</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel + '</span></td>\n')
-				self.htmlFile.write('        <td>CPU Frequency</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz + '</span></td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz[idx] + '</span></td>\n')
 				self.htmlFile.write('        <td></td>\n')
 				self.htmlFile.write('        <td></td>\n')
 				self.htmlFile.write('      </tr>\n')

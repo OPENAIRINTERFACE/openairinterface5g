@@ -94,13 +94,6 @@ class OaiCiTest():
 		self.x2ENBConnectedUEs = []
 		self.repeatCounts = []
 		self.finalStatus = False
-		self.OsVersion = ''
-		self.KernelVersion = ''
-		self.UhdVersion = ''
-		self.UsrpBoard = ''
-		self.CpuNb = ''
-		self.CpuModel = ''
-		self.CpuMHz = ''
 		self.UEIPAddress = ''
 		self.UEUserName = ''
 		self.UEPassword = ''
@@ -2747,26 +2740,26 @@ class OaiCiTest():
 	def AutoTerminateUEandeNB(self):
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
-			RAN.SettestCase_id(self.testCase_id)
+			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of UE'
 			self.ShowTestID()
 			self.TerminateUE()
 		if (self.Initialize_OAI_UE_args != ''):
 			self.testCase_id = 'AUTO-KILL-UE'
-			RAN.SettestCase_id(self.testCase_id)
+			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of UE'
 			self.ShowTestID()
 			self.TerminateOAIUE()
 		if (RAN.GetInitialize_eNB_args() != ''):
 			self.testCase_id = 'AUTO-KILL-eNB'
-			RAN.SettestCase_id(self.testCase_id)
+			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of eNB'
 			self.ShowTestID()
 			RAN.SeteNB_instance('0')
 			RAN.TerminateeNB()
 		if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
-			RAN.SettestCase_id(self.testCase_id)
+			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of FlexRan CTL'
 			self.ShowTestID()
 			self.TerminateFlexranCtrl()
@@ -2934,19 +2927,20 @@ class OaiCiTest():
 
 	def RetrieveSystemVersion(self, machine):
 		if RAN.GeteNBIPAddress() == 'none' or self.UEIPAddress == 'none':
-			self.OsVersion = 'Ubuntu 16.04.5 LTS'
-			self.KernelVersion = '4.15.0-45-generic'
-			self.UhdVersion = '3.13.0.1-0'
-			self.UsrpBoard = 'B210'
-			self.CpuNb = '4'
-			self.CpuModel = 'Intel(R) Core(TM) i5-6200U'
-			self.CpuMHz = '2399.996 MHz'
+			HTML.SetOsVersion('Ubuntu 16.04.5 LTS', 0)
+			HTML.SetKernelVersion('4.15.0-45-generic', 0)
+			HTML.SetUhdVersion('3.13.0.1-0', 0)
+			HTML.SetUsrpBoard('B210', 0)
+			HTML.SetCpuNb('4', 0)
+			HTML.SetCpuModel('Intel(R) Core(TM) i5-6200U', 0)
+			HTML.SetCpuMHz('2399.996 MHz', 0)
 			return 0
 		if machine == 'eNB':
 			if RAN.GeteNBIPAddress() != '' and RAN.GeteNBUserName() != '' and RAN.GeteNBPassword() != '':
 				IPAddress = RAN.GeteNBIPAddress()
 				UserName = RAN.GeteNBUserName()
 				Password = RAN.GeteNBPassword()
+				idx = 0
 			else:
 				return -1
 		if machine == 'UE':
@@ -2954,6 +2948,7 @@ class OaiCiTest():
 				IPAddress = self.UEIPAddress
 				UserName = self.UEUserName
 				Password = self.UEPassword
+				idx = 1
 			else:
 				return -1
 
@@ -2961,55 +2956,64 @@ class OaiCiTest():
 		SSH.command('lsb_release -a', '\$', 5)
 		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
 		if result is not None:
-			self.OsVersion = result.group('os_type')
-			logging.debug('OS is: ' + self.OsVersion)
+			OsVersion = result.group('os_type')
+			logging.debug('OS is: ' + OsVersion)
+			HTML.SetOsVersion(OsVersion, idx)
 		else:
 			SSH.command('hostnamectl', '\$', 5)
 			result = re.search('Operating System: (?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
 			if result is not None:
-				self.OsVersion = result.group('os_type')
-				if self.OsVersion == 'CentOS Linux 7 ':
+				OsVersion = result.group('os_type')
+				if OsVersion == 'CentOS Linux 7 ':
 					SSH.command('cat /etc/redhat-release', '\$', 5)
 					result = re.search('CentOS Linux release (?P<os_version>[0-9\.]+)', SSH.getBefore())
 					if result is not None:
-						self.OsVersion = self.OsVersion.replace('7 ', result.group('os_version'))
-				logging.debug('OS is: ' + self.OsVersion)
+						OsVersion = OsVersion.replace('7 ', result.group('os_version'))
+				logging.debug('OS is: ' + OsVersion)
+				HTML.SetOsVersion(OsVersion, idx)
 		SSH.command('uname -r', '\$', 5)
 		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', SSH.getBefore())
 		if result is not None:
-			self.KernelVersion = result.group('kernel_version')
-			logging.debug('Kernel Version is: ' + self.KernelVersion)
+			KernelVersion = result.group('kernel_version')
+			logging.debug('Kernel Version is: ' + KernelVersion)
+			HTML.SetKernelVersion(KernelVersion, idx)
 		SSH.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
 		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
-			self.UhdVersion = result.group('uhd_version')
-			logging.debug('UHD Version is: ' + self.UhdVersion)
+			UhdVersion = result.group('uhd_version')
+			logging.debug('UHD Version is: ' + UhdVersion)
+			HTML.SetUhdVersion(UhdVersion, idx)
 		else:
 			SSH.command('uhd_config_info --version', '\$', 5)
 			result = re.search('UHD (?P<uhd_version>[a-zA-Z0-9\.\-]+)', SSH.getBefore())
 			if result is not None:
-				self.UhdVersion = result.group('uhd_version')
-				logging.debug('UHD Version is: ' + self.UhdVersion)
+				UhdVersion = result.group('uhd_version')
+				logging.debug('UHD Version is: ' + UhdVersion)
+				HTML.SetUhdVersion(UhdVersion, idx)
 		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 60)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
 		count = 0
 		for board in usrp_boards:
 			if count == 0:
-				self.UsrpBoard = board
+				UsrpBoard = board
 			else:
-				self.UsrpBoard += ',' + board
+				UsrpBoard += ',' + board
 			count += 1
 		if count > 0:
-			logging.debug('USRP Board(s) : ' + self.UsrpBoard)
+			logging.debug('USRP Board(s) : ' + UsrpBoard)
+			HTML.SetUsrpBoard(UsrpBoard, idx)
 		SSH.command('lscpu', '\$', 5)
 		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
-			self.CpuNb = result.group('nb_cpus')
-			logging.debug('nb_cpus: ' + self.CpuNb)
-			self.CpuModel = result.group('model')
-			logging.debug('model: ' + self.CpuModel)
-			self.CpuMHz = result.group('cpu_mhz') + ' MHz'
-			logging.debug('cpu_mhz: ' + self.CpuMHz)
+			CpuNb = result.group('nb_cpus')
+			logging.debug('nb_cpus: ' + CpuNb)
+			HTML.SetCpuNb(CpuNb, idx)
+			CpuModel = result.group('model')
+			logging.debug('model: ' + CpuModel)
+			HTML.SetCpuModel(CpuModel, idx)
+			CpuMHz = result.group('cpu_mhz') + ' MHz'
+			logging.debug('cpu_mhz: ' + CpuMHz)
+			HTML.SetCpuMHz(CpuMHz, idx)
 		SSH.close()
 
 #-----------------------------------------------------------
@@ -3199,6 +3203,8 @@ RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 
 EPC.SetHtmlObj(HTML)
+RAN.SetHtmlObj(HTML)
+RAN.SetEpcObj(EPC)
 
 argvs = sys.argv
 argc = len(argvs)
@@ -3293,19 +3299,15 @@ while len(argvs) > 1:
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetIPAddress(matchReg.group(1))
-		RAN.SetIPAddress(matchReg.group(1))
 	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetUserName(matchReg.group(1))
-		RAN.SetUserName(matchReg.group(1))
 	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetPassword(matchReg.group(1))
-		RAN.SetPassword(matchReg.group(1))
 	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetSourceCodePath(matchReg.group(1))
-		RAN.SetSourceCodePath(matchReg.group(1))
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
 		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
@@ -3466,8 +3468,12 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		HTML.SethtmlNb_CATM_Modules(len(CiTestObj.CatMDevices))
 	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
-	HTML.SetreseNB(RetrieveSystemVersion('eNB'))
-	HTML.SetresUE(RetrieveSystemVersion('UE'))	
+	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+	logging.debug('\u001B[1m  Creating HTML footer \u001B[0m')
+	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+
+	CiTestObj.RetrieveSystemVersion('eNB')
+	CiTestObj.RetrieveSystemVersion('UE')
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
@@ -3575,7 +3581,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				if test_case_id != id:
 					continue
 				CiTestObj.testCase_id = id
-				RAN.SettestCase_id(CiTestObj.testCase_id)
 				HTML.SettestCase_id(CiTestObj.testCase_id)
 				CiTestObj.desc = test.findtext('desc')
 				HTML.Setdesc(CiTestObj.desc)

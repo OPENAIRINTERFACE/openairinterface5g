@@ -46,10 +46,7 @@ import sshconnection as SSH
 import epc 
 import helpreadme as HELP
 import constants as CONST
-import html as HTML
-
-EPC = epc.EPCManagement()
-
+import html
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -90,23 +87,19 @@ class RANManagement():
 		self.eNBstatuses = [-1, -1, -1]
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
+		self.epcPcapFile = ''
+		self.htmlObj = None
+		self.epcObj = None
 
 #-----------------------------------------------------------
-# Setters and Getters
+# Setters and Getters on Public members
 #-----------------------------------------------------------
 
-	def SetIPAddress(self, ipaddress):
-		self.EPCIPAddress = ipaddress
-	def SetUserName(self, username):
-		self.EPCUserName = username
-	def SetPassword(self, password):
-		self.EPCPassword = password
-	def SetSourceCodePath(self, sourcecodepath):
-		self.EPCSourceCodePath = sourcecodepath
+	def SetHtmlObj(self, obj):
+		self.htmlObj = obj
+	def SetEpcObj(self, obj):
+		self.epcObj = obj
 
-
-	def SettestCase_id(self,tcid):
-		self.testCase_id = tcid
 	def SetflexranCtrlInstalled(self,fxrctin):
 		self.flexranCtrlInstalled = fxrctin
 	def GetflexranCtrlInstalled(self):
@@ -242,7 +235,6 @@ class RANManagement():
 
 
 	def BuildeNB(self):
-		myHTML = HTML.HTMLManagement()
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
@@ -315,7 +307,8 @@ class RANManagement():
 						mismatch = True
 				if not mismatch:
 					mySSH.close()
-					myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+					if self.htmlObj is not None:
+						self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 					return
 
 		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
@@ -341,12 +334,17 @@ class RANManagement():
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=build_enb_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.close()
-			myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
-			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+				self.backgroundBuildTestId[int(self.eNB_instance)] = self.htmlObj.GettestCase_id()
 			return
 		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
 		mySSH.close()
-		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
+		if self.htmlObj is not None:
+			tId = self.htmlObj.GettestCase_id()
+		else:
+			tId = '0000'
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, tId)
 
 
 
@@ -385,8 +383,8 @@ class RANManagement():
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)])
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
-		myHTML = HTML.HTMLManagement()
-		myHTML.SettestCase_id(testcaseId)
+		if self.htmlObj is not None:
+			self.htmlObj.SettestCase_id(testcaseId)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
@@ -436,16 +434,17 @@ class RANManagement():
 
 		if buildStatus:
 			logging.info('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Pass\u001B[0m')
-			myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 		else:
 			logging.error('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Failed\u001B[0m')
-			myHTML.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
-			myHTML.CreateHtmlTabFooter(False)
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
+				self.htmlObj.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
 
 	def InitializeeNB(self):
-		myHTML = HTML.HTMLManagement()
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -467,21 +466,25 @@ class RANManagement():
 		mySSH = SSH.SSHConnection()
 		
 		if (self.pStatus < 0):
-			myHTML.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', self.pStatus)
-			myHTML.CreateHtmlTabFooter(False)
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', self.pStatus)
+				self.htmlObj.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if result is not None:
-			mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		if (result is not None) and (self.epcObj is not None):
+			localEpcIpAddr = self.epcObj.GetIPAddress()
+			localEpcUserName = self.epcObj.GetUserName()
+			localEpcPassword = self.epcObj.GetPassword()
+			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
-				EPC.Set_PcapFileName('enb_' + self.testCase_id + '_s1log.pcap')
-				mySSH.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + EPC.Get_PcapFileName()  + ' > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+				self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
+				mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
+				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
 			mySSH.close()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
@@ -520,7 +523,9 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		if self.epcObj is not None:
+			localEpcIpAddr = self.epcObj.GetIPAddress()
+			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localEpcIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -569,22 +574,26 @@ class RANManagement():
 				mySSH.close()
 				doLoop = False
 				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
-				myHTML.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
+				if self.htmlObj is not None:
+					self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
-				if result is not None:
-					mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+				if (result is not None) and (self.epcObj is not None):
+					localEpcIpAddr = self.epcObj.GetIPAddress()
+					localEpcUserName = self.epcObj.GetUserName()
+					localEpcPassword = self.epcObj.GetPassword()
+					mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-					mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
-					if EPC.Get_PcapFileName()  != '':
+					mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+					if self.epcPcapFile  != '':
 						time.sleep(0.5)
-						mySSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
+						mySSH.command('echo ' + localEpcPassword + ' | sudo -S chmod 666 /tmp/' + self.epcPcapFile, '\$', 5)
 					mySSH.close()
 					time.sleep(1)
-					if EPC.Get_PcapFileName()  != '':
-						copyin_res = mySSH.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + EPC.Get_PcapFileName() , '.')
+					if self.epcPcapFile != '':
+						copyin_res = mySSH.copyin(localEpcIpAddr, localEpcUserName, localEpcPassword, '/tmp/' + self.epcPcapFile, '.')
 						if (copyin_res == 0):
-							mySSH.copyout(lIpAddr, lUserName, lPassWord, EPC.Get_PcapFileName() , lSourcePath + '/cmake_targets/.')
+							mySSH.copyout(lIpAddr, lUserName, lPassWord, self.epcPcapFile, lSourcePath + '/cmake_targets/.')
 				self.prematureExit = True
 				return
 			else:
@@ -619,7 +628,8 @@ class RANManagement():
 			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId)
 
 		mySSH.close()
-		myHTML.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
+		if self.htmlObj is not None:
+			self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
 
@@ -659,7 +669,6 @@ class RANManagement():
 
 
 	def TerminateeNB(self):
-		myHTML = HTML.HTMLManagement()
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -700,15 +709,18 @@ class RANManagement():
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if result is not None:
-			mySSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		if (result is not None) and (self.epcObj is not None):
+			localEpcIpAddr = self.epcObj.GetIPAddress()
+			localEpcUserName = self.epcObj.GetUserName()
+			localEpcPassword = self.epcObj.GetPassword()
+			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-			mySSH.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
-			if EPC.Get_PcapFileName()  != '':
-				mySSH.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + EPC.Get_PcapFileName() , '\$', 5)
-				mySSH.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + EPC.Get_PcapFileName() , '.')
-				mySSH.copyout(lIpAddr, lUserName, lPassWord, EPC.Get_PcapFileName() , lSourcePath + '/cmake_targets/.')
+			if self.epcPcapFile != '':
+				mySSH.command('echo ' + localEpcPassword + ' | sudo -S chmod 666 /tmp/' + self.epcPcapFile, '\$', 5)
+				mySSH.copyin(localEpcIpAddr, localEpcUserName, localEpcPassword, '/tmp/' + self.epcPcapFile, '.')
+				mySSH.copyout(lIpAddr, lUserName, lPassWord, self.epcPcapFile, lSourcePath + '/cmake_targets/.')
 			mySSH.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
@@ -725,7 +737,8 @@ class RANManagement():
 			mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
-			myHTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+			if self.htmlObj is not None:
+				self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
 			analyzeFile = False
@@ -738,7 +751,8 @@ class RANManagement():
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
 					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
-					myHTML.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					if self.htmlObj is not None:
+						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId != '0':
@@ -746,14 +760,17 @@ class RANManagement():
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze)
 				if (logStatus < 0):
-					myHTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					if self.htmlObj is not None:
+						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					self.preamtureExit = True
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
-					myHTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+					if self.htmlObj is not None:
+						self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			else:
-				myHTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+				if self.htmlObj is not None:
+					self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
