@@ -84,6 +84,8 @@ class HTMLManagement():
                 self.htmlUEFailureMsg = huefa
 	def GethtmlUEFailureMsg(self):
 		return self.htmlUEFailureMsg
+	def SetHmleNBFailureMsg(self, msg):
+		self.htmleNBFailureMsg = msg
 
 	def SetreseNB(self,rsenb):
 		self.reseNB = rsenb

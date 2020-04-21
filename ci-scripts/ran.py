@@ -87,6 +87,7 @@ class RANManagement():
 		self.eNBstatuses = [-1, -1, -1]
 		self.flexranCtrlInstalled = False
 		self.flexranCtrlStarted = False
+		self.testCase_id = ''
 		self.epcPcapFile = ''
 		self.htmlObj = None
 		self.epcObj = None
@@ -267,6 +268,10 @@ class RANManagement():
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
+		if self.htmlObj is not None:
+			self.testCase_id = self.htmlObj.GettestCase_id()
+		else:
+			self.testCase_id = '000000'
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
@@ -336,15 +341,11 @@ class RANManagement():
 			mySSH.close()
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
-				self.backgroundBuildTestId[int(self.eNB_instance)] = self.htmlObj.GettestCase_id()
+			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
 			return
 		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
 		mySSH.close()
-		if self.htmlObj is not None:
-			tId = self.htmlObj.GettestCase_id()
-		else:
-			tId = '0000'
-		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, tId)
+		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
 
 
 
@@ -463,6 +464,11 @@ class RANManagement():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
+
+		if self.htmlObj is not None:
+			self.testCase_id = self.htmlObj.GettestCase_id()
+		else:
+			self.testCase_id = '000000'
 		mySSH = SSH.SSHConnection()
 		
 		if (self.pStatus < 0):
@@ -750,8 +756,8 @@ class RANManagement():
 				copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
-					self.htmleNBFailureMsg = 'Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 					if self.htmlObj is not None:
+						self.htmlObj.SetHmleNBFailureMsg('Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!')
 						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
@@ -811,7 +817,7 @@ class RANManagement():
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
-		self.htmleNBFailureMsg = ''
+		htmleNBFailureMsg = ''
 		isRRU = False
 		isSlave = False
 		slaveReceivesFrameResyncCmd = False
@@ -852,9 +858,9 @@ class RANManagement():
 					requested_option = int(res1.group('requested_option'))
 					applied_option = int(res2.group('applied_option'))
 					if requested_option == applied_option:
-						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
+						htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
 					else:
-						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
+						htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.eNBOptions[int(self.eNB_instance)] + '\n\n'
 			result = re.search('Exiting OAI softmodem', str(line))
 			if result is not None:
 				exitSignalReceived = True
@@ -935,7 +941,6 @@ class RANManagement():
 					mbmsRequestMsg += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
-		self.htmleNBFailureMsg = ''
 		if self.air_interface == 'lte':
 			nodeB_prefix = 'e'
 		else:
@@ -943,101 +948,109 @@ class RANManagement():
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += statMsg + '\n'
+			htmleNBFailureMsg += statMsg + '\n'
 		if pdcpFailure > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += statMsg + '\n'
+			htmleNBFailureMsg += statMsg + '\n'
 		if ulschFailure > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += statMsg + '\n'
+			htmleNBFailureMsg += statMsg + '\n'
 		if dropNotEnoughRBs > 0:
 			statMsg = 'eNB showed ' + str(dropNotEnoughRBs) + ' "dropping, not enough RBs" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += statMsg + '\n'
+			htmleNBFailureMsg += statMsg + '\n'
 		if rrcSetupComplete > 0:
 			rrcMsg = nodeB_prefix + 'NB completed ' + str(rrcSetupComplete) + ' RRC Connection Setup(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReleaseRequest > 0:
 			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
 			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReestablishRequest > 0 or rrcReestablishComplete > 0 or rrcReestablishReject > 0:
 			rrcMsg = nodeB_prefix + 'NB requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReestablishComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 		if self.eNBmbmsEnables[int(self.eNB_instance)]:
 			if mbmsRequestMsg > 0:
 				rrcMsg = 'eNB requested ' + str(mbmsRequestMsg) + ' times the RLC for MBMS USER-PLANE'
 				logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-				self.htmleNBFailureMsg += rrcMsg + '\n'
+				htmleNBFailureMsg += rrcMsg + '\n'
 		if X2HO_inNbProcedures > 0:
 			rrcMsg = 'eNB completed ' + str(X2HO_inNbProcedures) + ' X2 Handover Connection procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 		if X2HO_outNbProcedures > 0:
 			rrcMsg = 'eNB completed ' + str(X2HO_outNbProcedures) + ' X2 Handover Release procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rrcMsg + '\n'
+			htmleNBFailureMsg += rrcMsg + '\n'
 		if self.eNBOptions[int(self.eNB_instance)] != '':
 			res1 = re.search('drx_Config_present prSetup', self.eNBOptions[int(self.eNB_instance)])
 			if res1 is not None:
 				if cdrxActivationMessageCount > 0:
 					rrcMsg = 'eNB activated the CDRX Configuration for ' + str(cdrxActivationMessageCount) + ' time(s)'
 					logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-					self.htmleNBFailureMsg += rrcMsg + '\n'
+					htmleNBFailureMsg += rrcMsg + '\n'
 				else:
 					rrcMsg = 'eNB did NOT ACTIVATE the CDRX Configuration'
 					logging.debug('\u001B[1;37;43m ' + rrcMsg + ' \u001B[0m')
-					self.htmleNBFailureMsg += rrcMsg + '\n'
+					htmleNBFailureMsg += rrcMsg + '\n'
 		if rachCanceledProcedure > 0:
 			rachMsg = nodeB_prefix + 'NB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rachMsg + '\n'
+			htmleNBFailureMsg += rachMsg + '\n'
 		if isRRU:
 			if isSlave:
 				if slaveReceivesFrameResyncCmd:
 					rruMsg = 'Slave RRU received the RRU_frame_resynch command from RAU'
 					logging.debug('\u001B[1;30;43m ' + rruMsg + ' \u001B[0m')
-					self.htmleNBFailureMsg += rruMsg + '\n'
+					htmleNBFailureMsg += rruMsg + '\n'
 				else:
 					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
 					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
-					self.htmleNBFailureMsg += rruMsg + '\n'
+					htmleNBFailureMsg += rruMsg + '\n'
 					self.prematureExit(True)
 					return CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
+			if self.htmlObj is not None:
+				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
 			return CONST.ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with an assertion! \u001B[0m')
-			self.htmleNBFailureMsg += msgAssertion
+			htmleNBFailureMsg += msgAssertion
+			if self.htmlObj is not None:
+				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
 			return CONST.ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
-			self.htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
+			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
 			#return ENB_PROCESS_REALTIME_ISSUE
 		if rlcDiscardBuffer > 0:
 			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
-			self.htmleNBFailureMsg += rlcMsg + '\n'
+			htmleNBFailureMsg += rlcMsg + '\n'
+			if self.htmlObj is not None:
+				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
 			return CONST.ENB_PROCESS_REALTIME_ISSUE
+		if self.htmlObj is not None:
+			self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
 		return 0
