@@ -396,7 +396,6 @@ class HTMLManagement():
 			self.htmlFile.close()
 
 	def CreateHtmlTestRow(self, options, status, processesStatus, machine='eNB'):
-		print ('RD: calling CreateHtmlTestRow')
 		self.htmlFile = open('test_results.html', 'a')
 		currentTime = int(round(time.time() * 1000)) - self.startTime
 		self.htmlFile.write('      <tr>\n')

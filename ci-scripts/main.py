@@ -3198,6 +3198,8 @@ EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 
+EPC.SetHtmlObj(HTML)
+
 argvs = sys.argv
 argc = len(argvs)
 cwd = os.getcwd()
