@@ -3451,9 +3451,6 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 			HTML.SethtmlTabRefs(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
 			HTML.SethtmlTabNames(xmlRoot.findtext('htmlTabName',default='test-tab-' + str(count)))
 			HTML.SethtmlTabIcons(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
-			#CiTestObj.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
-			#CiTestObj.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-' + str(count)))
-			#CiTestObj.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
 			foundCount += 1
 		count += 1
 	if foundCount != HTML.GetnbTestXMLfiles():
@@ -3510,8 +3507,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	if (HTML.GetnbTestXMLfiles() == 1):
 		HTML.SethtmlTabRefs(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
 		HTML.SethtmlTabNames(xmlRoot.findtext('htmlTabName',default='Test-0'))
-		#CiTestObj.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
-		#CiTestObj.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 		repeatCount = xmlRoot.findtext('repeatCount',default='1')
 		CiTestObj.repeatCounts.append(int(repeatCount))
 	all_tests=xmlRoot.findall('testCase')
