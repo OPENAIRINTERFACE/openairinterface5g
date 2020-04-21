@@ -1,3 +1,4 @@
+#/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -27,7 +28,6 @@
 #     pexpect
 #---------------------------------------------------------------------
 
-
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -38,6 +38,8 @@ import os
 import time
 import subprocess
 from multiprocessing import Process, Lock, SimpleQueue
+
+import constants as CONST
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -87,11 +89,6 @@ class HTMLManagement():
 	def SetHmleNBFailureMsg(self, msg):
 		self.htmleNBFailureMsg = msg
 
-	def SetreseNB(self,rsenb):
-		self.reseNB = rsenb
-	def SetresUE(self,rsue):
-		self.resUE = rsue
-
 	def Setdesc(self, dsc):
 		self.desc = dsc
 
@@ -105,35 +102,19 @@ class HTMLManagement():
 
 	def SetranRepository(self, repository):
 		self.ranRepository = repository
-	def GetranRepository(self):
-		return self.ranRepository
-
 	def SetranAllowMerge(self, merge):
 		self.ranAllowMerge = merge
-	def GetranAllowMerge(self):
-		return self.ranAllowMerge
-
 	def SetranBranch(self, branch):
 		self.ranBranch = branch
-	def GetranBranch(self):
-		return self.ranBranch
-
 	def SetranCommitID(self, commitid):
 		self.ranCommitID = commitid
-	def GetranCommitID(self):
-		return self.ranCommitID
-
 	def SetranTargetBranch(self, tbranch):
 		self.ranTargetBranch = tbranch
-	def GetranTargetBranch(self):
-		return self.ranTargetBranch
 
 	def SethtmlUEConnected(self, nbUEs):
 		self.htmlUEConnected = nbUEs
-
 	def SethtmlNb_Smartphones(self, nbUEs):
 		self.htmlNb_Smartphones = nbUEs
-
 	def SethtmlNb_CATM_Modules(self, nbUEs):
 		self.htmlNb_CATM_Modules = nbUEs
 
@@ -400,29 +381,29 @@ class HTMLManagement():
 		elif (str(status) == 'KO'):
 			if (processesStatus == 0):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
-			elif (processesStatus == ENB_PROCESS_FAILED):
+			elif (processesStatus == CONST.ENB_PROCESS_FAILED):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
-			elif (processesStatus == OAI_UE_PROCESS_FAILED):
+			elif (processesStatus == CONST.OAI_UE_PROCESS_FAILED):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - OAI UE process not found</td>\n')
-			elif (processesStatus == ENB_PROCESS_SEG_FAULT) or (processesStatus == OAI_UE_PROCESS_SEG_FAULT):
+			elif (processesStatus == CONST.ENB_PROCESS_SEG_FAULT) or (processesStatus == CONST.OAI_UE_PROCESS_SEG_FAULT):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
-			elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == OAI_UE_PROCESS_ASSERTION):
+			elif (processesStatus == CONST.ENB_PROCESS_ASSERTION) or (processesStatus == CONST.OAI_UE_PROCESS_ASSERTION):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
-			elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
+			elif (processesStatus == CONST.ENB_PROCESS_REALTIME_ISSUE):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
-			elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE):
+			elif (processesStatus == CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == CONST.OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE):
 				self.htmlFile.write('        <td bgcolor = "orange" >OK?</td>\n')
-			elif (processesStatus == ENB_PROCESS_SLAVE_RRU_NOT_SYNCED):
+			elif (processesStatus == CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' Slave RRU could not synch</td>\n')
-			elif (processesStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
+			elif (processesStatus == CONST.OAI_UE_PROCESS_COULD_NOT_SYNC):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - UE could not sync</td>\n')
-			elif (processesStatus == HSS_PROCESS_FAILED):
+			elif (processesStatus == CONST.HSS_PROCESS_FAILED):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
-			elif (processesStatus == MME_PROCESS_FAILED):
+			elif (processesStatus == CONST.MME_PROCESS_FAILED):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - MME process not found</td>\n')
-			elif (processesStatus == SPGW_PROCESS_FAILED):
+			elif (processesStatus == CONST.SPGW_PROCESS_FAILED):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
-			elif (processesStatus == UE_IP_ADDRESS_ISSUE):
+			elif (processesStatus == CONST.UE_IP_ADDRESS_ISSUE):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not retrieve UE IP address</td>\n')
 			else:
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
@@ -490,5 +471,4 @@ class HTMLManagement():
 				i += 1
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.close()
-
 

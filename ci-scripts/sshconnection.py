@@ -1,4 +1,4 @@
-
+#/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -28,7 +28,6 @@
 #     pexpect
 #---------------------------------------------------------------------
 
-
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -36,6 +35,7 @@ import pexpect          # pexpect
 import logging
 import time             # sleep
 import re
+
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
@@ -88,7 +88,6 @@ class SSHConnection():
 			pass
 		else:
 			sys.exit('SSH Connection Failed')
-
 
 	def command(self, commandline, expectedline, timeout):
 		logging.debug(commandline)

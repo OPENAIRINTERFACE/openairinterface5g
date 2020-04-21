@@ -1,3 +1,4 @@
+#/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -26,7 +27,6 @@
 #   Required Python Package
 #     pexpect
 #---------------------------------------------------------------------
-
 
 #-----------------------------------------------------------
 # Import
@@ -124,7 +124,7 @@ class EPCManagement():
 			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/hss_sim0609', '\$', 5)
-			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
+			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f hss.log', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S echo "Starting sudo session" && sudo su -c "screen -dm -S simulated_hss ./starthss"', '\$', 5)
 		else:
 			logging.error('This option should not occur!')
@@ -198,7 +198,6 @@ class EPCManagement():
 		if self.htmlObj is not None:
 			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 
-
 	def CheckHSSProcess(self, status_queue):
 		try:
 			mySSH = SSH.SSHConnection() 
@@ -266,7 +265,6 @@ class EPCManagement():
 			mySSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
-
 
 	def TerminateHSS(self):
 		mySSH = SSH.SSHConnection() 
@@ -348,7 +346,6 @@ class EPCManagement():
 		mySSH.close()
 		if self.htmlObj is not None:
 			self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-
 
 	def LogCollectHSS(self):
 		mySSH = SSH.SSHConnection() 

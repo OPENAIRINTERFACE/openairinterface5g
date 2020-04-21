@@ -1,4 +1,4 @@
-
+#/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -27,7 +27,6 @@
 #   Required Python Package
 #     pexpect
 #---------------------------------------------------------------------
-
 
 #-----------------------------------------------------------
 # Import
@@ -233,8 +232,6 @@ class RANManagement():
 # RAN management functions
 #-----------------------------------------------------------
 
-
-
 	def BuildeNB(self):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			GenericHelp(Version)
@@ -347,8 +344,6 @@ class RANManagement():
 		mySSH.close()
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id)
 
-
-
 	def WaitBuildeNBisFinished(self):
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
@@ -443,7 +438,6 @@ class RANManagement():
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
 				self.htmlObj.CreateHtmlTabFooter(False)
 			sys.exit(1)
-
 
 	def InitializeeNB(self):
 		if self.eNB_serverId == '0':
@@ -638,8 +632,6 @@ class RANManagement():
 			self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
-
-
 	def CheckeNBProcess(self, status_queue):
 		try:
 			# At least the instance 0 SHALL be on!
@@ -671,8 +663,6 @@ class RANManagement():
 			mySSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
-
-
 
 	def TerminateeNB(self):
 		if self.eNB_serverId == '0':
@@ -780,7 +770,6 @@ class RANManagement():
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
-
 	def LogCollecteNB(self):
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
@@ -790,7 +779,6 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
 		mySSH.close()
-
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile):
 		if (not os.path.isfile('./' + eNBlogFile)):
@@ -1043,7 +1031,7 @@ class RANManagement():
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
 			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
-			#return ENB_PROCESS_REALTIME_ISSUE
+			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if rlcDiscardBuffer > 0:
 			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')

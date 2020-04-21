@@ -104,8 +104,6 @@ class OaiCiTest():
 		self.Initialize_OAI_UE_args = ''
 		self.clean_repository = True
 		self.expectedNbOfConnectedUEs = 0
-		self.startTime = 0
-
 
 	def BuildOAIUE(self):
 		if self.UEIPAddress == '' or RAN.GetranRepository() == '' or RAN.GetranBranch() == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -1901,7 +1899,6 @@ class OaiCiTest():
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
-			logging.debug('entring Iperf_common')
 			# Single-UE profile -- iperf only on one UE
 			if self.iperf_profile == 'single-ue' and idx != 0:
 				return
@@ -2239,7 +2236,6 @@ class OaiCiTest():
 		ue_num = len(self.UEIPAddresses)
 		lock = Lock()
 		status_queue = SimpleQueue()
-		logging.debug('ue_num = ' + str(ue_num))
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
 			p = Process(target = self.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,))
@@ -3559,8 +3555,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	CiTestObj.FailReportCnt = 0
 	RAN.SetprematureExit(True)
-	CiTestObj.startTime = int(round(time.time() * 1000))
-	HTML.SetstartTime(CiTestObj.startTime)
+	HTML.SetstartTime(int(round(time.time() * 1000))
 	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and RAN.GetprematureExit():
 		RAN.SetprematureExit(False)
 		# At every iteratin of the retry loop, a separator will be added
