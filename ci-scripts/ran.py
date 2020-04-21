@@ -386,6 +386,7 @@ class RANManagement():
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
 		myHTML = HTML.HTMLManagement()
+		myHTML.SettestCase_id(testcaseId)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)

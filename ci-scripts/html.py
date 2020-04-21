@@ -49,14 +49,25 @@ class HTMLManagement():
 		self.htmlFile = ''
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
+
+		self.ranRepository = ''
+		self.ranBranch = ''
+		self.ranCommitID = ''
 		self.ranAllowMerge = False
+		self.ranTargetBranch = ''
+
 		self.nbTestXMLfiles = 0
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
 		self.testXMLfiles = []
+
 		self.htmleNBFailureMsg = ''
 		self.htmlUEFailureMsg = ''
+
+		self.startTime = int(round(time.time() * 1000))
+		self.testCase_id = ''
+		self.desc = ''
 
 #-----------------------------------------------------------
 # Setters and Getters
@@ -64,8 +75,7 @@ class HTMLManagement():
 	def SethtmlUEFailureMsg(self,huefa):
                 self.htmlUEFailureMsg = huefa
 	def GethtmlUEFailureMsg(self):
-		return huefa
-
+		return self.htmlUEFailureMsg
 
 	def SetreseNB(self,rsenb):
 		self.reseNB = rsenb
@@ -386,76 +396,76 @@ class HTMLManagement():
 			self.htmlFile.close()
 
 	def CreateHtmlTestRow(self, options, status, processesStatus, machine='eNB'):
-		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
-			self.htmlFile = open('test_results.html', 'a')
-			currentTime = int(round(time.time() * 1000)) - self.startTime
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + format(currentTime / 1000, '.1f') + '</td>\n')
-			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
-			self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
-			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
-			if (str(status) == 'OK'):
-				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
-			elif (str(status) == 'KO'):
-				if (processesStatus == 0):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
-				elif (processesStatus == ENB_PROCESS_FAILED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
-				elif (processesStatus == OAI_UE_PROCESS_FAILED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - OAI UE process not found</td>\n')
-				elif (processesStatus == ENB_PROCESS_SEG_FAULT) or (processesStatus == OAI_UE_PROCESS_SEG_FAULT):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
-				elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == OAI_UE_PROCESS_ASSERTION):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
-				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
-				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE):
-					self.htmlFile.write('        <td bgcolor = "orange" >OK?</td>\n')
-				elif (processesStatus == ENB_PROCESS_SLAVE_RRU_NOT_SYNCED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' Slave RRU could not synch</td>\n')
-				elif (processesStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - UE could not sync</td>\n')
-				elif (processesStatus == HSS_PROCESS_FAILED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
-				elif (processesStatus == MME_PROCESS_FAILED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - MME process not found</td>\n')
-				elif (processesStatus == SPGW_PROCESS_FAILED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
-				elif (processesStatus == UE_IP_ADDRESS_ISSUE):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not retrieve UE IP address</td>\n')
-				else:
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+		print ('RD: calling CreateHtmlTestRow')
+		self.htmlFile = open('test_results.html', 'a')
+		currentTime = int(round(time.time() * 1000)) - self.startTime
+		self.htmlFile.write('      <tr>\n')
+		self.htmlFile.write('        <td bgcolor = "lightcyan" >' + format(currentTime / 1000, '.1f') + '</td>\n')
+		self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
+		self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
+		self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
+		if (str(status) == 'OK'):
+			self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
+		elif (str(status) == 'KO'):
+			if (processesStatus == 0):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+			elif (processesStatus == ENB_PROCESS_FAILED):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
+			elif (processesStatus == OAI_UE_PROCESS_FAILED):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - OAI UE process not found</td>\n')
+			elif (processesStatus == ENB_PROCESS_SEG_FAULT) or (processesStatus == OAI_UE_PROCESS_SEG_FAULT):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
+			elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == OAI_UE_PROCESS_ASSERTION):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
+			elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
+			elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE):
+				self.htmlFile.write('        <td bgcolor = "orange" >OK?</td>\n')
+			elif (processesStatus == ENB_PROCESS_SLAVE_RRU_NOT_SYNCED):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' Slave RRU could not synch</td>\n')
+			elif (processesStatus == OAI_UE_PROCESS_COULD_NOT_SYNC):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - UE could not sync</td>\n')
+			elif (processesStatus == HSS_PROCESS_FAILED):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
+			elif (processesStatus == MME_PROCESS_FAILED):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - MME process not found</td>\n')
+			elif (processesStatus == SPGW_PROCESS_FAILED):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
+			elif (processesStatus == UE_IP_ADDRESS_ISSUE):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not retrieve UE IP address</td>\n')
 			else:
-				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
-			if (len(str(self.htmleNBFailureMsg)) > 2):
-				cellBgColor = 'white'
-				result = re.search('ended with|faced real time issues', self.htmleNBFailureMsg)
-				if result is not None:
-					cellBgColor = 'red'
-				else:
-					result = re.search('showed|Reestablishment|Could not copy eNB logfile', self.htmleNBFailureMsg)
-					if result is not None:
-						cellBgColor = 'orange'
-				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
-				self.htmleNBFailureMsg = ''
-			elif (len(str(self.htmlUEFailureMsg)) > 2):
-				cellBgColor = 'white'
-				result = re.search('ended with|faced real time issues', self.htmlUEFailureMsg)
-				if result is not None:
-					cellBgColor = 'red'
-				else:
-					result = re.search('showed|Could not copy UE logfile|oaitun_ue1 interface is either NOT mounted or NOT configured', self.htmlUEFailureMsg)
-					if result is not None:
-						cellBgColor = 'orange'
-				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
-				self.htmlUEFailureMsg = ''
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+		else:
+			self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
+		if (len(str(self.htmleNBFailureMsg)) > 2):
+			cellBgColor = 'white'
+			result = re.search('ended with|faced real time issues', self.htmleNBFailureMsg)
+			if result is not None:
+				cellBgColor = 'red'
 			else:
-				i = 0
-				while (i < self.htmlUEConnected):
-					self.htmlFile.write('        <td>-</td>\n')
-					i += 1
-			self.htmlFile.write('      </tr>\n')
-			self.htmlFile.close()
+				result = re.search('showed|Reestablishment|Could not copy eNB logfile', self.htmleNBFailureMsg)
+				if result is not None:
+					cellBgColor = 'orange'
+			self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
+			self.htmleNBFailureMsg = ''
+		elif (len(str(self.htmlUEFailureMsg)) > 2):
+			cellBgColor = 'white'
+			result = re.search('ended with|faced real time issues', self.htmlUEFailureMsg)
+			if result is not None:
+				cellBgColor = 'red'
+			else:
+				result = re.search('showed|Could not copy UE logfile|oaitun_ue1 interface is either NOT mounted or NOT configured', self.htmlUEFailureMsg)
+				if result is not None:
+					cellBgColor = 'orange'
+			self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
+			self.htmlUEFailureMsg = ''
+		else:
+			i = 0
+			while (i < self.htmlUEConnected):
+				self.htmlFile.write('        <td>-</td>\n')
+				i += 1
+		self.htmlFile.write('      </tr>\n')
+		self.htmlFile.close()
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
