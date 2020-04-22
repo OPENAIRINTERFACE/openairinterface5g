@@ -29,11 +29,15 @@
  * \note
  * \warning
  */
+
 #ifdef USER_MODE
   #include <stdio.h>
   #include <stdlib.h>
   #include <string.h>
 #endif
+
+#include "executables/softmodem-common.h"
+
 #include "nr_transport_proto_ue.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/phy_extern_nr_ue.h"
@@ -842,7 +846,9 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
 
     rel15 = &pdcch_vars->pdcch_config[i];
     int dci_length = rel15->dci_length;
+    int gNB_id = 0;
     int16_t tmp_e[16*108];
+    rnti_t n_rnti;
 
     for (int j=0;j<rel15->number_of_candidates;j++) {
       int CCEind = rel15->CCE[j];
@@ -850,7 +856,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       uint64_t dci_estimation[2]= {0};
       const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
-      LOG_D(PHY, "Trying DCI candidate %d, CCE %d (%d), L %d\n", j, CCEind, CCEind*9*6*2, L);
+      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L);
 
       nr_pdcch_unscrambling(&pdcch_vars->e_rx[CCEind*108], rel15->rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 
@@ -867,16 +873,24 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                          dci_estimation,
                                          1,
                                          currentPtrDCI);
-      LOG_D(PHY,"Decoded crc %x\n",crc);
-      if (crc == rel15->rnti) {
+
+      if (get_softmodem_params()->do_ra == 1)
+        n_rnti = ue->prach_resources[gNB_id]->ra_RNTI;
+      else
+        n_rnti = rel15->rnti;
+
+      if (crc == n_rnti) {
+        LOG_D(PHY,"Decoded crc %x matches rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format);
 	dci_ind->SFN = frame;
 	dci_ind->slot = slot;
-	dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = rel15->rnti;
+	dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
 	dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE       = CCEind;
 	dci_ind->dci_list[dci_ind->number_of_dcis].dci_format  = rel15->dci_format;
 	dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
 	memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
 	dci_ind->number_of_dcis++;
+      } else {
+        LOG_D(PHY,"Decoded crc %x does not match rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format);
       }
     }
   }
