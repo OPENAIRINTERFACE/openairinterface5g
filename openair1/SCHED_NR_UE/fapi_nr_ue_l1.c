@@ -51,8 +51,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
+    NR_UE_DLSCH_t *dlsch0;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
-    NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
 
     if(scheduled_response->dl_config != NULL){
@@ -69,7 +69,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
           LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
 
-        } else {  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
+        } else {
+
+          if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
+          }
+          else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
+          }
 
           fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
           uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
@@ -80,7 +87,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
           //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
-          if (dlsch0_harq != NULL){
+
+          if (dlsch0_harq){
+
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
             dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
             dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;

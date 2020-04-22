@@ -36,6 +36,7 @@
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
 #include "mac_defs.h"
 #include "common/utils/nr/nr_common.h"
+#include "executables/softmodem-common.h"
 #include <stdio.h>
 
 #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
@@ -104,7 +105,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
       AssertFatal(mac->ULbwp[0]->bwp_Dedicated!=NULL,"bwp_Dedicated is null\n");
     }
     // check search spaces
-	
+
     int ss_id=0;
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
     int sps =mac->DLbwp[0]->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
@@ -120,18 +121,31 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
     if (mac->ra_state == WAIT_RAR) {
       // check for RAR
       rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15; 
-      rel15->rnti = 2;//get_RA_RNTI(mac,frame,slot); // WIP
-      dl_config->number_pdus = dl_config->number_pdus + 1;
+      // rel15->rnti = 2;//get_RA_RNTI(mac,frame,slot); // WIP
     }
     else if (mac->ra_state == WAIT_CONTENTION_RESOLUTION) {
       rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15; 
       rel15->rnti = mac->t_crnti;
-      dl_config->number_pdus = dl_config->number_pdus + 1;
+      //dl_config->number_pdus = dl_config->number_pdus + 1;
     }
     if (mac->crnti>0) {
       rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15; 
-      rel15->rnti = mac->crnti;
-      rel15->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+
+      if (get_softmodem_params()->do_ra == 1)
+        rel15->rnti = 0x00;
+      else // phy_test
+        rel15->rnti = mac->crnti;
+
+      rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
+
+      if (slot == 0 || slot == 1){
+        rel15->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+        rel15->dci_length = nr_dci_size(rel15->dci_format, NR_RNTI_C, rel15->BWPSize);
+      } else if (slot == 7){
+        rel15->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+        rel15->dci_length = nr_dci_size(rel15->dci_format, NR_RNTI_RA, rel15->BWPSize);
+      }
+
       rel15->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
       rel15->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
       // get UE-specific search space
@@ -166,19 +180,15 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
       }
       rel15->coreset.CoreSetType = 1;
       rel15->coreset.precoder_granularity = mac->coreset[0][0]->precoderGranularity;
+
       if (mac->coreset[0][0]->pdcch_DMRS_ScramblingID)
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->coreset[0][0]->pdcch_DMRS_ScramblingID;
       else
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->scc->physCellId;
+
       fill_dci_search_candidates(mac->SSpace[0][0][ss_id],rel15);
-      rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
-      rel15->dci_length = nr_dci_size(rel15->dci_format,NR_RNTI_C,rel15->BWPSize);
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;
     }
   }
 }
-
-
-
-
