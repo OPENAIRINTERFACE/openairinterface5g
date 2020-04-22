@@ -104,6 +104,7 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
+  int sr_flag = 0;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -114,7 +115,7 @@ int main(int argc, char **argv)
   randominit(0);
   logInit();
 
-  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:c")) != -1) {
     switch (c) {
     case 'f':
       //write_output_file=1;
@@ -274,6 +275,9 @@ int main(int argc, char **argv)
       break;
     case 'b':
       nr_bit=atoi(optarg);
+      break;
+    case 'c':
+      sr_flag=1;
       break;
     case 'B':
       actual_payload=atoi(optarg);
@@ -455,10 +459,13 @@ int main(int argc, char **argv)
   uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
   if(format==0){
   // for now we are not considering SR just HARQ-ACK
-    if(nr_bit==1)
+    if (nr_bit ==0) 
+      mcs=table1_mcs[0];
+    else if(nr_bit==1)
       mcs=table1_mcs[actual_payload];
     else if(nr_bit==2)
       mcs=table2_mcs[actual_payload];
+    else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n");
   }
 
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
@@ -480,8 +487,9 @@ int main(int argc, char **argv)
 				frame_parms->ofdm_symbol_size);
       //      printf("txlev %d (%d dB), offset %d\n",txlev,dB_fixed(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size);
 	    
-      // note : this scaling is for 1 PRB, to be updated for PUCCH 2
-      sigma2_dB = 10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12)-SNR;
+      // note : this scaling
+      int nb_re = (format == 0 || format == 1)? 12 : 12*nrofPRB;
+      sigma2_dB = 10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/nb_re)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
       
       for(i=startingSymbolIndex*frame_parms->ofdm_symbol_size; i<(startingSymbolIndex+1)*frame_parms->ofdm_symbol_size; i++) {
@@ -498,7 +506,7 @@ int main(int argc, char **argv)
 	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
 	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
 	pucch_pdu.bit_len_harq          = nr_bit;
-	pucch_pdu.sr_flag               = 0;
+	pucch_pdu.sr_flag               = sr_flag;
 	pucch_pdu.nr_of_symbols         = nrofSymbols;
 	pucch_pdu.hopping_id            = hopping_id;
 	pucch_pdu.initial_cyclic_shift  = 0;
