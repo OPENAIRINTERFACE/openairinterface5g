@@ -247,8 +247,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   // ra_rnti from 5.1.3 in 38.321
   uint16_t ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
 
-
-
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &nr_mac->UE_list;
@@ -672,7 +670,6 @@ void nr_generate_Msg2(module_id_t module_idP,
     dci_pdu->ScramblingId[numDlDci] = *scc->physCellId;
     dci_pdu->ScramblingRNTI[numDlDci] = 0;
     dci_pdu->AggregationLevel[numDlDci] = aggregation;
-    dci_pdu->powerControlOffsetSS[numDlDci] = 0;
     dci_pdu->CceIndex[numDlDci] = CCEIndex;
     dci_pdu->beta_PDCCH_1_0[numDlDci] = 0;
     dci_pdu->powerControlOffsetSS[numDlDci] = 1;

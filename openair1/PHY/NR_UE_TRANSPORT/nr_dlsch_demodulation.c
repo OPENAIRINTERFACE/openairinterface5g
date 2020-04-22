@@ -182,7 +182,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
 
     //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
-    LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
+    LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
 
     if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status == ACTIVE)){
       codeword_TB0 = dlsch0_harq->codeword;
@@ -969,45 +969,46 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
     break;
   }
+
   if (dlsch1_harq) {
-  switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
-  case 2 :
-    if (rx_type==rx_standard) {
-        nr_dlsch_qpsk_llr(frame_parms,
-                       pdsch_vars[eNB_id]->rxdataF_comp0,
-                       pllr_symbol_cw0,
-                       symbol,len,first_symbol_flag,nb_rb,
-                       beamforming_mode);
+    switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
+      case 2 :
+        if (rx_type==rx_standard) {
+            nr_dlsch_qpsk_llr(frame_parms,
+                              pdsch_vars[eNB_id]->rxdataF_comp0,
+                              pllr_symbol_cw0,
+                              symbol,len,first_symbol_flag,nb_rb,
+                              beamforming_mode);
+        }
+        break;
+      case 4:
+        if (rx_type==rx_standard) {
+          nr_dlsch_16qam_llr(frame_parms,
+                             pdsch_vars[eNB_id]->rxdataF_comp0,
+                             pdsch_vars[eNB_id]->llr[0],
+                             pdsch_vars[eNB_id]->dl_ch_mag0,
+                             symbol,len,first_symbol_flag,nb_rb,
+                             pdsch_vars[eNB_id]->llr128,
+                             beamforming_mode);
+        }
+        break;
+      case 6 :
+        if (rx_type==rx_standard) {
+          nr_dlsch_64qam_llr(frame_parms,
+                             pdsch_vars[eNB_id]->rxdataF_comp0,
+                             pllr_symbol_cw0,
+                             pdsch_vars[eNB_id]->dl_ch_mag0,
+                             pdsch_vars[eNB_id]->dl_ch_magb0,
+                             symbol,len,first_symbol_flag,nb_rb,
+                             pdsch_vars[eNB_id]->llr_offset[symbol],
+                             beamforming_mode);
+        }
+        break;
+      default:
+        LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
+        return(-1);
+        break;
     }
-    break;
-  case 4:
-    if (rx_type==rx_standard) {
-      nr_dlsch_16qam_llr(frame_parms,
-                      pdsch_vars[eNB_id]->rxdataF_comp0,
-                      pdsch_vars[eNB_id]->llr[0],
-                      pdsch_vars[eNB_id]->dl_ch_mag0,
-                      symbol,len,first_symbol_flag,nb_rb,
-                      pdsch_vars[eNB_id]->llr128,
-                      beamforming_mode);
-    }
-    break;
-  case 6 :
-    if (rx_type==rx_standard) {
-      nr_dlsch_64qam_llr(frame_parms,
-                      pdsch_vars[eNB_id]->rxdataF_comp0,
-                      pllr_symbol_cw0,
-                      pdsch_vars[eNB_id]->dl_ch_mag0,
-                      pdsch_vars[eNB_id]->dl_ch_magb0,
-                      symbol,len,first_symbol_flag,nb_rb,
-                      pdsch_vars[eNB_id]->llr_offset[symbol],
-                      beamforming_mode);
-  }
-    break;
-  default:
-    LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
-    return(-1);
-    break;
-  }
   }  
 
   //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
