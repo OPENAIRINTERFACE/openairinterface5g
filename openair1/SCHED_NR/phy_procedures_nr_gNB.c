@@ -428,6 +428,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       nr_fill_rx_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);  // indicate SDU to MAC
       nr_fill_crc_indication(gNB, frame_rx, slot_rx, ULSCH_id, 0);
     }
+    break;
     case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:{
       LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE\n",frame_rx,slot_rx);
       

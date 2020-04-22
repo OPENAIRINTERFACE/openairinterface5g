@@ -1104,8 +1104,7 @@
                   -n100 -R217 -a80 -s5
                   -n100 -R217 -a110 -s5 -b100
                   -n100 -e27 -s30 
-                  -n100 -e16 -s10 
-      </main_exec_args>
+                  -n100 -e16 -s10 </main_exec_args>
       <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 </tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1178,10 +1177,7 @@
     <testCase id="015109">
       <class>execution</class>
       <desc>nr_pucchsim Test cases. (Test1: Format 0 1-bit ACK miss 106 PRB),
-                                    (Test2: Format 0 2-bit ACK miss 106 PRB),
-                                    (Test3: Format 1 ACK miss 106 PRB),
-				                    (Test4: Format 1 ACK miss 273 PRB),
-			                        (Test5: Format 1 NACKtoACK 106 PRB)</desc>
+                                    (Test2: Format 0 2-bit ACK miss 106 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1190,9 +1186,7 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pucchsim.Rel15</main_exec>
       <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s-7 -n1000
                       -R 106 -i 1 -P 0 -b 2 -s-7 -n1000
-	              -R 106 -i 14 -P 1 -b 1 -s-6 -n100
-                      -R 273 -i 14 -P 1 -b 1 -s-6 -n100
-                      -R 106 -i 14 -P 1 -b 1 -s-6 -T 0.001 -n1000</main_exec_args>
+                      </main_exec_args>
       <tags>nr_pucchsim.test1 nr_pucchsim.test2 </tags>
       <search_expr_true>PUCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1250,11 +1244,11 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_ulsim.Rel15</main_exec>
-      <main_exec_args>-n100 -m9 -r106 -s0
+      <main_exec_args>-n100 -m9 -r106 -s5
                       -n100 -m16 -s10
                       -n100 -m28 -s20
-                      -n100 -m9 -R217 -r217 -s0
-                      -n100 -m9 -R273 -r273 -s0</main_exec_args>
+                      -n100 -m9 -R217 -r217 -s5
+                      -n100 -m9 -R273 -r273 -s5</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
