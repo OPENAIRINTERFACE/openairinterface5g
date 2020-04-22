@@ -384,6 +384,37 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
+  for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+    NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
+    if (pucch) {
+      nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+      uint16_t num_ucis;
+
+      switch (pucch_pdu->format_type) {
+      case 0:
+/*
+        num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
+        gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
+        gNB->UL_INFO.uci_ind.sfn = frame_rx;
+        gNB->UL_INFO.uci_ind.slot = slot_rx;
+	gNB->uci_pdu_list[num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+	gNB->uci_pdu_list[num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+	nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_0_1;
+
+	nr_decode_pucch0(gNB,
+			 slot_rx,
+			 uci_pdu_format0,
+			 pucch_pdu);
+
+	gNB->UL_INFO.uci_ind.num_ucis += 1;*/
+        pucch->active = 0;
+	break;
+      default:
+	AssertFatal(1==0,"Only PUCCH format 0 is currently supported\n");
+      }
+    }
+  }
+
   for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
     int harq_pid;

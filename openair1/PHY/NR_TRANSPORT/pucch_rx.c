@@ -19,6 +19,54 @@
 
 //#define DEBUG_NR_PUCCH_RX 1
 
+NR_gNB_PUCCH_t *new_gNB_pucch(void){
+    NR_gNB_PUCCH_t *pucch;
+    pucch = (NR_gNB_PUCCH_t *)malloc16(sizeof(NR_gNB_PUCCH_t));
+    pucch->active = 0;
+    return (pucch);
+}
+
+int nr_find_pucch(uint16_t rnti,
+                  int frame,
+                  int slot,
+                  PHY_VARS_gNB *gNB) {
+
+  AssertFatal(gNB!=NULL,"gNB is null\n");
+  int index = -1;
+
+  for (int i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
+    AssertFatal(gNB->pucch[i]!=NULL,"gNB->pucch[%d] is null\n",i);
+    if ((gNB->pucch[i]->active >0) &&
+        (gNB->pucch[i]->pucch_pdu.rnti==rnti) &&
+        (gNB->pucch[i]->frame==frame) &&
+        (gNB->pucch[i]->slot==slot)) return(i);
+    else if ((gNB->pucch[i]->active == 0) && (index==-1)) index=i;
+  }
+
+  if (index==-1)
+    LOG_E(MAC,"PUCCH list is full\n");
+
+  return(index);
+}
+
+void nr_fill_pucch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pucch_pdu_t *pucch_pdu) {
+
+  int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
+  AssertFatal( (id>=0) && (id<NUMBER_OF_NR_PUCCH_MAX),
+              "invalid id found for pucch !!! rnti %04x id %d\n",pucch_pdu->rnti,id);
+
+  NR_gNB_PUCCH_t  *pucch = gNB->pucch[id];
+  pucch->frame = frame;
+  pucch->slot = slot;
+  pucch->active = 1;
+  memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
+
+}
+
+
 int get_pucch0_cs_lut_index(PHY_VARS_gNB *gNB,nfapi_nr_pucch_pdu_t* pucch_pdu) {
 
   int i=0;
