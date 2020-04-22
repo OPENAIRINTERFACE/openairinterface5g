@@ -434,7 +434,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   //program DCI for slot 1
   //TODO: all of this has to be moved to the MAC!!!
-  if (proc->nr_tti_rx == NR_DOWNLINK_SLOT || UE->frame_parms.frame_type == FDD){
+  // Note: temp hardcoded slot 7 for RAR
+  if (proc->nr_tti_rx == NR_DOWNLINK_SLOT || proc->nr_tti_rx == 7 || UE->frame_parms.frame_type == FDD){
     dcireq.module_id = UE->Mod_id;
     dcireq.gNB_index = 0;
     dcireq.cc_id     = 0;
@@ -462,7 +463,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   }
 
   // Process Rx data for one sub-frame
-  if ( proc->nr_tti_rx >=0 && proc->nr_tti_rx <= 1 ) {
+  if ( proc->nr_tti_rx >=0 && proc->nr_tti_rx <= 1 || proc->nr_tti_rx == 7) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
