@@ -86,7 +86,6 @@ class OaiCiTest():
 		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlUEConnected = -1
-		self.picocom_closure = False
 		self.idle_sleep_time = 0
 		self.x2_ho_options = 'network'
 		self.x2NbENBs = 0
@@ -452,7 +451,7 @@ class OaiCiTest():
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
 					tunnelInterfaceStatus = False
 				if RAN.GeteNBmbmsEnable(0):
-					self.command('ifconfig oaitun_uem1', '\$', 4)
+					SSH.command('ifconfig oaitun_uem1', '\$', 4)
 					result = re.search('inet addr', SSH.getBefore())
 					if result is not None:
 						logging.debug('\u001B[1m oaitun_uem1 interface is mounted and configured\u001B[0m')
@@ -504,7 +503,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-		self.picocom_closure = True
+		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
 		SSH.command('echo ' + self.ADBPassword + ' | sudo -S ls', '\$', 10)
@@ -514,10 +513,10 @@ class OaiCiTest():
 		SSH.command('AT', 'OK|ERROR', 5)
 		SSH.command('AT', 'OK', 5)
 		# Doing a power cycle
-		self.command('AT^RESET', 'SIMSTORE,READY', 15)
-		self.command('AT', 'OK|ERROR', 5)
-		self.command('AT', 'OK', 5)
-		self.command('ATE1', 'OK', 5)
+		SSH.command('AT^RESET', 'SIMSTORE,READY', 15)
+		SSH.command('AT', 'OK|ERROR', 5)
+		SSH.command('AT', 'OK', 5)
+		SSH.command('ATE1', 'OK', 5)
 		# Disabling the Radio
 		SSH.command('AT+CFUN=0', 'OK', 5)
 		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
@@ -535,7 +534,7 @@ class OaiCiTest():
 			logging.debug('\u001B[1;37;41m Could not check Auto-Attach! \u001B[0m')
 		# Force closure of picocom but device might still be locked
 		SSH.close()
-		self.picocom_closure = False
+		SSH.disablePicocomClosure()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
@@ -543,7 +542,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-		self.picocom_closure = True
+		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
 		SSH.command('echo ' + self.ADBPassword + ' | sudo -S ls', '\$', 10)
@@ -556,7 +555,7 @@ class OaiCiTest():
 		SSH.command('AT+CFUN=0', 'OK', 5)
 		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
 		SSH.close()
-		self.picocom_closure = False
+		SSH.disablePicocomClosure()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		self.checkDevTTYisUnlocked()
 
@@ -564,7 +563,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			GenericHelp(Version)
 			sys.exit('Insufficient Parameter')
-		self.picocom_closure = True
+		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
 		SSH.command('echo ' + self.ADBPassword + ' | sudo -S ls', '\$', 10)
@@ -615,7 +614,7 @@ class OaiCiTest():
 					logging.debug('    RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB')
 					logging.debug('    RSRP = ' + str(-140+nRSRP) + ' dBm')
 		SSH.close()
-		self.picocom_closure = False
+		SSH.disablePicocomClosure()
 		html_queue = SimpleQueue()
 		self.checkDevTTYisUnlocked()
 		if attach_status:
@@ -1382,7 +1381,7 @@ class OaiCiTest():
 				sys.exit('Insufficient Parameter')
 		try:
 			if ping_from_eNB is not None:
-				SSH.open(RAN.GeteNBIPAddress, RAN.GeteNBUserName, RAN.GeteNBPassword)
+				SSH.open(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword())
 				SSH.command('cd ' + RAN.GeteNBSourceCodePath() + '/cmake_targets/', '\$', 5)
 			else:
 				SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)

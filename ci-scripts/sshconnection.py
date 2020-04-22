@@ -42,6 +42,13 @@ import re
 class SSHConnection():
 	def __init__(self):
 		self.ssh = ''
+		self.picocom_closure = False
+
+	def disablePicocomClosure(self):
+		self.picocom_closure = False
+
+	def enablePicocomClosure(self):
+		self.picocom_closure = True
 
 	def open(self, ipaddress, username, password):
 		count = 0
