@@ -799,22 +799,22 @@ void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
 
 #ifdef NR_PDCCH_DCI_RUN
 
-void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t slot,
-                           int16_t *z, int16_t *z2,uint32_t length, uint16_t pdcch_DMRS_scrambling_id) {
+void nr_pdcch_unscrambling(int16_t *z,
+                           uint16_t scrambling_RNTI,
+                           uint32_t length,
+                           uint16_t pdcch_DMRS_scrambling_id,
+                           int16_t *z2) {
   int i;
   uint8_t reset;
   uint32_t x1, x2, s = 0;
   uint16_t n_id; //{0,1,...,65535}
-  uint32_t n_rnti;
+  uint32_t rnti = (uint32_t) scrambling_RNTI;
   reset = 1;
   // x1 is set in first call to lte_gold_generic
-  //do_common=1;
-    n_id = pdcch_DMRS_scrambling_id;
-    n_rnti = (uint32_t)crnti;
+  n_id = pdcch_DMRS_scrambling_id;
+  x2 = ((rnti<<16) + n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
 
-  x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
-
-  LOG_D(PHY,"PDCCH Unscrambling x2 %x : n_RNTI %x\n",x2,n_rnti);
+  LOG_D(PHY,"PDCCH Unscrambling x2 %x : scrambling_RNTI %x\n", x2, rnti);
 
   for (i = 0; i < length; i++) {
     if ((i & 0x1f) == 0) {
@@ -845,20 +845,23 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     int16_t tmp_e[16*108];
 
     for (int j=0;j<rel15->number_of_candidates;j++) {
-      LOG_D(PHY,"Trying DCI candidate %d, CCE %d (%d), L %d\n",j,rel15->CCE[j],rel15->CCE[j]*9*6*2,rel15->L[j]);
       int CCEind = rel15->CCE[j];
       int L = rel15->L[j];
       uint64_t dci_estimation[2]= {0};
-      const t_nrPolar_params *currentPtrDCI=nr_polar_params(1, dci_length, L,1,&ue->polarList);
+      const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
-      nr_pdcch_unscrambling(rel15->rnti,
-			    &ue->frame_parms,
-			    slot,
-			    &pdcch_vars->e_rx[CCEind*108],
-			    tmp_e,
-			    L*108,
-			    // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
-			    rel15->coreset.pdcch_dmrs_scrambling_id);
+      LOG_D(PHY, "Trying DCI candidate %d, CCE %d (%d), L %d\n", j, CCEind, CCEind*9*6*2, L);
+
+      nr_pdcch_unscrambling(&pdcch_vars->e_rx[CCEind*108], rel15->rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
+
+      #ifdef DEBUG_DCI_DECODING
+        uint32_t * z = (uint32_t *) &pdcch_vars->e_rx[CCEind*108];
+        for (int index_z = 0; index_z < 96; index_z++){
+          for (int i=0; i<9; i++) {
+            LOG_D(PHY,"z[%d]=(%d,%d) \n", (9*index_z + i), *(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]));
+          }
+        }
+      #endif
 
       uint16_t crc = polar_decoder_int16(tmp_e,
                                          dci_estimation,
