@@ -88,6 +88,10 @@ void nr_get_prach_resources(module_id_t mod_id,
   int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3;
   uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, prach_ConfigIndex, SFN_nbr, Msg3_size;
 
+  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
+  nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
+
   // NR_RSRP_Range_t rsrp_ThresholdSSB; // todo
 
   ///////////////////////////////////////////////////////////
@@ -104,138 +108,140 @@ void nr_get_prach_resources(module_id_t mod_id,
   // -- RA initiated for SI request:
   // --- SSB selection, set prach_resources->ra_PreambleIndex
 
-  // if (rach_ConfigDedicated) {  // This is for network controlled Mobility
-  //   // operation for contention-free RA resources when:
-  //   // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
-  //   // - availalbe CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
-  //   prach_resources->ra_PreambleIndex = rach_ConfigDedicated->ra_PreambleIndex;
-  // }
-
-  //////////* Contention-based RA preamble selection *//////////
-  // todo:
-  // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
-  // - todo determine next available PRACH occasion
-
-  // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
-
-  AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
-
-  nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  rach_ConfigGeneric = &nr_rach_ConfigCommon->rach_ConfigGeneric;
-
-  Msg3_size = mac->RA_Msg3_size;
-
-  numberOfRA_Preambles = 64;
-  if(nr_rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
-    numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
-
-  if (!nr_rach_ConfigCommon->groupBconfigured) {
-    noGroupB = 1;
+  if (rach_ConfigDedicated) {
+    //////////* Contention free RA *//////////
+    // - the PRACH preamble for the UE to transmit is set through RRC configuration
+    // - this is the default mode in current implementation!
+    // Operation for contention-free RA resources when:
+    // - available SSB with SS-RSRP above rsrp-ThresholdSSB: SSB selection
+    // - available CSI-RS with CSI-RSRP above rsrp-ThresholdCSI-RS: CSI-RS selection
+    // - network controlled Mobility
+    uint8_t cfra_ssb_resource_idx = 0;
+    prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+    LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-free random access procedure... \n", prach_resources->ra_PreambleIndex);
   } else {
-    // RA preambles group B is configured 
-    // - Defining the number of RA preambles in RA Preamble Group A for each SSB */
-    sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
-    switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
-    /* - Threshold to determine the groups of RA preambles */
-    case 0:
-    messageSizeGroupA = 56;
-    break;
-    case 1:
-    messageSizeGroupA = 144;
-    break;
-    case 2:
-    messageSizeGroupA = 208;
-    break;
-    case 3:
-    messageSizeGroupA = 256;
-    break;
-    case 4:
-    messageSizeGroupA = 282;
-    break;
-    case 5:
-    messageSizeGroupA = 480;
-    break;
-    case 6:
-    messageSizeGroupA = 640;
-    break;
-    case 7:
-    messageSizeGroupA = 800;
-    break;
-    case 8:
-    messageSizeGroupA = 1000;
-    break;
-    case 9:
-    messageSizeGroupA = 72;
-    break;
-    default:
-    AssertFatal(1 == 0,"Unknown ra_Msg3SizeGroupA %lu\n", nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA);
-    /* todo cases 10 -15*/
-    }
+    //////////* Contention-based RA preamble selection *//////////
+    // todo:
+    // - selection of SSB with SS-RSRP above rsrp-ThresholdSSB else select any SSB
+    // - todo determine next available PRACH occasion
 
-    /* Power offset for preamble selection in dB */
-    messagePowerOffsetGroupB = -9999;
-    switch (nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB){
-    case 0:
-    messagePowerOffsetGroupB = -9999;
-    break;
-    case 1:
-    messagePowerOffsetGroupB = 0;
-    break;
-    case 2:
-    messagePowerOffsetGroupB = 5;
-    break;
-    case 3:
-    messagePowerOffsetGroupB = 8;
-    break;
-    case 4:
-    messagePowerOffsetGroupB = 10;
-    break;
-    case 5:
-    messagePowerOffsetGroupB = 12;
-    break;
-    case 6:
-    messagePowerOffsetGroupB = 15;
-    break;
-    case 7:
-    messagePowerOffsetGroupB = 18;
-    break;
-    default:
-    AssertFatal(1 == 0,"Unknown messagePowerOffsetGroupB %lu\n", nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB);
-    }
+    // rsrp_ThresholdSSB = *nr_rach_ConfigCommon->rsrp_ThresholdSSB;
 
-    // todo Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
-    mac->deltaPreamble_Msg3 = 0;
-    deltaPreamble_Msg3 = mac->deltaPreamble_Msg3;
-  }
+    Msg3_size = mac->RA_Msg3_size;
 
-  PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
+    numberOfRA_Preambles = 64;
+    if(nr_rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
+      numberOfRA_Preambles = *(nr_rach_ConfigCommon->totalNumberOfRA_Preambles);
 
-  /* Msg3 has not been transmitted yet */
-  if (first_Msg3 == 1) {
-    if (noGroupB == 1) {
-      // use Group A preamble
-      prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
-      mac->RA_usedGroupA = 1;
-    } else if ((Msg3_size < messageSizeGroupA) && (get_nr_PL(mod_id, CC_id, gNB_id) > PLThreshold)) {
-      // Group B is configured and RA preamble Group A is used
-      // - todo add condition on CCCH_sdu_size for initiation by CCCH
-      prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
-      mac->RA_usedGroupA = 1;
+    if (!nr_rach_ConfigCommon->groupBconfigured) {
+      noGroupB = 1;
     } else {
-      // Group B preamble is configured and used
-      // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
-      // the remaining belong to RA Preambles Group B
-      prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
-      mac->RA_usedGroupA = 0;
+      // RA preambles group B is configured 
+      // - Defining the number of RA preambles in RA Preamble Group A for each SSB */
+      sizeOfRA_PreamblesGroupA = nr_rach_ConfigCommon->groupBconfigured->numberOfRA_PreamblesGroupA;
+      switch (nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA){
+      /* - Threshold to determine the groups of RA preambles */
+      case 0:
+      messageSizeGroupA = 56;
+      break;
+      case 1:
+      messageSizeGroupA = 144;
+      break;
+      case 2:
+      messageSizeGroupA = 208;
+      break;
+      case 3:
+      messageSizeGroupA = 256;
+      break;
+      case 4:
+      messageSizeGroupA = 282;
+      break;
+      case 5:
+      messageSizeGroupA = 480;
+      break;
+      case 6:
+      messageSizeGroupA = 640;
+      break;
+      case 7:
+      messageSizeGroupA = 800;
+      break;
+      case 8:
+      messageSizeGroupA = 1000;
+      break;
+      case 9:
+      messageSizeGroupA = 72;
+      break;
+      default:
+      AssertFatal(1 == 0,"Unknown ra_Msg3SizeGroupA %lu\n", nr_rach_ConfigCommon->groupBconfigured->ra_Msg3SizeGroupA);
+      /* todo cases 10 -15*/
+      }
+
+      /* Power offset for preamble selection in dB */
+      messagePowerOffsetGroupB = -9999;
+      switch (nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB){
+      case 0:
+      messagePowerOffsetGroupB = -9999;
+      break;
+      case 1:
+      messagePowerOffsetGroupB = 0;
+      break;
+      case 2:
+      messagePowerOffsetGroupB = 5;
+      break;
+      case 3:
+      messagePowerOffsetGroupB = 8;
+      break;
+      case 4:
+      messagePowerOffsetGroupB = 10;
+      break;
+      case 5:
+      messagePowerOffsetGroupB = 12;
+      break;
+      case 6:
+      messagePowerOffsetGroupB = 15;
+      break;
+      case 7:
+      messagePowerOffsetGroupB = 18;
+      break;
+      default:
+      AssertFatal(1 == 0,"Unknown messagePowerOffsetGroupB %lu\n", nr_rach_ConfigCommon->groupBconfigured->messagePowerOffsetGroupB);
+      }
+
+      // todo Msg3-DeltaPreamble should be provided from higher layers, otherwise is 0
+      mac->deltaPreamble_Msg3 = 0;
+      deltaPreamble_Msg3 = mac->deltaPreamble_Msg3;
     }
-  } else { // Msg3 is being retransmitted
-    if (mac->RA_usedGroupA == 1 && noGroupB == 1) {
-      prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
-    } else if (mac->RA_usedGroupA == 1 && noGroupB == 0){
-      prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
-    } else {
-      prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
+
+    PLThreshold = prach_resources->RA_PCMAX - rach_ConfigGeneric->preambleReceivedTargetPower - deltaPreamble_Msg3 - messagePowerOffsetGroupB;
+
+    /* Msg3 has not been transmitted yet */
+    if (first_Msg3 == 1) {
+      if (noGroupB == 1) {
+        // use Group A preamble
+        prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
+        mac->RA_usedGroupA = 1;
+      } else if ((Msg3_size < messageSizeGroupA) && (get_nr_PL(mod_id, CC_id, gNB_id) > PLThreshold)) {
+        // Group B is configured and RA preamble Group A is used
+        // - todo add condition on CCCH_sdu_size for initiation by CCCH
+        prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
+        mac->RA_usedGroupA = 1;
+      } else {
+        // Group B preamble is configured and used
+        // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
+        // the remaining belong to RA Preambles Group B
+        prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
+        mac->RA_usedGroupA = 0;
+      }
+    } else { // Msg3 is being retransmitted
+      if (mac->RA_usedGroupA == 1 && noGroupB == 1) {
+        prach_resources->ra_PreambleIndex = (taus()) % numberOfRA_Preambles;
+      } else if (mac->RA_usedGroupA == 1 && noGroupB == 0){
+        prach_resources->ra_PreambleIndex = (taus()) % sizeOfRA_PreamblesGroupA;
+      } else {
+        prach_resources->ra_PreambleIndex = sizeOfRA_PreamblesGroupA + (taus()) % (numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
+      }
     }
+    LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
   }
 
   // todo determine next available PRACH occasion
@@ -284,7 +290,7 @@ void nr_get_prach_resources(module_id_t mod_id,
    prach_resources->ra_RNTI = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
    mac->ra_rnti = prach_resources->ra_RNTI;
 
-   LOG_D(MAC, "Computed ra_RNTI is %d", prach_resources->ra_RNTI);
+   LOG_D(MAC, "Computed ra_RNTI is %x \n", prach_resources->ra_RNTI);
 }
 
 // TbD: RA_attempt_number not used
@@ -311,6 +317,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 /// Handling inizialization by PDCCH order, MAC entity or RRC (TS 38.300)
 /// Only one RA procedure is ongoing at any point in time in a MAC entity
 /// the RA procedure on a SCell shall only be initiated by PDCCH order
+/// in the current implementation, RA is contention free only
 
 // WIP
 // todo TS 38.321:
@@ -324,7 +331,6 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 // - retrieve TBS
 // - add mac_rrc_nr_data_req_ue, etc ...
 // - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
-
 void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                     module_id_t mod_id,
                     int CC_id,
@@ -345,6 +351,8 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+  NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = mac->rach_ConfigDedicated;
+
   // int32_t frame_diff = 0;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -485,7 +493,8 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         }
 
         // Fill in preamble and PRACH resources
-        nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, prach_resources, NULL);
+        if (is_nr_prach_slot)
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, prach_resources, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
@@ -601,8 +610,11 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         mac->RA_tx_frame = frame;
         mac->RA_tx_subframe = nr_tti_tx;
+
         // Fill in preamble and PRACH resources
-        nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, NULL);
+        if (is_nr_prach_slot)
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
+
       }
     }
   } else if (UE_mode == PUSCH) {

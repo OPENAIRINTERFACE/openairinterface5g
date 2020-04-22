@@ -350,6 +350,7 @@ int nr_rrc_mac_config_req_ue(
     if(spCell_ConfigP != NULL ){
       mac->servCellIndex = *spCell_ConfigP->servCellIndex;
       if (spCell_ConfigP->reconfigurationWithSync) {
+        mac->rach_ConfigDedicated = spCell_ConfigP->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
         mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
         config_common_ue(mac,module_id,cc_idP);
         mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
