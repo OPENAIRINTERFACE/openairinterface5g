@@ -31,11 +31,6 @@
 import constants as CONST
 
 #-----------------------------------------------------------
-# Version
-#-----------------------------------------------------------
-Version = '0.1'
-
-#-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
 import sys		# arg
@@ -61,6 +56,12 @@ logging.basicConfig(
 class OaiCiTest():
 	
 	def __init__(self):
+		self.ranRepository = ''
+		self.ranBranch = ''
+		self.ranCommitID = ''
+		self.ranAllowMerge = False
+		self.ranTargetBranch = ''
+
 		self.FailReportCnt = 0
 		self.ADBIPAddress = ''
 		self.ADBUserName = ''
@@ -105,8 +106,8 @@ class OaiCiTest():
 		self.expectedNbOfConnectedUEs = 0
 
 	def BuildOAIUE(self):
-		if self.UEIPAddress == '' or RAN.GetranRepository() == '' or RAN.GetranBranch() == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-			GenericHelp(Version)
+		if self.UEIPAddress == '' or self.ranRepository == '' or self.ranBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		result = re.search('--nrUE', self.Build_OAI_UE_args)
@@ -116,11 +117,11 @@ class OaiCiTest():
 		else:
 			RAN.Setair_interface('lte')
 			ue_prefix = ''
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', RAN.GetranRepository())
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = RAN.GetranRepository()
+			full_ran_repo_name = self.ranRepository
 		else:
-			full_ran_repo_name = RAN.GetranRepository() + '.git'
+			full_ran_repo_name = self.ranRepository + '.git'
 		SSH.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
 		SSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
@@ -133,19 +134,19 @@ class OaiCiTest():
 			if result is not None:
 				mismatch = False
 				SSH.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
-				result = re.search(RAN.GetranCommitID(), SSH.getBefore())
+				result = re.search(self.ranCommitID, SSH.getBefore())
 				if result is None:
 					mismatch = True
 				SSH.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
-				if (RAN.GetranAllowMerge()):
+				if self.ranAllowMerge:
 					result = re.search('YES', SSH.getBefore())
 					if result is None:
 						mismatch = True
 					SSH.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
-					if RAN.GetranTargetBranch() == '':
+					if self.ranTargetBranch == '':
 						result = re.search('develop', SSH.getBefore())
 					else:
-						result = re.search(RAN.GetranTargetBranch(), SSH.getBefore())
+						result = re.search(self.ranTargetBranch, SSH.getBefore())
 					if result is None:
 						mismatch = True
 				else:
@@ -160,17 +161,17 @@ class OaiCiTest():
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
 
 		# if the commit ID is provided use it to point to it
-		if RAN.GetranCommitID() != '':
-			SSH.command('git checkout -f ' + RAN.GetranCommitID(), '\$', 5)
+		if self.ranCommitID != '':
+			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (RAN.GetranAllowMerge()):
-			if RAN.GetranTargetBranch() == '':
-				if (RAN.GetranBranch() != 'develop') and (RAN.GetranBranch() != 'origin/develop'):
+		if self.ranAllowMerge:
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					SSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				logging.debug('Merging with the target branch: ' + RAN.GetranTargetBranch())
-				SSH.command('git merge --ff origin/' + RAN.GetranTargetBranch() + ' -m "Temporary merge for CI"', '\$', 5)
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				SSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('mkdir -p log', '\$', 5)
@@ -188,14 +189,14 @@ class OaiCiTest():
 		SSH.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		if buildStatus:
 			# Generating a BUILD INFO file
-			SSH.command('echo "SRC_BRANCH: ' + RAN.GetranBranch() + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
-			SSH.command('echo "SRC_COMMIT: ' + RAN.GetranCommitID() + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
-			if (RAN.GetranAllowMerge()):
+			SSH.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			SSH.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			if self.ranAllowMerge:
 				SSH.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
-				if RAN.GetranTargetBranch() == '':
+				if self.ranTargetBranch == '':
 					SSH.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 				else:
-					SSH.command('echo "TGT_BRANCH: ' + RAN.GetranTargetBranch() + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+					SSH.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			else:
 				SSH.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			SSH.close()
@@ -222,7 +223,7 @@ class OaiCiTest():
 		if RAN.GetflexranCtrlInstalled() == False:
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 		SSH.command('cd /opt/flexran_rtc', '\$', 5)
@@ -287,7 +288,7 @@ class OaiCiTest():
 
 	def InitializeUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		i = 0
@@ -303,7 +304,7 @@ class OaiCiTest():
 
 	def InitializeOAIUE(self):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		if RAN.Getair_interface() == 'lte':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
@@ -501,7 +502,7 @@ class OaiCiTest():
 
 	def InitializeCatM(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -540,7 +541,7 @@ class OaiCiTest():
 
 	def TerminateCatM(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -561,7 +562,7 @@ class OaiCiTest():
 
 	def AttachCatM(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -635,7 +636,7 @@ class OaiCiTest():
 
 	def PingCatM(self):
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -801,7 +802,7 @@ class OaiCiTest():
 
 	def AttachUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -875,7 +876,7 @@ class OaiCiTest():
 
 	def DetachUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -946,7 +947,7 @@ class OaiCiTest():
 
 	def RebootUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -980,7 +981,7 @@ class OaiCiTest():
 
 	def DataDisableUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		i = 0
@@ -1009,7 +1010,7 @@ class OaiCiTest():
 
 	def DataEnableUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		i = 0
@@ -1025,7 +1026,7 @@ class OaiCiTest():
 
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
@@ -1069,7 +1070,7 @@ class OaiCiTest():
 
 	def GetAllCatMDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
@@ -1141,7 +1142,7 @@ class OaiCiTest():
 
 	def CheckStatusUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = False
@@ -1205,13 +1206,13 @@ class OaiCiTest():
 
 	def GetAllUEIPAddresses(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		ue_ip_status = 0
 		self.UEIPAddresses = []
 		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
 			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-				GenericHelp(Version)
+				HELP.GenericHelp(CONST.Version)
 				sys.exit('Insufficient Parameter')
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('ifconfig oaitun_ue1', '\$', 4)
@@ -1373,11 +1374,11 @@ class OaiCiTest():
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
 			if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '':
-				GenericHelp(Version)
+				HELP.GenericHelp(CONST.Version)
 				sys.exit('Insufficient Parameter')
 		else:
 			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
-				GenericHelp(Version)
+				HELP.GenericHelp(CONST.Version)
 				sys.exit('Insufficient Parameter')
 		try:
 			if ping_from_eNB is not None:
@@ -1460,7 +1461,7 @@ class OaiCiTest():
 			self.PingNoS1()
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
@@ -2087,7 +2088,7 @@ class OaiCiTest():
 
 	def IperfNoS1(self):
 		if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = True
@@ -2200,7 +2201,7 @@ class OaiCiTest():
 			self.IperfNoS1()
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
@@ -2625,7 +2626,7 @@ class OaiCiTest():
 		if RAN.GetflexranCtrlInstalled() == False or RAN.GetflexranCtrlStarted() == False:
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
@@ -2737,18 +2738,21 @@ class OaiCiTest():
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of UE'
+			HTML.Setdesc('Automatic Termination of UE')
 			self.ShowTestID()
 			self.TerminateUE()
 		if (self.Initialize_OAI_UE_args != ''):
-			self.testCase_id = 'AUTO-KILL-UE'
+			self.testCase_id = 'AUTO-KILL-OAI-UE'
 			HTML.SettestCase_id(self.testCase_id)
-			self.desc = 'Automatic Termination of UE'
+			self.desc = 'Automatic Termination of OAI-UE'
+			HTML.Setdesc('Automatic Termination of OAI-UE')
 			self.ShowTestID()
 			self.TerminateOAIUE()
 		if (RAN.GetInitialize_eNB_args() != ''):
 			self.testCase_id = 'AUTO-KILL-eNB'
 			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of eNB'
+			HTML.Setdesc('Automatic Termination of eNB')
 			self.ShowTestID()
 			RAN.SeteNB_instance('0')
 			RAN.TerminateeNB()
@@ -2756,6 +2760,7 @@ class OaiCiTest():
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of FlexRan CTL'
+			HTML.Setdesc('Automatic Termination of FlexRan CTL')
 			self.ShowTestID()
 			self.TerminateFlexranCtrl()
 		RAN.SetprematureExit(True)
@@ -3189,7 +3194,7 @@ CiTestObj = OaiCiTest()
 
 import sshconnection 
 import epc
-import helpreadme
+import helpreadme as HELP
 import ran
 import html
 import constants
@@ -3211,7 +3216,7 @@ while len(argvs) > 1:
 	myArgv = argvs.pop(1)	# 0th is this file's name
 
 	if re.match('^\-\-help$', myArgv, re.IGNORECASE):
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit(0)
 	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
@@ -3221,6 +3226,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
+		CiTestObj.ranRepository = matchReg.group(1)
 		RAN.SetranRepository(matchReg.group(1))
 		HTML.SetranRepository(matchReg.group(1))
 	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
@@ -3230,6 +3236,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		doMerge = matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
+			CiTestObj.ranAllowMerge = True
 			RAN.SetranAllowMerge(True)
 			HTML.SetranAllowMerge(True)
 	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
@@ -3237,6 +3244,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
+		CiTestObj.ranBranch = matchReg.group(1)
 		RAN.SetranBranch(matchReg.group(1))
 		HTML.SetranBranch(matchReg.group(1))
 	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
@@ -3244,6 +3252,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
+		CiTestObj.ranCommitID = matchReg.group(1)
 		RAN.SetranCommitID(matchReg.group(1))
 		HTML.SetranCommitID(matchReg.group(1))
 	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
@@ -3251,6 +3260,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+		CiTestObj.ranTargetBranch = matchReg.group(1)
 		RAN.SetranTargetBranch(matchReg.group(1))
 		HTML.SetranTargetBranch(matchReg.group(1))
 	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
@@ -3352,12 +3362,12 @@ while len(argvs) > 1:
 		if ((finalStatus == 'true') or (finalStatus == 'True')):
 			CiTestObj.finalStatus = True
 	else:
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Invalid Parameter: ' + myArgv)
 
 if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	RAN.SeteNB_serverId('0')
 	RAN.SeteNB_instance('0')
@@ -3365,74 +3375,74 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	RAN.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
 	CiTestObj.TerminateUE()
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
 	CiTestObj.TerminateOAIUE()
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateHSS()
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateMME()
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateSPGW()
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
 	if (RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectBuild()
 elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 	if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	RAN.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectHSS()
 elif re.match('^LogCollectMME$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectMME()
 elif re.match('^LogCollectSPGW$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectSPGW()
 elif re.match('^LogCollectPing$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectPing()
 elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectIperf()
 elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
-		GenericHelp(Version)
+		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	count = 0
 	foundCount = 0
@@ -3472,21 +3482,21 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.GeteNBIPAddress() == '' or RAN.GetranRepository() == '' or RAN.GetranBranch() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '' or EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or EPC.GetType() == '':
-				EPCSrvHelp(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath(), EPC.GetType())
+				HELP.EPCSrvHelp(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath(), EPC.GetType())
 			if RAN.GetranRepository() == '':
-				GitSrvHelp(RAN.GetranRepository(),RAN.GetranBranch(),RAN.GetranCommitID(),RAN.GetranAllowMerge(),RAN.GetranTargetBranch())
+				HELP.GitSrvHelp(RAN.GetranRepository(), RAN.GetranBranch(), RAN.GetranCommitID(), RAN.GetranAllowMerge(), RAN.GetranTargetBranch())
 			if RAN.GeteNBIPAddress() == ''  or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '':
-				eNBSrvHelp(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath())
+				HELP.eNBSrvHelp(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath())
 			sys.exit('Insufficient Parameter')
 
 		if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
 			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), cwd + "/tcp_iperf_stats.awk", "/tmp")
 			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
-		if CiTestObj.UEIPAddress == '' or RAN.GetranRepository() == '' or RAN.GetranBranch() == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
-			GenericHelp(Version)
+		if CiTestObj.UEIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('UE: Insufficient Parameter')
 
 	#read test_case_list.xml file
@@ -3663,6 +3673,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(True)
 else:
-	GenericHelp(Version)
+	HELP.GenericHelp(CONST.Version)
 	sys.exit('Invalid mode')
 sys.exit(0)

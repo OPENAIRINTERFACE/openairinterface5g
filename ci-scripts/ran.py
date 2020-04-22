@@ -232,7 +232,7 @@ class RANManagement():
 
 	def BuildeNB(self):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
@@ -250,7 +250,7 @@ class RANManagement():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
@@ -359,7 +359,7 @@ class RANManagement():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
@@ -454,7 +454,7 @@ class RANManagement():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 
 		if self.htmlObj is not None:
@@ -679,7 +679,7 @@ class RANManagement():
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			GenericHelp(Version)
+			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
