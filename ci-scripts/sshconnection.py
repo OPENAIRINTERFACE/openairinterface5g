@@ -35,6 +35,7 @@ import pexpect          # pexpect
 import logging
 import time             # sleep
 import re
+import sys
 
 #-----------------------------------------------------------
 # Class Declaration
