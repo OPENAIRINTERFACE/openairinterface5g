@@ -1132,6 +1132,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
                                    NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
                                    pdu,
                                    ue_num);
+        } else if (pdu->pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE) {
+          dl_config_req_UE_MAC_mch(NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),
+                                   NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
+                                   pdu,
+                                   ue_num);
         }
       }
     }
