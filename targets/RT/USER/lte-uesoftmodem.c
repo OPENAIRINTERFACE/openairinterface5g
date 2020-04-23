@@ -281,13 +281,13 @@ void exit_function(const char *file, const char *function, const int line, const
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
-  int CC_id;
-  int tddflag = 0;
-  char *loopfile = NULL;
-  int dumpframe = 0;
-  int timingadv = 0;
+  int CC_id=0;
+  int tddflag=0;
+  char *loopfile=NULL;
+  int dumpframe=0;
+  int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
-  int simL1flag = 0;
+  int simL1flag =0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
@@ -539,6 +539,12 @@ void init_pdcp(void) {
   pdcp_module_init(pdcp_initmask);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+}
+
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_msg(void *notUsed) {
+AssertFatal(false,"");
+	return NULL;
 }
 
 int main( int argc, char **argv ) {

@@ -8884,27 +8884,30 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   return NULL;
 }
 
+// as there are race conditions, no rrc thread
 //-----------------------------------------------------------------------------
 void *
-rrc_enb_task(
+rrc_enb_process_msg(
   void *args_p
 )
 //-----------------------------------------------------------------------------
 {
-  rrc_enb_init();
 
-  itti_mark_task_ready(TASK_RRC_ENB);
-  LOG_I(RRC,"Entering main loop of RRC message task\n");
 
-  while (1) {
+  //while (1) {
+    //(void) rrc_enb_process_itti_msg(NULL);
+  //}
+
+  //while (1) {
     (void) rrc_enb_process_itti_msg(NULL);
 {
   //extern volatile int go_nr;
   void rrc_go_nr(void);
   //if (go_nr) rrc_go_nr();
 }
+  //}
+return NULL;
   }
-}
 
 /*------------------------------------------------------------------------------*/
 void

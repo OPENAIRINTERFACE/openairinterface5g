@@ -38,6 +38,11 @@ extern "C"
 #endif
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"
+#define CONFIG_HLP_SPLIT73       "Split 7.3 (below rate matching) option: <cu|du>:<remote ip address>:<remote port>"
+#define CONFIG_HLP_TPOOL         "Thread pool configuration: \n\
+  default no pool (runs in calling thread),\n\
+  list of cores, comma separated (negative value is no core affinity)\n\
+  example: -1,3 launches two working threads one floating, the second set on core 3"
 #define CONFIG_HLP_ULMAXE        "set the eNodeB max ULSCH erros\n"
 #define CONFIG_HLP_CALUER        "set UE RX calibration\n"
 #define CONFIG_HLP_CALUERM       ""
@@ -89,6 +94,8 @@ extern "C"
 /*   optname                 helpstr                  paramflags      XXXptr                              defXXXval              type         numelt   */
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define RF_CONFIG_FILE      softmodem_params.rf_config_file
+#define SPLIT73             softmodem_params.split73
+#define TP_CONFIG           softmodem_params.threadPoolConfig
 #define PHY_TEST            softmodem_params.phy_test
 #define WAIT_FOR_SYNC       softmodem_params.wait_for_sync
 #define SINGLE_THREAD_FLAG  softmodem_params.single_thread_flag
@@ -104,6 +111,8 @@ extern "C"
 
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, sizeof(RF_CONFIG_FILE)},\
+    {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:(char **)&SPLIT73,           defstrval:NULL,        TYPE_STRING, sizeof(SPLIT73)},\
+    {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)}, \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
     {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
     {"clock-source",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
@@ -193,6 +202,8 @@ typedef struct {
   uint64_t       optmask;
   //THREAD_STRUCT  thread_struct;
   char           rf_config_file[1024];
+  char           split73[1024];
+  char           threadPoolConfig[1024];
   int            phy_test;
   uint8_t        usim_test;
   int            emulate_rf;

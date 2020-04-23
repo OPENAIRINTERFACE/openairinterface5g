@@ -137,7 +137,7 @@ void (*rlc_rrc_data_ind)(
   const protocol_ctxt_t *const ctxtP,
   const rb_id_t     rb_idP,
   const sdu_size_t  sdu_sizeP,
-  const uint8_t    *const sduP);
+  const uint8_t    *const sduP)  __attribute__ ((aligned(32)));
 
 void (*rlc_rrc_data_conf)(
   const protocol_ctxt_t *const ctxtP,
@@ -250,7 +250,7 @@ logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];           
    (((hash_key_t)(sESSION_ID)) << 37) | \
    (((hash_key_t)(0x0000000000000001))  << 63))
 
-hash_table_t  *rlc_coll_p;
+hash_table_t  *rlc_coll_p  __attribute__ ((aligned(32)));
 
 /*! \fn tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP)
 * \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.

@@ -7,6 +7,7 @@
 #include <sys/eventfd.h>
 
 
+extern "C" {
 #include <intertask_interface.h>
 #include <common/utils/system.h>
 
@@ -35,7 +36,6 @@ typedef struct task_list_s {
 int timer_expired(int fd);
 task_list_t tasks[TASK_MAX];
 
-extern "C" {
   void *pool_buffer_init (void) {
     return 0;
   }
@@ -86,6 +86,9 @@ extern "C" {
     temp->ittiMsgHeader.messageId = message_id;
     temp->ittiMsgHeader.originTaskId = origin_task_id;
     temp->ittiMsgHeader.ittiMsgSize = size;
+    temp->ittiMsgHeader.destinationTaskId=TASK_UNKNOWN;
+    temp->ittiMsgHeader.instance=0;
+    temp->ittiMsgHeader.lte_time={0};
     return temp;
     //return itti_alloc_new_message_sized(origin_task_id, message_id, messages_info[message_id].size);
   }

@@ -882,7 +882,8 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7,
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
   dl_config_req = (nfapi_dl_config_request_t *)malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -910,9 +911,10 @@ int memcpy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7,
   return 0;
 }
 
-int memcpy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7,
-                         nfapi_ul_config_request_t *req) {
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
+{
   ul_config_req = malloc(sizeof(nfapi_ul_config_request_t));
+
 
   ul_config_req->sfn_sf = req->sfn_sf;
   ul_config_req->vendor_extension = req->vendor_extension;
@@ -957,9 +959,12 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int memcpy_hi_dci0_req(nfapi_pnf_p7_config_t *pnf_p7,
-                       nfapi_hi_dci0_request_t *req) {
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t* pnf_p7, 
+			nfapi_hi_dci0_request_t* req) {
   hi_dci0_req = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
+	//if(req!=0){
+
 
   hi_dci0_req->sfn_sf = req->sfn_sf;
   hi_dci0_req->vendor_extension = req->vendor_extension;
@@ -1074,7 +1079,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,
                             int frame,
                             int subframe,
                             L1_rxtx_proc_t *proc,
-                            nfapi_dl_config_request_pdu_t *dl_config_pdu,
+			    nfapi_dl_config_request_pdu_t *dl_config_pdu,
                             uint8_t codeword_index,
                             uint8_t *sdu) {
 }

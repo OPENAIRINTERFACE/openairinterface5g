@@ -202,7 +202,7 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
 
 void add_tdd_dedicated_configuration_nr(NR_DL_FRAME_PARMS *frame_parms, int slotIndex, int nrofDownlinkSymbols, int nrofUplinkSymbols) {
   TDD_UL_DL_SlotConfig_t *p_TDD_UL_DL_ConfigDedicated = frame_parms->p_TDD_UL_DL_ConfigDedicated;
-  TDD_UL_DL_SlotConfig_t *p_previous_TDD_UL_DL_ConfigDedicated;
+  TDD_UL_DL_SlotConfig_t *p_previous_TDD_UL_DL_ConfigDedicated=NULL;
   int next = 0;
 
   while (p_TDD_UL_DL_ConfigDedicated != NULL) {

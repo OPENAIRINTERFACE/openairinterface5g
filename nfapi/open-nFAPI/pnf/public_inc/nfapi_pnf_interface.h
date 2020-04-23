@@ -24,6 +24,7 @@ extern "C" {
 
 #include "nfapi_interface.h"
 #include "debug.h"
+#include <openair2/PHY_INTERFACE/IF_Module.h>
 
 #include <sys/types.h>
 
@@ -619,21 +620,21 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the dl config request message structure
 	 * \return not currently used
 	 */
-	int (*dl_config_req)(nfapi_pnf_p7_config_t* config, nfapi_dl_config_request_t* req);
+	int (*dl_config_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_dl_config_request_t* req);
 	
 	/*! A callback for the UL_CONFIG.request
 	 * \param config A poiner to the PNF P7 config
 	 * \param req A pointer to the ul config request message structure
 	 * \return not currently used	
 	 */
-	int (*ul_config_req)(nfapi_pnf_p7_config_t* config, nfapi_ul_config_request_t* req);
+	int (*ul_config_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_ul_config_request_t* req);
 	
 	/*! A callback for the HI_DCI0.request
 	 * \param config A poiner to the PNF P7 config
 	 * \param req A pointer to the hi dci0 request message structure
 	 * \return not currently used
 	 */
-	int (*hi_dci0_req)(nfapi_pnf_p7_config_t* config, nfapi_hi_dci0_request_t* req);
+	int (*hi_dci0_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_hi_dci0_request_t* req);
 	
 	/*! A callback for the TX_REQ.request
 	 * \param config A poiner to the PNF P7 config
