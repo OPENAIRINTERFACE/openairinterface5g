@@ -732,7 +732,7 @@ int main(int argc, char **argv)
         memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[0].ndi = (round==0) ? 1 : 0;
+        UE_list->UE_sched_ctrl[0].harq_processes[0].ndi = !(trial&1);
 
         UE_list->UE_sched_ctrl[0].harq_processes[0].round = round;   
         gNB->dlsch[0][0]->harq_processes[0]->round = round;

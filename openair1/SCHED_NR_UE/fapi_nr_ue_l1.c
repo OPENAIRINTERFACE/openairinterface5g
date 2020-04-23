@@ -34,6 +34,7 @@
 
 #include "fapi_nr_ue_interface.h"
 #include "fapi_nr_ue_l1.h"
+#include "harq_nr.h"
 //#include "PHY/phy_vars_nr_ue.h"
 
 #include "PHY/defs_nr_UE.h"
@@ -95,14 +96,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
 	  dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
 	  dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
 	  dlsch0_harq->mcs = dlsch_config_pdu->mcs;
-	  dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
 	  dlsch0_harq->rvidx = dlsch_config_pdu->rv;
 	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
 	  dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
 	  dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
 	  dlsch0_harq->Nl=1;
 	  dlsch0_harq->mcs_table=0;
-	  dlsch0_harq->status = ACTIVE;
+	  dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
+ACTIVE;
 	  LOG_D(MAC,">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
 
 	}
