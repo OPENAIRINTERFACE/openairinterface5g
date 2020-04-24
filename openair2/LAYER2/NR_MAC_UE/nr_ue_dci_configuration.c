@@ -180,12 +180,14 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
       }
       rel15->coreset.CoreSetType = 1;
       rel15->coreset.precoder_granularity = mac->coreset[0][0]->precoderGranularity;
-
-      if (mac->coreset[0][0]->pdcch_DMRS_ScramblingID)
+      if (mac->coreset[0][0]->pdcch_DMRS_ScramblingID) {
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->coreset[0][0]->pdcch_DMRS_ScramblingID;
-      else
+        rel15->coreset.scrambling_rnti = mac->t_crnti;
+      }
+      else {
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->scc->physCellId;
-
+        rel15->coreset.scrambling_rnti = 0;
+      }
       fill_dci_search_candidates(mac->SSpace[0][0][ss_id],rel15);
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;

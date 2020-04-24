@@ -392,7 +392,11 @@ int configure_fapi_dl_pdu(int Mod_idP,
   int dci_formats[2];
   int rnti_types[2];
   
-  dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
+  if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
+    dci_formats[0]  = NR_DL_DCI_FORMAT_1_1;
+  else
+    dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
+
   rnti_types[0]   = NR_RNTI_C;
 
   pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[0]=nr_dci_size(dci_formats[0],rnti_types[0],pdcch_pdu_rel15->BWPSize);
