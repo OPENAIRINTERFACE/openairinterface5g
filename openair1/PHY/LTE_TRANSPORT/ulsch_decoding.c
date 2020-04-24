@@ -572,7 +572,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   G = G - Q_RI - Q_CQI;
   ulsch_harq->G = G;
   AssertFatal((int)G > 0,
-              "FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
+              "FATAL: ulsch_decoding.c G < 0 (%u) : Q_RI %u, Q_CQI %u\n",G,Q_RI,Q_CQI);
   H = G + Q_CQI;
   Hprime = H/Q_m;
   // Demultiplexing/Deinterleaving of PUSCH/ACK/RI/CQI
