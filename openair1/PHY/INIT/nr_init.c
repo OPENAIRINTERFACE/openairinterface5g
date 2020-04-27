@@ -26,6 +26,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -501,6 +502,12 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
+
+  for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
+    gNB->pucch[i] = new_gNB_pucch();
+    AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
+  }
 
   for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
 

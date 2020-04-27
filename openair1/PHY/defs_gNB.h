@@ -340,6 +340,15 @@ typedef struct {
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
 } NR_gNB_ULSCH_t;
 
+typedef struct {
+  uint8_t active;
+  /// Frame where current PUCCH pdu was sent
+  uint32_t frame;
+  /// Slot where current PUCCH pdu was sent
+  uint32_t slot;
+  /// ULSCH PDU
+  nfapi_nr_pucch_pdu_t pucch_pdu;
+} NR_gNB_PUCCH_t;
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -619,9 +628,9 @@ typedef struct {
 
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
-#define MAX_UL_PDUS_PER_SLOT 100
-#define MAX_NUM_NR_SRS_PDUS 100
-#define MAX_NUM_NR_UCI_PDUS 100
+#define MAX_UL_PDUS_PER_SLOT 8
+#define MAX_NUM_NR_SRS_PDUS 8
+#define MAX_NUM_NR_UCI_PDUS 8
 
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {
@@ -675,6 +684,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
+  NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;

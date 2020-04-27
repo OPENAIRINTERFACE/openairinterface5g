@@ -851,7 +851,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       uint64_t dci_estimation[2]= {0};
       const t_nrPolar_params *currentPtrDCI=nr_polar_params(1, dci_length, L,1,&ue->polarList);
 
-      nr_pdcch_unscrambling(rel15->rnti,
+      nr_pdcch_unscrambling(rel15->coreset.scrambling_rnti,
 			    &ue->frame_parms,
 			    slot,
 			    &pdcch_vars->e_rx[CCEind*108],

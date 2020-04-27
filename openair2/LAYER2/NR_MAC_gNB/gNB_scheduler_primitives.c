@@ -452,7 +452,6 @@ int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
 
-
     // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
     int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
@@ -807,7 +806,7 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 
     uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->dci_pdu.Payload[d];
-    int dci_size = nr_dci_size(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],pdcch_pdu_rel15->BWPSize,bwp_id);
+    int dci_size = nr_dci_size(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],N_RB,bwp_id);
     pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d] = dci_size;
     AssertFatal(pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
 

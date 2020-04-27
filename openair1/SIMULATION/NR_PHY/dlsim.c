@@ -703,8 +703,8 @@ int main(int argc, char **argv)
       errors_bit = 0;
       //multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
-
       memset(RC.nrmac[0]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
+      memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
       clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
       if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&pucch_sched,&dlsch_config);
       else               nr_schedule_css_dlsch_phytest(0,frame,slot);

@@ -426,9 +426,9 @@ int configure_fapi_dl_pdu(int Mod_idP,
   int rnti_types[2];
   
   if (ss->searchSpaceType->choice.ue_Specific->dci_Formats)
-    dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
-  else
     dci_formats[0]  = NR_DL_DCI_FORMAT_1_1;
+  else
+    dci_formats[0]  = NR_DL_DCI_FORMAT_1_0;
 
   rnti_types[0]   = NR_RNTI_C;
 

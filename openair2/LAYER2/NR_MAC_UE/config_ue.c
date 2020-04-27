@@ -349,11 +349,11 @@ int nr_rrc_mac_config_req_ue(
     if(cell_group_config != NULL ){
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
+        mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
 	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
 	config_common_ue(mac,module_id,cc_idP);
 	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
 	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
-
       }
       mac->scg = cell_group_config;
 

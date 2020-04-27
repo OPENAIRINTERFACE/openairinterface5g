@@ -60,7 +60,7 @@ typedef struct {
   uint8_t CoreSetType;
   uint8_t precoder_granularity;
   uint16_t pdcch_dmrs_scrambling_id;
-
+  uint16_t scrambling_rnti;
   uint8_t tci_state_pdcch;
   uint8_t tci_present_in_dci;
 } fapi_nr_coreset_t;
