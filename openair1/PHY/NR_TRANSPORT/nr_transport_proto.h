@@ -205,6 +205,18 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
 
+NR_gNB_PUCCH_t *new_gNB_pucch(void);
+
+void nr_fill_pucch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pucch_pdu_t *pucch_pdu);
+
+int nr_find_pucch(uint16_t rnti,
+                  int frame,
+                  int slot,
+                  PHY_VARS_gNB *gNB);
+
 void nr_fill_prach(PHY_VARS_gNB *gNB,
 		   int SFN,
 		   int Slot,

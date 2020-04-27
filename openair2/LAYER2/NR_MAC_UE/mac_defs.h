@@ -156,6 +156,7 @@ typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
   NR_CellGroupConfig_t            *scg;
+  NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
   int                             servCellIndex;
   ////  MAC config
   NR_DRX_Config_t                 *drx_Config;
