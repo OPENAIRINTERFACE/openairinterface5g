@@ -230,7 +230,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
     number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;
 
   if (nodata_dmrs)
-    nb_re_dmrs = 12*number_dmrs_symbols;
+    nb_re_dmrs = 12;
   else
     nb_re_dmrs = ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1)?6:4);
 
@@ -245,7 +245,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
-
   start_meas(&gNB->ulsch_unscrambling_stats);
   nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
                         G,
