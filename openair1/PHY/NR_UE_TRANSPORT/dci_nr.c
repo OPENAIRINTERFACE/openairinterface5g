@@ -874,10 +874,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                          1,
                                          currentPtrDCI);
 
-      if (get_softmodem_params()->do_ra == 1)
-        n_rnti = ue->prach_resources[gNB_id]->ra_RNTI;
-      else
-        n_rnti = rel15->rnti;
+      n_rnti = rel15->rnti;
 
       if (crc == n_rnti) {
         LOG_D(PHY,"Decoded crc %x matches rnti %x for DCI format %d\n", crc, n_rnti, rel15->dci_format);

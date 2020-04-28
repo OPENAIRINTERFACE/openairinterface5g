@@ -130,12 +130,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
     }
     if (mac->crnti>0) {
       rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15; 
-
-      if (get_softmodem_params()->do_ra == 1)
-        rel15->rnti = 0x00;
-      else // phy_test
-        rel15->rnti = mac->crnti;
-
       rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
 
       if (slot == 0 || slot == 1){
@@ -180,14 +174,20 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_
       }
       rel15->coreset.CoreSetType = 1;
       rel15->coreset.precoder_granularity = mac->coreset[0][0]->precoderGranularity;
+
       if (mac->coreset[0][0]->pdcch_DMRS_ScramblingID) {
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->coreset[0][0]->pdcch_DMRS_ScramblingID;
         rel15->coreset.scrambling_rnti = mac->t_crnti;
-      }
-      else {
+      } else {
 	rel15->coreset.pdcch_dmrs_scrambling_id = *mac->scc->physCellId;
         rel15->coreset.scrambling_rnti = 0;
       }
+
+      if (get_softmodem_params()->do_ra && slot == 7)
+        rel15->rnti = mac->ra_rnti;
+      else
+        rel15->rnti = mac->crnti;
+
       fill_dci_search_candidates(mac->SSpace[0][0][ss_id],rel15);
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;
