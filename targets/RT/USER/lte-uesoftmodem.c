@@ -541,12 +541,6 @@ void init_pdcp(void) {
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
 
-// Stupid function addition because UE itti messages queues definition is common with eNB
-void *rrc_enb_process_msg(void *notUsed) {
-AssertFatal(false,"");
-	return NULL;
-}
-
 int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;

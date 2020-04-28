@@ -56,9 +56,9 @@ int create_tasks(uint32_t enb_nb) {
   rc = itti_create_task (TASK_ENB_APP, eNB_app_task, NULL);
   AssertFatal(rc >= 0, "Create task for eNB APP failed\n");
 
-  // No more rrc thread, as many race conditions are hidden behind
-  rrc_enb_init();
-  itti_mark_task_ready(TASK_RRC_ENB);
+  LOG_I(RRC,"Creating RRC eNB Task\n");
+  rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
+  AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
 
   if (EPC_MODE_ENABLED && ! ( split73==SPLIT73_DU ) ) {
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
