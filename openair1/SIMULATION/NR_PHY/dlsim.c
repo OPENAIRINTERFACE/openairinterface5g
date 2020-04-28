@@ -139,6 +139,9 @@ int main(int argc, char **argv)
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
+  float roundStats[50];
+  float psnr;
+  uint8_t snrRun;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
@@ -682,6 +685,7 @@ int main(int argc, char **argv)
   nr_ue_phy_config_request(&UE_mac->phy_config);
   NR_UE_list_t *UE_list = &RC.nrmac[0]->UE_list;
   NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
+  snrRun = 0;
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
@@ -726,6 +730,8 @@ int main(int argc, char **argv)
       
       UE_harq_process->harq_ack.ack = 0;
       round = 0;
+      UE_harq_process->round = round;
+      UE_harq_process->first_tx = 1;
         
       while ((round<num_rounds) && (UE_harq_process->harq_ack.ack==0)) {
         memset(RC.nrmac[0]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
@@ -827,11 +833,7 @@ int main(int argc, char **argv)
              do_pdcch_flag,
              normal_txrx);
         
-        if (UE->dlsch[UE->current_thread_id[slot]][0][0]->last_iteration_cnt >= 
-      UE->dlsch[UE->current_thread_id[slot]][0][0]->max_ldpc_iterations+1)
-    n_errors++;
-      
-        printf("dlsim round %d ends\n",round);
+        //printf("dlsim round %d ends\n",round);
         round++;
       } // round
       
@@ -839,11 +841,12 @@ int main(int argc, char **argv)
       //---------------------- count errors ----------------------
       //----------------------------------------------------------
       
-        
+      if (UE->dlsch[UE->current_thread_id[slot]][0][0]->last_iteration_cnt >= 
+        UE->dlsch[UE->current_thread_id[slot]][0][0]->max_ldpc_iterations+1)
+        n_errors++;
         
       NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
       int16_t *UE_llr = pdsch_vars[0]->llr[0];
-      
       
       uint32_t TBS         = rel15->TBSize[0];
       uint16_t length_dmrs = 1;
@@ -892,15 +895,16 @@ int main(int argc, char **argv)
 	if (n_trials == 1)
 	  printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
       }
-      
+      roundStats[snrRun]+=((float)round); 
     } // noise trials
 
+    roundStats[snrRun]/=((float)n_trials);
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
            (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Channel BER %e\n", SNR, n_errors, n_trials,(double)errors_scrambling/available_bits/n_trials);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials);
     printf("\n");
 
     if (n_trials == 1) {
@@ -910,7 +914,6 @@ int main(int argc, char **argv)
 	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
       LOG_M("chestF0.m","chF0",UE->pdsch_vars[0][0]->dl_ch_estimates_ext,N_RB_DL*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
-      break;
     }
 
     if ((float)n_errors/(float)n_trials <= target_error_rate) {
@@ -969,7 +972,17 @@ int main(int argc, char **argv)
       printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC");
       */
     }
+    snrRun++;
   } // NSR
+
+  if (n_trials>1) {
+    printf("HARQ stats:\nSNR\tRounds\n");
+    psnr = snr0;
+    for (uint8_t i=0; i<snrRun; i++) {
+      printf("%.1f\t%.2f\n",psnr,roundStats[i]);
+      psnr+=0.2;
+    }
+  }
 
   for (i = 0; i < 2; i++) {
     free(s_re[i]);
