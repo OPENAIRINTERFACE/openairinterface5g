@@ -443,19 +443,18 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     dcireq.slot      = proc->nr_tti_rx;
     nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
+    if ((proc->frame_rx % (1 << (ssb_period-1)) == 0) && (proc->nr_tti_rx == 1)) {
+      UE->frame_gap = (MAX_FRAME_NUMBER + dcireq.dl_config_req.sfn - proc->frame_rx) % MAX_FRAME_NUMBER;
+      proc->frame_rx = (proc->frame_rx + UE->frame_gap) % MAX_FRAME_NUMBER;
+      proc->frame_tx = (proc->frame_tx + UE->frame_gap) % MAX_FRAME_NUMBER;
+    }
+
     // we should have received a DL DCI here, so configure DL accordingly
     scheduled_response.dl_config = &dcireq.dl_config_req;
     scheduled_response.ul_config = NULL;
     scheduled_response.tx_request = NULL;
     scheduled_response.module_id = UE->Mod_id;
     scheduled_response.CC_id     = 0;
-    if (!((proc->frame_rx)%(1<<(ssb_period-1)))) {
-      if(proc->frame_rx > dcireq.dl_config_req.sfn)
-        UE->frame_gap = proc->frame_rx - dcireq.dl_config_req.sfn;
-      if(proc->frame_rx < dcireq.dl_config_req.sfn)
-        UE->frame_gap = dcireq.dl_config_req.sfn - proc->frame_rx;
-      proc->frame_rx = dcireq.dl_config_req.sfn;
-    }
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot = proc->nr_tti_rx;
 
@@ -737,6 +736,12 @@ void *UE_thread(void *arg) {
 
 
     absolute_slot++;
+
+    if(UE->frame_gap) {
+      absolute_slot += UE->frame_gap * nb_slot_frame;
+      UE->frame_gap = 0;
+    }
+
     // whatever means thread_idx
     // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
     // Slot 3 will overlap if RX_NB_TH is 2
@@ -754,8 +759,8 @@ void *UE_thread(void *arg) {
     curMsg->proc.subframe_rx=slot_nr/(nb_slot_frame/10);
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
-    curMsg->proc.frame_rx = ((absolute_slot/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx = (((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_rx = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 
