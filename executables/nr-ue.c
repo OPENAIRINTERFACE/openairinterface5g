@@ -443,12 +443,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     dcireq.slot      = proc->nr_tti_rx;
     nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-    if ((proc->frame_rx % (1 << (ssb_period-1)) == 0) && (proc->nr_tti_rx == 1)) {
-      UE->frame_gap = (MAX_FRAME_NUMBER + dcireq.dl_config_req.sfn - proc->frame_rx) % MAX_FRAME_NUMBER;
-      proc->frame_rx = (proc->frame_rx + UE->frame_gap) % MAX_FRAME_NUMBER;
-      proc->frame_tx = (proc->frame_tx + UE->frame_gap) % MAX_FRAME_NUMBER;
-    }
-
     // we should have received a DL DCI here, so configure DL accordingly
     scheduled_response.dl_config = &dcireq.dl_config_req;
     scheduled_response.ul_config = NULL;
@@ -739,11 +733,6 @@ void *UE_thread(void *arg) {
 
 
     absolute_slot++;
-
-    if(UE->frame_gap) {
-      absolute_slot += UE->frame_gap * nb_slot_frame;
-      UE->frame_gap = 0;
-    }
 
     // whatever means thread_idx
     // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
