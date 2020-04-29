@@ -4153,7 +4153,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                   0);
     }
   } else {
-    LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);
+    LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: No DCIs found\n", ue->Mod_id, frame_rx, nr_tti_rx);
   }
 
 #endif //NR_PDCCH_SCHED
