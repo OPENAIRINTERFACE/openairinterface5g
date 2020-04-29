@@ -690,8 +690,11 @@ void *UE_thread(void *arg) {
       if (res) {
         syncRunning=false;
         syncData_t *tmp=(syncData_t *)NotifiedFifoData(res);
-        // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-        decoded_frame_rx=(tmp->proc.decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
+        if (UE->is_synchronized) {
+          decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+          // shift the frame index with all the frames we trashed meanwhile we perform the synch search
+          decoded_frame_rx=(decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
+        }
         delNotifiedFIFO_elt(res);
       } else {
         readFrame(UE, &timestamp, true);
