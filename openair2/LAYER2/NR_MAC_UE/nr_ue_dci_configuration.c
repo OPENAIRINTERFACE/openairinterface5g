@@ -61,12 +61,10 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 }
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot) {
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, int slot) {
 
   // check if DL slot
   if (slot == 1 || slot == 7) {
-
-    LOG_D(PHY,"Entering UE DCI configuration frame %d slot %d \n", frame, slot);
 
     // get BWP 1, Coreset 0, SearchSpace 0
     if (mac->DLbwp[0]==NULL) {
