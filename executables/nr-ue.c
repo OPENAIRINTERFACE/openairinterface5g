@@ -373,8 +373,11 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
 
+  fapi_nr_config_request_t *cfg = &UE->nrUE_config;
+  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_tti_tx);
+
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
-  if (proc->nr_tti_tx == 8 || proc->nr_tti_tx == 19 || UE->frame_parms.frame_type == FDD){
+  if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
 
     mod_id = UE->Mod_id;
 
@@ -403,7 +406,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     rvidx = 0;
     //------------------------------------------------------------------------------//
 
-    scheduled_response.ul_config->slot = 8;
+    scheduled_response.ul_config->slot = proc->nr_tti_tx;
     scheduled_response.ul_config->number_pdus = 1;
     scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
@@ -420,7 +423,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nr_ue_scheduled_response(&scheduled_response);
 
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_tx];
+      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_rx];
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
     }
   }
@@ -430,12 +433,13 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
-  uint8_t  ssb_period = UE->nrUE_config.ssb_table.ssb_period; 
+  fapi_nr_config_request_t *cfg = &UE->nrUE_config;
+  int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_tti_rx);
+  uint8_t ssb_period = UE->nrUE_config.ssb_table.ssb_period;
 
   //program DCI for slot 1
   //TODO: all of this has to be moved to the MAC!!!
-  // Note: temp hardcoded slot 7 for RAR
-  if (proc->nr_tti_rx == NR_DOWNLINK_SLOT || proc->nr_tti_rx == 7 || UE->frame_parms.frame_type == FDD){
+  if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
     dcireq.module_id = UE->Mod_id;
     dcireq.gNB_index = 0;
     dcireq.cc_id     = 0;
@@ -453,10 +457,8 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.slot = proc->nr_tti_rx;
 
     nr_ue_scheduled_response(&scheduled_response);
-  }
 
   // Process Rx data for one sub-frame
-  if ( proc->nr_tti_rx >=0 && proc->nr_tti_rx <= 1 || proc->nr_tti_rx == 7) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
