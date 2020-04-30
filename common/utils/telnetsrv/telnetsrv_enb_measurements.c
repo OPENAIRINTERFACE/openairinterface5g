@@ -110,13 +110,13 @@ void measurcmd_display_pdcpcpu(telnet_printfunc_t prnt) {
 
 
 void measurcmd_display_macstats_ue(telnet_printfunc_t prnt) {
-  UE_list_t *UE_list = &(RC.mac[eNB_id]->UE_list);
+  UE_info_t *UE_info = &(RC.mac[eNB_id]->UE_info);
 
-  for (int UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
-    for (int i=0; i<UE_list->numactiveCCs[UE_id]; i++) {
-      int CC_id = UE_list->ordered_CCids[i][UE_id];
+  for (int UE_id=UE_info->list.head; UE_id>=0; UE_id=UE_info->list.next[UE_id]) {
+    for (int i=0; i<UE_info->numactiveCCs[UE_id]; i++) {
+      int CC_id = UE_info->ordered_CCids[i][UE_id];
       prnt("%s UE %i Id %i CCid %i %s\n",HDR,i,UE_id,CC_id,HDR);
-      eNB_UE_STATS *macuestatptr = &(UE_list->eNB_UE_stats[CC_id][UE_id]);
+      eNB_UE_STATS *macuestatptr = &(UE_info->eNB_UE_stats[CC_id][UE_id]);
       telnet_ltemeasurdef_t  statsptr[]=LTEMAC_UEMEASURE;
       measurcmd_display_measures(prnt, statsptr, sizeof(statsptr)/sizeof(telnet_ltemeasurdef_t));
     }
@@ -155,7 +155,7 @@ void measurcmd_display_one_rlcstat(telnet_printfunc_t prnt, int UE_id, telnet_lt
 
 void measurcmd_display_rlcstats(telnet_printfunc_t prnt) {
   protocol_ctxt_t      ctxt;
-  UE_list_t *UE_list = &(RC.mac[eNB_id]->UE_list);
+  UE_info_t *UE_info = &(RC.mac[eNB_id]->UE_info);
   telnet_ltemeasurdef_t  statsptr[]=LTE_RLCMEASURE;
   int num_rlcmeasure = sizeof(statsptr)/sizeof(telnet_ltemeasurdef_t );
   unsigned int *rlcstats = malloc(num_rlcmeasure*sizeof(unsigned int));
@@ -165,9 +165,9 @@ void measurcmd_display_rlcstats(telnet_printfunc_t prnt) {
     statsptr[i].vptr = rlcstats + i;
   }
 
-  for (int UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+  for (int UE_id=UE_info->list.head; UE_id>=0; UE_id=UE_info->list.next[UE_id]) {
 #define NB_eNB_INST 1
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,eNB_id, ENB_FLAG_YES,UE_list->eNB_UE_stats[0][UE_id].crnti,
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,eNB_id, ENB_FLAG_YES,UE_info->eNB_UE_stats[0][UE_id].crnti,
                                    eNB->frame,eNB->subframe,eNB_id);
     measurcmd_display_one_rlcstat(prnt, UE_id, statsptr, num_rlcmeasure, rlcstats, "DCCH", &ctxt, SRB_FLAG_YES, DCCH);
     measurcmd_display_one_rlcstat(prnt, UE_id, statsptr, num_rlcmeasure, rlcstats, "DTCH", &ctxt, SRB_FLAG_NO,  DTCH-2);

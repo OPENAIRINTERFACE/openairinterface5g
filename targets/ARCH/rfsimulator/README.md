@@ -3,12 +3,6 @@ This is an RF simulator that allows to test OAI without an RF board. It replaces
 
 As much as possible, it works like an RF board, but not in real-time: It can run faster than real-time if there is enough CPU, or slower (it is CPU-bound instead of real-time RF sampling-bound).
 
-It can be run either in:
-
-- "noS1" mode: the generated IP traffic is sent and received between gNB and UE IP tunnel interfaces ("oaitun") by applications like ping and iperf
-- "phy-test" mode: random UL and DL traffic is generated at every scheduling opportunity 
-
-
 # build
 
 ## From [build_oai](../../../doc/BUILD.md) script

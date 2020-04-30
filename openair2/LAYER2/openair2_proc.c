@@ -91,12 +91,12 @@ int dump_eNB_l2_stats(char *buffer, int length) {
     number_of_cards=NB_eNB_INST;
 #endif
     eNB_MAC_INST *eNB;
-    UE_list_t *UE_list;
+    UE_info_t *UE_info;
 
     for (eNB_id=0; eNB_id<number_of_cards; eNB_id++) {
         /* reset the values */
         eNB = RC.mac[eNB_id];
-        UE_list = &eNB->UE_list;
+        UE_info = &eNB->UE_info;
 
         for (CC_id=0 ; CC_id < MAX_NUM_CCs; CC_id++) {
             eNB->eNB_stats[CC_id].dlsch_bitrate= 0;
@@ -141,76 +141,76 @@ int dump_eNB_l2_stats(char *buffer, int length) {
 
         len += sprintf(&buffer[len],"\n");
 
-        for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
-            for (i=0; i<UE_list->numactiveCCs[UE_id]; i++) {
-                CC_id=UE_list->ordered_CCids[i][UE_id];
-                UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_bitrate=((UE_list->eNB_UE_stats[CC_id][UE_id].TBS*8)/((eNB->frame + 1)*10));
-                UE_list->eNB_UE_stats[CC_id][UE_id].total_dlsch_bitrate= ((UE_list->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes*8)/((eNB->frame + 1)*10));
-                UE_list->eNB_UE_stats[CC_id][UE_id].total_overhead_bytes+=  UE_list->eNB_UE_stats[CC_id][UE_id].overhead_bytes;
-                UE_list->eNB_UE_stats[CC_id][UE_id].avg_overhead_bytes=((UE_list->eNB_UE_stats[CC_id][UE_id].total_overhead_bytes*8)/((eNB->frame + 1)*10));
-                UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_bitrate=((UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS*8)/((eNB->frame + 1)*10));
-                UE_list->eNB_UE_stats[CC_id][UE_id].total_ulsch_bitrate= ((UE_list->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx*8)/((eNB->frame + 1)*10));
+        for (UE_id=UE_info->list.head; UE_id>=0; UE_id=UE_info->list.next[UE_id]) {
+            for (i=0; i<UE_info->numactiveCCs[UE_id]; i++) {
+                CC_id=UE_info->ordered_CCids[i][UE_id];
+                UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_bitrate=((UE_info->eNB_UE_stats[CC_id][UE_id].TBS*8)/((eNB->frame + 1)*10));
+                UE_info->eNB_UE_stats[CC_id][UE_id].total_dlsch_bitrate= ((UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes*8)/((eNB->frame + 1)*10));
+                UE_info->eNB_UE_stats[CC_id][UE_id].total_overhead_bytes+=  UE_info->eNB_UE_stats[CC_id][UE_id].overhead_bytes;
+                UE_info->eNB_UE_stats[CC_id][UE_id].avg_overhead_bytes=((UE_info->eNB_UE_stats[CC_id][UE_id].total_overhead_bytes*8)/((eNB->frame + 1)*10));
+                UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_bitrate=((UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS*8)/((eNB->frame + 1)*10));
+                UE_info->eNB_UE_stats[CC_id][UE_id].total_ulsch_bitrate= ((UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx*8)/((eNB->frame + 1)*10));
                 len += sprintf(&buffer[len],"[MAC] UE %d (DLSCH),status %s, RNTI %x : CQI %d, MCS1 %d, MCS2 %d, RB (tx %d, retx %d, total %d), ncce (tx %d, retx %d) \n",
                                UE_id,
-                               map_int_to_str(rrc_status_names, UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status),
-                               UE_list->eNB_UE_stats[CC_id][UE_id].crnti,
-                               UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id],
-                               UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_retx,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used_retx
+                               map_int_to_str(rrc_status_names, UE_info->eNB_UE_stats[CC_id][UE_id].rrc_status),
+                               UE_info->eNB_UE_stats[CC_id][UE_id].crnti,
+                               UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id],
+                               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].rbs_used,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].rbs_used_retx,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].ncce_used,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].ncce_used_retx
                               );
                 len += sprintf(&buffer[len],
                                "[MAC] DLSCH bitrate (TTI %d, avg %d), Transmitted bytes "
                                "(TTI %d, total %"PRIu64"), Total Transmitted PDU %d, Overhead "
                                "(TTI %"PRIu64", total %"PRIu64", avg %"PRIu64")\n",
-                               UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_bitrate,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_dlsch_bitrate,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].TBS,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].overhead_bytes,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_overhead_bytes,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].avg_overhead_bytes
+                               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_bitrate,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_dlsch_bitrate,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].TBS,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].overhead_bytes,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_overhead_bytes,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].avg_overhead_bytes
                               );
                 len += sprintf(&buffer[len],"[MAC] UE %d (ULSCH), Status %s, Failute timer %d, RNTI %x : snr (%d,  target %d), MCS (pre %d, post %d), RB (rx %d, retx %d, total %d), Current TBS %d \n",
                                UE_id,
-                               map_int_to_str(rrc_status_names, UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status),
-                               UE_list->UE_sched_ctrl[UE_id].ul_failure_timer,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].crnti,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].snr,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].target_snr,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_rx,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_retx_rx,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS
+                               map_int_to_str(rrc_status_names, UE_info->eNB_UE_stats[CC_id][UE_id].rrc_status),
+                               UE_info->UE_sched_ctrl[UE_id].ul_failure_timer,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].crnti,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].snr,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].target_snr,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].rbs_used_rx,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].rbs_used_retx_rx,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_TBS
                               );
                 len += sprintf(&buffer[len],
                                "[MAC] ULSCH bitrate (TTI %d, avg %d), received bytes (total %"PRIu64"),"
                                "Total received PDU %d, Total errors %d\n",
-                               UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_bitrate,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_ulsch_bitrate,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].total_num_pdus_rx,
-                               UE_list->eNB_UE_stats[CC_id][UE_id].num_errors_rx);
-                len+= sprintf(&buffer[len],"[MAC] Received PHR PH = %d (db)\n", UE_list->UE_template[CC_id][UE_id].phr_info);
+                               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_bitrate,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_ulsch_bitrate,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus_rx,
+                               UE_info->eNB_UE_stats[CC_id][UE_id].num_errors_rx);
+                len+= sprintf(&buffer[len],"[MAC] Received PHR PH = %d (db)\n", UE_info->UE_template[CC_id][UE_id].phr_info);
                 len+= sprintf(&buffer[len],"[MAC] Estimated size LCGID[0][1][2][3] = %u %u %u %u\n",
-                              UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID0],
-                              UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID1],
-                              UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID2],
-                              UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID3]
+                              UE_info->UE_template[CC_id][UE_id].ul_buffer_info[LCGID0],
+                              UE_info->UE_template[CC_id][UE_id].ul_buffer_info[LCGID1],
+                              UE_info->UE_template[CC_id][UE_id].ul_buffer_info[LCGID2],
+                              UE_info->UE_template[CC_id][UE_id].ul_buffer_info[LCGID3]
                              );
             }
 
             PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,
                                            eNB_id,
                                            ENB_FLAG_YES,
-                                           UE_list->eNB_UE_stats[0][UE_id].crnti,//UE_PCCID(eNB_id,UE_id)][UE_id].crnti,
+                                           UE_info->eNB_UE_stats[0][UE_id].crnti,//UE_PCCID(eNB_id,UE_id)][UE_id].crnti,
                                            eNB->frame,
                                            eNB->subframe,
                                            eNB_id);
@@ -509,7 +509,7 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length) {
             for(i=1; i<=NB_CNX_CH; i++) {
                 if (CH_mac_inst[Mod_id].Dcch_lchan[i].Active==1) {
                     len+=sprintf(&buffer[len],"\nMR index %u: DL SINR (feedback) %d dB, CQI: %s\n\n",
-                                 i,//CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0],
+                                 i,//CH_rrc_inst[Mod_id].Info.UE_info[i].L2_id[0],
                                  CH_mac_inst[Mod_id].Def_meas[i].Wideband_sinr,
                                  print_cqi(CH_mac_inst[Mod_id].Def_meas[i].cqi));
                     len+=sprintf(&buffer[len],

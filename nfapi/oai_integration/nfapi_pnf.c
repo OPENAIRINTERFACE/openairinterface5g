@@ -49,7 +49,6 @@ extern RAN_CONTEXT_t RC;
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
 #include "common/utils/LOG/log.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "PHY/INIT/phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
