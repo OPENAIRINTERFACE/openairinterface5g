@@ -146,7 +146,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
-
+  // initialize all signal buffers
   // initialize all signal buffers
   init_nr_ue_signal(ue,1,abstraction_flag);
   // intialize transport
@@ -471,7 +471,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     }
   }
 
-  
+  // no UL for now
   // no UL for now
   /*
   if (UE->mac_enabled==1) {
@@ -508,7 +508,7 @@ void UE_processing(void *arg) {
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
 
   uint8_t gNB_id = 0;
-
+  // params for UL time alignment procedure
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
   uint8_t numerology = UE->frame_parms.numerology_index;
@@ -521,9 +521,9 @@ void UE_processing(void *arg) {
   // then timing advance is processed and set to be applied in the next UL transmission */
   if (UE->mac_enabled == 1) {
 
-    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot){
+    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
       LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
-
+      //if (nfapi_mode!=3){
       //if (nfapi_mode!=3){
       nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
       ul_time_alignment->ta_frame = -1;
@@ -590,8 +590,8 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash)
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
-    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-    void *dummy_tx[UE->frame_parms.nb_antennas_tx];
+  LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
+  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
     *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
@@ -753,7 +753,7 @@ void *UE_thread(void *arg) {
 #ifdef OAI_ADRV9371_ZC706
     /*uint32_t total_gain_dB_prev = 0;
     if (total_gain_dB_prev != UE->rx_total_gain_dB) {
-		total_gain_dB_prev = UE->rx_total_gain_dB;
+    total_gain_dB_prev = UE->rx_total_gain_dB;
         openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB;
         UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
     }*/

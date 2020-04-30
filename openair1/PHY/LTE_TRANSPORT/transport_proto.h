@@ -73,18 +73,19 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch);
 LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
 int dlsch_encoding_all(PHY_VARS_eNB *eNB,
-                       unsigned char *a,
-                       uint8_t num_pdcch_symbols,
-                       LTE_eNB_DLSCH_t *dlsch,
-                       int frame,
-                       uint8_t subframe,
-                       time_stats_t *rm_stats,
-                       time_stats_t *te_stats,
-                       time_stats_t *te_wait_stats,
-                       time_stats_t *te_main_stats,
-                       time_stats_t *te_wakeup_stats0,
-                       time_stats_t *te_wakeup_stats1,
-                       time_stats_t *i_stats);
+                      L1_rxtx_proc_t *proc,
+		       unsigned char *a,
+		       uint8_t num_pdcch_symbols,
+		       LTE_eNB_DLSCH_t *dlsch,
+		       int frame,
+		       uint8_t subframe,
+		       time_stats_t *rm_stats,
+		       time_stats_t *te_stats,
+		       time_stats_t *te_wait_stats,
+		       time_stats_t *te_main_stats,
+		       time_stats_t *te_wakeup_stats0,
+		       time_stats_t *te_wakeup_stats1,
+		       time_stats_t *i_stats);
 
 /** \fn dlsch_encoding(PHY_VARS_eNB *eNB,
     uint8_t *input_buffer,
@@ -112,6 +113,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
     @returns status
 */
 int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
+                      L1_rxtx_proc_t *proc,
                        uint8_t *a,
                        uint8_t num_pdcch_symbols,
                        LTE_eNB_DLSCH_t *dlsch,
@@ -467,9 +469,12 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 
 
 int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
-                            int UE_id,
-                            int harq_pid,
-                            int llr8_flag);
+
+                        L1_rxtx_proc_t *proc,
+                        int UE_id,
+                        int harq_pid,
+                        int llr8_flag);
+
 
 /*!
   \brief Decoding of PUSCH/ACK/RI/ACK from 36-212.
@@ -511,6 +516,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,
   @returns 0 on success
 */
 int ulsch_decoding_data(PHY_VARS_eNB *eNB,
+                        L1_rxtx_proc_t *proc,
                         int UE_id,
                         int harq_pid,
                         int llr8_flag);

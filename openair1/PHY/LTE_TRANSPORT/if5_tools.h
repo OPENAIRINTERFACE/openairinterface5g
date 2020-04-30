@@ -61,7 +61,8 @@ typedef struct IF5_mobipass_header IF5_mobipass_header_t;
 
 void send_IF5(RU_t *, openair0_timestamp, int, uint8_t*, uint16_t);
 
-void recv_IF5(RU_t *, openair0_timestamp*, int, uint16_t);
+void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type);
+
 
 void malloc_IF5_buffer(RU_t *ru);
 

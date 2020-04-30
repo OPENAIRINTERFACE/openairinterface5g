@@ -507,7 +507,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
 		"searchPsacesToAddModList is empty\n");
-    NR_SearchSpace_t *ss;
+    NR_SearchSpace_t *ss=NULL;
     int found=0;
     int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
     if (ss_type == 1) { 

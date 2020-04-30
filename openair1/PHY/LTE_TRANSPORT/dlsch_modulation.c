@@ -158,7 +158,7 @@ int allocate_REs_in_RB_no_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
 {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
-  uint8_t *x0             = dlsch0_harq->e;
+  uint8_t *x0             = dlsch0_harq->eDL;
   uint32_t qpsk_table_offset_re = 0;
   uint32_t qpsk_table_offset_im = 0;
 
@@ -248,7 +248,7 @@ int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->frame_parms;
 
-  uint8_t *x0             = dlsch0_harq->e;
+  uint8_t *x0             = dlsch0_harq->eDL;
   uint32_t qpsk_table_offset_re = 0;
   uint32_t qpsk_table_offset_im = 0;
 
@@ -343,7 +343,7 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
 {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
-  uint8_t *x0             = dlsch0_harq->e;
+  uint8_t *x0             = dlsch0_harq->eDL;
   uint32_t qam16_table_offset_re = 0;
   uint32_t qam16_table_offset_im = 0;
 
@@ -439,7 +439,7 @@ int allocate_REs_in_RB_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->frame_parms;
 
-  uint8_t *x0             = dlsch0_harq->e;
+  uint8_t *x0             = dlsch0_harq->eDL;
   uint32_t qam16_table_offset_re = 0;
   uint32_t qam16_table_offset_im = 0;
 
@@ -542,7 +542,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
 
-  uint8_t *x0             = dlsch0_harq->e;
+  uint8_t *x0             = dlsch0_harq->eDL;
   uint32_t qam64_table_offset_re = 0;
   uint32_t qam64_table_offset_im = 0;
 
@@ -699,7 +699,7 @@ int allocate_REs_in_RB_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->frame_parms;
 
-  uint8_t *x0             = dlsch0_harq->e;
+  uint8_t *x0             = dlsch0_harq->eDL;
   uint32_t qam64_table_offset_re = 0;
   uint32_t qam64_table_offset_im = 0;
 
@@ -866,12 +866,12 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   if ((dlsch0_harq != NULL) && (dlsch1_harq != NULL)) { //this is for TM3, TM4
 
-    x0 = dlsch0_harq->e;
+    x0 = dlsch0_harq->eDL;
     mimo_mode = dlsch0_harq->mimo_mode;
     first_layer0 = dlsch0_harq->first_layer;
     Nlayers0 = dlsch0_harq->Nlayers;
     mod_order0 = dlsch0_harq->Qm;
-    x1             = dlsch1_harq->e;
+    x1             = dlsch1_harq->eDL;
     // Fill these in later for TM8-10
     //    Nlayers1       = dlsch1_harq->Nlayers;
     //    first_layer1   = dlsch1_harq->first_layer;
@@ -879,7 +879,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   } else if ((dlsch0_harq != NULL) && (dlsch1_harq == NULL)){ //This is for SIS0 TM1, TM6, etc
 
-    x0 = dlsch0_harq->e;
+    x0 = dlsch0_harq->eDL;
     mimo_mode = dlsch0_harq->mimo_mode;
     first_layer0 = dlsch0_harq->first_layer;
     Nlayers0 = dlsch0_harq->Nlayers;
@@ -887,7 +887,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   } else if ((dlsch0_harq == NULL) && (dlsch1_harq != NULL)){ // This is for TM4 retransmission
 
-    x0 = dlsch1_harq->e;
+    x0 = dlsch1_harq->eDL;
     mimo_mode = dlsch1_harq->mimo_mode;
     first_layer0 = dlsch1_harq->first_layer;
     Nlayers0 = dlsch1_harq->Nlayers;
@@ -2692,7 +2692,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
   LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
   uint32_t i,jj,re_allocated=0;
   uint8_t mod_order0 = dlsch0_harq->Qm;
-  uint8_t *x0  = dlsch0_harq->e;
+  uint8_t *x0  = dlsch0_harq->eDL;
   uint8_t qam64_table_offset_re = 0;
   uint8_t qam64_table_offset_im = 0;
   uint8_t qam16_table_offset_re = 0;
@@ -2883,7 +2883,7 @@ int mch_modulation(int32_t **txdataF,
                              &jj,
                              re_offset,
                              symbol_offset,
-                             dlsch->harq_processes[0]->e,
+                             dlsch->harq_processes[0]->eDL,
                              l,
                              mod_order,
                              amp,

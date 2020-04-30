@@ -65,7 +65,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
   uint16_t *prach_root_sequence_map;
   uint16_t preamble_offset,preamble_shift;
   uint16_t preamble_index0,n_shift_ra,n_shift_ra_bar;
-  uint16_t d_start,numshift;
+  uint16_t d_start=-1,numshift;
   uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
   //uint8_t Nsp=2;
   //uint8_t f_ra,t1_ra;

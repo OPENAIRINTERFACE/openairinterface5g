@@ -28,6 +28,7 @@
  * \email: lionel.gauthier@eurecom.fr
  */
 #ifndef __RRC_ENB_UE_CONTEXT_H__
+#define __RRC_ENB_UE_CONTEXT_H__
 #include "collection/tree.h"
 #include "COMMON/platform_types.h"
 #include "nr_rrc_defs.h"
@@ -58,7 +59,7 @@ int rrc_gNB_compare_ue_rnti_id(
   struct rrc_gNB_ue_context_s* c2_pP
 );
 
-RB_PROTOTYPE(rrc_ue_tree_s, rrc_gNB_ue_context_s, entries, rrc_gNB_compare_ue_rnti_id);
+RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries, rrc_gNB_compare_ue_rnti_id);
 
 struct rrc_gNB_ue_context_s*
 rrc_gNB_allocate_new_UE_context(

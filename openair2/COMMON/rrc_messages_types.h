@@ -87,6 +87,8 @@
 
 #define RRC_SUBFRAME_PROCESS(mSGpTR)    (mSGpTR)->ittiMsg.rrc_subframe_process
 
+#define RLC_SDU_INDICATION(mSGpTR)      (mSGpTR)->ittiMsg.rlc_sdu_indication
+
 //-------------------------------------------------------------------------------------------//
 typedef struct RrcStateInd_s {
   Rrc_State_t     state;
@@ -428,5 +430,13 @@ typedef struct rrc_subframe_process_s {
   protocol_ctxt_t ctxt;
   int             CC_id;
 } RrcSubframeProcess;
+
+// eNB: RLC -> RRC messages
+typedef struct rlc_sdu_indication_s {
+  int rnti;
+  int is_successful;
+  int srb_id;
+  int message_id;
+} RlcSduIndication;
 
 #endif /* RRC_MESSAGES_TYPES_H_ */

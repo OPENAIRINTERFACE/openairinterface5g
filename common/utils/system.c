@@ -243,6 +243,8 @@ void configure_linux(void) {
 
   // Set CPU frequency to it's maximum
   if ( 0 != system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done"))
-	  LOG_W(HW,"Can't set cpu frequency\n");
-  
+	  LOG_E(HW,"Can't set cpu frequency\n");
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
 }
