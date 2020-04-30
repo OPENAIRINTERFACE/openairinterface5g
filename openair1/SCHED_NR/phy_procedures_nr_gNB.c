@@ -439,8 +439,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	case 2:
 	  break;
 	default:
-	  AssertFatal(1==0,"Only PUCCH format 0,1 and 2 are currently supported\n")
-	    }
+	  AssertFatal(1==0,"Only PUCCH format 0,1 and 2 are currently supported\n");
+	}
       }
     }
   }
