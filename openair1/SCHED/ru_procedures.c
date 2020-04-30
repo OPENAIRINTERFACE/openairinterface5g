@@ -321,7 +321,7 @@ void feptx_ofdm(RU_t *ru,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       } else {
-       if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)/*subframe==1*/){
+       if(is_pmch_subframe(frame,subframe,fp)/*subframe==1*/){
         normal_prefix_mod(&ru->common.txdataF_BF[aa][0],
                           dummy_tx_b,
                           2,
@@ -426,7 +426,7 @@ void feptx_ofdm(RU_t *ru,
 
      stop_meas(&ru->ofdm_mod_stats);
      LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
+	   frame,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
   }

@@ -281,13 +281,13 @@ void exit_function(const char *file, const char *function, const int line, const
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
-  int CC_id;
-  int tddflag = 0;
-  char *loopfile = NULL;
-  int dumpframe = 0;
-  int timingadv = 0;
+  int CC_id=0;
+  int tddflag=0;
+  char *loopfile=NULL;
+  int dumpframe=0;
+  int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
-  int simL1flag = 0;
+  int simL1flag =0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);

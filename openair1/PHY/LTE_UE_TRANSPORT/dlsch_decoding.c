@@ -793,7 +793,7 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
                                         G,  //G
                                         dlsch->harq_processes[harq_pid]->w[r],
-                                        dlsch->harq_processes[harq_pid]->e+r_offset,
+                                        dlsch->harq_processes[harq_pid]->eDL+r_offset,
                                         dlsch->harq_processes[harq_pid]->C, // C
                                         dlsch->Nsoft,                    // Nsoft,
                                         dlsch->Mdlharq,

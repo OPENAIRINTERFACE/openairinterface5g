@@ -714,7 +714,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	mbms_rab_id = cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9;
 
 	rlc_status =
-	    mac_rlc_status_ind(module_idP, 0/*0xfffd*/, frameP, subframeP,
+	    mac_rlc_status_ind(module_idP, 0xfffd, frameP, subframeP,
 			       module_idP, ENB_FLAG_YES, MBMS_FLAG_YES,
 				cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
 			       //MTCH,
@@ -771,7 +771,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		  TBS - header_len_mcch - header_len_msi -
 		  sdu_length_total - header_len_mtch, header_len_mtch, rlc_status.bytes_in_buffer);
 
-      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
+      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0xfffd, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
                                                TBS - header_len_mcch - header_len_msi - sdu_length_total - header_len_mtch,
 						     (char *)
 						     &mch_buffer[sdu_length_total]
@@ -1553,7 +1553,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	mbms_rab_id = cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9;
 
 	rlc_status =
-	    mac_rlc_status_ind(module_idP, 0/*0xfffd*/, frameP, subframeP,
+	    mac_rlc_status_ind(module_idP, 0xfffd, frameP, subframeP,
 			       module_idP, ENB_FLAG_YES, MBMS_FLAG_YES,
 				cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
 			       //MTCH,
@@ -1576,7 +1576,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		  TBS - header_len_mcch - header_len_msi -
 		  sdu_length_total - header_len_mtch, header_len_mtch, rlc_status.bytes_in_buffer);
 
-      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
+      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0xfffd, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES,cc->mbms_SessionList[0]->list.array[0]->logicalChannelIdentity_r9,
                                                TBS - header_len_mcch - header_len_msi - sdu_length_total - header_len_mtch,
 						     (char *)
 						     &mch_buffer[sdu_length_total]

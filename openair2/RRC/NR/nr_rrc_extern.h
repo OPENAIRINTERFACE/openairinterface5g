@@ -28,8 +28,8 @@
 * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
-#ifndef __OPENAIR_RRC_EXTERN_H__
-#define __OPENAIR_RRC_EXTERN_H__
+#ifndef __OPENAIR_NR_RRC_EXTERN_H__
+#define __OPENAIR_NR_RRC_EXTERN_H__
 #include "nr_rrc_defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/mac.h"
@@ -69,10 +69,12 @@ extern uint32_t timeToTrigger_ms[16];
 extern float RSRP_meas_mapping[98];
 extern float RSRQ_meas_mapping[35];
 
-extern UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+extern UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+
 extern pthread_mutex_t ue_pf_po_mutex;
 
-extern uint16_t reestablish_rnti_map[NUMBER_OF_UE_MAX][2];
+extern uint16_t reestablish_rnti_map[MAX_MOBILES_PER_ENB][2];
+char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration);
 
 #endif
 

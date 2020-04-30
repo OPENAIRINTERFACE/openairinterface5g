@@ -180,7 +180,7 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
                                       uint16_t n3_pucch_array[NUMBER_OF_UE_MAX],
                                       uint8_t ncs_cell[20][7] ) {
   uint32_t        aa, symNo, k, slotNo, sym, i, j;
-  int16_t         np, np_n, ip_ind;
+  int16_t         np, np_n, ip_ind=-1;
   //int16_t         npucch_sf;
   int16_t         calctmp[2];
   int16_t         BsCshData[NB_ANTENNAS_RX][D_NSYM1SF][D_NSC1RB][2];

@@ -107,7 +107,6 @@ tbs_size_t mac_rlc_data_req(
   int ret;
   nr_rlc_ue_t *ue;
   nr_rlc_entity_t *rb;
-  int is_enb;
   int maxsize;
 
   nr_rlc_manager_lock(nr_rlc_ue_manager);
@@ -121,8 +120,6 @@ tbs_size_t mac_rlc_data_req(
 
   if (rb != NULL) {
     rb->set_time(rb, nr_rlc_current_time);
-    /* UE does not seem to use saved_status_ind_tb_size */
-    is_enb = nr_rlc_manager_get_enb_flag(nr_rlc_ue_manager);
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {

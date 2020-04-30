@@ -13,7 +13,8 @@ void usage(void)
 "options:\n"
 "    -d <database file>        this option is mandatory\n"
 "    -ip <host>                connect to given IP address (default %s)\n"
-"    -p <port>                 connect to given port (default %d)\n",
+"    -p <port>                 connect to given port (default %d)\n"
+"    -e <event>                event to trace (default VCD_FUNCTION_ENB_DLSCH_ULSCH_SCHEDULER)\n",
   DEFAULT_REMOTE_IP,
   DEFAULT_REMOTE_PORT
   );
@@ -47,6 +48,7 @@ int main(int n, char **v)
   int ev_fun;
   int start_valid = 0;
   struct timespec start_time, stop_time, delta_time;
+  char *name = "VCD_FUNCTION_ENB_DLSCH_ULSCH_SCHEDULER";
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
@@ -55,6 +57,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-e")) { if (i > n-2) usage(); name = v[++i]; continue; }
     usage();
   }
 
@@ -71,10 +74,9 @@ int main(int n, char **v)
   is_on = calloc(number_of_events, sizeof(int));
   if (is_on == NULL) abort();
 
-  on_off(database, "VCD_FUNCTION_ENB_DLSCH_ULSCH_SCHEDULER", is_on, 1);
+  on_off(database, name, is_on, 1);
 
-  ev_fun = event_id_from_name(database,
-      "VCD_FUNCTION_ENB_DLSCH_ULSCH_SCHEDULER");
+  ev_fun = event_id_from_name(database, name);
 
   socket = connect_to(ip, port);
 

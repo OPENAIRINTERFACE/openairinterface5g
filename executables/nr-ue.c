@@ -520,7 +520,7 @@ void UE_processing(void *arg) {
   // then timing advance is processed and set to be applied in the next UL transmission */
   if (UE->mac_enabled == 1) {
 
-    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot){
+    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
       LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
 
       //if (nfapi_mode!=3){
@@ -762,7 +762,7 @@ void *UE_thread(void *arg) {
 #ifdef OAI_ADRV9371_ZC706
     /*uint32_t total_gain_dB_prev = 0;
     if (total_gain_dB_prev != UE->rx_total_gain_dB) {
-		total_gain_dB_prev = UE->rx_total_gain_dB;
+        total_gain_dB_prev = UE->rx_total_gain_dB;
         openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB;
         UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
     }*/

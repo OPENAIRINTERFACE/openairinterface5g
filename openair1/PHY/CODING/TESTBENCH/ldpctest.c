@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
   time_stats_t time_optim[10], time_decoder[10];
   n_iter_stats_t dec_iter[3];
 
-  short BG=0,Zc,Kb;
+  short BG=0,Zc,Kb=0;
 
   while ((c = getopt (argc, argv, "q:r:s:S:l:n:d:i:t:u:h")) != -1)
     switch (c)

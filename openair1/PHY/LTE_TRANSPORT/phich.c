@@ -714,7 +714,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
   int32_t **txdataF = eNB->common_vars.txdataF;
   uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   uint8_t NSF_PHICH = 4;
-  uint8_t pusch_subframe;
+  uint8_t pusch_subframe=-1;
   uint8_t i;
   int subframe = proc->subframe_tx;
   phich_config_t *phich;

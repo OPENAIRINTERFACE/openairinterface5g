@@ -4,7 +4,7 @@ For more details of the license, refer to [LICENSE](LICENSE) file in the same di
 
 However, the source code also contains third party software that is acknowledged here for reference.
 
-## Credits for LFDS user space source code located in folder openair2/UTILS/LFDS/liblfds6.1.1/ ##
+## Credits for LFDS user space source code located in folder openair2/UTILS/LFDS/ ##
 
 See on [liblfds website](https://liblfds.org/) the license section.
 
