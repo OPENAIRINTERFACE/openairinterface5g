@@ -239,6 +239,8 @@ typedef struct {
   uint8_t RA_RAPID_found;
   /// Flag to monitor if BI was received in RAR
   uint8_t RA_BI_found;
+  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
+  uint8_t generate_nr_prach;
 
   ////	FAPI-like interface message
   fapi_nr_tx_request_t tx_request;

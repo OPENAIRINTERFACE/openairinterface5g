@@ -2269,9 +2269,6 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     if ((ue->UE_mode[gNB_id] == PRACH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
-    else {
-      ue->prach_resources[gNB_id]->generate_nr_prach = 0;
-    }
   }
   LOG_I(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
@@ -4497,6 +4494,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
+  uint8_t nr_prach;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
@@ -4505,7 +4503,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     prach_resources->ra_TDD_map_index = 0;
     prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
     prach_resources->ra_RNTI = 0x1234;
-    prach_resources->generate_nr_prach = 1;
+    nr_prach = 1;
   } else {
     // ask L2 for RACH transport
     if ((runmode != rx_calib_ue) && (runmode != rx_calib_ue_med) && (runmode != rx_calib_ue_byp) && (runmode != no_L2_connect) ) {
@@ -4516,16 +4514,17 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
           ue->ulsch_Msg3_active[i] = 0;
         }
       }
-      nr_ue_get_rach(ue->prach_resources[gNB_id], mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
+      nr_prach = nr_ue_get_rach(ue->prach_resources[gNB_id], mod_id, ue->CC_id, UE_mode, frame_tx, gNB_id, nr_tti_tx);
     }
   }
 
-  if (!prach_resources->init_msg1 && (frame_tx > ue->prach_resources[gNB_id]->sync_frame + 150))
-    prach_resources->init_msg1 = 1;
-
-  if (ue->prach_resources[gNB_id] != NULL && prach_resources->generate_nr_prach == 1 && prach_resources->init_msg1) {
-
+  if (!prach_resources->init_msg1 && (frame_tx > ue->prach_resources[gNB_id]->sync_frame + 150)){
     ue->prach_cnt = 0;
+    prach_resources->init_msg1 = 1;
+  }
+
+  if (ue->prach_resources[gNB_id] != NULL && nr_prach == 1 && prach_resources->init_msg1) {
+
     pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
     LOG_D(PHY,"runmode %d\n",runmode);
 
@@ -4585,18 +4584,18 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       prach_resources->ra_PreambleIndex,
       ue->tx_power_dBm[nr_tti_tx],
       pathloss);
+
+    LOG_D(PHY,"[UE %d] frame %d nr_tti_tx %d : prach_cnt %d\n", ue->Mod_id, frame_tx, nr_tti_tx, ue->prach_cnt);
+
+    ue->prach_cnt++;
+
+    if (ue->prach_cnt == 3)
+      ue->prach_cnt = 0;
   }
 
   // if we're calibrating the PRACH kill the pointer to its resources so that the RA protocol doesn't continue
   if (runmode == calib_prach_tx)
     ue->prach_resources[gNB_id] = NULL;
-
-  LOG_D(PHY,"[UE %d] frame %d nr_tti_tx %d : generate_nr_prach %d, prach_cnt %d\n", ue->Mod_id, frame_tx, nr_tti_tx, ue->prach_resources[gNB_id]->generate_nr_prach, ue->prach_cnt);
-
-  ue->prach_cnt++;
-
-  if (ue->prach_cnt == 3)
-    prach_resources->generate_nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);
 }

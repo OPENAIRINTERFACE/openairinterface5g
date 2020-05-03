@@ -331,19 +331,17 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 // - retrieve TBS
 // - add mac_rrc_nr_data_req_ue, etc ...
 // - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
-void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
-                    module_id_t mod_id,
-                    int CC_id,
-                    UE_MODE_t UE_mode,
-                    frame_t frame,
-                    uint8_t gNB_id,
-                    int nr_tti_tx){
+uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                       module_id_t mod_id,
+                       int CC_id,
+                       UE_MODE_t UE_mode,
+                       frame_t frame,
+                       uint8_t gNB_id,
+                       int nr_tti_tx){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
   uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload, ra_ResponseWindow;
-  uint8_t config_index, mu;
-  int is_nr_prach_slot;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
@@ -365,27 +363,6 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
 
-    config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
-    if (setup->msg1_SubcarrierSpacing)
-      mu = *setup->msg1_SubcarrierSpacing;
-    else
-      mu = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-
-    is_nr_prach_slot = get_nr_prach_info_from_index(config_index,
-                                                    (int)frame,
-                                                    (int)nr_tti_tx,
-                                                    frequencyInfoDL->absoluteFrequencyPointA,
-                                                    mu,
-                                                    cfg->cell_config.frame_duplex_type,
-                                                    NULL,
-                                                    NULL,
-                                                    NULL,
-                                                    NULL);
-    if (is_nr_prach_slot)
-      prach_resources->generate_nr_prach = 1;
-    else
-      prach_resources->generate_nr_prach = 0;
-
     AssertFatal(setup != NULL, "[UE %d] FATAL  nr_rach_ConfigCommon is NULL !!!\n", mod_id);
 
     if (mac->RA_active == 0) {
@@ -393,6 +370,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       LOG_I(MAC, "RA not active. Starting RA preamble initialization.\n");
 
+      mac->ra_state = RA_UE_IDLE;
       mac->RA_RAPID_found = 0;
 
       /* Set RA_PREAMBLE_POWER_RAMPING_STEP */
@@ -446,10 +424,10 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         size_sdu += sdu_lengths[0];
       }
 
-      mac->RA_tx_frame = frame;
-      mac->RA_tx_subframe = nr_tti_tx;
-      mac->RA_backoff_frame = frame;
-      mac->RA_backoff_subframe = nr_tti_tx;
+      //mac->RA_tx_frame = frame;
+      //mac->RA_tx_subframe = nr_tti_tx;
+      //mac->RA_backoff_frame = frame;
+      //mac->RA_backoff_subframe = nr_tti_tx;
 
       if (size_sdu > 0) {
 
@@ -493,7 +471,7 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         }
 
         // Fill in preamble and PRACH resources
-        if (is_nr_prach_slot)
+        if (mac->generate_nr_prach)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, prach_resources, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
@@ -528,18 +506,20 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // - handle backoff and raResponseWindow params
       // - disabled contention resolution as OAI NSA is contention-free based
 
-      LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
-        mod_id, frame, nr_tti_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
+      // LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
+      //   mod_id, frame, nr_tti_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
 
       if (mac->RA_BI_found){
-        prach_resources->RA_PREAMBLE_BACKOFF =  prach_resources->RA_SCALING_FACTOR_BI * mac->RA_backoff_indicator;
+        prach_resources->RA_PREAMBLE_BACKOFF = prach_resources->RA_SCALING_FACTOR_BI * mac->RA_backoff_indicator;
       } else {
         prach_resources->RA_PREAMBLE_BACKOFF = 0;
       }
 
       if (mac->RA_window_cnt > 0 && mac->RA_RAPID_found == 1) {
         // mac->ra_state = WAIT_CONTENTION_RESOLUTION;
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
       } else {
+        mac->ra_state = RA_UE_IDLE;
         LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR reception not successful, (RA window count %d) \n",
           mod_id,
           frame,
@@ -608,11 +588,11 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         //   LOG_D(MAC, "[MAC][UE %d][RAPROC] Frame %d, subframe %d: RA Active, adjusted window cnt %d\n", mod_id, frame, nr_tti_tx, mac->RA_window_cnt);
         // }
 
-        mac->RA_tx_frame = frame;
-        mac->RA_tx_subframe = nr_tti_tx;
+        // mac->RA_tx_frame = frame;
+        // mac->RA_tx_subframe = nr_tti_tx;
 
         // Fill in preamble and PRACH resources
-        if (is_nr_prach_slot)
+        if (mac->generate_nr_prach)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
 
       }
@@ -621,5 +601,5 @@ void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     LOG_D(MAC, "[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...", mod_id);
     AssertFatal(1 == 0, "");
   }
- return;
+ return mac->generate_nr_prach;
 }

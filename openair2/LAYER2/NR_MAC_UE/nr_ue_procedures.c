@@ -813,6 +813,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                     &N_dur);
     if (is_nr_prach_slot) {
 
+      mac->generate_nr_prach = 1;
+
       fdm = rach_ConfigGeneric->msg1_FDM;
 
       switch (fdm){
@@ -911,6 +913,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
           }
         }
       }
+    } else {
+      mac->generate_nr_prach = 0;
     }
     mac->scheduled_response.ul_config = ul_config;
   }
