@@ -113,14 +113,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   mac->dl_config_request.number_pdus = 0;
   // clean previous FAPI messages
 
-  ret = nr_ue_scheduler(ul_info->module_id,
-                        ul_info->gNB_index,
-                        ul_info->cc_id,
-                        ul_info->frame_rx,
-                        ul_info->slot_rx,
-                        ul_info->ssb_index,
-                        ul_info->frame_tx,
-                        ul_info->slot_tx);
+  ret = nr_ue_scheduler(NULL, ul_info);
 
   if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
@@ -312,6 +305,8 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   dl_config->sfn=UE_mac->dl_config_request.sfn;
   dl_config->slot=UE_mac->dl_config_request.slot;
   dl_config->number_pdus=0;
+
+  printf(" UE_mac->dl_config_request.slot %d VS dcireq->slot %d \n", UE_mac->dl_config_request.slot, dcireq->slot);
 
   LOG_D(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
   ue_dci_configuration(UE_mac, dl_config, dcireq->slot);

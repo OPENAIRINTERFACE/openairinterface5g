@@ -431,32 +431,24 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
 void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
-  nr_dcireq_t dcireq;
-  nr_scheduled_response_t scheduled_response;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_tti_rx);
-  uint8_t ssb_period = UE->nrUE_config.ssb_table.ssb_period;
+  uint8_t gNB_id = 0;
 
-  //program DCI for slot 1
-  //TODO: all of this has to be moved to the MAC!!!
+  nr_downlink_indication_t dl_indication;
+  memset((void*)&dl_indication, 0, sizeof(dl_indication));
+
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
-    dcireq.module_id = UE->Mod_id;
-    dcireq.gNB_index = 0;
-    dcireq.cc_id     = 0;
-    dcireq.frame     = proc->frame_rx;
-    dcireq.slot      = proc->nr_tti_rx;
-    nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-    // we should have received a DL DCI here, so configure DL accordingly
-    scheduled_response.dl_config = &dcireq.dl_config_req;
-    scheduled_response.ul_config = NULL;
-    scheduled_response.tx_request = NULL;
-    scheduled_response.module_id = UE->Mod_id;
-    scheduled_response.CC_id     = 0;
-    scheduled_response.frame = proc->frame_rx;
-    scheduled_response.slot = proc->nr_tti_rx;
+    if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
+      dl_indication.module_id = UE->Mod_id;
+      dl_indication.gNB_index = gNB_id;
+      dl_indication.cc_id     = UE->CC_id;
+      dl_indication.frame     = proc->frame_rx;
+      dl_indication.slot      = proc->nr_tti_rx;
+    }
 
-    nr_ue_scheduled_response(&scheduled_response);
+    nr_ue_scheduler(&dl_indication, NULL);
 
   // Process Rx data for one sub-frame
 #ifdef UE_SLOT_PARALLELISATION

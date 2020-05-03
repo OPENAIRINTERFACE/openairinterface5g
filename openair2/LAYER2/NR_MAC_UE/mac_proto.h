@@ -84,23 +84,9 @@ NR_UE_MAC_INST_t *get_mac_inst(
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
-   \param module_id     module id
-   \param gNB_index     corresponding gNB index
-   \param cc_id         component carrier id
-   \param rx_frame      receive frame number
-   \param rx_slot       receive slot number
-   \param tx_frame      transmit frame number
-   \param tx_slot       transmit slot number*/
-NR_UE_L2_STATE_t nr_ue_scheduler(
-    const module_id_t module_id,
-    const uint8_t gNB_index,
-    const int cc_id,
-    const frame_t rx_frame,
-    const slot_t rx_slot,
-    const int32_t ssb_index,
-    const frame_t tx_frame,
-    const slot_t tx_slot);
-
+   \param dl_info     DL indication
+   \param ul_info     UL indication*/
+NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
