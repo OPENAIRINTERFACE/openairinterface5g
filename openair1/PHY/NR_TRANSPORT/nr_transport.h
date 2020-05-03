@@ -123,4 +123,11 @@ void rx_nr_prach_ru(RU_t *ru,
 		    int frame,
 		    int subframe);
 
+void compute_nr_prach_seq(uint16_t rootSequenceIndex,
+			  uint8_t prach_ConfigIndex,
+			  uint8_t zeroCorrelationZoneConfig,
+			  uint8_t highSpeedFlag,
+			  lte_frame_type_t frame_type,
+			  nr_frequency_range_e fr,
+			  uint32_t X_u[64][839]);
 #endif /*__NR_TRANSPORT__H__*/

@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   uint8_t hs_flag=0;
   int n_frames=1;
   channel_desc_t *UE2gNB;
-  uint32_t nsymb,tx_lev; //,tx_lev_dB;
+  uint32_t tx_lev=0; //,tx_lev_dB;
   //  int8_t interf1=-19,interf2=-19;
   NR_DL_FRAME_PARMS *frame_parms;
 
@@ -120,7 +120,6 @@ int main(int argc, char **argv)
   uint32_t prach_errors=0;
   uint8_t subframe=9;
   uint16_t preamble_energy_list[64],preamble_tx=50,preamble_delay_list[64];
-  uint16_t preamble_max,preamble_energy_max;
   PRACH_RESOURCES_t prach_resources;
   //uint8_t prach_fmt;
   //int N_ZC;
@@ -397,7 +396,7 @@ int main(int argc, char **argv)
   frame_parms->frame_type = TDD;
   frame_parms->freq_range = nr_FR1;
 
-  nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
+  //nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d,Frame type %s, Frequency Range %s\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_subframe,frame_parms->frame_type == FDD ? "FDD" : "TDD", frame_parms->freq_range == nr_FR1 ? "FR1" : "FR2");
@@ -434,7 +433,7 @@ int main(int argc, char **argv)
 
 
   bw = N_RB_UL*(180e3)*(1<<gNB->frame_parms.numerology_index);
-  AssertFatal(bw<=122.88e6,"Illegal channel bandwidth %f (mu %d,N_RB_UL %d)\n",gNB->frame_parms.numerology_index,N_RB_UL);
+  AssertFatal(bw<=122.88e6,"Illegal channel bandwidth %f (mu %d,N_RB_UL %d)\n",bw, gNB->frame_parms.numerology_index,N_RB_UL);
   if (bw <= 30.72e6)       fs = 30.72e6;
   else if (bw <= 61.44e6)  fs = 61.44e6;
   else if (bw <= 122.88e6) fs = 122.88e6;

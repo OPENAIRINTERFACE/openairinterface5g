@@ -468,7 +468,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint32_t number_of_search_space_per_slot=UINT_MAX;
   uint32_t first_symbol_index=UINT_MAX;
   uint32_t search_space_duration;  //  element of search space
-  uint32_t coreset_duration;  //  element of coreset
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -604,8 +603,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   }
 
   AssertFatal(number_of_search_space_per_slot!=UINT_MAX,"");
-  coreset_duration = num_symbols * number_of_search_space_per_slot;
   /*
+  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
     mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
     mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
     mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
