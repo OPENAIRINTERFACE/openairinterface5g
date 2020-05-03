@@ -29,8 +29,6 @@
  * \note
  * \warning
  */
-#ifndef __LTE_TRANSPORT_SLSS__C__
-#define __LTE_TRANSPORT_SLSS__C__
 #include "PHY/defs_UE.h"
 
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
@@ -61,6 +59,3 @@ void generate_sldch(PHY_VARS_UE *ue,SLDCH_t *sldch,int frame_tx,int subframe_tx)
                             sldch_header_len+sizeof(SLDCH_t));
 
 }
-
-
-#endif

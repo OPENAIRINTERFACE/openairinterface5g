@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __PHY_VARS_H__
-#define __PHY_VARS_H__
+#ifndef __PHY_VARS_UE_H__
+#define __PHY_VARS_UE_H__
 
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
@@ -133,4 +133,4 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
 uint8_t max_turbo_iterations=4;
-#endif /*__PHY_VARS_H__ */
+#endif
