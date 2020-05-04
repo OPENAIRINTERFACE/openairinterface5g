@@ -245,10 +245,6 @@ void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frame
 
 int find_aggregation_level (NR_SearchSpace_t *ss);
 
-void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
-                                               uint16_t *slot_period,
-                                               uint16_t *offset);
-
 void nr_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,

@@ -115,8 +115,16 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && mac->ra_state <= WAIT_RAR && get_softmodem_params()->do_ra)
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && mac->ra_state == RA_UE_IDLE && get_softmodem_params()->do_ra){
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
+    if (mac->generate_nr_prach){
+      uint16_t monitoring_slot_period, monitoring_offset;
+      uint16_t rach_frame = mac->scheduled_response.ul_config->sfn;
+      uint16_t rx_rach_frame = (rach_frame + 2) % MAX_FRAME_NUMBER; // compensate 2 frames offset delay at gNB side
+      uint16_t rach_slot  = mac->scheduled_response.ul_config->slot;
+      nr_ue_msg2_scheduler(module_id, rx_rach_frame, rach_slot, &mac->msg2_rx_frame, &mac->msg2_rx_slot);
+    }
+  }
 
   switch(ret){
   case UE_CONNECTION_OK:

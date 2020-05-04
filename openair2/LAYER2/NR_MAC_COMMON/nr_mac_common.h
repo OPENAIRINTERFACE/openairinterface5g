@@ -78,6 +78,10 @@ int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
 
 uint16_t nr_dci_size(nr_dci_format_t format, nr_rnti_type_t rnti_type, uint16_t N_RB);
 
+void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
+                                               uint16_t *slot_period,
+                                               uint16_t *offset);
+
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
                                  int slot,

@@ -220,6 +220,10 @@ typedef struct {
   uint32_t RA_tx_frame;
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
+  /// Scheduled RX frame for RA Msg2
+  uint16_t msg2_rx_frame;
+  /// Scheduled RX slot for RA Msg2
+  uint16_t msg2_rx_slot;
   /// Random-access Group B maximum path-loss
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
