@@ -8,12 +8,12 @@ OBJ= $(SRC:.c=.o)
 all: $(EXEC)
 
 cnProc_gen: $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -O 
 
 main.o: cnProc_gen.h
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g -ggdb
 
 .PHONY: clean mrproper
 
