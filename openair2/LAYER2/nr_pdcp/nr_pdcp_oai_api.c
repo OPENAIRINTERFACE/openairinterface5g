@@ -631,7 +631,7 @@ static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
   TODO;
 }
 
-static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s)
 {
   nr_pdcp_entity_t *pdcp_drb;
   nr_pdcp_ue_t *ue;
@@ -661,13 +661,13 @@ printf("\n\n################# rnti %d add drb %d\n\n\n", rnti, drb_id);
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
+static void add_drb(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_Config_t *rlc_Config)
 {
-  switch (s->rlc_Config->present) {
-  case LTE_RLC_Config_PR_am:
+  switch (rlc_Config->present) {
+  case NR_RLC_Config_PR_am:
     add_drb_am(rnti, s);
     break;
-  case LTE_RLC_Config_PR_um_Bi_Directional:
+  case NR_RLC_Config_PR_um_Bi_Directional:
     //add_drb_um(rnti, s);
     /* hack */
     add_drb_am(rnti, s);
@@ -677,6 +677,67 @@ static void add_drb(int rnti, struct LTE_DRB_ToAddMod *s)
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
+}
+
+boolean_t nr_rrc_pdcp_config_asn1_req(
+  const protocol_ctxt_t *const  ctxt_pP,
+  NR_SRB_ToAddModList_t  *const srb2add_list,
+  NR_DRB_ToAddModList_t  *const drb2add_list,
+  NR_DRB_ToReleaseList_t *const drb2release_list,
+  const uint8_t                   security_modeP,
+  uint8_t                  *const kRRCenc,
+  uint8_t                  *const kRRCint,
+  uint8_t                  *const kUPenc
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+  ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
+#endif
+  ,rb_id_t                 *const defaultDRB,
+  struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+  //struct NR_RLC_Config     *rlc_Config)
+{
+  int rnti = ctxt_pP->rnti;
+  int i;
+
+  if (//ctxt_pP->enb_flag != 1 ||
+      ctxt_pP->module_id != 0 ||
+      ctxt_pP->instance != 0 ||
+      ctxt_pP->eNB_index != 0 ||
+      //ctxt_pP->configured != 2 ||
+      //srb2add_list == NULL ||
+      //drb2add_list != NULL ||
+      drb2release_list != NULL ||
+      security_modeP != 255 ||
+      //kRRCenc != NULL ||
+      //kRRCint != NULL ||
+      //kUPenc != NULL ||
+      pmch_InfoList_r9 != NULL /*||
+      defaultDRB != NULL */) {
+    TODO;
+  }
+
+  if (srb2add_list != NULL) {
+    for (i = 0; i < srb2add_list->list.count; i++) {
+      add_srb(rnti, srb2add_list->list.array[i]);
+    }
+  }
+
+  if (drb2add_list != NULL) {
+    for (i = 0; i < drb2add_list->list.count; i++) {
+      LOG_I(PDCP, "Before calling add_drb \n");
+      add_drb(rnti, drb2add_list->list.array[i], rlc_bearer2add_list->list.array[i]->rlc_Config);
+    }
+  }
+
+  /* update security */
+  if (kRRCint != NULL) {
+    /* todo */
+  }
+
+  free(kRRCenc);
+  free(kRRCint);
+  free(kUPenc);
+
+  return 0;
 }
 
 boolean_t rrc_pdcp_config_asn1_req(
@@ -721,7 +782,7 @@ boolean_t rrc_pdcp_config_asn1_req(
 
   if (drb2add_list != NULL) {
     for (i = 0; i < drb2add_list->list.count; i++) {
-      add_drb(rnti, drb2add_list->list.array[i]);
+      add_drb(rnti, drb2add_list->list.array[i], NULL);
     }
   }
 
