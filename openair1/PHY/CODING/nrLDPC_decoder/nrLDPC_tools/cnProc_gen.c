@@ -9,12 +9,17 @@
 #include "../nrLDPC_bnProc.h"
 #include "cnProc_gen.h"
 
-void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+void nrLDPC_cnProc_BG1_generator(t_nrLDPC_procBuf* p_procBuf, uint16_t Z,int R)
 {
     printf("void nrLDPC_cnProc_BG1_Z%d\n",Z);
 
-    const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
-    const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
+    const uint8_t*  lut_numCnInCnGroups;
+    const uint32_t* lut_startAddrCnGroups = lut_startAddrCnGroups_BG1;
+
+    if (R==0)      lut_numCnInCnGroups = lut_numCnInCnGroups_BG1_R13;
+    else if (R==1) lut_numCnInCnGroups = lut_numCnInCnGroups_BG1_R23;
+    else if (R==2) lut_numCnInCnGroups = lut_numCnInCnGroups_BG1_R89;
+    else { printf("aborting, illegal R %d\n",R); abort();}
 
     int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
     int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;

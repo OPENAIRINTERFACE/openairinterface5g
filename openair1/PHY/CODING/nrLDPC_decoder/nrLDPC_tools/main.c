@@ -59,12 +59,12 @@ int main(int argc, char *argv[])
   t_nrLDPC_procBuf* p_procBuf = &cnProcBuf;
 
 //  load_nrLDPClib();
-    t_nrLDPC_lut lut_numCnInCnGroups;
-    t_nrLDPC_lut* p_lut = &lut_numCnInCnGroups;
+
 
 //  load_nrLDPClib_ref("_orig", &encoder_orig);
 
-    nrLDPC_cnProc_BG1(p_lut,p_procBuf,384);
+  // Z=384, R=1/3
+  nrLDPC_cnProc_BG1_generator(p_procBuf,384,0);
 	//nrLDPC_cnProc_BG1(&lut_numCnInCnGroups, &cnProcBuf, 380);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 
