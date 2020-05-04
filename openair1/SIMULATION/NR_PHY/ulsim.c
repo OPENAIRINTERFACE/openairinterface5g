@@ -628,7 +628,7 @@ int main(int argc, char **argv)
       pusch_pdu->mcs_table = 0; 
       pusch_pdu->target_code_rate = code_rate;
       pusch_pdu->qam_mod_order = mod_order;
-      pusch_pdu->transform_precoding = 0;
+      pusch_pdu->transform_precoding = 1;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = 1;
       pusch_pdu->ul_dmrs_symb_pos = (1<<start_symbol);
