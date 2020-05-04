@@ -142,6 +142,7 @@ int main(int argc, char **argv)
   float roundStats[50];
   float effRate;
   float psnr;
+  float eff_tp_check = 0.7;
   uint8_t snrRun;
   uint32_t TBS;
   int **txdata;
@@ -391,6 +392,10 @@ int main(int argc, char **argv)
       mu = atoi(optarg);
       break;
 
+    case 't':
+      eff_tp_check = (float)atoi(optarg)/100;
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -420,6 +425,7 @@ int main(int argc, char **argv)
       printf("-c Start symbol for PDSCH (fixed for now)\n");
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
+      printf("-t Acceptable effective throughput (in percentage)\n");
       exit (-1);
       break;
     }
@@ -919,10 +925,11 @@ int main(int argc, char **argv)
 	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
       LOG_M("chestF0.m","chF0",UE->pdsch_vars[0][0]->dl_ch_estimates_ext,N_RB_DL*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
+      break;
     }
 
     //if ((float)n_errors/(float)n_trials <= target_error_rate) {
-    if (effRate >= (0.7*TBS)) {
+    if (effRate >= (eff_tp_check*TBS)) {
       printf("PDSCH test OK\n");
       break;
     }
