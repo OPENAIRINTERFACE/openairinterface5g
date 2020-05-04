@@ -3,7 +3,7 @@
 //#include "../nrLDPCdecoder_defs.h"
 #include "../nrLDPC_types.h"
 #include "../nrLDPC_init.h"
-#include "../nrLDPC_mPass.h"
+//#include "../nrLDPC_mPass.h"
 //#include "../nrLDPC_cnProc.h"
 #include "../nrLDPC_bnProc.h"
 #include "cnProc_gen.h"
@@ -55,8 +55,6 @@ int main(int argc, char *argv[])
   }*/
   // Allocate LDPC decoder buffers
  // p_nrLDPC_procBuf = nrLDPC_init_mem();
-  t_nrLDPC_procBuf cnProcBuf;
-  t_nrLDPC_procBuf* p_procBuf = &cnProcBuf;
 
 //  load_nrLDPClib();
 
@@ -64,7 +62,7 @@ int main(int argc, char *argv[])
 //  load_nrLDPClib_ref("_orig", &encoder_orig);
 
   // Z=384, R=1/3
-  nrLDPC_cnProc_BG1_generator(p_procBuf,384,0);
+  nrLDPC_cnProc_BG1_generator(384,0);
 	//nrLDPC_cnProc_BG1(&lut_numCnInCnGroups, &cnProcBuf, 380);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 
