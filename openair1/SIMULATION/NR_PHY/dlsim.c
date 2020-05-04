@@ -140,8 +140,10 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
   float roundStats[50];
+  float effRate;
   float psnr;
   uint8_t snrRun;
+  uint32_t TBS;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
@@ -703,6 +705,7 @@ int main(int argc, char **argv)
     reset_meas(&gNB->toutput);  
 
     n_errors = 0;
+    effRate = 0;
     //n_errors2 = 0;
     //n_alamouti = 0;
     errors_scrambling=0;
@@ -848,7 +851,7 @@ int main(int argc, char **argv)
       NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
       int16_t *UE_llr = pdsch_vars[0]->llr[0];
       
-      uint32_t TBS         = rel15->TBSize[0];
+      TBS                  = rel15->TBSize[0];
       uint16_t length_dmrs = 1;
       uint16_t nb_rb       = rel15->rbSize;
       uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4;
@@ -896,15 +899,17 @@ int main(int argc, char **argv)
 	  printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
       }
       roundStats[snrRun]+=((float)round); 
+      if (UE_harq_process->harq_ack.ack==1) effRate += ((float)TBS)/round;
     } // noise trials
 
     roundStats[snrRun]/=((float)n_trials);
+    effRate /= n_trials;
     printf("*****************************************\n");
     printf("SNR %f, (false positive %f)\n", SNR,
            (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f\%, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
     printf("\n");
 
     if (n_trials == 1) {
@@ -916,7 +921,8 @@ int main(int argc, char **argv)
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
     }
 
-    if ((float)n_errors/(float)n_trials <= target_error_rate) {
+    //if ((float)n_errors/(float)n_trials <= target_error_rate) {
+    if (effRate >= (0.7*TBS)) {
       printf("PDSCH test OK\n");
       break;
     }
@@ -975,14 +981,14 @@ int main(int argc, char **argv)
     snrRun++;
   } // NSR
 
-  if (n_trials>1) {
+  /*if (n_trials>1) {
     printf("HARQ stats:\nSNR\tRounds\n");
     psnr = snr0;
     for (uint8_t i=0; i<snrRun; i++) {
       printf("%.1f\t%.2f\n",psnr,roundStats[i]);
       psnr+=0.2;
     }
-  }
+  }*/
 
   for (i = 0; i < 2; i++) {
     free(s_re[i]);
