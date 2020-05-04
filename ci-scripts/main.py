@@ -3583,6 +3583,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					continue
 				CiTestObj.testCase_id = id
 				HTML.SettestCase_id(CiTestObj.testCase_id)
+				EPC.SetTestCase_id(CiTestObj.testCase_id)
 				CiTestObj.desc = test.findtext('desc')
 				HTML.Setdesc(CiTestObj.desc)
 				action = test.findtext('class')
