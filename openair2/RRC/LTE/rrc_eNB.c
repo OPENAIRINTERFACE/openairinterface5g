@@ -4575,12 +4575,12 @@ int add_CG_ConfigInfo(
 	AssertFatal(rb_config->drb_ToAddModList != NULL,"failed to allocated memory for drbtoaddmodlist");
 	rb_config->drb_ToAddModList->list.count = ue_context_pP->ue_context.DRB_configList->list.count;
 	rb_config->drb_ToAddModList->list.array 
-		= calloc(ue_context_pP->ue_context.DRB_configList->list.count, sizeof(struct LTE_DRB_ToAddMod));
+		= calloc(ue_context_pP->ue_context.DRB_configList->list.count, sizeof(struct NR_DRB_ToAddMod));
 	AssertFatal( rb_config->drb_ToAddModList->list.array != NULL,
 		"falied to allocate memory for list.array");
 	  for(index = 0;index < ue_context_pP->ue_context.DRB_configList->list.count;index++) {
 	    rb_config->drb_ToAddModList->list.array[index] 
-			= calloc(1,sizeof(struct LTE_DRB_ToAddMod));
+			= calloc(1,sizeof(struct NR_DRB_ToAddMod));
 	    AssertFatal(rb_config->drb_ToAddModList->list.array[index] != NULL,
 			"failed to allocate memory for drb_toaddmod");
 	    rb_config->drb_ToAddModList->list.array[index]->drb_Identity
@@ -4618,7 +4618,7 @@ int add_CG_ConfigInfo(
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->size 
 	  = ue_context_pP->ue_context.UE_Capability_size;
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf 
-	  = calloc(1,sizeof(ue_context_pP->ue_context.UE_Capability_size));
+	  = calloc(1,ue_context_pP->ue_context.UE_Capability_size);
   AssertFatal( cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
 	  ue_CapabilityInfo->buf  != NULL, "failed to allocate memory for buf");
   memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf,
@@ -4635,6 +4635,7 @@ int add_CG_ConfigInfo(
 	  mcg_RB_Config->buf != NULL,"failed to allocate memory for buf");
   memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf,
 	  rb_config,sizeof(struct NR_RadioBearerConfig));
+  xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void*)cg_configinfo);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_ConfigInfo,NULL,(void*)cg_configinfo,
 	  enc_buf,ASN_MAX_ENCODE_SIZE);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
