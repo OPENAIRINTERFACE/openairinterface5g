@@ -771,7 +771,7 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
     struct NR_RLC_Config__um_Bi_Directional *um;
     um = r->choice.um_Bi_Directional;
     //t_reordering    = decode_t_reordering(um->dl_UM_RLC.t_Reordering);
-    if (um->dl_UM_RLC.sn_FieldLength != um->ul_UM_RLC.sn_FieldLength) {
+    if (*um->dl_UM_RLC.sn_FieldLength != *um->ul_UM_RLC.sn_FieldLength) {
       LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
       exit(1);
     }
