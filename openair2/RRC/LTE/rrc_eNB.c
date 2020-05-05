@@ -4602,7 +4602,8 @@ int add_CG_ConfigInfo(
 	  mcg_RB_Config->buf != NULL,"failed to allocate memory for buf");
   memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf,
 	  rb_config,sizeof(struct NR_RadioBearerConfig));
-  xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void*)cg_configinfo);
+ // xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void*)cg_configinfo);
+ // this xer_fprint can be enabled for additional debugging messages 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_ConfigInfo,NULL,(void*)cg_configinfo,
 	  enc_buf,ASN_MAX_ENCODE_SIZE);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
