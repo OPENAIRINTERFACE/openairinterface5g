@@ -4558,6 +4558,7 @@ rrc_eNB_process_MeasurementReport(
 	    if(encode_CG_ConfigInfo(enc_buf,sizeof(enc_buf),ue_context_pP,&enc_size) == RRC_OK)
 	      LOG_I(RRC,"CG-ConfigInfo encoded successfully\n");
           msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
+		  memset(&(X2AP_ENDC_SGNB_ADDITION_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_addition_req_t));
           X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
 	      memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
 	      X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
