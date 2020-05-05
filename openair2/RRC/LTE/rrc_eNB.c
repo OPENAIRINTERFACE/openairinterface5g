@@ -97,7 +97,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #define ASN_MAX_ENCODE_SIZE 1000
-static int add_CG_ConfigInfo(char **enc_buf,rrc_eNB_ue_context_t *const ue_context_pP,int * enc_size);
+static int add_CG_ConfigInfo(char *enc_buf,rrc_eNB_ue_context_t *const ue_context_pP,int * enc_size);
 static int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
 static void free_rb_config(struct NR_RadioBearerConfig *rb_config);
 static void free_cg_configinfo(struct NR_CG_ConfigInfo *cg_configinfo);
@@ -4405,7 +4405,8 @@ rrc_eNB_process_MeasurementReport(
 
       if(is_en_dc_supported(ue_context_pP->ue_context.UE_Capability)) {
 /** to add gNB as Secondary node CG-ConfigInfo to be added as per 36.423 r15 **/
-	    if(add_CG_ConfigInfo(&enc_buf,ue_context_pP,&enc_size) == RRC_OK)
+		enc_buf = calloc(1,1000);
+	    if(add_CG_ConfigInfo(enc_buf,ue_context_pP,&enc_size) == RRC_OK)
 	      LOG_I(RRC,"CG-ConfigInfo encoded successfully\n");
           msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_ADDITION_REQ);
           X2AP_ENDC_SGNB_ADDITION_REQ(msg).rnti = ctxt_pP->rnti;
@@ -4557,9 +4558,9 @@ rrc_eNB_process_MeasurementReport(
  *			this api is to fill and encode CG-ConfigInfo
  */
 int add_CG_ConfigInfo(
-  char **enc_buf,
+  char *enc_buf,
   rrc_eNB_ue_context_t *const ue_context_pP,
-  int * enc_size
+  int *enc_size
 ) {
   struct NR_CG_ConfigInfo *cg_configinfo = NULL;
   struct NR_RadioBearerConfig *rb_config = NULL;
