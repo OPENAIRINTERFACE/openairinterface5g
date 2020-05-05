@@ -31,11 +31,10 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
+#define OAIDFTS_MAIN
 #ifndef MR_MAIN
 #include "PHY/defs_common.h"
 #include "PHY/impl_defs_top.h"
-#include "tools_defs.h"
 #else
 #include "time_meas.h"
 #include "LOG/log.h"
@@ -61,6 +60,9 @@ const static int16_t conjugatedft[32] __attribute__((aligned(32))) = {-1,1,-1,1,
 
 
 const static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
+
+
+
 
 
 
@@ -2592,7 +2594,7 @@ const static int16_t tw64c[96] __attribute__((aligned(32))) = {
 #endif
 
 #ifndef __AVX2__
-void dft64(int16_t *x,int16_t *y,int scale)
+void dft64(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[16],ytmp[16],*tw64a_128=(simd_q15_t *)tw64a,*tw64b_128=(simd_q15_t *)tw64b,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y;
@@ -2706,7 +2708,7 @@ void dft64(int16_t *x,int16_t *y,int scale)
 }
 
 #else // __AVX2__
-void dft64(int16_t *x,int16_t *y,int scale)
+void dft64(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[16],ytmp[16],*tw64a_256=(simd256_q15_t *)tw64a,*tw64b_256=(simd256_q15_t *)tw64b,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y;
@@ -2854,7 +2856,7 @@ void dft64(int16_t *x,int16_t *y,int scale)
 #endif
 
 #ifndef __AVX2__
-void idft64(int16_t *x,int16_t *y,int scale)
+void idft64(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[16],ytmp[16],*tw64a_128=(simd_q15_t *)tw64,*tw64b_128=(simd_q15_t *)tw64c,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y;
@@ -2946,7 +2948,7 @@ void idft64(int16_t *x,int16_t *y,int scale)
 }
 
 #else // __AVX2__
-void idft64(int16_t *x,int16_t *y,int scale)
+void idft64(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[16],ytmp[16],*tw64a_256=(simd256_q15_t *)tw64,*tw64b_256=(simd256_q15_t *)tw64c,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y;
@@ -3056,7 +3058,7 @@ int16_t tw128b[128] __attribute__((aligned(32))) = {0,32767,-1608,32727,-3212,32
 int16_t tw128c[128] __attribute__((aligned(32))) = {0,32767,1608,32727,3212,32609,4808,32412,6393,32137,7962,31785,9512,31356,11039,30851,12540,30272,14010,29621,15447,28897,16846,28105,18205,27244,19520,26318,20788,25329,22005,24278,23170,23169,24279,22004,25330,20787,26319,19519,27245,18204,28106,16845,28898,15446,29622,14009,30273,12539,30852,11038,31357,9511,31786,7961,32138,6392,32413,4807,32610,3211,32728,1607,32767,0,32728,-1608,32610,-3212,32413,-4808,32138,-6393,31786,-7962,31357,-9512,30852,-11039,30273,-12540,29622,-14010,28898,-15447,28106,-16846,27245,-18205,26319,-19520,25330,-20788,24279,-22005,23170,-23170,22005,-24279,20788,-25330,19520,-26319,18205,-27245,16846,-28106,15447,-28898,14010,-29622,12540,-30273,11039,-30852,9512,-31357,7962,-31786,6393,-32138,4808,-32413,3212,-32610,1608,-32728};
 
 #ifndef __AVX2__
-void dft128(int16_t *x,int16_t *y,int scale)
+void dft128(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[64],*x64 = (simdshort_q15_t *)x;
@@ -3163,7 +3165,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
 }
 
 #else // __AVX2__
-void dft128(int16_t *x,int16_t *y,int scale)
+void dft128(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[16],*x256 = (simd256_q15_t *)x;
@@ -3233,7 +3235,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
 #endif
 
 #ifndef __AVX2__
-void idft128(int16_t *x,int16_t *y,int scale)
+void idft128(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[64],*x64 = (simdshort_q15_t *)x;
@@ -3332,7 +3334,7 @@ void idft128(int16_t *x,int16_t *y,int scale)
 }
 
 #else // __AVX2__
-void idft128(int16_t *x,int16_t *y,int scale)
+void idft128(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[16],*x256 = (simd256_q15_t *)x;
@@ -3405,7 +3407,7 @@ int16_t tw256b[384] __attribute__((aligned(32))) = {0,32767,-805,32757,-1608,327
                                                     0,32767,-2411,32678,-4808,32412,-7180,31970,-9512,31356,-11793,30571,-14010,29621,-16151,28510,-18205,27244,-20160,25831,-22005,24278,-23732,22594,-25330,20787,-26790,18867,-28106,16845,-29269,14732,-30273,12539,-31114,10278,-31786,7961,-32285,5601,-32610,3211,-32758,804,-32728,-1608,-32521,-4012,-32138,-6393,-31581,-8740,-30852,-11039,-29956,-13279,-28898,-15447,-27684,-17531,-26319,-19520,-24812,-21403,-23170,-23170,-21403,-24812,-19520,-26319,-17531,-27684,-15447,-28898,-13279,-29956,-11039,-30852,-8740,-31581,-6393,-32138,-4012,-32521,-1608,-32728,804,-32758,3211,-32610,5601,-32285,7961,-31786,10278,-31114,12539,-30273,14732,-29269,16845,-28106,18867,-26790,20787,-25330,22594,-23732,24278,-22005,25831,-20160,27244,-18205,28510,-16151,29621,-14010,30571,-11793,31356,-9512,31970,-7180,32412,-4808,32678,-2411
                                                    };
 #ifndef __AVX2__
-void dft256(int16_t *x,int16_t *y,int scale)
+void dft256(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[64],ytmp[64],*tw256a_128p=(simd_q15_t *)tw256a,*tw256b_128p=(simd_q15_t *)tw256b,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
@@ -3517,7 +3519,7 @@ void dft256(int16_t *x,int16_t *y,int scale)
 
 
 
-void idft256(int16_t *x,int16_t *y,int scale)
+void idft256(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[64],ytmp[64],*tw256_128p=(simd_q15_t *)tw256,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
@@ -3575,7 +3577,7 @@ void idft256(int16_t *x,int16_t *y,int scale)
 
 #else //__AVX2__
 
-void dft256(int16_t *x,int16_t *y,int scale)
+void dft256(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[32],ytmp[32],*tw256a_256p=(simd256_q15_t *)tw256a,*tw256b_256p=(simd256_q15_t *)tw256b,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
@@ -3667,7 +3669,7 @@ void dft256(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft256(int16_t *x,int16_t *y,int scale)
+void idft256(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[32],ytmp[32],*tw256_256p=(simd256_q15_t *)tw256,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
@@ -3772,7 +3774,7 @@ int16_t tw512c[512] __attribute__((aligned(32))) = {
 };
 
 #ifndef __AVX2__
-void dft512(int16_t *x,int16_t *y,int scale)
+void dft512(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[256],*xtmpp,*x64 = (simdshort_q15_t *)x;
@@ -3892,7 +3894,7 @@ void dft512(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft512(int16_t *x,int16_t *y,int scale)
+void idft512(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[256],*xtmpp,*x64 = (simdshort_q15_t *)x;
@@ -3984,7 +3986,7 @@ void idft512(int16_t *x,int16_t *y,int scale)
 
 #else //__AVX2__
 
-void dft512(int16_t *x,int16_t *y,int scale)
+void dft512(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[64],*x256 = (simd256_q15_t *)x;
@@ -4066,7 +4068,7 @@ void dft512(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft512(int16_t *x,int16_t *y,int scale)
+void idft512(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[64],*x256 = (simd256_q15_t *)x;
@@ -4153,7 +4155,7 @@ void idft512(int16_t *x,int16_t *y,int scale)
 int16_t tw1024[1536] __attribute__((aligned(32)));
 
 #ifndef __AVX2__
-void dft1024(int16_t *x,int16_t *y,int scale)
+void dft1024(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[256],ytmp[256],*tw1024_128p=(simd_q15_t *)tw1024,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
@@ -4209,7 +4211,7 @@ void dft1024(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft1024(int16_t *x,int16_t *y,int scale)
+void idft1024(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[256],ytmp[256],*tw1024_128p=(simd_q15_t *)tw1024,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
@@ -4266,7 +4268,7 @@ void idft1024(int16_t *x,int16_t *y,int scale)
 }
 
 #else //__AVX2__
-void dft1024(int16_t *x,int16_t *y,int scale)
+void dft1024(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[128],ytmp[128],*tw1024_256p=(simd256_q15_t *)tw1024,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
@@ -4322,7 +4324,7 @@ void dft1024(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft1024(int16_t *x,int16_t *y,int scale)
+void idft1024(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[128],ytmp[128],*tw1024_256p=(simd256_q15_t *)tw1024,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
@@ -4382,7 +4384,7 @@ void idft1024(int16_t *x,int16_t *y,int scale)
 int16_t tw2048[2048] __attribute__((aligned(32)));
 
 #ifndef __AVX2__
-void dft2048(int16_t *x,int16_t *y,int scale)
+void dft2048(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[1024],*xtmpp,*x64 = (simdshort_q15_t *)x;
@@ -4473,7 +4475,7 @@ void dft2048(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft2048(int16_t *x,int16_t *y,int scale)
+void idft2048(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[1024],*xtmpp,*x64 = (simdshort_q15_t *)x;
@@ -4565,7 +4567,7 @@ void idft2048(int16_t *x,int16_t *y,int scale)
 
 #else // __AVX2__
 
-void dft2048(int16_t *x,int16_t *y,int scale)
+void dft2048(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[256],*xtmpp,*x256 = (simd256_q15_t *)x;
@@ -4656,7 +4658,7 @@ void dft2048(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft2048(int16_t *x,int16_t *y,int scale)
+void idft2048(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[256],*xtmpp,*x256 = (simd256_q15_t *)x;
@@ -4753,7 +4755,7 @@ void idft2048(int16_t *x,int16_t *y,int scale)
 int16_t tw4096[3*2*1024];
 
 #ifndef __AVX2__
-void dft4096(int16_t *x,int16_t *y,int scale)
+void dft4096(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[1024],ytmp[1024],*tw4096_128p=(simd_q15_t *)tw4096,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
@@ -4811,7 +4813,7 @@ void dft4096(int16_t *x,int16_t *y,int scale)
 
  
 
-void idft4096(int16_t *x,int16_t *y,int scale)
+void idft4096(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd_q15_t xtmp[1024],ytmp[1024],*tw4096_128p=(simd_q15_t *)tw4096,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
@@ -4868,7 +4870,7 @@ void idft4096(int16_t *x,int16_t *y,int scale)
 }
 
 #else //__AVX2__
-void dft4096(int16_t *x,int16_t *y,int scale)
+void dft4096(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[512],ytmp[512],*tw4096_256p=(simd256_q15_t *)tw4096,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
@@ -4924,7 +4926,7 @@ void dft4096(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft4096(int16_t *x,int16_t *y,int scale)
+void idft4096(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[512],ytmp[512],*tw4096_256p=(simd256_q15_t *)tw4096,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
@@ -4986,7 +4988,7 @@ void idft4096(int16_t *x,int16_t *y,int scale)
 int16_t tw8192[2*4096] __attribute__((aligned(32)));
 
 #ifndef __AVX2__
-void dft8192(int16_t *x,int16_t *y,int scale)
+void dft8192(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[4096],*xtmpp,*x64 = (simdshort_q15_t *)x;
@@ -5076,7 +5078,7 @@ void dft8192(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft8192(int16_t *x,int16_t *y,int scale)
+void idft8192(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[4096],*xtmpp,*x64 = (simdshort_q15_t *)x;
@@ -5167,7 +5169,7 @@ void idft8192(int16_t *x,int16_t *y,int scale)
 }
 
 #else // __AVX2__
-void dft8192(int16_t *x,int16_t *y,int scale)
+void dft8192(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[1024],*xtmpp,*x256 = (simd256_q15_t *)x;
@@ -5258,7 +5260,7 @@ void dft8192(int16_t *x,int16_t *y,int scale)
 
 }
 
-void idft8192(int16_t *x,int16_t *y,int scale)
+void idft8192(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simd256_q15_t xtmp[1024],*xtmpp,*x256 = (simd256_q15_t *)x;
@@ -5354,7 +5356,7 @@ void idft8192(int16_t *x,int16_t *y,int scale)
 int16_t twa1536[1024],twb1536[1024];
 
 // 512 x 3
-void idft1536(int16_t *input, int16_t *output, int scale)
+void idft1536(int16_t *input, int16_t *output, unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][512 ]__attribute__((aligned(32)));
@@ -5406,7 +5408,7 @@ void idft1536(int16_t *input, int16_t *output, int scale)
 
 }
 
-void dft1536(int16_t *input, int16_t *output, int scale)
+void dft1536(int16_t *input, int16_t *output, unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][512] __attribute__((aligned(32)));
@@ -5471,7 +5473,7 @@ void dft1536(int16_t *input, int16_t *output, int scale)
 int16_t twa3072[2048] __attribute__((aligned(32)));
 int16_t twb3072[2048] __attribute__((aligned(32)));
 // 1024 x 3
-void dft3072(int16_t *input, int16_t *output,int scale)
+void dft3072(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][1024] __attribute__((aligned(32)));
@@ -5521,7 +5523,7 @@ void dft3072(int16_t *input, int16_t *output,int scale)
   _m_empty();
 }
 
-void idft3072(int16_t *input, int16_t *output,int scale)
+void idft3072(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][1024]__attribute__((aligned(32)));
@@ -5575,7 +5577,7 @@ void idft3072(int16_t *input, int16_t *output,int scale)
 int16_t twa6144[4096] __attribute__((aligned(32)));
 int16_t twb6144[4096] __attribute__((aligned(32)));
 
-void idft6144(int16_t *input, int16_t *output,int scale)
+void idft6144(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][2048] __attribute__((aligned(32)));
@@ -5635,7 +5637,7 @@ void idft6144(int16_t *input, int16_t *output,int scale)
 }
 
 
-void dft6144(int16_t *input, int16_t *output,int scale)
+void dft6144(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][2048] __attribute__((aligned(32)));
@@ -5699,12 +5701,12 @@ void dft6144(int16_t *input, int16_t *output,int scale)
 int16_t twa9216[6144] __attribute__((aligned(32)));
 int16_t twb9216[6144] __attribute__((aligned(32)));
 // 3072 x 3
-void dft9216(int16_t *input, int16_t *output,int scale) {
+void dft9216(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft9216(int16_t *input, int16_t *output,int scale) {
+void idft9216(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -5712,7 +5714,7 @@ void idft9216(int16_t *input, int16_t *output,int scale) {
 int16_t twa12288[8192] __attribute__((aligned(32)));
 int16_t twb12288[8192] __attribute__((aligned(32)));
 // 4096 x 3
-void dft12288(int16_t *input, int16_t *output,int scale)
+void dft12288(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][4096] __attribute__((aligned(32)));
@@ -5772,7 +5774,7 @@ void dft12288(int16_t *input, int16_t *output,int scale)
 
 }
 
-void idft12288(int16_t *input, int16_t *output,int scale)
+void idft12288(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][4096] __attribute__((aligned(32)));
@@ -5836,7 +5838,7 @@ void idft12288(int16_t *input, int16_t *output,int scale)
 int16_t twa18432[12288] __attribute__((aligned(32)));
 int16_t twb18432[12288] __attribute__((aligned(32)));
 // 6144 x 3
-void dft18432(int16_t *input, int16_t *output,int scale) {
+void dft18432(int16_t *input, int16_t *output,unsigned char scale) {
 
   int i,i2,j;
   uint32_t tmp[3][6144] __attribute__((aligned(32)));
@@ -5884,7 +5886,7 @@ void dft18432(int16_t *input, int16_t *output,int scale) {
   _m_empty();
 }
 
-void idft18432(int16_t *input, int16_t *output,int scale) {
+void idft18432(int16_t *input, int16_t *output,unsigned char scale) {
 
   int i,i2,j;
   uint32_t tmp[3][6144] __attribute__((aligned(32)));
@@ -5936,7 +5938,7 @@ void idft18432(int16_t *input, int16_t *output,int scale) {
 int16_t twa24576[16384] __attribute__((aligned(32)));
 int16_t twb24576[16384] __attribute__((aligned(32)));
 // 8192 x 3
-void dft24576(int16_t *input, int16_t *output,int scale)
+void dft24576(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][8192] __attribute__((aligned(32)));
@@ -5999,7 +6001,7 @@ void dft24576(int16_t *input, int16_t *output,int scale)
   }
 }
 
-void idft24576(int16_t *input, int16_t *output,int scale)
+void idft24576(int16_t *input, int16_t *output,unsigned char scale)
 {
   int i,i2,j;
   uint32_t tmp[3][8192] __attribute__((aligned(32)));
@@ -6061,11 +6063,11 @@ void idft24576(int16_t *input, int16_t *output,int scale)
 int16_t twa36864[24576] __attribute__((aligned(32)));
 int16_t twb36884[24576] __attribute__((aligned(32)));
 // 12288 x 3
-void dft36864(int16_t *input, int16_t *output,int scale) {
+void dft36864(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
-void idft36864(int16_t *input, int16_t *output,int scale) {
+void idft36864(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6073,12 +6075,12 @@ void idft36864(int16_t *input, int16_t *output,int scale) {
 int16_t twa49152[32768] __attribute__((aligned(32)));
 int16_t twb49152[32768] __attribute__((aligned(32)));
 // 16384 x 3
-void dft49152(int16_t *input, int16_t *output,int scale) {
+void dft49152(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft49152(int16_t *input, int16_t *output,int scale) {
+void idft49152(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6086,12 +6088,12 @@ void idft49152(int16_t *input, int16_t *output,int scale) {
 int16_t twa73728[49152] __attribute__((aligned(32)));
 int16_t twb73728[49152] __attribute__((aligned(32)));
 // 24576 x 3
-void dft73728(int16_t *input, int16_t *output,int scale) {
+void dft73728(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft73728(int16_t *input, int16_t *output,int scale) {
+void idft73728(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6100,12 +6102,12 @@ void idft73728(int16_t *input, int16_t *output,int scale) {
 int16_t twa98304[49152] __attribute__((aligned(32)));
 int16_t twb98304[49152] __attribute__((aligned(32)));
 // 32768 x 3
-void dft98304(int16_t *input, int16_t *output,int scale) {
+void dft98304(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
 
-void idft98304(int16_t *input, int16_t *output,int scale) {
+void idft98304(int16_t *input, int16_t *output,uint8_t scale) {
 
   AssertFatal(1==0,"Need to do this ..\n");
 }
@@ -6263,7 +6265,7 @@ static inline void dft12f(simd_q15_t *x0,
 
 
 
-void dft12(int16_t *x,int16_t *y)
+void dft12(int16_t *x,int16_t *y ,unsigned char scale_flag)
 {
 
   simd_q15_t *x128 = (simd_q15_t *)x,*y128 = (simd_q15_t *)y;
@@ -8595,8 +8597,6 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-//#define round trunc
-
 void init_rad4(int N,int16_t *tw) {
 
   int16_t *twa = tw;
@@ -8712,12 +8712,13 @@ void init_rad5_rep(int N,int16_t *twa,int16_t *twb,int16_t *twc,int16_t *twd) {
     twa+=8;
     twb+=8;
     twc+=8;
-    twd+=8;
+    twd+=8;                  
   }
 }
+/*----------------------------------------------------------------*/
+/* dft library entry points:                                      */
 
-
-void init_dfts(void)
+int dfts_autoinit(void)
 {
   init_rad4(1024,tw1024);
   init_rad2(2048,tw2048);
@@ -8764,9 +8765,23 @@ void init_dfts(void)
   init_rad3_rep(1080,twa1080,twb1080);
   init_rad4_rep(1152,twa1152,twb1152,twc1152);
   init_rad4_rep(1200,twa1200,twb1200,twc1200);
+  return 0;
 }
 
-//#undef round
+
+
+
+void dft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
+	AssertFatal((sizeidx>=0 && sizeidx<(int)DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
+	dft_ftab[sizeidx](sigF,sig,scale_flag);
+};
+
+void idft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
+	AssertFatal((sizeidx>=0 && sizeidx<(int)IDFT_SIZE_IDXTABLESIZE),"Invalid idft size index %i\n",sizeidx);
+	idft_ftab[sizeidx](sigF,sig,scale_flag);
+};
+
+/*---------------------------------------------------------------------------------------*/
 
 #ifdef MR_MAIN
 #include <string.h>
@@ -8937,12 +8952,12 @@ int main(int argc, char**argv)
 #ifdef __AVX2__
   simd256_q15_t x[4096],x2[4096],y[4096],tw0,tw1,tw2,tw3;
 #else
-  simd_q15_t x[8192],x2[8192],y[8192],tw0,tw1,tw2,tw3;
+  simd_q15_t x[8192],y[8192],tw0,tw1,tw2,tw3;
 #endif
   int i;
   simd_q15_t *x128=(simd_q15_t*)x,*y128=(simd_q15_t*)y;
 
-  init_dfts();
+  dfts_autoinit();
 
   set_taus_seed(0);
   opp_enabled = 1;

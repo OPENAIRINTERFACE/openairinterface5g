@@ -426,6 +426,7 @@ int main(int argc, char **argv)
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
+      printf("-P Print DLSCH performances\n");
       exit (-1);
       break;
     }
@@ -933,7 +934,6 @@ int main(int argc, char **argv)
       printf("PDSCH test OK\n");
       break;
     }
-
 
     if (print_perf==1) {
       printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",

@@ -127,8 +127,8 @@ time_stats_t generic_time[TIME_LAST];
 
 /************** FUNCTION ******************************************/
 
-void *get_idft(int ofdm_symbol_size);
-void *get_dft(int ofdm_symbol_size);
+idft_size_idx_t get_idft(int ofdm_symbol_size);
+dft_size_idx_t get_dft(int ofdm_symbol_size);
 void init_context_synchro_nr(NR_DL_FRAME_PARMS *frame_parms_ue);
 void free_context_synchro_nr(void);
 void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue);
