@@ -96,7 +96,7 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-#define ASN_MAX_ENCODE_SIZE 1000
+#define ASN_MAX_ENCODE_SIZE 4096
 static int encode_CG_ConfigInfo(char *buffer,int buffer_size,rrc_eNB_ue_context_t *const ue_context_pP,int *enc_size);
 static int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
 static void free_rb_config(struct NR_RadioBearerConfig *rb_config);
