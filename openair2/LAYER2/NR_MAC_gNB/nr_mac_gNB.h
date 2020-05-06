@@ -102,9 +102,20 @@ typedef struct {
   uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
 
-/*! \brief scheduling control information set through an API (not used)*/
+typedef struct NR_sched_pucch {
+  int frame;
+  int ul_slot;
+  uint8_t dai_c;
+  uint8_t timing_indicator;
+  uint8_t resource_indicator;
+  struct NR_sched_pucch *next_sched_pucch;
+} NR_sched_pucch;
+
+/*! \brief scheduling control information set through an API */
 typedef struct {
-  int dummy;
+  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+  uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+  NR_sched_pucch *sched_pucch;
 } NR_UE_sched_ctrl_t;
 
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
@@ -112,7 +123,7 @@ typedef struct {
 
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
-  UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
+  NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   int next[MAX_MOBILES_PER_GNB];
   int head;
   int next_ul[MAX_MOBILES_PER_GNB];
@@ -124,7 +135,7 @@ typedef struct {
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
 
-/*! \brief top level eNB MAC structure */
+/*! \brief top level gNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t                    eth_params_n;
@@ -191,64 +202,62 @@ typedef struct gNB_MAC_INST_s {
 } gNB_MAC_INST;
 
 typedef struct {
-
-
-uint8_t format_indicator; //1 bit
-uint16_t frequency_domain_assignment; //up to 16 bits
-uint8_t time_domain_assignment; // 4 bits
-uint8_t frequency_hopping_flag; //1 bit
-
-uint8_t ra_preamble_index; //6 bits
-uint8_t ss_pbch_index; //6 bits
-uint8_t prach_mask_index; //4 bits
-
-uint8_t vrb_to_prb_mapping; //0 or 1 bit
-uint8_t mcs; //5 bits
-uint8_t ndi; //1 bit
-uint8_t rv; //2 bits
-uint8_t harq_pid; //4 bits
-uint8_t dai; //0, 2 or 4 bits
-uint8_t dai1; //1 or 2 bits
-uint8_t dai2; //0 or 2 bits
-uint8_t tpc; //2 bits
-uint8_t pucch_resource_indicator; //3 bits
-uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
-
-uint8_t short_messages_indicator; //2 bits
-uint8_t short_messages; //8 bits
-uint8_t tb_scaling; //2 bits
-
-uint8_t carrier_indicator; //0 or 3 bits
-uint8_t bwp_indicator; //0, 1 or 2 bits
-uint8_t prb_bundling_size_indicator; //0 or 1 bits
-uint8_t rate_matching_indicator; //0, 1 or 2 bits
-uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
-uint8_t transmission_configuration_indication; //0 or 3 bits
-uint8_t srs_request; //2 bits
-uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
-uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
-uint8_t dmrs_sequence_initialization; //0 or 1 bit
-
-uint8_t srs_resource_indicator;
-uint8_t precoding_information;
-uint8_t csi_request;
-uint8_t ptrs_dmrs_association;
-uint8_t beta_offset_indicator; //0 or 2 bits
-
-uint8_t slot_format_indicator_count;
-uint8_t *slot_format_indicators;
-
-uint8_t pre_emption_indication_count;
-uint16_t *pre_emption_indications; //14 bit
-
-uint8_t block_number_count;
-uint8_t *block_numbers;
-
-uint8_t ul_sul_indicator; //0 or 1 bit
-uint8_t antenna_ports;
-
-uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
-uint16_t padding;
+  uint8_t format_indicator; //1 bit
+  uint16_t frequency_domain_assignment; //up to 16 bits
+  uint8_t time_domain_assignment; // 4 bits
+  uint8_t frequency_hopping_flag; //1 bit
+  
+  uint8_t ra_preamble_index; //6 bits
+  uint8_t ss_pbch_index; //6 bits
+  uint8_t prach_mask_index; //4 bits
+  
+  uint8_t vrb_to_prb_mapping; //0 or 1 bit
+  uint8_t mcs; //5 bits
+  uint8_t ndi; //1 bit
+  uint8_t rv; //2 bits
+  uint8_t harq_pid; //4 bits
+  uint8_t dai; //0, 2 or 4 bits
+  uint8_t dai1; //1 or 2 bits
+  uint8_t dai2; //0 or 2 bits
+  uint8_t tpc; //2 bits
+  uint8_t pucch_resource_indicator; //3 bits
+  uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
+  
+  uint8_t short_messages_indicator; //2 bits
+  uint8_t short_messages; //8 bits
+  uint8_t tb_scaling; //2 bits
+  
+  uint8_t carrier_indicator; //0 or 3 bits
+  uint8_t bwp_indicator; //0, 1 or 2 bits
+  uint8_t prb_bundling_size_indicator; //0 or 1 bits
+  uint8_t rate_matching_indicator; //0, 1 or 2 bits
+  uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
+  uint8_t transmission_configuration_indication; //0 or 3 bits
+  uint8_t srs_request; //2 bits
+  uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
+  uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
+  uint8_t dmrs_sequence_initialization; //0 or 1 bit
+  
+  uint8_t srs_resource_indicator;
+  uint8_t precoding_information;
+  uint8_t csi_request;
+  uint8_t ptrs_dmrs_association;
+  uint8_t beta_offset_indicator; //0 or 2 bits
+  
+  uint8_t slot_format_indicator_count;
+  uint8_t *slot_format_indicators;
+  
+  uint8_t pre_emption_indication_count;
+  uint16_t *pre_emption_indications; //14 bit
+  
+  uint8_t block_number_count;
+  uint8_t *block_numbers;
+  
+  uint8_t ul_sul_indicator; //0 or 1 bit
+  uint8_t antenna_ports;
+  
+  uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+  uint16_t padding;
 
 } dci_pdu_rel15_t;
 
