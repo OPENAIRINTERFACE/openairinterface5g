@@ -583,7 +583,7 @@ int main(int argc, char **argv)
       pusch_pdu->transform_precoding = 0;
       pusch_pdu->data_scrambling_id = 0;
       pusch_pdu->nrOfLayers = 1;
-      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
+      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol;
       pusch_pdu->dmrs_config_type = 0;
       pusch_pdu->ul_dmrs_scrambling_id =  0;
       pusch_pdu->scid = 0;
@@ -623,7 +623,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
       ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
-      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
+      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask << start_symbol;
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
