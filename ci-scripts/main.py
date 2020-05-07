@@ -86,7 +86,6 @@ class OaiCiTest():
 		self.UEDevicesRebootCmd = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
-		self.htmlUEConnected = -1
 		self.idle_sleep_time = 0
 		self.x2_ho_options = 'network'
 		self.x2NbENBs = 0
