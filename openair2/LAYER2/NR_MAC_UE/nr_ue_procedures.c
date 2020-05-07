@@ -668,7 +668,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     nr_dcireq_t dcireq;
     frame_t rx_frame = dl_info->frame;
     slot_t rx_slot = dl_info->slot;
-    
+
     // check type0 from 38.213 13 if we have no CellGroupConfig
     // TODO: implementation to be completed
     if (mac->scd == NULL) {
@@ -719,17 +719,12 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         dl_config->number_pdus = dl_config->number_pdus + 1;
         mac->scheduled_response.dl_config = dl_config;
       }
-    } else { // get PDCCH configuration(s) from SCGConfig
-      // get Coreset and SearchSpace Information from spCellConfigDedicated
-      // DCI configuration done for BWP 1, Coreset 0, SearchSpace 0
-
-      // TBR program DCI for slot 1 if PDSCH
-      // TBR program DCI for slot 7 if RAR DCI PDSCH
+    } else { // we have an scd
 
       dcireq.module_id = mod_id;
       dcireq.gNB_index = 0;
       dcireq.cc_id     = 0;
-      dcireq.frame     = rx_frame; // TBR not needed
+      dcireq.frame     = rx_frame;
       dcireq.slot      = rx_slot;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
@@ -770,8 +765,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   return UE_CONNECTION_OK;
 }
 
-// Note: msg2 is scheduled in the mixed slot or in the last dl slot
-// if they are allowed by search space configuration
+// Notes:
+// - Type1-PDCCH CSS configuration from ra-SearchSpace.
+// - Msg2 is scheduled in the mixed slot or in the last dl slot if they are allowed by the Type 1 Common Search Space configuration
+// todo:
+// - if Type1-PDCCH CSS is not configured in RRC message (Coreset and SearchSpace), UE searches in Type 0 PDCCH CSS.
 void nr_ue_msg2_scheduler(module_id_t mod_id,
                           uint16_t rach_frame,
                           uint16_t rach_slot,
@@ -870,7 +868,6 @@ void nr_ue_msg2_scheduler(module_id_t mod_id,
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
-//// however we need rach_ConfigGeneric to retrieve the config_index
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
   uint8_t config_index, mu, N_dur, N_t_slot, start_symbol;

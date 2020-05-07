@@ -317,7 +317,8 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   printf(" UE_mac->dl_config_request.slot %d VS dcireq->slot %d \n", UE_mac->dl_config_request.slot, dcireq->slot);
 
   LOG_D(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
-  ue_dci_configuration(UE_mac, dl_config, dcireq->slot);
+
+  ue_dci_configuration(UE_mac, dl_config, dcireq->frame, dcireq->slot);
 
   return 0;
 }

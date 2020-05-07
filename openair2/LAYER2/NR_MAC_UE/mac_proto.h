@@ -154,7 +154,7 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, int slot);
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
 void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                          int dci_format,
