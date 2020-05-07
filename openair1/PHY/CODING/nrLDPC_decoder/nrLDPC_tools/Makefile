@@ -1,5 +1,5 @@
 C=gcc
-CFLAGS=-W -Wall -mavx2
+CFLAGS=-W -Wall -mavx2 
 LDFLAGS=
 EXEC=cnProc_gen
 SRC= $(wildcard *.c)
@@ -8,12 +8,12 @@ OBJ= $(SRC:.c=.o)
 all: $(EXEC)
 
 cnProc_gen: $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS) -O 
+	$(CC) -o $@ $^ $(LDFLAGS) -O2  -pg
 
 main.o: cnProc_gen.h
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g -ggdb
+	$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g   -pg
 
 .PHONY: clean mrproper
 

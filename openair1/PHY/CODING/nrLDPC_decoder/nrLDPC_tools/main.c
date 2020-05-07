@@ -8,7 +8,7 @@
 #include "../nrLDPC_bnProc.h"
 #include "cnProc_gen.h"
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv [])
 {
   //short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
 //  unsigned int errors, errors_bit, crc_misses;

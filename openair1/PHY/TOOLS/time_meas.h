@@ -29,8 +29,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <linux/kernel.h>
-#include <linux/types.h>
+//#include <linux/kernel.h>
+//#include <linux/types.h>
 // global var to enable openair performance profiler
 extern int opp_enabled;
 double cpu_freq_GHz  __attribute__ ((aligned(32)));;

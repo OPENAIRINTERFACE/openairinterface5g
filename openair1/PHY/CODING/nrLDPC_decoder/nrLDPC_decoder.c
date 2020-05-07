@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -37,7 +38,7 @@
 #include "nrLDPC_mPass.h"
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
-
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13.h"
 #define NR_LDPC_ENABLE_PARITY_CHECK
 #define NR_LDPC_PROFILER_DETAIL
 
@@ -80,6 +81,9 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     uint8_t  BG         = p_decParams->BG;
     uint8_t  numMaxIter = p_decParams->numMaxIter;
     e_nrLDPC_outMode outMode = p_decParams->outMode;
+     
+    int8_t* cnProcBuf= p_procBuf->cnProcBuf;
+    int8_t* cnProcBufRes=p_procBuf->cnProcBufRes;
 
     // Minimum number of iterations is 1
     // 0 iterations means hard-decision on input LLRs
@@ -142,9 +146,12 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     start_meas(&p_profiler->cnProc);
 #endif
     if (BG == 1)
-    {
+    {	if(Z==384){
+	nrLDPC_cnProc_BG1_Z384_13(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+	}else{
         nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
-    }
+	}    
+}
     else
     {
         nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
@@ -242,8 +249,12 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #endif
         if (BG == 1)
         {
+	    if(Z==384){
+	    nrLDPC_cnProc_BG1_Z384_13(p_procBuf->cnProcBuf, p_procBuf->cnProcBufRes);
+	    }else{
             nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
-        }
+            }        
+	}
         else
         {
             nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
@@ -351,9 +362,12 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         start_meas(&p_profiler->cnProc);
 #endif
         if (BG == 1)
-        {
-            nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
-        }
+        {	if(Z==384){
+            	nrLDPC_cnProc_BG1_Z384_13(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+		}else{
+		nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
+		}  
+      }
         else
         {
             nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
