@@ -887,6 +887,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
+  mac->RA_offset = 2; // to compensate the rx frame offset at the gNB
+
   if (is_nr_UL_slot(scc, slotP)) {
 
     if (setup->msg1_SubcarrierSpacing)
