@@ -27,8 +27,8 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
-//#define DEBUG_CH
-//#define DEBUG_PUSCH
+#define DEBUG_CH
+#define DEBUG_PUSCH
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
