@@ -771,6 +771,8 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->ul_ch_estimates[0][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
 	  LOG_M("chestF0_ext.m","chF0_ext",
 		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+	  LOG_M("rxsigF0_comp.m","rxsF0_comp",
+		&gNB->pusch_vars[0]->rxdataF_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
 	}
         start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
