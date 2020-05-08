@@ -70,14 +70,16 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
   wf = (dmrs_type==pusch_dmrs_type1) ? wf1 : wf2;
   wt = (dmrs_type==pusch_dmrs_type1) ? wt1 : wt2;
 
+  int dmrs_offset = re_offset/((dmrs_type==pusch_dmrs_type1)?2:3);
+
   if (dmrs_type > 2)
     LOG_E(PHY,"PUSCH DMRS config type %d not valid\n", dmrs_type+1);
 
   if ((p>=1000) && (p<((dmrs_type==pusch_dmrs_type1) ? 1008 : 1012))) {
       if (gNB->frame_parms.Ncp == NORMAL) {
         nb_dmrs = ((dmrs_type==pusch_dmrs_type1) ? 6:4);
-        for (int i=re_offset; i<re_offset+(nb_pusch_rb*nb_dmrs); i++) {
-          k = i-re_offset;
+        for (int i=dmrs_offset; i<dmrs_offset+(nb_pusch_rb*nb_dmrs); i++) {
+          k = i-dmrs_offset;
           w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
           mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
 

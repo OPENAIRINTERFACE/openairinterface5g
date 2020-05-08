@@ -50,6 +50,8 @@
 
 #include "intertask_interface.h"
 
+//#define DEBUG_RXDATA
+
 uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
 
 extern uint8_t nfapi_mode;
@@ -435,6 +437,17 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	    (ulsch_harq->frame == frame_rx) &&
 	    (ulsch_harq->slot == slot_rx) &&
 	    (ulsch_harq->handled == 0)){
+
+#ifdef DEBUG_RXDATA
+          int slot_offset = frame_parms->get_samples_slot_timestamp(slot_rx,frame_parms,0);
+          slot_offset -= ru->N_TA_offset;
+          char name[128];
+          FILE *f;
+          sprintf(name, "rxdata.%d.%d.raw", frame_rx,slot_rx);
+          f = fopen(name, "w"); if (f == NULL) exit(1);
+          fwrite(&ru->common.rxdata[0][slot_offset],2,frame_parms->get_samples_per_slot(slot_rx,frame_parms)*2, f);
+          fclose(f);
+#endif
 
 	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
 	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
