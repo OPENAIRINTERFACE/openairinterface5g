@@ -1013,12 +1013,12 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
 }
 
-void nr_rx_pusch(PHY_VARS_gNB *gNB,
-                 uint8_t ulsch_id,
-                 uint32_t frame,
-                 uint8_t nr_tti_rx,
-                 unsigned char symbol,
-                 unsigned char harq_pid)
+int nr_rx_pusch(PHY_VARS_gNB *gNB,
+                uint8_t ulsch_id,
+                uint32_t frame,
+                uint8_t nr_tti_rx,
+                unsigned char symbol,
+                unsigned char harq_pid)
 {
 
   uint8_t aarx, aatx, dmrs_symbol_flag, ptrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
@@ -1159,6 +1159,12 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   gNB->pusch_vars[ulsch_id]->log2_maxh);
     stop_meas(&gNB->ulsch_channel_compensation_stats);
 
+
+    int rxsig = signal_energy(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][(symbol*rel15_ul->rb_size*12)],
+                              rel15_ul->rb_size*12);
+
+    if (rxsig==1) return (rxsig);
+
 #ifdef NR_SC_FDMA
     nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
 #endif
@@ -1181,5 +1187,5 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   }
 
   gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset +  nb_re_pusch;
-  
+  return (0);
 }

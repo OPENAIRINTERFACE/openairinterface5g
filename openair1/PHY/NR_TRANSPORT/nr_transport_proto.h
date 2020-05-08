@@ -46,12 +46,12 @@
     @param symbol Symbol on which to act (within-in nr_TTI_rx)
     @param harq_pid HARQ process ID
 */
-void nr_rx_pusch(PHY_VARS_gNB *gNB,
-                 uint8_t UE_id,
-                 uint32_t frame,
-                 uint8_t nr_tti_rx,
-                 unsigned char symbol,
-                 unsigned char harq_pid);
+int nr_rx_pusch(PHY_VARS_gNB *gNB,
+                uint8_t UE_id,
+                uint32_t frame,
+                uint8_t nr_tti_rx,
+                unsigned char symbol,
+                unsigned char harq_pid);
 
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)

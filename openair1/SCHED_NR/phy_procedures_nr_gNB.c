@@ -424,6 +424,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
     int harq_pid;
+    int no_sig;
     NR_UL_gNB_HARQ_t *ulsch_harq;
 
     if ((ulsch) &&
@@ -438,6 +439,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	    (ulsch_harq->handled == 0)){
 
 #ifdef DEBUG_RXDATA
+          NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+          RU_t *ru = gNB->RU_list[0];
           int slot_offset = frame_parms->get_samples_slot_timestamp(slot_rx,frame_parms,0);
           slot_offset -= ru->N_TA_offset;
           char name[128];
@@ -451,7 +454,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
 	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	    nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+            if (no_sig) return;
 	  }
 	  //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
 	  //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
