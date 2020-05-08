@@ -906,7 +906,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                     &start_symbol,
                                                     &N_t_slot,
                                                     &N_dur);
-    if (is_nr_prach_slot) {
+
+    if (is_nr_prach_slot && mac->ra_state == RA_UE_IDLE) {
 
       mac->generate_nr_prach = 1;
 
