@@ -117,7 +117,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //------------------generate DMRS------------------//
 
   if (pusch_pdu->transform_precoding==1) // if transform precoding is disabled
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB/((pusch_pdu->dmrs_config_type==pusch_dmrs_type1)?2:3), pusch_pdu->dmrs_config_type);
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   else
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, 0, pusch_pdu->dmrs_config_type);
 
