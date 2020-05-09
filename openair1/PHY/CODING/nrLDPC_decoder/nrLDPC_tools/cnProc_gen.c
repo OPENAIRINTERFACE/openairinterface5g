@@ -92,7 +92,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  
-	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
+	  fprintf(fd,"            for (int i=0;i<%d;i+=2) {\n",M);
 	  // Abs and sign of 32 CNs (first BN)
 	  //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                ymm0 = ((__m256i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]);
@@ -117,6 +117,32 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //                *p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
 	  //                p_cnProcBufResBit++;
 	  fprintf(fd,"                ((__m256i*)cnProcBufRes)[%d+i] = _mm256_sign_epi8(min, sgn);\n",(lut_startAddrCnGroups[0]>>5)+(j*bitOffsetInGroup));
+
+	  // Abs and sign of 32 CNs (first BN)
+	  //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
+	  fprintf(fd,"                ymm0 = ((__m256i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]+1);
+	  //                sgn  = _mm256_sign_epi8(ones, ymm0);
+	  fprintf(fd,"                sgn  = _mm256_sign_epi8(ones, ymm0);\n");
+	  //                min  = _mm256_abs_epi8(ymm0);
+	  fprintf(fd,"                min  = _mm256_abs_epi8(ymm0);\n");
+	  
+	  // 32 CNs of second BN
+	  //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
+	  fprintf(fd,"                ymm0 = ((__m256i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][1]+1);
+	  
+	  //                min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
+	  fprintf(fd,"                min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));\n");
+	  
+	  //                sgn  = _mm256_sign_epi8(sgn, ymm0);
+	  fprintf(fd,"                sgn  = _mm256_sign_epi8(sgn, ymm0);\n");
+	  
+	  // Store result
+	  //                min = _mm256_min_epu8(min, maxLLR); // 128 in epi8 is -127
+	  fprintf(fd,"                min = _mm256_min_epu8(min, maxLLR);\n");
+	  //                *p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
+	  //                p_cnProcBufResBit++;
+	  fprintf(fd,"                ((__m256i*)cnProcBufRes)[%d+i] = _mm256_sign_epi8(min, sgn);\n",(lut_startAddrCnGroups[0]>>5)+(j*bitOffsetInGroup)+1);
+
 	  fprintf(fd,"            }\n");
         }
     }
@@ -250,7 +276,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   // =====================================================================
   // Process group with 6 BNs
-
+  fprintf(fd,"//Process group with 6 BNs\n");
   // Offset is 8*384/32 = 96
   const uint16_t lut_idxCnProcG6[6][5] = {{96,192,288,384,480}, {0,192,288,384,480},
 					  {0,96,288,384,480}, {0,96,192,384,480},
@@ -316,7 +342,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   // =====================================================================
   // Process group with 7 BNs
-
+  fprintf(fd,"//Process group with 7 BNs\n");
   // Offset is 5*384/32 = 60
   const uint16_t lut_idxCnProcG7[7][6] = {{60,120,180,240,300,360}, {0,120,180,240,300,360},
 					  {0,60,180,240,300,360},   {0,60,120,240,300,360},
@@ -384,7 +410,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   // =====================================================================
   // Process group with 8 BNs
-
+  fprintf(fd,"//Process group with 8 BNs\n");
   // Offset is 2*384/32 = 24
   const uint8_t lut_idxCnProcG8[8][7] = {{24,48,72,96,120,144,168}, {0,48,72,96,120,144,168},
 					 {0,24,72,96,120,144,168}, {0,24,48,96,120,144,168},
@@ -452,7 +478,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   // =====================================================================
   // Process group with 9 BNs
-
+  fprintf(fd,"//Process group with 9 BNs\n");
   // Offset is 2*384/32 = 24
   const uint8_t lut_idxCnProcG9[9][8] = {{24,48,72,96,120,144,168,192}, {0,48,72,96,120,144,168,192},
 					 {0,24,72,96,120,144,168,192}, {0,24,48,96,120,144,168,192},
@@ -522,7 +548,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   // =====================================================================
   // Process group with 10 BNs
-
+  fprintf(fd,"//Process group with 10 BNs\n");
   // Offset is 1*384/32 = 12
   const uint8_t lut_idxCnProcG10[10][9] = {{12,24,36,48,60,72,84,96,108}, {0,24,36,48,60,72,84,96,108},
 					   {0,12,36,48,60,72,84,96,108}, {0,12,24,48,60,72,84,96,108},
@@ -593,6 +619,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   // =====================================================================
   // Process group with 19 BNs
+  fprintf(fd,"//Process group with 19 BNs\n");
   // Offset is 4*384/32 = 12
   const uint16_t lut_idxCnProcG19[19][18] = {{48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864}, {0,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864},
 					     {0,48,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864}, {0,48,96,192,240,288,336,384,432,480,528,576,624,672,720,768,816,864},

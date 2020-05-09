@@ -5,7 +5,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 __m256i ymm0, min, sgn,ones,maxLLR;
                 ones   = _mm256_set1_epi8((char)1);
                 maxLLR = _mm256_set1_epi8((char)127);
-            for (int i=0;i<12;i++) {
+            for (int i=0;i<12;i+=2) {
                 ymm0 = ((__m256i*)cnProcBuf)[12+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
                 min  = _mm256_abs_epi8(ymm0);
@@ -14,8 +14,16 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[0+i] = _mm256_sign_epi8(min, sgn);
+                ymm0 = ((__m256i*)cnProcBuf)[13+i];
+                sgn  = _mm256_sign_epi8(ones, ymm0);
+                min  = _mm256_abs_epi8(ymm0);
+                ymm0 = ((__m256i*)cnProcBuf)[25+i];
+                min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
+                sgn  = _mm256_sign_epi8(sgn, ymm0);
+                min = _mm256_min_epu8(min, maxLLR);
+                ((__m256i*)cnProcBufRes)[1+i] = _mm256_sign_epi8(min, sgn);
             }
-            for (int i=0;i<12;i++) {
+            for (int i=0;i<12;i+=2) {
                 ymm0 = ((__m256i*)cnProcBuf)[0+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
                 min  = _mm256_abs_epi8(ymm0);
@@ -24,8 +32,16 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[12+i] = _mm256_sign_epi8(min, sgn);
+                ymm0 = ((__m256i*)cnProcBuf)[1+i];
+                sgn  = _mm256_sign_epi8(ones, ymm0);
+                min  = _mm256_abs_epi8(ymm0);
+                ymm0 = ((__m256i*)cnProcBuf)[25+i];
+                min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
+                sgn  = _mm256_sign_epi8(sgn, ymm0);
+                min = _mm256_min_epu8(min, maxLLR);
+                ((__m256i*)cnProcBufRes)[13+i] = _mm256_sign_epi8(min, sgn);
             }
-            for (int i=0;i<12;i++) {
+            for (int i=0;i<12;i+=2) {
                 ymm0 = ((__m256i*)cnProcBuf)[0+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
                 min  = _mm256_abs_epi8(ymm0);
@@ -34,6 +50,14 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[24+i] = _mm256_sign_epi8(min, sgn);
+                ymm0 = ((__m256i*)cnProcBuf)[1+i];
+                sgn  = _mm256_sign_epi8(ones, ymm0);
+                min  = _mm256_abs_epi8(ymm0);
+                ymm0 = ((__m256i*)cnProcBuf)[13+i];
+                min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
+                sgn  = _mm256_sign_epi8(sgn, ymm0);
+                min = _mm256_min_epu8(min, maxLLR);
+                ((__m256i*)cnProcBufRes)[25+i] = _mm256_sign_epi8(min, sgn);
             }
 //Process group with 4 BNs
             for (int i=0;i<60;i++) {
@@ -169,6 +193,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[1140+i] = _mm256_sign_epi8(min, sgn);
            }
+//Process group with 6 BNs
             for (int i=0;i<96;i++) {
                 ymm0 = ((__m256i*)cnProcBuf)[1452+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
@@ -283,6 +308,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[1836+i] = _mm256_sign_epi8(min, sgn);
             }
+//Process group with 7 BNs
             for (int i=0;i<60;i++) {
                 ymm0 = ((__m256i*)cnProcBuf)[1992+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
@@ -437,6 +463,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[2292+i] = _mm256_sign_epi8(min, sgn);
             }
+//Process group with 8 BNs
             for (int i=0;i<24;i++) {
                 ymm0 = ((__m256i*)cnProcBuf)[2376+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
@@ -637,6 +664,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[2520+i] = _mm256_sign_epi8(min, sgn);
               }
+//Process group with 9 BNs
             for (int i=0;i<24;i++) {
                 ymm0 = ((__m256i*)cnProcBuf)[2568+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
@@ -889,6 +917,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[2736+i] = _mm256_sign_epi8(min, sgn);
             }
+//Process group with 10 BNs
             for (int i=0;i<12;i++) {
                 ymm0 = ((__m256i*)cnProcBuf)[2772+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
@@ -1199,6 +1228,7 @@ void nrLDPC_cnProc_BG1_Z384_13(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 min = _mm256_min_epu8(min, maxLLR);
                 ((__m256i*)cnProcBufRes)[2868+i] = _mm256_sign_epi8(min, sgn);
             }
+//Process group with 19 BNs
             for (int i=0;i<48;i++) {
                 ymm0 = ((__m256i*)cnProcBuf)[2928+i];
                 sgn  = _mm256_sign_epi8(ones, ymm0);
