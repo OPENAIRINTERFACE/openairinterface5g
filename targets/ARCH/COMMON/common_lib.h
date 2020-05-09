@@ -90,6 +90,8 @@ typedef enum {
   USRP_B200_DEV,
   /*!\brief device is USRP X300/X310*/
   USRP_X300_DEV,
+  /*!\brief device is USRP N300/N310*/
+  USRP_N300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
   /*!\brief device is LMSSDR (SoDeRa)*/
@@ -104,7 +106,7 @@ typedef enum {
   UEDv2_DEV,
   MAX_RF_DEV_TYPE
 } dev_type_t;
-#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2"} 
+#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2"} 
 /*!\brief transport protocol types
  */
 typedef enum {
