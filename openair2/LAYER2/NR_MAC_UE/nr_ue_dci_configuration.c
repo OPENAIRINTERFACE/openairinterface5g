@@ -192,15 +192,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     rel15->coreset.CoreSetType = 1;
     rel15->coreset.precoder_granularity = coreset->precoderGranularity;
 
-    // Scrambling RNTI
-    if (coreset->pdcch_DMRS_ScramblingID) {
-      rel15->coreset.pdcch_dmrs_scrambling_id = *coreset->pdcch_DMRS_ScramblingID;
-      rel15->coreset.scrambling_rnti = mac->t_crnti;
-    } else {
-      rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
-      rel15->coreset.scrambling_rnti = 0;
-    }
-
     if (mac->ra_state == WAIT_RAR){
 
        NR_BWP_DownlinkCommon_t *initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
@@ -266,6 +257,19 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
         }
       fill_dci_search_candidates(uss, rel15);
     }
+
+    // Scrambling RNTI
+    if (coreset->pdcch_DMRS_ScramblingID) {
+      rel15->coreset.pdcch_dmrs_scrambling_id = *coreset->pdcch_DMRS_ScramblingID;
+      rel15->coreset.scrambling_rnti = mac->t_crnti;
+    } else {
+      rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
+      if(mac->ra_state == WAIT_RAR)
+        rel15->coreset.scrambling_rnti = 0;
+      else
+        rel15->coreset.scrambling_rnti = rel15->rnti;
+    }
+
     if (add_dci){
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
       dl_config->number_pdus = dl_config->number_pdus + 1;
