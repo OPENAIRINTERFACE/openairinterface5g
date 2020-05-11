@@ -64,7 +64,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
       a_segments = a_segments/273;
     }  
 
-    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
 
 #ifdef DEBUG_DLSCH_FREE
@@ -82,7 +81,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
+          free16(dlsch->harq_processes[i]->b,a_segments*1056);
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);

@@ -134,7 +134,10 @@ tbs_size_t mac_rlc_data_req(
   }
 
   if (MBMS_flagP == MBMS_FLAG_YES) {
-    rb = ue->drb[channel_idP - 1];
+    if (channel_idP >= 1 && channel_idP <= 5)
+      rb = ue->drb[channel_idP - 1];
+    else
+      rb = NULL;
   }
 
 
@@ -192,7 +195,10 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   }
 
   if (MBMS_flagP == MBMS_FLAG_YES) {
-    rb = ue->drb[channel_idP - 1];
+    if (channel_idP >= 1 && channel_idP <= 5)
+      rb = ue->drb[channel_idP - 1];
+    else
+      rb = NULL;
   }
 
   if (rb != NULL) {
@@ -316,7 +322,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     if (rb_idP >= 1 && rb_idP <= 5)
       rb = ue->drb[rb_idP - 1];
   }
+
   if( MBMS_flagP == MBMS_FLAG_YES) {
+    if (rb_idP >= 1 && rb_idP <= 5)
       rb = ue->drb[rb_idP - 1];
   }
 
@@ -875,12 +883,19 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
         mbms_service_id    = MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
 //        mbms_service_id    = j;
 
+#if 0
+        /* TODO: check if this code should stay there
+         * as it is both enb and ue cases do the same thing
+         */
         // can set the mch_id = i
         if (ctxt_pP->enb_flag) {
           drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id;//+ (LTE_maxDRB + 3) * MAX_MOBILES_PER_ENB; // 1
         } else {
           drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id; // + (LTE_maxDRB + 3); // 15
         }
+#endif
+
+        drb_id =  (mbms_service_id * LTE_maxSessionPerPMCH ) + mbms_session_id;
 
         LOG_I(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u, mbms_rnti %x\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),

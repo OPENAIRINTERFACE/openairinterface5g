@@ -81,6 +81,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #include "executables/softmodem-common.h"
+#include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 
 //#define XER_PRINT
 

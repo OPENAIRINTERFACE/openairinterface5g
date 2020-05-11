@@ -62,6 +62,7 @@ class EPCManagement():
 		self.Type = ''
 		self.PcapFileName = ''
 		self.htmlObj = None
+		self.testCase_id = ''
 
 #-----------------------------------------------------------
 # Setter and Getters on Public Members
@@ -89,6 +90,8 @@ class EPCManagement():
 		return self.Type
 	def SetHtmlObj(self, obj):
 		self.htmlObj = obj
+	def SetTestCase_id(self, idx):
+		self.testCase_id = idx
 
 #-----------------------------------------------------------
 # EPC management functions

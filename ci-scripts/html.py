@@ -83,7 +83,7 @@ class HTMLManagement():
 # Setters and Getters
 #-----------------------------------------------------------
 	def SethtmlUEFailureMsg(self,huefa):
-                self.htmlUEFailureMsg = huefa
+		self.htmlUEFailureMsg = huefa
 	def GethtmlUEFailureMsg(self):
 		return self.htmlUEFailureMsg
 	def SetHmleNBFailureMsg(self, msg):
@@ -112,7 +112,10 @@ class HTMLManagement():
 		self.ranTargetBranch = tbranch
 
 	def SethtmlUEConnected(self, nbUEs):
-		self.htmlUEConnected = nbUEs
+		if nbUEs > 0:
+			self.htmlUEConnected = nbUEs
+		else:
+			self.htmlUEConnected = 1
 	def SethtmlNb_Smartphones(self, nbUEs):
 		self.htmlNb_Smartphones = nbUEs
 	def SethtmlNb_CATM_Modules(self, nbUEs):

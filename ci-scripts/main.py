@@ -86,7 +86,6 @@ class OaiCiTest():
 		self.UEDevicesRebootCmd = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
-		self.htmlUEConnected = -1
 		self.idle_sleep_time = 0
 		self.x2_ho_options = 'network'
 		self.x2NbENBs = 0
@@ -3583,6 +3582,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					continue
 				CiTestObj.testCase_id = id
 				HTML.SettestCase_id(CiTestObj.testCase_id)
+				EPC.SetTestCase_id(CiTestObj.testCase_id)
 				CiTestObj.desc = test.findtext('desc')
 				HTML.Setdesc(CiTestObj.desc)
 				action = test.findtext('class')
