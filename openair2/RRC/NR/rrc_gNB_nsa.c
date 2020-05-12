@@ -279,7 +279,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       ue_context_p->ue_context.rb_config->drb_ToAddModList,
       ue_context_p->ue_context.rb_config->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
-      ue_context_p->ue_context.secondaryCellGroup);
+      ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
 }
 
