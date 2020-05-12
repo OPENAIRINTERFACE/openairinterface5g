@@ -36,8 +36,31 @@
 //#include "NR_UE-CapabilityRAT-ContainerList.h"
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
+//#include "NR_SRB-ToAddModList.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
+
+extern boolean_t nr_rrc_pdcp_config_asn1_req(
+    const protocol_ctxt_t *const  ctxt_pP,
+    NR_SRB_ToAddModList_t  *const srb2add_list,
+    NR_DRB_ToAddModList_t  *const drb2add_list,
+    NR_DRB_ToReleaseList_t *const drb2release_list,
+    const uint8_t                   security_modeP,
+    uint8_t                  *const kRRCenc,
+    uint8_t                  *const kRRCint,
+    uint8_t                  *const kUPenc
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+    ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
+  #endif
+    ,rb_id_t                 *const defaultDRB,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m) {
 
@@ -132,8 +155,13 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			carrier->initial_csi_index[rrc->Nb_ue]);
 
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
+  //NR_CellGroupConfig_t               *secondaryCellGroup = ue_context_p->ue_context.secondaryCellGroup;
+  //secondaryCellGroup->rlc_BearerToAddModList->list.array[0]->rlc_Config
 
-  fill_default_rbconfig(ue_context_p->ue_context.rb_config);
+  if(m!=NULL)
+    fill_default_rbconfig(ue_context_p->ue_context.rb_config, m->e_rabs_tobeadded[0].e_rab_id, m->e_rabs_tobeadded[0].drb_ID);
+  else
+    fill_default_rbconfig(ue_context_p->ue_context.rb_config, 5, 1);
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void*)CG_Config,0,sizeof(*CG_Config));
@@ -232,6 +260,27 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			 1, // add_ue flag
 			 ue_context_p->ue_id_rnti,
 			 ue_context_p->ue_context.secondaryCellGroup);
+
+  nr_rrc_pdcp_config_asn1_req(
+    &ctxt,
+    (NR_SRB_ToAddModList_t *) NULL,
+    ue_context_p->ue_context.rb_config->drb_ToAddModList ,
+    ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+    0xff,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+
+  nr_rrc_rlc_config_asn1_req (&ctxt,
+      (NR_SRB_ToAddModList_t *) NULL,
+      ue_context_p->ue_context.rb_config->drb_ToAddModList,
+      ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+      (LTE_PMCH_InfoList_r9_t *) NULL,
+      ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+
 }
 
 

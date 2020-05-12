@@ -62,7 +62,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
 
-  RLC_BearerConfig->logicalChannelIdentity = 4;
+  RLC_BearerConfig->logicalChannelIdentity = 3;
   RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
   RLC_BearerConfig->servedRadioBearer->present = 	NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
 
@@ -70,6 +70,18 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
   *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
   RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
+
+  // RLC UM Bi-directional Bearer configuration 
+  /*RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional));
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;*/
+  
+  // RLC AM Bearer configuration
   RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
   RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
@@ -2046,7 +2058,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   reconfig->nonCriticalExtension = NULL;
 }
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, long eps_BearerIdentity, long drb_Identity) {
 
   rbconfig->srb_ToAddModList = NULL;
   rbconfig->srb3_ToRelease = NULL;
@@ -2054,8 +2066,8 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
   drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
   drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity=5;
-  drb_ToAddMod->drb_Identity = 1;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= eps_BearerIdentity; //5;
+  drb_ToAddMod->drb_Identity = drb_Identity;
   drb_ToAddMod->reestablishPDCP = NULL;
   drb_ToAddMod->recoverPDCP = NULL;
   drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));

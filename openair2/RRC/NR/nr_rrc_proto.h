@@ -82,7 +82,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
 			   int n_physical_antenna_ports,
 			   int initial_csi_index);
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig);
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, long eps_BearerIdentity, long drb_Identity);
 
 int generate_CG_Config(gNB_RRC_INST *rrc, 
 		       NR_CG_Config_t *cg_Config,
