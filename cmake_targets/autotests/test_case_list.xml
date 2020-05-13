@@ -1036,7 +1036,9 @@
     <testCase id="015103">
       <class>execution</class>
       <desc>polartest Test cases. (Test1: PBCH polar test),
-                                  (Test2: DCI polar test)</desc>
+                                  (Test2: DCI polar test),
+                                  (Test3: UCI polar test,6-bit CRC),
+                                  (Test4: UCI polar test,11-bit CRC)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1044,8 +1046,10 @@
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
       <main_exec_args>-q -s-10 -f0
-                      -q -s-10 -f0 -m1</main_exec_args>
-      <tags>polartest.test1 polartest.test2</tags>
+                      -q -s-10 -f0 -m1
+                      -q -s-2 -f2 -m2 -k12
+                      -q -s-2 -f2 -m2 -k20</main_exec_args>
+      <tags>polartest.test1 polartest.test2 polartest.test3 polartest.test4</tags>
       <search_expr_true>BLER= 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
