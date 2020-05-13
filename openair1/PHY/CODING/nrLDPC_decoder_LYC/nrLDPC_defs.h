@@ -19,16 +19,6 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_defs.h
- * \brief LDPC implementation on Quadro p5000 by NCTU OpinCommect
- * \author NCTU OpinConnect Terng-Yin Hsu/Yu-Chi Liang/Kai-Tai Yang/Yan-Bo Lin 
- * \email tyhsu@cs.nctu.edu.tw
- * \date 13-05-2020
- * \version 
- * \note
- * \warning
- */
-
 /*!\file nrLDPC_defs.h
  * \brief Defines all constants and buffers for the LDPC decoder
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>
@@ -36,7 +26,7 @@
  * \version 1.0
  * \note
  * \warning
- */
+* */
 
 #ifndef __NR_LDPC_DEFS__H__
 #define __NR_LDPC_DEFS__H__

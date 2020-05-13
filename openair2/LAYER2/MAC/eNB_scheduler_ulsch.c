@@ -1496,38 +1496,33 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
           if (status >= RRC_CONNECTED && UE_sched_ctrl_ptr->cqi_req_timer > 30) {
             if (UE_sched_ctrl_ptr->cqi_received == 0) {
-              if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-                cqi_req = 0;
-              } else {
-                cqi_req = 1;
-                LOG_D(MAC,"Setting CQI_REQ (timer %d)\n",UE_sched_ctrl_ptr->cqi_req_timer);
+              cqi_req = 1;
+              LOG_D(MAC,
+                    "Setting CQI_REQ (timer %d)\n",
+                    UE_sched_ctrl_ptr->cqi_req_timer);
 
-                /* TDD: to be safe, do not ask CQI in special Subframes:36.213/7.2.3 CQI definition */
-                if (cc[CC_id].tdd_Config) {
-                  switch (cc[CC_id].tdd_Config->subframeAssignment) {
-                    case 1:
-                      if(subframeP == 1 || subframeP == 6) {
-                        cqi_req=0;
-                      }
+              /* TDD: to be safe, do not ask CQI in special
+               * Subframes:36.213/7.2.3 CQI definition */
+              if (cc[CC_id].tdd_Config) {
+                switch (cc[CC_id].tdd_Config->subframeAssignment) {
+                  case 1:
+                    if (subframeP == 1 || subframeP == 6)
+                      cqi_req = 0;
+                    break;
 
-                      break;
+                  case 3:
+                    if (subframeP == 1)
+                      cqi_req = 0;
+                    break;
 
-                    case 3:
-                      if(subframeP == 1) {
-                        cqi_req=0;
-                      }
-
-                      break;
-
-                    default:
-                      LOG_E(MAC," TDD config not supported\n");
-                      break;
-                  }
+                  default:
+                    LOG_E(MAC, " TDD config not supported\n");
+                    break;
                 }
+              }
 
-                if(cqi_req == 1) {
-                  UE_sched_ctrl_ptr->cqi_req_flag |= 1 << sched_subframeP;
-                }
+              if (cqi_req == 1) {
+                UE_sched_ctrl_ptr->cqi_req_flag |= 1 << sched_subframeP;
               }
             } else {
               LOG_D(MAC,"Clearing CQI request timer\n");

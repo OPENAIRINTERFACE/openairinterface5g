@@ -175,7 +175,7 @@ if (logFlag){
   double channelOutput[coderLength];  //add noise
   int16_t channelOutput_int16[coderLength];
 
-  t_nrPolar_params *currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level);
+  t_nrPolar_params *currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level, 1, NULL);
 
 #ifdef DEBUG_DCI_POLAR_PARAMS
   uint32_t dci_pdu[4];

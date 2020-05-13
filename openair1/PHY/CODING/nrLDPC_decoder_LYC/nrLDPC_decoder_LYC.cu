@@ -1,13 +1,3 @@
- /*! \file PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
- * \brief LDPC implementation on Quadro p5000 by NCTU OpinCommect
- * \author NCTU OpinConnect Terng-Yin Hsu/Yu-Chi Liang/Kai-Tai Yang/Yan-Bo Lin 
- * \email tyhsu@cs.nctu.edu.tw
- * \date 13-05-2020
- * \version 
- * \note
- * \warning
- */
-
 #include <stdio.h>
 #include <unistd.h>
 #include <cuda_runtime.h>

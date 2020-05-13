@@ -77,7 +77,7 @@ extern struct iovec nas_iov_rx;
 
 extern int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
-extern int nas_sock_mbms_fd[8];
+extern int nas_sock_mbms_fd;
 
 extern int mbms_rab_id;
 
@@ -133,7 +133,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     } else if (UE_NAS_USE_TUN) {
       //ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        if(rb_id == mbms_rab_id){
-       ret = write(nas_sock_mbms_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+       ret = write(nas_sock_mbms_fd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
         }
        else
@@ -299,7 +299,7 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
   do {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_MBMS_FIFO_READ, 1 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_MBMS_FIFO_READ_BUFFER, 1 );
-    len = read(UE_NAS_USE_TUN?nas_sock_mbms_fd[0]:nas_sock_mbms_fd[0], &nl_rx_buf, NL_MAX_PAYLOAD);
+    len = read(nas_sock_mbms_fd, &nl_rx_buf, NL_MAX_PAYLOAD);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_MBMS_FIFO_READ_BUFFER, 0 );
 
     if (len<=0) continue;

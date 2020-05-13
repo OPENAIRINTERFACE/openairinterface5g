@@ -31,6 +31,7 @@
 */
 #include <stdint.h>
 #include "PHY/NR_REFSIG/dmrs_nr.h"
+#include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/MODULATION/nr_modulation.h"
@@ -105,27 +106,28 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int32_t **txdataF;
   uint16_t start_sc, start_rb;
   int8_t Wf[2], Wt[2], l_prime[2], delta;
-  uint16_t n_dmrs, code_rate, number_dmrs_symbols;
+  uint16_t n_dmrs, code_rate, number_dmrs_symbols, k;
   uint8_t dmrs_type;
-  uint8_t mapping_type;
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
   uint16_t n_rnti;
   uint8_t data_existing =0;
+  uint8_t L_ptrs, K_ptrs; // PTRS parameters
+  uint16_t beta_ptrs; // PTRS parameter related to power control
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue;
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
   uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
+  ptrs_UplinkConfig_t *ptrs_Uplink_Config = &UE->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
 
   num_of_codewords = 1; // tmp assumption
   n_rnti = 0x1234;
   Nid_cell = 0;
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   number_dmrs_symbols = 0;
-
-  mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
+  uint8_t mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
@@ -135,23 +137,23 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     start_symbol = harq_process_ul_ue->start_symbol;
 
     for (i = start_symbol; i < start_symbol + harq_process_ul_ue->number_of_symbols; i++)
-      number_dmrs_symbols += is_dmrs_symbol(i,
+      number_dmrs_symbols += is_dmrs_symbol((mapping_type)?i-start_symbol:i,
                                             0,
                                             0,
                                             0,
                                             0,
                                             0,
                                             harq_process_ul_ue->number_of_symbols,
-                                            &UE->dmrs_UplinkConfig,
-                                            mapping_type,
+                                            UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
                                             frame_parms->ofdm_symbol_size);
 
-    ulsch_ue->length_dmrs = UE->dmrs_UplinkConfig.pusch_maxLength;
+    ulsch_ue->length_dmrs = number_dmrs_symbols; // pusch.MaxLenght is redundant here as number_dmrs_symbols
+                                                 // contains all dmrs symbols even for double symbol dmrs
     ulsch_ue->rnti        = n_rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    ulsch_ue->nb_re_dmrs  = ((UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4)*number_dmrs_symbols;
+    ulsch_ue->nb_re_dmrs  = ((UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4);
 
-    N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs - N_PRB_oh;
+    N_RE_prime = NR_NB_SC_PER_RB*harq_process_ul_ue->number_of_symbols - ulsch_ue->nb_re_dmrs*number_dmrs_symbols - N_PRB_oh;
 
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*harq_process_ul_ue->nb_rb*num_of_codewords;
 
@@ -172,6 +174,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     // to be removed later when MAC is ready
 
     if (harq_process_ul_ue != NULL){
+      data_existing = 0;
 
     	if (IS_SOFTMODEM_NOS1){
     		data_existing = nr_ue_get_sdu(UE->Mod_id, UE->CC_id, frame,
@@ -189,31 +192,22 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     				printf("\n");
 				#endif
     		}
-    		//Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-    		else{
-    			//Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-    			//and block this traffic from being forwarded to the upper layers at the gNB
-    			uint16_t payload_offset = 5;
-    			LOG_D(PHY, "Random data to be tranmsitted: \n");
-    			//Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
-    			for (i = 0; i<payload_offset; i++)
-    				harq_process_ul_ue->a[i] = 0;
+      }
+      //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+      if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+        //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+        //and block this traffic from being forwarded to the upper layers at the gNB
+        uint16_t payload_offset = 5;
+        LOG_D(PHY, "Random data to be tranmsitted: \n");
+        //Give the header bytes some dummy value in order to block the random packet at the MAC layer of the receiver
+        for (i = 0; i<payload_offset; i++)
+          harq_process_ul_ue->a[i] = 0;
 
-    			for (i = payload_offset; i < harq_process_ul_ue->TBS / 8; i++) {
-    				harq_process_ul_ue->a[i] = (unsigned char) rand();
-    				//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-    				}
-    		}
-    	}
-        //else if(uplink_counter == 0){ //if(!IS_SOFTMODEM_NOS1){
-    	else{
-        	LOG_D(PHY, "Random data to be tranmsitted: \n");
-        	for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
-        		harq_process_ul_ue->a[i] = (unsigned char) rand();
-        		//printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-        	}
-        	//uplink_counter++;
+        for (i = payload_offset; i < harq_process_ul_ue->TBS / 8; i++) {
+          harq_process_ul_ue->a[i] = (unsigned char) rand();
+          //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
         }
+      }
     } else {
       LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
       return;
@@ -275,11 +269,40 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
-  n_dmrs = (harq_process_ul_ue->nb_rb*ulsch_ue->nb_re_dmrs);
+  n_dmrs = (harq_process_ul_ue->nb_rb*ulsch_ue->nb_re_dmrs*ulsch_ue->length_dmrs);
   int16_t mod_dmrs[n_dmrs<<1];
-  dmrs_type = UE->dmrs_UplinkConfig.pusch_dmrs_type;
+  dmrs_type = UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type;
   ///////////
   ////////////////////////////////////////////////////////////////////////
+
+
+  /////////////////////////PTRS parameters' initialization/////////////////////////
+  ///////////
+
+  int16_t mod_ptrs[(harq_process_ul_ue->nb_rb/2)*(NR_SYMBOLS_PER_SLOT-1)*2]; // assume maximum number of PTRS per pusch allocation
+  K_ptrs = 0; // just to avoid a warning
+
+  if (UE->ptrs_configured == 1) {
+
+    K_ptrs = get_K_ptrs(ptrs_Uplink_Config, harq_process_ul_ue->nb_rb);
+
+    L_ptrs = get_L_ptrs(ptrs_Uplink_Config, harq_process_ul_ue->mcs);
+
+    beta_ptrs = 1; // temp value until power control is implemented
+
+    ulsch_ue->ptrs_symbols = 0;
+
+    set_ptrs_symb_idx(&ulsch_ue->ptrs_symbols,
+                      harq_process_ul_ue->number_of_symbols,
+                      start_symbol,
+                      dmrs_type,
+                      L_ptrs,
+                      ulsch_ue->length_dmrs,
+                      frame_parms->ofdm_symbol_size);
+  }
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////ULSCH layer mapping/////////////////////////
   ///////////
@@ -306,15 +329,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   for (l = start_symbol; l < start_symbol + harq_process_ul_ue->number_of_symbols; l++) {
 
-    is_dmrs = is_dmrs_symbol(l,
+    is_dmrs = is_dmrs_symbol((mapping_type)?l-start_symbol:l,
                              0,
                              0,
                              0,
                              0,
                              0,
                              harq_process_ul_ue->number_of_symbols,
-                             &UE->dmrs_UplinkConfig,
-                             mapping_type,
+                             dmrs_type,
                              frame_parms->ofdm_symbol_size);
 
     if (is_dmrs == 1)
@@ -357,35 +379,54 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     
 
     uint8_t k_prime=0;
-    uint8_t is_dmrs;
-    uint16_t m=0, n=0, dmrs_idx=0, k=0;
+    uint8_t is_dmrs, is_ptrs;
+    uint8_t l_ref;
+    uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+harq_process_ul_ue->number_of_symbols; l++) {
 
       k = start_sc;
       n = 0;
       dmrs_idx = 0;
+      l_ref = (mapping_type) ? l-start_symbol : l;
 
       for (i=0; i<harq_process_ul_ue->nb_rb*NR_NB_SC_PER_RB; i++) {
 
         sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
 
         is_dmrs = 0;
+        is_ptrs = 0;
 
-        is_dmrs = is_dmrs_symbol(l,
+        is_dmrs = is_dmrs_symbol(l_ref,
                                  k,
                                  start_sc,
                                  k_prime,
                                  n,
                                  delta,
                                  harq_process_ul_ue->number_of_symbols,
-                                 &UE->dmrs_UplinkConfig,
-                                 mapping_type,
+                                 dmrs_type,
                                  frame_parms->ofdm_symbol_size);
+
+        if (UE->ptrs_configured == 1){
+          is_ptrs = is_ptrs_symbol(l,
+                                   k,
+                                   ulsch_ue->rnti,
+                                   harq_process_ul_ue->nb_rb,
+                                   harq_process_ul_ue->number_of_symbols,
+                                   ap,
+                                   K_ptrs,
+                                   ulsch_ue->ptrs_symbols,
+                                   start_sc,
+                                   frame_parms->ofdm_symbol_size,
+                                   UE->pusch_config.dmrs_UplinkConfig.pusch_dmrs_type,
+                                   ptrs_Uplink_Config->resourceElementOffset);
+        }
 
         if (is_dmrs == 1) {
 
-          nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+          if (k == start_sc){
+            nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+          }
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
@@ -401,9 +442,19 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           k_prime++;
           k_prime&=1;
           n+=(k_prime)?0:1;
-        }
 
-        else {
+        }  else if (is_ptrs == 1) {
+
+          if (k == start_sc){
+            nr_modulation(pusch_dmrs[l][0], harq_process_ul_ue->nb_rb/2, DMRS_MOD_ORDER, mod_ptrs);
+          }
+
+          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (beta_ptrs*AMP*mod_ptrs[ptrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (beta_ptrs*AMP*mod_ptrs[(ptrs_idx<<1) + 1]) >> 15;
+
+          ptrs_idx++;
+
+          } else {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
@@ -454,7 +505,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   timing_advance = 0;
 #endif
 
-  tx_offset = slot*frame_parms->samples_per_slot - timing_advance;
+  tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0) - timing_advance;
 
   if (tx_offset < 0)
     tx_offset += frame_parms->samples_per_frame;
@@ -484,6 +535,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
            frame_parms);
       }
     }
+
   ///////////
   ////////////////////////////////////////////////////
   return 0;

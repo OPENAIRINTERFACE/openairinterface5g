@@ -36,8 +36,6 @@ extern "C" {
 #include <stdint.h>
 #include "PHY/sse_intrin.h"
 
-#define CEILIDIV(a,b) ((a+b-1)/b)
-#define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
 struct complex {
   double x;
@@ -204,6 +202,21 @@ void dft12288(int16_t *sigF,int16_t *sig,int scale);
 void dft18432(int16_t *sigF,int16_t *sig,int scale);
 
 void dft24576(int16_t *sigF,int16_t *sig,int scale);
+
+void dft49152(int16_t *sigF,int16_t *sig,int scale);
+void idft49152(int16_t *sigF,int16_t *sig,int scale);
+
+void dft9216(int16_t *sigF,int16_t *sig,int scale);
+void idft9216(int16_t *sigF,int16_t *sig,int scale);
+
+void dft36864(int16_t *sigF,int16_t *sig,int scale);
+void idft36864(int16_t *sigF,int16_t *sig,int scale);
+
+void dft98304(int16_t *sigF,int16_t *sig,int scale);
+void idft98304(int16_t *sigF,int16_t *sig,int scale);
+
+void dft73728(int16_t *sigF,int16_t *sig,int scale);
+void idft73728(int16_t *sigF,int16_t *sig,int scale);
 
 
 /*!\fn int32_t rotate_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift)

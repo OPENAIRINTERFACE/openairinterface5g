@@ -18,6 +18,17 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+// add GPU mode (-G 1)
+
+ /*! \file PHY/CODING/TESTBENCH/ldpctest.c
+ * \brief Merge remote-tracking branch 'origin/develop' into NCTU_OpinConnect_LDPC
+ * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING,LIN
+ * \email tyhsu@cs.nctu.edu.tw
+ * \date 13-05-2020
+ * \version 
+ * \note
+ * \warning
+ */
 
 #include <stdlib.h>
 #include <math.h>
@@ -104,7 +115,8 @@ int test_ldpc(short No_iteration,
               unsigned int *crc_misses,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
-              n_iter_stats_t *dec_iter)
+              n_iter_stats_t *dec_iter,
+			  short run_cuda)
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -401,15 +413,21 @@ int test_ldpc(short No_iteration,
       // decoder supports BG2, Z=128 & 256
       //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
       ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
-#ifdef __NR_LDPC_DECODER_LYC__H__
+//#ifdef __NR_LDPC_DECODER_LYC__H__RUN__
+		if(run_cuda){
+		  printf("run ldpc by cuda\n");
     	  start_meas(time_decoder);
 		  n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
 		  stop_meas(time_decoder);
-#else		  	  
+		}  
+//#else	
+        else{	
+		  printf("run ldpc by cpu\n");
     	  start_meas(time_decoder);
 		  n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
 		  stop_meas(time_decoder);
-#endif      
+		}  
+//#endif      
       }
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
@@ -512,7 +530,7 @@ int main(int argc, char *argv[])
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
-
+  short run_cuda = 0;
   short No_iteration=5;
   int n_segments=1;
   //double rate=0.333;
@@ -534,7 +552,7 @@ int main(int argc, char *argv[])
 
   short BG=0,Zc,Kb;
 
-  while ((c = getopt (argc, argv, "q:r:s:S:l:n:d:i:t:u:h")) != -1)
+  while ((c = getopt (argc, argv, "q:r:s:S:l:n:d:i:t:u:h:G:")) != -1)
     switch (c)
     {
       case 'q':
@@ -544,7 +562,10 @@ int main(int argc, char *argv[])
       case 'r':
         nom_rate = atoi(optarg);
         break;
-
+	  case 'G':
+        run_cuda = atoi(optarg);
+        break;
+		
       case 'd':
         denom_rate = atoi(optarg);
         break;
@@ -576,6 +597,7 @@ int main(int argc, char *argv[])
       case 'u':
         test_uncoded = atoi(optarg);
         break;
+		
 
       case 'h':
             default:
@@ -594,6 +616,7 @@ int main(int argc, char *argv[])
               printf("-t SNR simulation step, Default: 0.1\n");
               printf("-i Max decoder iterations, Default: 5\n");
               printf("-u Set SNR per coded bit, Default: 0\n");
+			  printf("-G set 1 to run cuda for ldpc \n");
               exit(1);
               break;
     }
@@ -603,7 +626,7 @@ int main(int argc, char *argv[])
   printf("block length %d: \n", block_length);
   printf("n_trials %d: \n", n_trials);
   printf("SNR0 %f: \n", SNR0);
-
+  
 
 
 
@@ -677,7 +700,8 @@ int main(int argc, char *argv[])
                                 &crc_misses,
                                 time_optim,
                                 time_decoder,
-                                dec_iter);
+                                dec_iter,
+								run_cuda);
 
     printf("SNR %f, BLER %f (%u/%d)\n", SNR, (float)decoded_errors[i]/(float)n_trials, decoded_errors[i], n_trials);
     printf("SNR %f, BER %f (%u/%d)\n", SNR, (float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments, decoded_errors[i], n_trials);

@@ -23,6 +23,7 @@
 #define __NR_TRANSPORT__H__
 
 #include "PHY/defs_gNB.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #define NR_PBCH_PDU_BITS 24
 
@@ -36,7 +37,7 @@ int nr_generate_pss(  int16_t *d_pss,
                       int32_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
-                      nfapi_nr_config_request_t *config,
+                      nfapi_nr_config_request_scf_t *config,
                       NR_DL_FRAME_PARMS *frame_parms);
 
 /*!
@@ -49,7 +50,7 @@ int nr_generate_sss(  int16_t *d_sss,
                       int32_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
-                      nfapi_nr_config_request_t *config,
+                      nfapi_nr_config_request_scf_t *config,
                       NR_DL_FRAME_PARMS *frame_parms);
 
 /*!
@@ -62,7 +63,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t *txdataF,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
-                          nfapi_nr_config_request_t *config,
+                          nfapi_nr_config_request_scf_t *config,
                           NR_DL_FRAME_PARMS *frame_parms);
 
 /*!
@@ -85,16 +86,14 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
 @returns 0 on success
  */
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
-                     uint8_t *pbch_pdu,
+		     nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
                      int32_t *txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
                      uint8_t n_hf,
-                     uint8_t Lmax,
-                     uint8_t ssb_index,
                      int sfn,
-                     nfapi_nr_config_request_t *config,
+                     nfapi_nr_config_request_scf_t *config,
                      NR_DL_FRAME_PARMS *frame_parms);
 
 /*!
@@ -105,11 +104,23 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
  */
 void nr_init_pbch_interleaver(uint8_t *interleaver);
 
-NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
+NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
+                              unsigned char Kmimo,
                               unsigned char Mdlharq,
                               uint32_t Nsoft,
                               uint8_t abstraction_flag,
-                              NR_DL_FRAME_PARMS *frame_parms,
-                              nfapi_nr_config_request_t *config);
+                              uint16_t N_RB);
+
+void rx_nr_prach(PHY_VARS_gNB *gNB,
+		 int frame,
+		 int subframe,
+		 uint16_t *max_preamble,
+		 uint16_t *max_preamble_energy,
+		 uint16_t *max_preamble_delay
+		 );
+
+void rx_nr_prach_ru(RU_t *ru,
+		    int frame,
+		    int subframe);
 
 #endif /*__NR_TRANSPORT__H__*/

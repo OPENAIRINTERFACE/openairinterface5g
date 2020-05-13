@@ -85,6 +85,7 @@
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
 #define PBCH_PDU_SIZE 3 //bytes
+#define NR_NUMBER_OF_SYMBOLS_PER_SLOT 14
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
@@ -635,6 +636,10 @@ typedef struct LTE_DL_FRAME_PARMS {
   uint16_t first_carrier_offset_khz_1dot25;
   /// Number of samples in a subframe
   uint32_t samples_per_tti;
+  /// Number of samples in a subframe
+  uint32_t samples_per_subframe;
+  /// Number of samples in a slot
+  uint32_t samples_per_slot;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
   /// Number of OFDM symbols in DL portion of S-subframe

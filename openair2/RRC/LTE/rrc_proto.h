@@ -585,6 +585,12 @@ rrc_eNB_generate_UECapabilityEnquiry(
 );
 
 void
+rrc_eNB_generate_NR_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP
+);
+
+void
 rrc_eNB_generate_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t          *const ue_context_pP
