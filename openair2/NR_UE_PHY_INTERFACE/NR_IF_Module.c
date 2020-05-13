@@ -153,6 +153,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
+  nr_ue_scheduler(dl_info, NULL);
+
   dl_config->number_pdus = 0;
   ul_config->number_pdus = 0;
   //hook up pointers
