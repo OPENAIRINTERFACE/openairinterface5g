@@ -1419,7 +1419,7 @@ int32_t get_nr_uldl_offset(int nr_bandP)
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
-                   uint8_t nodata_dmrs,
+                   uint8_t numdmrscdmgroupnodata,
                    uint8_t tb_scaling) {
 
   LOG_D(MAC, "TBS calculation\n");
@@ -1427,10 +1427,14 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_rel15 = &pdsch_pdu->pdsch_pdu_rel15;
   uint16_t N_PRB_oh = x_overhead;
   uint8_t N_PRB_DMRS;
-  if (nodata_dmrs)
-    N_PRB_DMRS = 12;
-  else
-    N_PRB_DMRS = (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
+  if (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    N_PRB_DMRS = numdmrscdmgroupnodata*6;
+  }
+  else {
+    N_PRB_DMRS = numdmrscdmgroupnodata*4;
+  }
   uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
   uint8_t Imcs = pdsch_rel15->mcsIndex[0];
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;

@@ -369,6 +369,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].harq_pid = 0;
   // DAI
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
+
   // TPC for PUCCH
   dci_pdu_rel15[0].tpc = 1; // table 7.2.1-1 in 38.213
   // PUCCH resource indicator
@@ -377,7 +378,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = pucch_sched->timing_indicator;
   // antenna ports
   dci_pdu_rel15[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
-  
+
   LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment.val,
 	pdsch_pdu_rel15->rbStart, 
@@ -409,7 +410,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
     }
   }
   AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
-    
+
   int ret = nr_configure_pdcch(nr_mac,
                                pdcch_pdu_rel15,
                                UE_list->rnti[UE_id],
@@ -444,7 +445,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	pdcch_pdu_rel15->DurationSymbols);
 
   int x_Overhead = 0; // should be 0 for initialBWP
-  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead,1,0);
+  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu,x_Overhead,pdsch_pdu_rel15->numDmrsCdmGrpsNoData,0);
 
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
