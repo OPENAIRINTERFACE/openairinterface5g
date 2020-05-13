@@ -312,6 +312,23 @@ rx_sdu(const module_id_t enb_mod_idP,
 
       if (ra->msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
+        nfapi_hi_dci0_request_t *hi_dci0_req = NULL;
+        uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
+        hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP + sf_ahead_dl) % 10];
+        nfapi_hi_dci0_request_body_t *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
+        nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
+        memset((void *) hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+        hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_HI_PDU_TYPE;
+        hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_hi_pdu);
+        hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
+        hi_dci0_pdu->hi_pdu.hi_pdu_rel8.resource_block_start = first_rb;
+        hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = 0;
+        hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 0;
+        hi_dci0_req_body->number_of_hi++;
+        hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP, subframeP, 0);
+        hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
+        hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP, subframeP, sf_ahead_dl);
+        hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
       } else {
         if (ra->rach_resource_type > 0) {
           cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);        // TODO: Currently we don't support retransmission of Msg3 ( If in error Cancel RA procedure and reattach)
