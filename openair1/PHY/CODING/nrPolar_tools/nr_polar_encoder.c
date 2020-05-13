@@ -295,8 +295,8 @@ static inline void polar_rate_matching(t_nrPolar_params *polarParams,void *in,vo
 
 void build_polar_tables(t_nrPolar_params *polarParams) {
   // build table b -> c'
-  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
-  AssertFatal(polarParams->K < 129, "K = %d > 64, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K > 17, "K = %d < 18, is not possible\n",polarParams->K);
+  AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   int bit_i,ip;
   int numbytes = polarParams->K>>3;
   int residue = polarParams->K&7;
@@ -327,7 +327,7 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
   AssertFatal(polarParams->N==512 || polarParams->N==256 || polarParams->N==128,"N = %d, not done yet\n",polarParams->N);
   // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to 64 bit packed vectors.
   // keep only rows of G which correspond to information/crc bits
-  polarParams->G_N_tab = (uint64_t **)malloc(polarParams->K * sizeof(int64_t *));
+  polarParams->G_N_tab = (uint64_t **)malloc((polarParams->K + polarParams->n_pc) * sizeof(int64_t *));
   int k=0;
 
   for (int i=0; i<polarParams->N; i++) {
@@ -412,14 +412,14 @@ void polar_encoder_fast(uint64_t *A,
                         int32_t crcmask,
                         uint8_t ones_flag,
                         t_nrPolar_params *polarParams) {
-  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
+  //  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->payloadBits < 65, "payload bits = %d > 64, is not supported yet\n",polarParams->payloadBits);
   uint64_t B[4]= {0,0,0,0},Cprime[4]= {0,0,0,0};
   int bitlen = polarParams->payloadBits;
   // append crc
   AssertFatal(bitlen<129,"support for payloads <= 128 bits\n");
-  AssertFatal(polarParams->crcParityBits == 24,"support for 24-bit crc only for now\n");
+  //  AssertFatal(polarParams->crcParityBits == 24,"support for 24-bit crc only for now\n");
   //int bitlen0=bitlen;
   uint64_t tcrc=0;
   uint8_t offset = 0;
@@ -444,7 +444,9 @@ void polar_encoder_fast(uint64_t *A,
     A32_flip[1+offset]=((uint8_t *)&Aprime)[2];
     A32_flip[2+offset]=((uint8_t *)&Aprime)[1];
     A32_flip[3+offset]=((uint8_t *)&Aprime)[0];
-    tcrc = (uint64_t)((crcmask^(crc24c(A32_flip,8*offset+bitlen)>>8)));
+    if      (polarParams->crcParityBits == 24) tcrc = (uint64_t)(((crcmask^(crc24c(A32_flip,8*offset+bitlen)>>8)))&0xffffff);
+    else if (polarParams->crcParityBits == 11) tcrc = (uint64_t)(((crcmask^(crc11(A32_flip,bitlen)>>21)))&0x7ff);
+    else if (polarParams->crcParityBits == 6) tcrc = (uint64_t)(((crcmask^(crc6(A32_flip,bitlen)>>26)))&0x3f);
   } else if (bitlen<=64) {
     uint8_t A64_flip[8+offset];
     if (ones_flag) {
@@ -461,7 +463,8 @@ void polar_encoder_fast(uint64_t *A,
     A64_flip[5+offset]=((uint8_t *)&Aprime)[2];
     A64_flip[6+offset]=((uint8_t *)&Aprime)[1];
     A64_flip[7+offset]=((uint8_t *)&Aprime)[0];
-    tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,8*offset+bitlen)>>8)));
+    if (polarParams->crcParityBits == 24)      tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,8*offset+bitlen)>>8)))&0xffffff;
+    else if (polarParams->crcParityBits == 11) tcrc = (uint64_t)((crcmask^(crc11(A64_flip,bitlen)>>21)))&0x7ff;
   }
   else if (bitlen<=128) {
     uint8_t A128_flip[16+offset];
@@ -479,7 +482,8 @@ void polar_encoder_fast(uint64_t *A,
     A128_flip[10+offset]=((uint8_t*)&Aprime)[5];	  A128_flip[11+offset]=((uint8_t*)&Aprime)[4];
     A128_flip[12+offset]=((uint8_t*)&Aprime)[3];	  A128_flip[13+offset]=((uint8_t*)&Aprime)[2];
     A128_flip[14+offset]=((uint8_t*)&Aprime)[1];	  A128_flip[15+offset]=((uint8_t*)&Aprime)[0];
-    tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,8*offset+bitlen)>>8)));
+    if (polarParams->crcParityBits == 24) tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,8*offset+bitlen)>>8)))&0xffffff;
+    else if (polarParams->crcParityBits == 11) tcrc = (uint64_t)((crcmask^(crc11(A128_flip,bitlen)>>21)))&0x7ff;
   }
 
   int n;
@@ -522,6 +526,7 @@ void polar_encoder_fast(uint64_t *A,
 
 #ifdef DEBUG_POLAR_ENCODER
 
+  printf("Polar encoder: (N,K) : (%d,%d)\n",polarParams->N,polarParams->K);
   if (polarParams->K<65)
     printf("A %llx B %llx Cprime %llx (payload bits %d,crc %x)\n",
            (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),

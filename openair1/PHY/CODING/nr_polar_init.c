@@ -87,15 +87,43 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
       newPolarInitNode->crcCorrectionBits = NR_POLAR_DCI_CRC_ERROR_CORRECTION_BITS;
       newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
       //printf("Initializing polar parameters for DCI (K %d, E %d, L %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength,aggregation_level);
-    } else if (messageType == -1) { //UCI
+    } else if (messageType == 2) { //UCI PUCCH2
+      AssertFatal(aggregation_level>2,"Aggregation level (%d) for PUCCH 2 encoding is NPRB and should be > 2\n",aggregation_level);
+      AssertFatal(messageLength>11,"Message length %d is too short for polar encoding of UCI\n",messageLength);
+      newPolarInitNode->n_max = NR_POLAR_PUCCH_N_MAX;
+      newPolarInitNode->i_il = NR_POLAR_PUCCH_I_IL;
+      newPolarInitNode->encoderLength = aggregation_level * 16;
+
+      newPolarInitNode->i_seg = 0;
+      
+      if ((messageLength >= 360 && newPolarInitNode->encoderLength >= 1088)||
+	  (messageLength >= 1013)) newPolarInitNode->i_seg = 1;
+
+      newPolarInitNode->crcParityBits = 11;
+      newPolarInitNode->n_pc = 0;
+      newPolarInitNode->n_pc_wm = 0;
+
+      if (messageLength < 20) {
+	newPolarInitNode->crcParityBits = 6;
+	newPolarInitNode->n_pc = 3;
+	if ((newPolarInitNode->encoderLength - messageLength - 6 + 3) < 193) newPolarInitNode->n_pc_wm = 1; 
+      }
+
+
+
+      newPolarInitNode->i_bil = NR_POLAR_PUCCH_I_BIL;
+
+      newPolarInitNode->payloadBits = messageLength;
+      newPolarInitNode->crcCorrectionBits = NR_POLAR_PUCCH_CRC_ERROR_CORRECTION_BITS;
+      //newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
     } else {
       AssertFatal(1 == 0, "[nr_polar_init] Incorrect Message Type(%d)", messageType);
     }
 
     newPolarInitNode->K = newPolarInitNode->payloadBits + newPolarInitNode->crcParityBits; // Number of bits to encode.
     newPolarInitNode->N = nr_polar_output_length(newPolarInitNode->K,
-    											 newPolarInitNode->encoderLength,
-												 newPolarInitNode->n_max);
+						 newPolarInitNode->encoderLength,
+						 newPolarInitNode->n_max);
     newPolarInitNode->n = log2(newPolarInitNode->N);
     newPolarInitNode->G_N = nr_polar_kronecker_power_matrices(newPolarInitNode->n);
     //polar_encoder vectors:
