@@ -1452,7 +1452,7 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                        R,
 		       pdsch_rel15->rbSize,
 		       N_sh_symb,
-		       N_PRB_DMRS,
+		       N_PRB_DMRS, // FIXME // This should be multiplied by the number of dmrs symbols
 		       N_PRB_oh,
                        tb_scaling,
 		       pdsch_rel15->nrOfLayers)>>3;
@@ -1742,7 +1742,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       size += dci_pdu->time_domain_assignment.nbits;
       // VRB to PRB mapping 
-      if (pdsch_config->resourceAllocation == 1) {
+      if ((pdsch_config->resourceAllocation == 1) && (bwp->bwp_Dedicated->pdsch_Config->choice.setup->vrb_ToPRB_Interleaver != NULL)) {
         dci_pdu->vrb_to_prb_mapping.nbits = 1;
         size += dci_pdu->vrb_to_prb_mapping.nbits;
       }
@@ -1791,7 +1791,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       NR_SetupRelease_DMRS_DownlinkConfig_t *typeA = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA;
       NR_SetupRelease_DMRS_DownlinkConfig_t *typeB = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB;
       dci_pdu->antenna_ports.nbits = getAntPortBitWidth(typeA,typeB);
-      size += dci_pdu->antenna_ports.nbits; 
+      size += dci_pdu->antenna_ports.nbits;
       // Tx Config Indication
       long *isTciEnable = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI;
       if (isTciEnable != NULL) {

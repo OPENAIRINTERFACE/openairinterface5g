@@ -76,76 +76,11 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 }
 
 
-void handle_nr_sr(NR_UL_IND_t *UL_info) {
-
-
- /* if (nfapi_mode == 1)  // PNF
-  {
-    if (UL_info->sr_ind.sr_indication_body.number_of_srs>0)
-    {
-      //      oai_nfapi_sr_indication(&UL_info->sr_ind);
-    }
-  }
-  else
-  {
-
-    
-    for (int i=0;i<UL_info->sr_ind.sr_indication_body.number_of_srs;i++)
-      SR_indication(UL_info->module_id,
-          UL_info->CC_id,
-          UL_info->frame,
-          UL_info->slot,
-          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].rx_ue_information.rnti,
-          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].ul_cqi_information.ul_cqi);
-
-
-
-  }
-
-  UL_info->sr_ind.sr_indication_body.number_of_srs=0;*/
+void handle_nr_uci(NR_UL_IND_t *UL_info) {
+  // TODO
+  UL_info->uci_ind.num_ucis = 0;
 }
 
-void handle_nr_cqi(NR_UL_IND_t *UL_info) {
-
-    /*
-    for (int i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
-      cqi_indication(UL_info->module_id,
-          UL_info->CC_id,
-          UL_info->frame,
-          UL_info->slot,
-          UL_info->cqi_ind.cqi_pdu_list[i].rx_ue_information.rnti,
-          &UL_info->cqi_ind.cqi_pdu_list[i].cqi_indication_rel9,
-          UL_info->cqi_ind.cqi_raw_pdu_list[i].pdu,
-          &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
-    
-    UL_info->cqi_ind.number_of_cqis=0;*/
-
-}
-
-void handle_nr_harq(NR_UL_IND_t *UL_info) {
- /*  if (nfapi_mode == 1 && UL_info->harq_ind.harq_indication_body.number_of_harqs>0) { // PNF
-    //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
-       int retval = oai_nfapi_harq_indication(&UL_info->harq_ind);
-
-    if (retval!=0) {
-      LOG_E(PHY, "Failed to encode NFAPI HARQ_IND retval:%d\n", retval);
-    }
-    
-    UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
-  }
-  else
-  {
-    
-    for (int i=0;i<UL_info->harq_ind.harq_indication_body.number_of_harqs;i++)
-      harq_indication(UL_info->module_id,
-          UL_info->CC_id,
-          NFAPI_SFNSF2SFN(UL_info->harq_ind.sfn_sf),
-          NFAPI_SFNSF2SF(UL_info->harq_ind.sfn_sf),
-          &UL_info->harq_ind.harq_indication_body.harq_pdu_list[i]);
-    
-    UL_info->harq_ind.harq_indication_body.number_of_harqs=0;
-  }*/
-}
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
   if(nfapi_mode == 1) {
@@ -245,9 +180,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_sr(UL_info);
-  handle_nr_cqi(UL_info);
-  handle_nr_harq(UL_info);
+  handle_nr_uci(UL_info);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);

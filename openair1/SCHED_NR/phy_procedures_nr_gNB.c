@@ -50,6 +50,8 @@
 
 #include "intertask_interface.h"
 
+//#define DEBUG_RXDATA
+
 uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
 
 extern uint8_t nfapi_mode;
@@ -228,7 +230,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
     number_dmrs_symbols += ((pusch_pdu->ul_dmrs_symb_pos)>>l)&0x01;
 
   if (nodata_dmrs)
-    nb_re_dmrs = 12*number_dmrs_symbols;
+    nb_re_dmrs = 12;
   else
     nb_re_dmrs = ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1)?6:4);
 
@@ -243,7 +245,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
-
   start_meas(&gNB->ulsch_unscrambling_stats);
   nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
                         G,
@@ -423,6 +424,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
     int harq_pid;
+    int no_sig;
     NR_UL_gNB_HARQ_t *ulsch_harq;
 
     if ((ulsch) &&
@@ -436,10 +438,24 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	    (ulsch_harq->slot == slot_rx) &&
 	    (ulsch_harq->handled == 0)){
 
+#ifdef DEBUG_RXDATA
+          NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+          RU_t *ru = gNB->RU_list[0];
+          int slot_offset = frame_parms->get_samples_slot_timestamp(slot_rx,frame_parms,0);
+          slot_offset -= ru->N_TA_offset;
+          char name[128];
+          FILE *f;
+          sprintf(name, "rxdata.%d.%d.raw", frame_rx,slot_rx);
+          f = fopen(name, "w"); if (f == NULL) exit(1);
+          fwrite(&ru->common.rxdata[0][slot_offset],2,frame_parms->get_samples_per_slot(slot_rx,frame_parms)*2, f);
+          fclose(f);
+#endif
+
 	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
 	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	    nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+            if (no_sig) return;
 	  }
 	  //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
 	  //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
