@@ -19,6 +19,17 @@
  *      contact@openairinterface.org
  */
 
+ /*! \file PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_defs.h
+ * \brief LDPC cuda support BG1 all length
+ * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING,LIN
+ * \email tyhsu@cs.nctu.edu.tw
+ * \date 13-05-2020
+ * \version 
+ * \note
+ * \warning
+ */
+ 
+
 /*!\file nrLDPC_defs.h
  * \brief Defines all constants and buffers for the LDPC decoder
  * \author Sebastian Wagner (TCL Communications) Email: <mailto:sebastian.wagner@tcl.com>

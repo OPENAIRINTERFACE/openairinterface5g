@@ -4,6 +4,17 @@
 #include "nrLDPC_types.h"
 #include "nrLDPC_init_mem.h"
 
+/*! \file PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h
+ * \brief LDPC cuda support BG1 all length
+ * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING,LIN
+ * \email tyhsu@cs.nctu.edu.tw
+ * \date 13-05-2020
+ * \version 
+ * \note
+ * \warning
+ */
+ 
+
 /***
    \brief LDPC decoder
    \param p_decParams LDPC decoder parameters

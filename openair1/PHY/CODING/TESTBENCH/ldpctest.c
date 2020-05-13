@@ -20,16 +20,6 @@
  */
 // add GPU mode (-G 1)
 
- /*! \file PHY/CODING/TESTBENCH/ldpctest.c
- * \brief Merge remote-tracking branch 'origin/develop' into NCTU_OpinConnect_LDPC
- * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING,LIN
- * \email tyhsu@cs.nctu.edu.tw
- * \date 13-05-2020
- * \version 
- * \note
- * \warning
- */
-
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>

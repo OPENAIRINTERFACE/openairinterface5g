@@ -1,3 +1,13 @@
+ /*! \file PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
+ * \brief LDPC cuda support BG1 all length
+ * \author NCTU OpinConnect Terng-Yin Hsu,WEI-YING,LIN
+ * \email tyhsu@cs.nctu.edu.tw
+ * \date 13-05-2020
+ * \version 
+ * \note
+ * \warning
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <cuda_runtime.h>
@@ -143,8 +153,7 @@ __global__ void ldpc_cnp_kernel_1st_iter(char * dev_llr, char * dev_dt, int BG, 
 	for(int i = 0; i < s; i++){
 		// v0: Best performance so far. 0.75f is the value of alpha.
 		sq = 1 - 2 * ((Q_sign >> i) & 0x01);
-//		R_temp = 0.75f * sign * sq * (i != idx_min ? rmin1 : rmin2);
-		R_temp = sign * sq * (i != idx_min ? rmin1 : rmin2);
+		R_temp = 0.8 * sign * sq * (i != idx_min ? rmin1 : rmin2);
 		// write results to global memory
 		h_element_t = dev_h_compact1[i*row+iBlkRow];
 		int addr_temp = offsetR + h_element_t.y * row * Zc;
@@ -214,8 +223,8 @@ __global__ void ldpc_cnp_kernel(char * dev_llr, char * dev_dt, int BG, int row, 
 //	The 2nd recursion
 	for(int i = 0; i < s; i ++){
 		sq = 1 - 2 * ((Q_sign >> i) & 0x01);
-//		R_temp = 0.75f * sign * sq * (i != idx_min ? rmin1 : rmin2);
-		R_temp = sign * sq * (i != idx_min ? rmin1 : rmin2);
+		R_temp = 0.8 * sign * sq * (i != idx_min ? rmin1 : rmin2);
+		
 
 		// write results to global memory
 		h_element_t = dev_h_compact1[i*row+iBlkRow];
@@ -251,7 +260,7 @@ ldpc_vnp_kernel_normal(char * dev_llr, char * dev_dt, char * dev_const_llr, int 
 	{
 		h_element_t = dev_h_compact2[i*col+iBlkCol];
 
-		shift_t = h_element_t.value;
+		shift_t = h_element_t.value%Zc;
 		iBlkRow = h_element_t.x;
 
 		sf = iSubCol - shift_t;
@@ -472,7 +481,7 @@ start_meas(time_decoder);
 	
 
 // Define CUDA kernel dimension
-	int blockSizeX = (Zc + 32 - 1)/ 32 * 32;	// round block size to multiples of 32
+	int blockSizeX = Zc;
 	dim3 dimGridKernel1(row, MC, 1); 	// dim of the thread blocks
 	dim3 dimBlockKernel1(blockSizeX, 1, 1);
 
@@ -513,7 +522,7 @@ start_meas(time_decoder);
 			(dev_llr, dev_dt, dev_const_llr, BG, row, col, Zc);
 		
 	}
-	int pack = block_length/128;
+	int pack = (block_length/128)+1;
 	dim3 pack_block(pack, MC, 1);
 	pack_decoded_bit<<<pack_block,128>>>(dev_llr, dev_tmp, col, Zc);
 
