@@ -801,7 +801,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->dmrs_config_type = 0;  //dmrs-type 1 (the one with a single DMRS symbol in the beginning)
   pusch_pdu->ul_dmrs_scrambling_id =  0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
-  //pusch_pdu->num_dmrs_cdm_grps_no_data;
+  pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
   //pusch_pdu->dmrs_ports; //DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   pusch_pdu->resource_alloc = 1; //type 1
@@ -820,17 +820,24 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 0;
 
-  uint8_t no_data_in_dmrs = 1; // temp implementation
   uint8_t num_dmrs_symb = 0;
 
   for(int dmrs_counter = pusch_pdu->start_symbol_index; dmrs_counter < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; dmrs_counter++)
     num_dmrs_symb += ((pusch_pdu->ul_dmrs_symb_pos >> dmrs_counter) & 1);
 
+  uint8_t N_PRB_DMRS;
+  if (pusch_pdu->dmrs_config_type == 0) {
+    N_PRB_DMRS = pusch_pdu->num_dmrs_cdm_grps_no_data*6;
+  }
+  else {
+    N_PRB_DMRS = pusch_pdu->num_dmrs_cdm_grps_no_data*4;
+  }
+
   pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
 						 pusch_pdu->target_code_rate,
 						 pusch_pdu->rb_size,
 						 pusch_pdu->nr_of_symbols,
-						 ( no_data_in_dmrs ? 12 : ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1) ? 6 : 4) ) * num_dmrs_symb,
+						 N_PRB_DMRS * num_dmrs_symb,
 						 0, //nb_rb_oh
                                                  0,
 						 pusch_pdu->nrOfLayers)>>3;

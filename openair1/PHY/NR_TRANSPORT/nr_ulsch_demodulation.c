@@ -1028,7 +1028,6 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   int avg[4];
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
-  uint8_t nodata_dmrs = 1; // FIXME to be properly configured from fapi
 
   dmrs_symbol_flag = 0;
   ptrs_symbol_flag = 0;
@@ -1060,10 +1059,15 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   if (dmrs_symbol_flag == 1){
     if (((rel15_ul->ul_dmrs_symb_pos)>>((symbol+1)%frame_parms->symbols_per_slot))&0x01)
       AssertFatal(1==0,"Double DMRS configuration is not yet supported\n");
-    if (nodata_dmrs)
-      nb_re_pusch = 0;
-    else
-      nb_re_pusch = rel15_ul->rb_size * ((rel15_ul->dmrs_config_type==pusch_dmrs_type1)?6:8);
+
+    if (rel15_ul->dmrs_config_type == 0) {
+      // if no data in dmrs cdm group is 1 only even REs have no data
+      // if no data in dmrs cdm group is 2 both odd and even REs have no data
+      nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*6));
+    }
+    else {
+      nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*4));
+    }
     gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
   } else {
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
