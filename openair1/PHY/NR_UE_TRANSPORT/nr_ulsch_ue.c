@@ -126,7 +126,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   Nid_cell = 0;
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   number_dmrs_symbols = 0;
-  uint8_t mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
@@ -140,7 +139,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     for (i = start_symbol; i < start_symbol + number_of_symbols; i++) {
 
-      if((ul_dmrs_symb_pos >> (mapping_type ? (i - start_symbol) : i)) & 0x01)
+      if((ul_dmrs_symb_pos >> i) & 0x01)
         number_dmrs_symbols += 1;
 
     }
@@ -230,12 +229,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     /////////////////////////ULSCH scrambling/////////////////////////
     ///////////
 
-    available_bits = nr_get_G(nb_rb,
-                              number_of_symbols,
-                              nb_dmrs_re_per_rb,
-                              number_dmrs_symbols,
-                              mod_order,
-                              1);
+    available_bits = G;
 
     memset(scrambled_output[cwd_index], 0, ((available_bits>>5)+1)*sizeof(uint32_t));
 
@@ -326,7 +320,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   for (l = start_symbol; l < start_symbol + number_of_symbols; l++) {
 
-    if((ul_dmrs_symb_pos >> ((mapping_type)?l-start_symbol:l)) & 0x01)
+    if((ul_dmrs_symb_pos >> l) & 0x01)
       is_dmrs = 1;
     else
       is_dmrs = 0;
@@ -372,7 +366,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     uint8_t k_prime=0;
     uint8_t is_dmrs, is_ptrs;
-    uint8_t l_ref;
     uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+number_of_symbols; l++) {
@@ -380,7 +373,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       k = start_sc;
       n = 0;
       dmrs_idx = 0;
-      l_ref = (mapping_type) ? l-start_symbol : l;
 
       for (i=0; i< nb_rb*NR_NB_SC_PER_RB; i++) {
 
@@ -389,7 +381,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         is_dmrs = 0;
         is_ptrs = 0;
 
-        if((ul_dmrs_symb_pos >> l_ref) & 0x01) {
+        if((ul_dmrs_symb_pos >> l) & 0x01) {
           if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%frame_parms->ofdm_symbol_size))
             is_dmrs = 1;
         }

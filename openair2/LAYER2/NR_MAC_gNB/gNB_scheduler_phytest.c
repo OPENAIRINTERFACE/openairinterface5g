@@ -810,7 +810,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 						 pusch_pdu->target_code_rate,
 						 pusch_pdu->rb_size,
 						 pusch_pdu->nr_of_symbols,
-						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
+						 pusch_pdu->dmrs_config_type?4:6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
 						 pusch_pdu->nrOfLayers)>>3;
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported

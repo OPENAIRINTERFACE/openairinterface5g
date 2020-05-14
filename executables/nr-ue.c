@@ -359,7 +359,7 @@ static void UE_synch(void *arg) {
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
   uint32_t rb_size, rb_start;
-  uint16_t rnti, l_prime_mask, n_rb0, n_rb1;
+  uint16_t rnti, l_prime_mask, n_rb0, n_rb1, pdu_bit_map;
   uint8_t nr_of_symbols, start_symbol_index, mcs_index, mcs_table, nrOfLayers, harq_process_id, rv_index, dmrs_config_type;
   uint8_t ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, ptrs_time_density, ptrs_freq_density;
   nr_dcireq_t dcireq;
@@ -399,6 +399,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     ptrs_mcs3 = 10;
     n_rb0 = 25;
     n_rb1 = 75;
+    pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
     ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, mcs_table);
     ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, rb_size);
     //------------------------------------------------------------------------------//
@@ -419,6 +420,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
     scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));

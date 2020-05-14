@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
-  int start_symbol = 0;
+  int start_symbol = 2;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t precod_nbr_layers = 1;
@@ -638,9 +638,9 @@ int main(int argc, char **argv)
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
-      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4) * number_dmrs_symbols;
-      available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, precod_nbr_layers);
+      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+      available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
+      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, precod_nbr_layers);
 
       pusch_pdu->pusch_data.tb_size = TBS>>3;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
