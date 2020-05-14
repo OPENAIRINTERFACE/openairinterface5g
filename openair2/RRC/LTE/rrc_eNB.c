@@ -97,6 +97,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #define ASN_MAX_ENCODE_SIZE 4096
+#define NUMBEROF_DRBS_TOBE_ADDED 1
 static int encode_CG_ConfigInfo(char *buffer,int buffer_size,rrc_eNB_ue_context_t *const ue_context_pP,int *enc_size);
 static int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
 static void free_rb_config(struct NR_RadioBearerConfig *rb_config);
@@ -2124,6 +2125,27 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_p->Srb0.Tx_buffer.payload_size);
 }
+#ifdef GES_ENDC_SUPPORT
+void rrc_generate_SgNBReleaseRequest(
+  const protocol_ctxt_t *const ctxt_pP,                                         
+  rrc_eNB_ue_context_t *const ue_context_pP
+)
+//-----------------------------------------------------------------------------
+{
+  MessageDef      *msg;
+  msg = itti_alloc_new_message(TASK_RRC_ENB, X2AP_ENDC_SGNB_RELEASE_REQ);
+  memset(&(X2AP_ENDC_SGNB_RELEASE_REQ(msg)), 0, sizeof(x2ap_ENDC_sgnb_release_req_t));
+ // X2AP_ENDC_SGNB_RELEASE_REQ(msg).MeNB_ue_x2_id = ;
+ // X2AP_ENDC_SGNB_RELEASE_REQ(msg).SgNB_ue_x2_id = ;
+ // X2AP_ENDC_SGNB_RELEASE_REQ(msg).cause = ;
+ // X2AP_ENDC_SGNB_RELEASE_REQ(msg).target_physCellId = ;
+  LOG_I(RRC,
+    "[eNB %d] frame %d UE rnti %x transmitting sgnb release request to sgnb \n",
+	ctxt_pP->module_id,ctxt_pP->frame,ctxt_pP->rnti);
+  itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+  return;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 /*
@@ -2142,6 +2164,15 @@ rrc_eNB_generate_RRCConnectionRelease(
   memset(buffer, 0, RRC_BUF_SIZE);
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+#ifdef GES_ENDC_SUPPORT
+  if(ue_context_pP != NULL)
+  {
+	  if(ue_context_pP->ue_context.Status == RRC_NR_NSA)
+	  {
+		  //rrc_eNB_generate_SgNBReleaseRequest(ctxt_pP,ue_context_pP);
+	  }
+  }
+#endif
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
@@ -4310,6 +4341,7 @@ static int encode_CG_ConfigInfo(
   asn_enc_rval_t enc_rval;
   int RRC_OK = 1;
   int index = 0;
+  char temp_buff[4096];
 
   rb_config = calloc(1,sizeof( struct NR_RadioBearerConfig));
   AssertFatal(rb_config != NULL,"failed to allocate memory for rb_config");
@@ -4322,7 +4354,7 @@ static int encode_CG_ConfigInfo(
 		= calloc(ue_context_pP->ue_context.DRB_configList->list.count, sizeof(struct NR_DRB_ToAddMod));
 	AssertFatal( rb_config->drb_ToAddModList->list.array != NULL,
 		"falied to allocate memory for list.array");
-	  for(index = 0;index < ue_context_pP->ue_context.DRB_configList->list.count;index++) {
+	  for(index = 0;index < NUMBEROF_DRBS_TOBE_ADDED;index++) {
 	    rb_config->drb_ToAddModList->list.array[index] 
 			= calloc(1,sizeof(struct NR_DRB_ToAddMod));
 	    AssertFatal(rb_config->drb_ToAddModList->list.array[index] != NULL,
@@ -4339,7 +4371,30 @@ static int encode_CG_ConfigInfo(
 	      rb_config->drb_ToAddModList->list.array[index]->cnAssociation->choice.eps_BearerIdentity
 			  =*(ue_context_pP->ue_context.DRB_configList->list.array[index]->eps_BearerIdentity);
 		}
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config = calloc(1,sizeof(struct NR_PDCP_Config));
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb = calloc(1,sizeof(struct NR_PDCP_Config__drb));
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->discardTimer = calloc(1,sizeof(long*));
+		*rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->discardTimer 
+		  = *(ue_context_pP->ue_context.DRB_configList->list.array[index]->pdcp_Config->discardTimer);
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(long*));
+		*rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeUL 
+		  = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+	    rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(long*));
+	    *rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->pdcp_SN_SizeDL
+		  = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->headerCompression.present
+		  = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+		rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->t_Reordering = calloc(1,sizeof(long*));
+		*rb_config->drb_ToAddModList->list.array[index]->pdcp_Config->t_Reordering
+		  = NR_PDCP_Config__t_Reordering_ms0;        
 	  }
+	  rb_config->securityConfig = calloc(1,sizeof(struct NR_SecurityConfig ));
+	  rb_config->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(struct NR_SecurityAlgorithmConfig));
+	  rb_config->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
+	  rb_config->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm = NULL;
+	  rb_config->securityConfig->keyToUse = calloc(1,sizeof(long*));
+	  *rb_config->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
   }
 
   cg_configinfo = calloc(1,sizeof(struct NR_CG_ConfigInfo));
@@ -4358,7 +4413,17 @@ static int encode_CG_ConfigInfo(
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo 
 	  = calloc(1,sizeof( OCTET_STRING_t));
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
-	  ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
+      ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
+#if 1
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,
+      (void*)ue_context_pP->ue_context.UE_Capability,temp_buff,4096);
+  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+      enc_rval.failed_type->name, enc_rval.encoded);
+  OCTET_STRING_fromBuf( cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo,
+      (const char *)temp_buff,(enc_rval.encoded+7)>>3);
+#endif
+
+#if 0
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->size 
 	  = ue_context_pP->ue_context.UE_Capability_size;
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf 
@@ -4367,8 +4432,19 @@ static int encode_CG_ConfigInfo(
 	  ue_CapabilityInfo->buf  != NULL, "failed to allocate memory for buf");
   memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo->buf,
 	  ue_context_pP->ue_context.UE_Capability,ue_context_pP->ue_context.UE_Capability_size);
+#endif
+#if 1
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config 
 	  = calloc(1,sizeof(OCTET_STRING_t));
+  AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
+	  mcg_RB_Config != NULL, "failed to allocate memory for mcg_rb_config");
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig,NULL,(void *)rb_config,temp_buff,4096);
+  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+      enc_rval.failed_type->name, enc_rval.encoded);
+  OCTET_STRING_fromBuf(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config,
+      (const char *)temp_buff, (enc_rval.encoded+7)>>3);
+#endif
+#if 0
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
 	  mcg_RB_Config != NULL, "failed to allocate memory for mcg_rb_config");
   cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->size 
@@ -4379,8 +4455,9 @@ static int encode_CG_ConfigInfo(
 	  mcg_RB_Config->buf != NULL,"failed to allocate memory for buf");
   memcpy(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config->buf,
 	  rb_config,sizeof(struct NR_RadioBearerConfig));
+#endif
  // this xer_fprint can be enabled for additional debugging messages 
- // xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void*)cg_configinfo);
+  xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo,(void*)cg_configinfo);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CG_ConfigInfo,NULL,(void*)cg_configinfo,
 	  buffer,buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",

@@ -2032,8 +2032,20 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   reconfig->nonCriticalExtension = NULL;
 }
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, x2ap_ENDC_sgnb_addition_req_t *m,   struct NR_CG_ConfigInfo_IEs *cg_config_info) {
+  if(cg_config_info->mcg_RB_Config) {
+	asn_dec_rval dec_rval = uper_decode(NULL,                               
+                              &asn_DEF_NR_RadioBearerConfig,
+                              (void**)&rbconfig,                
+                              cg_config_info->mcg_RB_Config->buf,
+                              cg_ConfigInfo->mcg_RB_Config->size, 0, 0);
 
+	if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+	  AssertFatal(1==0,"[InterNode] Failed to decode mcg_rb_config (%zu bits), size of OCTET_STRING %lu\n",
+        dec_rval.consumed, cg_ConfigInfo->ue_CapabilityInfo->size);
+	}
+  }
+ #if 0
   rbconfig->srb_ToAddModList = NULL;
   rbconfig->srb3_ToRelease = NULL;
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
@@ -2074,6 +2086,7 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
   rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
   rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
   *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+#endif
 
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 }
