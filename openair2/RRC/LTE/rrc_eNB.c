@@ -2126,6 +2126,7 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
         ue_p->Srb0.Tx_buffer.payload_size);
 }
 #ifdef GES_ENDC_SUPPORT
+#if 0
 void rrc_generate_SgNBReleaseRequest(
   const protocol_ctxt_t *const ctxt_pP,                                         
   rrc_eNB_ue_context_t *const ue_context_pP
@@ -2146,7 +2147,7 @@ void rrc_generate_SgNBReleaseRequest(
   return;
 }
 #endif
-
+#endif
 //-----------------------------------------------------------------------------
 /*
 * Generate the RRC Connection Release to UE.
@@ -2165,6 +2166,7 @@ rrc_eNB_generate_RRCConnectionRelease(
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 #ifdef GES_ENDC_SUPPORT
+#if 0
   if(ue_context_pP != NULL)
   {
 	  if(ue_context_pP->ue_context.Status == RRC_NR_NSA)
@@ -2172,6 +2174,7 @@ rrc_eNB_generate_RRCConnectionRelease(
 		  //rrc_eNB_generate_SgNBReleaseRequest(ctxt_pP,ue_context_pP);
 	  }
   }
+#endif
 #endif
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
@@ -4341,7 +4344,7 @@ static int encode_CG_ConfigInfo(
   asn_enc_rval_t enc_rval;
   int RRC_OK = 1;
   int index = 0;
-  char temp_buff[4096];
+  char temp_buff[ASN_MAX_ENCODE_SIZE];
 
   rb_config = calloc(1,sizeof( struct NR_RadioBearerConfig));
   AssertFatal(rb_config != NULL,"failed to allocate memory for rb_config");
@@ -4416,7 +4419,7 @@ static int encode_CG_ConfigInfo(
       ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
 #if 1
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,
-      (void*)ue_context_pP->ue_context.UE_Capability,temp_buff,4096);
+      (void*)ue_context_pP->ue_context.UE_Capability,temp_buff,ASN_MAX_ENCODE_SIZE);
   AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
       enc_rval.failed_type->name, enc_rval.encoded);
   OCTET_STRING_fromBuf( cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo,
@@ -4438,7 +4441,7 @@ static int encode_CG_ConfigInfo(
 	  = calloc(1,sizeof(OCTET_STRING_t));
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->
 	  mcg_RB_Config != NULL, "failed to allocate memory for mcg_rb_config");
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig,NULL,(void *)rb_config,temp_buff,4096);
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RadioBearerConfig,NULL,(void *)rb_config,temp_buff,ASN_MAX_ENCODE_SIZE);
   AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
       enc_rval.failed_type->name, enc_rval.encoded);
   OCTET_STRING_fromBuf(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->mcg_RB_Config,
