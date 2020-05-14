@@ -39,7 +39,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m,   struct NR_CG_ConfigInfo_IEs * cg_config_info) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
   OCTET_STRING_t *ueCapabilityRAT_Container_nr = NULL;
@@ -96,12 +96,25 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1 && ueCapabilityRAT_Container_MRDC != NULL) ) {
      xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
-  }  
-
-  rrc_add_nsa_user(rrc,ue_context_p, m, cg_config_info);
+  } 
+   
+  if(cg_config_info->mcg_RB_Config) {
+	   asn_dec_rval_t dec_rval = uper_decode(NULL,
+                              &asn_DEF_NR_RadioBearerConfig,
+                              (void**)&ue_context_p->ue_context.rb_config,
+                              cg_config_info->mcg_RB_Config->buf,
+                              cg_config_info->mcg_RB_Config->size, 0, 0);
+	   
+	   if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+         AssertFatal(1==0,"[InterNode] Failed to decode mcg_rb_config (%zu bits), size of OCTET_STRING %lu\n",
+           dec_rval.consumed, cg_config_info->mcg_RB_Config->size);
+    }
+  }
+  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)ue_context_p->ue_context.rb_config);
+  rrc_add_nsa_user(rrc,ue_context_p, m);
 }
 
-void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m,   struct NR_CG_ConfigInfo_IEs * cg_config_info) {
+void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
 
 // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
 
@@ -133,7 +146,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
 
-  fill_default_rbconfig(ue_context_p->ue_context.rb_config,m, cg_config_info);
+  //fill_default_rbconfig(ue_context_p->ue_context.rb_config,m, cg_config_info);
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void*)CG_Config,0,sizeof(*CG_Config));

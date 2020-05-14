@@ -2031,8 +2031,9 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   // nonCriticalExtension
   reconfig->nonCriticalExtension = NULL;
 }
-
+#if 0
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, x2ap_ENDC_sgnb_addition_req_t *m,   struct NR_CG_ConfigInfo_IEs *cg_config_info) {
+/*
   if(cg_config_info->mcg_RB_Config) {
 	asn_dec_rval dec_rval = uper_decode(NULL,                               
                               &asn_DEF_NR_RadioBearerConfig,
@@ -2045,6 +2046,8 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, x2ap_ENDC_sgnb_addi
         dec_rval.consumed, cg_ConfigInfo->ue_CapabilityInfo->size);
 	}
   }
+  */
+
  #if 0
   rbconfig->srb_ToAddModList = NULL;
   rbconfig->srb3_ToRelease = NULL;
@@ -2090,4 +2093,5 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, x2ap_ENDC_sgnb_addi
 
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 }
+#endif
 #endif
