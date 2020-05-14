@@ -39,7 +39,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 
-void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m) {
+void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m,   struct NR_CG_ConfigInfo_IEs * cg_config_info) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
   OCTET_STRING_t *ueCapabilityRAT_Container_nr = NULL;
@@ -98,10 +98,10 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
      xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }  
 
-  rrc_add_nsa_user(rrc,ue_context_p, m);
+  rrc_add_nsa_user(rrc,ue_context_p, m, cg_config_info);
 }
 
-void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
+void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m,   struct NR_CG_ConfigInfo_IEs * cg_config_info) {
 
 // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
 
@@ -133,7 +133,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
 
-  fill_default_rbconfig(ue_context_p->ue_context.rb_config);
+  fill_default_rbconfig(ue_context_p->ue_context.rb_config,m, cg_config_info);
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void*)CG_Config,0,sizeof(*CG_Config));

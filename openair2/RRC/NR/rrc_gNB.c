@@ -296,11 +296,12 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x2ap_ENDC_sgnb_addition_req_t *m) {
 
 
-    LTE_UL_DCCH_Message_t *LTE_UL_DCCH_Message = NULL; 
+    //LTE_UL_DCCH_Message_t *LTE_UL_DCCH_Message = NULL; 
+	struct NR_CG_ConfigInfo *cg_configinfo = NULL;
 
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-						      &asn_DEF_LTE_UL_DCCH_Message,
-						      (void **)&LTE_UL_DCCH_Message,
+						      &asn_DEF_NR_CG_ConfigInfo,
+						      (void **)&cg_configinfo,
 						      (uint8_t *)m->rrc_buffer,
 						      (int) m->rrc_buffer_size);//m->rrc_buffer_size);
 
@@ -309,13 +310,14 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       AssertFatal(1==0,"NR_UL_DCCH_MESSAGE decode error\n");
 	// free the memory
-	SEQUENCE_free( &asn_DEF_LTE_UL_DCCH_Message, LTE_UL_DCCH_Message, 1 );
+	SEQUENCE_free(&asn_DEF_NR_CG_ConfigInfo, cg_configinfo, 1);
 	return;
     }
-    xer_fprint(stdout,&asn_DEF_LTE_UL_DCCH_Message, LTE_UL_DCCH_Message);
+    xer_fprint(stdout,&asn_DEF_NR_CG_ConfigInfo, cg_configinfo);
     // recreate enough of X2 EN-DC Container
-    AssertFatal(LTE_UL_DCCH_Message->message.choice.c1.present == LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation,
+    AssertFatal(cg_configinfo->criticalExtensions.choice.c1->present == NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo,
 		  "ueCapabilityInformation not present\n");
+#if 0
     NR_CG_ConfigInfo_t *CG_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo));
     CG_ConfigInfo->criticalExtensions.present = NR_CG_ConfigInfo__criticalExtensions_PR_c1;
     CG_ConfigInfo->criticalExtensions.choice.c1 = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1));
@@ -325,11 +327,12 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
     cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof(*cg_ConfigInfo->ue_CapabilityInfo));
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,(void*)&LTE_UL_DCCH_Message->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList,m->rrc_buffer,m->rrc_buffer_size);
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-		   enc_rval.failed_type->name, enc_rval.encoded);
+   		   enc_rval.failed_type->name, enc_rval.encoded);
     OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
-			   (const char *)m->rrc_buffer,
-			   (enc_rval.encoded+7)>>3);
-    parse_CG_ConfigInfo(rrc,CG_ConfigInfo,m);
+   			   (const char *)m->rrc_buffer,
+   			   (enc_rval.encoded+7)>>3);
+#endif
+    parse_CG_ConfigInfo(rrc,cg_configinfo,m);
    
 }
 
