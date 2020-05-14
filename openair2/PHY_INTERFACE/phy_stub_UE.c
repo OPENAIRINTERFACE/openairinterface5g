@@ -828,6 +828,40 @@ void dl_config_req_UE_MAC_bch(int sfn,
   }
 }
 
+void dl_config_req_UE_MAC_mch(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *mch,
+                              int num_ue) {
+  DevAssert(mch->pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE);
+
+  for (int ue_id = 0; ue_id < num_ue; ue_id++) {
+    if (UE_mac_inst[ue_id].UE_mode[0] == NOT_SYNCHED){
+	 LOG_D(MAC,
+            "%s(): Received MCH in NOT_SYNCHED: UE_mode: %d, sfn/sf: %d.%d\n",
+            __func__,
+            UE_mac_inst[ue_id].UE_mode[0],
+            sfn,
+            sf);
+	return;
+
+    } else {
+	 const int pdu_index = mch->mch_pdu.mch_pdu_rel8.pdu_index;
+  	if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
+    	LOG_E(MAC,
+          "%s(): Problem with receiving data: "
+          "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
+          __func__,
+          sfn, sf, mch->pdu_size, mch->mch_pdu.mch_pdu_rel8.pdu_index);
+    	return;
+  	}
+        ue_send_mch_sdu(ue_id, 0, sfn,
+            tx_request_pdu_list[pdu_index].segments[0].segment_data,
+            tx_request_pdu_list[pdu_index].segments[0].segment_length,
+            0,0);
+    }
+  }
+}
+
 void hi_dci0_req_UE_MAC(int sfn,
                         int sf,
                         nfapi_hi_dci0_request_pdu_t* hi_dci0,
@@ -848,7 +882,8 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7,
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
   dl_config_req = (nfapi_dl_config_request_t *)malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -876,9 +911,10 @@ int memcpy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7,
   return 0;
 }
 
-int memcpy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7,
-                         nfapi_ul_config_request_t *req) {
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
+{
   ul_config_req = malloc(sizeof(nfapi_ul_config_request_t));
+
 
   ul_config_req->sfn_sf = req->sfn_sf;
   ul_config_req->vendor_extension = req->vendor_extension;
@@ -923,9 +959,12 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int memcpy_hi_dci0_req(nfapi_pnf_p7_config_t *pnf_p7,
-                       nfapi_hi_dci0_request_t *req) {
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t* pnf_p7, 
+			nfapi_hi_dci0_request_t* req) {
   hi_dci0_req = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
+	//if(req!=0){
+
 
   hi_dci0_req->sfn_sf = req->sfn_sf;
   hi_dci0_req->vendor_extension = req->vendor_extension;
@@ -1040,7 +1079,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,
                             int frame,
                             int subframe,
                             L1_rxtx_proc_t *proc,
-                            nfapi_dl_config_request_pdu_t *dl_config_pdu,
+			    nfapi_dl_config_request_pdu_t *dl_config_pdu,
                             uint8_t codeword_index,
                             uint8_t *sdu) {
 }
@@ -1051,6 +1090,11 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,
                          uint16_t frame,
                          uint8_t subframe,
                          uint8_t srs_present) {
+}
+void handle_nfapi_mch_pdu(PHY_VARS_eNB *eNB,
+                          L1_rxtx_proc_t *proc,
+                          nfapi_dl_config_request_pdu_t *dl_config_pdu,
+                          uint8_t *sdu) {
 }
 
 void phy_config_request(PHY_Config_t *phy_config) {

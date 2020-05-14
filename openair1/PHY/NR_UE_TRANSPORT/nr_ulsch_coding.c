@@ -60,17 +60,16 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
     a_segments = a_segments/273;
   }  
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
       if (ulsch->harq_processes[i]) {
 
         if (ulsch->harq_processes[i]->a) {
-          free16(ulsch->harq_processes[i]->a,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->a,a_segments*1056);
           ulsch->harq_processes[i]->a = NULL;
         }
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->b,a_segments*1056);
           ulsch->harq_processes[i]->b = NULL;
         }
         if (ulsch->harq_processes[i]->e) {

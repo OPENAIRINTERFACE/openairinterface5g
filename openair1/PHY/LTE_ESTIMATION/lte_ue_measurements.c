@@ -1029,7 +1029,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   int N_RB_DL = frame_parms->N_RB_DL;
 
 
-  int rank_tm3_tm4;
+  int rank_tm3_tm4=-1;
 
 
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;

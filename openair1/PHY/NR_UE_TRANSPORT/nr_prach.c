@@ -40,6 +40,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
 
 
@@ -88,7 +89,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   uint16_t *prach_root_sequence_map;
   uint16_t preamble_offset,preamble_shift;
   uint16_t preamble_index0,n_shift_ra,n_shift_ra_bar;
-  uint16_t d_start,numshift;
+  uint16_t d_start=-1,numshift;
 
   uint16_t prach_fmt = get_nr_prach_fmt(prach_ConfigIndex,fp->frame_type,fp->freq_range);
   //uint8_t Nsp=2;

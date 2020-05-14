@@ -1,0 +1,38 @@
+To run tests, simply type: make
+
+Each test is made of:
+  testXX.h         definition of the test
+  testXX.txt.gz    compressed expected output of the test
+
+At runtime, we generate:
+  testXX.run    actual output of the test
+
+test.c is the test driving program.
+
+Only the output lines of the test program starting with "TEST" are
+stored into testXX.txt and testXX.run.
+
+A test is considered a success if testXX.txt and testXX.run are equal.
+
+Only failed tests are reported.
+
+How to define a new test?
+
+1 - get the ID
+
+    Look in the file run_tests.sh, the variable test_count gives you
+    the number of existing tests. The ID of your test has to be
+    test_count + 1.
+
+2 - create files
+
+    Create the file test<ID>.h containing the test, then generate test<ID>.run
+    by running 'make all TEST=test<ID>' and copy test<ID>.run to test<ID>.txt.
+    Then compress this file (gzip -9 test<ID>.txt). Be sure that the output
+    is correct, of course.
+
+    For the file names, replace <ID> by the actual number of the test.
+    For example, if your test ID is 47, then name the files test47.h and
+    test47.txt. And run 'make all TEST=test47' to generate test47.run.
+
+The available instructions for a test are described at the top of test.c.

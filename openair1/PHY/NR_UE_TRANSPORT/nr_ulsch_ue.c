@@ -116,7 +116,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint16_t beta_ptrs; // PTRS parameter related to power control
 
   NR_UE_ULSCH_t *ulsch_ue;
-  NR_UL_UE_HARQ_t *harq_process_ul_ue;
+  NR_UL_UE_HARQ_t *harq_process_ul_ue=NULL;
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
   uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];

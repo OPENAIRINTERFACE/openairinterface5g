@@ -685,7 +685,7 @@ static void dump_dl(Sched_Rsp_t *d) {
 /* debug utility functions end                                              */
 /****************************************************************************/
 
-void UL_indication(UL_IND_t *UL_info) {
+void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 #ifdef DUMP_FAPI
   dump_ul(UL_info);
@@ -767,7 +767,7 @@ void UL_indication(UL_IND_t *UL_info) {
                     "schedule_response is null (mod %d, cc %d)\n",
                     module_id,
                     CC_id);
-        ifi->schedule_response(sched_info);
+        ifi->schedule_response(sched_info, proc );
       }
 
       LOG_D(PHY,"Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);
