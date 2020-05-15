@@ -1457,7 +1457,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
       if (found == 1) {
         // computing slot in which pucch is scheduled
         sched_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
-        sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+        sched_pucch->timing_indicator = i; // index in the list of timing indicators
       }
       else
         AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
