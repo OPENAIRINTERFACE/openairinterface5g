@@ -30,6 +30,9 @@
 * \warning
 */
 
+#ifndef __ETHERNET_USERSPACE_LIB_IF_DEFS__H__
+#define __ETHERNET_USERSPACE_LIB_IF_DEFS__H__
+
 #include <netinet/ether.h>
 #include <stdint.h>
 
@@ -84,3 +87,5 @@
 #define RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES 1280
 #define RAW_IF5_MOBIPASS_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES)
 #define PAYLOAD_MOBIPASS_NUM_SAMPLES  640
+
+#endif
