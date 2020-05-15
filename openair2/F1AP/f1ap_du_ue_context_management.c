@@ -633,9 +633,9 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   int UE_out_of_sync = 0;
 
   for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[instance]->UE_list.active[n] == TRUE
+    if (RC.mac[instance]->UE_info.active[n] == TRUE
         && rnti == UE_RNTI(instance, n)) {
-      UE_out_of_sync = RC.mac[instance]->UE_list.UE_sched_ctrl[n].ul_out_of_sync;
+      UE_out_of_sync = RC.mac[instance]->UE_info.UE_sched_ctrl[n].ul_out_of_sync;
       break;
     }
   }

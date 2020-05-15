@@ -105,6 +105,7 @@ void generate_mch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,uint8_t *a)
   AssertFatal(eNB->dlsch_MCH->harq_processes[0]->pdu != NULL, "attempt to encode a NULL harq PDU\n");
   
   AssertFatal(dlsch_encoding(eNB,
+			     proc,
 			    // a,
 			    eNB->dlsch_MCH->harq_processes[0]->pdu,
 			     1,

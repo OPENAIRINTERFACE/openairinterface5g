@@ -1,41 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
-/*! \file lte-enb.c
- * \brief Top-level threads for eNodeB
- * \author R. Knopp, F. Kaltenberger, Navid Nikaein
- * \date 2012
- * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
- * \note
- * \warning
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
  */
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,9 +56,8 @@
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
 
-#include "LAYER2/MAC/mac.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
+
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
@@ -94,7 +76,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
- 
+
 //static int DEFNRBANDS[] = {7};
 //static int DEFGNBS[] = {0};
 
@@ -714,7 +696,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
@@ -885,7 +867,7 @@ void *ru_thread_prach( void *param ) {
                 0,0
           );
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );*/ 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );*/
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
   }
 
@@ -1112,16 +1094,16 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
       }
     } else if(N_RB == 106) {
       if (fp->threequarter_fs) {
-	cfg->sample_rate=46.08e6;
-	cfg->samples_per_frame = 460800;
-	cfg->tx_bw = 40e6;
-	cfg->rx_bw = 40e6;
+        cfg->sample_rate=46.08e6;
+        cfg->samples_per_frame = 460800;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
       }
       else {
-	cfg->sample_rate=61.44e6;
-	cfg->samples_per_frame = 614400;
-	cfg->tx_bw = 40e6;
-	cfg->rx_bw = 40e6;
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
       }
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
@@ -1285,7 +1267,7 @@ void *ru_stats_thread(void *param) {
 
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
 
-      if (ru->feptx_ofdm){
+      if (ru->feptx_ofdm) {
         print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
         print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
         print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
@@ -1294,7 +1276,7 @@ void *ru_stats_thread(void *param) {
 
       if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
 
-        print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
+      print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
       if (ru->fh_north_out) {
         print_meas(&ru->compression,"compression",NULL,NULL);
         print_meas(&ru->transport,"transport",NULL,NULL);
@@ -1425,7 +1407,7 @@ void *ru_thread_tx( void *param ) {
           L1_proc->instance_cnt_RUs = 0;
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE,L1_proc->instance_cnt_RUs);
           AssertFatal(pthread_cond_signal(&L1_proc->cond_RUs) == 0,
-                       "ERROR pthread_cond_signal for gNB_L1_thread\n");
+                      "ERROR pthread_cond_signal for gNB_L1_thread\n");
         } //else AssertFatal(1==0,"gNB TX thread is not ready\n");
         ret = pthread_mutex_unlock(&L1_proc->mutex_RUs_tx);
         AssertFatal(ret == 0,"mutex_unlock returns %d\n",ret);
@@ -2350,9 +2332,27 @@ void RCconfig_RU(void)
         }
       }
       else {
-	RC.ru[j]->openair0_cfg.clock_source = unset;
+        RC.ru[j]->openair0_cfg.clock_source = unset;
       }
 
+      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_TME_SRC)) {
+        if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "internal") == 0) {
+          RC.ru[j]->openair0_cfg.time_source = internal;
+          LOG_D(PHY, "RU time source set as internal\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "external") == 0) {
+          RC.ru[j]->openair0_cfg.time_source = external;
+          LOG_D(PHY, "RU time source set as external\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "gpsdo") == 0) {
+          RC.ru[j]->openair0_cfg.time_source = gpsdo;
+          LOG_D(PHY, "RU time source set as gpsdo\n");
+        } else {
+          LOG_E(PHY, "Erroneous RU time source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
+        }
+      }
+      else {
+	RC.ru[j]->openair0_cfg.time_source = unset;
+      }
+      
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
           RC.ru[j]->if_south                        = LOCAL_RF;

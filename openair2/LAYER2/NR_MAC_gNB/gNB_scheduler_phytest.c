@@ -598,7 +598,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                         ENB_FLAG_YES,
                                         MBMS_FLAG_NO,
                                         lcid,
-                                        TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
                                         0,
                                         0);
 
@@ -615,7 +614,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                                    ENB_FLAG_YES,
                                                    MBMS_FLAG_NO,
                                                    lcid,
-                                                   TBS_bytes,
+                                                   TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
                                                    (char *)&mac_sdus[sdu_length_total],
                                                    0,
                                                    0);

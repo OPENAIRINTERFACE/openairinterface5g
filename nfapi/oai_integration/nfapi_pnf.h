@@ -23,5 +23,5 @@
 #define NFAPI_PNF_H__
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
-
+void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 #endif

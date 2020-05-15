@@ -80,7 +80,7 @@ bool parse_plmn_param(config_setting_t *plmn_setting, plmn_conf_param_t *conf) {
 
 bool parse_plmns(config_setting_t *all_plmn_setting, networks_t *networks) {
 	config_setting_t *plmn_setting = NULL;
-	char plmn[10];
+	char plmn[100];
 	int size = 0;
 
 	size = config_setting_length(all_plmn_setting);

@@ -83,6 +83,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, cons
 int main(int argc, char **argv){
 
   char c;
+
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs, bw;
   int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
@@ -92,11 +93,13 @@ int main(int argc, char **argv){
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
   uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
   uint64_t SSB_positions = 0x01, absoluteFrequencyPointA = 640000;
+
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
   //  double prach_sinr;
   //  uint32_t nsymb;
   //  uint16_t preamble_max, preamble_energy_max;
+
 
   NR_DL_FRAME_PARMS *frame_parms;
   NR_PRACH_RESOURCES_t prach_resources;

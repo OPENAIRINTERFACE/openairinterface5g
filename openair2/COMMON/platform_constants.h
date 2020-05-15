@@ -73,7 +73,9 @@
   #ifdef UESIM_EXPANSION
     #define MAX_MOBILES_PER_ENB         256
     #define MAX_MOBILES_PER_ENB_NB_IoT  256
+    #define MAX_MOBILES_PER_GNB         256
     #define MAX_eNB                      2
+    #define MAX_gNB                      2
   #else
     #ifdef LARGE_SCALE
       #define MAX_MOBILES_PER_ENB         128

@@ -290,7 +290,7 @@ Protocol__FlexUlCqiReport * copy_ul_cqi_report(Protocol__FlexUlCqiReport * origi
   full_ul_report->has_sfn_sn = original->has_sfn_sn;
   full_ul_report->n_cqi_meas = original->n_cqi_meas;
 
-  Protocol__FlexUlCqi **ul_report;
+  Protocol__FlexUlCqi **ul_report=NULL;
   ul_report = malloc(sizeof(Protocol__FlexUlCqi *) * full_ul_report->n_cqi_meas);
   if(ul_report == NULL)
     goto error;
@@ -348,7 +348,7 @@ Protocol__FlexDlCqiReport * copy_dl_cqi_report(Protocol__FlexDlCqiReport * origi
   dl_report->has_sfn_sn = original->has_sfn_sn;
   dl_report->n_csi_report = original->n_csi_report;
 
-  Protocol__FlexDlCsi **csi_reports;
+  Protocol__FlexDlCsi **csi_reports=NULL;
   csi_reports = malloc(sizeof(Protocol__FlexDlCsi *) * dl_report->n_csi_report);
   if (csi_reports == NULL)
     goto error;
@@ -383,7 +383,7 @@ Protocol__FlexPagingBufferReport * copy_paging_buffer_report(Protocol__FlexPagin
   protocol__flex_paging_buffer_report__init(copy);
   copy->n_paging_info = original->n_paging_info;
   
-  Protocol__FlexPagingInfo **p_info;
+  Protocol__FlexPagingInfo **p_info=NULL;
   p_info = malloc(sizeof(Protocol__FlexPagingInfo *) * copy->n_paging_info);
   if (p_info == NULL)
     goto error;

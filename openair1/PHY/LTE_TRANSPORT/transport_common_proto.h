@@ -60,6 +60,8 @@ unsigned char get_I_TBS_UL(unsigned char I_MCS);
     @return Transport block size */
 uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
 
+uint16_t find_nb_rb_DL(uint8_t mcs, uint32_t bytes, uint16_t nb_rb_max, uint16_t rb_gran);
+
 /** \brief Compute Q (modulation order) based on uplink I_MCS. Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS
     @param nb_rb

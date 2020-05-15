@@ -42,10 +42,12 @@
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m) {
 
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
-  OCTET_STRING_t *ueCapabilityRAT_Container_nr = NULL;
-  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC = NULL;
-  int list_size;
+
+  OCTET_STRING_t *ueCapabilityRAT_Container_nr=NULL;
+  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC=NULL;
   asn_dec_rval_t dec_rval;
+  int list_size=0;
+
   AssertFatal(UE_CapabilityRAT_ContainerList!=NULL,"UE_CapabilityRAT_ContainerList is null\n");
   AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
   for (int i=0;i<list_size;i++) {
