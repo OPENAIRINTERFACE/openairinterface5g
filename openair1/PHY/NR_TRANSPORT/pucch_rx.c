@@ -367,9 +367,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   uint8_t xrtmag_dB = dB_fixed(xrtmag);
   
-#ifdef DEBUG_NR_PUCCH_RX
+//#ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
-#endif
+//#endif
 
   index=maxpos;
 #endif

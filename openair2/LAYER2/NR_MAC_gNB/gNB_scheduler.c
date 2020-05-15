@@ -321,6 +321,8 @@ void nr_schedule_pucch(int Mod_idP,
       O_ack = curr_pucch->dai_c;
       O_uci = O_ack; // for now we are just sending acknacks in pucch
 
+      LOG_I(MAC, "Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
+
       nr_configure_pucch(pucch_pdu,
 			 scc,
 			 ubwp,
@@ -485,6 +487,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
 
     if (get_softmodem_params()->phy_test == 0) {
+      NR_sched_pucch *curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+      if (curr_pucch != NULL)
+        nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
       schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
       nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
     }
