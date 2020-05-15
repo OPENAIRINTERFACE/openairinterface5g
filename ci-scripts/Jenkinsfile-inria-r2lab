@@ -62,6 +62,7 @@ def r2labUE0IpAddr = r2labBaseIpAddr + r2labUE0Idx
 def r2labENB1Idx = '16'
 def r2labENB1 = 'fit' + r2labENB1Idx
 def r2labENB1IpAddr = r2labBaseIpAddr + r2labENB1Idx
+def r2labDoAllOff = true
 
 pipeline {
     agent {
@@ -136,15 +137,22 @@ pipeline {
                         sh "python3 /home/eurecom/inria-scripts/booking-lease.py --book-lease --from ${BOOK_TIMESTAMP}T${r2labStartTime} --duration ${r2labDuration} --slice inria_oaici ${r2labuser} ${r2labpassword}"
                         sh "python3 /home/eurecom/inria-scripts/booking-lease.py --get-leases ${r2labuser} ${r2labpassword} | grep -v nightly"
                     }
+
+                    // Adding a tempo after booking leases
+                    sh "sleep 10"
+                    LEASE_STATUS = sh returnStdout: true, script: "ssh -t inria_oaici@faraday.inria.fr 'rleases --check'"
+                    LEASE_STATUS = LEASE_STATUS.trim()
+                    if (LEASE_STATUS ==~ /.*Access currently denied to inria_oaici.*/) {
+                        r2labDoAllOff = false
+                        currentBuild.result = 'ABORTED'
+                        error('Stopping early because R2LAB not available')
+                    }
                 }
             }
         }
         stage ("Load Images") {
             steps {
                 script {
-                    // Adding a tempo after booking leases
-                    sh "sleep 10"
-                    sh "ssh -t inria_oaici@faraday.inria.fr 'rleases --check'"
                     sh "ssh -t inria_oaici@faraday.inria.fr 'all-off'"
                     sh "sleep 10"
 
@@ -441,9 +449,11 @@ pipeline {
     post {
         always {
             script {
-                echo '\u2705 \u001B[32mShutdown every node\u001B[0m'
-                sh 'ssh -t inria_oaici@faraday.inria.fr "all-off"'
-                sh 'ssh -t inria_oaici@faraday.inria.fr "all-off"'
+                if (r2labDoAllOff) {
+                    echo '\u2705 \u001B[32mShutdown every node\u001B[0m'
+                    sh 'ssh -t inria_oaici@faraday.inria.fr "all-off"'
+                    sh 'ssh -t inria_oaici@faraday.inria.fr "all-off"'
+                }
             }
         }
     }
