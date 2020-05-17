@@ -121,9 +121,9 @@ int main(int argc, char *argv[])
     crcTableInit();
 
   if (polarMessageType == 0) { //PBCH
-	  aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
+    aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
   } else if (polarMessageType == 1) { //DCI
-	  coderLength = 108*aggregation_level;
+    coderLength = 108*aggregation_level;
   } else if (polarMessageType == 2) { //UCI
     //pucch2 parameters, 1 symbol, aggregation_level = NPRB
     AssertFatal(aggregation_level>2,"For UCI formats, aggregation (N_RB) should be > 2\n");

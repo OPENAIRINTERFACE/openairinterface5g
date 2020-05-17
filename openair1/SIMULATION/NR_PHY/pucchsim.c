@@ -336,7 +336,7 @@ int main(int argc, char **argv)
   }
 
   AssertFatal(((format < 2)&&(nr_bit<3)&&(actual_payload<4)) ||
-	      ((format == 2)&&(nr_bit>2)&&(nr_bit<12)),"illegal combination format %d, nr_bit %d\n",
+	      ((format == 2)&&(nr_bit>2)&&(nr_bit<65)),"illegal combination format %d, nr_bit %d\n",
 	      format,nr_bit);
 
   actual_payload &= ((1<<nr_bit)-1);

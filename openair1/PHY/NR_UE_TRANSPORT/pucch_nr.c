@@ -908,24 +908,13 @@ void nr_uci_encoding(uint64_t payload,
     // CRC bits are not attached, and coding small block lengths (subclause 5.3.3)
     b[0] = encodeSmallBlock((uint16_t*)&payload,A);
   } else if (A>=12) {
-    AssertFatal(1==0,"Polar encoding not supported yet for UCI\n");
-    // procedure in subclause 6.3.1.2.1 (UCI encoded by Polar code -> subclause 6.3.1.3.1)
-    /*if ((A>=360 && E>=1088)||(A>=1013)) {
-      I_seg = 1;
-    } else {
-      I_seg = 0;
-    }*/
-
-    /*if (A>=20) {
-      // parity bits (subclause 5.2.1) computed by setting L=11 and using generator polynomial gCRC11(D) (subclause 5.1)
-      L=11;
-    } else if (A<=19) {
-      // parity bits (subclause 5.2.1) computed by setting L=6  and using generator polynomial gCRC6(D)  (subclause 5.1)
-      L=6;
-    }*/
-
-    // code block segmentation and CRC attachment is performed according to subclause 5.2.1
-    // polar coding subclause 5.3.1
+    AssertFatal(A<65,"Polar encoding not supported yet for UCI with more than 64 bits\n");
+    t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, 
+						   A, 
+						   nrofPRB,
+						   1,
+						   NULL);
+    polar_encoder_fast(&payload, b, 0,0,currentPtr);
   }
   
 }
