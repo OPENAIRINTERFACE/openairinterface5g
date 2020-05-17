@@ -715,10 +715,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
 #ifdef DEBUG_ULSCH_DECODING
   LOG_I(PHY, "Decoder output (payload): \n");
-  for (i = 0; i < harq_process->TBS / 8; i++) {
+  for (i = 0; i < harq_process->TBS ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
 	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-	  printf("0x%02x",harq_process->b[i]);
+	  printf("%02x",harq_process->b[i]);
   }
 #endif
 
