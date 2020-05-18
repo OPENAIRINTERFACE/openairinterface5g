@@ -19,20 +19,21 @@
  *      contact@openairinterface.org
  */
 
-/***************************************************************************
-                          mem_pool.h  -  description
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
+#ifndef _RLC_SDU_H_
+#define _RLC_SDU_H_
 
+typedef struct rlc_sdu_t {
+  int upper_layer_id;
+  char *data;
+  int size;
+  /* next_byte indicates the starting byte to use to construct a new PDU */
+  int next_byte;
+  int acked_bytes;
+  struct rlc_sdu_t *next;
+} rlc_sdu_t;
 
- ***************************************************************************/
-#ifndef __MEM_POOL_H__
-#    define __MEM_POOL_H__
+rlc_sdu_t *rlc_new_sdu(char *buffer, int size, int upper_layer_id);
+void rlc_free_sdu(rlc_sdu_t *sdu);
+void rlc_sdu_list_add(rlc_sdu_t **list, rlc_sdu_t **end, rlc_sdu_t *sdu);
 
-#    include "list.h"
-#    include "mem_block.h"
-
-
-#endif
+#endif /* _RLC_SDU_H_ */

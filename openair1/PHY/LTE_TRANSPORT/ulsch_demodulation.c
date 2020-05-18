@@ -780,7 +780,6 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 #endif
 
     for (rb=0; rb<nb_rb; rb++) {
-      LOG_D(PHY,"comp: symbol %d rb %d\n",symbol,rb);
       // just compute channel magnitude without scaling, this is done after equalization for SC-FDMA
 #if defined(__x86_64__) || defined(__i386__)
       mmtmpU0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);

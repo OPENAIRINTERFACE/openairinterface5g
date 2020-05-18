@@ -166,6 +166,11 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                          dci_pdu_rel15_t *nr_pdci_info_extracted);
 
 
+uint8_t
+nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
+           sub_frame_t subframe, uint8_t eNB_index,
+           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) ;
+
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
                          int nrofUplinkSlots,   int nrofUplinkSymbols);

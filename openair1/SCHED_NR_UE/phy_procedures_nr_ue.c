@@ -2466,7 +2466,7 @@ ue->prach_resources[eNB_id]->ra_PreambleIndex = preamble_tx;
     ue->tx_total_RE[nr_tti_tx] = 96;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-    ue->prach_vars[eNB_id]->amp = get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
+    ue->prach_vars[eNB_id]->amp = nr_get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
 					     ue->tx_power_max_dBm,
 					     ue->frame_parms.N_RB_UL,
 					     6);

@@ -446,6 +446,13 @@ uint32_t ulsch_encoding(uint8_t *a,
       Qprime = (ulsch->O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
     else
       Qprime = 0;
+      LOG_D(PHY,"Qprime %d, O_RI %d + %d, Msc %d, Nym %d beta %d\n",
+                  Qprime,
+                  ulsch->O, L,
+                  ulsch->harq_processes[harq_pid]->Msc_initial,
+                  ulsch->harq_processes[harq_pid]->Nsymb_initial,
+                  ulsch->beta_offset_cqi_times8);
+
 
     if (Qprime > 0) {
       if ((Qprime % (8*sumKr)) > 0)
@@ -455,7 +462,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     }
 
     G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
-
+    LOG_D(PHY,"G: rb %d * ( 12 * Qm %d ) * nsymb %d, Qprime %d, O_RI %d\n", ulsch->harq_processes[harq_pid]->nb_rb, Q_m, ulsch->Nsymb_pusch, Qprime, ulsch->O_RI);
     if (Qprime > (G - ulsch->O_RI))
       Qprime = G - ulsch->O_RI;
 
@@ -465,6 +472,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
 
     G = G - Q_RI - Q_CQI;
+    LOG_D(PHY,"new G: %d, Q_RI %d Q_CQI %d\n",  G , Q_RI , Q_CQI);
     ulsch->harq_processes[harq_pid]->G = G;
 
 /*
