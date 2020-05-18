@@ -191,11 +191,11 @@ static const uint16_t lut_startAddrBnGroupsLlr_BG2_R13[NR_LDPC_NUM_BN_GROUPS_BG2
 /** Start address for every BN group within the LLR processing buffer for BG2 rate = 2/3 */
 static const uint16_t lut_startAddrBnGroupsLlr_BG2_R23[NR_LDPC_NUM_BN_GROUPS_BG2_R23] = {0,  1152,  2304,  4224,  5376, 6144};
 
-/** Vector of 32 '1' in int8 for application with AVX2 */
-static const int8_t ones256_epi8[32] __attribute__ ((aligned(32))) = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-/** Vector of 32 '0' in int8 for application with AVX2 */
-static const int8_t zeros256_epi8[32] __attribute__ ((aligned(32))) = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-/** Vector of 32 '127' in int8 for application with AVX2 */
-static const int8_t maxLLR256_epi8[32] __attribute__ ((aligned(32))) = {127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127};
+/** Vector of 64 '1' in int8 for application with AVX512 */
+static const int8_t ones512_epi8[64] __attribute__ ((aligned(64))) = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+/** Vector of 64 '0' in int8 for application with AVX512 */
+static const int8_t zeros512_epi8[64] __attribute__ ((aligned(64))) = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+/** Vector of 64 '127' in int8 for application with AVX512 */
+static const int8_t maxLLR512_epi8[64] __attribute__ ((aligned(64))) = {127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127,127};
 
 #endif
