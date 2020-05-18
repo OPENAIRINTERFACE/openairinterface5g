@@ -1,21 +1,21 @@
 #include <stdint.h>
 #include <immintrin.h>
-#include "../nrLDPCdecoder_defs.h"
-#include "../nrLDPC_types.h"                                                                                            
-#include "../nrLDPC_bnProc.h"
-#include "cnProc_gen.h"
+#include "../../nrLDPCdecoder_defs.h"
+#include "../../nrLDPC_types.h"                                                                                            
+#include "../../nrLDPC_bnProc.h"
+#include "cnProc_gen_avx512.h"
 
-void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
+void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 {
   const char *ratestr[3]={"13","23","89"};
 
   if (R<0 || R>2) {printf("Illegal R %d\n",R); abort();}
 
 
-  system("mkdir -p ldpc_gen_files");
+ // system("mkdir -p ldpc_gen_files");
 
   char fname[50];
-  sprintf(fname,"ldpc_gen_files/nrLDPC_cnProc_BG1_Z%d_%s.c",Z,ratestr[R]);
+  sprintf(fname,"../ldpc_gen_files/nrLDPC_cnProc_BG1_Z%d_%s_AVX512.c",Z,ratestr[R]);
   FILE *fd=fopen(fname,"w");
   if (fd == NULL) {printf("Cannot create %s\n");abort();}
 
@@ -31,7 +31,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
   fprintf(fd,  "}\n" );
 
 
-  fprintf(fd,"void nrLDPC_cnProc_BG1_Z%d_%s(int8_t* cnProcBuf,int8_t* cnProcBufRes) {\n",Z,ratestr[R]);
+  fprintf(fd,"void nrLDPC_cnProc_BG1_Z%d_%s_AVX512(int8_t* cnProcBuf,int8_t* cnProcBufRes) {\n",Z,ratestr[R]);
 
   const uint8_t*  lut_numCnInCnGroups;
   const uint32_t* lut_startAddrCnGroups = lut_startAddrCnGroups_BG1;
@@ -48,7 +48,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
   uint32_t M;
   uint32_t j;
   uint32_t k;
-  // Offset to each bit within a group in terms of 32  Byte
+  // Offset to each bit within a group in terms of 64  Byte
   uint32_t bitOffsetInGroup;
 
   //__m512i zmm0, min, sgn;
@@ -79,11 +79,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[0] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[0]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX)>>5;
 
 
@@ -103,7 +103,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //            {
 	  
 	  fprintf(fd,"            for (int i=0;i<%d;i+=2) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -128,7 +128,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //                p_cnProcBufResBit++;
 	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[0]>>5)+(j*bitOffsetInGroup));
 
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]+1);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -165,11 +165,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[1] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[1]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[1]*NR_LDPC_ZMAX)>>5;
 
 
@@ -188,7 +188,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[1]>>5)+lut_idxCnProcG4[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -230,11 +230,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[2] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[2]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX)>>5;
 
 
@@ -253,7 +253,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[2]>>5)+lut_idxCnProcG5[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -295,11 +295,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[3] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[3]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[3]*NR_LDPC_ZMAX)>>5;
 
 
@@ -318,7 +318,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[3]>>5)+lut_idxCnProcG6[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -362,11 +362,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[4] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[4]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX)>>5;
 
 
@@ -385,7 +385,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[4]>>5)+lut_idxCnProcG7[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -430,11 +430,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[5] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[5]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX)>>5;
 
 
@@ -453,7 +453,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[5]>>5)+lut_idxCnProcG8[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -499,11 +499,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[6] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[6]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[6]*NR_LDPC_ZMAX)>>5;
 
 
@@ -522,7 +522,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[6]>>5)+lut_idxCnProcG9[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -569,11 +569,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[7] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[7]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[7]*NR_LDPC_ZMAX)>>5;
 
 
@@ -592,7 +592,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[7]>>5)+lut_idxCnProcG10[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -642,11 +642,11 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 
   if (lut_numCnInCnGroups[8] > 0)
     {
-      // Number of groups of 32  CNs for parallel processing
+      // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
       M = (lut_numCnInCnGroups[8]*Z + 63)>>5;
 
-      // Set the offset to each bit within a group in terms of 32  Byte
+      // Set the offset to each bit within a group in terms of 64  Byte
       bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX)>>5;
 
 
@@ -665,7 +665,7 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
-	  // Abs and sign of 32  CNs (first BN)
+	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[8]>>5)+lut_idxCnProcG19[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
@@ -699,3 +699,9 @@ void nrLDPC_cnProc_BG1_generator(uint16_t Z,int R)
   fprintf(fd,"}\n");
   fclose(fd);
 }//end of the function  nrLDPC_cnProc_BG1
+
+
+
+
+
+

@@ -147,7 +147,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #endif
     if (BG == 1)
     {	if(Z==384){
-	nrLDPC_cnProc_BG1_Z384_13(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+	nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+    //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
 	}else{
         nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
 	}    
@@ -250,7 +251,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         if (BG == 1)
         {
 	    if(Z==384){
-	    nrLDPC_cnProc_BG1_Z384_13(p_procBuf->cnProcBuf, p_procBuf->cnProcBufRes);
+	    nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+        //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
 	    }else{
             nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
             }        
@@ -363,7 +365,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #endif
         if (BG == 1)
         {	if(Z==384){
-            	nrLDPC_cnProc_BG1_Z384_13(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+	    nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+        //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
 		}else{
 		nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
 		}  

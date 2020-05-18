@@ -1305,26 +1305,30 @@ set(PHY_TURBOIF
 set(PHY_LDPC_ORIG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c
 )
 
 
 set(PHY_LDPC_OPTIM_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13.c  
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c
 
 )
 set(PHY_LDPC_OPTIM8SEG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8seg.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13.c  
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c
 
 )
 set(PHY_LDPC_OPTIM8SEGMULTI_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13.c  
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c
 
 )
 set(PHY_NR_CODINGIF
