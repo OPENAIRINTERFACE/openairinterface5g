@@ -4278,6 +4278,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
 #endif
 
+  // deactivate dlsch once dlsch proc is done
+  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
  }
