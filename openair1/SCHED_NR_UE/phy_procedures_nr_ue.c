@@ -3885,7 +3885,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
       }
     //printf("[slot1 dl processing] AbsSubframe %d.%d LLR Computation Start wait DCI %d\n",frame_rx,nr_tti_rx,wait);
 
-
     /**** Pdsch Procedure Slot1 ****/
     // start slot1 thread for Pdsch Procedure (slot1)
     // do procedures for C-RNTI
@@ -3972,7 +3971,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
     LOG_D(PHY, "[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,nr_tti_rx,ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[nr_tti_rx]][1].p_time/(cpuf*1000.0));
 #endif
 #endif
-
 
     if (pthread_mutex_lock(&proc->mutex_slot1_dl_processing) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
@@ -4120,7 +4118,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if (dci_cnt > 0) {
 
-    LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
+    LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
 
     NR_UE_DLSCH_t *dlsch;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1){
@@ -4167,7 +4165,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   PDSCH,
 			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
 			   NULL);
-			   
+
     //printf("phy procedure pdsch start measurement\n"); 
     nr_ue_measurement_procedures(2,ue,proc,eNB_id,nr_tti_rx,mode);
 
@@ -4179,7 +4177,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
     write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
     */
-    
+
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
@@ -4248,7 +4246,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     
   // do procedures for C-RNTI
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
-    
+
     LOG_D(PHY, "DLSCH data reception at nr_tti_rx: %d \n \n", nr_tti_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
 
