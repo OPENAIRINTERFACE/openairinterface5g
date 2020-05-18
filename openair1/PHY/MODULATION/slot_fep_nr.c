@@ -25,6 +25,7 @@
 #include "nr_modulation.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
+#include <common/utils/LOG/log.h>
 
 //#define DEBUG_FEP
 
@@ -450,6 +451,10 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 
   dft(dftsize,(int16_t *)&rxdata[rxdata_offset],
        (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
+  LOG_D(PHY, "dft made on symbol: %d, rxdata offset: %d, rxdataF offset: %d, energy in %d, energy out %d\n",
+		  symbol, rxdata_offset, symbol * frame_parms->ofdm_symbol_size, 
+		  signal_energy(&rxdata[rxdata_offset], frame_parms->ofdm_symbol_size), 
+		  signal_energy(&rxdataF[symbol * frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size));
 
   return(0);
 }

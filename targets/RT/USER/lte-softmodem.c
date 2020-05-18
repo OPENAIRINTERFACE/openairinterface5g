@@ -447,8 +447,12 @@ int restart_L1L2(module_id_t enb_id) {
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
 
   // No more rrc thread, as many race conditions are hidden behind
-  rrc_enb_init();
-  itti_mark_task_ready(TASK_RRC_ENB);
+  if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
+    LOG_E(RRC, "Create task for RRC eNB failed\n");
+    return -1;
+  } else {
+    LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
+  }
 
   /* pass a reconfiguration request which will configure everything down to
    * RC.eNB[i][j]->frame_parms, too */

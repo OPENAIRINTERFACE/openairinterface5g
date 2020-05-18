@@ -102,6 +102,10 @@ void dl_config_req_UE_MAC_bch(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *bch,
                               int num_ue);
+void dl_config_req_UE_MAC_mch(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *bch,
+                              int num_ue);
 
 int tx_req_UE_MAC(nfapi_tx_request_t* req);
 

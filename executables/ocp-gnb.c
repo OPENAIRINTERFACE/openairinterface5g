@@ -69,7 +69,6 @@ int emulate_rf = 0;
 int numerology = 0;
 
 
-unsigned char NB_gNB_INST = 1;
 int config_sync_var=-1;
 pthread_mutex_t nfapi_sync_mutex;
 pthread_cond_t nfapi_sync_cond;
@@ -115,7 +114,7 @@ extern double cpuf;
 
 short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,16384,16384,-16384,-16384,16384,16384,16384,-16384,-16384,16384,-16384,-16384,7327,7327,7327,21981,21981,7327,21981,21981,7327,-7327,7327,-21981,21981,-7327,21981,-21981,-7327,7327,-7327,21981,-21981,7327,-21981,21981,-7327,-7327,-7327,-21981,-21981,-7327,-21981,-21981,10726,10726,10726,3576,3576,10726,3576,3576,10726,17876,10726,25027,3576,17876,3576,25027,17876,10726,17876,3576,25027,10726,25027,3576,17876,17876,17876,25027,25027,17876,25027,25027,10726,-10726,10726,-3576,3576,-10726,3576,-3576,10726,-17876,10726,-25027,3576,-17876,3576,-25027,17876,-10726,17876,-3576,25027,-10726,25027,-3576,17876,-17876,17876,-25027,25027,-17876,25027,-25027,-10726,10726,-10726,3576,-3576,10726,-3576,3576,-10726,17876,-10726,25027,-3576,17876,-3576,25027,-17876,10726,-17876,3576,-25027,10726,-25027,3576,-17876,17876,-17876,25027,-25027,17876,-25027,25027,-10726,-10726,-10726,-3576,-3576,-10726,-3576,-3576,-10726,-17876,-10726,-25027,-3576,-17876,-3576,-25027,-17876,-10726,-17876,-3576,-25027,-10726,-25027,-3576,-17876,-17876,-17876,-25027,-25027,-17876,-25027,-25027,8886,8886,8886,12439,12439,8886,12439,12439,8886,5332,8886,1778,12439,5332,12439,1778,5332,8886,5332,12439,1778,8886,1778,12439,5332,5332,5332,1778,1778,5332,1778,1778,8886,19547,8886,15993,12439,19547,12439,15993,8886,23101,8886,26655,12439,23101,12439,26655,5332,19547,5332,15993,1778,19547,1778,15993,5332,23101,5332,26655,1778,23101,1778,26655,19547,8886,19547,12439,15993,8886,15993,12439,19547,5332,19547,1778,15993,5332,15993,1778,23101,8886,23101,12439,26655,8886,26655,12439,23101,5332,23101,1778,26655,5332,26655,1778,19547,19547,19547,15993,15993,19547,15993,15993,19547,23101,19547,26655,15993,23101,15993,26655,23101,19547,23101,15993,26655,19547,26655,15993,23101,23101,23101,26655,26655,23101,26655,26655,8886,-8886,8886,-12439,12439,-8886,12439,-12439,8886,-5332,8886,-1778,12439,-5332,12439,-1778,5332,-8886,5332,-12439,1778,-8886,1778,-12439,5332,-5332,5332,-1778,1778,-5332,1778,-1778,8886,-19547,8886,-15993,12439,-19547,12439,-15993,8886,-23101,8886,-26655,12439,-23101,12439,-26655,5332,-19547,5332,-15993,1778,-19547,1778,-15993,5332,-23101,5332,-26655,1778,-23101,1778,-26655,19547,-8886,19547,-12439,15993,-8886,15993,-12439,19547,-5332,19547,-1778,15993,-5332,15993,-1778,23101,-8886,23101,-12439,26655,-8886,26655,-12439,23101,-5332,23101,-1778,26655,-5332,26655,-1778,19547,-19547,19547,-15993,15993,-19547,15993,-15993,19547,-23101,19547,-26655,15993,-23101,15993,-26655,23101,-19547,23101,-15993,26655,-19547,26655,-15993,23101,-23101,23101,-26655,26655,-23101,26655,-26655,-8886,8886,-8886,12439,-12439,8886,-12439,12439,-8886,5332,-8886,1778,-12439,5332,-12439,1778,-5332,8886,-5332,12439,-1778,8886,-1778,12439,-5332,5332,-5332,1778,-1778,5332,-1778,1778,-8886,19547,-8886,15993,-12439,19547,-12439,15993,-8886,23101,-8886,26655,-12439,23101,-12439,26655,-5332,19547,-5332,15993,-1778,19547,-1778,15993,-5332,23101,-5332,26655,-1778,23101,-1778,26655,-19547,8886,-19547,12439,-15993,8886,-15993,12439,-19547,5332,-19547,1778,-15993,5332,-15993,1778,-23101,8886,-23101,12439,-26655,8886,-26655,12439,-23101,5332,-23101,1778,-26655,5332,-26655,1778,-19547,19547,-19547,15993,-15993,19547,-15993,15993,-19547,23101,-19547,26655,-15993,23101,-15993,26655,-23101,19547,-23101,15993,-26655,19547,-26655,15993,-23101,23101,-23101,26655,-26655,23101,-26655,26655,-8886,-8886,-8886,-12439,-12439,-8886,-12439,-12439,-8886,-5332,-8886,-1778,-12439,-5332,-12439,-1778,-5332,-8886,-5332,-12439,-1778,-8886,-1778,-12439,-5332,-5332,-5332,-1778,-1778,-5332,-1778,-1778,-8886,-19547,-8886,-15993,-12439,-19547,-12439,-15993,-8886,-23101,-8886,-26655,-12439,-23101,-12439,-26655,-5332,-19547,-5332,-15993,-1778,-19547,-1778,-15993,-5332,-23101,-5332,-26655,-1778,-23101,-1778,-26655,-19547,-8886,-19547,-12439,-15993,-8886,-15993,-12439,-19547,-5332,-19547,-1778,-15993,-5332,-15993,-1778,-23101,-8886,-23101,-12439,-26655,-8886,-26655,-12439,-23101,-5332,-23101,-1778,-26655,-5332,-26655,-1778,-19547,-19547,-19547,-15993,-15993,-19547,-15993,-15993,-19547,-23101,-19547,-26655,-15993,-23101,-15993,-26655,-23101,-19547,-23101,-15993,-26655,-19547,-26655,-15993,-23101,-23101,-23101,-26655,-26655,-23101,-26655,-26655};
 
-static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx) {
+static inline int rxtx(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   start_meas(&softmodem_stats_rxtx_sf);
@@ -128,9 +127,8 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
-    oai_subframe_ind(frame_rx, slot_rx);
+    oai_subframe_ind(proc->frame_rx, proc->slot_rx);
     stop_meas(&nfapi_meas);
-
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
         gNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs ||
         gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs ||
@@ -152,20 +150,20 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // ****************************************
   // Common RX procedures subframe n
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
-  gNB->UL_INFO.frame     = frame_rx;
-  gNB->UL_INFO.slot      = slot_rx;
+  gNB->UL_INFO.frame     = proc->frame_rx;
+  gNB->UL_INFO.slot      = proc->slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   // RX processing
-  int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
-  int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
+  int tx_slot_type         = nr_slot_select(cfg,proc->frame_tx,proc->slot_tx);
+  int rx_slot_type         = nr_slot_select(cfg,proc->frame_rx,proc->slot_rx);
 
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
-    phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
+    phy_procedures_gNB_uespec_RX(gNB, proc->frame_rx, proc->slot_rx);
   }
 
   if (oai_exit) return(-1);
@@ -177,11 +175,11 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
   // *****************************************
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
-    phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+    phy_procedures_gNB_TX(gNB, proc->frame_tx,proc->slot_tx, 1);
   }
 
   stop_meas( &softmodem_stats_rxtx_sf );
-  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
+  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->slot_rx, proc->frame_tx, proc->slot_tx);
   return(0);
 }
 
@@ -190,13 +188,15 @@ void gNB_top(gNB_L1_proc_t *proc, struct RU_t_s *ru) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *ru_proc=&ru->proc;
   sl_ahead = sf_ahead*fp->slots_per_subframe;
+  proc->timestamp_rx  = ru_proc->timestamp_rx;
   L1_proc->frame_rx = proc->frame_rx = proc->frame_prach = ru_proc->frame_rx =
-                                         (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+                                         (ru_proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
   L1_proc->slot_rx = proc->slot_rx = proc->slot_prach =
-                                       ru_proc->tti_rx; // computed before
+                                       ru_proc->tti_rx; // computed before in caller function
   L1_proc->timestamp_tx = proc->timestamp_tx = ru_proc->timestamp_tx =
-                            ru_proc->timestamp_rx + sl_ahead;
-  L1_proc->frame_tx  = proc->frame_rx = ru_proc->frame_rx =
+                            ru_proc->timestamp_rx +
+                            sf_ahead*fp->samples_per_subframe;
+  L1_proc->frame_tx  = proc->frame_tx = ru_proc->frame_tx =
                                           (proc->timestamp_tx / (fp->samples_per_subframe*10))&1023;
   L1_proc->slot_tx   =  ru_proc->tti_tx =
                           (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
@@ -207,7 +207,6 @@ static void *process_stats_thread(void *param) {
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->dlsch_scrambling_stats);
   reset_meas(&gNB->dlsch_modulation_stats);
-  wait_sync("process_stats_thread");
 
   while(!oai_exit) {
     sleep(1);
@@ -240,47 +239,25 @@ void init_gNB_proc(int inst) {
 }
 
 /// eNB kept in function name for nffapi calls, TO FIX
-void init_eNB_afterRU(void) {
+void init_gNB_phase2(void) {
   int inst,ru_id,i,aa;
-  PHY_VARS_gNB *gNB;
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
-    gNB                                  =  RC.gNB[inst];
+    PHY_VARS_gNB *gNB =  RC.gNB[inst];
+    gNB->RU_list[0] = RC.ru[0];
+    gNB->num_RU=1;
+    RC.ru[0]->nr_frame_parms=&RC.gNB[inst]->frame_parms;
+    LOG_E(PHY,"hard coded gNB->num_RU:%d\n", gNB->num_RU);
     phy_init_nr_gNB(gNB,0,0);
-    LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-    //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
-    //      gNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
-    LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
-
-    for (ru_id=0,aa=0; ru_id<gNB->num_RU; ru_id++) {
-      AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
-                  "RU %d : common.rxdataF is NULL\n",
-                  gNB->RU_list[ru_id]->idx);
-      AssertFatal(gNB->RU_list[ru_id]->prach_rxsigF!=NULL,
-                  "RU %d : prach_rxsigF is NULL\n",
-                  gNB->RU_list[ru_id]->idx);
-
-      for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
-        LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-        gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[i];
-        gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
-      }
-    }
-
     //init_precoding_weights(RC.gNB[inst][CC_id]);
   }
 }
 
 void init_gNB(int single_thread_flag,int wait_for_sync) {
-  if (RC.gNB == NULL)
-    RC.gNB = (PHY_VARS_gNB **) calloc(1,(1+RC.nb_nr_L1_inst)*sizeof(PHY_VARS_gNB *));
-
   for (int inst=0; inst<RC.nb_nr_L1_inst; inst++) {
-    if (RC.gNB[inst] == NULL )
-      RC.gNB[inst] = (PHY_VARS_gNB *) calloc(1,sizeof(PHY_VARS_gNB));
-
+    AssertFatal( RC.gNB[inst] != NULL, "Must be allocated in init_main_gNB->RCconfig_NR_L1\n");
     PHY_VARS_gNB *gNB= RC.gNB[inst];
     gNB->abstraction_flag   = false;
     gNB->single_thread_flag = true;
@@ -289,7 +266,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
         NR_POLAR_PBCH_PAYLOAD_BITS,
         NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
     LOG_I(PHY,"Registering with MAC interface module\n");
-    AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
+    AssertFatal((gNB->if_inst = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
     gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
     gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
     memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
@@ -320,10 +297,10 @@ static void get_options(void) {
     memset((void *)&RC,0,sizeof(RC));
     /* Read RC configuration file */
     NRRCConfig();
-    NB_gNB_INST = RC.nb_nr_inst;
-    NB_RU   = RC.nb_RU;
-    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %hhu\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
+    printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %hhu\n",RC.nb_nr_inst,RC.nb_nr_L1_inst,RC.nb_RU);
   }
+
+  AssertFatal(RC.nb_nr_L1_inst == 1 && RC.nb_RU == 1, "Only one gNB, one RU and one carrier is supported\n");
 }
 
 void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs],
@@ -367,14 +344,14 @@ void init_main_gNB(void) {
   RCconfig_NR_L1();
   RCconfig_nr_macrlc();
 
-  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
+  if (RC.nb_nr_L1_inst>0)
+    AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
 
   LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
-  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
+  RC.nrrrc = (gNB_RRC_INST **)calloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *),1);
   LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
   int gnb_id=0; // only 1 gnb per process, index 0 for now
-  RC.nrrrc[gnb_id] = (gNB_RRC_INST *)malloc(sizeof(gNB_RRC_INST));
-  memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
+  RC.nrrrc[gnb_id] = (gNB_RRC_INST *)calloc(sizeof(gNB_RRC_INST),1);
   MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
   RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
   openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(ITTI_MSG_INSTANCE(msg_p)), &NRRRC_CONFIGURATION_REQ(msg_p));
@@ -389,25 +366,6 @@ static  void wait_nfapi_init(char *thread_name) {
 
   pthread_mutex_unlock(&nfapi_sync_mutex);
   printf( "NFAPI: got sync (%s)\n", thread_name);
-}
-
-void wait_gNBs(void) {
-  int waiting=1;
-
-  while (waiting==1) {
-    printf("Waiting for gNB L1 instances to all get configured ... sleeping 50ms (nb_nr_sL1_inst %d)\n",RC.nb_nr_L1_inst);
-    usleep(50*1000);
-    waiting=0;
-
-    for (int i=0; i<RC.nb_nr_L1_inst; i++) {
-      if (RC.gNB[i]->configured==0) {
-        waiting=1;
-        break;
-      }
-    }
-  }
-
-  printf("gNB L1 are configured\n");
 }
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
@@ -449,7 +407,7 @@ void RCconfig_RU(void) {
 
   if ( RUParamList.numelt > 0) {
     RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
-    RC.ru_mask=(1<<NB_RU) - 1;
+    RC.ru_mask=(1<<RC.nb_RU) - 1;
     printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (j = 0; j < RC.nb_RU; j++) {
@@ -532,13 +490,14 @@ int rx_rf(RU_t *ru, int lastReadSz) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   void *rxp[ru->nb_rx];
-  uint32_t samples_per_slot = fp->get_samples_per_slot(proc->tti_rx,fp);
+  int nextSlot=(proc->tti_rx+1)%fp->slots_per_frame;
+  uint32_t samples_per_slot = fp->get_samples_per_slot(nextSlot,fp);
 
   for (int i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(proc->tti_rx,fp,0)];
+    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(nextSlot,fp,0)];
 
   openair0_timestamp old_ts = proc->timestamp_rx;
-  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,proc->tti_rx,rxp[0]);
+  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,nextSlot,rxp[0]);
   unsigned int rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
                      & proc->timestamp_rx,
                      rxp,
@@ -772,33 +731,44 @@ static void *ru_thread( void *param ) {
   RU_proc_t          *proc    = &ru->proc;
   NR_DL_FRAME_PARMS  *fp      = ru->nr_frame_parms;
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
-  fp->threequarter_fs=threequarter_fs;
   nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
   nr_dump_frame_parms(fp);
-  fill_rf_config(ru,ru->rf_config_file);
-  nr_phy_init_RU(ru);
   AssertFatal(openair0_device_load(&ru->rfdevice,&ru->openair0_cfg)==0,"Cannot connect to local radio\n");
   AssertFatal(ru->rfdevice.trx_start_func(&ru->rfdevice) == 0,"Could not start the RF device\n");
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   int lastReadSz=0;
+  sf_ahead = (uint16_t) ceil((float)6/(0x01<<fp->numerology_index));
 
   while (!oai_exit) {
     // synchronization on input FH interface, acquire signals/data and block
     lastReadSz=rx_rf(ru, lastReadSz);
     // do RX front-end processing (frequency-shift, dft) if needed
+    proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
     uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-    uint32_t offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
+    float offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
     proc->tti_rx = (idx_sf * fp->slots_per_subframe +
-                    lroundf((float)offsetInSubframe / fp->samples_per_slot0))%(fp->slots_per_frame);
+                    lroundf(offsetInSubframe / fp->samples_per_slot0))%
+                   fp->slots_per_frame;
+    LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
+          ru->idx, 0,
+          (unsigned long long int)proc->timestamp_rx,
+          (int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
+    int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,proc->frame_rx,proc->tti_rx);
 
-    if (proc->tti_rx == NR_UPLINK_SLOT || fp->frame_type == FDD) {
+    if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
       nr_fep_full(ru,proc->tti_rx);
+
+      for (int aa=0; aa<ru->nb_rx; aa++)
+        memcpy((void *)RC.gNB[0]->common_vars.rxdataF[aa],
+               (void *)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
+
+      LOG_D(PHY, "rxdataF energy: %d\n", signal_energy(ru->common.rxdataF[0], fp->symbols_per_slot*fp->ofdm_symbol_size));
     }
 
     gNB_top(&RC.gNB[0][0].proc, ru);
     gNB_L1_rxtx_proc_t *L1_proc = &RC.gNB[0][0].proc.L1_proc;
 
-    if (rxtx(&RC.gNB[0][0],L1_proc->frame_rx,L1_proc->slot_rx,L1_proc->frame_tx,L1_proc->slot_tx) < 0)
+    if (rxtx(&RC.gNB[0][0],L1_proc) < 0)
       LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",RC.gNB[0][0].Mod_id,RC.gNB[0][0].CC_id);
 
     // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -808,10 +778,16 @@ static void *ru_thread( void *param ) {
     //ru->feptx_ofdm
     nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
 
-    if (nr_slot_select(cfg,proc->frame_tx, proc->tti_tx ) != SF_UL) {
+    if (nr_slot_select(cfg,proc->frame_tx, proc->tti_tx ) != NR_UPLINK_SLOT) {
       int aa=0; // antenna 0 hardcoded
       NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
       nr_feptx0(ru,proc->tti_tx,0,fp->symbols_per_slot,aa);
+      int *txdata = &ru->common.txdata[aa][fp->get_samples_slot_timestamp(proc->tti_tx,fp,0)];
+      int slot_sizeF = (fp->ofdm_symbol_size)*
+                       ((NFAPI_CP_NORMAL == 1) ? 12 : 14);
+      LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, slot %d: txp (time %ld) %d dB, txp (freq) %d dB\n",
+            proc->frame_tx,proc->tti_tx,proc->timestamp_tx,dB_fixed(signal_energy((int32_t *)txdata,fp->get_samples_per_slot(
+                  proc->tti_tx,fp))),dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
 
     // do outgoing fronthaul (south) if needed
@@ -824,8 +800,6 @@ static void *ru_thread( void *param ) {
   return &ru_thread_status;
 }
 void launch_NR_RU(char *rf_config_file) {
-  printf("configuring RU from file\n");
-  RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
         RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
@@ -845,16 +819,15 @@ void launch_NR_RU(char *rf_config_file) {
     ru->num_gNB=1;
     LOG_I(PHY,"Copying frame parms from gNB in RC to ru %d and frame_parms in ru\n",ru->idx);
     memcpy((void *)ru->nr_frame_parms,&RC.gNB[0][0].frame_parms,sizeof(NR_DL_FRAME_PARMS));
-
-    for (int i=0; i<ru->num_gNB; i++) {
-      PHY_VARS_gNB *gNB0 = ru->gNB_list[i];
-      gNB0->RU_list[gNB0->num_RU++] = ru;
-    }
-
     RU_proc_t *proc = &ru->proc;
     threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
   }
 }
+
+void init_eNB_afterRU() {
+  AssertFatal(false,"");
+}
+
 int main( int argc, char **argv ) {
   AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY),
               "[SOFTMODEM] Error, configuration module init failed\n");
@@ -866,21 +839,14 @@ int main( int argc, char **argv ) {
   configure_linux();
   get_options ();
   get_common_options(SOFTMODEM_GNB_BIT );
-
-  if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
-    fprintf(stderr,"Getting configuration failed\n");
-    exit(-1);
-  }
-
+  AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
   set_taus_seed (0);
   init_opt();
-
-  if(IS_SOFTMODEM_NOS1)
-    init_pdcp();
-
+  init_pdcp();
   init_main_gNB();
+  init_gNB(true, wait_for_sync);
   /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_nr_flexran();
 
@@ -888,6 +854,9 @@ int main( int argc, char **argv ) {
     flexran_agent_start(i);
   }
 
+  /*
+   *nfapi stuff very buggy in 4G, not yet implemented in 5G
+   */
   // init UE_PF_PO and mutex lock (paging from S1AP)
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
   printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
@@ -902,11 +871,9 @@ int main( int argc, char **argv ) {
   if (nfapi_mode==NFAPI_MODE_VNF) // VNF
     wait_nfapi_init("main?");
 
-  number_of_cards = 1;
-  LOG_I(PHY,"Initializing gNB threads\n");
-  init_gNB(single_thread_flag,wait_for_sync);
-  printf("wait_gNBs()\n");
-  wait_gNBs();
+  for (int i=0; i<RC.nb_nr_L1_inst; i++)
+    AssertFatal(RC.gNB[i]->configured, "Remain threads to manage\n");
+
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
   config_sync_var=0;
 
@@ -919,14 +886,12 @@ int main( int argc, char **argv ) {
   printf("RC.nb_RU:%d\n", RC.nb_RU);
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
-
-  if (nfapi_mode != NFAPI_MODE_PNF && nfapi_mode != NFAPI_MODE_VNF) {
-    printf("Not NFAPI mode - call init_eNB_afterRU()\n");
-    init_eNB_afterRU();
-  } else {
-    printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
-  }
-
+  LOG_E(PHY,"configuring RU from file,  hardcoded one gNB for one RU, one carrier\n");
+  RCconfig_RU();
+  RC.ru[0]->nr_frame_parms->threequarter_fs=threequarter_fs;
+  fill_rf_config(RC.ru[0],RC.ru[0]->rf_config_file);
+  init_gNB_phase2();
+  nr_phy_init_RU(RC.ru[0]);
   init_gNB_proc(0); // only instance 0 (one gNB per process)
 
   if (RC.nb_RU >0) {

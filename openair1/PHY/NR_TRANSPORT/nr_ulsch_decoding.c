@@ -70,13 +70,12 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr,uint8_t N_RB_UL)
       a_segments = a_segments/273;
     }  
 
-    uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
 
       if (ulsch->harq_processes[i]) {
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->b,a_segments*1056);
           ulsch->harq_processes[i]->b = NULL;
         }
         for (r=0; r<a_segments; r++) {
@@ -351,7 +350,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     printf("ulsch_decoding.c: NULL ulsch_llr pointer\n");
     return (ulsch->max_ldpc_iterations + 1);
   }
-
+  //log_dump(PHY,ulsch_llr, 32, LOG_DUMP_CHAR, "ul llr");
   if (!frame_parms) {
     printf("ulsch_decoding.c: NULL frame_parms pointer\n");
     return (ulsch->max_ldpc_iterations + 1);

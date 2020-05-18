@@ -468,7 +468,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint32_t number_of_search_space_per_slot=UINT_MAX;
   uint32_t first_symbol_index=UINT_MAX;
   uint32_t search_space_duration;  //  element of search space
-  uint32_t coreset_duration;  //  element of coreset
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -604,8 +603,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   }
 
   AssertFatal(number_of_search_space_per_slot!=UINT_MAX,"");
-  coreset_duration = num_symbols * number_of_search_space_per_slot;
   /*
+  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
     mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
     mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
     mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
@@ -2690,7 +2689,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
   #endif
   */
 
-  /*
   #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
     for (i = 0; i < 32; i++) {
@@ -2698,7 +2696,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
     }
     LOG_T(MAC, "\n");
   #endif
-  */
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
@@ -3110,12 +3107,10 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
         mac_sdu_len = 0x0000;
         rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
 
+              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", rx_lcid, pdu_len);
         switch(rx_lcid){
             //  MAC CE
 
-            /*#ifdef DEBUG_HEADER_PARSING
-              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
-            #endif*/
             case DL_SCH_LCID_CCCH:
                 //  MSG4 RRC Connection Setup 38.331
                 //  varialbe length
@@ -3266,12 +3261,12 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+                    LOG_D(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
-                    for (i = 0; i < 32; i++)
-                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
+                    for (int i = 0; i < 32; i++)
+                      LOG_D(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
 
-                    LOG_T(MAC, "\n");
+                    LOG_D(MAC, "\n");
                 #endif
 
                 if (IS_SOFTMODEM_NOS1){
@@ -3322,7 +3317,7 @@ nr_generate_ulsch_pdu(uint8_t *mac_pdu,
 
 	  // 2) Generation of ULSCH MAC SDU subheaders
 	  for (i = 0; i < num_sdus; i++) {
-	    LOG_D(MAC, "[gNB] Generate ULSCH header num sdu %d len sdu %d\n", num_sdus, sdu_lengths[i]);
+	    LOG_D(MAC, "[gNB] Generate ULSCH header num sdu %d len sdu %d, lcid: %d\n", num_sdus, sdu_lengths[i], sdu_lcids[i]);
 
 	    if (sdu_lengths[i] < 128) {
 	      ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;

@@ -82,8 +82,8 @@ char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
 
 void get_common_options(uint32_t execmask) {
   uint32_t online_log_messages=0;
-  uint32_t glog_level =0;
-  uint32_t start_telnetsrv=0;
+  uint32_t glog_level=0 ;
+  uint32_t start_telnetsrv = 0;
   uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
   uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
   char *logmem_filename = NULL;

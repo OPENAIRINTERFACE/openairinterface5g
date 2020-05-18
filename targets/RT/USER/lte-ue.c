@@ -1132,6 +1132,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
                                    NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
                                    pdu,
                                    ue_num);
+        } else if (pdu->pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE) {
+          dl_config_req_UE_MAC_mch(NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),
+                                   NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
+                                   pdu,
+                                   ue_num);
         }
       }
     }
@@ -1620,21 +1625,21 @@ void *UE_thread(void *arg)
 
         if (UE->mode != loop_through_memory) {
           if (IS_SOFTMODEM_RFSIM ) {
-	  for(int sf=0; sf<10; sf++) {
-	    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-	      rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
-	    
+	    for(int sf=0; sf<10; sf++) {
+	      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+		rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
+	      
               AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
-						    &timestamp,
-						    rxp,
-						    UE->frame_parms.samples_per_tti,
-						    UE->frame_parms.nb_antennas_rx), "");
+						      &timestamp,
+						      rxp,
+						      UE->frame_parms.samples_per_tti,
+						      UE->frame_parms.nb_antennas_rx), "");
 	      write_dummy(UE, timestamp);
-	  }
+	    }
 	  } else {
 	    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 	      rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
-	
+	    
 	    AssertFatal( UE->frame_parms.samples_per_tti*10 ==
                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                     &timestamp,

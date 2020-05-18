@@ -185,8 +185,8 @@ static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_t
     wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
   }
   */
-
   // Call the scheduler
+
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;

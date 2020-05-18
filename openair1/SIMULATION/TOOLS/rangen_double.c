@@ -67,6 +67,8 @@ void randominit(unsigned seed_init)
 
 double uniformrandom(void)
 {
+#define a 1664525lu
+#define mod 4294967296.0                /* is 2**32 */
 
   int j;
 

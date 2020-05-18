@@ -185,7 +185,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CU
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3 -Og")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g3 -DMALLOC_CHECK_=3 -Og -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
 
 set(GIT_BRANCH        "UNKNOWN")
@@ -727,7 +727,6 @@ Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 ##############################################################
 
 add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
-add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the default bearer")
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
@@ -828,7 +827,7 @@ add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGE
 ##########################
 # RRC LAYER OPTIONS
 ##########################
-add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, configure params are actually set in rrc_eNB.c:rrc_eNB_generate_defaultRRCConnectionReconfiguration(...)")
+add_boolean_option(RRC_DEFAULT_RAB_IS_AM       True   "set the RLC mode to AM for the default bearer, otherwise it is UM.")
 
 
 ##########################
@@ -1591,7 +1590,6 @@ add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_dependencies(PHY_COMMON rrc_flag)
 add_dependencies(PHY_COMMON dfts)
 add_library(PHY ${PHY_SRC})
-
 add_dependencies(PHY rrc_flag)
 add_library(PHY_UE ${PHY_SRC_UE})
 add_dependencies(PHY_UE rrc_flag)
@@ -1642,7 +1640,7 @@ set(NR_RRC_DIR ${OPENAIR2_DIR}/RRC/NR)
 set(NR_UE_RRC_DIR ${OPENAIR2_DIR}/RRC/NR_UE)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
 
-set(LTE_RLC_SRC
+set(RLC_V1
   ${RLC_AM_DIR}/rlc_am.c
   ${RLC_AM_DIR}/rlc_am_init.c
   ${RLC_AM_DIR}/rlc_am_timer_poll_retransmit.c
@@ -1670,6 +1668,17 @@ set(LTE_RLC_SRC
   ${RLC_DIR}/rlc.c
   ${RLC_DIR}/rlc_rrc.c
   ${RLC_DIR}/rlc_mpls.c
+  )
+
+set(RLC_V2
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_oai_api.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/asn1_utils.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_ue_manager.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_entity.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_entity_am.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_entity_um.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_pdu.c
+  ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_sdu.c
   )
 
 set(NR_RLC_SRC
@@ -1706,7 +1715,7 @@ set(L2_SRC
   )
 
 set(L2_LTE_SRC
-  ${LTE_RLC_SRC}
+  ${RLC_V2}
   )
 
 set(L2_NR_SRC
@@ -1743,7 +1752,7 @@ set(LTE_NR_L2_SRC_UE
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
-  ${LTE_RLC_SRC}
+  ${RLC_V2}
   )
 
 set(NR_L2_SRC_UE
@@ -2735,7 +2744,6 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
-  ${UTIL_SRC}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2842,7 +2850,6 @@ target_link_libraries(ldpctest
 add_executable(nr_dlschsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2854,7 +2861,6 @@ target_link_libraries(nr_dlschsim
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2869,7 +2875,6 @@ add_executable(nr_pucchsim
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2883,7 +2888,6 @@ add_executable(nr_dlsim
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )   
@@ -2898,7 +2902,6 @@ add_executable(nr_prachsim
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
@@ -2907,7 +2910,6 @@ target_link_libraries(nr_prachsim
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2921,7 +2923,6 @@ add_executable(nr_ulsim
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )

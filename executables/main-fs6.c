@@ -1,7 +1,26 @@
 /*
-  Author: Laurent THOMAS, Open Cells Project company, funded by IRT SystemX
-  copyleft: OpenAirInterface Software Alliance and it's licence
+* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The OpenAirInterface Software Alliance licenses this file to You under
+* the OAI Public License, Version 1.1  (the "License"); you may not use this file
+* except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.openairinterface.org/?page_id=698
+*
+* Author and copyright: Laurent Thomas, open-cells.com
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*-------------------------------------------------------------------------------
+* For more information about the OpenAirInterface (OAI) Software Alliance:
+*      contact@openairinterface.org
 */
+
 #include <stdint.h>
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
@@ -416,7 +435,7 @@ void pusch_procedures_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-        ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
+        ((ulsch_harq->frame == frame)     || (ulsch_harq->repetition_number >1) ) &&
         ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
         (ulsch_harq->handled == 0)) {
       // UE has ULSCH scheduling
@@ -1491,13 +1510,14 @@ void *cu_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3, 1023); //three first char should be cu: or du:
   char port_def[256]=DU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
       remoteIP[i]=0;
       break;
     }
-    
+
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, port_def, &sockFS6), "");
   L1_rxtx_proc_t L1proc= {0};
   // We pick the global thread pool from the legacy code global vars
@@ -1539,12 +1559,14 @@ void *du_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3,1023); //three first char should be cu: or du:
   char port_def[256]=CU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
       remoteIP[i]=0;
       break;
     }
+
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, port_def, &sockFS6), "");
 
   if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)

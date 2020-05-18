@@ -76,6 +76,11 @@ nullPointer:common/utils/T/local_tracer.c:243
 // first iteration of the loop
 nullPointer:common/utils/T/tracer/multi.c:264
 nullPointer:common/utils/T/tracer/multi.c:265
+//-----------------------------------------------------------------------------
+// this file is used for testing the RLC V2 implementation, this error is
+// not a problem, the programmer has to know what she does when writing
+// the tests
+arrayIndexOutOfBounds:openair2/LAYER2/rlc_v2/tests/test.c:401
 //
 //*****************************************************************************
 //

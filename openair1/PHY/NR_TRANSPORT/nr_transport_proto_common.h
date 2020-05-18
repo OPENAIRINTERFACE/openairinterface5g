@@ -29,8 +29,8 @@
  * \note
  * \warning
  */
-#ifndef __NR_TRANSPORT_PROTO_COMMON__H__
-#define __NR_TRANSPORT_PROTO_COMMON__H__
+#ifndef __NR_TRANSPORT_PROTO_COMMON_H__
+#define __NR_TRANSPORT_PROTO_COMMON_H__
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR_UE/defs.h"
 //#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
@@ -1090,10 +1090,6 @@ int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  uint8_t i_mod,
                  uint8_t harq_pid);
 
-int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    uint32_t frame,
-                    uint32_t slot);
-
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables
   @param[out] pss_ext contain the PSS signals after the extraction
@@ -1425,7 +1421,6 @@ int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* bu
 void init_transport_channels(uint8_t);
 
 void generate_RIV_tables(void);
-
 
 /*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212.

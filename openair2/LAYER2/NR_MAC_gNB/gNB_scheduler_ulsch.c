@@ -186,12 +186,8 @@ void nr_process_mac_pdu(
                 LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+		    log_dump(MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
-                    for (i = 0; i < 32; i++)
-                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
-
-                    LOG_T(MAC, "\n");
                 #endif
 
                 if (IS_SOFTMODEM_NOS1){
@@ -267,13 +263,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           ul_cqi);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-  LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
-  for (int i = 0; i < sdu_lenP ; i++) {
-	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
-	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-	  printf("%02x ",(unsigned char)sduP[i]);
-  }
-  printf("\n");
+  log_dump(MAC, sduP, sdu_lenP, LOG_DUMP_CHAR, "Printing received UL MAC payload at gNB side: %d \n");
 #endif
 
     if (sduP != NULL){

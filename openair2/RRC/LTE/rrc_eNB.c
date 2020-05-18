@@ -2134,6 +2134,8 @@ rrc_eNB_generate_RRCConnectionRelease(
 {
   uint8_t buffer[RRC_BUF_SIZE];
   uint16_t size = 0;
+  int release_num;
+
   memset(buffer, 0, RRC_BUF_SIZE);
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -2161,12 +2163,9 @@ rrc_eNB_generate_RRCConnectionRelease(
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
+  pthread_mutex_lock(&rrc_release_freelist);
 
-  while (pthread_mutex_trylock(&rrc_release_freelist)) {
-    /* spin... */
-  }
-
-  for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+  for (release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
     if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
       if (ue_context_pP->ue_context.ue_release_timer_s1 > 0) {
         rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
@@ -2184,6 +2183,12 @@ rrc_eNB_generate_RRCConnectionRelease(
             rrc_release_info.RRC_release_ctrl[release_num].flag);
       break;
     }
+  }
+
+  /* TODO: what to do if RRC_release_ctrl is full? For now, exit. */
+  if (release_num == NUMBER_OF_UE_MAX) {
+    LOG_E(RRC, "fatal: rrc_release_info.RRC_release_ctrl is full\n");
+    exit(1);
   }
 
   pthread_mutex_unlock(&rrc_release_freelist);
@@ -3512,6 +3517,35 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                size,
                buffer,
                PDCP_TRANSMISSION_MODE_CONTROL);
+
+  /* Refresh SRBs/DRBs */
+  rrc_pdcp_config_asn1_req(ctxt_pP,
+                          *SRB_configList2, // NULL,
+                          *DRB_configList,
+                          NULL,
+                          0xff, // already configured during the securitymodecommand
+                          NULL,
+                          NULL,
+                          NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                          , (LTE_PMCH_InfoList_r9_t *) NULL
+#endif
+                          , NULL);
+
+  /* Refresh SRBs/DRBs */
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            *SRB_configList2, // NULL,
+                            *DRB_configList,
+                            NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                            , (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
+#endif
+                            );
+  }
+
   free(Sparams);
   Sparams = NULL;
   free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
@@ -5192,13 +5226,13 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
   DRB_config->rlc_Config = DRB_rlc_config;
 #ifdef RRC_DEFAULT_RAB_IS_AM
-  DRB_rlc_config->present = RLC_Config_PR_am;
-  DRB_rlc_config->choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms50;
-  DRB_rlc_config->choice.am.ul_AM_RLC.pollPDU = PollPDU_p16;
-  DRB_rlc_config->choice.am.ul_AM_RLC.pollByte = PollByte_kBinfinity;
-  DRB_rlc_config->choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t8;
-  DRB_rlc_config->choice.am.dl_AM_RLC.t_Reordering = T_Reordering_ms35;
-  DRB_rlc_config->choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms25;
+  DRB_rlc_config->present = LTE_RLC_Config_PR_am;
+  DRB_rlc_config->choice.am.ul_AM_RLC.t_PollRetransmit = LTE_T_PollRetransmit_ms50;
+  DRB_rlc_config->choice.am.ul_AM_RLC.pollPDU = LTE_PollPDU_p16;
+  DRB_rlc_config->choice.am.ul_AM_RLC.pollByte = LTE_PollByte_kBinfinity;
+  DRB_rlc_config->choice.am.ul_AM_RLC.maxRetxThreshold = LTE_UL_AM_RLC__maxRetxThreshold_t8;
+  DRB_rlc_config->choice.am.dl_AM_RLC.t_Reordering = LTE_T_Reordering_ms35;
+  DRB_rlc_config->choice.am.dl_AM_RLC.t_StatusProhibit = LTE_T_StatusProhibit_ms25;
 #else
   DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
   DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
@@ -6029,6 +6063,35 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
+
+  /* Refresh SRBs/DRBs */
+  rrc_pdcp_config_asn1_req(ctxt_pP,
+                          *SRB_configList2, // NULL,
+                          *DRB_configList,
+                          NULL,
+                          0xff, // already configured during the securitymodecommand
+                          NULL,
+                          NULL,
+                          NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                          , (LTE_PMCH_InfoList_r9_t *) NULL
+#endif
+                          , NULL);
+
+  /* Refresh SRBs/DRBs */
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            *SRB_configList2, // NULL,
+                            *DRB_configList,
+                            NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                            , (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
+#endif
+                            );
+  }
+
   free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ);
   quantityConfig->quantityConfigEUTRA->filterCoefficientRSRQ = NULL;
   free(quantityConfig->quantityConfigEUTRA->filterCoefficientRSRP);
@@ -6072,12 +6135,14 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
                            NULL,
                            NULL,
                            (LTE_PMCH_InfoList_r9_t *) NULL, NULL);
-  rrc_rlc_config_asn1_req(ctxt_pP,
-                          ue_context_p->ue_context.SRB_configList,
-                          (LTE_DRB_ToAddModList_t *) NULL,
-                          (LTE_DRB_ToReleaseList_t *) NULL,
-                          (LTE_PMCH_InfoList_r9_t *) NULL, 0, 0
-                         );
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            ue_context_p->ue_context.SRB_configList,
+                            (LTE_DRB_ToAddModList_t *) NULL,
+                            (LTE_DRB_ToReleaseList_t *) NULL,
+                            (LTE_PMCH_InfoList_r9_t *) NULL, 0, 0
+                           );
+  }
 
   if (EPC_MODE_ENABLED) {
     rrc_eNB_process_security (
@@ -6212,14 +6277,16 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                            (LTE_PMCH_InfoList_r9_t *) NULL,
                            NULL);
   /* Refresh SRBs/DRBs */
-  rrc_rlc_config_asn1_req(ctxt_pP,
-                          SRB_configList, // NULL,
-                          DRB_configList,
-                          DRB_Release_configList2,
-                          (LTE_PMCH_InfoList_r9_t *) NULL,
-                          0,
-                          0
-                         );
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+    rrc_rlc_config_asn1_req(ctxt_pP,
+                            SRB_configList, // NULL,
+                            DRB_configList,
+                            DRB_Release_configList2,
+                            (LTE_PMCH_InfoList_r9_t *) NULL,
+                            0,
+                            0
+                            );
+  }
 
   /* Set the SRB active in UE context */
   if (SRB_configList != NULL) {
@@ -8167,6 +8234,143 @@ void rrc_enb_init(void) {
 }
 
 //-----------------------------------------------------------------------------
+void process_successful_rlc_sdu_indication(int instance,
+                                           int rnti,
+                                           int message_id)
+{
+  int release_num;
+  int release_total;
+  RRC_release_ctrl_t *release_ctrl;
+
+  /* Check if the message sent was RRC Connection Release.
+   * If yes then continue the release process.
+   */
+
+  pthread_mutex_lock(&rrc_release_freelist);
+
+  if (rrc_release_info.num_UEs > 0) {
+    release_total = 0;
+
+    for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
+         release_num < NUMBER_OF_UE_MAX;
+         release_num++, release_ctrl++) {
+      if(release_ctrl->flag > 0) {
+        release_total++;
+      } else {
+        continue;
+      }
+
+      if (release_ctrl->flag == 1 && release_ctrl->rnti == rnti && release_ctrl->rrc_eNB_mui == message_id) {
+        release_ctrl->flag = 3;
+        LOG_D(MAC,"DLSCH Release send:index %d rnti %x mui %d flag 1->3\n",
+              release_num,
+              rnti,
+              message_id);
+        break;
+      }
+
+      if (release_ctrl->flag == 2 && release_ctrl->rnti == rnti && release_ctrl->rrc_eNB_mui == message_id) {
+        release_ctrl->flag = 4;
+        LOG_D(MAC, "DLSCH Release send:index %d rnti %x mui %d flag 2->4\n",
+              release_num,
+              rnti,
+              message_id);
+        break;
+      }
+
+      if(release_total >= rrc_release_info.num_UEs)
+        break;
+    }
+  }
+
+  pthread_mutex_unlock(&rrc_release_freelist);
+}
+
+//-----------------------------------------------------------------------------
+void process_unsuccessful_rlc_sdu_indication(int instance, int rnti)
+{
+  int release_num;
+  int release_total;
+  RRC_release_ctrl_t *release_ctrl;
+
+  /* radio link failure detected by RLC layer, remove UE properly */
+
+  pthread_mutex_lock(&rrc_release_freelist);
+
+  /* first, check if the rnti is in the list rrc_release_info.RRC_release_ctrl */
+
+  if (rrc_release_info.num_UEs > 0) {
+    release_total = 0;
+
+    for (release_num = 0, release_ctrl = &rrc_release_info.RRC_release_ctrl[0];
+         release_num < NUMBER_OF_UE_MAX;
+         release_num++, release_ctrl++) {
+      if(release_ctrl->flag > 0) {
+        release_total++;
+      } else {
+        continue;
+      }
+
+      if (release_ctrl->flag == 1 && release_ctrl->rnti == rnti) {
+        release_ctrl->flag = 3;
+        LOG_D(MAC,"DLSCH Release send:index %d rnti %x flag 1->3\n",
+              release_num,
+              rnti);
+        goto done;
+      }
+
+      if (release_ctrl->flag == 2 && release_ctrl->rnti == rnti) {
+        release_ctrl->flag = 4;
+        LOG_D(MAC, "DLSCH Release send:index %d rnti %x flag 2->4\n",
+              release_num,
+              rnti);
+        goto done;
+      }
+
+      if(release_total >= rrc_release_info.num_UEs)
+        break;
+    }
+  }
+
+  /* it's not in the list, put it with flag = 4 */
+  for (release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+    if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
+      rrc_release_info.RRC_release_ctrl[release_num].flag = 4;
+      rrc_release_info.RRC_release_ctrl[release_num].rnti = rnti;
+      rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = -1;     /* not defined */
+      rrc_release_info.num_UEs++;
+      LOG_D(RRC, "radio link failure detected: index %d rnti %x flag %d \n",
+            release_num,
+            rnti,
+            rrc_release_info.RRC_release_ctrl[release_num].flag);
+      break;
+    }
+  }
+
+  /* TODO: what to do if rrc_release_info.RRC_release_ctrl is full? */
+  if (release_num == NUMBER_OF_UE_MAX) {
+    LOG_E(RRC, "fatal: radio link failure: rrc_release_info.RRC_release_ctrl is full\n");
+    exit(1);
+  }
+
+done:
+  pthread_mutex_unlock(&rrc_release_freelist);
+}
+
+//-----------------------------------------------------------------------------
+void process_rlc_sdu_indication(int instance,
+                                int rnti,
+                                int is_successful,
+                                int srb_id,
+                                int message_id)
+{
+  if (is_successful)
+    process_successful_rlc_sdu_indication(instance, rnti, message_id);
+  else
+    process_unsuccessful_rlc_sdu_indication(instance, rnti);
+}
+
+//-----------------------------------------------------------------------------
 int add_ue_to_remove(struct rrc_eNB_ue_context_s **ue_to_be_removed,
                      int removed_ue_count,
                      struct rrc_eNB_ue_context_s *ue_context_p) {
@@ -8868,6 +9072,13 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
        rrc_eNB_process_M2AP_MCE_CONFIGURATION_UPDATE(&ctxt,&M2AP_MCE_CONFIGURATION_UPDATE(msg_p));
        break;
 
+    case RLC_SDU_INDICATION:
+      process_rlc_sdu_indication(instance,
+                                 RLC_SDU_INDICATION(msg_p).rnti,
+                                 RLC_SDU_INDICATION(msg_p).is_successful,
+                                 RLC_SDU_INDICATION(msg_p).srb_id,
+                                 RLC_SDU_INDICATION(msg_p).message_id);
+      break;
 
     default:
       LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);
@@ -8887,27 +9098,25 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 // as there are race conditions, no rrc thread
 //-----------------------------------------------------------------------------
 void *
-rrc_enb_process_msg(
+rrc_enb_task(
   void *args_p
 )
 //-----------------------------------------------------------------------------
 {
-  //rrc_enb_init(); called once in place of thread startup
+  rrc_enb_init();
 
-  //itti_mark_task_ready(TASK_RRC_ENB);
-  //LOG_I(RRC,"Entering main loop of RRC message task\n");
+  itti_mark_task_ready(TASK_RRC_ENB);
+  LOG_I(RRC,"Entering main loop of RRC message task\n");
 
-
-  //while (1) {
+  while (1) {
     (void) rrc_enb_process_itti_msg(NULL);
 {
   //extern volatile int go_nr;
   void rrc_go_nr(void);
   //if (go_nr) rrc_go_nr();
 }
-  //}
-return NULL;
-}
+  }
+  }
 
 /*------------------------------------------------------------------------------*/
 void
