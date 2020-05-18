@@ -649,7 +649,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       size += dci_pdu->time_domain_assignment.nbits;
       // VRB to PRB mapping 
-      if (pdsch_config->resourceAllocation == 1) {
+      if ((pdsch_config->resourceAllocation == 1) && (bwp->bwp_Dedicated->pdsch_Config->choice.setup->vrb_ToPRB_Interleaver != NULL)) {
         dci_pdu->vrb_to_prb_mapping.nbits = 1;
         size += dci_pdu->vrb_to_prb_mapping.nbits;
       }

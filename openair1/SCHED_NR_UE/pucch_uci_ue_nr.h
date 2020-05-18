@@ -41,6 +41,9 @@
 /************** INCLUDE *******************************************/
 
 #include "PHY/defs_nr_UE.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_defs.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 #ifdef DEFINE_VARIABLES_PUCCH_UE_NR_H
 #define EXTERN
@@ -187,7 +190,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
     @param resource_id       pucch resource id if any
     @returns TRUE  a pucch resource has been found FALSE no valid pucch resource */
 
-boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
+boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
                                 int *initial_pucch_id, int *resource_set_id, int *resource_id, NR_UE_HARQ_STATUS_t *harq_status);
 
 /** \brief This function select a pucch resource set
@@ -196,7 +199,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
     @param uci size number of uci bits
     @returns number of the pucch resource set */
 
-int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size);
+int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size);
 
 /** \brief This function check pucch format
     @param ue context
@@ -206,7 +209,7 @@ int find_pucch_resource_set(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size);
     @param uci size number of uci bits
     @returns TRUE pucch format matched uci size and constraints, FALSE invalid pucch format */
 
-boolean_t check_pucch_format(PHY_VARS_NR_UE *ue, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, 
+boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, 
                              int uci_size);
 
 /** \brief This function selects a pucch resource
@@ -232,4 +235,9 @@ int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload);
 
 void set_csi_nr(int csi_status, uint32_t csi_payload);
 
+uint8_t get_nb_symbols_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type);
+
+uint16_t get_starting_symb_idx(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type);
+
+int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type);
 #endif /* PUCCH_UCI_UE_NR_H */
