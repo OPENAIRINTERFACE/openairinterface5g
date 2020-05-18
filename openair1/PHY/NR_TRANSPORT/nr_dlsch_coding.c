@@ -465,6 +465,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
   }
 
+    F = dlsch->harq_processes[harq_pid]->F;
+
+    Kr = dlsch->harq_processes[harq_pid]->K;
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     if (F>0) {

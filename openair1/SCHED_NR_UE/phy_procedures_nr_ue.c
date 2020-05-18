@@ -2255,6 +2255,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
+    LOG_D(PHY, "Sending PUCCH\n");
+    pucch_procedures_ue_nr(ue,
+                           gNB_id,
+                           proc,
+                           TRUE);
+
+    LOG_D(PHY, "Sending data \n");
     nr_ue_pusch_common_procedures(ue,
                                   harq_pid,
                                   slot_tx,
@@ -2262,7 +2269,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                   gNB_id,
                                   &ue->frame_parms);
   }
-
+  //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
 
   /* RACH */
   if (get_softmodem_params()->do_ra==1) {
@@ -4096,10 +4103,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
     nr_slot_fep(ue,
-    		    l,
-				nr_tti_rx,
-				0,
-				0);
+    		l,
+		nr_tti_rx,
+		0,
+		0);
 
     // note: this only works if RBs for PDCCH are contigous!
     LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",

@@ -1087,8 +1087,11 @@
                                  (Test6: 217 PRB 100 PDSCH-PRBs),
                                  (Test7: 217 PRB 80 PDSCH-Offset),
                                  (Test8: 217 PRB 100 PDSCH-PRBs 110 PDSCH-Offset),
-                                 (Test9: 106 PRBs 50 PDSCH-PRBs MCS Index 27)
-                                 (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16)</desc>
+                                 (Test9: 106 PRBs 50 PDSCH-PRBs MCS Index 27),
+                                 (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16),
+                                 (Test11: HARQ test 25% TP (4 rounds),
+                                 (Test12: HARQ test 33% TP (3 rounds),
+                                 (Test13: HARQ test 50% TP (2 rounds)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1104,8 +1107,12 @@
                   -n100 -R217 -a80 -s5
                   -n100 -R217 -a110 -s5 -b100
                   -n100 -e27 -s30 
-                  -n100 -e16 -s10</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10</tags>
+                  -n100 -e16 -s10 
+                  -n100 -s1 -t25
+                  -n100 -s1 -t33
+                  -n100 -s1 -t50
+      </main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 </tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
