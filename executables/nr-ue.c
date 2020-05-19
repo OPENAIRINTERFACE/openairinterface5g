@@ -374,7 +374,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   nr_scheduled_response_t scheduled_response;
 
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
-  if (proc->nr_tti_tx == 8 || proc->nr_tti_tx == 19 || UE->frame_parms.frame_type == FDD){
+  if (proc->nr_tti_tx == 8 || UE->frame_parms.frame_type == FDD){ //proc->nr_tti_tx == 19 ||
 
     mod_id = UE->Mod_id;
 
@@ -403,7 +403,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     rvidx = 0;
     //------------------------------------------------------------------------------//
 
-    scheduled_response.ul_config->slot = 8;
+    scheduled_response.ul_config->slot = proc->nr_tti_tx;
     scheduled_response.ul_config->number_pdus = 1;
     scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
     scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
