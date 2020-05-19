@@ -188,6 +188,11 @@ typedef struct NR_sched_pucch {
   struct NR_sched_pucch *next_sched_pucch;
 } NR_sched_pucch;
 
+typedef struct NR_UE_harq {
+  uint8_t ndi;
+  uint8_t round;
+} NR_UE_harq_t;
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
@@ -195,6 +200,7 @@ typedef struct {
   NR_sched_pucch *sched_pucch;
   uint16_t ta_timer;
   int16_t ta_update;
+  NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
 } NR_UE_sched_ctrl_t;
 
 typedef struct NR_preamble_ue {

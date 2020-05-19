@@ -1476,9 +1476,10 @@ void nr_update_pucch_scheduling(int Mod_idP,
         if (found == 0) i++;
       }
       if (found == 1) {  // scheduling this harq-ack in current pucch
-        sched_pucch = curr_pucch;
-        sched_pucch->dai_c = 1 + sched_pucch->dai_c;
-        sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+        curr_pucch->dai_c = 1 + curr_pucch->dai_c;
+        memcpy(sched_pucch,curr_pucch,sizeof(NR_sched_pucch));
+        sched_pucch->timing_indicator = i;
+        return;
       }
     }
     if (curr_pucch->dai_c==MAX_ACK_BITS || found == 0) { // if current pucch is full or no timing indicator allowed
@@ -1498,7 +1499,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
               sched_pucch->next_sched_pucch = curr_pucch;
               sched_pucch->dai_c = 1;
               sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
-              sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+              sched_pucch->timing_indicator = i;
               UE_list->UE_sched_ctrl[UE_id].sched_pucch = sched_pucch;
             }
             else {
@@ -1508,7 +1509,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
                 sched_pucch->frame = frameP;
                 sched_pucch->next_sched_pucch = NULL;
                 sched_pucch->dai_c = 1;
-                sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+                sched_pucch->timing_indicator = i;
                 sched_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
                 sched_pucch->ul_slot = k + (slotP - (slotP % slots_per_tdd));
                 curr_pucch->next_sched_pucch = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
@@ -1520,7 +1521,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
                 else { // scheduling this harq-ack in current pucch
                   sched_pucch = curr_pucch;
                   sched_pucch->dai_c = 1 + sched_pucch->dai_c;
-                  sched_pucch->timing_indicator = pdsch_to_harq_feedback[i];
+                  sched_pucch->timing_indicator = i;
                 }
               }
             }
