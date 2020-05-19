@@ -482,7 +482,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   } //is_nr_DL_slot
 
-  if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
+  if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) {
 
     if (get_softmodem_params()->phy_test == 0) {
       schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);

@@ -539,8 +539,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config){
 
-  LOG_I(MAC, "In nr_schedule_uss_dlsch_phytest frame %d slot %d\n",frameP,slotP);
-
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int lcid, offset, i, header_length_last, TBS_bytes;
   int UE_id = 0, CC_id = 0;
@@ -577,9 +575,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   if (TBS_bytes == 0)
    return;
  
-  //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
-  //through the LTE stack
-  if (IS_SOFTMODEM_NOS1){
+  //Corresponding to noS1 and EPC_MODE_ENABLED use cases where DLSCH transmissions are scheduled only when there is IP traffic
+  //at the upper layers
+  if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test == 0){
 
     for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 
@@ -635,7 +633,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       }
     }
 
-  } //if (IS_SOFTMODEM_NOS1)
+  } //if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test)
   else {
 
     //When the --NOS1 option is not enabled, DLSCH transmissions with random data
