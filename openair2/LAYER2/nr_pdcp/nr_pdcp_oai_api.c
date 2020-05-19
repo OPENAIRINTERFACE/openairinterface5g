@@ -20,6 +20,10 @@
  */
 
 #include "nr_pdcp_ue_manager.h"
+#include "NR_RadioBearerConfig.h"
+#include "NR_RLC-BearerConfig.h"
+#include "NR_CellGroupConfig.h"
+#include "openair2/RRC/NR/nr_rrc_proto.h"
 
 /* from OAI */
 #include "pdcp.h"
@@ -76,6 +80,13 @@ typedef struct {
 } rlc_data_req_queue;
 
 static rlc_data_req_queue q;
+
+extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 static void *rlc_data_req_thread(void *_)
 {
@@ -169,102 +180,6 @@ static void enqueue_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
 /****************************************************************************/
 
 #include "LAYER2/MAC/mac_extern.h"
-
-void nr_ip_over_LTE_DRB_preconfiguration(void)
-{
-          // Addition for the use-case of 4G stack on top of 5G-NR.
-          // We need to configure pdcp and rlc instances without having an actual
-          // UE RRC Connection. In order to be able to test the NR PHY with some injected traffic
-          // on top of the LTE stack.
-          protocol_ctxt_t ctxt;
-          LTE_DRB_ToAddModList_t*                DRB_configList=NULL;
-          DRB_configList = CALLOC(1, sizeof(LTE_DRB_ToAddModList_t));
-          struct LTE_LogicalChannelConfig        *DRB_lchan_config                                 = NULL;
-          struct LTE_RLC_Config                  *DRB_rlc_config                   = NULL;
-          struct LTE_PDCP_Config                 *DRB_pdcp_config                  = NULL;
-          struct LTE_PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
-
-          struct LTE_DRB_ToAddMod                *DRB_config                       = NULL;
-          struct LTE_LogicalChannelConfig__ul_SpecificParameters *DRB_ul_SpecificParameters        = NULL;
-          long  *logicalchannelgroup_drb;
-
-
-          //Static preconfiguration of DRB
-          DRB_config = CALLOC(1, sizeof(*DRB_config));
-
-          DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
-          // allowed value 5..15, value : x+4
-          *(DRB_config->eps_BearerIdentity) = 1; //ue_context_pP->ue_context.e_rab[i].param.e_rab_id;//+ 4; // especial case generation
-          //   DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
-          // 1 + drb_identiy_index;
-          DRB_config->drb_Identity = 1;
-          DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
-          *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
-
-          DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
-          DRB_config->rlc_Config = DRB_rlc_config;
-
-          DRB_pdcp_config = CALLOC(1, sizeof(*DRB_pdcp_config));
-          DRB_config->pdcp_Config = DRB_pdcp_config;
-          DRB_pdcp_config->discardTimer = CALLOC(1, sizeof(long));
-          *DRB_pdcp_config->discardTimer = LTE_PDCP_Config__discardTimer_infinity;
-          DRB_pdcp_config->rlc_AM = NULL;
-          DRB_pdcp_config->rlc_UM = NULL;
-
-          DRB_rlc_config->present = LTE_RLC_Config_PR_um_Bi_Directional;
-          DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
-          DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = LTE_SN_FieldLength_size10;
-          DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = LTE_T_Reordering_ms35;
-          // PDCP
-          PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
-          DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
-          PDCP_rlc_UM->pdcp_SN_Size = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
-
-          DRB_pdcp_config->headerCompression.present = LTE_PDCP_Config__headerCompression_PR_notUsed;
-
-          DRB_lchan_config = CALLOC(1, sizeof(*DRB_lchan_config));
-          DRB_config->logicalChannelConfig = DRB_lchan_config;
-          DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
-          DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
-
-          DRB_ul_SpecificParameters->priority= 4;
-
-          DRB_ul_SpecificParameters->prioritisedBitRate = LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
-          //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-          DRB_ul_SpecificParameters->bucketSizeDuration =
-          LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-          logicalchannelgroup_drb = CALLOC(1, sizeof(long));
-          *logicalchannelgroup_drb = 1;//(i+1) % 3;
-          DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-
-          ASN_SEQUENCE_ADD(&DRB_configList->list,DRB_config);
-
-          if (ENB_NAS_USE_TUN){
-                  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
-          }
-          else{
-                  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
-          }
-
-          rrc_pdcp_config_asn1_req(&ctxt,
-                       (LTE_SRB_ToAddModList_t *) NULL,
-                       DRB_configList,
-                       (LTE_DRB_ToReleaseList_t *) NULL,
-                       0xff, NULL, NULL, NULL
-                       , (LTE_PMCH_InfoList_r9_t *) NULL,
-                       &DRB_config->drb_Identity);
-
-        rrc_rlc_config_asn1_req(&ctxt,
-                       (LTE_SRB_ToAddModList_t*)NULL,
-                       DRB_configList,
-                       (LTE_DRB_ToReleaseList_t*)NULL
-        //#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                       ,(LTE_PMCH_InfoList_r9_t *)NULL
-                       , 0, 0
-        //#endif
-                 );
-}
 
 static void reblock_tun_socket(void)
 {
@@ -796,6 +711,127 @@ boolean_t rrc_pdcp_config_asn1_req(
   free(kUPenc);
 
   return 0;
+}
+
+void nr_ip_over_LTE_DRB_preconfiguration(void)
+{
+
+  NR_RadioBearerConfig_t             *rbconfig = NULL;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList *Rlc_Bearer_ToAdd_list = NULL;
+  protocol_ctxt_t ctxt;
+  //fill_default_rbconfig(rb_config, 5, 1);
+  rbconfig = calloc(1, sizeof(*rbconfig));
+
+  rbconfig->srb_ToAddModList = NULL;
+    rbconfig->srb3_ToRelease = NULL;
+    rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
+    NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
+    drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
+    drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
+    drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 5;
+    drb_ToAddMod->drb_Identity = 1;
+    drb_ToAddMod->reestablishPDCP = NULL;
+    drb_ToAddMod->recoverPDCP = NULL;
+    drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
+    drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
+    drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
+    *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_ms30;
+    drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
+    *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+    drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
+    *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+    drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+    drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+
+    drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;
+    drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;
+    drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
+    drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
+
+    drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
+    *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+    drb_ToAddMod->pdcp_Config->ext1 = NULL;
+
+    ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
+
+    rbconfig->drb_ToReleaseList = NULL;
+
+    rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
+    rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
+    rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
+    rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
+    rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
+    *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+
+    xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
+
+
+  NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
+
+  RLC_BearerConfig->logicalChannelIdentity = 3;
+  RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
+  RLC_BearerConfig->servedRadioBearer->present =    NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
+
+  RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=1;
+  RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
+  *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
+  RLC_BearerConfig->rlc_Config=calloc(1,sizeof(*RLC_BearerConfig->rlc_Config));
+
+  // RLC UM Bi-directional Bearer configuration
+  RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_um_Bi_Directional;
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional));
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
+  RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+
+  RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedServingCells = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->allowedSCS_List     = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->maxPUSCH_Duration   = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->configuredGrantType1Allowed = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
+  *RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup  = 1;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = NULL;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
+  RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
+
+  Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));
+  ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
+
+  if (ENB_NAS_USE_TUN){
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, 0x1234, 0, 0,0);
+  }
+  else{
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, 0x1234, 0, 0,0);
+  }
+
+  nr_rrc_pdcp_config_asn1_req(
+    &ctxt,
+    (NR_SRB_ToAddModList_t *) NULL,
+    rbconfig->drb_ToAddModList ,
+    rbconfig->drb_ToReleaseList,
+    0xff,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    Rlc_Bearer_ToAdd_list);
+
+  nr_rrc_rlc_config_asn1_req (&ctxt,
+      (NR_SRB_ToAddModList_t *) NULL,
+      rbconfig->drb_ToAddModList,
+      rbconfig->drb_ToReleaseList,
+      (LTE_PMCH_InfoList_r9_t *) NULL,
+      Rlc_Bearer_ToAdd_list);
 }
 
 uint64_t get_pdcp_optmask(void)
