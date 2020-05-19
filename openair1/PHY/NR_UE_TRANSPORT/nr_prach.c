@@ -60,6 +60,7 @@ extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 extern const char *prachfmt[9];
+extern const char *prachfmt03[4];
 
 // Note:
 // - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt
@@ -210,9 +211,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   #ifdef NR_PRACH_DEBUG
     if (NCS>0)
       LOG_I(PHY, "PRACH [UE %d] generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %s, NCS %d (N_ZC %d): Preamble_offset %d, Preamble_shift %d\n", Mod_id,
-        rootSequenceIndex,
-        preamble_index,
-        prachfmt[prach_fmt_id],
+    rootSequenceIndex,
+    preamble_index,
+    prach_sequence_length == 0 ? prachfmt03[prach_fmt_id]  : prachfmt[prach_fmt_id],
         NCS,
         N_ZC,
         preamble_offset,
