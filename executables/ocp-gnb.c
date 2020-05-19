@@ -486,34 +486,39 @@ void RCconfig_RU(void) {
   return;
 }
 
-int rx_rf(RU_t *ru, int lastReadSz) {
-  RU_proc_t *proc = &ru->proc;
-  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  void *rxp[ru->nb_rx];
+int rx_rf(RU_proc_t *proc, NR_DL_FRAME_PARMS *fp,int nb_rx, int32_t** rxdata, int lastReadSz,
+	  openair0_device* rfdevice,  openair0_timestamp ts_offset) {
+  void *rxp[nb_rx];
   int nextSlot=(proc->tti_rx+1)%fp->slots_per_frame;
   uint32_t samples_per_slot = fp->get_samples_per_slot(nextSlot,fp);
 
-  for (int i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(nextSlot,fp,0)];
+  int rxBufOffet=fp->get_samples_slot_timestamp(nextSlot,fp,0);
+  int controlrxBufOffet=(proc->timestamp_rx+lastReadSz)%fp->samples_per_frame;
+  AssertFatal(rxBufOffet == controlrxBufOffet && 
+	      rxBufOffet+ samples_per_slot <= fp->samples_per_frame,
+	      "inconsistent IQ samples read");
+
+  for (int i=0; i<nb_rx; i++)
+    rxp[i] = (void *)&rxdata[i][rxBufOffet];
 
   openair0_timestamp old_ts = proc->timestamp_rx;
   LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,nextSlot,rxp[0]);
-  unsigned int rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
-                     & proc->timestamp_rx,
+  unsigned int rxs = rfdevice->trx_read_func(rfdevice,
+                     &proc->timestamp_rx,
                      rxp,
                      samples_per_slot,
-                     ru->nb_rx);
+                     nb_rx);
 
   if (rxs != samples_per_slot)
     LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
 
   // In case we need offset, between RU or any other need
   // The sync system can put a offset to use betwwen RF boards
-  proc->timestamp_rx+=ru->ts_offset;
+  proc->timestamp_rx+=ts_offset;
 
   if (lastReadSz && proc->timestamp_rx - old_ts != lastReadSz)
     LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",
-          proc->timestamp_rx - old_ts - samples_per_slot,ru->ts_offset);
+          proc->timestamp_rx - old_ts - samples_per_slot,ts_offset);
 
   return rxs;
 }
@@ -738,10 +743,12 @@ static void *ru_thread( void *param ) {
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   int lastReadSz=0;
   sf_ahead = (uint16_t) ceil((float)6/(0x01<<fp->numerology_index));
+  proc->tti_rx=-1; // we increment before each read
+  openair0_timestamp ts_offset=0; //for multi RU
 
   while (!oai_exit) {
     // synchronization on input FH interface, acquire signals/data and block
-    lastReadSz=rx_rf(ru, lastReadSz);
+    lastReadSz=rx_rf(proc, fp, ru->nb_rx,ru->common.rxdata,lastReadSz, &ru->rfdevice, ts_offset);
     // do RX front-end processing (frequency-shift, dft) if needed
     proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
     uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
@@ -824,7 +831,7 @@ void launch_NR_RU(char *rf_config_file) {
   }
 }
 
-void init_eNB_afterRU() {
+void init_eNB_afterRU(void) {
   AssertFatal(false,"");
 }
 

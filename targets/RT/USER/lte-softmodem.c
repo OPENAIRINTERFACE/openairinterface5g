@@ -660,6 +660,7 @@ int main ( int argc, char **argv )
          initTpool("n", L1proc->threadPool, true);
       initNotifiedFIFO(L1proc->respEncode);
       initNotifiedFIFO(L1proc->respDecode);
+      RC.eNB[x][CC_id]->proc.L1_proc_tx.threadPool=L1proc->threadPool;
     }
 
 

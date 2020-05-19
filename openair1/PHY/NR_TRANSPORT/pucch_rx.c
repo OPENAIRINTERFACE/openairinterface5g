@@ -263,7 +263,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
 #else
 
-  int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
+  const int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
   int16_t xr[24]  __attribute__((aligned(32)));
   int16_t xrt[24] __attribute__((aligned(32)));
   int32_t xrtmag=0;

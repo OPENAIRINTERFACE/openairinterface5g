@@ -183,10 +183,14 @@ compilations() {
     else
         COV_SCAN_PREFIX=""
     fi
-    if [ "$VERBOSE_COMPILE" == "1" ]; then
-       $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
-    else
-       $COV_SCAN_PREFIX make -j`nproc` $2
+    if [ "$MAKE_CMD" != "" ]; then
+       $MAKE_CMD $2
+    else 
+       if [ "$VERBOSE_COMPILE" == "1" ]; then
+          $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
+       else
+          $COV_SCAN_PREFIX make -j`nproc` $2
+       fi
     fi
 
   } > $dlog/$2.$REL.txt 2>&1
@@ -778,7 +782,7 @@ install_asn1c_from_source(){
 
 install_nas_tools() {
   if [ ! -f .ue.nvram0 ]; then
-    echo_success "generate .ue_emm.nvram .ue.nvram"
+    echo_success "generate .ue_emm.nvram .ue.nvram ./nvram --gen -c $1 -o $2"
     ./nvram --gen -c $1 -o $2
   else
     [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
