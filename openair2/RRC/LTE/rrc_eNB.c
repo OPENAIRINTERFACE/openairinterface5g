@@ -2124,7 +2124,6 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_p->Srb0.Tx_buffer.payload_size);
 }
-#ifdef GES_ENDC_SUPPORT
 #if 0
 void rrc_generate_SgNBReleaseRequest(
   const protocol_ctxt_t *const ctxt_pP,
@@ -2146,7 +2145,6 @@ void rrc_generate_SgNBReleaseRequest(
   return;
 }
 #endif
-#endif
 //-----------------------------------------------------------------------------
 /*
 * Generate the RRC Connection Release to UE.
@@ -2166,7 +2164,6 @@ rrc_eNB_generate_RRCConnectionRelease(
   memset(buffer, 0, RRC_BUF_SIZE);
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-#ifdef GES_ENDC_SUPPORT
 #if 0
 
   if(ue_context_pP != NULL) {
@@ -2175,7 +2172,6 @@ rrc_eNB_generate_RRCConnectionRelease(
     }
   }
 
-#endif
 #endif
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
