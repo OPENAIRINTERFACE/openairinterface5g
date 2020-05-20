@@ -245,7 +245,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
   NR_UE_list_t *UE_list = NULL;
-  UE_sched_ctrl_t *UE_scheduling_control = NULL;
+  NR_UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   current_rnti = rntiP;
   UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
@@ -261,7 +261,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           CC_idP,
           frameP,
           slotP,
-          UE_scheduling_control->round_UL[CC_idP][harq_pid],
+          -1, //UE_scheduling_control->round_UL[CC_idP][harq_pid],
           current_rnti,
           UE_id,
           ul_cqi);
@@ -277,7 +277,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      UE_scheduling_control->ta_update = timing_advance;
+      //UE_scheduling_control->ta_update = timing_advance;
       LOG_D(MAC, "Received PDU at MAC gNB \n");
       nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
     }

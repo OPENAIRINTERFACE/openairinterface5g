@@ -69,13 +69,9 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
-#if OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
-#endif
 
 
 /** @addtogroup _GENERIC_PHY_RF_INTERFACE_

@@ -45,9 +45,6 @@
 #define MAX_RRU_CONFIG_SIZE 1024
 
 
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 
 typedef enum {
   normal_txrx=0,
@@ -93,7 +90,6 @@ typedef enum {
   synch_to_other,          // synch to another source_(timer, other RU)
   synch_to_mobipass_standalone  // special case for mobipass in standalone mode
 } node_timing_t;
-#endif
 
 
 typedef struct {
