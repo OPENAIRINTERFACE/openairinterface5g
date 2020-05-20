@@ -472,6 +472,7 @@ uint8_t dB_fixed64(uint64_t x);
 int8_t dB_fixed2(uint32_t x,uint32_t y);
 
 int16_t dB_fixed_times10(uint32_t x);
+int16_t dB_fixed_x10(uint32_t x);
 
 int32_t phy_phase_compensation_top(uint32_t pilot_type,
                                    uint32_t initial_pilot,
