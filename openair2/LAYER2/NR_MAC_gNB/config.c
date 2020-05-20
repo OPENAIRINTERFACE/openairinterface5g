@@ -290,8 +290,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
-                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
-                  );
+                    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols);
 
   if (return_tdd !=0){
      LOG_E(PHY,"TDD configuration can not be done\n");

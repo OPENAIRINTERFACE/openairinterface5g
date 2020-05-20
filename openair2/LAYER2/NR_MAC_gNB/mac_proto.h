@@ -157,7 +157,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
                                 frame_t frameP,
                                 sub_frame_t slotP,
                                 int slots_per_tdd,
-                                NR_sched_pucch *sched_pucch);
+                                NR_sched_pucch *curr_pucch);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
