@@ -19,6 +19,7 @@
 
 #define NFAPI_MAX_NUM_UL_UE_PER_GROUP 6
 #define NFAPI_MAX_NUM_UL_PDU 8
+#define NFAPI_MAX_NUM_UCI_INDICATION 8
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
@@ -1513,8 +1514,8 @@ typedef struct
   uint8_t  ul_cqi;
   uint16_t timing_advance;
   uint16_t rssi;
-  nfapi_nr_sr_pdu_0_1_t sr;//67
-  nfapi_nr_harq_pdu_0_1_t harq;//68
+  nfapi_nr_sr_pdu_0_1_t *sr;//67
+  nfapi_nr_harq_pdu_0_1_t *harq;//68
   
 
 }nfapi_nr_uci_pucch_pdu_format_0_1_t;
@@ -1536,28 +1537,22 @@ typedef struct
 
 }nfapi_nr_uci_pucch_pdu_format_2_3_4_t;
 
-//for SR, HARQ and CSI Part 1/ 2 PDUs
+typedef enum {
+  NFAPI_NR_UCI_PDCCH_PDU_TYPE  = 0,
+  NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE  = 1,
+  NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE = 2,
+} nfapi_nr_uci_pdu_type_e;
 
 typedef struct
 {
-  nfapi_nr_uci_pusch_pdu_t* pusch_pdu;
-  nfapi_nr_uci_pucch_pdu_format_0_1_t* pucch_pdu_format_0_1;
-  nfapi_nr_uci_pucch_pdu_format_2_3_4_t* pucch_pdu_format_2_3_4;
-  nfapi_nr_sr_pdu_0_1_t*   sr_pdu_0_1;
-  nfapi_nr_sr_pdu_2_3_4_t* sr_pdu_2_3_4;
-  nfapi_nr_harq_pdu_0_1_t* harq_pdu_0_1;
-  nfapi_nr_harq_pdu_2_3_4_t* harq_pdu_2_3_4;
-  nfapi_nr_csi_part1_pdu_t*  csi_part1_pdu;
-  nfapi_nr_csi_part2_pdu_t*  csi_part2_pdu;
-
-} nfapi_nr_uci_pdu_information_t;
-
-typedef struct
-{
-  uint16_t pdu_type;
+  uint16_t pdu_type;  // 0 for PDU on PUSCH, 1 for PUCCH format 0 or 1, 2 for PUCCH format 2 to 4
   uint16_t pdu_size;
-  nfapi_nr_uci_pdu_information_t uci_pdu;
-
+  union
+  {
+    nfapi_nr_uci_pusch_pdu_t pusch_pdu;
+    nfapi_nr_uci_pucch_pdu_format_0_1_t pucch_pdu_format_0_1;
+    nfapi_nr_uci_pucch_pdu_format_2_3_4_t pucch_pdu_format_2_3_4;
+  };
 } nfapi_nr_uci_t;
 
 typedef struct
@@ -1565,7 +1560,7 @@ typedef struct
   uint16_t sfn;
   uint16_t slot;
   uint16_t num_ucis;
-  nfapi_nr_uci_t* uci_list;
+  nfapi_nr_uci_t uci_list[NFAPI_MAX_NUM_UCI_INDICATION];
 
 } nfapi_nr_uci_indication_t;
 

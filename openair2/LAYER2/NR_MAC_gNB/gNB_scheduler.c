@@ -287,6 +287,67 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
+void nr_schedule_pucch(int Mod_idP,
+                       int UE_id,
+                       frame_t frameP,
+                       sub_frame_t slotP) {
+
+  uint16_t O_uci;
+  uint16_t O_ack;
+  uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  int bwp_id=1;
+  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+
+  NR_sched_pucch *curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+  NR_sched_pucch *temp_pucch;
+  int release_pucch = 0;
+
+  if (curr_pucch != NULL) {
+    if ((frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+      UL_tti_req->SFN = frameP;
+      UL_tti_req->Slot = slotP;
+      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+      nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
+      memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
+      UL_tti_req->n_pdus+=1;
+      O_ack = curr_pucch->dai_c;
+      O_uci = O_ack; // for now we are just sending acknacks in pucch
+
+      nr_configure_pucch(pucch_pdu,
+			 scc,
+			 ubwp,
+                         curr_pucch->resource_indicator,
+                         O_uci,
+                         O_ack,
+                         SR_flag);
+
+      release_pucch = 1;
+    }
+  }
+
+  if (release_pucch) {
+    temp_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
+    UE_list->UE_sched_ctrl[UE_id].sched_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch->next_sched_pucch;
+    free(temp_pucch);
+  }
+
+}
+
+bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot){
+
+  if((bitmap>>slot)&0x01)
+    return true;
+  else
+    return false;
+}
+
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame_rxP,
                                sub_frame_t slot_rxP,
@@ -302,6 +363,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_UE_list_t *UE_list = &gNB->UE_list;
   UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_sched_pucch *pucch_sched = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -339,7 +401,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       } //END if (UE_list->active[i])
     } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
     */
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frame_txP, slot_txP,module_idP);
   
     // This schedules MIB
     if((slot_txP == 0) && (frame_txP & 7) == 0){
@@ -365,7 +426,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     
     // Phytest scheduling
     if (get_softmodem_params()->phy_test && slot_txP==1){
-      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,NULL);
+      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, pucch_sched, NULL);
       // resetting ta flag
       gNB->ta_len = 0;
     }

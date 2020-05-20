@@ -68,6 +68,8 @@ extern const uint16_t nr_slots_per_frame[5];
 
 //extern uint8_t  nfapi_mode;
 
+void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
+
 // WIP
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
 // and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321

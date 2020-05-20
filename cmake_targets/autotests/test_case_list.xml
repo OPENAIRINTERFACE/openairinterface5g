@@ -1176,21 +1176,38 @@
 
     <testCase id="015109">
       <class>execution</class>
-      <desc>nr_pucchsim Test cases. (Test1: Format 0 ACK miss 106 PRB),
-                                    (Test2: Format 1 ACK miss 106 PRB),
-				                    (Test3: Format 1 ACK miss 273 PRB),
-			                        (Test4: Format 1 NACKtoACK 106 PRB)</desc>
+      <desc>nr_pucchsim Test cases. (Test1: Format 0 1-bit ACK miss 106 PRB),
+                                    (Test2: Format 0 2-bit ACK miss 106 PRB),
+                                    (Test3: Format 0 2-bit ACK miss, 1-bit SR 106 PRB),
+				    (Test4: Format 2 3-bit 106 PRB),
+                                    (Test5: Format 2 4-bit 106 PRB),
+                                    (Test6: Format 2 5-bit 106 PRB),
+                                    (Test7: Format 2 6-bit 106 PRB),
+                                    (Test8: Format 2 7-bit 106 PRB),
+                                    (Test9: Format 2 8-bit 106 PRB),
+                                    (Test10: Format 2 9-bit 106 PRB),
+                                    (Test11: Format 2 10-bit 106 PRB),
+                                    (Test12: Format 2 11-bit 106 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pucchsim.Rel15</main_exec>
-      <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s3 -n100
-	                  -R 106 -i 14 -P 1 -b 1 -s-6 -n100
-                      -R 273 -i 14 -P 1 -b 1 -s-6 -n100
-                      -R 106 -i 14 -P 1 -b 1 -s-6 -T 0.001 -n1000</main_exec_args>
-      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4</tags>
+      <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s-2 -n1000
+                      -R 106 -i 1 -P 0 -b 2 -s-2 -n1000
+		      -R 106 -i 1 -P 0 -b 2 -s-2 -c -n1000
+                      -R 106 -i 1 -P 2 -b 3 -s0 -n1000
+		      -R 106 -i 1 -P 2 -b 4 -s0 -n1000
+		      -R 106 -i 1 -P 2 -b 5 -s1 -n1000
+		      -R 106 -i 1 -P 2 -b 6 -s2 -n1000
+		      -R 106 -i 1 -P 2 -b 7 -s3 -n1000
+		      -R 106 -i 1 -P 2 -b 8 -s4 -n1000
+		      -R 106 -i 1 -P 2 -b 9 -s5 -n1000
+		      -R 106 -i 1 -P 2 -b 10 -s6 -n1000
+		      -R 106 -i 1 -P 2 -b 11 -s6 -n1000
+                      </main_exec_args>
+      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4 nr_pucchsim.test5 nr_pucchsim.test6 nr_pucchsim.test7 nr_pucchsim.test8 nr_pucchsim.test9 nr_pucchsim.test10 nr_pucchsim.test11 nr_pucchsim.test12 </tags>
       <search_expr_true>PUCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

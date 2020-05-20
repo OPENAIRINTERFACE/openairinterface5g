@@ -29,8 +29,8 @@
 *
 ************************************************************************/
 
-#ifndef PHY_FRAME_CONFIG_NR_H
-#define PHY_FRAME_CONFIG_NR_H
+#ifndef PHY_FRAME_CONFIG_NR_UE_H
+#define PHY_FRAME_CONFIG_NR_UE_H
 
 /************** DEFINE ********************************************/
 

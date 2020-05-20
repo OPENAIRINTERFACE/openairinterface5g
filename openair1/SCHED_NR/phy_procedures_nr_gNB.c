@@ -27,6 +27,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
+#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "SCHED/sched_eNB.h"
 #include "sched_nr.h"
 #include "SCHED/sched_common_extern.h"
@@ -379,33 +380,66 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
+  nfapi_nr_ul_tti_request_t *UL_tti_req  = &gNB->UL_tti_req;
+  int num_pdus = UL_tti_req->n_pdus;
 
-  for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
-    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
-    int harq_pid;
-    NR_UL_gNB_HARQ_t *ulsch_harq;
+  nfapi_nr_uci_indication_t *uci_indication = &gNB->uci_indication;
+  uci_indication->sfn = frame_rx;
+  uci_indication->slot = slot_rx;
+  uci_indication->num_ucis = 0;
 
-    if ((ulsch) &&
-	(ulsch->rnti > 0)) {
-      // for for an active HARQ process
-      for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	ulsch_harq = ulsch->harq_processes[harq_pid];
-	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-	if ((ulsch_harq->status == NR_ACTIVE) &&
-	    (ulsch_harq->frame == frame_rx) &&
-	    (ulsch_harq->slot == slot_rx) &&
-	    (ulsch_harq->handled == 0)){
 
-	  uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
-	  uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
-	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	    nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-	  }
-	  //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
-	  //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
-	  nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+  LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d, num_pdus %d\n",frame_rx,slot_rx,num_pdus);
+
+  gNB->UL_INFO.rx_ind.number_of_pdus = 0;
+  gNB->UL_INFO.crc_ind.number_crcs = 0;
+
+  for (int i = 0; i < num_pdus; i++) {
+    switch (UL_tti_req->pdus_list[i].pdu_type) {
+    case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+      {
+	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE\n",frame_rx,slot_rx);
+	
+	nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+	nr_fill_ulsch(gNB,frame_rx,slot_rx,pusch_pdu);
+	
+	uint8_t ULSCH_id =  find_nr_ulsch(pusch_pdu->rnti,gNB,SEARCH_EXIST);
+	uint8_t harq_pid = pusch_pdu->pusch_data.harq_process_id;
+	uint8_t symbol_start = pusch_pdu->start_symbol_index;
+	uint8_t symbol_end = symbol_start + pusch_pdu->nr_of_symbols;
+	
+	for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+	  nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+	}
+	//LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
+	//LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
+	nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+      }
+      break;
+    case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
+      {
+	LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE\n",frame_rx,slot_rx);
+	
+	nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[i].pucch_pdu;
+	switch (pucch_pdu->format_type) {
+	case 0:
+	  uci_indication->uci_list[uci_indication->num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+	  uci_indication->uci_list[uci_indication->num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+	  nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &uci_indication->uci_list[uci_indication->num_ucis].pucch_pdu_format_0_1;
+	  
+	  nr_decode_pucch0(gNB,
+			   slot_rx,
+			   uci_pdu_format0,
+			   pucch_pdu);
+	  
+	  uci_indication->num_ucis += 1;
 	  break;
+	case 1:
+	  break;
+	case 2:
+	  break;
+	default:
+	  AssertFatal(1==0,"Only PUCCH format 0,1 and 2 are currently supported\n");
 	}
       }
     }

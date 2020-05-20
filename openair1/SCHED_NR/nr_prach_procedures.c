@@ -55,7 +55,7 @@ extern int oai_nfapi_nr_rach_ind(nfapi_rach_indication_t *rach_ind);
 void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
 			    nfapi_nr_prach_pdu_t *prach_pdu) {
 
-  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
+  uint16_t max_preamble[4]={0},max_preamble_energy[4]={0},max_preamble_delay[4]={0};
   uint16_t i;
 
 
