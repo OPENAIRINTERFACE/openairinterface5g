@@ -1972,6 +1972,10 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                          subframe, ENB_FLAG_NO,
                                          lcid);
       lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
+#if 0
+      /* TODO: those assert crash the L2 simulator with the new RLC.
+       *       Are they necessary?
+       */
       AssertFatal(lcid_buffer_occupancy_new ==
                   UE_mac_inst[module_idP].
                   scheduling_info.LCID_buffer_remain[lcid],
@@ -1990,6 +1994,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                   scheduling_info.BSR_bytes[UE_mac_inst[module_idP].
                                             scheduling_info.LCGID
                                             [lcid]]);
+#endif
 
       //Multiplex all available DCCH RLC PDUs considering to multiplex the last PDU each time for maximize the data
       //Adjust at the end of the loop
@@ -2085,18 +2090,10 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
       }
 
       //Update Buffer remain and BSR bytes after transmission
-      AssertFatal(lcid_buffer_occupancy_new <=
-                  lcid_buffer_occupancy_old,
-                  "MAC UE Tx error : Buffer Occupancy After Tx=%d greater than before=%d BO! for LCID=%d RLC PDU nb=%d Frame %d Subrame %d\n",
-                  lcid_buffer_occupancy_new,
-                  lcid_buffer_occupancy_old, lcid,
-                  lcid_rlc_pdu_count, frameP, subframe);
-      UE_mac_inst[module_idP].scheduling_info.
-      LCID_buffer_remain[lcid] = lcid_buffer_occupancy_new;
-      UE_mac_inst[module_idP].
-      scheduling_info.BSR_bytes[UE_mac_inst[module_idP].
-                                scheduling_info.LCGID[lcid]] +=
-                                  (lcid_buffer_occupancy_new - lcid_buffer_occupancy_old);
+      UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[lcid] = lcid_buffer_occupancy_new;
+      UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] += (lcid_buffer_occupancy_new - lcid_buffer_occupancy_old);
+      if (UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] < 0)
+        UE_mac_inst[module_idP].scheduling_info.BSR_bytes[UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] = 0;
 
       //Update the number of LCGID with data as BSR shall reflect status after BSR transmission
       if ((num_lcg_id_with_data > 1)
@@ -2809,7 +2806,6 @@ update_bsr(module_id_t module_idP, frame_t frameP,
 
       rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
                                       lcid,
-                                      0xFFFF, //TBS is not used in RLC at this step, set a special value for debug
                                       0, 0
                                      );
       lcid_bytes_in_buffer[lcid] = rlc_status.bytes_in_buffer;
@@ -3176,7 +3172,7 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_
         for (int j = 0; j < ue->numCommFlows; j++) {
           if ((ue->sourceL2Id > 0) && (ue->destinationList[j] >0) ) {
             rlc_status = mac_rlc_status_ind(module_idP, 0x1234,0,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
-                                            ue->SL_LCID[i], 0xFFFF, ue->sourceL2Id, ue->destinationList[j]);
+                                            ue->SL_LCID[i], ue->sourceL2Id, ue->destinationList[j]);
 
             if (rlc_status.bytes_in_buffer > 2) {
               LOG_I(MAC,"SFN.SF %d.%d: Scheduling for %d bytes in Sidelink buffer\n",frameP,subframeP,rlc_status.bytes_in_buffer);

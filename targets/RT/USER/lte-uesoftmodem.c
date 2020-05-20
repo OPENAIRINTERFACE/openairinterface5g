@@ -113,10 +113,6 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 volatile int             oai_exit = 0;
 
-
-clock_source_t clock_source = internal,time_source=internal;
-
-
 unsigned int                    mmapped_dma=0;
 
 
@@ -285,13 +281,13 @@ void exit_function(const char *file, const char *function, const int line, const
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
-  int CC_id;
-  int tddflag = 0;
-  char *loopfile = NULL;
-  int dumpframe = 0;
-  int timingadv = 0;
+  int CC_id=0;
+  int tddflag=0;
+  char *loopfile=NULL;
+  int dumpframe=0;
+  int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
-  int simL1flag = 0;
+  int simL1flag =0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
@@ -467,7 +463,8 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 
     openair0_cfg[card].Mod_id = 0;
     openair0_cfg[card].num_rb_dl=frame_parms->N_RB_DL;
-    openair0_cfg[card].clock_source = clock_source;
+    openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
+    openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
     openair0_cfg[card].tx_num_channels=min(2,frame_parms->nb_antennas_tx);
     openair0_cfg[card].rx_num_channels=min(2,frame_parms->nb_antennas_rx);
 

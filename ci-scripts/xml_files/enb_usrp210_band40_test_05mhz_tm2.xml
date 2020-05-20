@@ -25,7 +25,7 @@
 	<htmlTabRef>test-05-tm2</htmlTabRef>
 	<htmlTabName>Test-05MHz-TM2</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>3</repeatCount>
+	<repeatCount>2</repeatCount>
         <TestCaseRequestedList>
  030201
  040101

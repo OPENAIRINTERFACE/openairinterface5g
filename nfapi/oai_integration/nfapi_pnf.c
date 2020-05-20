@@ -49,7 +49,6 @@ extern RAN_CONTEXT_t RC;
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
 #include "common/utils/LOG/log.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "PHY/INIT/phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
@@ -692,13 +691,14 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
   free(header);
 }
 
-int pnf_phy_hi_dci0_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *req) {
+int pnf_phy_hi_dci0_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *req) {
   if (req->hi_dci0_request_body.number_of_dci == 0 && req->hi_dci0_request_body.number_of_hi == 0)
     LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
 
   //phy_info* phy = (phy_info*)(pnf_p7->user_data);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;
+  if (proc ==NULL) 
+    proc = &eNB->proc.L1_proc;
 
   for (int i=0; i<req->hi_dci0_request_body.number_of_dci + req->hi_dci0_request_body.number_of_hi; i++) {
     //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
@@ -719,7 +719,7 @@ int pnf_phy_hi_dci0_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *
   return 0;
 }
 
-int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
+int pnf_phy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
   if (RC.ru == 0) {
     return -1;
   }
@@ -740,7 +740,8 @@ int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request
   int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   int sf = NFAPI_SFNSF2SF(req->sfn_sf);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;
+  if (proc==NULL)
+     proc = &eNB->proc.L1_proc;
   nfapi_dl_config_request_pdu_t *dl_config_pdu_list = req->dl_config_request_body.dl_config_pdu_list;
   LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[sf&1];
   pdcch_vars->num_pdcch_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
@@ -797,7 +798,7 @@ int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request
         uint8_t *dlsch_sdu = tx_pdus[UE_id][harq_pid];
         memcpy(dlsch_sdu, tx_pdu->segments[0].segment_data, tx_pdu->segments[0].segment_length);
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
-        handle_nfapi_dlsch_pdu( eNB, sfn,sf, &eNB->proc.L1_proc, &dl_config_pdu_list[i], rel8_pdu->transport_blocks-1, dlsch_sdu);
+        handle_nfapi_dlsch_pdu( eNB, sfn,sf, proc, &dl_config_pdu_list[i], rel8_pdu->transport_blocks-1, dlsch_sdu);
       } else {
         NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() DLSCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), rel8_pdu->pdu_index);
       }
@@ -837,7 +838,7 @@ int pnf_phy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int pnf_phy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
+int pnf_phy_ul_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
   if (0)LOG_D(PHY,"[PNF] UL_CONFIG_REQ %s() sfn_sf:%d pdu:%d rach_prach_frequency_resources:%d srs_present:%u\n",
                 __FUNCTION__,
                 NFAPI_SFNSF2DEC(req->sfn_sf),
@@ -866,7 +867,8 @@ int pnf_phy_ul_config_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request
   uint16_t curr_sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   uint16_t curr_sf = NFAPI_SFNSF2SF(req->sfn_sf);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  L1_rxtx_proc_t *proc = &eNB->proc.L1_proc;
+  if (proc==NULL)
+     proc = &eNB->proc.L1_proc;
   nfapi_ul_config_request_pdu_t *ul_config_pdu_list = req->ul_config_request_body.ul_config_pdu_list;
 
   for (int i=0; i<req->ul_config_request_body.number_of_pdus; i++) {

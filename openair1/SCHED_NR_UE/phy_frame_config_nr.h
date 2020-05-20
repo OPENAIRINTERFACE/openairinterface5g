@@ -29,8 +29,8 @@
 *
 ************************************************************************/
 
-#ifndef PHY_FRAME_CONFIG_NR_H
-#define PHY_FRAME_CONFIG_NR_H
+#ifndef PHY_FRAME_CONFIG_NR_UE_H
+#define PHY_FRAME_CONFIG_NR_UE_H
 
 /************** DEFINE ********************************************/
 
@@ -78,5 +78,6 @@ void free_tdd_configuration_nr(NR_DL_FRAME_PARMS *frame_parms);
 
 void free_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
 
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mod);
 #endif  /* PHY_FRAME_CONFIG_NR_H */
 

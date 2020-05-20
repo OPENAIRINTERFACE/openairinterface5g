@@ -60,17 +60,16 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
     a_segments = a_segments/273;
   }  
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
       if (ulsch->harq_processes[i]) {
 
         if (ulsch->harq_processes[i]->a) {
-          free16(ulsch->harq_processes[i]->a,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->a,a_segments*1056);
           ulsch->harq_processes[i]->a = NULL;
         }
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->b,a_segments*1056);
           ulsch->harq_processes[i]->b = NULL;
         }
         if (ulsch->harq_processes[i]->e) {
@@ -356,11 +355,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     Kr_bytes = Kr>>3;
 #endif
 
-///////////
-/////////////////////////////////////////////////////////////////////////////////////
-
-opp_enabled=0;
-
 ///////////////////////// c---->| LDCP coding |---->d /////////////////////////
 ///////////
 
@@ -386,6 +380,12 @@ opp_enabled=0;
     //for (int i=0;i<68*384;i++)
       //        printf("channel_input[%d]=%d\n",i,channel_input[i]);
 
+    int temp_opp = 0;
+
+    if (opp_enabled) {
+      opp_enabled = 0;
+      temp_opp = 1;
+    }
 
 
     /*printf("output %d %d %d %d %d \n", harq_process->d[0][0], harq_process->d[0][1], harq_process->d[r][2],harq_process->d[0][3], harq_process->d[0][4]);
@@ -402,9 +402,11 @@ opp_enabled=0;
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
 #ifdef DEBUG_DLSCH_CODING
-      write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
-      write_output("ulsch_enc_output0.m","enc0",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,4);
+    write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
+    write_output("ulsch_enc_output0.m","enc0",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,4);
 #endif
+
+    if (temp_opp) opp_enabled = 1;
 
 ///////////
 ///////////////////////////////////////////////////////////////////////////////

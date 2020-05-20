@@ -55,7 +55,8 @@
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-
+#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#include "SIMULATION/LTE_PHY/common_sim.h"
 //#define DEBUG_ULSIM
 
 PHY_VARS_gNB *gNB;
@@ -104,7 +105,7 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 int main(int argc, char **argv)
 {
   char c;
-  int i,sf;
+  int i;
   double SNR, snr0 = -2.0, snr1 = 2.0;
   double sigma, sigma_dB;
   double snr_step = 1;
@@ -140,7 +141,7 @@ int main(int argc, char **argv)
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
   float target_error_rate = 0.01;
-  
+  int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
 
 
@@ -155,7 +156,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:P:R:S:L:")) != -1) {
+  while ((c = getopt(argc, argv, "d:f:g:h:i:j:l:m:n:p:r:s:y:z:F:M:N:PR:S:L:")) != -1) {
     switch (c) {
 
       /*case 'd':
@@ -309,9 +310,14 @@ int main(int argc, char **argv)
         printf("Setting SNR1 to %f\n", snr1);
         break;
 
-    case 'L':
-      loglvl = atoi(optarg);
-      break;	
+      case 'P':
+        print_perf=1;
+        opp_enabled=1;
+        break;
+
+      case 'L':
+        loglvl = atoi(optarg);
+        break;
 
       default:
         case 'h':
@@ -340,6 +346,7 @@ int main(int argc, char **argv)
           printf("-O oversampling factor (1,2,4,8,16)\n");
           printf("-R N_RB_DL\n");
           printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+          printf("-P Print ULSCH performances\n");
           exit(-1);
           break;
     }
@@ -370,10 +377,10 @@ int main(int argc, char **argv)
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
-  gNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list = (nfapi_rx_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_rx_indication_pdu_t));
-  gNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = (nfapi_crc_indication_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_crc_indication_pdu_t));
-  gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
-  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs = 0;
+  gNB->UL_INFO.rx_ind.pdu_list = (nfapi_nr_rx_data_pdu_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_rx_data_pdu_t));
+  gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
+  gNB->UL_INFO.rx_ind.number_of_pdus = 0;
+  gNB->UL_INFO.crc_ind.number_crcs = 0;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -386,7 +393,7 @@ int main(int argc, char **argv)
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
   mac_top_init_gNB();
-  gNB_MAC_INST* gNB_mac = RC.nrmac[0];
+  //gNB_MAC_INST* gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
@@ -442,7 +449,7 @@ int main(int argc, char **argv)
   init_nr_ue_transport(UE, 0);
 
   /*
-  for (sf = 0; sf < 2; sf++) {
+  for (int sf = 0; sf < 2; sf++) {
     for (i = 0; i < 2; i++) {
 
         UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
@@ -523,6 +530,18 @@ int main(int argc, char **argv)
   printf("\n");
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
+
+      varArray_t *table_rx=initVarArray(1000,sizeof(double));
+      reset_meas(&gNB->phy_proc_rx);
+      reset_meas(&gNB->ulsch_decoding_stats);
+      reset_meas(&gNB->ulsch_deinterleaving_stats);
+      reset_meas(&gNB->ulsch_rate_unmatching_stats);
+      reset_meas(&gNB->ulsch_ldpc_decoding_stats);
+      reset_meas(&gNB->ulsch_unscrambling_stats);
+      reset_meas(&gNB->ulsch_channel_estimation_stats);
+      reset_meas(&gNB->ulsch_llr_stats);
+      reset_meas(&gNB->ulsch_channel_compensation_stats);
+      reset_meas(&gNB->ulsch_rbs_extraction_stats);
 
       UE_proc.nr_tti_tx = slot;
       UE_proc.frame_tx = frame;
@@ -651,15 +670,17 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         //------------------- gNB phy procedures -------------------
         //----------------------------------------------------------
-        gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus = 0;
-        gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs = 0;
+        gNB->UL_INFO.rx_ind.number_of_pdus = 0;
+        gNB->UL_INFO.crc_ind.number_crcs = 0;
 
+        start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
 	if (n_trials==1)
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],frame_length_complex_samples_no_prefix,1,1);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+        start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
 
 	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
@@ -712,6 +733,20 @@ int main(int argc, char **argv)
       printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
       printf("*****************************************\n");
       printf("\n");
+
+      if (print_perf==1) {
+        printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
+        printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
+        printStatIndent(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
+        printStatIndent(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
+        printStatIndent(&gNB->ulsch_llr_stats,"ULSCH llr computation");
+        printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
+        printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+        printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
+        printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
+        printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
+        printf("\n");
+      }
 
       if(n_trials==1)
 	break;

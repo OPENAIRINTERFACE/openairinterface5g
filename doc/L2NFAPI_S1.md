@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">L2 nFAPI Simulator (with S1 / same machine deployment)</font></b>
+      <b><font size = "5">L2 nFAPI Simulator (with S1 / 2-host deployment)</font></b>
     </td>
   </tr>
 </table>
@@ -21,25 +21,24 @@
 5.   [Setup of the Configuration files](#5-setup-of-the-configuration-files)
      1.   [The eNB Configuration file](#51-the-enb-configuration-file)
      2.   [The UE Configuration file](#52-the-ue-configuration-file)
-6.   [Bring Up a second loopback interface](#6-bring-up-a-second-loopback-interface)
-7.   [Build the eNB](#7-build-the-enb)
-8.   [Build the UE](#8-build-the-ue)
-9.   [Initialize the NAS UE Layer](#9-initialize-the-nas-ue-layer)
-10.   [Start the eNB](#10-start-the-enb)
-11.   [Start the UE](#11-start-the-ue)
-12.   [Test with ping](#12-test-with-ping)
-13.   [Limitations](#13-limitations)
+6.   [Build OAI UE and eNodeB](#6-build-oai-ue-and-enodeb)
+7.   [Start EPC](#7-start-epc)
+8.   [Start the eNB](#8-start-the-enb)
+9.   [Start the UE](#9-start-the-ue)
+10.   [Test with ping](#10-test-with-ping)
+11.   [Limitations](#11-limitations)
 
 # 1. Environment #
 
-2 servers are used in this deployment. You can use Virtual Machines instead of each server; like it is done in the CI process.
+3 servers are used in this deployment. You can use Virtual Machines instead of each server; like it is done in the CI process.
 
 *  Machine A contains the EPC.
-*  Machine B contains the OAI eNB and the OAI UE(s)
+*  Machine B contains the OAI eNB executable (`lte-softmodem`)
+*  Machine C contains the OAI UE(s) executable (`lte-uesoftmodem`)
 
 Example of L2 nFAPI Simulator testing environment:
 
-<img src="../l2-nfapi-simulator/L2-sim-single-server-deployment.png" alt="" border=3>
+<img src="./images/L2-sim-S1-3-host-deployment.png" alt="" border=3>
 
 Note that the IP addresses are indicative and need to be adapted to your environment.
 
@@ -47,26 +46,35 @@ Note that the IP addresses are indicative and need to be adapted to your environ
 
 Create the environment for the EPC and register all **USIM** information into the **HSS** database.
 
-If you are using OAI-EPC ([see on GitHub](https://github.com/OPENAIRINTERFACE/openair-cn)), build **HSS/MME/SPGW** and create config files.
+If you are using OAI-EPC ([see on GitHub](https://github.com/OPENAIRINTERFACE/openair-epc-fed)), build **HSS/MME/SPGW** and create config files.
 
 # 3. Retrieve the OAI eNB-UE source code #
 
-The eNB and the UE executables will compiled into 2 separate folders on the same machine `B`.
+At the time of writing, the tag used in the `develop` branch to do this documentation was `2020.w16`.
+
+The tutorial should be valid for the `master` branch tags such as `v1.2.0` or `v1.2.1`. But you may face issues that could be fixed in newer `develop` tags.
+
+Please try to use the same commit ID on both eNB/UE hosts.
 
 ```bash
 $ ssh sudousername@machineB
-$ git clone https://gitlab.eurecom.fr/oai/openairinterface5g/ enb_folder
-$ cd enb_folder
-$ git checkout -f v1.0.0
-$ cd ..
-$ cp -Rf enb_folder ue_folder
+git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git enb_folder
+cd enb_folder
+git checkout develop
+```
+
+```bash
+$ ssh sudousername@machineC
+git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git ue_folder
+cd ue_folder
+git checkout develop
 ```
 
 # 4. Setup of the USIM information in UE folder #
 
 ```bash
-$ ssh sudousername@machineB
-$ cd ue_folder
+$ ssh sudousername@machineC
+cd ue_folder
 # Edit openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf with your preferred editor
 ```
 
@@ -126,19 +134,19 @@ You can repeat the operation for as many users you want to test with.
 
 ```bash
 $ ssh sudousername@machineB
-$ cd enb_folder
+cd enb_folder
 # Edit ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf with your preferred editor
 ```
 
-First verify the nFAPI interface setup on the 2nd loopback interface.
+First verify the nFAPI interface setup on the physical ethernet interface of machineB and put the proper IP addresses for both hosts.
 
 ```
 MACRLCs = (
         {
         num_cc = 1;
-        local_s_if_name  = "lo:";            // <-- HERE
-        remote_s_address = "127.0.0.1";      // <-- HERE
-        local_s_address  = "127.0.0.2";      // <-- HERE
+        local_s_if_name  = "ens3";             // <-- HERE
+        remote_s_address = "192.168.122.169";  // <-- HERE
+        local_s_address  = "192.168.122.31";   // <-- HERE
         local_s_portc    = 50001;
         remote_s_portc   = 50000;
         local_s_portd    = 50011;
@@ -171,7 +179,7 @@ Last, the S1 interface shall be properly set.
 
 ```
     ////////// MME parameters:
-    mme_ip_address      = ( { ipv4       = "CI_MME_IP_ADDR"; // replace with 192.168.10.20
+    mme_ip_address      = ( { ipv4       = "CI_MME_IP_ADDR"; // replace with 192.168.122.195
                               ipv6       = "192:168:30::17";
                               active     = "yes";
                               preference = "ipv4";
@@ -181,11 +189,11 @@ Last, the S1 interface shall be properly set.
     NETWORK_INTERFACES :
     {
         ENB_INTERFACE_NAME_FOR_S1_MME            = "ens3";            // replace with the proper interface name
-        ENB_IPV4_ADDRESS_FOR_S1_MME              = "CI_ENB_IP_ADDR";  // replace with 192.168.10.10
+        ENB_IPV4_ADDRESS_FOR_S1_MME              = "CI_ENB_IP_ADDR";  // replace with 192.168.122.31
         ENB_INTERFACE_NAME_FOR_S1U               = "ens3";            // replace with the proper interface name
-        ENB_IPV4_ADDRESS_FOR_S1U                 = "CI_ENB_IP_ADDR";  // replace with 192.168.10.10
+        ENB_IPV4_ADDRESS_FOR_S1U                 = "CI_ENB_IP_ADDR";  // replace with 192.168.122.31
         ENB_PORT_FOR_S1U                         = 2152; # Spec 2152
-        ENB_IPV4_ADDRESS_FOR_X2C                 = "CI_ENB_IP_ADDR";  // replace with 192.168.10.10
+        ENB_IPV4_ADDRESS_FOR_X2C                 = "CI_ENB_IP_ADDR";  // replace with 192.168.122.31
         ENB_PORT_FOR_X2C                         = 36422; # Spec 36422
 
     };
@@ -195,7 +203,7 @@ Last, the S1 interface shall be properly set.
 
 ```bash
 $ ssh sudousername@machineB
-$ cd ue_folder
+cd ue_folder
 # Edit ci-scripts/conf_files/ue.nfapi.conf with your preferred editor
 ```
 
@@ -206,9 +214,9 @@ L1s = (
         {
         num_cc = 1;
         tr_n_preference = "nfapi";
-        local_n_if_name  = "lo";         // <- HERE
-        remote_n_address = "127.0.0.2";  // <- HERE
-        local_n_address  = "127.0.0.1";  // <- HERE
+        local_n_if_name  = "ens3";            // <- HERE
+        remote_n_address = "192.168.122.31";  // <- HERE
+        local_n_address  = "192.168.122.169"; // <- HERE
         local_n_portc    = 50000;
         remote_n_portc   = 50001;
         local_n_portd    = 50010;
@@ -217,20 +225,11 @@ L1s = (
 );
 ```
 
-# 6. Bring Up a second loopback interface #
+# 6. Build OAI UE and eNodeB #
 
-A second loopback interface is used to connect the eNB and the UEs.
+See [Build documentation](./BUILD.md).
 
-```bash
-$ ssh sudousername@machineB
-$ sudo ifconfig lo: 127.0.0.2 netmask 255.0.0.0 up
-```
-
-# 7. [Build OAI UE and eNodeB](BUILD.md) #
-
-
-
-# 8. Initialize the NAS UE Layer #
+# 7. Start EPC #
 
 Start the EPC on machine `A`.
 
@@ -239,61 +238,89 @@ $ ssh sudousername@machineA
 # Start the EPC
 ```
 
-# 9. Start the eNB #
+# 8. Start the eNB #
 
 In the first terminal (the one you used to build the eNB):
 
 ```bash
 $ ssh sudousername@machineB
-$ cd enb_folder/cmake_targets
-$ sudo -E ./ran_build/build/lte-softmodem -O ../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf > enb.log 2>&1
+cd enb_folder/cmake_targets
+sudo -E ./ran_build/build/lte-softmodem -O ../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf > enb.log 2>&1
 ```
 
 If you don't use redirection, you can test but many logs are printed on the console and this may affect performance of the L2-nFAPI simulator.
 
 We do recommend the redirection in steady mode once your setup is correct.
 
-# 10. Start the UE #
+# 9. Start the UE #
 
 In the second terminal (the one you used to build the UE):
 
 ```bash
-$ ssh sudousername@machineB
-$ cd ue_folder/cmake_targets
-# Test 64 UEs, 64 threads in FDD mode
-$ sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums-ue-thread 64 > ue.log 2>&1
-# Test 64 UEs, 64 threads in TDD mode
-$ sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums-ue-thread 64 -T 1 > ue.log 2>&1
+$ ssh sudousername@machineC
+cd ue_folder/cmake_targets
+# Test 64 UEs, 1 thread in FDD mode
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 --nokrnmod 1 > ue.log 2>&1
+# Test 64 UEs, 1 thread in TDD mode
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 --nokrnmod 1 -T 1 > ue.log 2>&1
 # The "-T 1" option means TDD config
 ```
 
 -   The number of UEs can set by using `--num-ues` option and the maximum UE number is 255 (with the `--mu*` options, otherwise 16).
--   The umber of threads can set with the `--nums-ue-thread`. This number **SHALL NOT** be greater than the number of UEs.
+-   The number of threads can set with the `--nums-ue-thread`. This number **SHALL NOT** be greater than the number of UEs.
+    * At the time of writing, it seems to be enough to run on a single thread.
+-   The `--nokrnmod 1` option makes use of the preferred and supported tunnel interface.
 -   How many UE that can be tested depends on hardware (server , PC, etc) performance in your environment.
 
-# 11. Test with ping #
+For example, running with 4 UEs:
 
-In a third terminal, after around 10 seconds, the UE(s) shall be connected to the eNB:
+```bash
+$ ssh sudousername@machineC
+cd ue_folder/cmake_targets
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 --nokrnmod 1 > ue.log 2>&1
+sleep 10
+ifconfig
+ens3      Link encap:Ethernet  HWaddr XX:XX:XX:XX:XX:XX
+          inet addr:192.168.122.169  Bcast:192.168.122.255  Mask:255.255.255.0
+....
+oaitun_ue1 Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+          inet addr:192.172.0.2  P-t-P:192.172.0.2  Mask:255.255.255.0
+....
+oaitun_ue2 Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+          inet addr:192.172.0.3  P-t-P:192.172.0.3  Mask:255.255.255.0
+....
+oaitun_ue3 Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+          inet addr:192.172.0.4  P-t-P:192.172.0.4  Mask:255.255.255.0
+....
+oaitun_ue4 Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+          inet addr:192.172.0.5  P-t-P:192.172.0.5  Mask:255.255.255.0
+....
+oaitun_uem1 Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+          inet addr:10.0.2.2  P-t-P:10.0.2.2  Mask:255.255.255.0
+....
+....
+```
+
+Having the 4 oaitun_ue tunnel interfaces up and with an allocated address means the connection with EPC went alright.
+
+# 10. Test with ping #
+
+In a third terminal, after around 10 seconds, the UE(s) shall be connected to the eNB: Check with ifconfig
 
 ```bash
 $ ssh sudousername@machineA
-# Ping UE0 IP address based on the EPC pool used: in this example:
-$ ping -c 20 192.168.200.2
 # Ping UE1 IP address based on the EPC pool used: in this example:
-$ ping -c 20 192.168.200.4
+$ ping -c 20 192.172.0.2
+# Ping UE4 IP address based on the EPC pool used: in this example:
+$ ping -c 20 192.172.0.5
 ```
 
-# 12. Limitations #
+iperf operations can also be performed.
 
-Testing on the CI process is currently limited at time of writing. Improvements will be made soon.
-
-
+# 11. Limitations #
 
 
-
-
-
-
+----
 
 [oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
 
