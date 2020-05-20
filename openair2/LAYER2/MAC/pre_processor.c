@@ -86,9 +86,6 @@ int round_robin_dl(module_id_t Mod_id,
   int num_ue_req = 0;
   UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
 
-  int rb_required[MAX_MOBILES_PER_ENB]; // how much UEs request
-  memset(rb_required, 0, sizeof(rb_required));
-
   int rbg = 0;
   for (; !rbgalloc_mask[rbg]; rbg++)
     ; /* fast-forward to first allowed RBG */
@@ -133,6 +130,7 @@ int round_robin_dl(module_id_t Mod_id,
         if (!rbgalloc_mask[rbg])
           continue;
         ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
+        rbgalloc_mask[rbg] = 0;
         nb_rbg--;
       }
       LOG_D(MAC,
@@ -150,22 +148,8 @@ int round_robin_dl(module_id_t Mod_id,
         return n_rbg_sched;
       for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
     } else {
-      const int dlsch_mcs1 = cqi_to_mcs[UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id]];
-      UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1 = dlsch_mcs1;
-      rb_required[UE_id] =
-          find_nb_rb_DL(dlsch_mcs1,
-                        UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
-                        n_rbg_sched * RBGsize,
-                        RBGsize);
-      if (rb_required[UE_id] > 0)
+      if (UE_info->UE_template[CC_id][UE_id].dl_buffer_total > 0)
         num_ue_req++;
-      LOG_D(MAC,
-            "%d/%d UE_id %d rb_required %d n_rbg_sched %d\n",
-            frame,
-            subframe,
-            UE_id,
-            rb_required[UE_id],
-            n_rbg_sched);
     }
   }
 
@@ -178,12 +162,13 @@ int round_robin_dl(module_id_t Mod_id,
     g_start_ue_dl = UE_list->head;
   int UE_id = g_start_ue_dl;
   UE_list_t UE_sched;
-  int rb_required_total = 0;
+  int *cur_UE = &UE_sched.head;
+
   int num_ue_sched = 0;
   max_num_ue = min(min(max_num_ue, num_ue_req), n_rbg_sched);
-  int *cur_UE = &UE_sched.head;
+  int rb_required[MAX_MOBILES_PER_ENB]; // how much UEs request
   while (num_ue_sched < max_num_ue) {
-    while (rb_required[UE_id] == 0)
+    while (UE_info->UE_template[CC_id][UE_id].dl_buffer_total <= 0)
       UE_id = next_ue_list_looped(UE_list, UE_id);
     const uint8_t cqi = UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
     const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
@@ -195,42 +180,42 @@ int round_robin_dl(module_id_t Mod_id,
       continue;
     }
     UE_info->UE_sched_ctrl[UE_id].pre_dci_dl_pdu_idx = idx;
+    const int mcs = cqi_to_mcs[cqi];
+    UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1 = mcs;
+    const uint32_t B = UE_info->UE_template[CC_id][UE_id].dl_buffer_total;
+    rb_required[UE_id] = find_nb_rb_DL(mcs, B, n_rbg_sched * RBGsize, RBGsize);
     *cur_UE = UE_id;
     cur_UE = &UE_sched.next[UE_id];
-    rb_required_total += rb_required[UE_id];
     num_ue_sched++;
     UE_id = next_ue_list_looped(UE_list, UE_id); // next candidate
   }
   *cur_UE = -1;
 
   /* for one UE after the next: allocate resources */
-  for (int UE_id = UE_sched.head; UE_id >= 0;
-       UE_id = next_ue_list_looped(&UE_sched, UE_id)) {
-    if (rb_required[UE_id] <= 0)
-      continue;
+  cur_UE = &UE_sched.head;
+  while (*cur_UE >= 0) {
+    const int UE_id = *cur_UE;
     UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
+    rbgalloc_mask[rbg] = 0;
     const int sRBG = rbg == N_RBG - 1 ? RBGlastsize : RBGsize;
     ue_ctrl->pre_nb_available_rbs[CC_id] += sRBG;
     rb_required[UE_id] -= sRBG;
-    rb_required_total -= sRBG;
-    if (rb_required_total <= 0)
-      break;
+    if (rb_required[UE_id] <= 0) {
+      *cur_UE = UE_sched.next[*cur_UE];
+      if (*cur_UE < 0)
+        cur_UE = &UE_sched.head;
+    } else {
+      cur_UE = UE_sched.next[*cur_UE] < 0 ? &UE_sched.head : &UE_sched.next[*cur_UE];
+    }
     n_rbg_sched--;
     if (n_rbg_sched <= 0)
       break;
     for (rbg++; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
   }
 
-  /* if not all UEs could be allocated in this round */
-  if (num_ue_req > max_num_ue) {
-    /* go to the first one we missed */
-    for (int i = 0; i < max_num_ue; ++i)
-      g_start_ue_dl = next_ue_list_looped(UE_list, g_start_ue_dl);
-  } else {
-    /* else, just start with the next UE next time */
-    g_start_ue_dl = next_ue_list_looped(UE_list, g_start_ue_dl);
-  }
+  /* just start with the next UE next time */
+  g_start_ue_dl = next_ue_list_looped(UE_list, g_start_ue_dl);
 
   return n_rbg_sched;
 }
@@ -730,15 +715,8 @@ int round_robin_ul(module_id_t Mod_id,
     }
   }
 
-  /* if not all UEs could be allocated in this round */
-  if (num_ue_req > max_num_ue) {
-    /* go to the first one we missed */
-    for (int i = 0; i < max_num_ue; ++i)
-      g_start_ue_ul = next_ue_list_looped(UE_list, g_start_ue_ul);
-  } else {
-    /* else, just start with the next UE next time */
-    g_start_ue_ul = next_ue_list_looped(UE_list, g_start_ue_ul);
-  }
+  /* just start with the next UE next time */
+  g_start_ue_ul = next_ue_list_looped(UE_list, g_start_ue_ul);
 
   return rbs[0].length + (num_contig_rb > 1 ? rbs[1].length : 0);
 }
