@@ -1426,10 +1426,11 @@ void nr_update_pucch_scheduling(int Mod_idP,
                                 frame_t frameP,
                                 sub_frame_t slotP,
                                 int slots_per_tdd,
-                                NR_sched_pucch *curr_pucch) {
+                                int *pucch_id) {
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  NR_sched_pucch *curr_pucch;
   int first_ul_slot_tdd,k,i;
   uint8_t pdsch_to_harq_feedback[8];
   int found = 0;
@@ -1461,6 +1462,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
         // computing slot in which pucch is scheduled
         curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
         curr_pucch->timing_indicator = i; // index in the list of timing indicators
+        *pucch_id = k;
         return;
       }
     }
