@@ -170,6 +170,10 @@ void RCconfig_L1(void) {
         RC.eNB[j][0]->pucch1_DTX_threshold_emtc[ce_level]   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
         RC.eNB[j][0]->pucch1ab_DTX_threshold_emtc[ce_level] = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
       }
+
+
+      RC.eNB[j][0]->pusch_signal_threshold    = *(L1_ParamList.paramarray[j][L1_PUSCH_SIGNAL_THRESHOLD_IDX].iptr);
+      LOG_I(ENB_APP,"PUSCH singal threshold = %d \n",RC.eNB[j][0]->pusch_signal_threshold);
     }// j=0..num_inst
 
     LOG_I(ENB_APP,"Initializing northbound interface for L1\n");

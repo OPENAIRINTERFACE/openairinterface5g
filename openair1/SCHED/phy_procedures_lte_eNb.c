@@ -1607,7 +1607,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   // estimate UL_CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_interference_power[0]);
   
-  if(dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) > 500) {
+  if(dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) > eNB->pusch_signal_threshold) {
     SNRtimes10 = 300;
   }
 
