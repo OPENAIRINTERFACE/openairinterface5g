@@ -283,6 +283,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
             dftlen=49152;
             dft(DFT_49152,prach2,rxsigF[aa],1);
+	    LOG_M("prach_rxsigF.m","prach_rxF0",rxsigF[aa],49152,1,1);
           }
 	  if (prachFormat == 1 || prachFormat == 2) {
             dft(DFT_49152,prach2+98304,rxsigF[aa]+98304,1);
@@ -503,6 +504,7 @@ void rx_nr_prach_ru(RU_t *ru,
     }
 
     //Coherent combining of PRACH repetitions (assumes channel does not change, to be revisted for "long" PRACH)
+    LOG_D(PHY,"Doing PRACH combining of %d reptitions N_ZC %d\n",reps,N_ZC);
     int16_t rxsigF_tmp[N_ZC<<1];
     //    if (k+N_ZC > dftlen) { // PRACH signal is split around DC 
     int16_t *rxsigF2=rxsigF[aa];
@@ -583,8 +585,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   restricted_set      = cfg->restricted_set_config.value;
 
-  AssertFatal(prach_sequence_length == 1, "no support yet for long prachSequenceLength\n");
-
 
   uint8_t prach_fmt = prach_pdu->prach_format;
   uint16_t N_ZC = (prach_sequence_length==0)?839:139;
@@ -624,7 +624,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
     if (LOG_DEBUGFLAG(PRACH)){
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],(N_ZC==839) ? 840: 140));
-      if (en>60) LOG_I(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
+      if (en>60) LOG_D(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
     }
     if (restricted_set == 0) {
       // This is the relative offset in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
@@ -750,10 +750,10 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
 	}
 
-        if (LOG_DUMPFLAG(PRACH)) {	
+	//        if (LOG_DUMPFLAG(PRACH)) {	
 	  if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
           if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
-        }
+	  //        }
       }// antennas_rx
     } // new dft
     
@@ -766,6 +766,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       lev = (int32_t)prach_ifft[(preamble_shift2+i)];
       levdB = dB_fixed_times10(lev);
       if (levdB>*max_preamble_energy) {
+	LOG_D(PHY,"preamble_index %d, delay %d en %d dB > %d dB\n",preamble_index,i,levdB,*max_preamble_energy);
 	*max_preamble_energy  = levdB;
 	*max_preamble_delay   = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate 
 	*max_preamble         = preamble_index;
