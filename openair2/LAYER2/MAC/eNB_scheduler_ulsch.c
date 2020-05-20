@@ -167,7 +167,8 @@ rx_sdu(const module_id_t enb_mod_idP,
        * lte_est_timing_advance_pusch, maybe it's not necessary?
        * maybe it's even not correct at all?
        */
-      UE_scheduling_control->ta_update = (UE_scheduling_control->ta_update * 3 + timing_advance) / 4;
+      UE_scheduling_control->ta_update_f = ((double)UE_scheduling_control->ta_update_f * 3 + (double)timing_advance) / 4;
+      UE_scheduling_control->ta_update = (int)UE_scheduling_control->ta_update_f;
       UE_scheduling_control->pusch_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
       
       if(UE_scheduling_control->pusch_snr[CC_idP] > 0 || UE_scheduling_control->pusch_snr[CC_idP] < 63) {
@@ -175,7 +176,8 @@ rx_sdu(const module_id_t enb_mod_idP,
         int snr_thres_tpc=30;
         int diff = UE_scheduling_control->pusch_snr_avg[CC_idP] - UE_scheduling_control->pusch_snr[CC_idP];
         if(abs(diff) < snr_thres_tpc) {
-          UE_scheduling_control->pusch_cqi[CC_idP] = (int)((double)UE_scheduling_control->pusch_cqi[CC_idP] * snr_filter_tpc + (double)ul_cqi * (1-snr_filter_tpc));
+          UE_scheduling_control->pusch_cqi_f[CC_idP] = ((double)UE_scheduling_control->pusch_cqi_f[CC_idP] * snr_filter_tpc + (double)ul_cqi * (1-snr_filter_tpc));
+          UE_scheduling_control->pusch_cqi[CC_idP] = (int)UE_scheduling_control->pusch_cqi_f[CC_idP];
           UE_scheduling_control->pusch_snr_avg[CC_idP] = (5 * UE_scheduling_control->pusch_cqi[CC_idP] - 640) / 10;
         }
       }

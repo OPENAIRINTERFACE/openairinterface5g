@@ -821,6 +821,7 @@ schedule_ue_spec(module_id_t module_idP,
 
         /* reset ta_update */
         ue_sched_ctrl->ta_update = 31;
+        ue_sched_ctrl->ta_update_f = 31.0;
       }
 
       int ta_len = (ta_update != 31) ? 2 : 0;
@@ -1366,6 +1367,7 @@ schedule_ue_spec_br(module_id_t module_idP,
 
           /* Reset ta_update */
           ue_sched_ctl->ta_update = 31;
+          ue_sched_ctl->ta_update_f = 31.0;
         } else {
           ta_update = 31;
         }

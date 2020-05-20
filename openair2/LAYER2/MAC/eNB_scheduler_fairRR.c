@@ -1567,6 +1567,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
           /* reset ta_update */
           ue_sched_ctl->ta_update = 31;
+          ue_sched_ctl->ta_update_f = 31.0;
         } else {
           ta_update = 31;
         }

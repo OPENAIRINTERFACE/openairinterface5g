@@ -942,6 +942,7 @@ typedef struct {
   unsigned char rballoc_sub_UE[NFAPI_CC_MAX][N_RBG_MAX];
   int pre_dci_dl_pdu_idx;
   uint16_t ta_timer;
+  double ta_update_f;
   int16_t ta_update;
   uint16_t ul_consecutive_errors;
   int32_t context_active_timer;
@@ -965,6 +966,7 @@ typedef struct {
   uint8_t pucch2_snr[NFAPI_CC_MAX];
   uint8_t pucch3_cqi_update[NFAPI_CC_MAX];
   uint8_t pucch3_snr[NFAPI_CC_MAX];
+  double  pusch_cqi_f[NFAPI_CC_MAX];
   uint8_t pusch_cqi[NFAPI_CC_MAX];
   uint8_t pusch_snr[NFAPI_CC_MAX];
   uint8_t pusch_snr_avg[NFAPI_CC_MAX];
