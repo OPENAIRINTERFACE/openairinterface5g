@@ -588,6 +588,7 @@ schedule_ue_spec(module_id_t module_idP,
     UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_TEMPLATE *ue_template = &UE_info->UE_template[CC_id][UE_id];
     eNB_UE_STATS *eNB_UE_stats = &UE_info->eNB_UE_stats[CC_id][UE_id];
+    eNB_UE_stats->TBS = 0;
     const rnti_t rnti = ue_template->rnti;
 
     // If TDD
@@ -799,6 +800,7 @@ schedule_ue_spec(module_id_t module_idP,
       eNB_UE_stats->rbs_used_retx = nb_rb;
       eNB_UE_stats->total_rbs_used_retx += nb_rb;
       eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->dlsch_mcs1;
+      eNB_UE_stats->TBS = TBS;
     } else {
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
