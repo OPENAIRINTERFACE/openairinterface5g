@@ -283,7 +283,6 @@ void rx_nr_prach_ru(RU_t *ru,
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
             dftlen=49152;
             dft(DFT_49152,prach2,rxsigF[aa],1);
-	    LOG_M("prach_rxsigF.m","prach_rxF0",rxsigF[aa],49152,1,1);
           }
 	  if (prachFormat == 1 || prachFormat == 2) {
             dft(DFT_49152,prach2+98304,rxsigF[aa]+98304,1);
@@ -750,10 +749,10 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
 	}
 
-	//        if (LOG_DUMPFLAG(PRACH)) {	
+	if (LOG_DUMPFLAG(PRACH)) {	
 	  if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
           if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
-	  //        }
+	}
       }// antennas_rx
     } // new dft
     
