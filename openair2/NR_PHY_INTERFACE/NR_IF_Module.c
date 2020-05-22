@@ -76,7 +76,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 }
 
 
-void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_crtl) {
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
   // TODO
   int max_harq_rounds = 4; // TODO define macro
   int num_ucis = UL_info->uci_ind.num_ucis;
@@ -86,7 +86,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_crtl) {
     switch (uci_list[i].pdu_type) {
       case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
 
-      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
         nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
         // handle harq
         int harq_idx_s = 0;
@@ -108,6 +108,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_crtl) {
           }
         }
         break;
+      }
 
       case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: break;
     }
@@ -215,7 +216,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_uci(UL_info, mac->UE_list->UE_sched_ctrl[0]);
+  handle_nr_uci(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
