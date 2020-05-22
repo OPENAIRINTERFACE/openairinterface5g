@@ -24,8 +24,8 @@
  * \author     R. Knopp, K.H. HSU, G. Casati
  * \date       2019
  * \version    0.1
- * \company    Eurecom / NTUST / Fraunhofer IIS 
- * \email:     knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr, guido.casati@iis.fraunhofer.de 
+ * \company    Eurecom / NTUST / Fraunhofer IIS
+ * \email:     knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr, guido.casati@iis.fraunhofer.de
  * \note
  * \warning
  */
@@ -71,71 +71,131 @@
 //  R: Reserved bit, set to zero.
 
 typedef struct {
-    uint8_t LCID:6;     // octet 1 [5:0]
-    uint8_t F:1;        // octet 1 [6]
-    uint8_t R:1;        // octet 1 [7]
-    uint8_t L:8;        // octet 2 [7:0]
+    uint8_t LCID: 6;    // octet 1 [5:0]
+    uint8_t F: 1;       // octet 1 [6]
+    uint8_t R: 1;       // octet 1 [7]
+    uint8_t L: 8;       // octet 2 [7:0]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_SHORT;
 
 typedef struct {
-    uint8_t LCID:6;     // octet 1 [5:0]
-    uint8_t F:1;        // octet 1 [6]
-    uint8_t R:1;        // octet 1 [7]
-    uint8_t L1:8;       // octet 2 [7:0]
-    uint8_t L2:8;       // octet 3 [7:0]
+    uint8_t LCID: 6;    // octet 1 [5:0]
+    uint8_t F: 1;       // octet 1 [6]
+    uint8_t R: 1;       // octet 1 [7]
+    uint8_t L1: 8;      // octet 2 [7:0]
+    uint8_t L2: 8;      // octet 3 [7:0]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_LONG;
 
 typedef struct {
-    uint8_t LCID:6;     // octet 1 [5:0]
-    uint8_t R:2;        // octet 1 [7:6]
+    uint8_t LCID: 6;    // octet 1 [5:0]
+    uint8_t R: 2;       // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
 // BSR MAC CEs
 // TS 38.321 ch. 6.1.3.1
 // Short BSR for a specific logical channel group ID
 typedef struct {
-  uint8_t Buffer_size:5;   // octet 1 LSB
-  uint8_t LcgID:3;         // octet 1 MSB
+    uint8_t Buffer_size: 5;  // octet 1 LSB
+    uint8_t LcgID: 3;        // octet 1 MSB
 } __attribute__ ((__packed__)) NR_BSR_SHORT;
 
 typedef NR_BSR_SHORT NR_BSR_SHORT_TRUNCATED;
 
 // Long BSR for all logical channel group ID
 typedef struct {
-  uint8_t Buffer_size7:8;
-  uint8_t Buffer_size6:8;
-  uint8_t Buffer_size5:8;
-  uint8_t Buffer_size4:8;
-  uint8_t Buffer_size3:8;
-  uint8_t Buffer_size2:8;
-  uint8_t Buffer_size1:8;
-  uint8_t Buffer_size0:8;
-  uint8_t LcgID0:1;
-  uint8_t LcgID1:1;
-  uint8_t LcgID2:1;
-  uint8_t LcgID3:1;
-  uint8_t LcgID4:1;
-  uint8_t LcgID5:1;
-  uint8_t LcgID6:1;
-  uint8_t LcgID7:1;
+    uint8_t Buffer_size7: 8;
+    uint8_t Buffer_size6: 8;
+    uint8_t Buffer_size5: 8;
+    uint8_t Buffer_size4: 8;
+    uint8_t Buffer_size3: 8;
+    uint8_t Buffer_size2: 8;
+    uint8_t Buffer_size1: 8;
+    uint8_t Buffer_size0: 8;
+    uint8_t LcgID0: 1;
+    uint8_t LcgID1: 1;
+    uint8_t LcgID2: 1;
+    uint8_t LcgID3: 1;
+    uint8_t LcgID4: 1;
+    uint8_t LcgID5: 1;
+    uint8_t LcgID6: 1;
+    uint8_t LcgID7: 1;
 } __attribute__ ((__packed__)) NR_BSR_LONG;
 
 typedef NR_BSR_LONG NR_BSR_LONG_TRUNCATED;
 
 // 38.321 ch. 6.1.3.4
 typedef struct {
-    uint8_t TA_COMMAND:6;   // octet 1 [5:0]
-    uint8_t TAGID:2;        // octet 1 [7:6]
+    uint8_t TA_COMMAND: 6;  // octet 1 [5:0]
+    uint8_t TAGID: 2;       // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_CE_TA;
 
 // single Entry PHR MAC CE
 // TS 38.321 ch. 6.1.3.8
 typedef struct {
-  uint8_t PH:6;
-  uint8_t R1:2;
-  uint8_t PCMAX:6;
-  uint8_t R2:6;
+    uint8_t PH: 6;
+    uint8_t R1: 2;
+    uint8_t PCMAX: 6;
+    uint8_t R2: 6;
 } __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
+
+#ifdef GES_SUPPORT
+
+// SP ZP CSI-RS Resource Set Activation/Deactivation MAC CE
+// 38.321 ch. 6.1.3.19
+typedef struct {
+    uint8_t BWPID: 2;       // octet 1 [1:0]
+    uint8_t CELLID: 5;      // octet 1 [6:2]
+    uint8_t A_D: 1;         // octet 1 [7]
+    uint8_t CSIRS_RSC_ID: 4; // octet 2 [3:0]
+    uint8_t R: 4            // octet 2 [7:4]
+} __attribute__ ((__packed__)) NR_MAC_CE_SP_ZP_CSI_RS_RES_SET;
+
+//TS 38.321 Sec 6.1.3.15, TCI State indicaton for UE-Specific PDCCH MAC CE
+typedef struct {
+    uint8_t CoresetId1: 3;   //Octect 1 [2:0]
+    uint8_t ServingCellId: 5; //Octect 1 [7:3]
+    uint8_t TciStateId: 7;   //Octect 2 [6:0]
+    uint8_t CoresetId2: 1;   //Octect 2 [7]
+} __attribute__ ((__packed__)) NR_TCI_PDCCH;
+
+//TS 38.321 Sec 6.1.3.14, TCI State activation/deactivation for UE Specific PDSCH MAC CE
+typedef struct {
+    uint8_t BWP_Id: 2;       //Octect 1 [1:0]
+    uint8_t ServingCellId: 5; //Octect 1 [6:2]
+    uint8_t R: 1;            //Octect 1 [7]
+    uint8_t T[];             //Octects 2 to MAX TCI States/8
+} __attribute__ ((__packed__)) NR_TCI_PDSCH_APERIODIC_CSI;
+
+//TS 6.1.3.16, SP CSI reporting on PUCCH Activation/Deactivation MAC CE
+typedef struct {
+    uint8_t BWP_Id: 2;			//Octect 1 [1:0]
+    uint8_t ServingCellId: 5; //Octect 1 [6:2]
+    uint8_t R1: 1;				//Octect 1 [7]
+    uint8_t S0: 1;				//Octect 2 [0]
+    uint8_t S1: 1;				//Octect 2 [1]
+    uint8_t S2: 1;				//Octect 2 [2]
+    uint8_t S3: 1;				//Octect 2 [3]
+    uint8_t R2: 4;				//Octect 2 [7:4]
+} __attribute__ ((__packed__)) NR_PUCCH_CSI_REPORTING;
+
+
+//TS 38.321 sec 6.1.3.12
+//SP CSI-RS / CSI-IM Resource Set Activation/Deactivation MAC CE
+typedef struct {
+    uint8_t BWP_ID: 2;
+    uint8_t SCID: 5;
+    uint8_t A_D: 1;
+    uint8_t SP_CSI_RSID: 6;
+    uint8_t IM: 1;
+    uint8_t R1: 1;
+    uint8_t SP_CSI_IMID: 6;
+    uint8_t R2: 2;
+    struct TCI_S {
+        uint8_t TCI_STATE_ID: 6;
+        uint8_t R: 2;
+    } __attribute__ ((__packed__)) TCI_STATE;
+} __attribute__ ((__packed__)) CSI_RS_CSI_IM_ACT_DEACT_MAC_CE;
+
+#endif
 
 //* RAR MAC subheader // TS 38.321 ch. 6.1.5, 6.2.2 *//
 // - E: The Extension field is a flag indicating if the MAC subPDU including this MAC subheader is the last MAC subPDU or not in the MAC PDU
@@ -146,30 +206,30 @@ typedef struct {
 
 /*!\brief RAR MAC subheader with RAPID */
 typedef struct {
-    uint8_t RAPID:6;
-    uint8_t T:1;
-    uint8_t E:1;
+    uint8_t RAPID: 6;
+    uint8_t T: 1;
+    uint8_t E: 1;
 } __attribute__ ((__packed__)) NR_RA_HEADER_RAPID;
 
 /*!\brief RAR MAC subheader with Backoff Indicator */
 typedef struct {
-    uint8_t BI:4;
-    uint8_t R:2;
-    uint8_t T:1;
-    uint8_t E:1;
+    uint8_t BI: 4;
+    uint8_t R: 2;
+    uint8_t T: 1;
+    uint8_t E: 1;
 } __attribute__ ((__packed__)) NR_RA_HEADER_BI;
 
 // TS 38.321 ch. 6.2.3
 typedef struct {
-    uint8_t TA1:7;          // octet 1 [6:0]
-    uint8_t R:1;            // octet 1 [7]
-    uint8_t UL_GRANT_1:3;   // octet 2 [2:0]
-    uint8_t TA2:5;          // octet 2 [7:3]
-    uint8_t UL_GRANT_2:8;   // octet 3 [7:0]
-    uint8_t UL_GRANT_3:8;   // octet 4 [7:0]
-    uint8_t UL_GRANT_4:8;   // octet 5 [7:0]
-    uint8_t TCRNTI_1:8;     // octet 6 [7:0]
-    uint8_t TCRNTI_2:8;     // octet 7 [7:0]
+    uint8_t TA1: 7;         // octet 1 [6:0]
+    uint8_t R: 1;           // octet 1 [7]
+    uint8_t UL_GRANT_1: 3;  // octet 2 [2:0]
+    uint8_t TA2: 5;         // octet 2 [7:3]
+    uint8_t UL_GRANT_2: 8;  // octet 3 [7:0]
+    uint8_t UL_GRANT_3: 8;  // octet 4 [7:0]
+    uint8_t UL_GRANT_4: 8;  // octet 5 [7:0]
+    uint8_t TCRNTI_1: 8;    // octet 6 [7:0]
+    uint8_t TCRNTI_2: 8;    // octet 7 [7:0]
 } __attribute__ ((__packed__)) NR_MAC_RAR;
 
 //  38.321 ch6.2.1, 38.331
@@ -185,7 +245,7 @@ typedef struct {
 #define DL_SCH_LCID_TCI_STATE_IND_UE_SPEC_PDCCH    0x34
 #define DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH    0x35
 #define DL_SCH_LCID_APERIODIC_CSI_TRI_STATE_SUBSEL 0x36
-#define DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT   0X37 
+#define DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT   0X37
 #define DL_SCH_LCID_DUPLICATION_ACT                0X38
 #define DL_SCH_LCID_SCell_ACT_4_OCT                0X39
 #define DL_SCH_LCID_SCell_ACT_1_OCT                0X3A

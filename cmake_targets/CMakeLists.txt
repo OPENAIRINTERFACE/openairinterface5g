@@ -249,6 +249,7 @@ add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
 add_boolean_option(DEBUG_CONSOLE       False "makes debugging easier, disables stdout/stderr buffering")
+add_boolean_option(GES_SUPPORT       True "To enable the GES Code")
 
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 add_library(ITTI
