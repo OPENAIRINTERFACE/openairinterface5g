@@ -377,7 +377,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
 
-  if (slot_txP == 0) {
+  if ((slot_txP == 0) && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
     for (int k=0; k<nr_ulmix_slots; k++) {
       memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
@@ -474,12 +474,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     }
 
     // Test DL scheduling
-    if (get_softmodem_params()->phy_test == 0 && slot_txP == 1 && UE_list->fiveG_connected[UE_id]) {
+    if (get_softmodem_params()->phy_test == 0 && slot_txP>0 && slot_txP<7 && UE_list->fiveG_connected[UE_id]) {
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
       nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
       // resetting ta flag
       gNB->ta_len = 0;
-      UE_list->fiveG_connected[UE_id] = false;
     }
 
 
@@ -494,8 +493,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
 
     if (get_softmodem_params()->phy_test == 0) {
-      NR_sched_pucch *curr_pucch = UE_list->UE_sched_ctrl[UE_id].sched_pucch;
-      if (curr_pucch != NULL)
+      if (UE_list->fiveG_connected[UE_id])
         nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
       schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
       nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
