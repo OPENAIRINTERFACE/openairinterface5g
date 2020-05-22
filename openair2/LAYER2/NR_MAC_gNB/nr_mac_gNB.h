@@ -254,6 +254,7 @@ typedef struct NR_sched_pucch {
   struct NR_sched_pucch *next_sched_pucch;
 } NR_sched_pucch;
 
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
@@ -267,8 +268,6 @@ typedef struct {
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
-<<<<<<< 8533610e2abb78ee712ceed939c08b5d0b5e835a
-<<<<<<< 3bce9a7b85f6f8dff8ba2f98142451a90fd8f8bd
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
@@ -283,7 +282,7 @@ typedef struct {
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
 
-/*! \brief top level gNB MAC structure */
+/*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t                    eth_params_n;
