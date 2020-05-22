@@ -126,7 +126,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 			  time_stats_t *dlsch_interleaving_stats,
 			  time_stats_t *dlsch_segmentation_stats) {
 
-  int harq_pid = 0;
+  int harq_pid = dlsch->harq_ids[frame%2][slot];
   NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];

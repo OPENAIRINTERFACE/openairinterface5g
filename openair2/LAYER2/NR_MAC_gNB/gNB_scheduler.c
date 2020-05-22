@@ -467,6 +467,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     // Phytest scheduling
     if (get_softmodem_params()->phy_test && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
+      ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
       nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
       // resetting ta flag
@@ -475,6 +476,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     // Test DL scheduling
     if (get_softmodem_params()->phy_test == 0 && slot_txP>0 && slot_txP<7 && UE_list->fiveG_connected[UE_id]) {
+      ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
       nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
       // resetting ta flag
