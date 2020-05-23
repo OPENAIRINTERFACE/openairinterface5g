@@ -33,7 +33,7 @@
 
 #include <string.h>
 #include "nrLDPCdecoder_defs.h"
-
+//#include <omp.h>
 /**
    \brief Circular memcpy
                 |<- rem->|<- circular shift ->|
@@ -171,6 +171,9 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX;
 
+//	#pragma omp  simd
+//	#pragma omp parallel for schedule(dynamic)
+
     for (j=0; j<3; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
@@ -202,7 +205,9 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
     // =====================================================================
     // CN group with 5 BNs
 
+
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX;
+
 
     for (j=0; j<5; j++)
     {
@@ -236,7 +241,9 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
     // =====================================================================
     // CN group with 7 BNs
 
+
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX;
+
 
     for (j=0; j<7; j++)
     {
@@ -254,6 +261,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
     // CN group with 8 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX;
+
 
     for (j=0; j<8; j++)
     {
@@ -303,6 +311,7 @@ static inline void nrLDPC_llr2CnProcBuf_BG1(t_nrLDPC_lut* p_lut, int8_t* llr, t_
 
     // =====================================================================
     // CN group with 19 BNs
+
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX;
 

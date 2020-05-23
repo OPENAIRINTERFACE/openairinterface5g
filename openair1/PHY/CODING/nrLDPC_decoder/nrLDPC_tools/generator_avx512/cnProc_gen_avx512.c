@@ -3,7 +3,6 @@
 #include "../../nrLDPCdecoder_defs.h"
 #include "../../nrLDPC_types.h"                                                                                            
 #include "../../nrLDPC_bnProc.h"
-#include "cnProc_gen_avx512.h"
 
 void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 {
@@ -12,12 +11,12 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
   if (R<0 || R>2) {printf("Illegal R %d\n",R); abort();}
 
 
- // system("mkdir -p ldpc_gen_files");
+ // system("mkdir -p ../ldpc_gen_files");
 
   char fname[50];
   sprintf(fname,"../ldpc_gen_files/nrLDPC_cnProc_BG1_Z%d_%s_AVX512.c",Z,ratestr[R]);
   FILE *fd=fopen(fname,"w");
-  if (fd == NULL) {printf("Cannot create %s\n");abort();}
+  if (fd == NULL) {printf("Cannot create \n");abort();}
 
   fprintf(fd,"#include <stdint.h>\n");
   fprintf(fd,"#include <immintrin.h>\n");
@@ -92,7 +91,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
 
       // Loop over every BN
-      int iprime=0;
+      
       for (j=0; j<3; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -178,7 +177,6 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
       for (j=0; j<4; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -243,7 +241,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+      
       for (j=0; j<5; j++)
 	{
 	  // Set of results pointer to correct BN address
@@ -308,7 +306,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+      
       for (j=0; j<6; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -375,7 +373,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+      
       for (j=0; j<7; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -443,7 +441,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+     
       for (j=0; j<8; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -512,7 +510,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+      
       for (j=0; j<9; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -582,7 +580,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+     
       for (j=0; j<10; j++)
         {
 	  // Set of results pointer to correct BN address
@@ -655,7 +653,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
       //p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
       // Loop over every BN
-      int iprime=0;
+      
       for (j=0; j<19; j++)
         {
 	  // Set of results pointer to correct BN address

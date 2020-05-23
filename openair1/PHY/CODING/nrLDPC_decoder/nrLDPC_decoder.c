@@ -38,7 +38,122 @@
 #include "nrLDPC_mPass.h"
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
-#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13.h"
+//include files-> AVX2
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z384_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z352_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z320_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z288_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z256_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z240_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z224_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z208_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z192_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z176_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z160_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z144_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z128_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z120_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z112_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z104_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z96_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z88_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z80_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z72_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z64_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z60_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z56_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z52_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z48_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z44_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z40_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z36_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z32_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z30_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z28_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z26_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z24_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z22_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z20_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z18_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z16_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z15_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z14_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z13_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z12_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z11_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z10_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z9_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z8_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z7_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z6_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z5_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z4_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z3_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z2_13_AVX2.c"
+
+
+//include files for -->AVX512
+
+//#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z384_13_AVX2.c"
+/*#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z352_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z320_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z288_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z256_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z240_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z224_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z208_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z192_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z176_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z160_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z144_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z128_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z120_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z112_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z104_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z96_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z88_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z80_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z72_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z64_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z60_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z56_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z52_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z48_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z44_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z40_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z36_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z32_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z30_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z28_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z26_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z24_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z22_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z20_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z18_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z16_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z15_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z14_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z13_13_AVX2.c"
+
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z12_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z11_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z10_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z9_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z8_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z7_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z6_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z5_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z4_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z3_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z2_13_AVX2.c"
+*/
 #define NR_LDPC_ENABLE_PARITY_CHECK
 #define NR_LDPC_PROFILER_DETAIL
 
@@ -81,7 +196,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     uint8_t  BG         = p_decParams->BG;
     uint8_t  numMaxIter = p_decParams->numMaxIter;
     e_nrLDPC_outMode outMode = p_decParams->outMode;
-     
     int8_t* cnProcBuf= p_procBuf->cnProcBuf;
     int8_t* cnProcBufRes=p_procBuf->cnProcBufRes;
 
@@ -146,13 +260,354 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     start_meas(&p_profiler->cnProc);
 #endif
     if (BG == 1)
-    {	if(Z==384){
-	nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-    //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-	}else{
-        nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
-	}    
-}
+    {
+      //  depend on Z 
+        switch (Z)
+        {
+        case 384:
+        {
+            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+	}                                                                           
+        case 352:
+        {
+            nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 320:
+        {
+            nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;  
+        }
+
+        case 288:
+        {
+            nrLDPC_cnProc_BG1_Z288_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z288_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 256:
+        {
+            nrLDPC_cnProc_BG1_Z256_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //LDPC_cnProc_BG1_Z256_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 240:
+        {
+
+            nrLDPC_cnProc_BG1_Z240_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z240_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 224:
+        {
+
+            nrLDPC_cnProc_BG1_Z224_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z224_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 208:
+        {
+            nrLDPC_cnProc_BG1_Z208_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z208_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 192:
+        {
+            nrLDPC_cnProc_BG1_Z192_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z192_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 176:
+        {
+            nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 160:
+        {
+            nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 144:
+        {
+            nrLDPC_cnProc_BG1_Z144_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z144_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 128:
+        {
+            nrLDPC_cnProc_BG1_Z128_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z128_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 120:
+        {
+            nrLDPC_cnProc_BG1_Z120_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z120_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 112:
+        {
+            nrLDPC_cnProc_BG1_Z112_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z112_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+   
+        case 104:
+        {
+            nrLDPC_cnProc_BG1_Z104_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z104_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 96:
+        {
+            nrLDPC_cnProc_BG1_Z96_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z96_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 88:
+        {
+            nrLDPC_cnProc_BG1_Z88_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z88_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 80:
+        {
+            nrLDPC_cnProc_BG1_Z80_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z80_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 72:
+        {
+            nrLDPC_cnProc_BG1_Z72_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z72_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 64:
+        {
+            nrLDPC_cnProc_BG1_Z64_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z64_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+         
+        case 60:
+        {
+            nrLDPC_cnProc_BG1_Z60_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z60_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 56:
+        {
+            nrLDPC_cnProc_BG1_Z56_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z56_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 52:
+        {
+            nrLDPC_cnProc_BG1_Z52_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z52_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 48:
+        {
+            nrLDPC_cnProc_BG1_Z48_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z48_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 44:
+        {
+            nrLDPC_cnProc_BG1_Z44_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z44_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 40:
+        {
+            nrLDPC_cnProc_BG1_Z40_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z40_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+          case 36:
+        {
+            nrLDPC_cnProc_BG1_Z36_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z36_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 32:
+        {
+            nrLDPC_cnProc_BG1_Z32_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z32_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 30:
+        {
+            nrLDPC_cnProc_BG1_Z30_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z30_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 28:
+        {
+            nrLDPC_cnProc_BG1_Z28_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z28_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 26:
+        {
+            nrLDPC_cnProc_BG1_Z26_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z26_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 24:
+        {
+            nrLDPC_cnProc_BG1_Z24_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z24_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 22:
+        {
+            nrLDPC_cnProc_BG1_Z22_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z22_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 20:
+        {
+            nrLDPC_cnProc_BG1_Z20_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z20_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 18:
+        {
+            nrLDPC_cnProc_BG1_Z18_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z18_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 16:
+        {
+            nrLDPC_cnProc_BG1_Z16_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z16_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 15:
+        {
+            nrLDPC_cnProc_BG1_Z15_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z15_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 14:
+        {
+            nrLDPC_cnProc_BG1_Z14_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z14_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 13:
+        {
+            nrLDPC_cnProc_BG1_Z13_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z13_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 12:
+        {
+            nrLDPC_cnProc_BG1_Z12_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z12_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 11:
+        {
+            nrLDPC_cnProc_BG1_Z11_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z11_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 10:
+        {
+            nrLDPC_cnProc_BG1_Z10_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z10_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        
+        case 9:
+        {
+            nrLDPC_cnProc_BG1_Z9_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z9_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 8:
+        {
+            nrLDPC_cnProc_BG1_Z8_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z8_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 7:
+        {
+            nrLDPC_cnProc_BG1_Z7_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z7_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 6:
+        {
+            nrLDPC_cnProc_BG1_Z6_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z6_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 5:
+        {
+            nrLDPC_cnProc_BG1_Z5_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z5_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 4:
+        {
+            nrLDPC_cnProc_BG1_Z4_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z4_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 3:
+        {
+            nrLDPC_cnProc_BG1_Z3_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z3_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 2:
+        {
+            nrLDPC_cnProc_BG1_Z2_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z2_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+    }//end switch(Z)   
+   }
     else
     {
         nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
@@ -248,16 +703,356 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 #ifdef NR_LDPC_PROFILER_DETAIL
         start_meas(&p_profiler->cnProc);
 #endif
-        if (BG == 1)
+        if (BG == 1){
+	      //  depend on Z 
+        switch (Z)
         {
-	    if(Z==384){
-	    nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-        //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-	    }else{
-            nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
-            }        
-	}
-        else
+        case 384:
+        {
+            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 352:
+        {
+            nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 320:
+        {
+            nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;  
+        }
+
+        case 288:
+        {
+            nrLDPC_cnProc_BG1_Z288_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z288_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 256:
+        {
+            nrLDPC_cnProc_BG1_Z256_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //LDPC_cnProc_BG1_Z256_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 240:
+        {
+
+            nrLDPC_cnProc_BG1_Z240_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z240_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 224:
+        {
+
+            nrLDPC_cnProc_BG1_Z224_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z224_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 208:
+        {
+            nrLDPC_cnProc_BG1_Z208_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z208_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 192:
+        {
+            nrLDPC_cnProc_BG1_Z192_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z192_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 176:
+        {
+            nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 160:
+        {
+            nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 144:
+        {
+            nrLDPC_cnProc_BG1_Z144_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z144_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 128:
+        {
+            nrLDPC_cnProc_BG1_Z128_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z128_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 120:
+        {
+            nrLDPC_cnProc_BG1_Z120_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z120_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 112:
+        {
+            nrLDPC_cnProc_BG1_Z112_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z112_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 104:
+        {
+            nrLDPC_cnProc_BG1_Z104_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z104_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 96:
+        {
+            nrLDPC_cnProc_BG1_Z96_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z96_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 88:
+        {
+            nrLDPC_cnProc_BG1_Z88_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z88_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 80:
+        {
+            nrLDPC_cnProc_BG1_Z80_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z80_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 72:
+        {
+            nrLDPC_cnProc_BG1_Z72_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z72_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 64:
+        {
+            nrLDPC_cnProc_BG1_Z64_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z64_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 60:
+        {
+            nrLDPC_cnProc_BG1_Z60_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z60_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 56:
+        {
+            nrLDPC_cnProc_BG1_Z56_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z56_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 52:
+        {
+            nrLDPC_cnProc_BG1_Z52_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z52_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 48:
+        {
+            nrLDPC_cnProc_BG1_Z48_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z48_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 44:
+        {
+            nrLDPC_cnProc_BG1_Z44_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z44_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 40:
+        {
+            nrLDPC_cnProc_BG1_Z40_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z40_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+          case 36:
+        {
+            nrLDPC_cnProc_BG1_Z36_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z36_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 32:
+        {
+            nrLDPC_cnProc_BG1_Z32_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z32_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 30:
+        {
+            nrLDPC_cnProc_BG1_Z30_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z30_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 28:
+        {
+            nrLDPC_cnProc_BG1_Z28_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z28_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 26:
+        {
+            nrLDPC_cnProc_BG1_Z26_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z26_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 24:
+        {
+            nrLDPC_cnProc_BG1_Z24_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z24_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 22:
+        {
+            nrLDPC_cnProc_BG1_Z22_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z22_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 20:
+        {
+            nrLDPC_cnProc_BG1_Z20_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z20_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 18:
+        {
+            nrLDPC_cnProc_BG1_Z18_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z18_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 16:
+        {
+            nrLDPC_cnProc_BG1_Z16_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z16_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 15:
+        {
+            nrLDPC_cnProc_BG1_Z15_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z15_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 14:
+        {
+            nrLDPC_cnProc_BG1_Z14_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z14_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 13:
+        {
+            nrLDPC_cnProc_BG1_Z13_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z13_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 12:
+        {
+            nrLDPC_cnProc_BG1_Z12_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z12_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 11:
+        {
+            nrLDPC_cnProc_BG1_Z11_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z11_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 10:
+        {
+            nrLDPC_cnProc_BG1_Z10_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z10_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        
+        case 9:
+        {
+            nrLDPC_cnProc_BG1_Z9_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z9_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 8:
+        {
+            nrLDPC_cnProc_BG1_Z8_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z8_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 7:
+        {
+            nrLDPC_cnProc_BG1_Z7_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z7_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 6:
+        {
+            nrLDPC_cnProc_BG1_Z6_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z6_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 5:
+        {
+            nrLDPC_cnProc_BG1_Z5_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z5_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 4:
+        {
+            nrLDPC_cnProc_BG1_Z4_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z4_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 3:
+        {
+            nrLDPC_cnProc_BG1_Z3_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z3_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 2:
+        {
+            nrLDPC_cnProc_BG1_Z2_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z2_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+    }//end switch(Z)
+
+
+
+    }
+     else
         {
             nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
         }
@@ -364,17 +1159,358 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         start_meas(&p_profiler->cnProc);
 #endif
         if (BG == 1)
-        {	if(Z==384){
-	    nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-        //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-		}else{
-		nrLDPC_cnProc_BG1(p_lut, p_procBuf, Z);
-		}  
-      }
-        else
         {
-            nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
+	      //  depend on Z 
+        switch (Z)
+        {
+        case 384:
+        {
+            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+	}
+        case 352:
+        {
+            nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
         }
+
+        case 320:
+        {
+            nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;  
+        }
+
+        case 288:
+        {
+            nrLDPC_cnProc_BG1_Z288_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z288_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 256:
+        {
+            nrLDPC_cnProc_BG1_Z256_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //LDPC_cnProc_BG1_Z256_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 240:
+        {
+
+            nrLDPC_cnProc_BG1_Z240_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z240_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 224:
+        {
+
+            nrLDPC_cnProc_BG1_Z224_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z224_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 208:
+        {
+            nrLDPC_cnProc_BG1_Z208_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z208_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 192:
+        {
+            nrLDPC_cnProc_BG1_Z192_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+         //   nrLDPC_cnProc_BG1_Z192_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 176:
+        {
+            nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 160:
+        {
+            nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 144:
+        {
+            nrLDPC_cnProc_BG1_Z144_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z144_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 128:
+        {
+            nrLDPC_cnProc_BG1_Z128_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z128_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 120:
+        {
+            nrLDPC_cnProc_BG1_Z120_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z120_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 112:
+        {
+            nrLDPC_cnProc_BG1_Z112_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z112_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+   
+        case 104:
+        {
+            nrLDPC_cnProc_BG1_Z104_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z104_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 96:
+        {
+            nrLDPC_cnProc_BG1_Z96_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z96_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 88:
+        {
+            nrLDPC_cnProc_BG1_Z88_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z88_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 80:
+        {
+            nrLDPC_cnProc_BG1_Z80_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z80_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 72:
+        {
+            nrLDPC_cnProc_BG1_Z72_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z72_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 64:
+        {
+            nrLDPC_cnProc_BG1_Z64_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z64_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+         
+        case 60:
+        {
+            nrLDPC_cnProc_BG1_Z60_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z60_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 56:
+        {
+            nrLDPC_cnProc_BG1_Z56_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z56_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 52:
+        {
+            nrLDPC_cnProc_BG1_Z52_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z52_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 48:
+        {
+            nrLDPC_cnProc_BG1_Z48_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z48_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 44:
+        {
+            nrLDPC_cnProc_BG1_Z44_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z44_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 40:
+        {
+            nrLDPC_cnProc_BG1_Z40_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z40_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+          case 36:
+        {
+            nrLDPC_cnProc_BG1_Z36_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z36_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 32:
+        {
+            nrLDPC_cnProc_BG1_Z32_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z32_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 30:
+        {
+            nrLDPC_cnProc_BG1_Z30_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z30_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 28:
+        {
+            nrLDPC_cnProc_BG1_Z28_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z28_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 26:
+        {
+            nrLDPC_cnProc_BG1_Z26_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z26_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 24:
+        {
+            nrLDPC_cnProc_BG1_Z24_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z24_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 22:
+        {
+            nrLDPC_cnProc_BG1_Z22_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z22_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 20:
+        {
+            nrLDPC_cnProc_BG1_Z20_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z20_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 18:
+        {
+            nrLDPC_cnProc_BG1_Z18_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z18_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 16:
+        {
+            nrLDPC_cnProc_BG1_Z16_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z16_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 15:
+        {
+            nrLDPC_cnProc_BG1_Z15_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z15_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 14:
+        {
+            nrLDPC_cnProc_BG1_Z14_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z14_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 13:
+        {
+            nrLDPC_cnProc_BG1_Z13_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z13_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 12:
+        {
+            nrLDPC_cnProc_BG1_Z12_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z12_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 11:
+        {
+            nrLDPC_cnProc_BG1_Z11_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z11_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 10:
+        {
+            nrLDPC_cnProc_BG1_Z10_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z10_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 9:
+        {
+            nrLDPC_cnProc_BG1_Z9_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z9_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 8:
+        {
+            nrLDPC_cnProc_BG1_Z8_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z8_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 7:
+        {
+            nrLDPC_cnProc_BG1_Z7_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z7_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 6:
+        {
+            nrLDPC_cnProc_BG1_Z6_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z6_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 5:
+        {
+            nrLDPC_cnProc_BG1_Z5_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z5_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 4:
+        {
+            nrLDPC_cnProc_BG1_Z4_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z4_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+
+        case 3:
+        {
+            nrLDPC_cnProc_BG1_Z3_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z3_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+        case 2:
+        {
+            nrLDPC_cnProc_BG1_Z2_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+           // nrLDPC_cnProc_BG1_Z2_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            break;
+        }
+    }//end switch(Z)	 
+
+  }
+   else
+      {
+        nrLDPC_cnProc_BG2(p_lut, p_procBuf, Z);
+      }
 #ifdef NR_LDPC_PROFILER_DETAIL
         stop_meas(&p_profiler->cnProc);
 #endif

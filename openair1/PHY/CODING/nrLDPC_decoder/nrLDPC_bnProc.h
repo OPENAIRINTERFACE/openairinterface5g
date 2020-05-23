@@ -2745,8 +2745,8 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
     uint32_t M  = numLLR>>5;
     uint32_t Mr = numLLR&31;
 
-    const __m256i* p_zeros = (__m256i*) zeros512_epi8;
-    const __m256i* p_ones  = (__m256i*) ones512_epi8;
+    const __m256i* p_zeros = (__m256i*) zeros256_epi8;
+    const __m256i* p_ones  = (__m256i*) ones256_epi8;
 
     for (i=0; i<M; i++)
     {

@@ -8,20 +8,20 @@ OBJ= $(SRC:.c=.o)
 all: $(EXEC)
 
 cnProc_gen_avx2: $(OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS) -O2  -pg
+	@$(CC) -o $@ $^ $(LDFLAGS) -O2  
 
-main.o: cnProc_gen_avx2.h
+#main.o: cnProc_gen_avx2.h
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g   -pg
+	@$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g   
 
 .PHONY: clean mrproper
 
 clean:
-	rm -rf *.o
+	@rm -rf *.o
 
 mrproper: clean
-	rm -rf $(EXEC)
+	@rm -rf $(EXEC)
 
 zip: 
-	tar -zcvf sauvegarde.tar.gz main.c cnProc_gen_avx2.c cnProc_gen_avx2.h Makefile
+	@tar -zcvf sauvegarde.tar.gz main.c cnProc_gen_avx2.c cnProc_gen_avx2.h Makefile
