@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -28,7 +27,6 @@
  * \note
  * \warning
  */
-
 
 #include <stdint.h>
 #include <immintrin.h>
