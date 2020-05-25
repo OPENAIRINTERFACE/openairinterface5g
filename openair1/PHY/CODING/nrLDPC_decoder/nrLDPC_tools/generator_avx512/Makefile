@@ -24,4 +24,4 @@ mrproper: clean
 	@rm -rf $(EXEC)
 
 zip: 
-	tar -zcvf sauvegarde.tar.gz main.c cnProc_gen_avx512.c  Makefile
+	tar -zcvf sauvegarde.tar.gz main.c cnProc_gen_BG1_avx512.c cnProc_gen_BG2_avx512.c  Makefile

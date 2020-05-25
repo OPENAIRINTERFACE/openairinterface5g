@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <immintrin.h>
-
 void nrLDPC_cnProc_BG1_Z384_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
 //Process group with 3 BNs
                 __m256i ymm0, min, sgn,ones,maxLLR;
