@@ -76,8 +76,44 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 }
 
 
-void handle_nr_uci(NR_UL_IND_t *UL_info) {
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
   // TODO
+  int max_harq_rounds = 4; // TODO define macro
+  int num_ucis = UL_info->uci_ind.num_ucis;
+  nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
+
+  for (int i = 0; i < num_ucis; i++) {
+    switch (uci_list[i].pdu_type) {
+      case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
+
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+        // handle harq
+        int harq_idx_s = 0;
+        // iterate over received harq bits
+        for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
+          // search for the right harq process
+          for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+            if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+              if (uci_pdu->harq->harq_list[harq_bit].harq_value == 0)
+                sched_ctrl->harq_processes[harq_idx].round++;
+              if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) ||
+                 (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+              }
+              harq_idx_s = harq_idx + 1;
+              break;
+            }
+          }
+        }
+        break;
+      }
+
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: break;
+    }
+  }
+
   UL_info->uci_ind.num_ucis = 0;
 }
 
@@ -180,7 +216,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_uci(UL_info);
+  handle_nr_uci(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);

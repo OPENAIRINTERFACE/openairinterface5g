@@ -219,7 +219,8 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     }
     
     dlsch = gNB->dlsch[dlsch_id][0];
-    int harq_pid = 0;//extract_harq_pid(i,pdu_rel15);
+    int num_slots_tdd = (gNB->frame_parms.slots_per_frame)>>(7-gNB->gNB_config.tdd_table.tdd_period.value);
+    int harq_pid = slot % num_slots_tdd;
 
     dlsch->slot_tx[slot]             = 1;
     dlsch->harq_ids[frame%2][slot]   = harq_pid;

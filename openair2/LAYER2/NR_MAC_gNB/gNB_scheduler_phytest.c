@@ -309,11 +309,12 @@ int configure_fapi_dl_pdu(int Mod_idP,
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
   int mcs = (mcsIndex!=NULL) ? *mcsIndex : 9;
+  int current_harq_pid = UE_list->UE_sched_ctrl[UE_id].current_harq_pid;
   pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcs,0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = UE_list->UE_sched_ctrl[UE_id].harq_processes[0].round;
+  pdsch_pdu_rel15->rvIndex[0] = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
@@ -365,8 +366,8 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
   dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
   // harq pid
-  dci_pdu_rel15[0].harq_pid = 0;
-  dci_pdu_rel15[0].ndi = UE_list->UE_sched_ctrl[UE_id].harq_processes[0].ndi;
+  dci_pdu_rel15[0].harq_pid = current_harq_pid;
+  dci_pdu_rel15[0].ndi = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].ndi;
   // DAI
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
 
@@ -376,6 +377,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
   // PDSCH to HARQ TI
   dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = pucch_sched->timing_indicator;
+  UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].feedback_slot = pucch_sched->ul_slot;
   // antenna ports
   dci_pdu_rel15[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
 
