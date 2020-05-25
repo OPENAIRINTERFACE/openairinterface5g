@@ -747,6 +747,7 @@ int main(int argc, char **argv)
 					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
 					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
 	  fclose(input_fd);
+	  LOG_M("rxsig0.m","rx0",gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
 	}
 	////////////////////////////////////////////////////////////
 	

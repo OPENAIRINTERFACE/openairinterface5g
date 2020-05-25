@@ -1065,7 +1065,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   uint8_t ncs_index = rach_config->rach_ConfigGeneric.zeroCorrelationZoneConfig;
   uint16_t format0 = get_format0(config_index, unpaired);
   uint16_t NCS = get_NCS(ncs_index, format0, rach_config->restrictedSetConfig);
-  uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present) ? 139 : 839;
+  uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139) ? 139 : 839;
   uint16_t r,u,index,q,d_u,n_shift_ra,n_shift_ra_bar,d_start;
   uint32_t w;
   uint8_t found_preambles = 0;
