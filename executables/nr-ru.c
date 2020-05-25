@@ -773,7 +773,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d\n",ru->idx,
 	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-      AssertFatal(txs == 0,"trx write function error %d\n", txs);
+      //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
 }
 
