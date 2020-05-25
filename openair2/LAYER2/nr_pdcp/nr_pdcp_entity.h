@@ -60,4 +60,6 @@ nr_pdcp_entity_t *new_nr_pdcp_entity_drb_am(
                         char *buf, int size, int sdu_id),
     void *deliver_pdu_data);
 
+void nr_DRB_preconfiguration(void);
+
 #endif /* _NR_PDCP_ENTITY_H_ */

@@ -98,7 +98,7 @@ boolean_t pdcp_data_ind(
 ) { return(false);}
 
 void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
-void nr_ip_over_LTE_DRB_preconfiguration(void){}
+void nr_DRB_preconfiguration(void){}
 int rrc_init_nr_global_param(void){return(0);}
 
 

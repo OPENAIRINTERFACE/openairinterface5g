@@ -541,7 +541,7 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
   }
 }
 
-static void add_srb(int rnti, struct LTE_SRB_ToAddMod *s)
+static void add_srb(int rnti, struct NR_SRB_ToAddMod *s)
 {
   TODO;
 }
@@ -655,6 +655,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   return 0;
 }
 
+/* Dummy function due to dependency from LTE libraries */
 boolean_t rrc_pdcp_config_asn1_req(
   const protocol_ctxt_t *const  ctxt_pP,
   LTE_SRB_ToAddModList_t  *const srb2add_list,
@@ -669,51 +670,10 @@ boolean_t rrc_pdcp_config_asn1_req(
 #endif
   ,rb_id_t                 *const defaultDRB)
 {
-  int rnti = ctxt_pP->rnti;
-  int i;
-
-  if (//ctxt_pP->enb_flag != 1 ||
-      ctxt_pP->module_id != 0 ||
-      ctxt_pP->instance != 0 ||
-      ctxt_pP->eNB_index != 0 ||
-      //ctxt_pP->configured != 2 ||
-      //srb2add_list == NULL ||
-      //drb2add_list != NULL ||
-      drb2release_list != NULL ||
-      security_modeP != 255 ||
-      //kRRCenc != NULL ||
-      //kRRCint != NULL ||
-      //kUPenc != NULL ||
-      pmch_InfoList_r9 != NULL /*||
-      defaultDRB != NULL */) {
-    TODO;
-  }
-
-  if (srb2add_list != NULL) {
-    for (i = 0; i < srb2add_list->list.count; i++) {
-      add_srb(rnti, srb2add_list->list.array[i]);
-    }
-  }
-
-  if (drb2add_list != NULL) {
-    for (i = 0; i < drb2add_list->list.count; i++) {
-      add_drb(rnti, drb2add_list->list.array[i], NULL);
-    }
-  }
-
-  /* update security */
-  if (kRRCint != NULL) {
-    /* todo */
-  }
-
-  free(kRRCenc);
-  free(kRRCint);
-  free(kUPenc);
-
   return 0;
 }
 
-void nr_ip_over_LTE_DRB_preconfiguration(void)
+void nr_DRB_preconfiguration(void)
 {
 
   NR_RadioBearerConfig_t             *rbconfig = NULL;
@@ -723,47 +683,47 @@ void nr_ip_over_LTE_DRB_preconfiguration(void)
   rbconfig = calloc(1, sizeof(*rbconfig));
 
   rbconfig->srb_ToAddModList = NULL;
-    rbconfig->srb3_ToRelease = NULL;
-    rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
-    NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
-    drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
-    drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-    drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 5;
-    drb_ToAddMod->drb_Identity = 1;
-    drb_ToAddMod->reestablishPDCP = NULL;
-    drb_ToAddMod->recoverPDCP = NULL;
-    drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
-    drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
-    drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
-    *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_ms30;
-    drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
-    *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-    drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
-    *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-    drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-    drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+  rbconfig->srb3_ToRelease = NULL;
+  rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
+  NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
+  drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
+  drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 5;
+  drb_ToAddMod->drb_Identity = 1;
+  drb_ToAddMod->reestablishPDCP = NULL;
+  drb_ToAddMod->recoverPDCP = NULL;
+  drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
+  drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
+  drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
+  *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_ms30;
+  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
+  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len12bits;
+  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
+  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len12bits;
+  drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+  drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
 
-    drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;
-    drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;
-    drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
-    drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
+  drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;
+  drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;
+  drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
+  drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
 
-    drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
-    *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
-    drb_ToAddMod->pdcp_Config->ext1 = NULL;
+  drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
+  *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+  drb_ToAddMod->pdcp_Config->ext1 = NULL;
 
-    ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
+  ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
 
-    rbconfig->drb_ToReleaseList = NULL;
+  rbconfig->drb_ToReleaseList = NULL;
 
-    rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
-    rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
-    rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
-    rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
-    rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
-    *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+  rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
+  rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
+  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
+  rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
+  rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
+  *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
 
-    xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
+  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 
 
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
@@ -786,6 +746,21 @@ void nr_ip_over_LTE_DRB_preconfiguration(void)
   RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
   *RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength   =    NR_SN_FieldLengthUM_size12;
   RLC_BearerConfig->rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+
+  // RLC AM Bearer configuration
+  /*RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
+  RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =    NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
+  RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
+
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
+  *RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
+  RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;*/
 
   RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
