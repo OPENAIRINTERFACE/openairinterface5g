@@ -539,8 +539,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config){
 
-  LOG_I(MAC, "In nr_schedule_uss_dlsch_phytest frame %d slot %d\n",frameP,slotP);
-
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int lcid, offset, i, header_length_last, TBS_bytes;
   int UE_id = 0, CC_id = 0;
@@ -577,9 +575,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   if (TBS_bytes == 0)
    return;
  
-  //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
-  //through the LTE stack
-  if (IS_SOFTMODEM_NOS1){
+  //Corresponding to noS1 and EPC_MODE_ENABLED use cases where DLSCH transmissions are scheduled only when there is IP traffic
+  //at the upper layers
+  if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test == 0){
 
     for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 
@@ -635,7 +633,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       }
     }
 
-  } //if (IS_SOFTMODEM_NOS1)
+  } //if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test)
   else {
 
     //When the --NOS1 option is not enabled, DLSCH transmissions with random data
@@ -818,11 +816,18 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 0;
+
+  uint8_t no_data_in_dmrs = 1; // temp implementation
+  uint8_t num_dmrs_symb = 0;
+
+  for(int dmrs_counter = pusch_pdu->start_symbol_index; dmrs_counter < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; dmrs_counter++)
+    num_dmrs_symb += ((pusch_pdu->ul_dmrs_symb_pos >> dmrs_counter) & 1);
+
   pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
 						 pusch_pdu->target_code_rate,
 						 pusch_pdu->rb_size,
 						 pusch_pdu->nr_of_symbols,
-						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
+						 ( no_data_in_dmrs ? 12 : ((pusch_pdu->dmrs_config_type == pusch_dmrs_type1) ? 6 : 4) ) * num_dmrs_symb,
 						 0, //nb_rb_oh
                                                  0,
 						 pusch_pdu->nrOfLayers)>>3;

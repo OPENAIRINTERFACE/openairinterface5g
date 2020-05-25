@@ -76,7 +76,7 @@ boolean_t pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
                         const sdu_size_t   sdu_buffer_sizeP,
                         mem_block_t *const sdu_buffer_pP) {return(false);}
 
-void nr_ip_over_LTE_DRB_preconfiguration(void){}
+void nr_DRB_preconfiguration(void){}
 void pdcp_layer_init(void) {}
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 

@@ -39,6 +39,7 @@
 #include "PHY/defs_UE.h"
 #include "openair2/LAYER2/RLC/rlc.h"
 #include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
@@ -59,7 +60,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
 	  LOG_I(RLC, "Problem at RLC initiation \n");
     	}
     	pdcp_layer_init();
-    	nr_ip_over_LTE_DRB_preconfiguration();
+    	nr_DRB_preconfiguration();
       }
     }
     else LOG_I(MAC,"Running without RRC instance\n");

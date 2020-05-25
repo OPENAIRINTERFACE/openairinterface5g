@@ -193,15 +193,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if (!IS_SOFTMODEM_NOS1 || !data_existing) {
         //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
         //and block this traffic from being forwarded to the upper layers at the gNB
-        uint16_t payload_offset = 5;
         LOG_D(PHY, "Random data to be tranmsitted: \n");
 
-        //Give the header bytes a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-        //in order to block the random packet at the MAC layer of the receiver
-        for (i = 0; i<payload_offset; i++)
-          harq_process_ul_ue->a[i] = 64;
+        //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+        //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+        //have a valid LCID (nr_process_mac_pdu function)
+          harq_process_ul_ue->a[0] = 0x31;
 
-        for (i = payload_offset; i < harq_process_ul_ue->TBS / 8; i++) {
+        for (i = 1; i < harq_process_ul_ue->TBS / 8; i++) {
           harq_process_ul_ue->a[i] = (unsigned char) rand();
           //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
         }
@@ -537,21 +536,51 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 
-  for (ap = 0; ap < Nl; ap++) {
+  if(UE->N_TA_offset > tx_offset) {
+    int32_t *tmp_idft_out = (int32_t*)malloc16(frame_parms->get_samples_per_slot(slot, frame_parms) * sizeof(int32_t));
+
+    for(ap = 0; ap < Nl; ap++) {
       if (frame_parms->Ncp == 1) { // extended cyclic prefix
-  PHY_ofdm_mod(txdataF[ap],
-         &txdata[ap][tx_offset],
-         frame_parms->ofdm_symbol_size,
-         12,
-         frame_parms->nb_prefix_samples,
-         CYCLIC_PREFIX);
+        PHY_ofdm_mod(txdataF[ap],
+                     tmp_idft_out,
+                     frame_parms->ofdm_symbol_size,
+                     12,
+                     frame_parms->nb_prefix_samples,
+                     CYCLIC_PREFIX);
       } else { // normal cyclic prefix
-  nr_normal_prefix_mod(txdataF[ap],
-           &txdata[ap][tx_offset],
-           14,
-           frame_parms);
+        nr_normal_prefix_mod(txdataF[ap],
+                             tmp_idft_out,
+                             14,
+                             frame_parms);
+      }
+
+      memcpy((void *) &txdata[ap][frame_parms->samples_per_frame - UE->N_TA_offset + tx_offset],
+             (void *) tmp_idft_out,
+             (UE->N_TA_offset - tx_offset) * sizeof(int32_t));
+
+      memcpy((void *) &txdata[ap][0],
+             (void *) &tmp_idft_out[UE->N_TA_offset - tx_offset],
+             (frame_parms->get_samples_per_slot(slot, frame_parms) - UE->N_TA_offset + tx_offset) * sizeof(int32_t));
+    }
+
+    free(tmp_idft_out);
+  } else { // UE->N_TA_offset <= tx_offset
+    for (ap = 0; ap < Nl; ap++) {
+      if (frame_parms->Ncp == 1) { // extended cyclic prefix
+        PHY_ofdm_mod(txdataF[ap],
+                     &txdata[ap][tx_offset-UE->N_TA_offset],
+                     frame_parms->ofdm_symbol_size,
+                     12,
+                     frame_parms->nb_prefix_samples,
+                     CYCLIC_PREFIX);
+      } else { // normal cyclic prefix
+        nr_normal_prefix_mod(txdataF[ap],
+                             &txdata[ap][tx_offset-UE->N_TA_offset],
+                             14,
+                             frame_parms);
       }
     }
+  }
 
   ///////////
   ////////////////////////////////////////////////////

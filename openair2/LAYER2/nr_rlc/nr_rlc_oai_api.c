@@ -821,7 +821,7 @@ __attribute__ ((unused)) static void add_drb(int rnti, struct NR_DRB_ToAddMod *s
   }
 }
 
-//#if 0
+/* Dummy function due to dependency from LTE libraries */
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
     const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const LTE_DRB_ToAddModList_t   * const drb2add_listP,
@@ -830,46 +830,11 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
     const uint32_t sourceL2Id,
     const uint32_t destinationL2Id)
 {
-  int rnti = ctxt_pP->rnti;
-  int i;
-
-  if (/*ctxt_pP->enb_flag != 1 ||*/ ctxt_pP->module_id != 0 /*||
-      ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
-      ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
-    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %d %d %d %d)\n", __FUNCTION__,
-          ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
-          ctxt_pP->eNB_index, ctxt_pP->configured, ctxt_pP->brOption);
-    exit(1);
-  }
-
-  if (pmch_InfoList_r9_pP != NULL) {
-    LOG_E(RLC, "%s: pmch_InfoList_r9_pP not handled\n", __FUNCTION__);
-    exit(1);
-  }
-
-  if (drb2release_listP != NULL) {
-    LOG_E(RLC, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-
-  if (srb2add_listP != NULL) {
-    for (i = 0; i < srb2add_listP->list.count; i++) {
-      add_srb(rnti, srb2add_listP->list.array[i]);
-    }
-  }
-
-  if (drb2add_listP != NULL) {
-    for (i = 0; i < drb2add_listP->list.count; i++) {
-      add_drb(rnti, drb2add_listP->list.array[i], NULL);
-    }
-  }
-
-  return RLC_OP_STATUS_OK;
+  return 0;
 }
-//#endif
 
 rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
-    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const LTE_SRB_ToAddModList_t   * const srb2add_listP,
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
