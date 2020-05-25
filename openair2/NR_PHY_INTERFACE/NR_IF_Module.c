@@ -102,8 +102,19 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
                 sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
                 sched_ctrl->harq_processes[harq_idx].round = 0;
               }
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
               harq_idx_s = harq_idx + 1;
               break;
+            }
+            // if gNB fails to receive a ACK/NACK
+            else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                    (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+              sched_ctrl->harq_processes[harq_idx].round++;
+              if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+              }
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
             }
           }
         }

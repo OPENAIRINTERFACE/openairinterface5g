@@ -188,6 +188,7 @@ typedef struct NR_sched_pucch {
 } NR_sched_pucch;
 
 typedef struct NR_UE_harq {
+  uint8_t is_waiting;
   uint8_t ndi;
   uint8_t round;
   uint16_t feedback_slot;
