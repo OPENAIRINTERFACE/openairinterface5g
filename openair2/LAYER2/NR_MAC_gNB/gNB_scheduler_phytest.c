@@ -601,7 +601,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
         if (rlc_status.bytes_in_buffer > 0) {
 
-          LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
+          LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
             module_idP, frameP, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
             lcid, header_length_total, TBS_bytes);
 
@@ -617,7 +617,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                                    0,
                                                    0);
 
-          LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n", module_idP, sdu_lengths[num_sdus], lcid);
+          LOG_W(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n", module_idP, sdu_lengths[num_sdus], lcid);
 
           sdu_lcids[num_sdus] = lcid;
           sdu_length_total += sdu_lengths[num_sdus];

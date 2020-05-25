@@ -470,7 +470,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, pucch_sched, NULL);
       // resetting ta flag
       gNB->ta_len = 0;
-      UE_list->fiveG_connected[UE_id] = false;
+      //UE_list->fiveG_connected[UE_id] = false;
     }
 
 
