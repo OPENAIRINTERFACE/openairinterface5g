@@ -10571,6 +10571,32 @@ int main(int argc, char**argv)
   LOG_M("y24576.m","y24576",y,24576,1,1);
   LOG_M("x24576.m","x24576",x,24576,1,1);
 
+
+  memset((void*)x,0,2*18432*sizeof(int32_t));
+  for (i=2;i<(2*14402);i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(36864-14400);i<(36864*2);i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft36864((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n36864-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  LOG_M("y36864.m","y36864",y,36864,1,1);
+  LOG_M("x36864.m","x36864",x,36864,1,1);
+
+
   memset((void*)x,0,49152*sizeof(int32_t));
   for (i=2;i<28402;i++) {
     if ((taus() & 1)==0)

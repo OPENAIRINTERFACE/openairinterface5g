@@ -904,7 +904,7 @@ int get_nr_prach_info_from_index(uint8_t index,
     if ( (frame%x)==y || (frame%x)==y2 ) {
       slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
-      if ( (s_map>>slot_60khz)&0x01 ) {
+      if ( ((s_map>>slot_60khz)&0x01) ) {
         if (mu == 3) {
           if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 0) )
             return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
@@ -944,7 +944,7 @@ int get_nr_prach_info_from_index(uint8_t index,
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
           if (mu == 1) {
-            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] == 1) && (slot%2 == 0) )
+            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
@@ -954,7 +954,7 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
+            LOG_I(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
               slot,
               index,
               pointa,
