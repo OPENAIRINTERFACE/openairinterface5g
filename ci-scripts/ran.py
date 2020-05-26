@@ -801,6 +801,7 @@ class RANManagement():
 		pdcpFailure = 0
 		ulschFailure = 0
 		ulschReceiveOK = 0
+		gnbRxTxWakeUpFailure = 0
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -910,7 +911,10 @@ class RANManagement():
 			result = re.search('PDCP.*Out of Resources.*reason', str(line))
 			if result is not None:
 				pdcpFailure += 1
-			result = re.search('ULSCH in error in round', str(line))
+			result = re.search('could not wakeup gNB rxtx process', str(line))
+			if result is not None:
+				gnbRxTxWakeUpFailure += 1
+			result = re.search('ULSCH in error in round|ULSCH 0 in error', str(line))
 			if result is not None:
 				ulschFailure += 1
 			result = re.search('ULSCH received ok', str(line))
@@ -938,6 +942,10 @@ class RANManagement():
 		if self.air_interface == 'nr':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if gnbRxTxWakeUpFailure > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(gnbRxTxWakeUpFailure) + ' "could not wakeup gNB rxtx process" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
