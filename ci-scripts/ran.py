@@ -522,8 +522,8 @@ class RANManagement():
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		if self.epcObj is not None:
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localEpcIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
+			localMmeIpAddr = self.epcObj.GetMmeIPAddress()
+			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
