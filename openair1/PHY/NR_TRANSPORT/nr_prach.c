@@ -150,6 +150,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   int16_t            **rxsigF=NULL;
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
+  int slot2=slot;
 
   int16_t *prach[ru->nb_rx];
   int prach_sequence_length = ru->config.prach_config.prach_sequence_length.value;
@@ -159,9 +160,10 @@ void rx_nr_prach_ru(RU_t *ru,
   rxsigF            = ru->prach_rxsigF;
 
   AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
-  for (int aa=0; aa<ru->nb_rx; aa++) 
-    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
-  
+  for (int aa=0; aa<ru->nb_rx; aa++){ 
+    if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
+    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
+  } 
 
 
   int mu = fp->numerology_index;
@@ -170,7 +172,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   if (prach_sequence_length == 0) {
     LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d, msg1_frequencyStart %d\n",
-	  ru->idx,frame,slot,prachFormat,msg1_frequencystart);
+	  ru->idx,frame,slot2,prachFormat,msg1_frequencystart);
     AssertFatal(prachFormat<4,"Illegal prach format %d for length 839\n",prachFormat);
     switch (prachFormat) {
     case 0:
