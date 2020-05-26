@@ -161,61 +161,61 @@
 
 /**************************include files for -->AVX512 ******************/
 
-//#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z384_13_AVX2.c"
-/*#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z352_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z320_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z288_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z256_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z240_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z224_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z208_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z192_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z176_13_AVX2.c"
+/#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c"
+/*#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z352_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z320_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z288_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z256_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z240_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z224_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z208_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z192_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z176_13_AVX512.c"
 
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z160_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z144_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z128_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z120_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z112_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z104_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z96_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z88_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z80_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z72_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z160_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z144_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z128_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z120_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z112_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z104_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z96_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z88_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z80_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z72_13_AVX512.c"
 
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z64_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z60_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z56_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z52_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z48_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z44_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z40_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z36_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z32_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z30_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z64_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z60_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z56_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z52_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z48_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z44_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z40_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z36_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z32_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z30_13_AVX512.c"
 
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z28_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z26_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z24_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z22_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z20_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z18_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z16_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z15_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z14_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z13_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z28_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z26_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z24_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z22_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z20_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z18_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z16_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z15_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z14_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z13_13_AVX512.c"
 
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z12_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z11_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z10_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z9_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z8_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z7_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z6_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z5_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z4_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z3_13_AVX2.c"
-#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z2_13_AVX2.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z12_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z11_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z10_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z9_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z8_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z7_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z6_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z5_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z4_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z3_13_AVX512.c"
+#include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z2_13_AVX512.c"
 */
 #define NR_LDPC_ENABLE_PARITY_CHECK
 #define NR_LDPC_PROFILER_DETAIL
@@ -328,11 +328,11 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         switch (Z)
         {
         case 384:
-        {
-            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-           // nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+        {    //we test here
+            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;
-	}                                                                           
+	    }                                                                           
         case 352:
         {
             nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1917,9 +1917,9 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         switch (Z)
         {
         case 384:
-        {
-            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-           // nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+        {//we test here
+            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;
 	}
         case 352:
@@ -2267,9 +2267,9 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     switch (Z)
     {
         case 384:
-        {
-            nrLDPC_cnProc_BG2_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-           // nrLDPC_cnProc_BG2_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+        {  //we test here
+            //nrLDPC_cnProc_BG2_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            nrLDPC_cnProc_BG2_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;
         }
         case 352:
