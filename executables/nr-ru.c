@@ -1465,7 +1465,14 @@ void *ru_thread( void *param ) {
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
     // start trx write thread
-    ru->start_write_thread(ru);
+    if (ru->start_write_thread){
+      if(ru->start_write_thread(ru) != 0){
+        LOG_E(HW,"Could not start tx write thread\n");
+      }
+      else{
+        LOG_I(PHY,"tx write thread ready\n");
+      }
+    }
   }
 
   pthread_mutex_lock(&proc->mutex_FH1);
@@ -2099,6 +2106,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
       ru->start_rf               = NULL;                // no local RF
       ru->stop_rf                = NULL;
+      ru->start_write_thread     = NULL;
       ru->nr_start_if            = nr_start_if;         // need to start if interface for IF5
       ru->ifdevice.host_type     = RAU_HOST;
       ru->ifdevice.eth_params    = &ru->eth_params;
@@ -2125,6 +2133,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->fh_north_asynch_in     = NULL;
       ru->start_rf               = NULL;                // no local RF
       ru->stop_rf                = NULL;
+      ru->start_write_thread     = NULL;
       ru->nr_start_if            = nr_start_if;         // need to start if interface for IF4p5
       ru->ifdevice.host_type     = RAU_HOST;
       ru->ifdevice.eth_params    = &ru->eth_params;
