@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <immintrin.h>
+#include  "../include/avx512fintrin.h"
 __m512i _mm512_sign_epi16(__m512i a, __m512i b){ 
 b = _mm512_min_epi16(b, _mm512_set1_epi16(1)); 	 
 b = _mm512_max_epi16(b, _mm512_set1_epi16(-1)); 	 

@@ -20,7 +20,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 
   fprintf(fd,"#include <stdint.h>\n");
   fprintf(fd,"#include <immintrin.h>\n");
-
+  fprintf(fd, "#include  \"../include/avx512fintrin.h\"\n");
 
   fprintf(fd,	"__m512i _mm512_sign_epi16(__m512i a, __m512i b){ \n");     /* Emulate _mm512_sign_epi16() with instructions that exist in the AVX-512 instruction set      */
   fprintf(fd,	"b = _mm512_min_epi16(b, _mm512_set1_epi16(1)); 	 \n" );

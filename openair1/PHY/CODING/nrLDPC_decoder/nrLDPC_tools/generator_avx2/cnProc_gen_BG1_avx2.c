@@ -21,6 +21,8 @@ void nrLDPC_cnProc_BG1_generator_AVX2(uint16_t Z,int R)
 
   fprintf(fd,"#include <stdint.h>\n");
   fprintf(fd,"#include <immintrin.h>\n");
+ fprintf(fd,"#include "\"../include/avx512fintrin.h>\"\n");
+
   fprintf(fd,"void nrLDPC_cnProc_BG1_Z%d_%s_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {\n",Z,ratestr[R]);
 
   const uint8_t*  lut_numCnInCnGroups;
