@@ -377,7 +377,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
 
-  if ((slot_txP == 0) && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
+  if (slot_txP== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
     for (int k=0; k<nr_ulmix_slots; k++) {
       memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
@@ -394,25 +394,23 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   RC.nrmac[module_idP]->frame    = frame_rxP;
   RC.nrmac[module_idP]->slot     = slot_rxP;
 
-  if (get_softmodem_params()->phy_test) {
-    dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
-    ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
+  dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
+  ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
 
-    // hardcoding dlsch to be in slot 1
-    if (!(slot_txP%num_slots_per_tdd)) {
-      if(slot_txP==0)
-        *dlsch_in_slot_bitmap = 0x02;
-      else
-        *dlsch_in_slot_bitmap = 0x00;
-    }
+  // hardcoding dlsch to be in slot 1
+  if (!(slot_txP%num_slots_per_tdd)) {
+    if(slot_txP==0)
+      *dlsch_in_slot_bitmap = 0x7e;
+    else
+      *dlsch_in_slot_bitmap = 0x00;
+  }
 
-    // hardcoding ulsch to be in slot 8
-    if (!(slot_rxP%num_slots_per_tdd)) {
-      if(slot_rxP==0)
-        *ulsch_in_slot_bitmap = 0x100;
-      else
-        *ulsch_in_slot_bitmap = 0x00;
-    }
+  // hardcoding ulsch to be in slot 8
+  if (!(slot_rxP%num_slots_per_tdd)) {
+    if(slot_rxP==0)
+      *ulsch_in_slot_bitmap = 0x100;
+    else
+      *ulsch_in_slot_bitmap = 0x00;
   }
 
   // Check if there are downlink symbols in the slot, 
@@ -464,25 +462,17 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     if (get_softmodem_params()->phy_test == 0)
       nr_schedule_RA(module_idP, frame_txP, slot_txP);
+    else
+      UE_list->fiveG_connected[UE_id] = true;
 
     // Phytest scheduling
-    if (get_softmodem_params()->phy_test && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
+    if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
       ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
       nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
       // resetting ta flag
       gNB->ta_len = 0;
     }
-
-    // Test DL scheduling
-    if (get_softmodem_params()->phy_test == 0 && slot_txP>0 && slot_txP<7 && UE_list->fiveG_connected[UE_id]) {
-      ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
-      nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
-      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
-      // resetting ta flag
-      gNB->ta_len = 0;
-    }
-
 
     /*
     // Allocate CCEs for good after scheduling is done
