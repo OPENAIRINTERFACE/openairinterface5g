@@ -27,8 +27,9 @@
  * \company Eurecom
  * \email: lionel.gauthier@eurecom.fr
  */
-#ifndef __RRC_ENB_UE_CONTEXT_H__
-#define __RRC_ENB_UE_CONTEXT_H__
+#ifndef __RRC_GNB_UE_CONTEXT_H__
+#define __RRC_GNB_UE_CONTEXT_H__
+
 #include "collection/tree.h"
 #include "COMMON/platform_types.h"
 #include "nr_rrc_defs.h"

@@ -23,6 +23,8 @@
   This library offers some functions to remotely program the R&S SMBV100A.
 */
 
+#ifndef __PHY_TOOLS_SMBV__H__
+#define __PHY_TOOLS_SMBV__H__
 
 #include <string.h>
 #include <stdio.h>
@@ -92,4 +94,5 @@ int smbv_configure_common_dci(const char* fname, uint8_t subframe, const char* t
 // Configures UE-spec DCI for user 1,2,3,4
 // item is the row in the DCI table
 int smbv_configure_ue_spec_dci(const char* fname, uint8_t subframe, uint8_t user, DCI_ALLOC_t *dci_alloc, uint8_t item);
+#endif
 #endif

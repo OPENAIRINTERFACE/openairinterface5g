@@ -30,6 +30,9 @@
  * \warning
  */
 
+#ifndef __GNB_APP_GNB_PARAMDEF__H__
+#define __GNB_APP_GNB_PARAMDEF__H__
+
 #include "common/config/config_paramdesc.h"
 #include "RRC_nr_paramsvalues.h"
 
@@ -430,3 +433,4 @@ typedef struct ccparams_nr_x2 {
 #define CONFIG_HLP_WORKER                          "coding and FEP worker thread WORKER_DISABLE or WORKER_ENABLE\n"
 #define CONFIG_HLP_PARALLEL                        "PARALLEL_SINGLE_THREAD, PARALLEL_RU_L1_SPLIT, or PARALLEL_RU_L1_TRX_SPLIT(RU_L1_TRX_SPLIT by defult)\n"
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#endif
