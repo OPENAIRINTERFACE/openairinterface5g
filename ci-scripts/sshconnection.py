@@ -52,15 +52,19 @@ class SSHConnection():
 		self.picocom_closure = True
 
 	def open(self, ipaddress, username, password):
+		extraSshOptions = ''
 		count = 0
 		connect_status = False
+		if ipaddress == '192.168.18.197':
+			extraSshOptions = ' -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 		while count < 4:
-			self.ssh = pexpect.spawn('ssh', [username + '@' + ipaddress], timeout = 5)
+			self.ssh = pexpect.spawn('ssh', [username + '@' + ipaddress + extraSshOptions], timeout = 5)
 			self.sshresponse = self.ssh.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', 'Last login', pexpect.EOF, pexpect.TIMEOUT])
 			if self.sshresponse == 0:
 				self.ssh.sendline('yes')
-				self.ssh.expect('password:')
-				self.ssh.sendline(password)
+				self.sshresponse = self.ssh.expect(['password:', username + '@'])
+				if self.sshresponse == 0:
+					self.ssh.sendline(password)
 				self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 				if self.sshresponse == 0:
 					count = 10

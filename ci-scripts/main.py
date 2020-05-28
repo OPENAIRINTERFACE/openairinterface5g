@@ -403,23 +403,50 @@ class OaiCiTest():
 				if (outterLoopCounter == 0):
 					doOutterLoop = False
 				continue
+			# We are now checking if sync w/ eNB DOES NOT OCCUR
+			# Usually during the cell synchronization stage, the UE returns with No cell synchronization message
+			# That is the case for LTE
+			# In NR case, it's a positive message that will show if synchronization occurs
+			doLoop = True
 			if RAN.Getair_interface() == 'nr':
-				fullSyncStatus = True
-				doOutterLoop = False
+				loopCounter = 10
 			else:
 				# We are now checking if sync w/ eNB DOES NOT OCCUR
 				# Usually during the cell synchronization stage, the UE returns with No cell synchronization message
-				doLoop = True
 				loopCounter = 10
-				while (doLoop):
-					loopCounter = loopCounter - 1
-					if (loopCounter == 0):
+			while (doLoop):
+				loopCounter = loopCounter - 1
+				if (loopCounter == 0):
+					if RAN.Getair_interface() == 'nr':
+						# Here we do have great chances that UE did NOT cell-sync w/ gNB
+						doLoop = False
+						fullSyncStatus = False
+						logging.debug('Never seen the NR-Sync message (Measured Carrier Frequency) --> try again')
+						time.sleep(6)
+						# Stopping the NR-UE  
+						SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
+						result = re.search('nr-uesoftmodem', SSH.getBefore())
+						if result is not None:
+							SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT nr-uesoftmodem', '\$', 4)
+						time.sleep(6)
+					else:
 						# Here we do have a great chance that the UE did cell-sync w/ eNB
 						doLoop = False
 						doOutterLoop = False
 						fullSyncStatus = True
 						continue
-					SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
+				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Frequency"', '\$', 4)
+				if RAN.Getair_interface() == 'nr':
+					# Positive messaging -->
+					result = re.search('Measured Carrier Frequency', SSH.getBefore())
+					if result is not None:
+						doLoop = False
+						doOutterLoop = False
+						fullSyncStatus = True
+					else:
+						time.sleep(6)
+				else:
+					# Negative messaging -->
 					result = re.search('No cell synchronization found', SSH.getBefore())
 					if result is None:
 						time.sleep(6)
@@ -432,13 +459,22 @@ class OaiCiTest():
 						result = re.search('lte-uesoftmodem', SSH.getBefore())
 						if result is not None:
 							SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
-				outterLoopCounter = outterLoopCounter - 1
-				if (outterLoopCounter == 0):
-					doOutterLoop = False
+			outterLoopCounter = outterLoopCounter - 1
+			if (outterLoopCounter == 0):
+				doOutterLoop = False
 
-		if fullSyncStatus and gotSyncStatus and RAN.Getair_interface() == 'lte':
-			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
-			if result is None:
+		if fullSyncStatus and gotSyncStatus:
+			doInterfaceCheck = False
+			if RAN.Getair_interface() == 'lte':
+				result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+				if result is None:
+					doInterfaceCheck = True
+			# For the moment, only in explicit noS1 without kernel module (ie w/ tunnel interface)
+			if RAN.Getair_interface() == 'nr':
+				result = re.search('--noS1 --nokrnmod 1', str(self.Initialize_OAI_UE_args))
+				if result is not None:
+					doInterfaceCheck = True
+			if doInterfaceCheck:
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
@@ -3316,10 +3352,13 @@ while len(argvs) > 1:
 		EPC.SetSourceCodePath(matchReg.group(1))
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
-		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
+		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE):
 			EPC.SetType(matchReg.group(1))
 		else:
-			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS)')
+			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS or OAI-Rel14-Docker)')
+	elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
+		EPC.SetContainerPrefix(matchReg.group(1))
 	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ADBIPAddress = matchReg.group(1)
@@ -3542,6 +3581,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			sys.exit(1)
 	if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation()
+		EPC.SetMmeIPAddress()
 
 	#get the list of tests to be done
 	todo_tests=[]
