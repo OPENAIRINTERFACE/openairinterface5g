@@ -176,7 +176,7 @@ class OaiCiTest():
 		SSH.command('mkdir -p log', '\$', 5)
 		SSH.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 600)
+		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 900)
 		SSH.command('ls ran_build/build', '\$', 3)
 		SSH.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
