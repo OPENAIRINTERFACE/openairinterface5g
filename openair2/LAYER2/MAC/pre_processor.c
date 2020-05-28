@@ -237,6 +237,170 @@ default_sched_dl_algo_t round_robin_dl = {
 };
 
 
+void *pf_dl_setup(void) {
+  void *data = calloc(MAX_MOBILES_PER_ENB, sizeof(float));
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++)
+    *(float *) data = 0.0f;
+  AssertFatal(data, "could not allocate data in %s()\n", __func__);
+  return data;
+}
+void pf_dl_unset(void **data) {
+  if (*data)
+    free(*data);
+  *data = NULL;
+}
+int pf_wbcqi_dl_run(module_id_t Mod_id,
+                    int CC_id,
+                    int frame,
+                    int subframe,
+                    UE_list_t *UE_list,
+                    int max_num_ue,
+                    int n_rbg_sched,
+                    uint8_t *rbgalloc_mask,
+                    void *data) {
+  DevAssert(UE_list->head >= 0);
+  DevAssert(n_rbg_sched > 0);
+  const int N_RBG = to_rbg(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  const int RBGsize = get_min_rb_unit(Mod_id, CC_id);
+  const int RBGlastsize = get_rbg_size_last(Mod_id, CC_id);
+  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
+
+  int rbg = 0;
+  for (; !rbgalloc_mask[rbg]; rbg++)
+    ; /* fast-forward to first allowed RBG */
+
+  UE_list_t UE_sched; // UEs that could be scheduled
+  int *uep = &UE_sched.head;
+  float *thr_ue = data;
+  float coeff_ue[MAX_MOBILES_PER_ENB];
+
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    const float a = 0.0005f; // corresponds to 200ms window
+    const uint32_t b = UE_info->eNB_UE_stats[CC_id][UE_id].TBS;
+    thr_ue[UE_id] = (1 - a) * thr_ue[UE_id] + a * b;
+
+    // check whether there are HARQ retransmissions
+    const COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
+    const uint8_t harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config, frame, subframe);
+    UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    const uint8_t round = ue_ctrl->round[CC_id][harq_pid];
+    if (round != 8) { // retransmission: allocate
+      const int nb_rb = UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+      if (nb_rb == 0)
+        continue;
+      int nb_rbg = (nb_rb + (nb_rb % RBGsize)) / RBGsize;
+      // needs more RBGs than we can allocate
+      if (nb_rbg > n_rbg_sched) {
+        LOG_D(MAC,
+              "retransmission of UE %d needs more RBGs (%d) than we have (%d)\n",
+              UE_id, nb_rbg, n_rbg_sched);
+        continue;
+      }
+      // ensure that the number of RBs can be contained by the RBGs (!), i.e.
+      // if we allocate the last RBG this one should have the full RBGsize
+      if ((nb_rb % RBGsize) == 0 && nb_rbg == n_rbg_sched
+          && rbgalloc_mask[N_RBG - 1] && RBGlastsize != RBGsize) {
+        LOG_D(MAC,
+              "retransmission of UE %d needs %d RBs, but the last RBG %d is too small (%d, normal %d)\n",
+              UE_id, nb_rb, N_RBG - 1, RBGlastsize, RBGsize);
+        continue;
+      }
+      const uint8_t cqi = ue_ctrl->dl_cqi[CC_id];
+      const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
+      if (idx < 0)
+        continue; // cannot allocate CCE
+      ue_ctrl->pre_dci_dl_pdu_idx = idx;
+      // retransmissions: directly allocate
+      n_rbg_sched -= nb_rbg;
+      ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
+      for (; nb_rbg > 0; rbg++) {
+        if (!rbgalloc_mask[rbg])
+          continue;
+        ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
+        rbgalloc_mask[rbg] = 0;
+        nb_rbg--;
+      }
+      LOG_D(MAC,
+            "%4d.%d n_rbg_sched %d after retransmission reservation for UE %d "
+            "round %d retx nb_rb %d pre_nb_available_rbs %d\n",
+            frame, subframe, n_rbg_sched, UE_id, round,
+            UE_info->UE_template[CC_id][UE_id].nb_rb[harq_pid],
+            ue_ctrl->pre_nb_available_rbs[CC_id]);
+      /* if there are no more RBG to give, return */
+      if (n_rbg_sched <= 0)
+        return 0;
+      max_num_ue--;
+      /* if there are no UEs that can be allocated anymore, return */
+      if (max_num_ue == 0)
+        return n_rbg_sched;
+      for (; !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
+    } else {
+      if (UE_info->UE_template[CC_id][UE_id].dl_buffer_total == 0)
+        continue;
+
+      const int mcs = cqi_to_mcs[UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id]];
+      const uint32_t tbs = get_TBS_DL(mcs, RBGsize);
+      coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
+      //LOG_I(MAC, "    pf UE %d: old TBS %d thr %f MCS %d TBS %d coeff %f\n",
+      //      UE_id, b, thr_ue[UE_id], mcs, tbs, coeff_ue[UE_id]);
+      *uep = UE_id;
+      uep = &UE_sched.next[UE_id];
+    }
+  }
+  *uep = -1;
+
+  while (max_num_ue > 0 && n_rbg_sched > 0 && UE_sched.head >= 0) {
+    int *max = &UE_sched.head; /* assume head is max */
+    int *p = &UE_sched.next[*max];
+    while (*p >= 0) {
+      /* if the current one has larger coeff, save for later */
+      if (coeff_ue[*p] > coeff_ue[*max])
+        max = p;
+      p = &UE_sched.next[*p];
+    }
+    /* remove the max one */
+    const int UE_id = *max;
+    p = &UE_sched.next[*max];
+    *max = UE_sched.next[*max];
+    *p = -1;
+
+    const uint8_t cqi = UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
+    const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
+    if (idx < 0)
+      continue;
+    UE_info->UE_sched_ctrl[UE_id].pre_dci_dl_pdu_idx = idx;
+
+    max_num_ue--;
+
+    /* allocate as much as possible */
+    const int mcs = cqi_to_mcs[cqi];
+    UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1 = mcs;
+    int req = find_nb_rb_DL(mcs,
+                            UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
+                            n_rbg_sched * RBGsize,
+                            RBGsize);
+    UE_sched_ctrl_t *ue_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    while (req > 0 && n_rbg_sched > 0) {
+      ue_ctrl->rballoc_sub_UE[CC_id][rbg] = 1;
+      rbgalloc_mask[rbg] = 0;
+      const int sRBG = rbg == N_RBG - 1 ? RBGlastsize : RBGsize;
+      ue_ctrl->pre_nb_available_rbs[CC_id] += sRBG;
+      req -= sRBG;
+      n_rbg_sched--;
+      for (rbg++; n_rbg_sched > 0 && !rbgalloc_mask[rbg]; rbg++) /* fast-forward */ ;
+    }
+  }
+
+  return n_rbg_sched;
+}
+default_sched_dl_algo_t proportional_fair_wbcqi_dl = {
+  .name  = "proportional_fair_wbcqi_dl",
+  .setup = pf_dl_setup,
+  .unset = pf_dl_unset,
+  .run   = pf_wbcqi_dl_run,
+  .data  = NULL
+};
+
 // This function stores the downlink buffer for all the logical channels
 void
 store_dlsch_buffer(module_id_t Mod_id,
