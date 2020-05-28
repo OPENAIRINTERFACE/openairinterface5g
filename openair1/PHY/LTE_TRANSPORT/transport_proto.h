@@ -621,7 +621,11 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       uint16_t frame,
                       uint8_t Ns);
 
-
+uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
+                 int     frame,
+                 uint8_t subframe,
+                 uint8_t shortened_format
+);
 
 uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
                   PUCCH_FMT_t fmt,

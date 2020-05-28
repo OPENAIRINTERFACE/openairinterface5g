@@ -419,6 +419,8 @@ typedef struct {
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
   /// PRACH background noise level
   int            prach_I0;
+  /// PUCCH background noise level
+  int            n0_pucch_dB;
 } PHY_MEASUREMENTS_eNB;
 
 
