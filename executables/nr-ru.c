@@ -1690,9 +1690,7 @@ void init_RU_proc(RU_t *ru) {
   int i=0;
   RU_proc_t *proc;
   char name[100];
-#ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
-#endif
   proc = &ru->proc;
   memset((void *)proc,0,sizeof(RU_proc_t));
   proc->ru = ru;

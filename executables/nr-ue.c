@@ -859,7 +859,7 @@ void *UE_thread(void *arg) {
 
     if (  decoded_frame_rx != curMsg->proc.frame_rx &&
           ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx )
-      LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
+      LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
     nbSlotProcessing++;

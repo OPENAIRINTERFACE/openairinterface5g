@@ -408,6 +408,10 @@ function main() {
             SKIP_SHARED_LIB_FLAG="True"
             echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
             shift;;
+    --ninja)
+        CMAKE_CMD="$CMAKE_CMD -GNinja"
+	MAKE_CMD=ninja
+	shift;;
         -h | --help)
             print_help
             exit 1;;

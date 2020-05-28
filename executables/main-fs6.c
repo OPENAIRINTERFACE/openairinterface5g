@@ -1510,6 +1510,7 @@ void *cu_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3, 1023); //three first char should be cu: or du:
   char port_def[256]=DU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
@@ -1558,12 +1559,14 @@ void *du_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3,1023); //three first char should be cu: or du:
   char port_def[256]=CU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
       remoteIP[i]=0;
       break;
     }
+
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, port_def, &sockFS6), "");
 
   if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)

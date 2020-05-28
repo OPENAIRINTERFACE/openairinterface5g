@@ -302,7 +302,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
       }
 
   #ifdef DEBUG_RB_EXT
-      printf("re = %d, is_dmrs_symbol_flag = %d, symbol = %d\n", re, is_dmrs_symbol_flag, symbol);
+      printf("re = %d, is_ptrs_symbol_flag = %d, symbol = %d\n", re, is_ptrs_symbol_flag, symbol);
   #endif
 
       if ( is_dmrs_re == 0 && is_ptrs_symbol_flag == 0) {
@@ -313,8 +313,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
         ul_ch0_ptrs_ext[ul_ch0_ptrs_ext_index] = ul_ch0_ptrs[ul_ch0_ptrs_index];
 
   #ifdef DEBUG_RB_EXT
-        printf("rxF_ext[%d] = %d\n", rxF_ext_index, rxF_ext[rxF_ext_index]);
-        printf("rxF_ext[%d] = %d\n", rxF_ext_index+1, rxF_ext[rxF_ext_index+1]);
+        printf("rxF_ext[%d] = %d, %d\n", rxF_ext_index, rxF_ext[rxF_ext_index], rxF_ext[rxF_ext_index+1]);
   #endif
 
         ul_ch0_ext_index++;

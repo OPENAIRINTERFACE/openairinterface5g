@@ -42,6 +42,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
+#include <openair1/PHY/CODING/nrSmallBlock/nr_small_block_defs.h>
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
@@ -263,7 +264,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
 #else
 
-  int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
+  const int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
   int16_t xr[24]  __attribute__((aligned(32)));
   int16_t xrt[24] __attribute__((aligned(32)));
   int32_t xrtmag=0;
@@ -966,7 +967,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
   //extract pucch and dmrs first
 
-  int l2;
+  int l2=-1;
   int re_offset = (12*pucch_pdu->prb_start) + (12*pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
   if (re_offset>= frame_parms->ofdm_symbol_size) 
     re_offset-=frame_parms->ofdm_symbol_size;
@@ -1330,7 +1331,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   
   int harq_bytes=pucch_pdu->bit_len_harq>>3;
   if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
-  uci_pdu->harq.harq_payload = (nfapi_nr_harq_t*)malloc(harq_bytes);
+  uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
   uci_pdu->harq.harq_crc = 2;
   for (int i=0;i<harq_bytes;i++) {
     uci_pdu->harq.harq_payload[i] = cw_ML & 255;

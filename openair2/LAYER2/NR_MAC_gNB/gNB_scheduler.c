@@ -423,7 +423,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // TbD once RACH is available, start ta_timer when UE is connected
-  if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
+#if 0
+   if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
 
   if (ue_sched_ctl->ta_timer == 0) {
     gNB->ta_command = ue_sched_ctl->ta_update;
@@ -435,6 +436,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     /* MAC CE flag indicating TA length */
     gNB->ta_len = 2;
   }
+#endif
 
   // Phytest scheduling
   if (get_softmodem_params()->phy_test && slot_txP==1){

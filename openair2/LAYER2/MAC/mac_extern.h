@@ -60,7 +60,7 @@ extern uint16_t NB_THREAD_INST;
 extern unsigned char NB_RN_INST;
 extern unsigned short NODE_ID[1];
 
-extern int cqi_to_mcs[16];
+extern const int cqi_to_mcs[16];
 
 extern uint32_t RRC_CONNECTION_FLAG;
 
