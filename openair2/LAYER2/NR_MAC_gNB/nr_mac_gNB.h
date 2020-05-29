@@ -198,7 +198,7 @@ typedef struct NR_UE_harq {
 typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
-  NR_sched_pucch *sched_pucch;
+  NR_sched_pucch **sched_pucch;
   uint16_t ta_timer;
   int16_t ta_update;
   uint8_t current_harq_pid;

@@ -1328,11 +1328,13 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   int UE_id;
-  int i;
+  int i,p;
   NR_UE_list_t *UE_list = &RC.nrmac[mod_idP]->UE_list;
   NR_COMMON_channels_t *cc = RC.nrmac[mod_idP]->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   int num_slots_ul = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+  int nb_periods = 1<<(7-scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0)
     num_slots_ul++;
   LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
@@ -1353,7 +1355,17 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
-    UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+
+    UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch **)malloc(nb_periods*sizeof(NR_sched_pucch *));
+    for (p=0; p<nb_periods; p++)
+      UE_list->UE_sched_ctrl[UE_id].sched_pucch[p] = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+    for (p=0; p<nb_periods; p++) {
+      for (int k=0; k<num_slots_ul; k++) {
+        memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[p][k],
+               0, sizeof(NR_sched_pucch));
+      }
+    }
+
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
@@ -1431,6 +1443,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   NR_sched_pucch *curr_pucch;
+  int tdd_index = slotP/slots_per_tdd;
   int first_ul_slot_tdd,k,i;
   uint8_t pdsch_to_harq_feedback[8];
   int found = 0;
@@ -1444,7 +1457,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
 
   // for each possible ul or mixed slot
   for (k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
+    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[tdd_index][k];
     // if there is free room in current pucch structure
     if (curr_pucch->dai_c<MAX_ACK_BITS) {
       curr_pucch->frame = frameP;
