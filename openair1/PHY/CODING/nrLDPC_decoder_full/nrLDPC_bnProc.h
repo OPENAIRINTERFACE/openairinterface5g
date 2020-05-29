@@ -23,7 +23,7 @@
  * \brief Defines the functions for check node processing
  * Version AVX512 
 */
-
+#include <immintrin.h>
 #ifndef __NR_LDPC_BNPROC__H__
 #define __NR_LDPC_BNPROC__H__
 
@@ -59,7 +59,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
     uint32_t cnOffsetInGroup;
     uint8_t idxBnGroup = 0;
 
-    __m512i zmm0, zmm1, zmmRes0, zmmRes1;
+    __m512i zmm0, zmm1, zmmRes0, zmmRes1,tmp;
 
     // =====================================================================
     // Process group with 1 CN
@@ -96,8 +96,8 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
         // Pack results back to epi8
         zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-        //-*p_llrRes = _mm512_permute4x64_epi64(zmm0, 0xD8);                     // revenir ? 
-            *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+        //-*p_llrRes = _mm512_permutevar_epi32 (tmp, zmm0);                     // revenir ? 
+            *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
         // Next result
         p_llrRes++;
     }
@@ -148,7 +148,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -201,7 +201,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -254,7 +254,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -307,7 +307,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -360,7 +360,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -413,7 +413,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -466,7 +466,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -519,7 +519,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -572,7 +572,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -625,7 +625,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -678,7 +678,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -731,7 +731,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -784,7 +784,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -837,7 +837,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -890,7 +890,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -943,7 +943,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -996,7 +996,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1049,7 +1049,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1102,7 +1102,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1155,7 +1155,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1208,7 +1208,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1261,7 +1261,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1314,7 +1314,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1367,7 +1367,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1420,7 +1420,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1473,7 +1473,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1526,7 +1526,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
             // Pack results back to epi8
             zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
 
-           *p_llrRes =  _mm512_permutex2var_epi16(zmm0, 0xD8,zmm1);
+           *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1571,16 +1571,16 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
 
             // Add LLR from receiver input
             zmm0    = _mm512_cvtepi8_epi16(p_llrProcBuf[j]);
-            zmmRes0 = _mm512_adds_epi16(ymmRes0, ymm0);
+            zmmRes0 = _mm512_adds_epi16(zmmRes0, zmm0);
 
-            ymm1    = _mm512_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm512_adds_epi16(ymmRes1, ymm1);
+            zmm1    = _mm512_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            zmmRes1 = _mm512_adds_epi16(zmmRes1, zmm1);
 
             // Pack results back to epi8
-            ymm0 = _mm512_packs_epi16(ymmRes0, ymmRes1);
-            // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
-            // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm512_permute4x64_epi64(ymm0, 0xD8);
+            zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
+            // zmm0     = [zmmRes1[255:128] zmmRes0[255:128] zmmRes1[127:0] zmmRes0[127:0]]
+            // p_llrRes = [zmmRes1[255:128] zmmRes1[127:0] zmmRes0[255:128] zmmRes0[127:0]]
+             *p_llrRes=  _mm512_permutex2var_epi16(zmm0,tmp,zmm1);
 
             // Next result
             p_llrRes++;
@@ -1610,31 +1610,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm512_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm512_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            zmmRes0 = _mm512_cvtepi8_epi16(p_bnProcBuf[j]);
+            zmmRes1 = _mm512_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<30; k++)
             {
-                ymm0 = _mm512_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm512_adds_epi16(ymmRes0, ymm0);
+                zmm0 = _mm512_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                zmmRes0 = _mm512_adds_epi16(zmmRes0, zmm0);
 
-                ymm1 = _mm512_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm512_adds_epi16(ymmRes1, ymm1);
+                zmm1 = _mm512_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                zmmRes1 = _mm512_adds_epi16(zmmRes1, zmm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm512_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm512_adds_epi16(ymmRes0, ymm0);
+            zmm0    = _mm512_cvtepi8_epi16(p_llrProcBuf[j]);
+            zmmRes0 = _mm512_adds_epi16(zmmRes0, zmm0);
 
-            ymm1    = _mm512_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm512_adds_epi16(ymmRes1, ymm1);
+            zmm1    = _mm512_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            zmmRes1 = _mm512_adds_epi16(zmmRes1, zmm1);
 
             // Pack results back to epi8
-            ymm0 = _mm512_packs_epi16(ymmRes0, ymmRes1);
-            // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
-            // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm512_permute4x64_epi64(ymm0, 0xD8);
+            zmm0 = _mm512_packs_epi16(zmmRes0, zmmRes1);
+            // zmm0     = [zmmRes1[255:128] zmmRes0[255:128] zmmRes1[127:0] zmmRes0[127:0]]
+            // p_llrRes = [zmmRes1[255:128] zmmRes1[127:0] zmmRes0[255:128] zmmRes0[127:0]]
+            *p_llrRes =  _mm512_permutex2var_epi16(zmm0,tmp,zmm1); 
 
             // Next result
             p_llrRes++;
@@ -2715,12 +2715,12 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
     uint64_t M  = numLLR>>5;
     uint64_t Mr = numLLR&63;
 
-    const __m512i* p_zeros = (__m512i*) zeros256_epi8;
-    const __m512i* p_ones  = (__m512i*) ones256_epi8;
+    const __m512i* p_zeros = (__m512i*) zeros512_epi8;
+    const __m512i* p_ones  = (__m512i*) ones512_epi8;
 
     for (i=0; i<M; i++)
     {
-        *p_out++ =  _mm512_and_pd(*p_ones,  _mm512_cmpgt_epi8_mask(*p_zeros, *p_llrOut));
+        *p_out++ =  _mm512_and_si512(*p_ones,   _mm512_or_si512(*p_zeros, *p_llrOut));
         p_llrOut++;
     }
 
@@ -2738,6 +2738,7 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
             }
             else
             {
+
                 p_out8[i] = 0;
             }
         }
@@ -2767,7 +2768,7 @@ static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t nu
     uint64_t i;
     uint64_t M  = numLLR>>5;
     uint64_t Mr = numLLR&63;
-    const __m512i* p_shuffle = (__m512i*) constShuffle_256_epi8;
+    const __m512i* p_shuffle = (__m512i*) constShuffle_512_epi8;
 
     for (i=0; i<M; i++)
     {

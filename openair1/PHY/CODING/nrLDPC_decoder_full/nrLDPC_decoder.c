@@ -29,17 +29,15 @@
  */
 
 #include <stdint.h>
-//#include <immintrin.h>
+#include <immintrin.h>
 #include "nrLDPCdecoder_defs.h"
 #include "nrLDPC_types.h"
 #include "nrLDPC_init.h"
 #include "nrLDPC_mPass.h"
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
-
+#include <avx512fintrin.h>
 //#include "include/immintrin.h"
-#include "include/avx512fintrin.h"
-#include "include/avx2intrin.h"
 
 #define NR_LDPC_ENABLE_PARITY_CHECK
 #define NR_LDPC_PROFILER_DETAIL

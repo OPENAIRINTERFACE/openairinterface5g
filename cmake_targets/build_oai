@@ -697,7 +697,7 @@ function main() {
   if [ "$SIMUS_PHY" = "1" ] ; then
     echo_info "Compiling physical unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
-    simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim"
+    simlist="ldpctest dlsim ulsim  polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim"
     for f in $simlist ; do
       compilations \
         phy_simulators $f \

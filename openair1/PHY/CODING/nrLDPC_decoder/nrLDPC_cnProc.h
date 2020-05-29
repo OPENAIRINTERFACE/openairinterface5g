@@ -438,6 +438,7 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
+	     
 
                 // Store result
                 min = _mm256_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
