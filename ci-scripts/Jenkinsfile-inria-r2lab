@@ -158,8 +158,7 @@ pipeline {
 
                     echo '\u2705 \u001B[32mLoad Image for Python Executor\u001B[0m'
                     try {
-                       //sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
-                       sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx}'"
+                       sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labPythonExeIdx} > /dev/null 2>&1'"
                     } catch (Exception e) {
                        echo "Why is it wrong?"
                     }
@@ -172,14 +171,12 @@ pipeline {
 
                     echo '\u2705 \u001B[32mLoad Image for two (2) eNBs\u001B[0m'
                     try {
-                      //sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx} > /dev/null 2>&1'"
-                      sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx}"
+                      sh "ssh -t inria_oaici@faraday.inria.fr 'rload -i oai-ci-cd-u18-lowlatency-enb-ue ${r2labENB0Idx},${r2labENB1Idx} > /dev/null 2>&1'"
                     } catch (Exception e) {
                        echo "Why is it wrong?"
                     }
                     try {
-                       //sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx},${r2labENB1Idx}'"
-                       sh "ssh -t inria_oaici@faraday.inria.fr 'rwait ${r2labENB0Idx},${r2labENB1Idx}'"
+                       sh "ssh -t inria_oaici@faraday.inria.fr 'rwait --silent ${r2labENB0Idx},${r2labENB1Idx}'"
                     } catch (Exception e) {
                        echo "Why is it wrong?"
                     }
