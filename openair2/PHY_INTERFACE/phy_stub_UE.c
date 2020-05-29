@@ -1044,6 +1044,11 @@ void UE_config_stub_pnf(void) {
   }
 }
 
+void UE_init_socket(void) {
+
+  // scpt socket creation and memcpy function calls here
+}
+
 /* Dummy functions*/
 
 void handle_nfapi_hi_dci0_dci_pdu(

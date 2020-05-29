@@ -631,7 +631,7 @@ int main( int argc, char **argv ) {
 
   NB_INST=1;
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // || NFAPI_MODE_STANDALONE_PNF
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);
 
     for (int i=0; i<NB_UE_INST; i++) {
@@ -652,10 +652,10 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-  
-  
+
+
 #if 0 // #ifndef DEADLINE_SCHEDULER
-  
+
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   cpu_set_t cpuset;
@@ -667,7 +667,7 @@ int main( int argc, char **argv ) {
   if (get_nprocs() > 2) {
     for (j = 2; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
-    
+
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
     if (s != 0) {
@@ -708,6 +708,8 @@ int main( int argc, char **argv ) {
     UE_config_stub_pnf();
   }
 
+  // add socket here and call corresponding memcpys - Andrew
+
   printf("ITTI tasks created\n");
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_sleep_ns(10*100000000ULL);
@@ -719,7 +721,18 @@ int main( int argc, char **argv ) {
     //Panos: Temporarily we will be using single set of threads for multiple UEs.
     //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
-  } else {
+  } else if (NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
+    // init thread and open socket
+
+    /*
+    need to do this in thread
+     l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
+             0,// cba_group_active
+             0); // HO flag
+    */
+
+  }
+  else {
     init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
             frame_parms[0]);
   }

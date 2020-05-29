@@ -413,12 +413,12 @@ void init_UE_stub_single_thread(int nb_inst,
     // PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
   }
 
-  init_timer_thread();
+  init_timer_thread(); // dont need this
   init_UE_single_thread_stub(nb_inst);
   printf("UE threads created \n");
   LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF)
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) // dont need this
     multicast_link_start(ue_stub_rx_handler,0,emul_iface);
 }
 
