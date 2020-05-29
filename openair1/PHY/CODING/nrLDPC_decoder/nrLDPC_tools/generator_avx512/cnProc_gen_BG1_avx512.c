@@ -80,10 +80,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[0]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[0]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 3
@@ -104,7 +104,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i+=2) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>31)+lut_idxCnProcG3[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -112,7 +112,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  
 	  // 32 CNs of second BN
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][1]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>31)+lut_idxCnProcG3[j][1]);
 	  
 	  //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	  fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -125,11 +125,11 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[0]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[0]>>31)+(j*bitOffsetInGroup));
 
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]+1);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>31)+lut_idxCnProcG3[j][0]+1);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -137,7 +137,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  
 	  // 32 CNs of second BN
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][1]+1);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>31)+lut_idxCnProcG3[j][1]+1);
 	  
 	  //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	  fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -150,7 +150,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[0]>>5)+(j*bitOffsetInGroup)+1);
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[0]>>31)+(j*bitOffsetInGroup)+1);
 
 	  fprintf(fd,"            }\n");
         }
@@ -166,10 +166,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[1]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[1]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[1]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[1]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 4
@@ -188,7 +188,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[1]>>5)+lut_idxCnProcG4[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[1]>>31)+lut_idxCnProcG4[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -198,7 +198,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<3; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[1]>>5)+lut_idxCnProcG4[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[1]>>31)+lut_idxCnProcG4[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -212,7 +212,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	      //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[1]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[1]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"            }\n");
         }
     }
@@ -230,10 +230,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[2]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[2]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 4
@@ -253,7 +253,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[2]>>5)+lut_idxCnProcG5[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[2]>>31)+lut_idxCnProcG5[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -263,7 +263,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<4; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[2]>>5)+lut_idxCnProcG5[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[2]>>31)+lut_idxCnProcG5[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -277,7 +277,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[2]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[2]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"           }\n");
         }
     }
@@ -295,10 +295,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[3]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[3]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[3]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[3]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 4
@@ -318,7 +318,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[3]>>5)+lut_idxCnProcG6[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[3]>>31)+lut_idxCnProcG6[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -328,7 +328,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<5; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[3]>>5)+lut_idxCnProcG6[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[3]>>31)+lut_idxCnProcG6[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -342,7 +342,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[3]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[3]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"            }\n");
 	}
     }
@@ -362,10 +362,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[4]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[4]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 4
@@ -385,7 +385,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[4]>>5)+lut_idxCnProcG7[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[4]>>31)+lut_idxCnProcG7[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -395,7 +395,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<6; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[4]>>5)+lut_idxCnProcG7[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[4]>>31)+lut_idxCnProcG7[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -409,7 +409,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[4]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[4]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"            }\n");
 	}
     }
@@ -430,10 +430,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[5]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[5]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 4
@@ -453,7 +453,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[5]>>5)+lut_idxCnProcG8[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[5]>>31)+lut_idxCnProcG8[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -463,7 +463,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<7; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[5]>>5)+lut_idxCnProcG8[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[5]>>31)+lut_idxCnProcG8[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -477,7 +477,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[5]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[5]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"              }\n");
         }
     }
@@ -499,10 +499,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[6]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[6]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[6]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[6]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 9
@@ -522,7 +522,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[6]>>5)+lut_idxCnProcG9[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[6]>>31)+lut_idxCnProcG9[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -532,7 +532,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<8; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[6]>>5)+lut_idxCnProcG9[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[6]>>31)+lut_idxCnProcG9[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -546,7 +546,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[6]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[6]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"            }\n");
 	}
     }
@@ -569,10 +569,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[7]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[7]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[7]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[7]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 10
@@ -592,7 +592,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[7]>>5)+lut_idxCnProcG10[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[7]>>31)+lut_idxCnProcG10[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -602,7 +602,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<9; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[7]>>5)+lut_idxCnProcG10[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[7]>>31)+lut_idxCnProcG10[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -616,7 +616,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[7]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[7]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"            }\n");
         }
     }
@@ -642,10 +642,10 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
     {
       // Number of groups of 64  CNs for parallel processing
       // Ceil for values not divisible by 64
-      M = (lut_numCnInCnGroups[8]*Z + 63)>>5;
+      M = (lut_numCnInCnGroups[8]*Z + 63)>>31;
 
       // Set the offset to each bit within a group in terms of 64  Byte
-      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX)>>5;
+      bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX)>>31;
 
 
       // Set pointers to start of group 19
@@ -665,7 +665,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"            for (int i=0;i<%d;i++) {\n",M);
 	  // Abs and sign of 64  CNs (first BN)
 	  //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[8]>>5)+lut_idxCnProcG19[j][0]);
+	  fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[8]>>31)+lut_idxCnProcG19[j][0]);
 	  //                sgn  = _mm512_sign_epi16(ones, zmm0);
 	  fprintf(fd,"                sgn  = _mm512_sign_epi16(ones, zmm0);\n");
 	  //                min  = _mm512_abs_epi8(zmm0);
@@ -675,7 +675,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  // Loop over BNs
 	  for (k=1; k<18; k++)
 	    {
-	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[8]>>5)+lut_idxCnProcG19[j][k]);
+	      fprintf(fd,"                zmm0 = ((__m512i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[8]>>31)+lut_idxCnProcG19[j][k]);
 	      
 	      //                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
 	      fprintf(fd,"                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));\n");
@@ -689,7 +689,7 @@ void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t Z,int R)
 	  fprintf(fd,"                min = _mm512_min_epu8(min, maxLLR);\n");
 	  //                *p_cnProcBufResBit = _mm512_sign_epi16(min, sgn);
 	  //                p_cnProcBufResBit++;
-	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[8]>>5)+(j*bitOffsetInGroup));
+	  fprintf(fd,"                ((__m512i*)cnProcBufRes)[%d+i] = _mm512_sign_epi16(min, sgn);\n",(lut_startAddrCnGroups[8]>>31)+(j*bitOffsetInGroup));
 	  fprintf(fd,"            }\n");
         }
     }
