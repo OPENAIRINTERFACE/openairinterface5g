@@ -724,7 +724,7 @@ int main(int argc, char **argv)
 
         if (errors_scrambling > 0) {
 	  if (n_trials==1)
-	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %d\n" "\x1B[0m", frame, trial, errors_scrambling);
+	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling);
         }
 
         for (i = 0; i < TBS; i++) {
@@ -742,13 +742,13 @@ int main(int argc, char **argv)
         if (errors_decoding > 0) {
           n_false_positive++;
 	  if (n_trials==1)
-	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %d\n" "\x1B[0m", frame, trial, errors_decoding);
+	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
         } 
 
       } // trial loop
 
       printf("*****************************************\n");
-      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %d/%d\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, n_trials);
+      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %u/%d\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, n_trials);
       printf("\n");
       printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
       printf("*****************************************\n");
@@ -790,6 +790,9 @@ int main(int argc, char **argv)
 
   if (input_fd)
     fclose(input_fd);
+
+  if (scg_fd)
+    fclose(scg_fd);
 
   return (n_errors);
 }

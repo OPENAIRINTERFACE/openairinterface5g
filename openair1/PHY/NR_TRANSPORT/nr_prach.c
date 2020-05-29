@@ -366,6 +366,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 uint16_t *max_preamble_delay
 		 )
 {
+  AssertFatal(gNB!=NULL,"Can only be called from gNB\n");
 
   int i;
 
@@ -405,7 +406,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   
   nr_frequency_range_e freq_range;
 
-  AssertFatal(gNB!=NULL,"Can only be called from gNB\n");
   fp    = &gNB->frame_parms;
   nb_rx = fp->nb_antennas_rx;
   
@@ -419,8 +419,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   uint8_t prach_fmt = get_nr_prach_fmt(prach_ConfigIndex,frame_type,freq_range);
   uint16_t N_ZC = (prach_fmt <4)?839:139;
-
-  AssertFatal(gNB!=NULL,"gNB is null\n");
 
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;
@@ -456,8 +454,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   AssertFatal(NCS!=99,"NCS has not been set\n");
 
-  if (gNB) start_meas(&gNB->rx_prach);
-
+  start_meas(&gNB->rx_prach);
 
   prach_root_sequence_map = (prach_fmt<4) ? prach_root_sequence_map_0_3 : prach_root_sequence_map_abc;
 

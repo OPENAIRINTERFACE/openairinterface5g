@@ -1194,6 +1194,8 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     int harq_pid;
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
+    if (ulsch == NULL)
+      continue;
 
     if (ulsch->ue_type > NOCE)
       harq_pid = 0;
@@ -1209,9 +1211,10 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
     for (int k=0; k<8; k++) {
       ulsch_harq = ulsch->harq_processes[k];
+      if (ulsch_harq == NULL)
+        continue;
 
-      if (ulsch &&
-          (ulsch->rnti>0) &&
+      if ((ulsch->rnti>0) &&
           (ulsch_harq->status == ACTIVE) &&
           (ulsch_harq->frame == frame) &&
           (ulsch_harq->subframe == subframe) &&

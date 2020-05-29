@@ -167,13 +167,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                              0,
                                              harq_process_ul_ue->pusch_pdu.nrOfLayers);
 
-    TBS = harq_process_ul_ue->pusch_pdu.pusch_data.tb_size;
     uint8_t access_mode = SCHEDULED_ACCESS;
 
     //-----------------------------------------------------//
     // to be removed later when MAC is ready
 
     if (harq_process_ul_ue != NULL){
+      TBS = harq_process_ul_ue->pusch_pdu.pusch_data.tb_size;
       data_existing = 0;
 
     	if (IS_SOFTMODEM_NOS1){
