@@ -27,7 +27,9 @@
 #ifndef __NR_LDPC_CNPROC__H__
 #define __NR_LDPC_CNPROC__H__
 #include <immintrin.h>
-#include "include/avx512fintrin.h"
+#include <avx512fintrin.h>
+//#include "include/immintrin.h"
+
 
 /**
    \brief Performs CN processing for BG2 on the CN processing buffer and stores the results in the CN processing results buffer.
@@ -110,12 +112,12 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
 	            zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // 64 CNS of second BN
 		        zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
 		
-                min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                 sgn  = mm512_sign_epi16(sgn, zmm0);
 
                 // Store result
@@ -157,13 +159,13 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG4[j][0] + i];
                 sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<3; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG4[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -206,13 +208,13 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG5[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<4; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG5[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -256,13 +258,13 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG6[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<5; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG6[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -307,13 +309,13 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG8[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<7; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG8[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -359,13 +361,13 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG10[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<9; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG10[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -442,12 +444,12 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
             {
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-               sgn  = mm512_sign_epi16(*p_ones, zmm0); revenir 
-                min  = _m512_abs_epi8(zmm0);
+               sgn  = mm512_sign_epi16(*p_ones, zmm0);  
+                min  = _mm512_abs_epi8(zmm0);
 
                 // 64 CNS of second BN
                 zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
-                min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                 sgn  = mm512_sign_epi16(sgn, zmm0);
 
                 // Store result
@@ -489,13 +491,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG4[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<3; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG4[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -539,13 +541,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG5[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<4; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG5[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -590,13 +592,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG6[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<5; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG6[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -642,13 +644,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG7[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<6; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG7[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -694,13 +696,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG8[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<7; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG8[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -747,13 +749,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG9[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<8; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG9[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -800,13 +802,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG10[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<9; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG10[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -857,13 +859,13 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
                 // Abs and sign of 64 CNS (first BN)
                 zmm0 = p_cnProcBuf[lut_idxCnProcG19[j][0] + i];
                sgn  = mm512_sign_epi16(*p_ones, zmm0);
-                min  = _m512_abs_epi8(zmm0);
+                min  = _mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<18; k++)
                 {
                     zmm0 = p_cnProcBuf[lut_idxCnProcG19[j][k] + i];
-                    min  = _mm512_min_epu8(min, _m512_abs_epi8(zmm0));
+                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
                     sgn  = mm512_sign_epi16(sgn, zmm0);
                 }
 
@@ -938,7 +940,7 @@ static inline uint64_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1072,7 +1074,7 @@ static inline uint64_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1226,7 +1228,7 @@ static inline uint64_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1341,7 +1343,7 @@ static inline uint64_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1408,7 +1410,7 @@ static inline uint64_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1422,12 +1424,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<10; j++)
         {
             // BN offset is units of 1*384/64 = 6
-            ymm0 = p_cnProcBuf   [j*6 + i];
-            ymm1 = p_cnProcBufRes[j*6 + i];
+            zmm0 = p_cnProcBuf   [j*6 + i];
+            zmm1 = p_cnProcBufRes[j*6 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1543,7 +1545,7 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     uint64_t Mrem;
     uint64_ ;
 
-    __m512i ymm0, ymm1;
+    __m512i zmm0, zmm1;
 
     // =====================================================================
     // Process group with 3 BNs
@@ -1574,12 +1576,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             for (j=0; j<3; j++)
             {
                 // BN offset is units of (6*384/32) = 72
-                ymm0 = p_cnProcBuf   [j*72 + i];
-                ymm1 = p_cnProcBufRes[j*72 + i];
+                zmm0 = p_cnProcBuf   [j*72 + i];
+                zmm1 = p_cnProcBufRes[j*72 + i];
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1593,12 +1595,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<3; j++)
         {
             // BN offset is units of (6*384/32) = 72
-            ymm0 = p_cnProcBuf   [j*72 + i];
-            ymm1 = p_cnProcBufRes[j*72 + i];
+            zmm0 = p_cnProcBuf   [j*72 + i];
+            zmm1 = p_cnProcBufRes[j*72 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1641,12 +1643,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             for (j=0; j<4; j++)
             {
                 // BN offset is units of 20*384/32 = 240
-                ymm0 = p_cnProcBuf   [j*240 + i];
-                ymm1 = p_cnProcBufRes[j*240 + i];
+                zmm0 = p_cnProcBuf   [j*240 + i];
+                zmm1 = p_cnProcBufRes[j*240 + i];
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1660,12 +1662,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<4; j++)
         {
             // BN offset is units of 20*384/32 = 240
-            ymm0 = p_cnProcBuf   [j*240 + i];
-            ymm1 = p_cnProcBufRes[j*240 + i];
+            zmm0 = p_cnProcBuf   [j*240 + i];
+            zmm1 = p_cnProcBufRes[j*240 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1708,12 +1710,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             for (j=0; j<5; j++)
             {
                 // BN offset is units of 9*384/32 = 108
-                ymm0 = p_cnProcBuf   [j*108 + i];
-                ymm1 = p_cnProcBufRes[j*108 + i];
+                zmm0 = p_cnProcBuf   [j*108 + i];
+                zmm1 = p_cnProcBufRes[j*108 + i];
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1727,12 +1729,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<5; j++)
         {
             // BN offset is units of 9*384/32 = 108
-            ymm0 = p_cnProcBuf   [j*108 + i];
-            ymm1 = p_cnProcBufRes[j*108 + i];
+            zmm0 = p_cnProcBuf   [j*108 + i];
+            zmm1 = p_cnProcBufRes[j*108 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1775,12 +1777,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             for (j=0; j<6; j++)
             {
                 // BN offset is units of 3*384/32 = 36
-                ymm0 = p_cnProcBuf   [j*36 + i];
-                ymm1 = p_cnProcBufRes[j*36 + i];
+                zmm0 = p_cnProcBuf   [j*36 + i];
+                zmm1 = p_cnProcBufRes[j*36 + i];
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1794,12 +1796,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<6; j++)
         {
             // BN offset is units of 3*384/32 = 36
-            ymm0 = p_cnProcBuf   [j*36 + i];
-            ymm1 = p_cnProcBufRes[j*36 + i];
+            zmm0 = p_cnProcBuf   [j*36 + i];
+            zmm1 = p_cnProcBufRes[j*36 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1842,12 +1844,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             for (j=0; j<8; j++)
             {
                 // BN offset is units of 2*384/32 = 24
-                ymm0 = p_cnProcBuf   [j*24 + i];
-                ymm1 = p_cnProcBufRes[j*24 + i];
+                zmm0 = p_cnProcBuf   [j*24 + i];
+                zmm1 = p_cnProcBufRes[j*24 + i];
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1861,12 +1863,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<8; j++)
         {
             // BN offset is units of 2*384/32 = 24
-            ymm0 = p_cnProcBuf   [j*24 + i];
-            ymm1 = p_cnProcBufRes[j*24 + i];
+            zmm0 = p_cnProcBuf   [j*24 + i];
+            zmm1 = p_cnProcBufRes[j*24 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0
@@ -1909,12 +1911,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
             for (j=0; j<10; j++)
             {
                 // BN offset is units of 2*384/32 = 24
-                ymm0 = p_cnProcBuf   [j*24 + i];
-                ymm1 = p_cnProcBufRes[j*24 + i];
+                zmm0 = p_cnProcBuf   [j*24 + i];
+                zmm1 = p_cnProcBufRes[j*24 + i];
 
                 // Add BN and input LLR, extract the sign bit
                 // and add in GF(2) (xor)
-                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+                pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
             }
 
             // If no error pcRes should be 0
@@ -1928,12 +1930,12 @@ static inline uint64_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
         for (j=0; j<10; j++)
         {
             // BN offset is units of 2*384/32 = 24
-            ymm0 = p_cnProcBuf   [j*24 + i];
-            ymm1 = p_cnProcBufRes[j*24 + i];
+            zmm0 = p_cnProcBuf   [j*24 + i];
+            zmm1 = p_cnProcBufRes[j*24 + i];
 
             // Add BN and input LLR, extract the sign bit
             // and add in GF(2) (xor)
-            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(ymm0,ymm1));
+            pcRes ^= _mm512_movemask_epi8(_mm512_adds_epi8(zmm0,zmm1));
         }
 
         // If no error pcRes should be 0

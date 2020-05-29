@@ -30,7 +30,7 @@
 
 #ifndef __NR_LDPC_BNPROC__H__
 #define __NR_LDPC_BNPROC__H__
-
+#include <immintrin.h>
 /**
    \brief Performs first part of BN processing on the BN processing buffer and stores the results in the LLR results buffer.
           At every BN, the sum of the returned LLRs from the connected CNs and the LLR of the receiver input is computed.

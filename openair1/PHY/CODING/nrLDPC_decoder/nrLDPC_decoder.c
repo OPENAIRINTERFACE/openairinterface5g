@@ -263,8 +263,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     uint8_t  BG         = p_decParams->BG;
     uint8_t  numMaxIter = p_decParams->numMaxIter;
     e_nrLDPC_outMode outMode = p_decParams->outMode;
-    int8_t* cnProcBuf= p_procBuf->cnProcBuf;
-    int8_t* cnProcBufRes=p_procBuf->cnProcBufRes;
+   // int8_t* cnProcBuf= p_procBuf->cnProcBuf;
+   // int8_t* cnProcBufRes=p_procBuf->cnProcBufRes;
 
     // Minimum number of iterations is 1
     // 0 iterations means hard-decision on input LLRs
@@ -334,7 +334,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         case 384:
         {
            // nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-              nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //were test  here 
+              nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //we test  here 
             break;
 	}                                                                           
         case 352:
@@ -349,7 +349,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             //nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;  
-        }
+        }	
 
         case 288:
         {
@@ -1928,8 +1928,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 	}
         case 352:
         {
-            //nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-            nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;
         }
 

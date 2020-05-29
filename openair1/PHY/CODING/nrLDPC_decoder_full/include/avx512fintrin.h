@@ -30,7 +30,7 @@
 
 #ifndef __AVX512F__
 #pragma GCC push_options
-//#pragma GCC target("avx512f")
+#pragma GCC target("avx512f")
 #define __DISABLE_AVX512F__
 #endif /* __AVX512F__ */
 
