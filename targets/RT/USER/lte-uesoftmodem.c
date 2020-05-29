@@ -631,7 +631,7 @@ int main( int argc, char **argv ) {
 
   NB_INST=1;
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // || NFAPI_MODE_STANDALONE_PNF
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE_STANDALONE_PNF) { // || NFAPI_MODE_STANDALONE_PNF
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);
 
     for (int i=0; i<NB_UE_INST; i++) {
@@ -704,11 +704,31 @@ int main( int argc, char **argv ) {
     exit(-1); // need a softer mode
   }
 
+  nfapi_setmode(NFAPI_MODE_STANDALONE_PNF); // make sure to hammer out this nfapi mode crap
   if (NFAPI_MODE==NFAPI_UE_STUB_PNF) { // UE-STUB-PNF
     UE_config_stub_pnf();
   }
 
-  // add socket here and call corresponding memcpys - Andrew
+  // hard-coding address and port for now fix later
+  int sd = -1;
+  if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
+    const char *standalone_addr = "127.0.0.1";
+    int standalone_port = 3289;
+    char buffy[1024];
+
+    sd = ue_init_standalone_socket(standalone_addr, standalone_port);
+    ssize_t len = read(sd, buffy, sizeof(buffy));
+    if (len == -1) {
+      printf("reading from standalone pnf sctp socket failed \n");
+      return EXIT_FAILURE;
+    }
+
+    nfapi_p7_message_header_t header_t;
+    if (nfapi_p7_message_header_unpack((void *)buffy, len, &header_t, sizeof(header_t), NULL) != 0) {
+      printf("unpacking p7 message failed from standalone pnf\n");
+      printf("Bruins header_t.message_id: %u", header_t.message_id);
+    }
+  }
 
   printf("ITTI tasks created\n");
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -723,13 +743,7 @@ int main( int argc, char **argv ) {
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   } else if (NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     // init thread and open socket
-
-    /*
-    need to do this in thread
-     l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
-             0,// cba_group_active
-             0); // HO flag
-    */
+    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
 
   }
   else {

@@ -882,7 +882,7 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
   dl_config_req = (nfapi_dl_config_request_t *)malloc(sizeof(nfapi_dl_config_request_t));
@@ -959,8 +959,8 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
-			nfapi_pnf_p7_config_t* pnf_p7, 
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
+			nfapi_pnf_p7_config_t* pnf_p7,
 			nfapi_hi_dci0_request_t* req) {
   hi_dci0_req = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
@@ -1044,9 +1044,32 @@ void UE_config_stub_pnf(void) {
   }
 }
 
-void UE_init_socket(void) {
+int ue_init_standalone_socket(const char *addr, int port)
+{
 
-  // scpt socket creation and memcpy function calls here
+  struct sockaddr_in server_address;
+  int addr_len = sizeof(server_address);
+  memset(&server_address, 0, addr_len);
+  server_address.sin_family = AF_INET;
+  server_address.sin_port = htons(port);
+
+  int sd = socket(address.sin_family, SOCK_STREAM, IPPROTO_SCTP);
+  if (sd < 0) {
+    LOG_E(MAC, "Socket creation error standalone PNF");
+    return -1;
+  }
+
+  if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0) {
+    LOG_E(MAC, "Invalid standalone PNF Address");
+    return -1;
+  }
+
+  if (connect(socket, (struct sockaddr *)&server_address, addr_len) < 0) {
+    LOG_E(MAC, "Connection to standalone PNF failed");
+    return -1;
+  }
+
+  return sd;
 }
 
 /* Dummy functions*/

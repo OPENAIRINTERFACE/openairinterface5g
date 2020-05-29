@@ -131,6 +131,9 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfa
 
 void UE_config_stub_pnf(void);
 
+// This function is used to open an SCTP socket with a standalone PNF module
+int ue_init_standalone_socket(const char *addr, int port);
+
 
 
 #endif /* PHY_STUB_UE_H_ */
