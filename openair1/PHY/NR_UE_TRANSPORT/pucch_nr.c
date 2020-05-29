@@ -42,6 +42,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
+//#define NR_UNIT_TEST 1
 #ifdef NR_UNIT_TEST
   #define DEBUG_PUCCH_TX
   #define DEBUG_NR_PUCCH_TX
@@ -905,7 +906,9 @@ void nr_uci_encoding(uint64_t payload,
   if (A<=11) {
     // procedure in subclause 6.3.1.2.2 (UCI encoded by channel coding of small block lengths -> subclause 6.3.1.3.2)
     // CRC bits are not attached, and coding small block lengths (subclause 5.3.3)
+    b[0] = encodeSmallBlock((uint16_t*)&payload,A);
   } else if (A>=12) {
+    AssertFatal(1==0,"Polar encoding not supported yet for UCI\n");
     // procedure in subclause 6.3.1.2.1 (UCI encoded by Polar code -> subclause 6.3.1.3.1)
     /*if ((A>=360 && E>=1088)||(A>=1013)) {
       I_seg = 1;
@@ -924,10 +927,13 @@ void nr_uci_encoding(uint64_t payload,
     // code block segmentation and CRC attachment is performed according to subclause 5.2.1
     // polar coding subclause 5.3.1
   }
+  
 }
 //#if 0
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
                         uint16_t crnti,
+			uint32_t dmrs_scrambling_id,
+			uint32_t data_scrambling_id,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
@@ -961,14 +967,14 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
    */
   uint8_t *btilde = malloc(sizeof(int8_t)*M_bit);
   // rnti is given by the C-RNTI
-  uint16_t rnti=crnti, n_id=0;
+  uint16_t rnti=crnti;
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch2] rnti = %d ,\n",rnti);
 #endif
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.1 scrambling format 2
    */
-  nr_pucch2_3_4_scrambling(M_bit,rnti,n_id,b,btilde);
+  nr_pucch2_3_4_scrambling(M_bit,rnti,data_scrambling_id,b,btilde);
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.2 modulation format 2
    * btilde shall be modulated as described in subclause 5.1 using QPSK
@@ -1016,10 +1022,10 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   int m=0;
 
   for (int l=0; l<nrofSymbols; l++) {
-    x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*n_id) + 1)) + (2*n_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
+    x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*dmrs_scrambling_id) + 1)) + (2*dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
+
     s = lte_gold_generic(&x1, &x2, 1);
     m = 0;
-
     for (int rb=0; rb<nrofPRB; rb++) {
       //startingPRB = startingPRB + rb;
       if (((rb+startingPRB) <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is lower band

@@ -1,7 +1,26 @@
 /*
-  Author: Laurent THOMAS, Open Cells for Nokia
-  copyleft: OpenAirInterface Software Alliance and it's licence
+* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The OpenAirInterface Software Alliance licenses this file to You under
+* the OAI Public License, Version 1.1  (the "License"); you may not use this file
+* except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.openairinterface.org/?page_id=698
+*
+* Author and copyright: Laurent Thomas, open-cells.com
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*-------------------------------------------------------------------------------
+* For more information about the OpenAirInterface (OAI) Software Alliance:
+*      contact@openairinterface.org
 */
+
 
 /*
  * Open issues and limitations
@@ -33,7 +52,7 @@
 #include <openair1/SIMULATION/TOOLS/sim.h>
 
 #define PORT 4043 //default TCP port for this simulator
-#define CirSize 3072000 // 100ms is enough
+#define CirSize 307200 // 100ms is enough
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
@@ -346,7 +365,8 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if ( t->lastWroteTS != 0 && abs((double)t->lastWroteTS-timestamp) > (double)CirSize)
     LOG_E(HW,"Discontinuous TX gap too large Tx:%lu, %lu\n", t->lastWroteTS, timestamp);
 
-  AssertFatal(t->lastWroteTS <= timestamp+1, " Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
+  if (t->lastWroteTS > timestamp+nsamps)
+    LOG_E(HW,"Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
               t->lastWroteTS, timestamp);
   t->lastWroteTS=timestamp+nsamps;
 
@@ -420,7 +440,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       if ( sz < 0 ) {
         if ( errno != EAGAIN ) {
           LOG_E(HW,"socket failed %s\n", strerror(errno));
-          abort();
+          //abort();
         }
       } else if ( sz == 0 )
         continue;
@@ -439,11 +459,15 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         b->headerMode=false;
 
         if ( t->nextTimestamp == 0 ) { // First block in UE, resync with the eNB current TS
-          t->nextTimestamp  = b->th.timestamp > nsamps_for_initial ? b->th.timestamp - nsamps_for_initial : 0;
-          b->lastReceivedTS = b->th.timestamp > nsamps_for_initial ? b->th.timestamp : nsamps_for_initial;
-          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
-          b->trashingPacket=true;
-        } else if ( b->lastReceivedTS < b->th.timestamp) {
+	  t->nextTimestamp=b->th.timestamp> nsamps_for_initial ?
+	    b->th.timestamp -  nsamps_for_initial :
+	    0;
+	  b->lastReceivedTS=b->th.timestamp> nsamps_for_initial ?
+	    b->th.timestamp :
+	    nsamps_for_initial;
+	  LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
+	  b->trashingPacket=true;
+	} else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 	  
           for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
@@ -463,8 +487,8 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         } else if ( b->lastReceivedTS == b->th.timestamp ) {
           // normal case
         } else {
-          abort();
-          AssertFatal(false, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
+          LOG_E(HW, "received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
+	  b->trashingPacket=true;
         }
 
         pthread_mutex_lock(&Sockmutex);

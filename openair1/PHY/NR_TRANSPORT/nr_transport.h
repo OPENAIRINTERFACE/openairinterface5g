@@ -111,6 +111,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint8_t abstraction_flag,
                               uint16_t N_RB);
 
+
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
                       uint32_t n_id,       // hoppingID higher layer parameter
@@ -130,6 +131,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 		      int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
+
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 nfapi_nr_prach_pdu_t *prach_pdu,
@@ -159,5 +161,6 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru,
 			    int prach_id);
+
 
 #endif /*__NR_TRANSPORT__H__*/

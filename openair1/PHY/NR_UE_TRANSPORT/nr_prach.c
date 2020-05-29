@@ -41,6 +41,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
 #define NR_PRACH_DEBUG 1
 
@@ -59,6 +60,7 @@ extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 extern const char *prachfmt[9];
+extern const char *prachfmt03[4];
 
 // Note:
 // - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt
@@ -78,6 +80,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
   uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
+
   int16_t Ncp, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im, samp_count;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
@@ -121,6 +124,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   #else //normal case (simulation)
     prach_start = slot*samp_count - ue->N_TA_offset;
   #endif
+
 
   if (prach_start<0)
     prach_start += (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
@@ -207,9 +211,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   #ifdef NR_PRACH_DEBUG
     if (NCS>0)
       LOG_I(PHY, "PRACH [UE %d] generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %s, NCS %d (N_ZC %d): Preamble_offset %d, Preamble_shift %d\n", Mod_id,
-        rootSequenceIndex,
-        preamble_index,
-        prachfmt[prach_fmt_id],
+    rootSequenceIndex,
+    preamble_index,
+    prach_sequence_length == 0 ? prachfmt03[prach_fmt_id]  : prachfmt[prach_fmt_id],
         NCS,
         N_ZC,
         preamble_offset,
@@ -428,20 +432,20 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
       prach2 = prach+(Ncp<<1);
       if (prach_sequence_length == 0){
         if (prach_fmt_id == 0) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-          idft49152(prachF,prach2,1);
+          idft(IDFT_49152,prachF,prach2,1);
           // here we have |empty | Prach49152|
           memmove(prach,prach+(49152<<1),(Ncp<<2));
           // here we have |Prefix | Prach49152|
           prach_len = 49152+Ncp;
         } else if (prach_fmt_id == 1) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-          idft49152(prachF,prach2,1);
+          idft(IDFT_49152,prachF,prach2,1);
           memmove(prach2+(49152<<1),prach2,(49152<<2));
           // here we have |empty | Prach49152 | Prach49152|
           memmove(prach,prach+(49152<<2),(Ncp<<2));
           // here we have |Prefix | Prach49152 | Prach49152|
           prach_len = (49152*2)+Ncp;
         } else if (prach_fmt_id == 2) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-          idft49152(prachF,prach2,1);
+          idft(IDFT_49152,prachF,prach2,1);
           memmove(prach2+(49152<<1),prach2,(49152<<2));
           // here we have |empty | Prach49152 | Prach49152| empty49152 | empty49152
           memmove(prach2+(49152<<2),prach2,(49152<<3));
@@ -450,7 +454,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           // here we have |Prefix | Prach49152 | Prach49152| Prach49152 | Prach49152
           prach_len = (49152*4)+Ncp;
         } else if (prach_fmt_id == 3) { // //6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
-          idft12288(prachF,prach2,1);
+          idft(IDFT_12288,prachF,prach2,1);
           memmove(prach2+(12288<<1),prach2,(12288<<2));
           // here we have |empty | Prach12288 | Prach12288| empty12288 | empty12288
           memmove(prach2+(12288<<2),prach2,(12288<<3));
@@ -463,7 +467,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
           Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft2048(prachF,prach2,1);
+          idft(IDFT_2048,prachF,prach2,1);
           // here we have |empty | Prach2048 |
           if (prach_fmt_id != 7) {
             memmove(prach2+(2048<<1),prach2,(2048<<2));
@@ -475,7 +479,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 6x2048
           Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft2048(prachF,prach2,1);
+          idft(IDFT_2048,prachF,prach2,1);
           // here we have |empty | Prach2048 |
           memmove(prach2+(2048<<1),prach2,(2048<<2));
           // here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 |
@@ -487,7 +491,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x2048
           Ncp+=32;
           prach2 = prach+(Ncp<<1);
-          idft2048(prachF,prach2,1);
+          idft(IDFT_2048,prachF,prach2,1);
           // here we have |empty | Prach2048 |
           memmove(prach2+(2048<<1),prach2,(2048<<2));
           // here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
@@ -501,7 +505,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 6) { // 12x2048
           Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft2048(prachF,prach2,1);
+          idft(IDFT_2048,prachF,prach2,1);
           // here we have |empty | Prach2048 |
           memmove(prach2+(2048<<1),prach2,(2048<<2));
           // here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
@@ -521,20 +525,20 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
       prach2 = prach+(Ncp<<1);
       if (prach_sequence_length == 0){
         if (prach_fmt_id == 0) {
-          idft36864(prachF,prach2,1);
+          idft(IDFT_36864,prachF,prach2,1);
           // here we have |empty | Prach73728|
           memmove(prach,prach+(36864<<1),(Ncp<<2));
           // here we have |Prefix | Prach73728|
           prach_len = (36864*1)+Ncp;
         } else if (prach_fmt_id == 1) {
-          idft36864(prachF,prach2,1);
+          idft(IDFT_36864,prachF,prach2,1);
           memmove(prach2+(36864<<1),prach2,(36864<<2));
           // here we have |empty | Prach73728 | Prach73728|
           memmove(prach,prach+(36864<<2),(Ncp<<2));
           // here we have |Prefix | Prach73728 | Prach73728|
           prach_len = (36864*2)+Ncp;
         } else if (prach_fmt_id == 2) {
-          idft36864(prachF,prach2,1);
+          idft(IDFT_36864,prachF,prach2,1);
           memmove(prach2+(36864<<1),prach2,(36864<<2));
           // here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
           memmove(prach2+(36864<<2),prach2,(36864<<3));
@@ -543,7 +547,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           // here we have |Prefix | Prach73728 | Prach73728| Prach73728 | Prach73728
           prach_len = (36864*4)+Ncp;
         } else if (prach_fmt_id == 3) {
-          idft9216(prachF,prach2,1);
+          idft(IDFT_9216,prachF,prach2,1);
           memmove(prach2+(9216<<1),prach2,(9216<<2));
           // here we have |empty | Prach9216 | Prach9216| empty9216 | empty9216
           memmove(prach2+(9216<<2),prach2,(9216<<3));
@@ -556,8 +560,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
           Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft1536(prachF,prach2,1);
-
+          idft(IDFT_1536,prachF,prach2,1);
           // here we have |empty | Prach1536 |
           if (prach_fmt_id != 7) {
             memmove(prach2+(1536<<1),prach2,(1536<<2));
@@ -571,7 +574,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
           Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft1536(prachF,prach2,1);
+          idft(IDFT_1536,prachF,prach2,1);
           // here we have |empty | Prach1536 |
           memmove(prach2+(1536<<1),prach2,(1536<<2));
           // here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 |
@@ -583,7 +586,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x1536
           Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft1536(prachF,prach2,1);
+          idft(IDFT_1536,prachF,prach2,1);
           // here we have |empty | Prach1536 |
           memmove(prach2+(1536<<1),prach2,(1536<<2));
           // here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
@@ -597,7 +600,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 6) { // 12x1536
           Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft1536(prachF,prach2,1);
+          idft(IDFT_1536,prachF,prach2,1);
           // here we have |empty | Prach1536 |
           memmove(prach2+(1536<<1),prach2,(1536<<2));
           // here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
@@ -619,20 +622,20 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
       prach2 = prach+(Ncp<<1);
       if (prach_sequence_length == 0){
         if (prach_fmt_id == 0) { //24576 samples @ 30.72 Ms/s, 98304 samples @ 122.88 Ms/s
-          idft98304(prachF,prach2,1);
+          idft(IDFT_98304,prachF,prach2,1);
           // here we have |empty | Prach98304|
           memmove(prach,prach+(98304<<1),(Ncp<<2));
           // here we have |Prefix | Prach98304|
           prach_len = (98304*1)+Ncp;
         } else if (prach_fmt_id == 1) {
-          idft98304(prachF,prach2,1);
+          idft(IDFT_98304,prachF,prach2,1);
           memmove(prach2+(98304<<1),prach2,(98304<<2));
           // here we have |empty | Prach98304 | Prach98304|
           memmove(prach,prach+(98304<<2),(Ncp<<2));
           // here we have |Prefix | Prach98304 | Prach98304|
           prach_len = (98304*2)+Ncp;
         } else if (prach_fmt_id == 2) {
-          idft98304(prachF,prach2,1);
+          idft(IDFT_98304,prachF,prach2,1);
           memmove(prach2+(98304<<1),prach2,(98304<<2));
           // here we have |empty | Prach98304 | Prach98304| empty98304 | empty98304
           memmove(prach2+(98304<<2),prach2,(98304<<3));
@@ -641,7 +644,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           // here we have |Prefix | Prach98304 | Prach98304| Prach98304 | Prach98304
           prach_len = (98304*4)+Ncp;
         } else if (prach_fmt_id == 3) { // 4x6144, Ncp 3168
-          idft24576(prachF,prach2,1);
+          idft(IDFT_24576,prachF,prach2,1);
           memmove(prach2+(24576<<1),prach2,(24576<<2));
           // here we have |empty | Prach24576 | Prach24576| empty24576 | empty24576
           memmove(prach2+(24576<<2),prach2,(24576<<3));
@@ -654,7 +657,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
           Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft4096(prachF,prach2,1);
+          idft(IDFT_4096,prachF,prach2,1);
           // here we have |empty | Prach4096 |
           if (prach_fmt_id != 7) {
             memmove(prach2+(4096<<1),prach2,(4096<<2));
@@ -665,7 +668,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 4x4096
           Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft4096(prachF,prach2,1);
+          idft(IDFT_4096,prachF,prach2,1);
           // here we have |empty | Prach4096 |
           memmove(prach2+(4096<<1),prach2,(4096<<2));
           // here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 |
@@ -677,7 +680,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x4096
           Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft4096(prachF,prach2,1);
+          idft(IDFT_4096,prachF,prach2,1);
           // here we have |empty | Prach4096 |
           memmove(prach2+(4096<<1),prach2,(4096<<2));
           // here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
@@ -691,7 +694,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 6) { // 12x4096
           Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft4096(prachF,prach2,1);
+          idft(IDFT_4096,prachF,prach2,1);
           // here we have |empty | Prach4096 |
           memmove(prach2+(4096<<1),prach2,(4096<<2));
           // here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
@@ -711,20 +714,20 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
       prach2 = prach+(Ncp<<1);
       if (prach_sequence_length == 0){
         if (prach_fmt_id == 0) {
-          idft73728(prachF,prach2,1);
+          idft(IDFT_73728,prachF,prach2,1);
           // here we have |empty | Prach73728|
           memmove(prach,prach+(73728<<1),(Ncp<<2));
           // here we have |Prefix | Prach73728|
           prach_len = (73728*1)+Ncp;
         } else if (prach_fmt_id == 1) {
-          idft73728(prachF,prach2,1);
+          idft(IDFT_73728,prachF,prach2,1);
           memmove(prach2+(73728<<1),prach2,(73728<<2));
           // here we have |empty | Prach73728 | Prach73728|
           memmove(prach,prach+(73728<<2),(Ncp<<2));
           // here we have |Prefix | Prach73728 | Prach73728|
           prach_len = (73728*2)+Ncp;
         } if (prach_fmt_id == 2) {
-          idft73728(prachF,prach2,1);
+          idft(IDFT_73728,prachF,prach2,1);
           memmove(prach2+(73728<<1),prach2,(73728<<2));
           // here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
           memmove(prach2+(73728<<2),prach2,(73728<<3));
@@ -733,7 +736,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           // here we have |Prefix | Prach73728 | Prach73728| Prach73728 | Prach73728
           prach_len = (73728*4)+Ncp;
         } else if (prach_fmt_id == 3) {
-          idft18432(prachF,prach2,1);
+          idft(IDFT_18432,prachF,prach2,1);
           memmove(prach2+(18432<<1),prach2,(18432<<2));
           // here we have |empty | Prach18432 | Prach18432| empty18432 | empty18432
           memmove(prach2+(18432<<2),prach2,(18432<<3));
@@ -746,7 +749,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
           Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft3072(prachF,prach2,1);
+          idft(IDFT_3072,prachF,prach2,1);
           // here we have |empty | Prach3072 |
           if (prach_fmt_id != 7) {
             memmove(prach2+(3072<<1),prach2,(3072<<2));
@@ -757,7 +760,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x3072
           Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft3072(prachF,prach2,1);
+          idft(IDFT_3072,prachF,prach2,1);
           // here we have |empty | Prach3072 |
           memmove(prach2+(3072<<1),prach2,(3072<<2));
           // here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072
@@ -771,7 +774,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 4x3072
           Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft3072(prachF,prach2,1);
+          idft(IDFT_3072,prachF,prach2,1);
           // here we have |empty | Prach3072 |
           memmove(prach2+(3072<<1),prach2,(3072<<2));
           // here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 |
@@ -783,7 +786,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
         } else if (prach_fmt_id == 6) { // 12x3072
           Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
-          idft3072(prachF,prach2,1);
+          idft(IDFT_3072,prachF,prach2,1);
           // here we have |empty | Prach3072 |
           memmove(prach2+(3072<<1),prach2,(3072<<2));
           // here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072

@@ -93,16 +93,18 @@ int main(int argc, char **argv)
   uint8_t nrofSymbols=1; //number of OFDM symbols can be 1-2 for format 1
   uint8_t startingSymbolIndex=0; // resource allocated see 9.2.1, 38.213 for more info.should be actually present in the resource set provided
   uint16_t startingPRB=0,startingPRB_intraSlotHopping=0; //PRB number not sure see 9.2.1, 38.213 for more info. Should be actually present in the resource set provided
+  uint16_t nrofPRB=2;
   uint8_t timeDomainOCC=0;
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
   
   int N_RB_DL=273,mu=1;
-  float target_error_rate=0.01;
+  float target_error_rate=0.001;
   int frame_length_complex_samples;
   //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
+  int sr_flag = 0;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -112,9 +114,8 @@ int main(int argc, char **argv)
 
   randominit(0);
   logInit();
-  set_glog(loglvl);
 
-  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:c")) != -1) {
     switch (c) {
     case 'f':
       //write_output_file=1;
@@ -263,6 +264,9 @@ int main(int argc, char **argv)
     case 'r':
       startingPRB=atoi(optarg);
       break;
+    case 'q':
+      nrofPRB=atoi(optarg);
+      break;
     case 'P':
       format=atoi(optarg);
       break;
@@ -271,6 +275,9 @@ int main(int argc, char **argv)
       break;
     case 'b':
       nr_bit=atoi(optarg);
+      break;
+    case 'c':
+      sr_flag=1;
       break;
     case 'B':
       actual_payload=atoi(optarg);
@@ -305,7 +312,8 @@ int main(int argc, char **argv)
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-i Enter number of ofdm symbols for pucch\n");
       printf("-I Starting symbol index for pucch\n");
-      printf("-r PUCCCH starting PRB\n");
+      printf("-r PUCCH starting PRB\n");
+      printf("-q PUCCH number of PRB\n");
       printf("-P Enter the format of PUCCH\n");
       printf("-b number of HARQ bits (1-2)\n");
       printf("-B payload to be transmitted on PUCCH\n");
@@ -316,18 +324,22 @@ int main(int argc, char **argv)
     }
   }
 
+  set_glog(loglvl);
+
   if (snr1set==0) snr1 = snr0+10;
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
-  if((format!=0) && (format!=1)){
+  if((format!=0) && (format!=1) && (format!=2)){
     printf("PUCCH format %d not supported\n",format);
     exit(0); 
   }
 
-  AssertFatal((nr_bit<3)&&(actual_payload<4),"Only format 0 and 1 currently supported. 2 bits max supported");
+  AssertFatal(((format < 2)&&(nr_bit<3)&&(actual_payload<4)) ||
+	      ((format == 2)&&(nr_bit>2)&&(nr_bit<12)),"illegal combination format %d, nr_bit %d\n",
+	      format,nr_bit);
 
-  if (nr_bit==1) actual_payload = actual_payload&1;
+  actual_payload &= ((1<<nr_bit)-1);
 
   printf("Transmitted payload is %ld\n",actual_payload);
 
@@ -417,9 +429,9 @@ int main(int argc, char **argv)
     bzero(r_im[i],frame_length_complex_samples*sizeof(double));
 
     printf("Allocating %d samples for txdataF/rxdataF\n",14*frame_parms->ofdm_symbol_size);
-    txdataF[i] = malloc(14*frame_parms->ofdm_symbol_size*sizeof(int));
+    txdataF[i] = memalign(32,14*frame_parms->ofdm_symbol_size*sizeof(int));
     bzero(txdataF[i],14*frame_parms->ofdm_symbol_size*sizeof(int));
-    rxdataF[i] = malloc(14*frame_parms->ofdm_symbol_size*sizeof(int));
+    rxdataF[i] = memalign(32,14*frame_parms->ofdm_symbol_size*sizeof(int));
     bzero(rxdataF[i],14*frame_parms->ofdm_symbol_size*sizeof(int));
   }
 
@@ -443,14 +455,17 @@ int main(int argc, char **argv)
   uint8_t mcs=0;
   startingPRB_intraSlotHopping=N_RB_DL-1;
   pucch_GroupHopping_t PUCCH_GroupHopping=UE->pucch_config_common_nr->pucch_GroupHopping;
-  uint32_t n_id=UE->pucch_config_common_nr->hoppingId;
-
+  uint32_t hopping_id=UE->pucch_config_common_nr->hoppingId;
+  uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
   if(format==0){
   // for now we are not considering SR just HARQ-ACK
-    if(nr_bit==1)
+    if (nr_bit ==0) 
+      mcs=table1_mcs[0];
+    else if(nr_bit==1)
       mcs=table1_mcs[actual_payload];
     else if(nr_bit==2)
       mcs=table2_mcs[actual_payload];
+    else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n");
   }
 
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
@@ -461,16 +476,20 @@ int main(int argc, char **argv)
       if(format==0){
         nr_generate_pucch0(UE,txdataF,frame_parms,UE->pucch_config_dedicated,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
       }
-      else{
+      else if (format == 1){
         nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	
+      }
+      else {
+	nr_generate_pucch2(UE,0x1234,dmrs_scrambling_id,data_scrambling_id,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,nrofSymbols,startingSymbolIndex,nrofPRB,startingPRB,nr_bit);	
       }
       
       int txlev = signal_energy(&txdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
 				frame_parms->ofdm_symbol_size);
       //      printf("txlev %d (%d dB), offset %d\n",txlev,dB_fixed(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size);
 	    
-      // note : this scaling is for 1 PRB, to be updated for PUCCH 2
-      sigma2_dB = 10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12)-SNR;
+      // note : this scaling
+      int nb_re = (format == 0 || format == 1)? 12 : 12*nrofPRB;
+      sigma2_dB = 10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/nb_re)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
       
       for(i=startingSymbolIndex*frame_parms->ofdm_symbol_size; i<(startingSymbolIndex+1)*frame_parms->ofdm_symbol_size; i++) {
@@ -487,9 +506,9 @@ int main(int argc, char **argv)
 	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
 	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
 	pucch_pdu.bit_len_harq          = nr_bit;
-	pucch_pdu.sr_flag               = 0;
+	pucch_pdu.sr_flag               = sr_flag;
 	pucch_pdu.nr_of_symbols         = nrofSymbols;
-	pucch_pdu.hopping_id            = n_id;
+	pucch_pdu.hopping_id            = hopping_id;
 	pucch_pdu.initial_cyclic_shift  = 0;
 	pucch_pdu.start_symbol_index    = startingSymbolIndex;
 	pucch_pdu.prb_start             = startingPRB;
@@ -497,21 +516,49 @@ int main(int argc, char **argv)
         if(nr_bit==1)
           ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
         else
-          ack_nack_errors+=((actual_payload^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
+          ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
 	free(uci_pdu.harq->harq_list);
       }
-      else{
+      else if (format==1) {
 	
-        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,n_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
+        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
         if(nr_bit==1)
           ack_nack_errors+=((actual_payload^payload_received)&1);
         else
           ack_nack_errors+=((actual_payload^payload_received)&1) + (((actual_payload^payload_received)&2)>>1);
       }
+      else if (format==2) {
+	nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu;
+	nfapi_nr_pucch_pdu_t pucch_pdu;
+	pucch_pdu.rnti = 0x1234;
+	pucch_pdu.subcarrier_spacing    = 1;
+	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
+	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
+	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.sr_flag               = 0;
+	pucch_pdu.nr_of_symbols         = nrofSymbols;
+	pucch_pdu.hopping_id            = hopping_id;
+	pucch_pdu.initial_cyclic_shift  = 0;
+	pucch_pdu.start_symbol_index    = startingSymbolIndex;
+	pucch_pdu.prb_size              = nrofPRB;
+	pucch_pdu.prb_start             = startingPRB;
+	pucch_pdu.dmrs_scrambling_id    = dmrs_scrambling_id;
+	pucch_pdu.data_scrambling_id    = data_scrambling_id;
+        nr_decode_pucch2(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
+	int harq_bytes=pucch_pdu.bit_len_harq>>3;
+	if ((pucch_pdu.bit_len_harq&7) > 0) harq_bytes++;
+	for (int i=0;i<harq_bytes;i++)
+	  if (uci_pdu.harq.harq_payload[i] != ((int8_t*)&actual_payload)[i]) {
+	    ack_nack_errors++;
+	    break;
+	  }
+	free(uci_pdu.harq.harq_payload);
+
+      }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
     printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
-    if((float)ack_nack_errors/(float)(nr_bit*n_trials)<=target_error_rate){
+    if((float)ack_nack_errors/(float)(n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");
       break;
     }

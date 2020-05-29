@@ -114,7 +114,6 @@ tbs_size_t mac_rlc_data_req(
   int ret;
   nr_rlc_ue_t *ue;
   nr_rlc_entity_t *rb;
-  int is_enb;
   int maxsize;
 
   nr_rlc_manager_lock(nr_rlc_ue_manager);
@@ -128,12 +127,7 @@ tbs_size_t mac_rlc_data_req(
 
   if (rb != NULL) {
     rb->set_time(rb, nr_rlc_current_time);
-    /* UE does not seem to use saved_status_ind_tb_size */
-    is_enb = nr_rlc_manager_get_enb_flag(nr_rlc_ue_manager);
-    if (is_enb)
-      maxsize = ue->saved_status_ind_tb_size[channel_idP - 1];
-    else
-      maxsize = tb_sizeP;
+    maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
@@ -159,7 +153,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP,
   const uint32_t sourceL2Id,
   const uint32_t destinationL2Id
   )
@@ -196,7 +189,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
-    ue->saved_status_ind_tb_size[channel_idP - 1] = tb_sizeP;
   } else {
     ret.bytes_in_buffer = 0;
   }

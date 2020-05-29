@@ -109,7 +109,7 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 int main(int argc, char **argv)
 {
   char c;
-  int i,sf;
+  int i;
   double SNR, snr0 = -2.0, snr1 = 2.0;
   double sigma, sigma_dB;
   double snr_step = 1;
@@ -426,7 +426,7 @@ int main(int argc, char **argv)
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
   mac_top_init_gNB();
-  gNB_MAC_INST* gNB_mac = RC.nrmac[0];
+  //gNB_MAC_INST* gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
@@ -487,7 +487,7 @@ int main(int argc, char **argv)
   init_nr_ue_transport(UE, 0);
 
   /*
-  for (sf = 0; sf < 2; sf++) {
+  for (int sf = 0; sf < 2; sf++) {
     for (i = 0; i < 2; i++) {
 
         UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
@@ -747,6 +747,7 @@ int main(int argc, char **argv)
 					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
 					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
 	  fclose(input_fd);
+	  LOG_M("rxsig0.m","rx0",gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
 	}
 	////////////////////////////////////////////////////////////
 	

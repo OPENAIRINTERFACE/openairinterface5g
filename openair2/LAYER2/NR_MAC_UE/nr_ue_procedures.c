@@ -73,6 +73,7 @@
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 #define DEBUG_EXTRACT_DCI 1
 
+extern int bwp_id;
 extern dci_pdu_rel15_t *def_dci_pdu_rel15;
 
 extern void mac_rlc_data_ind     (
@@ -478,7 +479,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint32_t number_of_search_space_per_slot=UINT_MAX;
   uint32_t first_symbol_index=UINT_MAX;
   uint32_t search_space_duration;  //  element of search space
-  uint32_t coreset_duration;  //  element of coreset
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -614,8 +614,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   }
 
   AssertFatal(number_of_search_space_per_slot!=UINT_MAX,"");
-  coreset_duration = num_symbols * number_of_search_space_per_slot;
   /*
+  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
     mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
     mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
     mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
@@ -2114,6 +2114,8 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
+  int bwp_id = 1;
+
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
@@ -2709,17 +2711,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     if (dci->tpc == 2) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 1;
     if (dci->tpc == 3) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 3;
     /* PUCCH_RESOURCE_IND */
-    if (dci->pucch_resource_indicator == 0) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
-    if (dci->pucch_resource_indicator == 1) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
-    if (dci->pucch_resource_indicator == 2) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
-    if (dci->pucch_resource_indicator == 3) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
-    if (dci->pucch_resource_indicator == 4) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
-    if (dci->pucch_resource_indicator == 5) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
-    if (dci->pucch_resource_indicator == 6) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
-    if (dci->pucch_resource_indicator == 7) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
+    dlsch_config_pdu_1_1->pucch_resource_id = dci->pucch_resource_indicator;
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
     // according to TS 38.213 Table 9.2.3-1
-    dlsch_config_pdu_1_1-> pdsch_to_harq_feedback_time_ind = mac->phy_config.config_req.ul_bwp_dedicated.pucch_config_dedicated.dl_data_to_ul_ack[dci->pdsch_to_harq_feedback_timing_indicator.val];
+    dlsch_config_pdu_1_1->pdsch_to_harq_feedback_time_ind = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
     /* ANTENNA_PORTS */
     uint8_t n_codewords = 1; // FIXME!!!
     if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 1) &&

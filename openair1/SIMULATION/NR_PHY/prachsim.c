@@ -83,20 +83,23 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, cons
 int main(int argc, char **argv){
 
   char c;
+
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs, bw;
   int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
   uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format;
-  uint8_t frame = 1, subframe = 19, config_index = 98, prach_sequence_length = 1, num_root_sequences = 16, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
+  uint8_t frame = 1, subframe = 9, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, num_root_sequences = 16, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
   uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
   uint64_t SSB_positions = 0x01, absoluteFrequencyPointA = 640000;
+
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
   //  double prach_sinr;
   //  uint32_t nsymb;
   //  uint16_t preamble_max, preamble_energy_max;
+
 
   NR_DL_FRAME_PARMS *frame_parms;
   NR_PRACH_RESOURCES_t prach_resources;
@@ -115,13 +118,17 @@ int main(int argc, char **argv){
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "hHaA:Cr:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
       awgn_flag = 1;
       /* ntrials not used later, no need to set */
       //ntrials=1;
+      break;
+
+    case 'c':
+      config_index = atoi(optarg);
       break;
 
     case 'd':
@@ -310,6 +317,11 @@ int main(int argc, char **argv){
     }
   }
 
+  
+  if (config_index<67)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
+
+  printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
+
   // Configure log
   logInit();
   set_glog(loglvl);
@@ -370,11 +382,11 @@ int main(int argc, char **argv){
   gNB->gNB_config.prach_config.num_prach_fd_occasions.value = num_prach_fd_occasions;
   gNB->gNB_config.prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *) malloc(num_prach_fd_occasions*sizeof(nfapi_nr_num_prach_fd_occasions_t));
 
-  gNB->proc.slot_rx       = subframe;
+  gNB->proc.slot_rx       = slot;
 
-  get_nr_prach_info_from_index(config_index,
+  int ret = get_nr_prach_info_from_index(config_index,
                                (int)frame,
-                               (int)subframe,
+                               (int)slot_gNB,
                                absoluteFrequencyPointA,
                                mu,
                                frame_parms->frame_type,
@@ -383,6 +395,7 @@ int main(int argc, char **argv){
                                &N_t_slot,
                                &N_dur);
 
+  if (ret == 0) {printf("No prach in %d.%d, mu %d, config_index %d\n",frame,slot,mu,config_index); exit(-1);}
   format0 = format&0xff;      // first column of format from table
   format1 = (format>>8)&0xff; // second column of format from table
 
@@ -559,7 +572,7 @@ int main(int argc, char **argv){
 
   UE_nr_rxtx_proc_t proc={0};
   proc.frame_tx  = frame;
-  proc.nr_tti_tx = subframe;
+  proc.nr_tti_tx = slot;
   nr_ue_prach_procedures(UE,&proc,0,0);
 
   /* tx_lev_dB not used later, no need to set */
@@ -568,19 +581,19 @@ int main(int argc, char **argv){
   if (mu == 0)
     samp_count = frame_parms->samples_per_subframe;
   else
-    samp_count = (subframe%(frame_parms->slots_per_subframe/2)) ? frame_parms->samples_per_slotN0 : frame_parms->samples_per_slot0;
+    samp_count = ((slot)%(frame_parms->slots_per_subframe/2)) ? frame_parms->samples_per_slotN0 : frame_parms->samples_per_slot0;
 
-  prach_start = subframe*samp_count - UE->N_TA_offset;
+  prach_start = slot*samp_count - UE->N_TA_offset;
 
   #ifdef NR_PRACH_DEBUG
-    LOG_M("txsig0.m", "txs0", &txdata[0][prach_start], samp_count, 1, 1);
+    LOG_M("txsig0.m", "txs0", &txdata[0][prach_start], frame_parms->samples_per_subframe, 1, 1);
     //LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   #endif
 
   // multipath channel
   // dump_nr_prach_config(&gNB->frame_parms,subframe);
 
-  for (i = 0; i < samp_count<<1; i++) {
+  for (i = 0; i < frame_parms->samples_per_subframe<<1; i++) {
     for (aa=0; aa<1; aa++) {
       if (awgn_flag == 0) {
         s_re[aa][i] = ((double)(((short *)&txdata[aa][prach_start]))[(i<<1)]);
@@ -615,7 +628,10 @@ int main(int argc, char **argv){
       ue_speed1 = ue_speed0 + 50;
   }
 
-  rx_prach_start = subframe*frame_parms->get_samples_per_slot(subframe,frame_parms);
+  rx_prach_start = slot*frame_parms->get_samples_per_slot(slot,frame_parms);
+  if (n_frames==1) printf("slot %d, rx_prach_start %d\n",slot,rx_prach_start);
+  uint16_t preamble_rx, preamble_energy, N_ZC;
+  N_ZC = prach_sequence_length == 0 ? 839 : 139;
 
   for (SNR=snr0; SNR<snr1; SNR+=.1) {
     for (ue_speed=ue_speed0; ue_speed<ue_speed1; ue_speed+=10) {
@@ -627,9 +643,8 @@ int main(int argc, char **argv){
 
       for (trial=0; trial<n_frames; trial++) {
 
-        uint16_t preamble_rx, preamble_energy, N_ZC;
 
-        sigma2_dB = 10*log10((double)tx_lev) - SNR;
+        sigma2_dB = 10*log10((double)tx_lev) - SNR - 10*log10(N_RB_UL*12/N_ZC);
 
         if (n_frames==1)
           printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
@@ -648,20 +663,20 @@ int main(int argc, char **argv){
                  10*log10(tx_lev));
         }
 
-        for (i = 0; i< frame_parms->get_samples_per_slot(subframe,frame_parms); i++) {
+        for (i = 0; i< frame_parms->samples_per_subframe; i++) {
           for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-            ((short*) &gNB->common_vars.rxdata[aa][rx_prach_start])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-            ((short*) &gNB->common_vars.rxdata[aa][rx_prach_start])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
           }
         }
 
-        rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, frame, subframe);
+        rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, frame, slot);
 
         gNB->prach_vars.rxsigF = ru->prach_rxsigF;
 
         rx_nr_prach(gNB, prach_pdu, frame, subframe, &preamble_rx, &preamble_energy, &preamble_delay);
 
-        printf(" preamble_energy %d preamble_rx %d preamble_tx %d \n", preamble_energy, preamble_rx, preamble_tx);
+	//        printf(" preamble_energy %d preamble_rx %d preamble_tx %d \n", preamble_energy, preamble_rx, preamble_tx);
 
         if (preamble_rx != preamble_tx)
           prach_errors++;

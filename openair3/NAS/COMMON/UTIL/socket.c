@@ -107,7 +107,7 @@ void* socket_udp_open(int type, const char* host, const char* port)
 {
   struct addrinfo socket_info; /* endpoint information    */
   struct addrinfo *socket_addr, *sp; /* endpoint address    */
-  int sfd; /* socket file descriptor  */
+  int sfd=-1; /* socket file descriptor  */
 
   /*
    * Parameters sanity check

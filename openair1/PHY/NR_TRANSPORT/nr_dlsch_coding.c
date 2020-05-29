@@ -64,7 +64,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
       a_segments = a_segments/273;
     }  
 
-    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
 
 #ifdef DEBUG_DLSCH_FREE
@@ -82,7 +81,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
+          free16(dlsch->harq_processes[i]->b,a_segments*1056);
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
@@ -336,12 +335,13 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nodata_dmrs = 1;
   uint8_t nb_re_dmrs;
-  if (nodata_dmrs)
-    nb_re_dmrs = 12;
+
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
   else
-    nb_re_dmrs = rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1 ? 6:4;
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+
   uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
@@ -465,6 +465,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
   }
 
+    F = dlsch->harq_processes[harq_pid]->F;
+
+    Kr = dlsch->harq_processes[harq_pid]->K;
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     if (F>0) {

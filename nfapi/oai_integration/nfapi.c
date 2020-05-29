@@ -29,7 +29,7 @@ typedef struct {
   nfapi_mode_t nfapi_mode;
 } nfapi_params_t;
 
-static nfapi_params_t nfapi_params;
+static nfapi_params_t nfapi_params = {0};
 
 void set_thread_priority(int priority) {
   //printf("%s(priority:%d)\n", __FUNCTION__, priority);
