@@ -188,21 +188,27 @@ int main(int argc, char **argv)
 
       case 'H':
         channel_model=Rayleigh8;
+        break;
 
       case 'I':
         channel_model=Rayleigh1;
+        break;
 
       case 'J':
         channel_model=Rayleigh1_corr;
+        break;
 
       case 'K':
         channel_model=Rayleigh1_anticorr;
+        break;
 
       case 'L':
         channel_model=Rice8;
+        break;
 
       case 'M':
         channel_model=Rice1;
+        break;
 
       case 'N':
         channel_model=Rayleigh1_800;
@@ -628,7 +634,7 @@ int main(int argc, char **argv)
         }
       }
 
-      printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
+      printf("SNR %f dB, UE Speed %f km/h: errors %u/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
       //printf("(%f,%f)\n",ue_speed,(double)prach_errors/(double)n_frames);
     } // UE Speed loop
 

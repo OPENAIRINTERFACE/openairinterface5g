@@ -465,7 +465,7 @@ int main(int argc, char **argv)
       mcs=table1_mcs[actual_payload];
     else if(nr_bit==2)
       mcs=table2_mcs[actual_payload];
-    else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n");
+    else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n", nr_bit, sr_flag);
   }
 
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){

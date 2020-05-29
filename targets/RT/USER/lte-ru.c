@@ -2233,9 +2233,7 @@ void init_RU_proc(RU_t *ru) {
   RU_proc_t *proc;
   pthread_attr_t *attr_FH=NULL, *attr_FH1=NULL, *attr_prach=NULL, *attr_asynch=NULL, *attr_synch=NULL, *attr_emulateRF=NULL, *attr_ctrl=NULL, *attr_prach_br=NULL;
   //pthread_attr_t *attr_fep=NULL;
-#ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
-#endif
   proc = &ru->proc;
   memset((void *)proc,0,sizeof(RU_proc_t));
   proc->ru = ru;

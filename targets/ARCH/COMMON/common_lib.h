@@ -52,6 +52,9 @@
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
 
+#define MAX_WRITE_THREAD_PACKAGE     10
+#define MAX_WRITE_THREAD_BUFFER_SIZE 8
+
 #ifndef MAX_CARDS
   #define MAX_CARDS 8
 #endif
@@ -69,13 +72,9 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
-#if OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
-#endif
 
 
 /** @addtogroup _GENERIC_PHY_RF_INTERFACE_
@@ -275,8 +274,37 @@ typedef struct {
   void *rx;
 } if_buffer_t;
 
+typedef struct {
+  openair0_timestamp timestamp;
+  void *buff[MAX_WRITE_THREAD_BUFFER_SIZE];// buffer to be write;
+  int nsamps;
+  int cc;
+  signed char first_packet;
+  signed char last_packet;
+  int flags_msb;
+} openair0_write_package_t;
+
+typedef struct {
+  openair0_write_package_t write_package[MAX_WRITE_THREAD_PACKAGE];
+  int start;
+  int end;
+  /// \internal This variable is protected by \ref mutex_write
+  int count_write;
+  /// pthread struct for trx write thread
+  pthread_t pthread_write;
+  /// pthread attributes for trx write thread
+  pthread_attr_t attr_write;
+  /// condition varible for trx write thread
+  pthread_cond_t cond_write;
+  /// mutex for trx write thread
+  pthread_mutex_t mutex_write;
+} openair0_thread_t;
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
+  /*!tx write thread*/
+  openair0_thread_t write_thread;
+
   /*!brief Module ID of this device */
   int Mod_id;
 
@@ -400,6 +428,12 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   void (*configure_rru)(int idx, void *arg);
+
+  /*! \brief RRU Configuration callback
+   * \param idx RU index
+   * \param arg pointer to capabilities or configuration
+   */
+  int (*trx_write_init)(openair0_device *device);
 };
 
 /* type of device init function, implemented in shared lib */

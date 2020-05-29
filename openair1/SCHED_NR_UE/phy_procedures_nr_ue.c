@@ -86,17 +86,6 @@ char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 extern double cpuf;
 
-
-
-int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    uint32_t frame,
-                    uint32_t slot);
-
-uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
-				  int frame,
-				  int nr_tti_rx,
-				  fapi_nr_dci_indication_t *dci_ind);
-
 /*
 int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint8_t eNB_id,

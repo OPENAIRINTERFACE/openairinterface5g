@@ -36,6 +36,7 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
+#include <openair2/LAYER2/NR_MAC_COMMON/nr_mac_extern.h>
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"

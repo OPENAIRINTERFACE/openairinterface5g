@@ -1194,6 +1194,8 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     int harq_pid;
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
+    if (ulsch == NULL)
+      continue;
 
     if (ulsch->ue_type > NOCE)
       harq_pid = 0;
@@ -1209,9 +1211,10 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
     for (int k=0; k<8; k++) {
       ulsch_harq = ulsch->harq_processes[k];
+      if (ulsch_harq == NULL)
+        continue;
 
-      if (ulsch &&
-          (ulsch->rnti>0) &&
+      if ((ulsch->rnti>0) &&
           (ulsch_harq->status == ACTIVE) &&
           (ulsch_harq->frame == frame) &&
           (ulsch_harq->subframe == subframe) &&
@@ -1510,6 +1513,7 @@ void *cu_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3, 1023); //three first char should be cu: or du:
   char port_def[256]=DU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
@@ -1558,12 +1562,14 @@ void *du_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3,1023); //three first char should be cu: or du:
   char port_def[256]=CU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
       remoteIP[i]=0;
       break;
     }
+
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, port_def, &sockFS6), "");
 
   if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)
