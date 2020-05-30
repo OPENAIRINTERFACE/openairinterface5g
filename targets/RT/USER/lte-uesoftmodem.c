@@ -66,6 +66,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "PHY_INTERFACE/phy_stub_UE.h"
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"

@@ -30,6 +30,7 @@
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "common/config/config_load_configmodule.h"
 #include "common/config/config_userapi.h"
+#include <arpa/inet.h>
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,
@@ -1053,7 +1054,7 @@ int ue_init_standalone_socket(const char *addr, int port)
   server_address.sin_family = AF_INET;
   server_address.sin_port = htons(port);
 
-  int sd = socket(address.sin_family, SOCK_STREAM, IPPROTO_SCTP);
+  int sd = socket(server_address.sin_family, SOCK_STREAM, IPPROTO_SCTP);
   if (sd < 0) {
     LOG_E(MAC, "Socket creation error standalone PNF");
     return -1;
@@ -1061,11 +1062,13 @@ int ue_init_standalone_socket(const char *addr, int port)
 
   if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0) {
     LOG_E(MAC, "Invalid standalone PNF Address");
+    close(sd);
     return -1;
   }
 
-  if (connect(socket, (struct sockaddr *)&server_address, addr_len) < 0) {
+  if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0) {
     LOG_E(MAC, "Connection to standalone PNF failed");
+    close(sd);
     return -1;
   }
 
