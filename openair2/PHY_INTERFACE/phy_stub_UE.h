@@ -134,6 +134,9 @@ void UE_config_stub_pnf(void);
 // This function is used to open an SCTP socket with a standalone PNF module
 int ue_init_standalone_socket(const char *addr, int port);
 
+// This function is used to read from standalone pnf socket call corresponding memcpy functions
+void *ue_standalone_pnf_task(void *context);
+
 
 
 #endif /* PHY_STUB_UE_H_ */

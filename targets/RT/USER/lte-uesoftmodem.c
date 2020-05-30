@@ -711,26 +711,11 @@ int main( int argc, char **argv ) {
   }
 
   // hard-coding address and port for now fix later
-  int sd = -1;
+  // beggining of test
   if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-    const char *standalone_addr = "127.0.0.1";
-    int standalone_port = 3289;
-    char buffy[1024];
-
-    sd = ue_init_standalone_socket(standalone_addr, standalone_port);
-    ssize_t len = read(sd, buffy, sizeof(buffy));
-    if (len == -1) {
-      printf("reading from standalone pnf sctp socket failed \n");
-      return EXIT_FAILURE;
-    }
-
-    nfapi_p7_message_header_t header_t;
-    if (nfapi_p7_message_header_unpack((void *)buffy, len, &header_t, sizeof(header_t), NULL) != 0) {
-      printf("unpacking p7 message failed from standalone pnf\n");
-      printf("Bruins header_t.message_id: %u", header_t.message_id);
-    }
+    init_UE_standalone_thread();
   }
-
+  // end of test
   printf("ITTI tasks created\n");
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_sleep_ns(10*100000000ULL);

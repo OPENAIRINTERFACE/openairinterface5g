@@ -1056,23 +1056,78 @@ int ue_init_standalone_socket(const char *addr, int port)
 
   int sd = socket(server_address.sin_family, SOCK_STREAM, IPPROTO_SCTP);
   if (sd < 0) {
-    LOG_E(MAC, "Socket creation error standalone PNF");
+    LOG_E(MAC, "Socket creation error standalone PNF\n");
     return -1;
   }
 
   if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0) {
-    LOG_E(MAC, "Invalid standalone PNF Address");
+    LOG_E(MAC, "Invalid standalone PNF Address\n");
     close(sd);
     return -1;
   }
 
-  if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0) {
-    LOG_E(MAC, "Connection to standalone PNF failed");
-    close(sd);
-    return -1;
+  while (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0) {
+    LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+    sleep(1);
   }
-
+    LOG_I(MAC, "Succeeded Now\n");
   return sd;
+}
+
+void *ue_standalone_pnf_task(void *context)
+{
+  const char *standalone_addr = "127.0.0.1";
+  int standalone_port = 3289;
+  char buffer[1024];
+
+  int sd = ue_init_standalone_socket(standalone_addr, standalone_port);
+
+  while (true)
+  {
+    ssize_t len = read(sd, buffer, sizeof(buffer));
+    if (len == -1)
+    {
+      LOG_E(MAC, "reading from standalone pnf sctp socket failed \n");
+      continue;
+    }
+
+    nfapi_p7_message_header_t header;
+    if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
+    {
+      LOG_E(MAC, "Header unpack failed for standalone pnf\n");
+      continue;
+    }
+
+    LOG_I(MAC, "Bruins header_t.message_id: %u\n", header.message_id);
+
+    switch (header.message_id)
+    {
+    case NFAPI_DL_CONFIG_REQUEST:
+    {
+      nfapi_dl_config_request_t dl_config_req;
+      if (nfapi_p7_message_unpack((void *)buffer, len, &dl_config_req,
+                                  sizeof(dl_config_req), NULL) < 0)
+      {
+        LOG_E(MAC, "Message dl_config_req failed to unpack\n");
+      }
+      else
+      {
+        LOG_I(MAC, "Sending dl_config_req to memcpy function\n");
+        memcpy_dl_config_req(NULL, NULL, &dl_config_req);
+      }
+      break;
+    }
+    case NFAPI_TX_REQUEST:
+      break;
+
+    case NFAPI_HI_DCI0_REQUEST:
+      break;
+
+    default:
+      LOG_E(MAC, "Case Statement has no corresponding nfapi message\n");
+      break;
+    }
+  }
 }
 
 /* Dummy functions*/

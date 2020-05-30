@@ -422,6 +422,13 @@ void init_UE_stub_single_thread(int nb_inst,
     multicast_link_start(ue_stub_rx_handler,0,emul_iface);
 }
 
+void init_UE_standalone_thread()
+{
+  pthread_t thread;
+  if (pthread_create(&thread, NULL, ue_standalone_pnf_task, NULL) != 0) {
+    LOG_E(MAC, "pthread_create failed for calling ue_standalone_pnf_task");
+  }
+}
 
 void init_UE_stub(int nb_inst,
                   int eMBMS_active,
