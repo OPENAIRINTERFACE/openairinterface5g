@@ -886,34 +886,37 @@ void hi_dci0_req_UE_MAC(int sfn,
 int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
-  dl_config_req = (nfapi_dl_config_request_t *)malloc(sizeof(nfapi_dl_config_request_t));
 
-  // UE_mac_inst[Mod_id].dl_config_req->header = req->header;
-  dl_config_req->sfn_sf = req->sfn_sf;
+  nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
 
-  dl_config_req->vendor_extension = req->vendor_extension;
+  // UE_mac_inst[Mod_id].p->header = req->header;
+  p->sfn_sf = req->sfn_sf;
 
-  dl_config_req->dl_config_request_body.number_dci = req->dl_config_request_body.number_dci;
-  dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
-  dl_config_req->dl_config_request_body.number_pdsch_rnti = req->dl_config_request_body.number_pdsch_rnti;
-  dl_config_req->dl_config_request_body.number_pdu = req->dl_config_request_body.number_pdu;
+  p->vendor_extension = req->vendor_extension;
 
-  dl_config_req->dl_config_request_body.tl.tag = req->dl_config_request_body.tl.tag;
-  dl_config_req->dl_config_request_body.tl.length = req->dl_config_request_body.tl.length;
+  p->dl_config_request_body.number_dci = req->dl_config_request_body.number_dci;
+  p->dl_config_request_body.number_pdcch_ofdm_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
+  p->dl_config_request_body.number_pdsch_rnti = req->dl_config_request_body.number_pdsch_rnti;
+  p->dl_config_request_body.number_pdu = req->dl_config_request_body.number_pdu;
 
-  dl_config_req->dl_config_request_body.dl_config_pdu_list =
+  p->dl_config_request_body.tl.tag = req->dl_config_request_body.tl.tag;
+  p->dl_config_request_body.tl.length = req->dl_config_request_body.tl.length;
+
+  p->dl_config_request_body.dl_config_pdu_list =
       calloc(req->dl_config_request_body.number_pdu,
              sizeof(nfapi_dl_config_request_pdu_t));
-  for (int i = 0; i < dl_config_req->dl_config_request_body.number_pdu; i++) {
-    dl_config_req->dl_config_request_body.dl_config_pdu_list[i] =
+  for (int i = 0; i < p->dl_config_request_body.number_pdu; i++) {
+    p->dl_config_request_body.dl_config_pdu_list[i] =
         req->dl_config_request_body.dl_config_pdu_list[i];
   }
+  dl_config_req = p;
 
   return 0;
 }
 
 int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
 {
+  // make same changes as in dl_config_req
   ul_config_req = malloc(sizeof(nfapi_ul_config_request_t));
 
 
@@ -939,23 +942,25 @@ int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, n
 }
 
 int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
+  // make same changes as in dl_config_req
   tx_req_num_elems = req->tx_request_body.number_of_pdus;
-  tx_request_pdu_list = calloc(tx_req_num_elems, sizeof(nfapi_tx_request_pdu_t));
+  nfapi_tx_request_pdu_t *p = calloc(tx_req_num_elems, sizeof(nfapi_tx_request_pdu_t));
   for (int i = 0; i < tx_req_num_elems; i++) {
-    tx_request_pdu_list[i].num_segments = req->tx_request_body.tx_pdu_list[i].num_segments;
-    tx_request_pdu_list[i].pdu_index = req->tx_request_body.tx_pdu_list[i].pdu_index;
-    tx_request_pdu_list[i].pdu_length = req->tx_request_body.tx_pdu_list[i].pdu_length;
+    p[i].num_segments = req->tx_request_body.tx_pdu_list[i].num_segments;
+    p[i].pdu_index = req->tx_request_body.tx_pdu_list[i].pdu_index;
+    p[i].pdu_length = req->tx_request_body.tx_pdu_list[i].pdu_length;
     for (int j = 0; j < req->tx_request_body.tx_pdu_list[i].num_segments; j++) {
-      tx_request_pdu_list[i].segments[j].segment_length = req->tx_request_body.tx_pdu_list[i].segments[j].segment_length;
-      if (tx_request_pdu_list[i].segments[j].segment_length > 0) {
-        tx_request_pdu_list[i].segments[j].segment_data = calloc(
-            tx_request_pdu_list[i].segments[j].segment_length, sizeof(uint8_t));
-        memcpy(tx_request_pdu_list[i].segments[j].segment_data,
+      p[i].segments[j].segment_length = req->tx_request_body.tx_pdu_list[i].segments[j].segment_length;
+      if (p[i].segments[j].segment_length > 0) {
+        p[i].segments[j].segment_data = calloc(
+            p[i].segments[j].segment_length, sizeof(uint8_t));
+        memcpy(p[i].segments[j].segment_data,
                req->tx_request_body.tx_pdu_list[i].segments[j].segment_data,
-               tx_request_pdu_list[i].segments[j].segment_length);
+               p[i].segments[j].segment_length);
       }
     }
   }
+  tx_request_pdu_list = p;
 
   return 0;
 }
@@ -963,6 +968,7 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
 int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t* pnf_p7,
 			nfapi_hi_dci0_request_t* req) {
+  // make same changes as in dl_config_req
   hi_dci0_req = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
 
@@ -1076,6 +1082,7 @@ int ue_init_standalone_socket(const char *addr, int port)
 
 void *ue_standalone_pnf_task(void *context)
 {
+
   const char *standalone_addr = "127.0.0.1";
   int standalone_port = 3289;
   char buffer[1024];
@@ -1098,7 +1105,7 @@ void *ue_standalone_pnf_task(void *context)
       continue;
     }
 
-    LOG_I(MAC, "Bruins header_t.message_id: %u\n", header.message_id);
+    LOG_I(MAC, "Bruins header.message_id: %u\n", header.message_id);
 
     switch (header.message_id)
     {
@@ -1118,8 +1125,20 @@ void *ue_standalone_pnf_task(void *context)
       break;
     }
     case NFAPI_TX_REQUEST:
+    {
+      nfapi_tx_request_t tx_req;
+      if (nfapi_p7_message_unpack((void *)buffer, len, &tx_req,
+                                  sizeof(tx_req), NULL) < 0)
+      {
+        LOG_E(MAC, "Message tx_req failed to unpack\n");
+      }
+      else
+      {
+        LOG_I(MAC, "Sending tx_req to memcpy function\n");
+        memcpy_tx_req(NULL, &tx_req);
+      }
       break;
-
+    }
     case NFAPI_HI_DCI0_REQUEST:
       break;
 

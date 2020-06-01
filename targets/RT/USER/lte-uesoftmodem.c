@@ -632,7 +632,7 @@ int main( int argc, char **argv ) {
 
   NB_INST=1;
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE_STANDALONE_PNF) { // || NFAPI_MODE_STANDALONE_PNF
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // || NFAPI_MODE_STANDALONE_PNF
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);
 
     for (int i=0; i<NB_UE_INST; i++) {
@@ -705,16 +705,10 @@ int main( int argc, char **argv ) {
     exit(-1); // need a softer mode
   }
 
-  nfapi_setmode(NFAPI_MODE_STANDALONE_PNF); // make sure to hammer out this nfapi mode crap
   if (NFAPI_MODE==NFAPI_UE_STUB_PNF) { // UE-STUB-PNF
     UE_config_stub_pnf();
   }
 
-  // hard-coding address and port for now fix later
-  // beggining of test
-  if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-    init_UE_standalone_thread();
-  }
   // end of test
   printf("ITTI tasks created\n");
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -729,8 +723,9 @@ int main( int argc, char **argv ) {
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   } else if (NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     // init thread and open socket
+    config_sync_var=0;
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
-
+    init_UE_standalone_thread();
   }
   else {
     init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
