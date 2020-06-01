@@ -19,44 +19,50 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_dci_tools_common.c
- * \brief
- * \author
- * \date 2018
- * \version 0.1
- * \company Eurecom
- * \email:
- * \note
- * \warning
- */
+#include "rlc_sdu.h"
 
-#include "nr_dci.h"
+#include <stdlib.h>
+#include <string.h>
 
-//#define DEBUG_FILL_DCI
+#include "LOG/log.h"
 
-#include "nr_dlsch.h"
+rlc_sdu_t *rlc_new_sdu(char *buffer, int size, int upper_layer_id)
+{
+  rlc_sdu_t *ret = calloc(1, sizeof(rlc_sdu_t));
+  if (ret == NULL)
+    goto oom;
 
+  ret->upper_layer_id = upper_layer_id;
 
-void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
+  ret->data = malloc(size);
+  if (ret->data == NULL)
+    goto oom;
 
-  uint8_t count=0, start=0, start_set=0;
+  memcpy(ret->data, buffer, size);
 
-  uint64_t bitmap = (((uint64_t)FreqDomainResource[0])<<37)|
-    (((uint64_t)FreqDomainResource[1])<<29)|
-    (((uint64_t)FreqDomainResource[2])<<21)|
-    (((uint64_t)FreqDomainResource[3])<<13)|
-    (((uint64_t)FreqDomainResource[4])<<5)|
-    (((uint64_t)FreqDomainResource[5])>>3);
-  
-  for (int i=0; i<45; i++)
-    if ((bitmap>>(44-i))&1) {
-      count++;
-      if (!start_set) {
-        start = i;
-        start_set = 1;
-      }
-    }
-  *rb_offset = 6*start;
-  *n_rb = 6*count;
+  ret->size = size;
+
+  return ret;
+
+oom:
+  LOG_E(RLC, "%s:%d:%s: out of memory\n", __FILE__, __LINE__,  __FUNCTION__);
+  exit(1);
 }
 
+void rlc_free_sdu(rlc_sdu_t *sdu)
+{
+  free(sdu->data);
+  free(sdu);
+}
+
+void rlc_sdu_list_add(rlc_sdu_t **list, rlc_sdu_t **end, rlc_sdu_t *sdu)
+{
+  if (*list == NULL) {
+    *list = sdu;
+    *end = sdu;
+    return;
+  }
+
+  (*end)->next = sdu;
+  *end = sdu;
+}

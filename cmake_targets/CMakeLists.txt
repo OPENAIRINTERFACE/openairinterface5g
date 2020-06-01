@@ -2825,6 +2825,7 @@ target_link_libraries(smallblocktest
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
+<<<<<<< HEAD
 ###################################################
 # For CUDA library 
 ###################################################
@@ -2833,10 +2834,15 @@ CUDA_ADD_LIBRARY(LDPC_CU
   )
 CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
 cuda_add_executable(ldpctest
+=======
+add_executable(ldpctest  
+  ${PHY_NR_CODINGIF}
+>>>>>>> origin/develop
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
+<<<<<<< HEAD
 
 target_link_libraries(ldpctest -ldl
   -Wl,--start-group 
@@ -2851,6 +2857,8 @@ target_link_libraries(ldpctest -ldl
   # ${T_SOURCE}
   # ${SHLIB_LOADER_SOURCES}
   # )
+=======
+>>>>>>> origin/develop
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ) 
 
 target_link_libraries(ldpctest
