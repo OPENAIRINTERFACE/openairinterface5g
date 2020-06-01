@@ -743,7 +743,8 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
   uint8_t n_cs,alpha_ind;
   int16_t tmp_re,tmp_im,W_re=0,W_im=0;
   int16_t W4_nouse[4]={1,1,-1,-1};
-  int32_t interference_power;
+  int32_t n0_IQ[2];
+  double interference_power;
   int16_t *rxptr;
   uint32_t symbol_offset;
 
@@ -769,7 +770,7 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
   zptr = (int16_t *)z;
   N_UL_symb = (frame_parms->Ncp==NORMAL) ? 7 : 6;
 
-  interference_power=0;
+  interference_power=0.0;
   calc_cnt=0;
   // loop over 2 slots
   for (n_cs=0; n_cs<12; n_cs++) {
@@ -778,6 +779,7 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
       //loop over symbols in slot
       for (l=0; l<N_UL_symb; l++) {
         if(((l>1)&&(l<N_UL_symb-2)) || ((ns==(1+(subframe<<1))) && (shortened_format==1)) ){
+          zptr+=24;
           continue;
         }
 
@@ -817,8 +819,11 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
 
     // Do detection
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+      n0_IQ[0]=0;
+      n0_IQ[1]=0;
       for (j=0,l=0; l<nsymb; l++) {
         if((((l%N_UL_symb)>1)&&((l%N_UL_symb)<N_UL_symb-2)) || ((nsymb>=N_UL_symb) && (shortened_format==1)) ){
+          j+=24;
           continue;
         }
           if ((l<(nsymb>>1)) && ((m&1) == 0))
@@ -842,15 +847,17 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
 
           rxcomp[aa][j]   = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[1+j])>>15);
           rxcomp[aa][1+j] = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[1+j])>>15) + ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[j])>>15);
-          interference_power+= ((int32_t)rxcomp[aa][j]*(int32_t)rxcomp[aa][j]+(int32_t)rxcomp[aa][1+j]*(int32_t)rxcomp[aa][1+j]);
+          n0_IQ[0]+=rxcomp[aa][j];
+          n0_IQ[1]+=rxcomp[aa][1+j];
           calc_cnt++;
         } //re
       } // symbol
+      interference_power+= (int32_t)(n0_IQ[0]*n0_IQ[0]+n0_IQ[1]*n0_IQ[1]);
     }  // antenna
   }
-  calc_cnt/=12;
-  //printf("pucch noise %d %d %d\n",interference_power,calc_cnt,eNB->measurements.n0_subband_power_tot_dB[0]);
-  eNB->measurements.n0_pucch_dB = dB_fixed_x10(interference_power/calc_cnt)/10;
+  interference_power /= calc_cnt;
+  eNB->measurements.n0_pucch_dB = dB_fixed_x10((int)(interference_power/calc_cnt))/10;
+  LOG_D(PHY,"estimate pucch noise %d %d %d\n",interference_power,calc_cnt,eNB->measurements.n0_pucch_dB);
   return 0;
 }
 
