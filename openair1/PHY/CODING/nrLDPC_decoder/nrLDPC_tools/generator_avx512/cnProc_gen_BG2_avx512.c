@@ -1,8 +1,7 @@
+#include <stdio.h>
 #include <stdint.h>
-#include <immintrin.h>
 #include "../../nrLDPCdecoder_defs.h"
-#include "../../nrLDPC_types.h"                                                                                            
-#include "../../nrLDPC_bnProc.h"
+
 
 void nrLDPC_cnProc_BG2_generator_AVX512(uint16_t Z,int R)
 {

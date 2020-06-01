@@ -333,8 +333,8 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
         case 384:
         {
-           // nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-              nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //we test  here 
+            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //we test  here 
             break;
 	}                                                                           
         case 352:
@@ -1475,7 +1475,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         case 384:
         {
             nrLDPC_cnProc_BG2_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-           // nrLDPC_cnProc_BG2_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG2_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;
         }
         case 352:
@@ -1922,7 +1922,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
         case 384:
         {
-           // nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes); //we test here
             break;
 	}
@@ -2273,7 +2273,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         case 384:
         {
             nrLDPC_cnProc_BG2_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-           // nrLDPC_cnProc_BG2_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+            //nrLDPC_cnProc_BG2_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             break;
         }
         case 352:

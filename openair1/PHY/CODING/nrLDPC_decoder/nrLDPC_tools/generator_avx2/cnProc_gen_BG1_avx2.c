@@ -21,7 +21,6 @@ void nrLDPC_cnProc_BG1_generator_AVX2(uint16_t Z,int R)
 
   fprintf(fd,"#include <stdint.h>\n");
   fprintf(fd,"#include <immintrin.h>\n");
- fprintf(fd,"#include "\"../include/avx512fintrin.h>\"\n");
 
   fprintf(fd,"void nrLDPC_cnProc_BG1_Z%d_%s_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {\n",Z,ratestr[R]);
 
@@ -411,10 +410,10 @@ void nrLDPC_cnProc_BG1_generator_AVX2(uint16_t Z,int R)
   // Process group with 8 BNs
   fprintf(fd,"//Process group with 8 BNs\n");
   // Offset is 2*384/32 = 24
-  const uint8_t lut_idxCnProcG8[8][7] = {{24,48,72,96,120,144,168}, {0,48,72,96,120,144,168},
-					 {0,24,72,96,120,144,168}, {0,24,48,96,120,144,168},
-					 {0,24,48,72,120,144,168}, {0,24,48,72,96,144,168},
-					 {0,24,48,72,96,120,168}, {0,24,48,72,96,120,144}};
+  const uint8_t lut_idxCnProcG8[8][7] = {{24,48,72,96,112,144,168}, {0,48,72,96,112,144,168},
+					 {0,24,72,96,112,144,168}, {0,24,48,96,112,144,168},
+					 {0,24,48,72,112,144,168}, {0,24,48,72,96,144,168},
+					 {0,24,48,72,96,112,168},  {0,24,48,72,96,112,144}};
 
 
 

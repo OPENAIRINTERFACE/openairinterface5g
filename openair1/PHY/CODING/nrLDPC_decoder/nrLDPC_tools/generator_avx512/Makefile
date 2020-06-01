@@ -13,7 +13,7 @@ cnProc_gen_avx512: $(OBJ)
 #main.o: cnProc_gen_avx512.h
 
 %.o: %.c
-	@$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g   
+	@$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g    -std=c99
 
 .PHONY: clean mrproper
 

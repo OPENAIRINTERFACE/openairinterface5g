@@ -1,9 +1,6 @@
 
 #include <stdio.h>
-#include <immintrin.h>
-#include "../../nrLDPC_types.h"
-#include "../../nrLDPC_init.h"
-#include "../../nrLDPC_bnProc.h"
+#include <stdint.h>
 #define NB_Z  51
 void nrLDPC_cnProc_BG1_generator_AVX512(uint16_t,int);
 void nrLDPC_cnProc_BG2_generator_AVX512(uint16_t,int);
