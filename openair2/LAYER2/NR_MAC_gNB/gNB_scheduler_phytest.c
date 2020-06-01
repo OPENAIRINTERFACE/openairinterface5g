@@ -249,9 +249,14 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
+
+
+
+
 int configure_fapi_dl_pdu(int Mod_idP,
                           int *CCEIndex,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
+			  NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
                           uint16_t *rbSize,
                           uint16_t *rbStart) {
@@ -260,12 +265,11 @@ int configure_fapi_dl_pdu(int Mod_idP,
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-  
+
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
   int TBS, bwp_id = 1, UE_id = 0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
@@ -351,10 +355,10 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].ndi = 1;
   dci_pdu_rel15[0].rv = 0;
   dci_pdu_rel15[0].harq_pid = 0;
-  dci_pdu_rel15[0].dai = 2;
+  dci_pdu_rel15[0].dai = (pucch_sched->dai_c-1)&3;
   dci_pdu_rel15[0].tpc = 2;
-  dci_pdu_rel15[0].pucch_resource_indicator = 7;
-  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = 7;
+  dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
+  dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator = pucch_sched->timing_indicator;
   
   LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment,
@@ -413,7 +417,6 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	pdsch_pdu_rel15->NrOfCodewords,
 	pdsch_pdu_rel15->mcsIndex[0],
 	TBS);
-
   return TBS; //Return TBS in bytes
 }
 
@@ -491,6 +494,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
+                                   NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config){
 
   LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest \n");
@@ -537,7 +541,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     CCEIndices,
-                                    dl_req, 
+                                    dl_req,
+				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
@@ -562,7 +567,6 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                         ENB_FLAG_YES,
                                         MBMS_FLAG_NO,
                                         lcid,
-                                        TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
                                         0,
                                         0);
 
@@ -579,7 +583,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                                    ENB_FLAG_YES,
                                                    MBMS_FLAG_NO,
                                                    lcid,
-                                                   TBS_bytes,
+                                                   TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
                                                    (char *)&mac_sdus[sdu_length_total],
                                                    0,
                                                    0);
@@ -599,13 +603,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       break;
       }
     }
-
   } //if (IS_SOFTMODEM_NOS1)
   else {
 
     //When the --NOS1 option is not enabled, DLSCH transmissions with random data
     //occur every time that the current function is called (dlsch phytest mode)
-
     LOG_D(MAC,"Configuring DL_TX in %d.%d\n", frameP, slotP);
 
     // fill dlsch_buffer with random data
@@ -719,12 +721,12 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 
   UL_tti_req->SFN = frameP;
   UL_tti_req->Slot = slotP;
-  UL_tti_req->n_pdus = 1;
-  UL_tti_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-  UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
+  UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+  UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu,0,sizeof(nfapi_nr_pusch_pdu_t));
-  
+  UL_tti_req->n_pdus+=1;  
+
   LOG_D(MAC, "Scheduling UE specific PUSCH\n");
   //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
   /*
@@ -758,14 +760,6 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->transform_precoding = 0;
   pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
   pusch_pdu->nrOfLayers = 1;
-  //DMRS
-  pusch_pdu->ul_dmrs_symb_pos = 1<<2; //for now the gnb assumes dmrs in the first symbol of the scheduled pusch resource
-  pusch_pdu->dmrs_config_type = 0;  //dmrs-type 1 (the one with a single DMRS symbol in the beginning)
-  pusch_pdu->ul_dmrs_scrambling_id =  0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
-  pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
-  //pusch_pdu->num_dmrs_cdm_grps_no_data;
-  //pusch_pdu->dmrs_ports; //DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
-  //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   pusch_pdu->resource_alloc = 1; //type 1
   //pusch_pdu->rb_bitmap;// for ressource alloc type 0
   pusch_pdu->rb_start = 0;
@@ -777,6 +771,40 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   //Resource Allocation in time domain
   pusch_pdu->start_symbol_index = 2;
   pusch_pdu->nr_of_symbols = 12;
+
+  // --------------------
+  // ------- DMRS -------
+  // --------------------
+  uint16_t l_prime_mask            = get_l_prime(pusch_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+  pusch_pdu->ul_dmrs_symb_pos      = l_prime_mask << pusch_pdu->start_symbol_index;
+  pusch_pdu->dmrs_config_type      = 0;      // dmrs-type 1 (the one with a single DMRS symbol in the beginning)
+  pusch_pdu->ul_dmrs_scrambling_id = 0;      // If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id
+  pusch_pdu->scid                  = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
+                                             // Should match what is sent in DCI 0_1, otherwise set to 0
+  //pusch_pdu->num_dmrs_cdm_grps_no_data;
+  //pusch_pdu->dmrs_ports; // DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports
+                           // Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011,
+                           // and for each bit 0: DMRS port not used 1: DMRS port used
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+
+  // --------------------
+  // ------- PTRS -------
+  // --------------------
+  uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
+  uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
+  uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
+  uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
+  uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
+  pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
+  pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+  pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
+  pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+
+  if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
+    pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+
+  //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
@@ -785,7 +813,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 						 pusch_pdu->target_code_rate,
 						 pusch_pdu->rb_size,
 						 pusch_pdu->nr_of_symbols,
-						 6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
+						 pusch_pdu->dmrs_config_type?4:6, //nb_re_dmrs - not sure where this is coming from - its not in the FAPI
 						 0, //nb_rb_oh
 						 pusch_pdu->nrOfLayers)>>3;
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
@@ -821,7 +849,6 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 		     1, // ue-specific,
 		     scc,
 		     bwp);
-
   
   dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
 

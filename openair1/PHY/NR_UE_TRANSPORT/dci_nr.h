@@ -29,6 +29,10 @@
 * \note
 * \warning
 */
+
+#ifndef __PHY_NR_UE_TRANSPORT_DCI_NR__H__
+#define __PHY_NR_UE_TRANSPORT_DCI_NR__H__
+
 #ifndef USER_MODE
 #include "PHY/types.h"
 #else
@@ -117,5 +121,6 @@ struct NR_DCI_INFO_EXTRACTED {
 typedef struct NR_DCI_INFO_EXTRACTED NR_DCI_INFO_EXTRACTED_t;
 
 
+#endif
 #endif
 

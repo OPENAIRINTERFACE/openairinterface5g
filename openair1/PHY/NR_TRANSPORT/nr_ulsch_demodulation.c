@@ -44,7 +44,7 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
 
   switch (Msc_PUSCH) {
     case 12:
-      dft12((int16_t *)idft_in0, (int16_t *)idft_out0);
+      dft(DFT_12,(int16_t *)idft_in0, (int16_t *)idft_out0,0);
 
 #if defined(__x86_64__)||defined(__i386__)
       norm128 = _mm_set1_epi16(9459);
@@ -63,135 +63,135 @@ void nr_idft(uint32_t *z, uint32_t Msc_PUSCH)
       break;
 
     case 24:
-      dft24(idft_in0, idft_out0, 1);
+      dft(DFT_24,idft_in0, idft_out0, 1);
       break;
 
     case 36:
-      dft36(idft_in0, idft_out0, 1);
+      dft(DFT_36,idft_in0, idft_out0, 1);
       break;
 
     case 48:
-      dft48(idft_in0, idft_out0, 1);
+      dft(DFT_48,idft_in0, idft_out0, 1);
       break;
 
     case 60:
-      dft60(idft_in0, idft_out0, 1);
+      dft(DFT_60,idft_in0, idft_out0, 1);
       break;
 
     case 72:
-      dft72(idft_in0, idft_out0, 1);
+      dft(DFT_72,idft_in0, idft_out0, 1);
       break;
 
     case 96:
-      dft96(idft_in0, idft_out0, 1);
+      dft(DFT_96,idft_in0, idft_out0, 1);
       break;
 
     case 108:
-      dft108(idft_in0, idft_out0, 1);
+      dft(DFT_108,idft_in0, idft_out0, 1);
       break;
 
     case 120:
-      dft120(idft_in0, idft_out0, 1);
+      dft(DFT_120,idft_in0, idft_out0, 1);
       break;
 
     case 144:
-      dft144(idft_in0, idft_out0, 1);
+      dft(DFT_144,idft_in0, idft_out0, 1);
       break;
 
     case 180:
-      dft180(idft_in0, idft_out0, 1);
+      dft(DFT_180,idft_in0, idft_out0, 1);
       break;
 
     case 192:
-      dft192(idft_in0, idft_out0, 1);
+      dft(DFT_192,idft_in0, idft_out0, 1);
       break;
 
     case 216:
-      dft216(idft_in0, idft_out0, 1);
+      dft(DFT_216,idft_in0, idft_out0, 1);
       break;
 
     case 240:
-      dft240(idft_in0, idft_out0, 1);
+      dft(DFT_240,idft_in0, idft_out0, 1);
       break;
 
     case 288:
-      dft288(idft_in0, idft_out0, 1);
+      dft(DFT_288,idft_in0, idft_out0, 1);
       break;
 
     case 300:
-      dft300(idft_in0, idft_out0, 1);
+      dft(DFT_300,idft_in0, idft_out0, 1);
       break;
 
     case 324:
-      dft324((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_324,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 360:
-      dft360((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_360,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 384:
-      dft384((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_384,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 432:
-      dft432((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_432,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 480:
-      dft480((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_480,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 540:
-      dft540((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_540,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 576:
-      dft576((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_576,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 600:
-      dft600((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_600,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 648:
-      dft648((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_648,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 720:
-      dft720((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_720,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 768:
-      dft768((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_768,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 864:
-      dft864((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_864,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 900:
-      dft900((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_900,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 960:
-      dft960((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_960,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 972:
-      dft972((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_972,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 1080:
-      dft1080((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_1080,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 1152:
-      dft1152((int16_t*)idft_in0, (int16_t*)idft_out0, 1);
+      dft(DFT_1152,(int16_t*)idft_in0, (int16_t*)idft_out0, 1);
       break;
 
     case 1200:
-      dft1200(idft_in0, idft_out0, 1);
+      dft(DFT_1200,idft_in0, idft_out0, 1);
       break;
 
     default:
@@ -284,19 +284,17 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
       else
         is_dmrs_re = 0;
 
-      if ( ((pusch_pdu->pdu_bit_map)>>2)& 0x01 ) {
-        is_ptrs_symbol_flag = is_ptrs_symbol(symbol,
-                                             (start_re + re)%frame_parms->ofdm_symbol_size,
-                                             n_rnti,
-                                             pusch_pdu->rb_size,
-                                             pusch_pdu->nr_of_symbols,
-                                             aarx,
-                                             K_ptrs,
-                                             pusch_vars->ptrs_symbols,
-                                             start_re,
-                                             frame_parms->ofdm_symbol_size,
-                                             pusch_pdu->dmrs_config_type,
-                                             pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset);
+      if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+        if(is_ptrs_symbol(symbol, pusch_vars->ptrs_symbols))
+            is_ptrs_symbol_flag = is_ptrs_subcarrier((start_re + re) % frame_parms->ofdm_symbol_size,
+                                                     n_rnti,
+                                                     aarx,
+                                                     pusch_pdu->dmrs_config_type,
+                                                     K_ptrs,
+                                                     pusch_pdu->rb_size,
+                                                     pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                                     start_re,
+                                                     frame_parms->ofdm_symbol_size);
 
         if (is_ptrs_symbol_flag == 1)
           num_ptrs_symbols++;
@@ -304,7 +302,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
       }
 
   #ifdef DEBUG_RB_EXT
-      printf("re = %d, is_dmrs_symbol_flag = %d, symbol = %d\n", re, is_dmrs_symbol_flag, symbol);
+      printf("re = %d, is_ptrs_symbol_flag = %d, symbol = %d\n", re, is_ptrs_symbol_flag, symbol);
   #endif
 
       if ( is_dmrs_re == 0 && is_ptrs_symbol_flag == 0) {
@@ -315,8 +313,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
         ul_ch0_ptrs_ext[ul_ch0_ptrs_ext_index] = ul_ch0_ptrs[ul_ch0_ptrs_index];
 
   #ifdef DEBUG_RB_EXT
-        printf("rxF_ext[%d] = %d\n", rxF_ext_index, rxF_ext[rxF_ext_index]);
-        printf("rxF_ext[%d] = %d\n", rxF_ext_index+1, rxF_ext[rxF_ext_index+1]);
+        printf("rxF_ext[%d] = %d, %d\n", rxF_ext_index, rxF_ext[rxF_ext_index], rxF_ext[rxF_ext_index+1]);
   #endif
 
         ul_ch0_ext_index++;
@@ -1026,7 +1023,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char harq_pid)
 {
 
-  uint8_t first_symbol_flag, aarx, aatx, dmrs_symbol_flag, ptrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
+  uint8_t first_symbol_flag, aarx, aatx, dmrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   uint8_t L_ptrs = 0; // PTRS parameter
   int avgs;
@@ -1035,7 +1032,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[UE_id][0]->harq_processes[harq_pid]->ulsch_pdu;
 
   dmrs_symbol_flag = 0;
-  ptrs_symbol_flag = 0;
   first_symbol_flag = 0;
   gNB->pusch_vars[UE_id]->ptrs_sc_per_ofdm_symbol = 0;
 
@@ -1046,16 +1042,14 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     gNB->pusch_vars[UE_id]->ptrs_symbols = 0;
     first_symbol_flag = 1;
 
-    if ( ((rel15_ul->pdu_bit_map)>>2)& 0x01 ) {  // if there is ptrs pdu
+    if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
       L_ptrs = 1<<(rel15_ul->pusch_ptrs.ptrs_time_density);
 
       set_ptrs_symb_idx(&gNB->pusch_vars[UE_id]->ptrs_symbols,
                         rel15_ul->nr_of_symbols,
                         rel15_ul->start_symbol_index,
-                        rel15_ul->dmrs_config_type,
                         L_ptrs,
-                        1, // only dmrs of length 1 is currently supported
-                        frame_parms->ofdm_symbol_size);
+                        rel15_ul->ul_dmrs_symb_pos);
     }
   }
 
@@ -1070,30 +1064,16 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
   }
 
-  if ( ((rel15_ul->pdu_bit_map)>>2)& 0x01 ) {  // if there is ptrs pdu
-    ptrs_symbol_flag = is_ptrs_symbol(symbol,
-                                      0,
-                                      rel15_ul->rnti,
-                                      rel15_ul->rb_size,
-                                      rel15_ul->nr_of_symbols,
-                                      0,
-                                      (rel15_ul->pusch_ptrs.ptrs_freq_density)?4:2,
-                                      gNB->pusch_vars[UE_id]->ptrs_symbols,
-                                      0,
-                                      frame_parms->ofdm_symbol_size,
-                                      rel15_ul->dmrs_config_type,
-                                      rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset);
-  }
-
-  if (ptrs_symbol_flag == 1){
-    gNB->pusch_vars[UE_id]->ptrs_symbol_index = symbol;
+  if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
+    if(is_ptrs_symbol(symbol, gNB->pusch_vars[UE_id]->ptrs_symbols))
+      gNB->pusch_vars[UE_id]->ptrs_symbol_index = symbol;
   }
 
 
   //----------------------------------------------------------
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
-
+  start_meas(&gNB->ulsch_channel_estimation_stats);
   if (dmrs_symbol_flag == 1)
     nr_pusch_channel_estimation(gNB,
                                 nr_tti_rx,
@@ -1101,17 +1081,19 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 symbol,
                                 bwp_start_subcarrier,
                                 rel15_ul);
-
+  stop_meas(&gNB->ulsch_channel_estimation_stats);
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
 
+  start_meas(&gNB->ulsch_rbs_extraction_stats);
   nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                               gNB->pusch_vars[UE_id],
                               symbol,
                               dmrs_symbol_flag,
                               rel15_ul,
                               frame_parms);
+  stop_meas(&gNB->ulsch_rbs_extraction_stats);
 
   nr_ulsch_scale_channel(gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                          frame_parms,
@@ -1140,6 +1122,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   }
 
+  start_meas(&gNB->ulsch_channel_compensation_stats);
   nr_ulsch_channel_compensation(gNB->pusch_vars[UE_id]->rxdataF_ext,
                                 gNB->pusch_vars[UE_id]->ul_ch_estimates_ext,
                                 gNB->pusch_vars[UE_id]->ul_ch_mag0,
@@ -1152,6 +1135,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul->qam_mod_order,
                                 rel15_ul->rb_size,
                                 gNB->pusch_vars[UE_id]->log2_maxh);
+  stop_meas(&gNB->ulsch_channel_compensation_stats);
 
 #ifdef NR_SC_FDMA
   nr_idft(&((uint32_t*)gNB->pusch_vars[UE_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
@@ -1160,7 +1144,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //-------------------- LLRs computation --------------------
   //----------------------------------------------------------
-
+  start_meas(&gNB->ulsch_llr_stats);
   nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_comp[0][symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB],
                        gNB->pusch_vars[UE_id]->ul_ch_mag0,
                        gNB->pusch_vars[UE_id]->ul_ch_magb0,
@@ -1169,6 +1153,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                        nb_re_pusch,
                        symbol,
                        rel15_ul->qam_mod_order);
+  stop_meas(&gNB->ulsch_llr_stats);
 
   gNB->pusch_vars[UE_id]->rxdataF_ext_offset = gNB->pusch_vars[UE_id]->rxdataF_ext_offset +  nb_re_pusch - gNB->pusch_vars[UE_id]->ptrs_sc_per_ofdm_symbol;
   

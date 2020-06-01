@@ -41,7 +41,19 @@
 #define NR_PUSCH_y 3 // UCI placeholder bit 
 
 
+void nr_group_sequence_hopping(pucch_GroupHopping_t PUCCH_GroupHopping,
+                               uint32_t n_id,
+                               uint8_t n_hop,
+                               int nr_tti_tx,
+                               uint8_t *u,
+                               uint8_t *v);
 
+double nr_cyclic_shift_hopping(uint32_t n_id,
+                               uint8_t m0,
+                               uint8_t mcs,
+                               uint8_t lnormal,
+                               uint8_t lprime,
+                               int nr_tti_tx);
 
 
 /** \brief Computes available bits G. */
@@ -49,4 +61,5 @@ uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint
 
 uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
 
+void init_pucch2_luts(void);
 #endif

@@ -118,7 +118,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   //fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   nr_phy_config_t *phy_config = &mac->phy_config;
 
-  //ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
+  //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
   // First we need to verify if DCI ind contains a ul-sch to be perfomred. If it does, we will handle a PUSCH in the UL_CONFIG_REQ.
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUCCH;
   for (int i=0; i<10; i++) {
@@ -128,29 +128,28 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   }
   if (ul_config->ul_config_list[ul_config->number_pdus].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH) {
     // fill in the elements in config request inside P5 message
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.bandwidth_part_ind = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.frame_offset = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.pusch_freq_hopping = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.mcs = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.accumulated_delta_PUSCH = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.tpmi = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.n_dmrs_cdm_groups = 0;
-    for (int i=0;i<4;i++) ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.dmrs_ports[i]=0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.n_front_load_symb = 0;
-    //ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.srs_config = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.csi_reportTriggerSize = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.maxCodeBlockGroupsPerTransportBlock = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.ptrs_dmrs_association_port = 0;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.beta_offset_ind = 0;
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.bandwidth_part_ind = 0; //FIXME
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rb_size = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rb_start = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.nr_of_symbols = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.start_symbol_index = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.frequency_hopping = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.mcs_index = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.pusch_data.rv_index = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.pusch_data.harq_process_id = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.absolute_delta_PUSCH = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.nrOfLayers = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.transform_precoding = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.dmrs_ports = 0;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.dmrs_config_type = 0;
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.n_front_load_symb = 0; //FIXME
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.srs_config = 0; //FIXME
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.csi_reportTriggerSize = 0; //FIXME
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.maxCodeBlockGroupsPerTransportBlock = 0; //FIXME
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.ptrs_dmrs_association_port = 0; FIXME
+    //ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.beta_offset_ind = 0; //FIXME
   } else { // If DCI ind is not format 0_0 or 0_1, we will handle a PUCCH in the UL_CONFIG_REQ
     ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUCCH;
     // If we handle PUCCH common
@@ -468,7 +467,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint32_t number_of_search_space_per_slot=UINT_MAX;
   uint32_t first_symbol_index=UINT_MAX;
   uint32_t search_space_duration;  //  element of search space
-  uint32_t coreset_duration;  //  element of coreset
   //  38.213 table 10.1-1
 
   /// MUX PATTERN 1
@@ -604,8 +602,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   }
 
   AssertFatal(number_of_search_space_per_slot!=UINT_MAX,"");
-  coreset_duration = num_symbols * number_of_search_space_per_slot;
   /*
+  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
     mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
     mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
     mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
@@ -1669,7 +1667,7 @@ uint8_t table_7_3_2_3_3_4_twoCodeword[6][10] = {
   {2,0,1,2,3,6,7,8,0,2},
   {2,0,1,2,3,6,7,8,9,2}
 };
-int8_t nr_ue_process_dci_freq_dom_resource_assignment(fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
+int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
 						      uint16_t n_RB_ULBWP,
 						      uint16_t n_RB_DLBWP,
@@ -1692,7 +1690,7 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(fapi_nr_ul_config_pusch_pd
     dlsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_DLBWP);
 
   }
-  if(ulsch_config_pdu != NULL){
+  if(pusch_config_pdu != NULL){
     /*
      * TS 38.214 subclause 6.1.2.2 Resource allocation in frequency domain (uplink)
      */
@@ -1703,14 +1701,14 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(fapi_nr_ul_config_pusch_pd
      * TS 38.214 subclause 6.1.2.2.2 Uplink resource allocation type 1
      */
 
-    ulsch_config_pdu->number_rbs = NRRIV2BW(riv,n_RB_ULBWP);
-    ulsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_ULBWP);
+    pusch_config_pdu->rb_size  = NRRIV2BW(riv,n_RB_ULBWP);
+    pusch_config_pdu->rb_start = NRRIV2PRBOFFSET(riv,n_RB_ULBWP);
   }
   return 0;
 }
 
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
-						      fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
+						      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
 						      uint8_t time_domain_ind
 						      ){
@@ -1849,9 +1847,6 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       SLIV2SL(startSymbolAndLength,&S,&L);
       dlsch_config_pdu->start_symbol=S;
       dlsch_config_pdu->number_symbols=L;
-      dlsch_config_pdu->frame_offset = pdsch_TimeDomainAllocationList->list.array[time_domain_ind]->k0!=NULL ?
-	*pdsch_TimeDomainAllocationList->list.array[time_domain_ind]->k0 : 
-	0;
     }
     else {// Default configuration from tables
       k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
@@ -1866,14 +1861,13 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       // k_offset = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][2];
-      dlsch_config_pdu->frame_offset = k_offset;
       dlsch_config_pdu->number_symbols = sliv_L;
       dlsch_config_pdu->start_symbol = sliv_S;
     }
   }	/*
 	 * TS 38.214 subclause 6.1.2.1 Resource allocation in time domain (uplink)
 	 */
-  if(ulsch_config_pdu != NULL){
+  if(pusch_config_pdu != NULL){
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
     if (mac->ULbwp[0]->bwp_Dedicated->pusch_Config)
       pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
@@ -1885,12 +1879,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       int startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[time_domain_ind]->startSymbolAndLength;
       int S,L;
       SLIV2SL(startSymbolAndLength,&S,&L);
-      ulsch_config_pdu->start_symbol=S;
-      ulsch_config_pdu->number_symbols=L;
-      ulsch_config_pdu->frame_offset = pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2!=NULL ?
-	*pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2 : 
-	 mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing < NR_SubcarrierSpacing_kHz60 ? 1 :
-	mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing < NR_SubcarrierSpacing_kHz120 ? 2 : 3;
+      pusch_config_pdu->start_symbol_index=S;
+      pusch_config_pdu->nr_of_symbols=L;
     }
     else {
       k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
@@ -1899,9 +1889,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
-      ulsch_config_pdu->frame_offset = k_offset;
-      ulsch_config_pdu->number_symbols = sliv_L;
-      ulsch_config_pdu->start_symbol = sliv_S;
+      pusch_config_pdu->nr_of_symbols = sliv_L;
+      pusch_config_pdu->start_symbol_index = sliv_S;
     }
   }
   return 0;
@@ -1917,6 +1906,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
   nr_extract_dci_info(mac,dci->dci_format,dci->payloadSize,dci->rnti,(uint64_t *)dci->payloadBits,&dci_pdu_rel15);
   nr_ue_process_dci(module_id, cc_id, gNB_index, &dci_pdu_rel15, dci->rnti, dci->dci_format);
+  return 0;
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
@@ -1953,45 +1943,41 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
      *    50 SUL_IND_0_0:
      */
     ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
-    fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
+    nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
     /* IDENTIFIER_DCI_FORMATS */
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-    nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+    nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     nr_ue_process_dci_time_dom_resource_assignment(mac,
-						   ulsch_config_pdu_0_0,NULL,
+						   pusch_config_pdu_0_0,NULL,
 						   dci->time_dom_resource_assignment);
 
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
-      ulsch_config_pdu_0_0->pusch_freq_hopping = (dci->freq_hopping_flag == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
+      pusch_config_pdu_0_0->frequency_hopping = dci->freq_hopping_flag;
     /* MCS */
-    ulsch_config_pdu_0_0->mcs = dci->mcs;
+    pusch_config_pdu_0_0->mcs_index = dci->mcs;
     /* NDI */
-    ulsch_config_pdu_0_0->ndi = dci->ndi;
+    pusch_config_pdu_0_0->pusch_data.new_data_indicator = dci->ndi;
     /* RV */
-    ulsch_config_pdu_0_0->rv = dci->rv;
+    pusch_config_pdu_0_0->pusch_data.rv_index = dci->rv;
     /* HARQ_PROCESS_NUMBER */
-    ulsch_config_pdu_0_0->harq_process_nbr = dci->harq_process_number;
+    pusch_config_pdu_0_0->pusch_data.harq_process_id = dci->harq_process_number;
     /* TPC_PUSCH */
     // according to TS 38.213 Table Table 7.1.1-1
     if (dci->tpc_pusch == 0) {
-      ulsch_config_pdu_0_0->accumulated_delta_PUSCH = -1;
-      ulsch_config_pdu_0_0->absolute_delta_PUSCH = -4;
+      pusch_config_pdu_0_0->absolute_delta_PUSCH = -4;
     }
     if (dci->tpc_pusch == 1) {
-      ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 0;
-      ulsch_config_pdu_0_0->absolute_delta_PUSCH = -1;
+      pusch_config_pdu_0_0->absolute_delta_PUSCH = -1;
     }
     if (dci->tpc_pusch == 2) {
-      ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 1;
-      ulsch_config_pdu_0_0->absolute_delta_PUSCH = 1;
+      pusch_config_pdu_0_0->absolute_delta_PUSCH = 1;
     }
     if (dci->tpc_pusch == 3) {
-      ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 3;
-      ulsch_config_pdu_0_0->absolute_delta_PUSCH = 4;
+      pusch_config_pdu_0_0->absolute_delta_PUSCH = 4;
     }
     /* SUL_IND_0_0 */ // To be implemented, FIXME!!!
 
@@ -2028,49 +2014,45 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
      *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
      */
     ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-    ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
-    fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
+    ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu.rnti = rnti;
+    nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
     /* IDENTIFIER_DCI_FORMATS */
     /* CARRIER_IND */
     /* SUL_IND_0_1 */
     /* BANDWIDTH_PART_IND */
-    ulsch_config_pdu_0_1->bandwidth_part_ind = dci->bandwidth_part_ind;
+    //pusch_config_pdu_0_1->bandwidth_part_ind = dci->bandwidth_part_ind; //FIXME
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-    nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+    nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    nr_ue_process_dci_time_dom_resource_assignment(mac,ulsch_config_pdu_0_1,NULL,
+    nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_1,NULL,
 						   dci->time_dom_resource_assignment);
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
-      ulsch_config_pdu_0_1->pusch_freq_hopping = (dci->freq_hopping_flag == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
+      pusch_config_pdu_0_1->frequency_hopping = dci->freq_hopping_flag;
     /* MCS */
-    ulsch_config_pdu_0_1->mcs = dci->mcs;
+    pusch_config_pdu_0_1->mcs_index = dci->mcs;
     /* NDI */
-    ulsch_config_pdu_0_1->ndi = dci->ndi;
+    pusch_config_pdu_0_1->pusch_data.new_data_indicator = dci->ndi;
     /* RV */
-    ulsch_config_pdu_0_1->rv = dci->rv;
+    pusch_config_pdu_0_1->pusch_data.rv_index = dci->rv;
     /* HARQ_PROCESS_NUMBER */
-    ulsch_config_pdu_0_1->harq_process_nbr = dci->harq_process_number;
+    pusch_config_pdu_0_1->pusch_data.harq_process_id = dci->harq_process_number;
     /* FIRST_DAI */ //To be implemented, FIXME!!!
     /* SECOND_DAI */ //To be implemented, FIXME!!!
     /* TPC_PUSCH */
     // according to TS 38.213 Table Table 7.1.1-1
     if (dci->tpc_pusch == 0) {
-      ulsch_config_pdu_0_1->accumulated_delta_PUSCH = -1;
-      ulsch_config_pdu_0_1->absolute_delta_PUSCH = -4;
+      pusch_config_pdu_0_1->absolute_delta_PUSCH = -4;
     }
     if (dci->tpc_pusch == 1) {
-      ulsch_config_pdu_0_1->accumulated_delta_PUSCH = 0;
-      ulsch_config_pdu_0_1->absolute_delta_PUSCH = -1;
+      pusch_config_pdu_0_1->absolute_delta_PUSCH = -1;
     }
     if (dci->tpc_pusch == 2) {
-      ulsch_config_pdu_0_1->accumulated_delta_PUSCH = 1;
-      ulsch_config_pdu_0_1->absolute_delta_PUSCH = 1;
+      pusch_config_pdu_0_1->absolute_delta_PUSCH = 1;
     }
     if (dci->tpc_pusch == 3) {
-      ulsch_config_pdu_0_1->accumulated_delta_PUSCH = 3;
-      ulsch_config_pdu_0_1->absolute_delta_PUSCH = 4;
+      pusch_config_pdu_0_1->absolute_delta_PUSCH = 4;
     }
     /* SRS_RESOURCE_IND */
     //FIXME!!
@@ -2087,16 +2069,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 		(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 3) ||
 		(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 4))){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][0];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][1];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][0];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][1];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_partialAndNonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][2];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][3];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][2];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][3];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][4];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][5];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][4];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][5];
 	  }
 	}
 	// Table 7.3.1.1.2-3: transformPrecoder= enabled, or transformPrecoder=disabled and maxRank = 1
@@ -2104,16 +2086,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	     || (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled))
 	    && (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 1)){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][6];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][7];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][6];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][7];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_partialAndNonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][8];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][9];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][8];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][9];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][10];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][11];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][10];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][11];
 	  }
 	}
       }
@@ -2122,12 +2104,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled)
 	    && (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 2)){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][12];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][13];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][12];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][13];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][14];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][15];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][14];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][15];
 	  }
 	}
 	// Table 7.3.1.1.2-5: transformPrecoder= enabled, or transformPrecoder= disabled and maxRank = 1
@@ -2135,12 +2117,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	     || (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled))
 	    && (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 1)){
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][16];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][17];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][16];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][17];
 	  }
 	  if (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.codebook_subset == codebook_subset_nonCoherent){
-	    ulsch_config_pdu_0_1->n_layers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][18];
-	    ulsch_config_pdu_0_1->tpmi     = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][19];
+	    pusch_config_pdu_0_1->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][18];
+	    pusch_config_pdu_0_1->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precod_nbr_layers][19];
 	  }
 	}
       }
@@ -2150,146 +2132,158 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-6
-      ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-      ulsch_config_pdu_0_1->dmrs_ports[0] = dci->antenna_ports;
+      pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
+      pusch_config_pdu_0_1->dmrs_ports = dci->antenna_ports; //TBC
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-7
-      ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-      ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 3)?(dci->antenna_ports-4):(dci->antenna_ports);
-      ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 3)?2:1;
+      pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
+      pusch_config_pdu_0_1->dmrs_ports = (dci->antenna_ports > 3)?(dci->antenna_ports-4):(dci->antenna_ports); //TBC
+      //pusch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 3)?2:1; //FIXME
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-8/9/10/11
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 1)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports-2):(dci->antenna_ports);
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 1)?2:1; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = (dci->antenna_ports > 1)?(dci->antenna_ports-2):(dci->antenna_ports); //TBC
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?0:2):0;
-	ulsch_config_pdu_0_1->dmrs_ports[1] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?2:3):1;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 0)?2:1; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?0:2):0;
+	//pusch_config_pdu_0_1->dmrs_ports[1] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?2:3):1;
       }
       if (rank == 3){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = 0;
-	ulsch_config_pdu_0_1->dmrs_ports[1] = 1;
-	ulsch_config_pdu_0_1->dmrs_ports[2] = 2;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = 0;
+	//pusch_config_pdu_0_1->dmrs_ports[1] = 1;
+	//pusch_config_pdu_0_1->dmrs_ports[2] = 2;
       }
       if (rank == 4){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = 0;
-	ulsch_config_pdu_0_1->dmrs_ports[1] = 1;
-	ulsch_config_pdu_0_1->dmrs_ports[2] = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[3] = 3;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = 0;
+	//pusch_config_pdu_0_1->dmrs_ports[1] = 1;
+	//pusch_config_pdu_0_1->dmrs_ports[2] = 2;
+	//pusch_config_pdu_0_1->dmrs_ports[3] = 3;
       }
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-12/13/14/15
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 1)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 5 ?(dci->antenna_ports-6):(dci->antenna_ports-2)):dci->antenna_ports;
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 6)?2:1;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 1)?2:1; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = (dci->antenna_ports > 1)?(dci->antenna_ports > 5 ?(dci->antenna_ports-6):(dci->antenna_ports-2)):dci->antenna_ports; //TBC
+	//pusch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 6)?2:1; //FIXME
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?2:1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_13[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_13[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 3)?2:1;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 0)?2:1; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_13[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_13[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 3)?2:1; // FIXME
       }
       if (rank == 3){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_14[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_14[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_14[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 1)?2:1;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_14[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_14[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_14[dci->antenna_ports][3];
+	//pusch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 1)?2:1; //FIXME
       }
       if (rank == 4){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_15[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_15[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_15[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_15[dci->antenna_ports][4];
-	ulsch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 1)?2:1;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = 2; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_15[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_15[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_15[dci->antenna_ports][3];
+	//pusch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_15[dci->antenna_ports][4];
+	//pusch_config_pdu_0_1->n_front_load_symb = (dci->antenna_ports > 1)?2:1; //FIXME
       }
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 2) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-16/17/18/19
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 1)?((dci->antenna_ports > 5)?3:2):1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 5 ?(dci->antenna_ports-6):(dci->antenna_ports-2)):dci->antenna_ports;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 1)?((dci->antenna_ports > 5)?3:2):1; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = (dci->antenna_ports > 1)?(dci->antenna_ports > 5 ?(dci->antenna_ports-6):(dci->antenna_ports-2)):dci->antenna_ports; //TBC
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?((dci->antenna_ports > 2)?3:2):1;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_17[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_17[dci->antenna_ports][2];
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 0)?((dci->antenna_ports > 2)?3:2):1; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_17[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_17[dci->antenna_ports][2];
       }
       if (rank == 3){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = (dci->antenna_ports > 0)?3:2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_18[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_18[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_18[dci->antenna_ports][3];
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = (dci->antenna_ports > 0)?3:2; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_18[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_18[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_18[dci->antenna_ports][3];
       }
       if (rank == 4){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = dci->antenna_ports + 2;
-	ulsch_config_pdu_0_1->dmrs_ports[0] = 0;
-	ulsch_config_pdu_0_1->dmrs_ports[1] = 1;
-	ulsch_config_pdu_0_1->dmrs_ports[2] = 2;
-	ulsch_config_pdu_0_1->dmrs_ports[3] = 3;
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = dci->antenna_ports + 2; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = 0;
+	//pusch_config_pdu_0_1->dmrs_ports[1] = 1;
+	//pusch_config_pdu_0_1->dmrs_ports[2] = 2;
+	//pusch_config_pdu_0_1->dmrs_ports[3] = 3;
       }
     }
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 2) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-20/21/22/23
       if (rank == 1){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_20[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_20[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_20[dci->antenna_ports][2];
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = table_7_3_1_1_2_20[dci->antenna_ports][0]; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = table_7_3_1_1_2_20[dci->antenna_ports][1]; //TBC
+	//pusch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_20[dci->antenna_ports][2]; //FIXME
       }
       if (rank == 2){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_21[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_21[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_21[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_21[dci->antenna_ports][3];
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = table_7_3_1_1_2_21[dci->antenna_ports][0]; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_21[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_21[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_21[dci->antenna_ports][3]; //FIXME
       }
       if (rank == 3){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_22[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_22[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_22[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_22[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_22[dci->antenna_ports][4];
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = table_7_3_1_1_2_22[dci->antenna_ports][0]; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_22[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_22[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_22[dci->antenna_ports][3];
+	//pusch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_22[dci->antenna_ports][4]; //FIXME
       }
       if (rank == 4){
-	ulsch_config_pdu_0_1->n_dmrs_cdm_groups = table_7_3_1_1_2_23[dci->antenna_ports][0];
-	ulsch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_23[dci->antenna_ports][1];
-	ulsch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_23[dci->antenna_ports][2];
-	ulsch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_23[dci->antenna_ports][3];
-	ulsch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_23[dci->antenna_ports][4];
-	ulsch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_23[dci->antenna_ports][5];
+	pusch_config_pdu_0_1->num_dmrs_cdm_grps_no_data = table_7_3_1_1_2_23[dci->antenna_ports][0]; //TBC
+	pusch_config_pdu_0_1->dmrs_ports = 0; //FIXME
+	//pusch_config_pdu_0_1->dmrs_ports[0] = table_7_3_1_1_2_23[dci->antenna_ports][1];
+	//pusch_config_pdu_0_1->dmrs_ports[1] = table_7_3_1_1_2_23[dci->antenna_ports][2];
+	//pusch_config_pdu_0_1->dmrs_ports[2] = table_7_3_1_1_2_23[dci->antenna_ports][3];
+	//pusch_config_pdu_0_1->dmrs_ports[3] = table_7_3_1_1_2_23[dci->antenna_ports][4];
+	//pusch_config_pdu_0_1->n_front_load_symb = table_7_3_1_1_2_23[dci->antenna_ports][5]; //FIXME
       }
     }
     /* SRS_REQUEST */
     // if SUL is supported in the cell, there is an additional bit in thsi field and the value of this bit represents table 7.1.1.1-1 TS 38.212 FIXME!!!
-    ulsch_config_pdu_0_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212
+    //pusch_config_pdu_0_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212 //FIXME
     /* CSI_REQUEST */
-    ulsch_config_pdu_0_1->csi_reportTriggerSize = dci->csi_request;
+    //pusch_config_pdu_0_1->csi_reportTriggerSize = dci->csi_request; //FIXME
     /* CBGTI */
-    ulsch_config_pdu_0_1->maxCodeBlockGroupsPerTransportBlock = dci->cbgti;
+    //pusch_config_pdu_0_1->maxCodeBlockGroupsPerTransportBlock = dci->cbgti; //FIXME
     /* PTRS_DMRS */
     if (((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_disabled) &&
 	 (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.dmrs_ul_for_pusch_mapping_type_a.ptrs_uplink_config == 0)) ||
 	((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.transform_precoder == transform_precoder_enabled) &&
 	 (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.max_rank == 1))){
     } else {
-      ulsch_config_pdu_0_1->ptrs_dmrs_association_port = dci->ptrs_dmrs;
+      //pusch_config_pdu_0_1->ptrs_dmrs_association_port = dci->ptrs_dmrs; //FIXME
     }
     /* BETA_OFFSET_IND */
     // Table 9.3-3 in [5, TS 38.213]
-    ulsch_config_pdu_0_1->beta_offset_ind = dci->beta_offset_ind;
+    //pusch_config_pdu_0_1->beta_offset_ind = dci->beta_offset_ind; //FIXME
     /* DMRS_SEQ_INI */
     // FIXME!!
     /* UL_SCH_IND */

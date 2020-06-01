@@ -70,13 +70,12 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr,uint8_t N_RB_UL)
       a_segments = a_segments/273;
     }  
 
-    uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
 
       if (ulsch->harq_processes[i]) {
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->b,a_segments*1056);
           ulsch->harq_processes[i]->b = NULL;
         }
         for (r=0; r<a_segments; r++) {
@@ -458,9 +457,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   for (r=0; r<harq_process->C; r++) {
     E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
 
-#if gNB_TIMING_TRACE
-    start_meas(ulsch_deinterleaving_stats);
-#endif
+
+    start_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////// nr_deinterleaving_ldpc ///////////////////////////////////
@@ -476,13 +474,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     //for (int i =0; i<16; i++)
     //          printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
 
-#if gNB_TIMING_TRACE
-    stop_meas(ulsch_deinterleaving_stats);
-#endif
+    stop_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
-#if gNB_TIMING_TRACE
-    start_meas(ulsch_rate_unmatching_stats);
-#endif
 
 #ifdef DEBUG_ULSCH_DECODING
     LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
@@ -504,6 +497,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     ///////////////////////// harq_process->e =====> harq_process->d /////////////////////////
 
+    start_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
+
     Tbslbrm = nr_compute_tbslbrm(0,nb_rb,n_layers,harq_process->C);
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
@@ -518,15 +513,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                  E,
 				 harq_process->F,
 				 Kr-harq_process->F-2*(p_decParams->Z))==-1) {
-#if gNB_TIMING_TRACE
-      stop_meas(ulsch_rate_unmatching_stats);
-#endif
+
+      stop_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
+
       LOG_E(PHY,"ulsch_decoding.c: Problem in rate_matching\n");
       return (ulsch->max_ldpc_iterations + 1);
     } else {
-#if gNB_TIMING_TRACE
-      stop_meas(ulsch_rate_unmatching_stats);
-#endif
+      stop_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
     }
 
     r_offset += E;
@@ -564,9 +557,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     if (err_flag == 0) {
 
-#if gNB_TIMING_TRACE
-      start_meas(ulsch_turbo_decoding_stats);
-#endif
+      start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 
       //LOG_E(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d A %d ",frame%1024,nr_tti_rx,r,harq_process->C-1, A);
 
@@ -636,9 +627,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
 #endif
 
-#if gNB_TIMING_TRACE
-      stop_meas(ulsch_turbo_decoding_stats);
-#endif
+      stop_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
     }
 
     if ((err_flag == 0) && (ret >= (ulsch->max_ldpc_iterations + 1))) {

@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
+#ifndef __UTILS_MME_CONFIG__H__
+#define __UTILS_MME_CONFIG__H__
+
 #include <pthread.h>
 #include <stdint.h>
 
 #include "mme_default_values.h"
-
-#ifndef MME_CONFIG_H_
-#define MME_CONFIG_H_
 
 #define MME_CONFIG_STRING_MME_CONFIG                     "MME"
 #define MME_CONFIG_STRING_REALM                          "REALM"
@@ -183,4 +183,4 @@ int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config);
 
 //int yyparse(struct mme_config_s *mme_config_p);
 
-#endif /* MME_CONFIG_H_ */
+#endif /* __UTILS_MME_CONFIG__H__ */

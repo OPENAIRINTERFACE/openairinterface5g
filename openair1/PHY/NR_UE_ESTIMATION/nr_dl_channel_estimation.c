@@ -405,39 +405,39 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     }
 
-    void (*idft)(int16_t *,int16_t *, int);
+    idft_size_idx_t idftsizeidx;
 
     switch (ue->frame_parms.ofdm_symbol_size) {
     case 128:
-      idft = idft128;
+      idftsizeidx = IDFT_128;
       break;
 
     case 256:
-      idft = idft256;
+      idftsizeidx = IDFT_256;
       break;
 
     case 512:
-      idft = idft512;
+      idftsizeidx = IDFT_512;
       break;
 
     case 1024:
-      idft = idft1024;
+      idftsizeidx = IDFT_1024;
       break;
 
     case 1536:
-      idft = idft1536;
+      idftsizeidx = IDFT_1536;
       break;
 
     case 2048:
-      idft = idft2048;
+      idftsizeidx = IDFT_2048;
       break;
 
     case 3072:
-      idft = idft3072;
+      idftsizeidx = IDFT_3072;
       break;
 
     case 4096:
-      idft = idft4096;
+      idftsizeidx = IDFT_4096;
       break;
 
     default:
@@ -453,7 +453,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                 if (ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx])
                 {
   		LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, ue->current_thread_id[Ns], symbol, ch_offset);
-  		idft((int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][ch_offset],
+  		idft(idftsizeidx,
+  			 (int16_t*) &ue->pbch_vars[eNB_offset]->dl_ch_estimates[(p<<1)+aarx][ch_offset],
   		     (int16_t*) ue->pbch_vars[eNB_offset]->dl_ch_estimates_time[(p<<1)+aarx],1);
                 }
             }
@@ -617,7 +618,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
 #ifdef DEBUG_PDCCH
-	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+2,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("pilot %u : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+2,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 #endif
 
         multadd_real_vector_complex_scalar(fr,

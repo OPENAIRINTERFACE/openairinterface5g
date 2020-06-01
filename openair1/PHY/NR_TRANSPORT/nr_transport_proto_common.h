@@ -29,8 +29,8 @@
  * \note
  * \warning
  */
-#ifndef __NR_TRANSPORT_PROTO_UE__H__
-#define __NR_TRANSPORT_PROTO_UE__H__
+#ifndef __NR_TRANSPORT_PROTO_COMMON_H__
+#define __NR_TRANSPORT_PROTO_COMMON_H__
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR_UE/defs.h"
 //#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
@@ -42,29 +42,6 @@
 /** @addtogroup _PHY_TRANSPORT_
  * @{
  */
-
-/** \fn free_ue_dlsch(NR_UE_DLSCH_t *dlsch)
-    \brief This function frees memory allocated for a particular DLSCH at UE
-    @param dlsch Pointer to DLSCH to be removed
-*/
-void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch);
-
-/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
-    \brief This function allocates structures for a particular DLSCH at UE
-    @returns Pointer to DLSCH to be removed
-    @param Kmimo Kmimo factor from 36-212/36-213
-    @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
-    @param Nsoft Soft-LLR buffer size from UE-Category
-    @params N_RB_DL total number of resource blocks (determine the operating BW)
-    @param abstraction_flag Flag to indicate abstracted interface
-*/
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
-
-
-void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch);
-
-
-NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
 
 void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
 
@@ -1051,25 +1028,6 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
 
-int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
-                     NR_DL_FRAME_PARMS* frame_parms,
-                     uint8_t harq_pid);
-
-/*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
-  @param[in] in Pointer to input bits
-  @param[in] size of input bits
-  @param[in] Nid cell id
-  @param[in] n_RNTI CRNTI
-  @param[out] out the scrambled bits
-*/
-
-void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out);
-
-
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 						 UE_nr_rxtx_proc_t *proc,
                          int eNB_id,
@@ -1127,17 +1085,6 @@ int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  RX_type_t rx_type,
                  uint8_t i_mod,
                  uint8_t harq_pid);
-
-int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    uint32_t frame,
-                    uint8_t nr_tti_rx,
-                    uint8_t eNB_id,
-                    MIMO_mode_t mimo_mode,
-                    uint32_t high_speed_flag,
-                    uint8_t is_secondary_ue,
-                    int nb_coreset_active,
-                    uint16_t symbol_mon,
-                    NR_SEARCHSPACE_TYPE_t searchSpaceType);
 
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1472,18 +1419,6 @@ void init_transport_channels(uint8_t);
 void generate_RIV_tables(void);
 
 /*!
-  \brief This function performs the initial cell search procedure - PSS detection, SSS detection and PBCH detection.  At the
-  end, the basic frame parameters are known (Frame configuration - TDD/FDD and cyclic prefix length,
-  N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
-  parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
-  @param phy_vars_ue Pointer to UE variables
-  @param mode current running mode
-*/
-int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
-                    PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
-
-
-/*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212.
   @param a Pointer to ulsch SDU
   @param frame_parms Pointer to Frame parameters
@@ -1723,10 +1658,6 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 			     uint8_t prach_ConfigIndex, 
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
-
-void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
-			   int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common);
-
 
 uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 

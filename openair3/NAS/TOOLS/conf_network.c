@@ -43,7 +43,7 @@ void gen_network_record_from_conf(const plmn_conf_param_t *conf, network_record_
 		strcpy(record->fullname, conf->fullname);
 		strcpy(record->shortname, conf->shortname);
 
-		char num[6];
+		char num[60];
 		sprintf(num, "%s%s", conf->mcc, conf->mnc);
 		record->num = atoi(num);
 
@@ -80,7 +80,7 @@ bool parse_plmn_param(config_setting_t *plmn_setting, plmn_conf_param_t *conf) {
 
 bool parse_plmns(config_setting_t *all_plmn_setting, networks_t *networks) {
 	config_setting_t *plmn_setting = NULL;
-	char plmn[10];
+	char plmn[100];
 	int size = 0;
 
 	size = config_setting_length(all_plmn_setting);

@@ -183,10 +183,14 @@ compilations() {
     else
         COV_SCAN_PREFIX=""
     fi
+    if [ "$MAKE_CMD" != "" ]; then
+       $MAKE_CMD $2
+    else 
     if [ "$VERBOSE_COMPILE" == "1" ]; then
        $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
     else
        $COV_SCAN_PREFIX make -j`nproc` $2
+    fi
     fi
 
   } > $dlog/$2.$REL.txt 2>&1
@@ -217,7 +221,7 @@ install_protobuf_from_source(){
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
     rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+    wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
     tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
     cd protobuf-3.3.0/
     ./configure
@@ -353,8 +357,8 @@ install_bladerf_driver_from_source(){
     $SUDO ldconfig
     echo "Downloading FPGA and firmware images"
     cd /tmp/bladeRF
-    wget https://www.nuand.com/fx3/bladeRF_fw_latest.img
-    wget https://www.nuand.com/fpga/hostedx40-latest.rbf
+    wget --tries=3 --retry-connrefused https://www.nuand.com/fx3/bladeRF_fw_latest.img
+    wget --tries=3 --retry-connrefused https://www.nuand.com/fpga/hostedx40-latest.rbf
     sudo mkdir -p /usr/share/Nuand/bladeRF
     sudo mv bladeRF_fw_latest.img /usr/share/Nuand/bladeRF/bladeRF_fw.img
     sudo mv hostedx40-latest.rbf /usr/share/Nuand/bladeRF/hostedx40.rbf
@@ -567,7 +571,7 @@ check_install_additional_tools (){
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
     (
     $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
-    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
+    wget --tries=3 --retry-connrefused -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
     tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
     cd /tmp/netifaces-0.10.4
     $SUDO python setup.py install
@@ -619,6 +623,7 @@ check_install_oai_software() {
 	build-essential \
 	cmake \
 	cmake-curses-gui  \
+        ninja-build \
 	doxygen \
 	doxygen-gui \
 	texlive-latex-base \

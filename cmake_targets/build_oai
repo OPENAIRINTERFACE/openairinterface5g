@@ -408,6 +408,10 @@ function main() {
             SKIP_SHARED_LIB_FLAG="True"
             echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
             shift;;
+    --ninja)
+        CMAKE_CMD="$CMAKE_CMD -GNinja"
+	MAKE_CMD=ninja
+	shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -697,12 +701,7 @@ function main() {
   if [ "$SIMUS_PHY" = "1" ] ; then
     echo_info "Compiling physical unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
-<<<<<<< HEAD
-#simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim"
-simlist="ldpctest"
-=======
     simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim"
->>>>>>> origin/develop
     for f in $simlist ; do
       compilations \
         phy_simulators $f \

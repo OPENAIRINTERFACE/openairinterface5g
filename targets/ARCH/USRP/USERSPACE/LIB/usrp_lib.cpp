@@ -50,6 +50,8 @@
 #include "common_lib.h"
 #include "assertions.h"
 
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include <sys/resource.h>
 
 #ifdef __SSE4_1__
@@ -341,37 +343,13 @@ static int trx_usrp_write(openair0_device *device,
 
   int flags_lsb = flags&0xff;
   int flags_msb = (flags>>8)&0xff;
-    
-#if defined(__x86_64) || defined(__i386__)
-  #ifdef __AVX2__
-      nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[8][nsamps2];
-  #else
-    nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[8][nsamps2];
-  #endif
-#elif defined(__arm__)
-    nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[8][nsamps2];
-#else
-#error Unsupported CPU architecture, USRP device cannot be built
-#endif
 
-  // bring RX data into 12 LSBs for softmodem RX
-  for (int i=0; i<cc; i++) {
-    for (int j=0; j<nsamps2; j++) {
-#if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
-      buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
-#else
-      buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
-#endif
-#elif defined(__arm__)
-      buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
-#endif
-    }
-  }
+  int end;
+  int write_tread = 0;
+  openair0_thread_t *write_thread = &device->write_thread;
+  openair0_write_package_t *write_package = write_thread->write_package;
 
+  AssertFatal( MAX_WRITE_THREAD_BUFFER_SIZE >= cc,"Do not support more than %d cc number\n", MAX_WRITE_THREAD_BUFFER_SIZE);
 
     boolean_t first_packet_state=false,last_packet_state=false;
 
@@ -404,7 +382,37 @@ static int trx_usrp_write(openair0_device *device,
      last_packet_state  = true;
     }
 
-    
+  if(write_tread == 0){
+#if defined(__x86_64) || defined(__i386__)
+  #ifdef __AVX2__
+      nsamps2 = (nsamps+7)>>3;
+      __m256i buff_tx[8][nsamps2];
+  #else
+    nsamps2 = (nsamps+3)>>2;
+    __m128i buff_tx[8][nsamps2];
+  #endif
+#elif defined(__arm__)
+    nsamps2 = (nsamps+3)>>2;
+    int16x8_t buff_tx[8][nsamps2];
+#else
+#error Unsupported CPU architecture, USRP device cannot be built
+#endif
+
+    // bring RX data into 12 LSBs for softmodem RX
+    for (int i=0; i<cc; i++) {
+      for (int j=0; j<nsamps2; j++) {
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+        buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+#else
+        buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
+#endif
+#elif defined(__arm__)
+        buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
+#endif
+      }
+    }
+
     s->tx_md.has_time_spec  = true;
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state;
     s->tx_md.end_of_burst   = last_packet_state;
@@ -432,10 +440,169 @@ static int trx_usrp_write(openair0_device *device,
       ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
     }
 
-  if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+    if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+    return ret;
+  }
+  else{
+    pthread_mutex_lock(&write_thread->mutex_write);
 
-  return ret;
+    if(write_thread->count_write >= MAX_WRITE_THREAD_PACKAGE){
+      LOG_W(HW,"Buffer overflow, count_write = %d, start = %d end = %d, resetting write package\n", write_thread->count_write, write_thread->start, write_thread->end);
+      write_thread->end = write_thread->start;
+      write_thread->count_write = 0;
+    }
+
+    end = write_thread->end;
+    write_package[end].timestamp    = timestamp;
+    write_package[end].nsamps       = nsamps;
+    write_package[end].cc           = cc;
+    write_package[end].first_packet = first_packet_state;
+    write_package[end].last_packet  = last_packet_state;
+    write_package[end].flags_msb    = flags_msb;
+    for (int i = 0; i < cc; i++)
+      write_package[end].buff[i]    = buff[i];
+    write_thread->count_write++;
+    write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
+    pthread_cond_signal(&write_thread->cond_write);
+    pthread_mutex_unlock(&write_thread->mutex_write);
+    return 0;
+  }
+
 }
+
+//-----------------------start--------------------------
+/*! \brief Called to send samples to the USRP RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at which the first sample MUST be sent
+      @param buff Buffer which holds the samples
+      @param nsamps number of samples to be sent
+      @param antenna_id index of the antenna if the device has multiple antennas
+      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+*/
+void *trx_usrp_write_thread(void * arg){ 
+  int ret=0;
+  openair0_device *device=(openair0_device *)arg;
+  openair0_thread_t *write_thread = &device->write_thread;
+  openair0_write_package_t *write_package = write_thread->write_package;
+
+  usrp_state_t *s;
+  int nsamps2;  // aligned to upper 32 or 16 byte boundary
+  int start;
+  openair0_timestamp timestamp;
+  void               **buff;
+  int                nsamps;
+  int                cc;
+  signed char        first_packet;
+  signed char        last_packet;
+  int                flags_msb;
+
+  while(1){
+    pthread_mutex_lock(&write_thread->mutex_write);
+    while (write_thread->count_write == 0) {
+      pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
+    }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 1 );
+    s = (usrp_state_t *)device->priv;
+    start = write_thread->start;
+    timestamp    = write_package[start].timestamp;
+    buff         = write_package[start].buff;
+    nsamps       = write_package[start].nsamps;
+    cc           = write_package[start].cc;
+    first_packet = write_package[start].first_packet;
+    last_packet  = write_package[start].last_packet;
+    flags_msb    = write_package[start].flags_msb;
+    write_thread->start = (write_thread->start + 1)% MAX_WRITE_THREAD_PACKAGE;
+    write_thread->count_write--;
+    pthread_mutex_unlock(&write_thread->mutex_write);
+    /*if(write_thread->count_write != 0){
+      LOG_W(HW,"count write = %d, start = %d, end = %d\n", write_thread->count_write, write_thread->start, write_thread->end);
+    }*/
+
+    #if defined(__x86_64) || defined(__i386__)
+      #ifdef __AVX2__
+        nsamps2 = (nsamps+7)>>3;
+        __m256i buff_tx[8][nsamps2];
+      #else
+        nsamps2 = (nsamps+3)>>2;
+        __m128i buff_tx[8][nsamps2];
+      #endif
+    #elif defined(__arm__)
+      nsamps2 = (nsamps+3)>>2;
+      int16x8_t buff_tx[8][nsamps2];
+    #else
+    #error Unsupported CPU architecture, USRP device cannot be built
+    #endif
+
+    // bring RX data into 12 LSBs for softmodem RX
+    for (int i=0; i<cc; i++) {
+      for (int j=0; j<nsamps2; j++) {
+        #if defined(__x86_64__) || defined(__i386__)
+          #ifdef __AVX2__
+            buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+          #else
+            buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
+          #endif
+        #elif defined(__arm__)
+          buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
+        #endif
+      }
+    }
+
+    
+    s->tx_md.has_time_spec  = true;
+    s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet;
+    s->tx_md.end_of_burst   = last_packet;
+    s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
+    s->tx_count++;
+
+    // bit 3 enables gpio (for backward compatibility)
+    if (flags_msb&8) {
+      // push GPIO bits 7-9 from flags_msb
+      int gpio789=(flags_msb&7)<<7;
+      s->usrp->set_command_time(s->tx_md.time_spec);
+      s->usrp->set_gpio_attr("FP0", "OUT", gpio789, 0x380);
+      s->usrp->clear_command_time();
+    }
+
+    if (cc>1) {
+      std::vector<void *> buff_ptrs;
+
+      for (int i=0; i<cc; i++)
+        buff_ptrs.push_back(&(((int16_t *)buff_tx[i])[0]));
+
+      ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
+    } 
+    else {
+      ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
+    }
+
+    if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_USRP_SEND_RETURN, ret );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 0 );
+
+    if(0) break;
+  }
+
+  return NULL;
+}
+
+int trx_write_init(openair0_device *device){
+
+  uhd::set_thread_priority_safe(1.0);
+  openair0_thread_t *write_thread = &device->write_thread;
+  printf("initializing tx write thread\n");
+
+  write_thread->start              = 0;
+  write_thread->end                = 0;
+  write_thread->count_write        = 0;
+  printf("end of tx write thread\n");
+
+  pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
+
+  return(0);
+}
+
+//---------------------end-------------------------
 
 /*! \brief Receive samples from hardware.
  * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
@@ -765,6 +932,7 @@ extern "C" {
     device->trx_stop_func  = trx_usrp_stop;
     device->trx_set_freq_func = trx_usrp_set_freq;
     device->trx_set_gains_func   = trx_usrp_set_gains;
+    device->trx_write_init = trx_write_init;
 
 
     // hotfix! to be checked later
@@ -835,22 +1003,16 @@ extern "C" {
   
     if (args.find("clock_source")==std::string::npos) {
 	if (openair0_cfg[0].clock_source == internal) {
-	  //in UHD 3.14 we could use
-	  //s->usrp->set_sync_source("clock_source=internal","time_source=internal");
-	  s->usrp->set_time_source("internal");
 	  s->usrp->set_clock_source("internal");
-	  LOG_D(HW,"Setting time and clock source to internal\n");
+	  LOG_D(HW,"Setting clock source to internal\n");
 	}
 	else if (openair0_cfg[0].clock_source == external ) {
-	  //s->usrp->set_sync_source("clock_source=external","time_source=external");
-	  s->usrp->set_time_source("external");
 	  s->usrp->set_clock_source("external");
-	  LOG_D(HW,"Setting time and clock source to external\n");
+	  LOG_D(HW,"Setting clock source to external\n");
 	}
 	else if (openair0_cfg[0].clock_source==gpsdo) {
 	  s->usrp->set_clock_source("gpsdo");
-	  s->usrp->set_time_source("gpsdo");
-	  LOG_D(HW,"Setting time and clock source to gpsdo\n");
+	  LOG_D(HW,"Setting clock source to gpsdo\n");
 	}
 	else { 
 	  LOG_W(HW,"Clock source set neither in usrp_args nor on command line, using default!\n");
@@ -861,7 +1023,31 @@ extern "C" {
 	  LOG_W(HW,"Clock source set in both usrp_args and in clock_source, ingnoring the latter!\n");
 	}
   }
-  
+
+    if (args.find("time_source")==std::string::npos) {
+	if (openair0_cfg[0].time_source == internal) {
+	  s->usrp->set_time_source("internal");
+	  LOG_D(HW,"Setting time source to internal\n");
+	}
+	else if (openair0_cfg[0].time_source == external ) {
+	  s->usrp->set_time_source("external");
+	  LOG_D(HW,"Setting time source to external\n");
+	}
+	else if (openair0_cfg[0].time_source==gpsdo) {
+	  s->usrp->set_time_source("gpsdo");
+	  LOG_D(HW,"Setting time source to gpsdo\n");
+	}
+	else { 
+	  LOG_W(HW,"Time source set neither in usrp_args nor on command line, using default!\n");
+	}
+    }
+    else {
+	if (openair0_cfg[0].clock_source != unset) {
+	  LOG_W(HW,"Time source set in both usrp_args and in time_source, ingnoring the latter!\n");
+	}
+  }
+
+    
   if (s->usrp->get_clock_source(0) == "gpsdo") {
     s->use_gps = 1;
   
@@ -1061,7 +1247,9 @@ extern "C" {
   //s->usrp->set_time_source("external");
   // display USRP settings
   LOG_I(HW,"Actual master clock: %fMHz...\n",s->usrp->get_master_clock_rate()/1e6);
-  sleep(1);
+  LOG_I(HW,"Actual clock source %s...\n",s->usrp->get_clock_source(0).c_str());
+  LOG_I(HW,"Actual time source %s...\n",s->usrp->get_time_source(0).c_str());
+   sleep(1);
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
   int samples=openair0_cfg[0].sample_rate;

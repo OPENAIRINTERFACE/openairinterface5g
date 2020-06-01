@@ -93,27 +93,41 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                          nfapi_ul_config_request_pdu_t *ul_config_pdu,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present, int index);
 
-//int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, nfapi_tx_request_pdu_t* tx_request_pdu_list);
-int dl_config_req_UE_MAC(nfapi_dl_config_request_t* req, module_id_t Mod_id);
+void dl_config_req_UE_MAC_dci(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *dci,
+                              nfapi_dl_config_request_pdu_t *dlsch,
+                              int num_ue);
+void dl_config_req_UE_MAC_bch(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *bch,
+                              int num_ue);
+void dl_config_req_UE_MAC_mch(int sfn,
+                              int sf,
+                              nfapi_dl_config_request_pdu_t *bch,
+                              int num_ue);
 
 int tx_req_UE_MAC(nfapi_tx_request_t* req);
 
 
-int hi_dci0_req_UE_MAC(nfapi_hi_dci0_request_t* req, module_id_t Mod_id);
+void hi_dci0_req_UE_MAC(int sfn,
+                        int sf,
+                        nfapi_hi_dci0_request_pdu_t* bch,
+                        int num_ue);
 
 // The following set of memcpy functions should be getting called as callback functions from
 // pnf_p7_subframe_ind.
 
-int memcpy_dl_config_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_dl_config_request_t* req);
+int memcpy_dl_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_dl_config_request_t* req);
 
 
-int memcpy_ul_config_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req);
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req);
 
 
 int memcpy_tx_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_tx_request_t* req);
 
 
-int memcpy_hi_dci0_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req);
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req);
 
 void UE_config_stub_pnf(void);
 

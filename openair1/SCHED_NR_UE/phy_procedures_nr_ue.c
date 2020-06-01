@@ -86,17 +86,6 @@ char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 extern double cpuf;
 
-
-
-int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    uint32_t frame,
-                    uint32_t slot);
-
-uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
-				  int frame,
-				  int nr_tti_rx,
-				  fapi_nr_dci_indication_t *dci_ind);
-
 /*
 int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint8_t eNB_id,
@@ -2460,7 +2449,7 @@ ue->prach_resources[eNB_id]->ra_PreambleIndex = preamble_tx;
     ue->tx_total_RE[nr_tti_tx] = 96;
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-    ue->prach_vars[eNB_id]->amp = get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
+    ue->prach_vars[eNB_id]->amp = nr_get_tx_amp(ue->tx_power_dBm[nr_tti_tx],
 					     ue->tx_power_max_dBm,
 					     ue->frame_parms.N_RB_UL,
 					     6);

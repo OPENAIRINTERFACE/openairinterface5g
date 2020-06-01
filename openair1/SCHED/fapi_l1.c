@@ -596,7 +596,7 @@ void handle_uci_sr_pdu(PHY_VARS_eNB *eNB,
   uci->frame               = frame;
   uci->subframe            = subframe;
   uci->rnti                = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti;
-  uci->ue_id               = find_dlsch(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
+  uci->ue_id               = find_ulsch(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
   uci->type                = SR;
   uci->pucch_fmt           = pucch_format1;
   uci->num_antenna_ports   = 1;
@@ -622,7 +622,7 @@ void handle_uci_sr_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_
   uci->frame               = frame;
   uci->subframe            = subframe;
   uci->rnti                = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti;
-  uci->ue_id               = find_dlsch(ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
+  uci->ue_id               = find_ulsch(ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
   uci->type                = HARQ_SR;
   uci->num_antenna_ports   = 1;
   uci->num_pucch_resources = 1;
@@ -644,7 +644,7 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
   uci->frame             = frame;
   uci->subframe          = subframe;
   uci->rnti              = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
-  uci->ue_id             = find_dlsch(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
+  uci->ue_id             = find_ulsch(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
   uci->type              = HARQ;
   uci->srs_active        = srs_active;
   uci->num_antenna_ports = ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel11.num_ant_ports;
@@ -732,7 +732,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE) {
     AssertFatal(1==0,"NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE not handled yet\n");
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE) {
-    AssertFatal((UE_id = find_uci(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,
+  AssertFatal((UE_id = find_uci(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,
                                   proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE UCI for rnti %x\n",ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti);
     handle_uci_sr_pdu(eNB,UE_id,ul_config_pdu,frame,subframe,srs_present);
@@ -745,9 +745,8 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   }
 }
 
-void schedule_response(Sched_Rsp_t *Sched_INFO) {
+void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
   PHY_VARS_eNB *eNB;
-  L1_rxtx_proc_t *proc;
   // copy data from L2 interface into L1 structures
   module_id_t               Mod_id       = Sched_INFO->module_id;
   uint8_t                   CC_id        = Sched_INFO->CC_id;
@@ -767,7 +766,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   AssertFatal(RC.eNB[Mod_id][CC_id]!=NULL,"RC.eNB[%d][%d] is null\n",Mod_id,CC_id);
   eNB         = RC.eNB[Mod_id][CC_id];
   fp          = &eNB->frame_parms;
-  proc        = &eNB->proc.L1_proc;
   /* TODO: check that following line is correct - in the meantime it is disabled */
   //if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
@@ -1020,11 +1018,11 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
 /*Dummy functions*/
 
-int memcpy_dl_config_req (nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
+int memcpy_dl_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
   return 0;
 }
 
-int memcpy_ul_config_req (nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
   return 0;
 }
 

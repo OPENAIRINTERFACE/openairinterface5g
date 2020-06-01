@@ -69,12 +69,11 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
       a_segments = a_segments/273;
     }  
  
-    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
+          free16(dlsch->harq_processes[i]->b,a_segments*1056);
           dlsch->harq_processes[i]->b = NULL;
         }
 

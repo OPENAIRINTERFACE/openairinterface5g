@@ -38,15 +38,13 @@
 #include "openairinterface5g_limits.h"
 #include "PHY/TOOLS/time_meas.h"
 #include "defs_common.h"
+#include <openair2/PHY_INTERFACE/IF_Module.h>
 
 
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
 
 
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 
 typedef enum {
   normal_txrx=0,
@@ -92,7 +90,6 @@ typedef enum {
   synch_to_other,          // synch to another source_(timer, other RU)
   synch_to_mobipass_standalone  // special case for mobipass in standalone mode
 } node_timing_t;
-#endif
 
 
 typedef struct {
@@ -540,6 +537,8 @@ typedef struct RU_t_s {
   void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *gNB, struct RU_t_s *ru, int frame, int subframe);
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru, int frame, int subframe);
+  /// function pointer to start a thread of tx write for USRP.
+  int (*start_write_thread)(struct RU_t_s *ru);
 
   /// function pointer to NB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);

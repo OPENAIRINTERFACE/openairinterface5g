@@ -137,7 +137,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
 
 
   int N_reg = n_rb * pdcch_pdu_rel15->DurationSymbols;
-  int C;
+  int C=-1;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
     int  L = pdcch_pdu_rel15->AggregationLevel[d];
@@ -210,7 +210,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
-    uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
 
 
     int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->RNTI[i],gNB,SEARCH_EXIST_OR_FREE);
@@ -248,7 +248,7 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
-    uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
 
     // if there's no DL DCI then generate CCE list
     if (gNB->pdcch_pdu) nr_fill_cce_list(gNB,0);  

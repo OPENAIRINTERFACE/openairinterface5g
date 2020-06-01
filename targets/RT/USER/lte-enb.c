@@ -235,10 +235,10 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
     new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
     dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
     // L2-emulator can work only one eNB.
-    //      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    //      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
-    memcpy(&pre_scd_eNB_UE_stats,&RC.mac[0]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    //      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    //      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_eNB_UE_stats,&RC.mac[0]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
     AssertFatal((ret= pthread_mutex_lock(&ru->proc.mutex_pre_scd))==0,"[eNB] error locking proc mutex for eNB pre scd, return %d\n",ret);
     ru->proc.instance_pre_scd++;
 
@@ -261,7 +261,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc);
   AssertFatal((ret= pthread_mutex_unlock(&eNB->UL_INFO_mutex))==0,"error unlocking UL_INFO_mutex, return %d\n",ret);
   /* this conflict resolution may be totally wrong, to be tested */
   /* CONFLICT RESOLUTION: BEGIN */
@@ -851,9 +851,7 @@ void init_eNB_proc(int inst) {
 
   for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
     eNB = RC.eNB[inst][CC_id];
-#ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing eNB processes instance:%d CC_id %d \n",inst,CC_id);
-#endif
     proc = &eNB->proc;
     L1_proc                        = &proc->L1_proc;
     L1_proc_tx                     = &proc->L1_proc_tx;
@@ -1247,9 +1245,7 @@ void init_eNB(int single_thread_flag,
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       LOG_I(PHY,"Initializing eNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
-#ifndef OCP_FRAMEWORK
       LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
-#endif
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
       eNB->if_inst->schedule_response   = schedule_response;

@@ -570,8 +570,8 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
 void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig){
-  gNB_RrcConfigurationReq  *common_configuration;
-  common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
+  //gNB_RrcConfigurationReq  *common_configuration;
+  //common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
   //Fill servingcellconfigcommon config value
   //Fill common config to structure
   //  rrc->configuration = common_configuration;
