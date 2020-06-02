@@ -44,7 +44,6 @@
 /*********************************include files-> AVX2**********************/
 /*----------------------------BG1-----------------------------------------*/
 
-#ifndef __AVX512BW__
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z384_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z352_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z320_13_AVX2.c"
@@ -160,7 +159,7 @@
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z3_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z2_13_AVX2.c"
 
-#else
+#ifdef __AVX512BW__
 
 
 /**************************include files for -->AVX512 ******************/
