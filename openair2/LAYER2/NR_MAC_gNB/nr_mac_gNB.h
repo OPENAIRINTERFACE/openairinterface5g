@@ -116,6 +116,8 @@ typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
   NR_sched_pucch *sched_pucch;
+  uint16_t ta_timer;
+  int16_t ta_update;
 } NR_UE_sched_ctrl_t;
 
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/

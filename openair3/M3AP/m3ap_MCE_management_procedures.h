@@ -26,8 +26,8 @@
  * \version 0.1
  */
 
-#ifndef M3AP_MCE_MANAGEMENT_PROCEDURES_H_
-#define M3AP_MCE_MANAGEMENT_PROCEDURES_H
+#ifndef __M3AP_MCE_MANAGEMENT_PROCEDURES__H__
+#define __M3AP_MCE_MANAGEMENT_PROCEDURES__H__
 
 void m3ap_MCE_prepare_internal_data(void);
 
@@ -50,4 +50,4 @@ struct m3ap_MCE_data_s *m3ap_get_MCE(m3ap_MCE_instance_t *instance_p,
                                      int32_t assoc_id,
                                      uint16_t cnx_id);
 
-#endif /* M3AP_MCE_MANAGEMENT_PROCEDURES_H_ */
+#endif /* __M3AP_MCE_MANAGEMENT_PROCEDURES__H__ */

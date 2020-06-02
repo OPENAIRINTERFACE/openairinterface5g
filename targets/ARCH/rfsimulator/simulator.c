@@ -682,6 +682,9 @@ int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cf
 int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
+int rfsimulator_write_init(openair0_device *device){
+  return 0;
+}
 __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // to change the log level, use this on command line
@@ -705,6 +708,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->type = USRP_B200_DEV;
   device->openair0_cfg=&openair0_cfg[0];
   device->priv = rfsimulator;
+  device->trx_write_init = rfsimulator_write_init;
 
   for (int i=0; i<FD_SETSIZE; i++)
     rfsimulator->buf[i].conn_sock=-1;
