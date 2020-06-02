@@ -25,8 +25,11 @@ extern "C" {
 #include "nfapi_interface.h"
 #include "debug.h"
 #include <openair2/PHY_INTERFACE/IF_Module.h>
+#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 
 #include <sys/types.h>
+
 
 /*! This enum is used to describe the states of the pnf 
  */
@@ -166,7 +169,7 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the PARAM.response after receiving the
 	 *  PARAM.request. This can be done in the call back. 
 	 */
-	int (*param_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_param_request_t* req);
+	int (*param_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_nr_param_request_scf_t* req);
 	
 	/*! A callback for the CONFIG.request
 	 *  \param config A pointer to the pnf configuration
@@ -178,7 +181,7 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the CONFIG.response after receiving the
 	 *  CONFIG.request. This can be done in the call back. 
 	 */
-	int (*config_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_config_request_t* req);
+	int (*config_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_nr_config_request_scf_t* req);
 	
 	/*! A callback for the START.request
 	 *  \param config A pointer to the pnf configuration

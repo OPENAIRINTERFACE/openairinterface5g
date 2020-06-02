@@ -24,6 +24,8 @@
 #include <errno.h>
 
 #include "vnf.h"
+#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 
 
 void* vnf_malloc(nfapi_vnf_config_t* config, size_t size)
@@ -1024,6 +1026,12 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 					// handle now if complete message in one or more segments
 					if ((flags & 0x80) == 0x80)
 					{
+						printf("\nVNF RECEIVES:\n");
+						for(int i=0; i<message_size; i++){
+							printf("%d", read_buffer[i]);
+						}
+						printf("\n");
+
 						vnf_handle_p4_p5_message(read_buffer, message_size, pnf->p5_idx, config);
 					}
 					else
@@ -1051,6 +1059,12 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 
 static int vnf_send_p5_msg(nfapi_vnf_pnf_info_t* pnf, const void *msg, int len, uint8_t stream)
 {
+	printf("\n MESSAGE SENT: \n");
+	for(int i=0; i<len; i++){
+		printf("%d", *(uint8_t *)(msg + i));
+	}
+	printf("\n");
+
 	//NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s len:%d stream:%d\n", __FUNCTION__, len, stream);
 
 	int result = sctp_sendmsg(pnf->p5_sock, msg, len, (struct sockaddr*)&pnf->p5_pnf_sockaddr, sizeof(pnf->p5_pnf_sockaddr),1, 0, stream, 0, 4);

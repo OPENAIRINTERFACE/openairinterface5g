@@ -33,11 +33,13 @@
 
 #include <nfapi_interface.h>
 #include <nfapi.h>
+#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include <debug.h>
 
 
 // Pack routines
-
+//TODO: Add pacl/unpack fns for uint32 and uint64
 static uint8_t pack_pnf_param_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t* end, nfapi_p4_p5_codec_config_t* config)
 {
 	nfapi_pnf_param_request_t* request = (nfapi_pnf_param_request_t*)msg;

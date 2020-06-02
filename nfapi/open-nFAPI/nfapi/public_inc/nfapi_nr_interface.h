@@ -10,7 +10,7 @@
 #define _NFAPI_NR_INTERFACE_H_
 
 #include "nfapi_interface.h"
-#include <nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h>
+#include "/home/glab/NR_nfapi/openairinterface5g/nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
@@ -22,41 +22,8 @@
 // nFAPI enums
 
 
-
 //These TLVs are used exclusively by nFAPI
-typedef struct
-{
-  // These TLVs are used to setup the transport connection between VNF and PNF
-  // nfapi_ipv4_address_t p7_vnf_address_ipv4;
-  // nfapi_ipv6_address_t p7_vnf_address_ipv6;
-  // nfapi_uint16_tlv_t p7_vnf_port;
 
-  // nfapi_ipv4_address_t p7_pnf_address_ipv4;
-  // nfapi_ipv6_address_t p7_pnf_address_ipv6;
-  // nfapi_uint16_tlv_t p7_pnf_port;
-  
-  // // These TLVs are used to setup the transport connection between VNF and PNF
-  // nfapi_uint8_tlv_t dl_ue_per_sf;
-  // nfapi_uint8_tlv_t ul_ue_per_sf;
-
-  // These TLVs are used by PNF to report its RF capabilities to the VNF software
-  nfapi_rf_bands_t rf_bands;
-
-  // These TLVs are used by the VNF to configure the synchronization with the PNF.
-  // nfapi_uint8_tlv_t timing_window;
-  // nfapi_uint8_tlv_t timing_info_mode;
-  // nfapi_uint8_tlv_t timing_info_period;
-
-  // These TLVs are used by the VNF to configure the RF in the PNF
-  // nfapi_uint16_tlv_t max_transmit_power;
-  nfapi_uint32_tlv_t nrarfcn;
-
-  // nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
-  // nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;
-  // nfapi_nmm_frequency_bands_t nmm_lte_frequency_bands;
-  // nfapi_uint8_tlv_t nmm_uplink_rssi_supported;
-
-} nfapi_nr_nfapi_t;
 
 #define NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG 0x5100
 #define NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG 0x5101

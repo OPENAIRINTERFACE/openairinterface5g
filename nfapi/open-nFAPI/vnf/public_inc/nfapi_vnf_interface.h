@@ -19,6 +19,7 @@
 
 #include "nfapi_interface.h"
 #include "nfapi_nr_interface_scf.h"
+ 	#include "nfapi_nr_interface.h"
 
 #include "debug.h"
 
@@ -248,7 +249,7 @@ typedef struct nfapi_vnf_config
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
-	int (*param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_response_t* resp);
+	int (*param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_response_scf_t* resp);
 	
 	/*! A callback for the CONFIG.response
      *  \param config A pointer to the vnf configuration
@@ -266,7 +267,8 @@ typedef struct nfapi_vnf_config
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */
-	int (*config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_response_t* resp);
+	//TODO: Add nfapi_nr_config_response_scf_t struct
+	int (*config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_response_scf_t* resp);
 	
 	/*! A callback for the START.resp
      *  \param config A pointer to the vnf configuration

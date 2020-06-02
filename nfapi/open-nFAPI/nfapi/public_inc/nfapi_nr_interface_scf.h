@@ -11,6 +11,7 @@
 
 #include "stddef.h"
 #include "nfapi_interface.h"
+#include "nfapi_nr_interface.h"
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
@@ -24,25 +25,7 @@
 #define NFAPI_MAX_NUM_CB 8
 
 // Extension to the generic structures for single tlv values
-typedef struct {
-	nfapi_tl_t tl;
-	int32_t value;
-} nfapi_int32_tlv_t;
 
-typedef struct {
-	nfapi_tl_t tl;
-	uint32_t value;
-} nfapi_uint32_tlv_t;
-
-typedef struct {
-	nfapi_tl_t tl;
-	int64_t value;
-} nfapi_int64_tlv_t;
-
-typedef struct {
-	nfapi_tl_t tl;
-	uint64_t value;
-} nfapi_uint64_tlv_t;
 
 typedef enum {
   NFAPI_NR_DMRS_TYPE1=0,
@@ -93,6 +76,8 @@ typedef enum {
 // SCF222_5G-FAPI_PHY_SPI_Specificayion.pdf Section 3.3
 
 //3.3.1 PARAM
+
+
 
 //same with nfapi_param_request_t
 typedef struct {
@@ -463,9 +448,39 @@ typedef struct
 
 } nfapi_nr_measurement_config_t;
 
-
+/* PARAM.REQUEST */
 typedef struct {
-  uint8_t num_tlv;
+  nfapi_p4_p5_message_header_t  header;
+	nfapi_vendor_extension_tlv_t  vendor_extension;
+} nfapi_nr_param_request_scf_t;
+
+/* PARAM.RESPONSE */
+typedef struct {
+  nfapi_p4_p5_message_header_t  header;
+  nfapi_nr_param_errors_e       error_code;
+  
+  uint8_t                       number_of_tlvs;
+  nfapi_vendor_extension_tlv_t  vendor_extension;
+
+  nfapi_nr_cell_param_t         cell_param;
+  nfapi_nr_carrier_param_t      carrier_param;
+  nfapi_nr_pdcch_param_t        pdcch_param;
+  nfapi_nr_pucch_param_t        pucch_param;
+  nfapi_nr_pdsch_param_t        pdsch_param;
+  nfapi_nr_pusch_param_t        pusch_param;
+  nfapi_nr_prach_param_t        prach_param;
+  nfapi_nr_measurement_param_t  measurement_param;
+  nfapi_nr_nfapi_t              nfapi_config;
+} nfapi_nr_param_response_scf_t;
+
+/* CONFIG.REQUEST */
+typedef struct {
+  nfapi_p4_p5_message_header_t  header;
+  nfapi_nr_param_errors_e       error_code;
+
+  uint8_t                       num_tlv;
+  nfapi_vendor_extension_tlv_t  vendor_extension;
+
   nfapi_nr_carrier_config_t     carrier_config;
   nfapi_nr_cell_config_t        cell_config;
   nfapi_nr_ssb_config_t         ssb_config;
@@ -473,8 +488,13 @@ typedef struct {
   nfapi_nr_ssb_table_t          ssb_table;
   nfapi_nr_tdd_table_t          tdd_table;
   nfapi_nr_measurement_config_t measurement_config;
+  nfapi_nr_nfapi_t              nfapi_config;
 } nfapi_nr_config_request_scf_t;
 
+/* CONFIG.RESPONSE */
+typedef struct {
+  // TODO: add here
+} nfapi_nr_config_response_scf_t;
 
 //------------------------------//
 //3.3.3 START

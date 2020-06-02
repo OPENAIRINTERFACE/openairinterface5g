@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 
 nfapi_pnf_config_t* nfapi_pnf_config_create()
 {

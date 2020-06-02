@@ -30,6 +30,9 @@
 #include "debug.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "nfapi_pnf_interface.h"
+#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
+
 #include "nfapi.h"
 #include "nfapi_pnf.h"
 #include "common/ran_context.h"
@@ -52,6 +55,7 @@ extern RAN_CONTEXT_t RC;
 
 #include "PHY/INIT/phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #define NUM_P5_PHY 2
 
@@ -452,7 +456,7 @@ int pnf_stop_request(nfapi_pnf_config_t *config, nfapi_pnf_stop_request_t *req) 
   return 0;
 }
 
-int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_param_request_t *req) {
+int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_nr_param_request_scf_t *req) {
   printf("[PNF] Received NFAPI_PARAM_REQUEST phy_id:%d\n", req->header.phy_id);
   //pnf_info* pnf = (pnf_info*)(config->user_data);
   nfapi_param_response_t nfapi_resp;
@@ -463,12 +467,12 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   nfapi_resp.error_code = 0; // DJP - what value???
   struct sockaddr_in pnf_p7_sockaddr;
   pnf_p7_sockaddr.sin_addr.s_addr = inet_addr(pnf->phys[0].local_addr);
-  nfapi_resp.nfapi_config.p7_pnf_address_ipv4.tl.tag = NFAPI_NFAPI_P7_PNF_ADDRESS_IPV4_TAG;
+  nfapi_resp.nfapi_config.p7_pnf_address_ipv4.tl.tag = NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG;
   memcpy(nfapi_resp.nfapi_config.p7_pnf_address_ipv4.address, &pnf_p7_sockaddr.sin_addr.s_addr, 4);
   nfapi_resp.num_tlv++;
   // P7 PNF Port
-  nfapi_resp.nfapi_config.p7_pnf_port.tl.tag = NFAPI_NFAPI_P7_PNF_PORT_TAG;
-  nfapi_resp.nfapi_config.p7_pnf_port.value = 32123; // DJP - hard code alert!!!! FIXME TODO
+  nfapi_resp.nfapi_config.p7_pnf_port.tl.tag = NFAPI_NR_NFAPI_P7_PNF_PORT_TAG;
+  nfapi_resp.nfapi_config.p7_pnf_port.value = pnf->phys[0].local_port; // 32123; // DJP - hard code alert!!!! FIXME TODO
   nfapi_resp.num_tlv++;
   nfapi_pnf_param_resp(config, &nfapi_resp);
   printf("[PNF] Sent NFAPI_PARAM_RESPONSE phy_id:%d number_of_tlvs:%u\n", req->header.phy_id, nfapi_resp.num_tlv);
@@ -476,24 +480,26 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   return 0;
 }
 
-int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_config_request_t *req) {
+int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_nr_config_request_scf_t *req) {
   printf("[PNF] Received NFAPI_CONFIG_REQ phy_id:%d\n", req->header.phy_id);
   pnf_info *pnf = (pnf_info *)(config->user_data);
   uint8_t num_tlv = 0;
   //struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   //  In the case of nfapi_mode = 3 (UE = PNF) we should not have dependency on any eNB var. So we aim
   // to keep only the necessary just to keep the nfapi FSM rolling by sending a dummy response.
-  LTE_DL_FRAME_PARMS *fp;
+  NR_DL_FRAME_PARMS *fp;
 
   if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
-    struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-    fp = &eNB->frame_parms;
+    struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+    fp = &gNB->frame_parms;
   } else {
-    fp = (LTE_DL_FRAME_PARMS *) malloc(sizeof(LTE_DL_FRAME_PARMS));
+    fp = (NR_DL_FRAME_PARMS *) malloc(sizeof(NR_DL_FRAME_PARMS));
   }
 
   phy_info *phy_info = pnf->phys;
 
+  // TODO: change all these tags to NR
+  #if 0
   if(req->nfapi_config.timing_window.tl.tag == NFAPI_NFAPI_TIMING_WINDOW_TAG) {
     phy_info->timing_window = req->nfapi_config.timing_window.value;
     printf("Phy_info:Timing window:%u NFAPI_CONFIG:timing_window:%u\n", phy_info->timing_window, req->nfapi_config.timing_window.value);
@@ -650,14 +656,14 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     printf("[PNF] CONFIG_REQUEST[num_tlv:%d] TLVs processed:%d\n", req->num_tlv, num_tlv);
     printf("[PNF] Simulating PHY CONFIG - DJP\n");
-    PHY_Config_t phy_config;
-    phy_config.Mod_id = 0;
-    phy_config.CC_id=0;
-    phy_config.cfg = req;
-    phy_config_request(&phy_config);
-    dump_frame_parms(fp);
+    NR_PHY_Config_t nr_phy_config;
+    nr_phy_config.Mod_id = 0;
+    nr_phy_config.CC_id=0;
+    nr_phy_config.cfg = req;
+    nr_phy_config_request(&nr_phy_config);
+    nr_dump_frame_parms(fp);
   }
-
+  #endif
   phy_info->remote_port = req->nfapi_config.p7_vnf_port.value;
   struct sockaddr_in vnf_p7_sockaddr;
   memcpy(&vnf_p7_sockaddr.sin_addr.s_addr, &(req->nfapi_config.p7_vnf_address_ipv4.address[0]), 4);
@@ -674,7 +680,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
 
   if(NFAPI_MODE==NFAPI_UE_STUB_PNF)
     free(fp);
-
+ 
   return 0;
 }
 

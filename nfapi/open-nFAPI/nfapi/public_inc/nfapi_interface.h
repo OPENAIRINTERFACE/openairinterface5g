@@ -589,6 +589,26 @@ typedef struct {
 // Generic strucutre for single tlv value.
 typedef struct {
 	nfapi_tl_t tl;
+	int32_t value;
+} nfapi_int32_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint32_t value;
+} nfapi_uint32_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	int64_t value;
+} nfapi_int64_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint64_t value;
+} nfapi_uint64_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
 	uint16_t value;
 } nfapi_uint16_tlv_t;
 
@@ -3652,6 +3672,42 @@ typedef struct {
 	uint32_t error_code;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nmm_stop_response_t;
+
+typedef struct
+{
+  // TODO: see if this needs to be uncommented
+
+  // These TLVs are used to setup the transport connection between VNF and PNF
+  nfapi_ipv4_address_t p7_vnf_address_ipv4;
+  nfapi_ipv6_address_t p7_vnf_address_ipv6;
+  nfapi_uint16_tlv_t p7_vnf_port;
+
+  nfapi_ipv4_address_t p7_pnf_address_ipv4;
+  nfapi_ipv6_address_t p7_pnf_address_ipv6;
+  nfapi_uint16_tlv_t p7_pnf_port;
+  
+  // // These TLVs are used to setup the transport connection between VNF and PNF
+  nfapi_uint8_tlv_t dl_ue_per_sf;
+  nfapi_uint8_tlv_t ul_ue_per_sf;
+
+  // These TLVs are used by PNF to report its RF capabilities to the VNF software
+  nfapi_rf_bands_t rf_bands;
+
+  // These TLVs are used by the VNF to configure the synchronization with the PNF.
+  nfapi_uint8_tlv_t timing_window;
+  nfapi_uint8_tlv_t timing_info_mode;
+  nfapi_uint8_tlv_t timing_info_period;
+
+  // These TLVs are used by the VNF to configure the RF in the PNF
+  nfapi_uint16_tlv_t max_transmit_power;
+  nfapi_uint32_tlv_t nrarfcn;
+
+  // nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
+  // nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;
+  // nfapi_nmm_frequency_bands_t nmm_lte_frequency_bands;
+  // nfapi_uint8_tlv_t nmm_uplink_rssi_supported;
+
+} nfapi_nr_nfapi_t;
 
 //
 // Configuration options for the encode decode functions

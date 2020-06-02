@@ -360,6 +360,13 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 */
 }
+
+//Adding nr_schedule_handler
+void install_nr_schedule_handlers(NR_IF_Module_t *if_inst)
+{
+  if_inst->NR_PHY_config_req = nr_phy_config_request;
+  if_inst->NR_Schedule_response = nr_schedule_response;
+}
 /*
 void install_schedule_handlers(IF_Module_t *if_inst)
 {
