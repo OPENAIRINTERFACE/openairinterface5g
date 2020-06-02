@@ -231,9 +231,46 @@ void oai_enb_init(void) {
   init_eNB_afterRU();
 }
 
+
+void oai_create_gnb(void) {
+  int bodge_counter=0;
+  PHY_VARS_gNB *gNB = RC.gNB[0];
+  RC.nb_nr_CC = (int *)malloc(sizeof(int)); // TODO: find a better function to place this in
+  
+  printf("[VNF] RC.gNB[0][0]. Mod_id:%d CC_id:%d nb_CC[0]:%d abstraction_flag:%d single_thread_flag:%d if_inst:%p\n", gNB->Mod_id, gNB->CC_id, RC.nb_nr_CC, gNB->abstraction_flag,
+  gNB->single_thread_flag, gNB->if_inst);
+
+  gNB->Mod_id  = bodge_counter;
+  gNB->CC_id   = bodge_counter;
+  gNB->abstraction_flag   = 0;
+  gNB->single_thread_flag = 0;//single_thread_flag;
+  RC.nb_nr_CC[bodge_counter] = 1;
+
+  if (gNB->if_inst==0) {
+    gNB->if_inst = NR_IF_Module_init(bodge_counter);
+  }
+  
+
+  // This will cause phy_config_request to be installed. That will result in RRC configuring the PHY
+  // that will result in gNB->configured being set to TRUE.
+  // See we need to wait for that to happen otherwise the NFAPI message exchanges won't contain the right parameter values
+  if (RC.gNB[0]->if_inst==0 || RC.gNB[0]->if_inst->NR_PHY_config_req==0 || RC.gNB[0]->if_inst->NR_Schedule_response==0) {
+    printf("RC.gNB[0][0]->if_inst->NR_PHY_config_req is not installed - install it\n");
+    install_nr_schedule_handlers(RC.gNB[0]->if_inst);
+  }
+
+  do {
+    printf("%s() Waiting for gNB to become configured (by RRC/PHY) - need to wait otherwise NFAPI messages won't contain correct values\n", __FUNCTION__);
+    usleep(50000);
+  } while(gNB->configured != 1);
+
+  printf("%s() gNB is now configured\n", __FUNCTION__);
+}
+
+
 int pnf_connection_indication_cb(nfapi_vnf_config_t *config, int p5_idx) {
   printf("[VNF] pnf connection indication idx:%d\n", p5_idx);
-  oai_create_enb();
+  oai_create_gnb();
   nfapi_pnf_param_request_t req;
   memset(&req, 0, sizeof(req));
   req.header.message_id = NFAPI_PNF_PARAM_REQUEST;
