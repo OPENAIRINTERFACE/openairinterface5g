@@ -34,23 +34,17 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 #define SCALE 0x3FFF
 
-int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
+int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                   L1_rxtx_proc_t *proc,
-                                  module_id_t UE_id,
+				  LTE_eNB_ULSCH_t * ulsch,
+				  int32_t **ul_ch_estimates,
+				  int32_t **ul_ch_estimates_time,
+				  int32_t **rxdataF_ext,
+				  module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
-  RU_t *ru;
-  ru = RC.ru[UE_id];
-  LTE_DL_FRAME_PARMS *frame_parms = (eNB!=NULL) ? &eNB->frame_parms : ru->frame_parms;
-  LTE_eNB_PUSCH *pusch_vars = (eNB!=NULL) ? eNB->pusch_vars[UE_id] : NULL;
-  RU_CALIBRATION *calibration = &ru->calibration;
-  int32_t **ul_ch_estimates = (eNB!=NULL) ? pusch_vars->drs_ch_estimates : calibration->drs_ch_estimates;
-  AssertFatal(ul_ch_estimates != NULL, "ul_ch_estimates is null (eNB %p, pusch %p, pusch->drs_ch_estimates %p, pusch->drs_ch_estimates[0] %p ul_ch_estimates %p UE_id %d)\n",eNB,pusch_vars,
-              pusch_vars->drs_ch_estimates,pusch_vars->drs_ch_estimates[0],ul_ch_estimates,UE_id);
-  int32_t **ul_ch_estimates_time = (eNB!=NULL) ? pusch_vars->drs_ch_estimates_time : calibration->drs_ch_estimates_time;
+  AssertFatal(ul_ch_estimates != NULL, "ul_ch_estimates is null ");
   AssertFatal(ul_ch_estimates_time != NULL, "ul_ch_estimates_time is null\n");
-  int32_t **rxdataF_ext = (eNB!=NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
-
   int subframe = proc->subframe_rx;
 
   uint8_t harq_pid; 
@@ -83,16 +77,16 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 #endif
   int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 
-  if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
+  if (ulsch->ue_type > 0) harq_pid = 0;
   else {
     harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
   }
 
-  uint16_t N_rb_alloc = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
+  uint16_t N_rb_alloc = ulsch->harq_processes[harq_pid]->nb_rb;
   int32_t tmp_estimates[N_rb_alloc*12] __attribute__((aligned(16)));
   Msc_RS = N_rb_alloc*12;
   cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
-                  eNB->ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
+                  ulsch->harq_processes[harq_pid]->n_DMRS2 +
                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
   Msc_idx_ptr = (uint16_t *) bsearch(&Msc_RS, dftsizes, 34, sizeof(uint16_t), compareints);
 
@@ -276,7 +270,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 #if T_TRACER
 
       if (aa == 0)
-        T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(0), T_INT(eNB->ulsch[UE_id]->rnti),
+        T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(0), T_INT(ulsch->rnti),
           T_INT(proc->frame_rx), T_INT(subframe),
           T_INT(0), T_BUFFER(ul_ch_estimates_time[0], 512  * 4));
 

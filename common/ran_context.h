@@ -110,6 +110,7 @@ typedef struct {
   /// GTPu descriptor 
   gtpv1u_data_t *gtpv1u_data_g;
   /// RU descriptors. These describe what each radio unit is supposed to do and contain the necessary functions for fronthaul interfaces
+  // LTS: not coherent (xxx_frame_parms cardinatlity wtih xNB (so one carrier))
   struct RU_t_s **ru;
   /// Mask to indicate fronthaul setup status of RU (hard-limit to 64 RUs)
   uint64_t ru_mask;

@@ -623,6 +623,7 @@ check_install_oai_software() {
 	build-essential \
 	cmake \
 	cmake-curses-gui  \
+        ninja-build \
 	doxygen \
 	doxygen-gui \
 	texlive-latex-base \
@@ -782,7 +783,7 @@ install_asn1c_from_source(){
 
 install_nas_tools() {
   if [ ! -f .ue.nvram0 ]; then
-    echo_success "generate .ue_emm.nvram .ue.nvram ./nvram --gen -c $1 -o $2"
+    echo_success "generate .ue_emm.nvram .ue.nvram"
     ./nvram --gen -c $1 -o $2
   else
     [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
