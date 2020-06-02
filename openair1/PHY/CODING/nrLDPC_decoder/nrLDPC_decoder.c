@@ -44,6 +44,7 @@
 /*********************************include files-> AVX2**********************/
 /*----------------------------BG1-----------------------------------------*/
 
+#ifndef __AVX512BW__
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z384_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z352_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z320_13_AVX2.c"
@@ -102,6 +103,7 @@
 
 /*----------------------------BG2---------------------------------------*/
 
+
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z384_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z352_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z320_13_AVX2.c"
@@ -158,13 +160,14 @@
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z3_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG2_Z2_13_AVX2.c"
 
-
+#else
 
 
 /**************************include files for -->AVX512 ******************/
 //test
 #include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c"
 
+#endif
 
 /*#include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z352_13_AVX2.c"
 #include "nrLDPC_tools/ldpc_gen_files/avx2/nrLDPC_cnProc_BG1_Z320_13_AVX2.c"
@@ -333,8 +336,11 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
         case 384:
         {
-            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-            nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //we test  here 
+#ifndef __AVX512BW__
+            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+#else
+            nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //we test  here
+#endif	    
             break;
 	}                                                                           
         case 352:
@@ -1122,8 +1128,11 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
       {
         case 384:
         {
-            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+#ifndef __AVX512BW__
+            nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+#else
             nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);  //we test here
+#endif	    
             break;
         }
         case 352:
@@ -1922,9 +1931,12 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
         case 384:
         {
-            //nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-            nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes); //we test here
-            break;
+#ifndef __AVX512BW__
+	  nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+#else
+	  nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes); //we test here
+#endif
+	  break;
 	}
         case 352:
         {
