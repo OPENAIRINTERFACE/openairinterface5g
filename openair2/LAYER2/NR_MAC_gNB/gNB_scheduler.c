@@ -291,7 +291,8 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 void nr_schedule_pucch(int Mod_idP,
                        int UE_id,
                        frame_t frameP,
-                       sub_frame_t slotP) {
+                       sub_frame_t slotP,
+                       int num_slots_per_tdd) {
 
   uint16_t O_uci;
   uint16_t O_ack;
@@ -306,12 +307,13 @@ void nr_schedule_pucch(int Mod_idP,
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
 
   NR_sched_pucch *curr_pucch;
+  int p = slotP/num_slots_per_tdd;
   int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
 
   for (int k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
+    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[p][k];
     if ((curr_pucch->dai_c > 0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
       UL_tti_req->SFN = frameP;
       UL_tti_req->Slot = slotP;
@@ -333,7 +335,9 @@ void nr_schedule_pucch(int Mod_idP,
                          O_ack,
                          SR_flag);
 
-      curr_pucch->dai_c = 0;
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[p][k],
+             0,
+             sizeof(NR_sched_pucch));
     }
   }
 }
@@ -377,14 +381,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
 
-  if (slot_txP== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
-    for (int k=0; k<nr_ulmix_slots; k++) {
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));
-    }
-  }
-
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
@@ -397,12 +393,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
 
-  // hardcoding dlsch to be in slot 1
   if (!(slot_txP%num_slots_per_tdd)) {
     if(slot_txP==0)
       *dlsch_in_slot_bitmap = 0x7e;
     else
-      *dlsch_in_slot_bitmap = 0x00;
+      *dlsch_in_slot_bitmap = 0x7e;
   }
 
   // hardcoding ulsch to be in slot 8
@@ -469,7 +464,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
       ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
-      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
+      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP,
+                                    &UE_list->UE_sched_ctrl[UE_id].sched_pucch[slot_txP/num_slots_per_tdd][pucch_sched], NULL);
       // resetting ta flag
       gNB->ta_len = 0;
     }
@@ -486,12 +482,12 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     if (get_softmodem_params()->phy_test == 0) {
       if (UE_list->fiveG_connected[UE_id])
-        nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
+        nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP, num_slots_per_tdd);
       schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
       nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
     }
     if (get_softmodem_params()->phy_test){
-      nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
+      nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP, num_slots_per_tdd);
       if (is_xlsch_in_slot(*ulsch_in_slot_bitmap,slot_rxP%num_slots_per_tdd)){
         nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
       }
