@@ -62,12 +62,13 @@
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
-void clear_nr_nfapi_information_dl(gNB_MAC_INST * gNB,
-                                   int CC_idP,
-                                   frame_t frameP,
-                                   sub_frame_t slotP){
+void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
+                                int CC_idP,
+                                frame_t frameP,
+                                sub_frame_t slotP){
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
+  nfapi_nr_ul_tti_request_t    *UL_tti_req = &gNB->UL_tti_req[0];
   nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
   nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
 
@@ -85,28 +86,17 @@ void clear_nr_nfapi_information_dl(gNB_MAC_INST * gNB,
     UL_dci_req[CC_idP].Slot                        = slotP;
     UL_dci_req[CC_idP].numPdus                     = 0;
 
-    TX_req[CC_idP].Number_of_PDUs                  = 0;
-
-  }
-}
-
-void clear_nr_nfapi_information_ul(gNB_MAC_INST * gNB,
-                                   int CC_idP,
-                                   frame_t frameP,
-                                   sub_frame_t slotP){
-
-  nfapi_nr_ul_tti_request_t    *UL_tti_req = &gNB->UL_tti_req[0];
-
-  if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
     UL_tti_req[CC_idP].SFN                         = frameP;
     UL_tti_req[CC_idP].Slot                        = slotP;
     UL_tti_req[CC_idP].n_pdus                      = 0;
     UL_tti_req[CC_idP].n_ulsch                     = 0;
     UL_tti_req[CC_idP].n_ulcch                     = 0;
     UL_tti_req[CC_idP].n_group                     = 0;
+
+    TX_req[CC_idP].Number_of_PDUs                  = 0;
+
   }
 }
-
 /*
 void check_nr_ul_failure(module_id_t module_idP,
                          int CC_id,
@@ -429,7 +419,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       memset(cc[CC_id].vrb_map, 0, 100);
       memset(cc[CC_id].vrb_map_UL, 0, 100);
 
-      clear_nr_nfapi_information_dl(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
+      clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
     }
 
     // refresh UE list based on UEs dropped by PHY in previous subframe

@@ -225,7 +225,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   }
 
   // clear DL/UL info for new scheduling round
-  clear_nr_nfapi_information_ul(mac,CC_id,UL_info->frame,UL_info->slot);
+  clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
   handle_nr_uci(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
   // clear HI prior to handling ULSCH
