@@ -32,7 +32,7 @@ void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int
   if (size < 3) abort();
   if (!(buffer[0] & 0x80)) { printf("%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__); exit(1); }
   entity->common.deliver_sdu(entity->common.deliver_sdu_data,
-                             (nr_pdcp_entity_t *)entity, buffer+2, size-2);
+                             (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }
 
 void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int size,
@@ -50,12 +50,13 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
     entity->common.tx_hfn++;
   }
 
-  buf[0] = 0x80 | ((sn >> 8) & 0x0f);
-  buf[1] = sn & 0xff;
-  memcpy(buf+2, buffer, size);
+  buf[0] = 0x80 | ((sn >> 16) & 0x3);
+  buf[1] = (sn >> 8) & 0xff;
+  buf[2] = sn & 0xff;
+  memcpy(buf+3, buffer, size);
 
   entity->common.deliver_pdu(entity->common.deliver_pdu_data,
-                             (nr_pdcp_entity_t *)entity, buf, size+2, sdu_id);
+                             (nr_pdcp_entity_t *)entity, buf, size+3, sdu_id);
 }
 
 void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *_entity, char *key)
