@@ -634,7 +634,7 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   if (IS_SOFTMODEM_RFSIM) {
-    LOG_E(PHY,"SET rx_offset %d \n",UE->rx_offset);
+    LOG_D(PHY,"SET rx_offset %d \n",UE->rx_offset);
     //UE->rx_offset_diff=0;
     return 0;
   }
@@ -857,8 +857,9 @@ void *UE_thread(void *arg) {
       usleep(200);
     }
 
-    if (  decoded_frame_rx != curMsg->proc.frame_rx &&
-          ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx )
+    if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
+          (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
+          (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
