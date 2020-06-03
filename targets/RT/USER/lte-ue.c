@@ -413,7 +413,10 @@ void init_UE_stub_single_thread(int nb_inst,
     // PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
   }
 
-  init_timer_thread(); // dont need this
+  if(NFAPI_MODE != NFAPI_MODE_STANDALONE_PNF) {
+    init_timer_thread();
+  }
+
   init_UE_single_thread_stub(nb_inst);
   printf("UE threads created \n");
   //LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
@@ -996,7 +999,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   int ret;
   uint8_t   end_flag;
   proc = &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0];
-  phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
+
+  if (phy_stub_ticking != NULL) {
+    phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
+  }
+
   UE = rtd->UE;
 
   UL_INFO = (UL_IND_t *)malloc(sizeof(UL_IND_t));
@@ -1013,7 +1020,10 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
   if(ue_thread_id == 0) {
-    phy_stub_ticking->ticking_var = -1;
+
+    if (phy_stub_ticking != NULL) {
+      phy_stub_ticking->ticking_var = -1;
+    }
     proc->subframe_rx=proc->sub_frame_start;
     // Initializations for nfapi-L2-emulator mode
     dl_config_req = NULL;
@@ -1026,8 +1036,10 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       end_flag = 1;
 
       for(uint16_t i = 0; i< NB_THREAD_INST; i++) {
-        if(phy_stub_ticking->num_single_thread[i] == 0) {
-          end_flag = 0;
+        if (phy_stub_ticking != NULL) {
+          if (phy_stub_ticking->num_single_thread[i] == 0) {
+            end_flag = 0;
+          }
         }
       }
     } while(end_flag == 0);
@@ -1040,25 +1052,25 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 
   while (!oai_exit) {
     if(ue_thread_id == 0) {
+      if (phy_stub_ticking != NULL) {
       if (pthread_mutex_lock(&phy_stub_ticking->mutex_ticking) != 0) {
         LOG_E( MAC, "[SCHED][UE] error locking mutex for UE RXTX\n" );
         exit_fun("nothing to add");
       }
+        while (phy_stub_ticking->ticking_var < 0) {
+          // most of the time, the thread is waiting here
+          //pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx )
+          LOG_D(MAC, "Waiting for ticking_var\n");
+          pthread_cond_wait(&phy_stub_ticking->cond_ticking, &phy_stub_ticking->mutex_ticking);
+        }
 
-      while (phy_stub_ticking->ticking_var < 0) {
-        // most of the time, the thread is waiting here
-        //pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx )
-        LOG_D(MAC,"Waiting for ticking_var\n");
-        pthread_cond_wait( &phy_stub_ticking->cond_ticking, &phy_stub_ticking->mutex_ticking);
+        phy_stub_ticking->ticking_var--;
+
+        if (pthread_mutex_unlock(&phy_stub_ticking->mutex_ticking) != 0) {
+          LOG_E(MAC, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n");
+          exit_fun("nothing to add");
+        }
       }
-
-      phy_stub_ticking->ticking_var--;
-
-      if (pthread_mutex_unlock(&phy_stub_ticking->mutex_ticking) != 0) {
-        LOG_E( MAC, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n" );
-        exit_fun("nothing to add");
-      }
-
       proc->subframe_rx=timer_subframe;
       proc->frame_rx = timer_frame;
       // FDD and TDD tx timing settings.
@@ -1084,34 +1096,37 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         initRefTimes(t3);
         pickTime(current);
         updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");*/
+      if (phy_stub_ticking != NULL) {
+        if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
+          LOG_E(MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
+          exit_fun("nothing to add");
+        }
 
-      if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
-        LOG_E( MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
-        exit_fun("nothing to add");
-      }
+        memset(&phy_stub_ticking->num_single_thread[0], 0, sizeof(int) * NB_THREAD_INST);
+        pthread_cond_broadcast(&phy_stub_ticking->cond_single_thread);
 
-      memset(&phy_stub_ticking->num_single_thread[0],0,sizeof(int)*NB_THREAD_INST);
-      pthread_cond_broadcast(&phy_stub_ticking->cond_single_thread);
-
-      if (pthread_mutex_unlock(&phy_stub_ticking->mutex_single_thread) != 0) {
-        LOG_E( MAC, "[SCHED][UE] error unlocking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
-        exit_fun("nothing to add");
+        if (pthread_mutex_unlock(&phy_stub_ticking->mutex_single_thread) != 0) {
+          LOG_E(MAC, "[SCHED][UE] error unlocking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
+          exit_fun("nothing to add");
+        }
       }
     } else {
-      if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
-        LOG_E( MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
-        exit_fun("nothing to add");
-      }
+      if (phy_stub_ticking != NULL) {
+        if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
+          LOG_E(MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
+          exit_fun("nothing to add");
+        }
 
-      while (phy_stub_ticking->num_single_thread[ue_thread_id] < 0) {
-        // most of the time, the thread is waiting here
-        LOG_D(MAC,"Waiting for single_thread (ue_thread_id %d)\n",ue_thread_id);
-        pthread_cond_wait( &phy_stub_ticking->cond_single_thread, &phy_stub_ticking->mutex_single_thread);
-      }
+        while (phy_stub_ticking->num_single_thread[ue_thread_id] < 0) {
+          // most of the time, the thread is waiting here
+          LOG_D(MAC, "Waiting for single_thread (ue_thread_id %d)\n", ue_thread_id);
+          pthread_cond_wait(&phy_stub_ticking->cond_single_thread, &phy_stub_ticking->mutex_single_thread);
+        }
 
-      if (pthread_mutex_unlock(&phy_stub_ticking->mutex_single_thread) != 0) {
-        LOG_E( MAC, "[SCHED][UE] error unlocking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
-        exit_fun("nothing to add");
+        if (pthread_mutex_unlock(&phy_stub_ticking->mutex_single_thread) != 0) {
+          LOG_E(MAC, "[SCHED][UE] error unlocking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
+          exit_fun("nothing to add");
+        }
       }
     }
 
@@ -1252,23 +1267,25 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
           // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
           // Generate UL_indications which correspond to UL traffic.
           if(ul_config_req!=NULL) { //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
-            ul_config_req_UE_MAC(ul_config_req, timer_frame, timer_subframe, ue_Mod_id);
-          }
+            ul_config_req_UE_MAC(ul_config_req, timer_frame, timer_subframe, ue_Mod_id); // Andrew - send over socket to proxy here
+          }// Andrew - else send a dummy over the socket
         }
 
       phy_procedures_UE_SL_RX(UE,proc);
     } //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
-
+    if (phy_stub_ticking != NULL) {
     phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
-
+    }
     // waiting for all UE's threads set phy_stub_ticking->num_single_thread[ue_thread_id] = -1.
     if(ue_thread_id == 0) {
       do {
         end_flag = 1;
 
-        for(uint16_t i = 0; i< NB_THREAD_INST; i++) {
-          if(phy_stub_ticking->num_single_thread[i] == 0) {
-            end_flag = 0;
+        for (uint16_t i = 0; i < NB_THREAD_INST; i++) {
+          if (phy_stub_ticking != NULL) {
+            if (phy_stub_ticking->num_single_thread[i] == 0) {
+              end_flag = 0;
+            }
           }
         }
       } while(end_flag == 0);
@@ -1401,7 +1418,9 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
   struct rx_tx_thread_data *rtd = arg;
   UE_rxtx_proc_t *proc = rtd->proc;
   PHY_VARS_UE    *UE   = rtd->UE;
+
   phy_stub_ticking->ticking_var = -1;
+
   proc->subframe_rx=proc->sub_frame_start;
   // CAREFUL HERE!
   wait_sync("UE_phy_stub_thread_rxn_txnp4");

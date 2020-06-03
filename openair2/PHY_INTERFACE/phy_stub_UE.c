@@ -231,6 +231,8 @@ void fill_rach_indication_UE_MAC(int Mod_id,
 
   // This function is currently defined only in the nfapi-RU-RAU-split so we
   // should call it when we merge with that branch.
+  // Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
+  // as soon as numberof preambles
   oai_nfapi_rach_ind(&UL_INFO->rach_ind);
   free(UL_INFO->rach_ind.rach_indication_body.preamble_list);
 
@@ -1104,8 +1106,6 @@ void *ue_standalone_pnf_task(void *context)
       LOG_E(MAC, "Header unpack failed for standalone pnf\n");
       continue;
     }
-
-    LOG_I(MAC, "Bruins header.message_id: %u\n", header.message_id);
 
     switch (header.message_id)
     {
