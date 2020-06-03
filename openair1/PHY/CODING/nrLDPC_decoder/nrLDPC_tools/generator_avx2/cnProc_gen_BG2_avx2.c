@@ -7,7 +7,7 @@
 
 void nrLDPC_cnProc_BG2_generator_AVX2(uint16_t Z,int R)
 {
-  const char *ratestr[3]={"13","23","89"};
+  const char *ratestr[3]={"15","13","23"};
 
   if (R<0 || R>2) {printf("Illegal R %d\n",R); abort();}
 

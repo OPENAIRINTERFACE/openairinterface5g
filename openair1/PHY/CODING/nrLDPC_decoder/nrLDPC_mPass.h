@@ -33,7 +33,7 @@
 
 #include <string.h>
 #include "nrLDPCdecoder_defs.h"
-//#include <omp.h>
+#include <omp.h>
 /**
    \brief Circular memcpy
                 |<- rem->|<- circular shift ->|
@@ -1018,9 +1018,9 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
 
     // =====================================================================
     // CN group with 3 BNs
-
+    
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX;
-
+    #pragma omp simd
     for (j=0;j<2; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[0] + j*bitOffsetInGroup];
@@ -1031,27 +1031,28 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 4 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[1]*NR_LDPC_ZMAX;
-
+  // #pragma omp simd
     for (j=0; j<3; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[1] + j*bitOffsetInGroup];
-        for (i=0; i<lut_numCnInCnGroups[1]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[1]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG4[j][i] + lut_bnPosBnProcBuf_CNG4[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG4[j][i]);
             p_cnProcBuf += Z;
-        }
+   	 }
     }
-
     // =====================================================================
     // CN group with 5 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX;
-
+//    #pragma omp simd
     for (j=0; j<4; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[2] + j*bitOffsetInGroup];
-        for (i=0; i<lut_numCnInCnGroups[2]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[2]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG5[j][i] + lut_bnPosBnProcBuf_CNG5[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG5[j][i]);
@@ -1063,11 +1064,12 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 6 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[3]*NR_LDPC_ZMAX;
-
+    //#pragma omp simd
     for (j=0; j<5; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[3] + j*bitOffsetInGroup];
-        for (i=0; i<lut_numCnInCnGroups[3]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[3]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG6[j][i] + lut_bnPosBnProcBuf_CNG6[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG6[j][i]);
@@ -1079,12 +1081,13 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 7 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX;
-
+    //#pragma omp simd
     for (j=0; j<6; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[4] + j*bitOffsetInGroup];
 
-        for (i=0; i<lut_numCnInCnGroups[4]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[4]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG7[j][i] + lut_bnPosBnProcBuf_CNG7[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG7[j][i]);
@@ -1096,7 +1099,7 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 8 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX;
-
+   #pragma omp simd 
     for (j=0; j<7; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[5] + j*bitOffsetInGroup];
@@ -1112,11 +1115,12 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 9 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[6]*NR_LDPC_ZMAX;
-
+   // #pragma omp simd
     for (j=0; j<8; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[6] + j*bitOffsetInGroup];
-        for (i=0; i<lut_numCnInCnGroups[6]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[6]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG9[j][i] + lut_bnPosBnProcBuf_CNG9[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG9[j][i]);
@@ -1128,11 +1132,12 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 10 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[7]*NR_LDPC_ZMAX;
-
+    //#pragma omp simd
     for (j=0; j<9; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[7] + j*bitOffsetInGroup];
-        for (i=0; i<lut_numCnInCnGroups[7]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[7]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG10[j][i] + lut_bnPosBnProcBuf_CNG10[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG10[j][i]);
@@ -1144,11 +1149,12 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
     // CN group with 19 BNs
 
     bitOffsetInGroup = lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX;
-
+   //#pragma omp simd
     for (j=0; j<19; j++)
     {
         p_cnProcBuf = &cnProcBuf[lut_startAddrCnGroups[8] + j*bitOffsetInGroup];
-        for (i=0; i<lut_numCnInCnGroups[8]; i++)
+        #pragma omp simd 
+	for (i=0; i<lut_numCnInCnGroups[8]; i++)
         {
             idxBn = lut_startAddrBnProcBuf_CNG19[j][i] + lut_bnPosBnProcBuf_CNG19[j][i]*Z;
             nrLDPC_circ_memcpy(p_cnProcBuf, &bnProcBufRes[idxBn], Z, lut_circShift_CNG19[j][i]);

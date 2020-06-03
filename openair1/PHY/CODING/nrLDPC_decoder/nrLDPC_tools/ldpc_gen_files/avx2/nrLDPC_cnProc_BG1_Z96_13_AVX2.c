@@ -477,7 +477,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2448+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2496+i];
@@ -502,7 +502,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2448+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2496+i];
@@ -527,7 +527,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2448+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2496+i];
@@ -552,7 +552,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2448+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2496+i];
@@ -577,7 +577,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2424+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2496+i];
@@ -630,7 +630,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2448+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2520+i];
@@ -655,7 +655,7 @@ void nrLDPC_cnProc_BG1_Z96_13_AVX2(int8_t* cnProcBuf,int8_t* cnProcBufRes) {
                 ymm0 = ((__m256i*)cnProcBuf)[2448+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
-                ymm0 = ((__m256i*)cnProcBuf)[2472+i];
+                ymm0 = ((__m256i*)cnProcBuf)[2464+i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
                 ymm0 = ((__m256i*)cnProcBuf)[2496+i];

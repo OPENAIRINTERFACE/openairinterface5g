@@ -30,8 +30,6 @@
 
 #ifndef __NR_LDPC_CNPROC__H__
 #define __NR_LDPC_CNPROC__H__
-//#include "/opt/rh/devtoolset-7/root/lib/gcc/x86_64-redhat-linux/7/include/avx2intrin.h"
-#include "immintrin.h"
 
 /**
    \brief Performs CN processing for BG2 on the CN processing buffer and stores the results in the CN processing results buffer.
