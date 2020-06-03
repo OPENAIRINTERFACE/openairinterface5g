@@ -736,7 +736,7 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
   uint32_t z[12*14];
   int16_t *zptr;
   int16_t rxcomp[NB_ANTENNAS_RX][2*12*14];
-  uint8_t ns,N_UL_symb,nsymb;
+  uint8_t ns,N_UL_symb,nsymb,n_cs_base;
   uint8_t c = (frame_parms->Ncp==0) ? 3 : 2;
   uint16_t i,j,re_offset;
   uint8_t m,l;
@@ -748,24 +748,11 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
   int16_t *rxptr;
   uint32_t symbol_offset;
 
-  uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;
-  uint8_t Ncs1_div_deltaPUCCH_Shift = frame_parms->pucch_config_common.nCS_AN;
-
-  uint32_t u0 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1]) % 30;
-  uint32_t u1 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)]) % 30;
+  uint32_t u0 = (frame_parms->pucch_config_common.grouphop[subframe<<1]) % 30;
+  uint32_t u1 = (frame_parms->pucch_config_common.grouphop[1+(subframe<<1)]) % 30;
   uint32_t v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
   uint32_t v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   int calc_cnt;
-
-  if ((deltaPUCCH_Shift==0) || (deltaPUCCH_Shift>3)) {
-    LOG_E(PHY,"[eNB] rx_pucch: Illegal deltaPUCCH_shift %d (should be 1,2,3)\n",deltaPUCCH_Shift);
-    return(-1);
-  }
-
-  if (Ncs1_div_deltaPUCCH_Shift > 7) {
-    LOG_E(PHY,"[eNB] rx_pucch: Illegal Ncs1_div_deltaPUCCH_Shift %d (should be 0...7)\n",Ncs1_div_deltaPUCCH_Shift);
-    return(-1);
-  }
 
   zptr = (int16_t *)z;
   N_UL_symb = (frame_parms->Ncp==NORMAL) ? 7 : 6;
@@ -773,11 +760,13 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
   interference_power=0.0;
   calc_cnt=0;
   // loop over 2 slots
-  for (n_cs=0; n_cs<12; n_cs++) {
+  for (n_cs_base=0; n_cs_base<12; n_cs_base++) {
+    zptr = (int16_t *)z;
     for (ns=(subframe<<1),u=u0,v=v0; ns<(2+(subframe<<1)); ns++,u=u1,v=v1) {
 
       //loop over symbols in slot
       for (l=0; l<N_UL_symb; l++) {
+        n_cs = eNB->ncs_cell[ns][l]+n_cs_base;
         if(((l>1)&&(l<N_UL_symb-2)) || ((ns==(1+(subframe<<1))) && (shortened_format==1)) ){
           zptr+=24;
           continue;
@@ -811,7 +800,7 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
       } // l
     } // ns
 
-    m = 0;
+    m = 1;
 
     nsymb = N_UL_symb<<1;
 
@@ -852,7 +841,7 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
           calc_cnt++;
         } //re
       } // symbol
-      interference_power+= (int32_t)(n0_IQ[0]*n0_IQ[0]+n0_IQ[1]*n0_IQ[1]);
+      interference_power+= (double)(n0_IQ[0]*n0_IQ[0]+n0_IQ[1]*n0_IQ[1]);
     }  // antenna
   }
   interference_power /= calc_cnt;
@@ -907,8 +896,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;
   uint8_t NRB2                      = frame_parms->pucch_config_common.nRB_CQI;
   uint8_t Ncs1_div_deltaPUCCH_Shift = frame_parms->pucch_config_common.nCS_AN;
-  uint32_t u0 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1]) % 30;
-  uint32_t u1 = (frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)]) % 30;
+
+  uint32_t u0 = (frame_parms->pucch_config_common.grouphop[subframe<<1]) % 30;
+  uint32_t u1 = (frame_parms->pucch_config_common.grouphop[1+(subframe<<1)]) % 30;
   uint32_t v0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
   uint32_t v1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   int chL;
