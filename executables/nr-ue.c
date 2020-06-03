@@ -858,8 +858,9 @@ void *UE_thread(void *arg) {
       usleep(200);
     }
 
-    if (  decoded_frame_rx != curMsg->proc.frame_rx &&
-          ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx )
+    if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
+          (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
+          (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
