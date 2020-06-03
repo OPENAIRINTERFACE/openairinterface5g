@@ -32,7 +32,7 @@
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
 #include "nrLDPC_tools/include/avx512bwintrin.h"
-
+//#define ___AVX512BW___ 1
 
 
   /*----------------------------------------------------------------------/
@@ -40,7 +40,7 @@
 /----------------------------------------------------------------------*/
 
 //BG1-------------------------------------------------------------------
-#ifdef _AVX512BW_
+#ifdef __AVX512BW__
 #include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c"
 #include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z352_13_AVX512.c"
 #include "nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z320_13_AVX512.c"
@@ -386,7 +386,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 384:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
              	nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                	#else
                 nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -395,7 +395,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 352:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -405,7 +405,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 320:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -415,7 +415,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 288:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z288_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z288_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -425,7 +425,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 256:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z256_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z256_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -435,7 +435,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 240:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z240_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z240_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -446,7 +446,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             case 224:
             {
 
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z224_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z224_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -456,7 +456,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 208:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z208_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z208_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -466,7 +466,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 192:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z192_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z192_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -476,7 +476,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 176:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -486,7 +486,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 160:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -495,7 +495,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 144:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z144_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z144_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -504,7 +504,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 128:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z128_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z128_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -514,7 +514,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 120:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z120_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG1_Z120_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -524,7 +524,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 112:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z112_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z112_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -535,7 +535,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 104:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z104_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z104_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -544,7 +544,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 96:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z96_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z96_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -553,7 +553,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 88:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z88_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z88_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -563,7 +563,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 80:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z80_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z80_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -573,7 +573,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 72:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z72_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z72_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -583,7 +583,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 64:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z64_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z64_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -593,7 +593,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 60:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z60_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z60_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -602,7 +602,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 56:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z56_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z56_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -611,7 +611,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 52:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z52_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z52_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -621,7 +621,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 48:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z48_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z48_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -631,7 +631,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 44:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z44_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z44_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -640,7 +640,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 40:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z40_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z40_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -650,7 +650,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 36:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z36_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z36_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -659,7 +659,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 32:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z32_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z32_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -668,7 +668,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 30:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z30_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z30_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -677,7 +677,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 28:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z28_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z28_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -687,7 +687,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 26:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z26_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z26_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -697,7 +697,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 24:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z24_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z24_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -707,7 +707,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 22:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z22_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z22_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -716,7 +716,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 20:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z20_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z20_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -725,7 +725,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 18:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z18_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z18_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -735,7 +735,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 16:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z16_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z16_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -744,7 +744,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 15:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z15_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z15_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -753,7 +753,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 14:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z14_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z14_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -763,7 +763,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 13:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z13_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z13_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -773,7 +773,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 12:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z12_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z12_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -783,7 +783,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 11:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z11_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z11_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -792,7 +792,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 10:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z10_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z10_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -802,7 +802,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 9:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z9_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z9_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -812,7 +812,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 8:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z8_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z8_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -822,7 +822,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 7:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z7_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z7_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -832,7 +832,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 6:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z6_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z6_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -842,7 +842,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 5:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z5_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z5_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -852,7 +852,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 4:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z4_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z4_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -862,7 +862,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 3:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z3_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z3_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -871,7 +871,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 2:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z2_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z2_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -886,7 +886,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 384:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z384_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z384_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -895,7 +895,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 352:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z352_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z352_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -905,7 +905,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 320:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z320_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z320_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -915,7 +915,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 288:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z288_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z288_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -925,7 +925,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 256:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z256_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z256_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -935,7 +935,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 240:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z240_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG2_Z240_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -946,7 +946,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             case 224:
             {
 
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z224_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z224_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -956,7 +956,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 208:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z208_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z208_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -966,7 +966,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 192:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z192_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z192_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -976,7 +976,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 176:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z176_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z176_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -986,7 +986,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 160:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z176_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z176_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -995,7 +995,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 144:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z144_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z144_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1004,7 +1004,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 128:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z128_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                  nrLDPC_cnProc_BG2_Z128_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1014,7 +1014,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 120:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z120_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG2_Z120_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1024,7 +1024,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 112:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z112_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z112_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1035,7 +1035,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 104:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z104_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z104_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1044,7 +1044,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 96:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z96_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z96_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1053,7 +1053,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 88:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z88_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z88_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1063,7 +1063,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 80:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z80_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z80_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1073,7 +1073,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 72:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z72_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z72_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1083,7 +1083,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 64:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z64_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z64_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1093,7 +1093,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 60:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z60_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z60_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1102,7 +1102,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 56:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z56_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z56_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1111,7 +1111,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 52:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z52_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z52_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1121,7 +1121,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 48:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z48_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z48_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1131,7 +1131,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 44:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z44_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z44_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1140,7 +1140,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 40:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z40_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z40_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1150,7 +1150,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 36:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z36_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z36_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1159,7 +1159,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 32:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z32_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z32_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1168,7 +1168,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 30:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z30_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z30_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1177,7 +1177,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 28:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z28_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z28_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1187,7 +1187,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 26:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z26_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z26_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1197,7 +1197,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 24:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z24_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z24_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1207,7 +1207,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 22:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z22_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z22_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1216,7 +1216,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 20:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z20_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z20_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1225,7 +1225,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 18:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z18_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z18_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1235,7 +1235,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 16:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z16_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z16_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1244,7 +1244,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 15:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z15_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z15_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1253,7 +1253,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 14:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z14_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z14_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1263,7 +1263,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 13:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z13_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z13_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1273,7 +1273,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 12:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z12_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z12_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1283,7 +1283,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 11:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z11_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z11_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1292,7 +1292,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 10:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z10_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z10_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1302,7 +1302,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 9:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z9_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z9_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1312,7 +1312,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 8:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z8_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z8_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1322,7 +1322,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 7:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z7_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z7_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1332,7 +1332,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 6:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z6_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z6_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1342,7 +1342,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 5:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z5_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z5_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1352,7 +1352,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 4:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z4_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z4_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1362,7 +1362,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 3:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z3_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z3_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1371,7 +1371,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 2:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z2_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z2_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1477,16 +1477,16 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 384:
             {
-               #ifdef _AVX512BW_
-               nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-               #else
+                #ifdef __AVX512BW__
+                nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
+                #else
                 nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
-               #endif                                                                                                                                                                        
+                #endif                                                                                                                                                                        
                 break;
             }
             case 352:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1496,7 +1496,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 320:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1506,7 +1506,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 288:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z288_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z288_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1516,7 +1516,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 256:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z256_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z256_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1526,7 +1526,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 240:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z240_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z240_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1537,7 +1537,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             case 224:
             {
 
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z224_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z224_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1547,7 +1547,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 208:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z208_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z208_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1557,7 +1557,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 192:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z192_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z192_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1567,7 +1567,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 176:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1577,7 +1577,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 160:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1586,7 +1586,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 144:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z144_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z144_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1595,7 +1595,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 128:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z128_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z128_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1605,7 +1605,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 120:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z120_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG1_Z120_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1615,7 +1615,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 112:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z112_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z112_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1626,7 +1626,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 104:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z104_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z104_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1635,7 +1635,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 96:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z96_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z96_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1644,7 +1644,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 88:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z88_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z88_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1654,7 +1654,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 80:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z80_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z80_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1664,7 +1664,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 72:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z72_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z72_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1674,7 +1674,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 64:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z64_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z64_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1684,7 +1684,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 60:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z60_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z60_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1693,7 +1693,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 56:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z56_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z56_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1702,7 +1702,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 52:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z52_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z52_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1712,7 +1712,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 48:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z48_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z48_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1722,7 +1722,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 44:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z44_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z44_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1731,7 +1731,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 40:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z40_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z40_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1741,7 +1741,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 36:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z36_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z36_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1750,7 +1750,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 32:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z32_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z32_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1759,7 +1759,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 30:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z30_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z30_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1768,7 +1768,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 28:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z28_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z28_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1778,7 +1778,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 26:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z26_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z26_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1788,7 +1788,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 24:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z24_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z24_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1798,7 +1798,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 22:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z22_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z22_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1807,7 +1807,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 20:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z20_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z20_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1816,7 +1816,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 18:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z18_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z18_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1826,7 +1826,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 16:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z16_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z16_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1835,7 +1835,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 15:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z15_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z15_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1844,7 +1844,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 14:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z14_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z14_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1854,7 +1854,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 13:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z13_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z13_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1864,7 +1864,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 12:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z12_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z12_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1874,7 +1874,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 11:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z11_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z11_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1883,7 +1883,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 10:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z10_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z10_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1893,7 +1893,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 9:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z9_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z9_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1903,7 +1903,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 8:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z8_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z8_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1913,7 +1913,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 7:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z7_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z7_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1923,7 +1923,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 6:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z6_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z6_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1933,7 +1933,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 5:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z5_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z5_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1943,7 +1943,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 4:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z4_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z4_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1953,7 +1953,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 3:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z3_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z3_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1962,7 +1962,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 2:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z2_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z2_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1977,7 +1977,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 384:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z384_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z384_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1986,7 +1986,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 352:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z352_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z352_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -1996,7 +1996,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 320:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z320_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z320_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2006,7 +2006,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 288:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z288_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z288_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2016,7 +2016,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 256:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z256_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z256_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2026,7 +2026,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 240:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z240_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG2_Z240_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2037,7 +2037,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             case 224:
             {
 
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z224_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z224_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2047,7 +2047,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 208:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z208_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z208_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2057,7 +2057,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 192:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z192_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z192_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2067,7 +2067,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 176:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z176_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z176_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2077,7 +2077,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 160:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z176_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z176_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2086,7 +2086,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 144:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z144_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z144_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2095,7 +2095,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 128:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z128_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                  nrLDPC_cnProc_BG2_Z128_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2105,7 +2105,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 120:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z120_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG2_Z120_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2115,7 +2115,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 112:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z112_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z112_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2126,7 +2126,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 104:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z104_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z104_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2135,7 +2135,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 96:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z96_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z96_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2144,7 +2144,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 88:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z88_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z88_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2154,7 +2154,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 80:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z80_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z80_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2164,7 +2164,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 72:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z72_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z72_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2174,7 +2174,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 64:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z64_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z64_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2184,7 +2184,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 60:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z60_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z60_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2193,7 +2193,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 56:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z56_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z56_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2202,7 +2202,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 52:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z52_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z52_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2212,7 +2212,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 48:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z48_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z48_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2222,7 +2222,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 44:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z44_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z44_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2231,7 +2231,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 40:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z40_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z40_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2241,7 +2241,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 36:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z36_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z36_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2250,7 +2250,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 32:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z32_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z32_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2259,7 +2259,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 30:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z30_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z30_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2268,7 +2268,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 28:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z28_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z28_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2278,7 +2278,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 26:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z26_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z26_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2288,7 +2288,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 24:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z24_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z24_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2298,7 +2298,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 22:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z22_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z22_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2307,7 +2307,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 20:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z20_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z20_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2316,7 +2316,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 18:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z18_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z18_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2326,7 +2326,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 16:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z16_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z16_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2335,7 +2335,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 15:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z15_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z15_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2344,7 +2344,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 14:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z14_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z14_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2354,7 +2354,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 13:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z13_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z13_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2364,7 +2364,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 12:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z12_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z12_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2374,7 +2374,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 11:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z11_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z11_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2383,7 +2383,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 10:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z10_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z10_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2393,7 +2393,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 9:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z9_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z9_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2403,7 +2403,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 8:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z8_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z8_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2413,7 +2413,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 7:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z7_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z7_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2423,7 +2423,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 6:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z6_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z6_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2433,7 +2433,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 5:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z5_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z5_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2443,7 +2443,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 4:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z4_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z4_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2453,7 +2453,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 3:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z3_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z3_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2462,7 +2462,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 2:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z2_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z2_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2579,7 +2579,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 384:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z384_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z384_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2588,7 +2588,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 352:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z352_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z352_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2598,7 +2598,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 320:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z320_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z320_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2608,7 +2608,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 288:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z288_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z288_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2618,7 +2618,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 256:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z256_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z256_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2628,7 +2628,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 240:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z240_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z240_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2639,7 +2639,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             case 224:
             {
 
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z224_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z224_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2649,7 +2649,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 208:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z208_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z208_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2659,7 +2659,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 192:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z192_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z192_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2669,7 +2669,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 176:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2679,7 +2679,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 160:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z176_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z176_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2688,7 +2688,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 144:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z144_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z144_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2697,7 +2697,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 128:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z128_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z128_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2707,7 +2707,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 120:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z120_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG1_Z120_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2717,7 +2717,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 112:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z112_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z112_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2728,7 +2728,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 104:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z104_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z104_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2737,7 +2737,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 96:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z96_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z96_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2746,7 +2746,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 88:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z88_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z88_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2756,7 +2756,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 80:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z80_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z80_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2766,7 +2766,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 72:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z72_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z72_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2776,7 +2776,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 64:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z64_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z64_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2786,7 +2786,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 60:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z60_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z60_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2795,7 +2795,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 56:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z56_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z56_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2804,7 +2804,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 52:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z52_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z52_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2814,7 +2814,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 48:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z48_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z48_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2824,7 +2824,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 44:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z44_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z44_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2833,7 +2833,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 40:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z40_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z40_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2843,7 +2843,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 36:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z36_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z36_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2852,7 +2852,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 32:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z32_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z32_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2861,7 +2861,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 30:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z30_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z30_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2870,7 +2870,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 28:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z28_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z28_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2880,7 +2880,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 26:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z26_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z26_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2890,7 +2890,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 24:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z24_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z24_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2900,7 +2900,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 22:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z22_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z22_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2909,7 +2909,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 20:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z20_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z20_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2918,7 +2918,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 18:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z18_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z18_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2928,7 +2928,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 16:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z16_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z16_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2937,7 +2937,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 15:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z15_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z15_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2946,7 +2946,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 14:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z14_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z14_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2956,7 +2956,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 13:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z13_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z13_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2966,7 +2966,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 12:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z12_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z12_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2976,7 +2976,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 11:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z11_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z11_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2985,7 +2985,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 10:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z10_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z10_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -2995,7 +2995,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 9:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z9_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z9_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3005,7 +3005,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 8:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z8_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z8_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3015,7 +3015,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 7:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z7_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z7_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3025,7 +3025,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 6:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z6_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z6_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3035,7 +3035,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 5:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z5_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z5_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3045,7 +3045,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 4:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z4_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z4_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3055,7 +3055,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 3:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z3_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z3_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3064,7 +3064,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 2:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG1_Z2_13_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG1_Z2_13_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3079,7 +3079,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 384:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z384_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z384_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3088,7 +3088,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 352:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z352_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z352_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3098,7 +3098,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 320:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z320_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z320_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3108,7 +3108,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 288:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z288_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z288_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3118,7 +3118,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 256:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z256_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z256_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3128,7 +3128,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 240:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z240_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG2_Z240_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3139,7 +3139,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             case 224:
             {
 
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z224_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z224_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3149,7 +3149,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 208:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z208_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z208_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3159,7 +3159,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 192:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z192_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z192_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3169,7 +3169,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 176:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z176_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z176_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3179,7 +3179,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 160:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z176_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z176_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3188,7 +3188,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 144:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z144_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z144_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3197,7 +3197,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 128:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z128_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                  nrLDPC_cnProc_BG2_Z128_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3207,7 +3207,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 120:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z120_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
             #else
              nrLDPC_cnProc_BG2_Z120_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3217,7 +3217,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 112:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z112_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z112_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3228,7 +3228,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 104:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z104_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z104_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3237,7 +3237,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 96:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z96_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z96_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3246,7 +3246,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 88:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z88_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z88_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3256,7 +3256,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 80:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z80_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z80_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3266,7 +3266,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 72:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z72_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z72_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3276,7 +3276,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 64:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z64_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z64_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3286,7 +3286,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 60:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z60_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z60_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3295,7 +3295,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 56:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z56_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z56_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3304,7 +3304,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 52:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z52_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z52_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3314,7 +3314,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 48:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z48_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z48_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3324,7 +3324,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 44:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z44_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z44_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3333,7 +3333,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 40:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z40_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z40_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3343,7 +3343,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 36:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z36_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z36_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3352,7 +3352,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 32:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z32_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z32_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3361,7 +3361,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 30:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z30_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z30_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3370,7 +3370,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 28:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z28_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z28_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3380,7 +3380,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 26:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z26_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z26_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3390,7 +3390,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 24:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z24_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z24_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3400,7 +3400,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 22:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z22_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z22_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3409,7 +3409,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 20:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z20_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z20_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3418,7 +3418,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 18:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z18_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z18_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3428,7 +3428,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 16:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z16_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z16_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3437,7 +3437,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 15:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z15_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z15_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3446,7 +3446,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 14:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z14_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z14_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3456,7 +3456,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 13:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z13_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z13_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3466,7 +3466,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 12:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z12_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z12_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3476,7 +3476,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 11:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z11_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z11_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3485,7 +3485,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 10:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z10_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z10_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3495,7 +3495,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 9:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z9_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z9_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3505,7 +3505,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 8:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z8_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z8_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3515,7 +3515,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 7:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z7_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z7_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3525,7 +3525,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 6:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z6_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z6_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3535,7 +3535,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 5:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z5_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z5_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3545,7 +3545,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 4:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z4_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z4_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3555,7 +3555,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
             case 3:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z3_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z3_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
@@ -3564,7 +3564,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
             }
             case 2:
             {
-                #ifdef _AVX512BW_
+                #ifdef __AVX512BW__
                 nrLDPC_cnProc_BG2_Z2_15_AVX512(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
                 #else
                 nrLDPC_cnProc_BG2_Z2_15_AVX2(p_procBuf->cnProcBuf,p_procBuf->cnProcBufRes);
