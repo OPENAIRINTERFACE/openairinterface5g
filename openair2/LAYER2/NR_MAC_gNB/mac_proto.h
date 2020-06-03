@@ -228,8 +228,6 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
-int get_num_dmrs(uint16_t dmrs_mask );
-
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int bwp_id,
                      int coreset_id,

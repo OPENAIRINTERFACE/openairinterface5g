@@ -867,7 +867,7 @@ int main(int argc, char **argv)
       
       if (errors_scrambling > 0) {
 	if (n_trials == 1)
-	  printf("errors_scrambling = %d/%d (trial %d)\n", errors_scrambling, available_bits,trial);
+	  printf("errors_scrambling = %u/%u (trial %d)\n", errors_scrambling, available_bits,trial);
       }
       
       if (errors_bit > 0) {
@@ -975,6 +975,8 @@ int main(int argc, char **argv)
   if (input_fd)
     fclose(input_fd);
 
+  if (scg_fd)
+    fclose(scg_fd);
   return(n_errors);
   
 }

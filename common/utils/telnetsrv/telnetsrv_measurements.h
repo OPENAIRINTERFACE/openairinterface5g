@@ -31,6 +31,10 @@
  * \note
  * \warning
  */
+
+#ifndef __TELNETSRV_MEASUREMENTS__H__
+#define __TELNETSRV_MEASUREMENTS__H__
+
 #include <dlfcn.h>
 #include "telnetsrv.h"
 #include "openair1/PHY/defs_eNB.h"
@@ -97,3 +101,4 @@ extern uint64_t measurcmd_getstatvalue(telnet_ltemeasurdef_t *measur,telnet_prin
 extern void     measurcmd_display_measures(telnet_printfunc_t prnt, telnet_ltemeasurdef_t  *statsptr, int stats_size);
 
 #endif  /* TELNETSRV_MEASURCMD_MAIN */
+#endif

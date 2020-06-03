@@ -77,4 +77,5 @@ void init_nr_prach_tables(int N_ZC);
 
 /**@}*/
 
+void init_pucch2_luts(void);
 #endif

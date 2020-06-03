@@ -1,3 +1,6 @@
+#ifndef __UTIL_OPT_MAC_PCAP__H__
+#define __UTIL_OPT_MAC_PCAP__H__
+
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -42,4 +45,4 @@ typedef struct MAC_Context_Info_t {
   unsigned int   subframesSinceCaptureStart;
 } MAC_Context_Info_t;
 
-
+#endif

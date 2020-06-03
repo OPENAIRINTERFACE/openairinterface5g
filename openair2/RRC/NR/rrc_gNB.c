@@ -268,13 +268,6 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_FMT" Init...\n",
         PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
-#if OCP_FRAMEWORK
-
-  while (rrc == NULL ) {
-    LOG_E(NR_RRC, "RC.nrrrc not yet initialized, waiting 1 second\n");
-    sleep(1);
-  }
-#endif 
   AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");

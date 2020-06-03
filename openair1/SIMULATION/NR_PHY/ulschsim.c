@@ -402,7 +402,6 @@ int main(int argc, char **argv)
   rel15_ul->mcs_index           = Imcs;
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
-  //rel15_ul->length_dmrs       = length_dmrs;
   rel15_ul->target_code_rate    = code_rate;
   rel15_ul->pusch_data.tb_size  = TBS>>3;
   ///////////////////////////////////////////////////
@@ -424,15 +423,6 @@ int main(int argc, char **argv)
   for (i = 0; i < TBS / 8; i++)
     test_input[i] = (unsigned char) rand();
 
-
-  /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
-  ///////////
-  ulsch_ue->nb_re_dmrs = nb_re_dmrs;
-  ulsch_ue->length_dmrs =  length_dmrs;
-  ulsch_ue->rnti = n_rnti;
-  ///////////
-  ////////////////////////////////////////////////////////////////////////////////////////////
-
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
   NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
@@ -442,13 +432,14 @@ int main(int argc, char **argv)
 
   if (harq_process_ul_ue) {
 
-    harq_process_ul_ue->mcs = Imcs;
-    harq_process_ul_ue->Nl = Nl;
-    harq_process_ul_ue->nb_rb = nb_rb;
-    harq_process_ul_ue->number_of_symbols = nb_symb_sch;
+    harq_process_ul_ue->pusch_pdu.rnti = n_rnti;
+    harq_process_ul_ue->pusch_pdu.mcs_index = Imcs;
+    harq_process_ul_ue->pusch_pdu.nrOfLayers = Nl;
+    harq_process_ul_ue->pusch_pdu.rb_size = nb_rb;
+    harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
-    harq_process_ul_ue->rvidx = rvidx;
-    harq_process_ul_ue->TBS = TBS;
+    harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
+    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS;
     harq_process_ul_ue->a = &test_input[0];
 
   }
@@ -461,9 +452,10 @@ int main(int argc, char **argv)
 
   /////////////////////////ULSCH coding/////////////////////////
   ///////////
+  unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
 
   if (input_fd == NULL) {
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
+    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
   }
   
   printf("\n");

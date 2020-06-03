@@ -522,8 +522,8 @@ class RANManagement():
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		if self.epcObj is not None:
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localEpcIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
+			localMmeIpAddr = self.epcObj.GetMmeIPAddress()
+			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -801,6 +801,7 @@ class RANManagement():
 		pdcpFailure = 0
 		ulschFailure = 0
 		ulschReceiveOK = 0
+		gnbRxTxWakeUpFailure = 0
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -910,7 +911,10 @@ class RANManagement():
 			result = re.search('PDCP.*Out of Resources.*reason', str(line))
 			if result is not None:
 				pdcpFailure += 1
-			result = re.search('ULSCH in error in round', str(line))
+			result = re.search('could not wakeup gNB rxtx process', str(line))
+			if result is not None:
+				gnbRxTxWakeUpFailure += 1
+			result = re.search('ULSCH in error in round|ULSCH 0 in error', str(line))
 			if result is not None:
 				ulschFailure += 1
 			result = re.search('ULSCH received ok', str(line))
@@ -938,6 +942,10 @@ class RANManagement():
 		if self.air_interface == 'nr':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if gnbRxTxWakeUpFailure > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(gnbRxTxWakeUpFailure) + ' "could not wakeup gNB rxtx process" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:

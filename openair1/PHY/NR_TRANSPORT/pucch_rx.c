@@ -42,6 +42,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
+#include <openair1/PHY/CODING/nrSmallBlock/nr_small_block_defs.h>
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/LOG/log.h"
@@ -262,7 +263,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
 #else
 
-  int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
+  const int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
   int16_t xr[24]  __attribute__((aligned(32)));
   int16_t xrt[24] __attribute__((aligned(32)));
   int32_t xrtmag=0;
@@ -390,7 +391,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                         uint8_t timeDomainOCC,
                         uint8_t nr_bit) {
 #ifdef DEBUG_NR_PUCCH_RX
-  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d payload=%d m0=%d nrofSymbols=%d startingSymbolIndex=%d startingPRB=%d startingPRB_intraSlotHopping=%d timeDomainOCC=%d nr_bit=%d\n",
+  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d payload=%lp m0=%d nrofSymbols=%d startingSymbolIndex=%d startingPRB=%d startingPRB_intraSlotHopping=%d timeDomainOCC=%d nr_bit=%d\n",
          nr_tti_tx,payload,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
 #endif
   /*
@@ -400,7 +401,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
   // complex-valued symbol d_re, d_im containing complex-valued symbol d(0):
   int16_t d_re=0, d_im=0,d1_re=0,d1_im=0;
 #ifdef DEBUG_NR_PUCCH_RX
-  printf("\t [nr_generate_pucch1] sequence modulation: payload=%x \tde_re=%d \tde_im=%d\n",payload,d_re,d_im);
+  printf("\t [nr_generate_pucch1] sequence modulation: payload=%lp \tde_re=%d \tde_im=%d\n",payload,d_re,d_im);
 #endif
   /*
    * Defining cyclic shift hopping TS 38.211 Subclause 6.3.2.2.2
@@ -494,7 +495,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
         z_re_rx[i+n] = ((int16_t *)&rxdataF[0][re_offset])[0];
         z_im_rx[i+n] = ((int16_t *)&rxdataF[0][re_offset])[1];
 #ifdef DEBUG_NR_PUCCH_RX
-        printf("\t [nr_generate_pucch1] mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+        printf("\t [nr_generate_pucch1] mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
                l,n,((int16_t *)&rxdataF[0][re_offset])[0],((int16_t *)&rxdataF[0][re_offset])[1]);
 #endif
@@ -505,7 +506,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
         z_dmrs_im_rx[i+n] = ((int16_t *)&rxdataF[0][re_offset])[1];
 //	printf("%d\t%d\t%d\n",l,z_dmrs_re_rx[i+n],z_dmrs_im_rx[i+n]);
 #ifdef DEBUG_NR_PUCCH_RX
-        printf("\t [nr_generate_pucch1] mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+        printf("\t [nr_generate_pucch1] mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
                l,n,((int16_t *)&rxdataF[0][re_offset])[0],((int16_t *)&rxdataF[0][re_offset])[1]);
 #endif
@@ -965,7 +966,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
   //extract pucch and dmrs first
 
-  int l2;
+  int l2=-1;
   int re_offset = (12*pucch_pdu->prb_start) + (12*pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
   if (re_offset>= frame_parms->ofdm_symbol_size) 
     re_offset-=frame_parms->ofdm_symbol_size;
@@ -1060,7 +1061,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  r_im_ext[aa][15]=rp[aa][47];
 		  
 #ifdef DEBUG_NR_PUCCH_RX
-	  for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext[aa][i],rd_im_ext[aa],i);
+	  for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext[aa][i],rd_im_ext[aa]);
 #endif
 	} // aa
      } // prb

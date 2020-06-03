@@ -167,7 +167,7 @@ endif()
 
 #
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
 # add autotools definitions that were maybe used!
 set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
 set(CMAKE_C_FLAGS
@@ -2456,9 +2456,9 @@ endif (${T_TRACER})
 #This rule and the following deal with it.
 add_custom_command (
   OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-  COMMAND $(MAKE) clean
-  COMMAND $(MAKE)
-  COMMAND $(MAKE) check_vcd
+  COMMAND make clean
+  COMMAND make
+  COMMAND make check_vcd
   WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
           ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
@@ -3017,7 +3017,7 @@ if (${T_TRACER})
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_UE NR_L2_UE MAC_NR_COMMON MAC_NR MAC_UE_NR
         CN_UTILS GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU SIMU_ETH OPENAIR0_LIB
-        ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
+        ldpc_orig ldpc_optim ldpc_optim8seg ldpc PROTO_AGENT)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
@@ -3060,7 +3060,7 @@ function(make_driver name dir)
   endforeach()
   CONFIGURE_FILE(${OPENAIR_CMAKE}/tools/Kbuild.cmake ${OPENAIR_BIN_DIR}/${name}/Kbuild)
   add_custom_command(OUTPUT ${name}.ko
-    COMMAND $(MAKE) -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
+    COMMAND make -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
     WORKING_DIRECTORY ${OPENAIR_BIN_DIR}/${name}
     COMMENT "building ${module}.ko"
     VERBATIM

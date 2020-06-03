@@ -657,8 +657,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
-  dmrs_UplinkConfig_t *dmrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig;
-  ptrs_UplinkConfig_t *ptrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
+  // dmrs_UplinkConfig_t *dmrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig;
+  // ptrs_UplinkConfig_t *ptrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   phy_init_nr_top(ue);
@@ -710,9 +710,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   }
 
   //------------- config DMRS parameters--------------//
-  dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
-  dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
+  // dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
+  // dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  // dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
   //-------------------------------------------------//
   ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
   ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
@@ -745,15 +745,13 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   /////////////////////////PUSCH PTRS init/////////////////////////
   ///////////
 
-  ue->ptrs_configured = 0; // flag to be toggled by RCC
-
   //------------- config PTRS parameters--------------//
-  ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 0; // setting MCS values to 0 indicate abscence of time_density field in the configuration
-  ptrs_Uplink_Config->timeDensity.ptrs_mcs2 = 0;
-  ptrs_Uplink_Config->timeDensity.ptrs_mcs3 = 0;
-  ptrs_Uplink_Config->frequencyDensity.n_rb0 = 0;     // setting N_RB values to 0 indicate abscence of frequency_density field in the configuration
-  ptrs_Uplink_Config->frequencyDensity.n_rb1 = 0;
-  ptrs_Uplink_Config->resourceElementOffset = 0;
+  // ptrs_Uplink_Config->timeDensity.ptrs_mcs1 = 2; // setting MCS values to 0 indicate abscence of time_density field in the configuration
+  // ptrs_Uplink_Config->timeDensity.ptrs_mcs2 = 4;
+  // ptrs_Uplink_Config->timeDensity.ptrs_mcs3 = 10;
+  // ptrs_Uplink_Config->frequencyDensity.n_rb0 = 25;     // setting N_RB values to 0 indicate abscence of frequency_density field in the configuration
+  // ptrs_Uplink_Config->frequencyDensity.n_rb1 = 75;
+  // ptrs_Uplink_Config->resourceElementOffset = 0;
   //-------------------------------------------------//
 
   ///////////

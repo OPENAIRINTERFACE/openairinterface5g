@@ -29,8 +29,8 @@
 
 ***************************************************************************/
 
-#ifndef _NAS_PROTO_H
-#define _NAS_PROTO_H
+#ifndef __NETWORK_DRIVER_MESH_PROTO_EXTERN__H__
+#define __NETWORK_DRIVER_MESH_PROTO_EXTERN__H__
 
 #include <linux/if_arp.h>
 #include <linux/types.h>

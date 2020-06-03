@@ -1237,6 +1237,47 @@ nr_bandentry_t nr_bandtable[] = {
   {261,27500000,28350000,27500000,28350000,  2,2070833, 120}
 };
 
+
+// TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
+// When l' = l0, it is represented by 1
+// E.g. when symbol duration is 12 in colomn 7, value 1057 ('10000100001') which means l' =  l0, 5, 10.
+
+int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,          1,          1,         1,         1},       //<4              // (DMRS l' position)
+{1,            1,           1,          1,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{1,            1,           1,          1,          1,          5,         5,         5},       //5               // (DMRS l' position)
+{1,            1,           1,          1,          1,          5,         5,         5},       //6               // (DMRS l' position)
+{1,            1,           1,          1,          1,          5,         5,         5},       //7               // (DMRS l' position)
+{1,          129,         129,        129,          1,         65,        73,        73},       //8               // (DMRS l' position)
+{1,          129,         129,        129,          1,         65,        73,        73},       //9               // (DMRS l' position)
+{1,          513,         577,        577,          1,        257,       273,       585},       //10              // (DMRS l' position)
+{1,          513,         577,        577,          1,        257,       273,       585},       //11              // (DMRS l' position)
+{1,          513,         577,       2337,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
+{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
+{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
+};
+
+
+// TS 38.211 Table 6.4.1.1.3-4: PUSCH DMRS positions l' within a slot for double-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
+// When l' = l0, it is represented by 1
+
+int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
+{1,            1,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //5               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //6               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //7               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //8               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //9               // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //10              // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //11              // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        513,        -1,         -1},       //12              // (DMRS l' position)
+{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
+{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
+};
+
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
 void get_band(uint64_t downlink_frequency,
@@ -1680,6 +1721,112 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
 
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
+}
+
+/*******************************************************************
+*
+* NAME :         get_l0_ul
+*
+* PARAMETERS :   mapping_type : PUSCH mapping type
+*                dmrs_typeA_position  : higher layer parameter
+*
+* RETURN :       demodulation reference signal for PUSCH
+*
+* DESCRIPTION :  see TS 38.211 V15.4.0 Demodulation reference signals for PUSCH
+*
+*********************************************************************/
+
+uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
+
+  return ((mapping_type==typeA)?dmrs_typeA_position:0);
+
+}
+
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength) {
+
+  uint8_t row, colomn;
+  int32_t l_prime;
+
+  colomn = additional_pos;
+
+  if (mapping_type == typeB)
+    colomn += 4;
+
+  if (duration_in_symbols < 4)
+    row = 0;
+  else
+    row = duration_in_symbols - 3;
+
+  if (pusch_maxLength == pusch_len1)
+    l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
+  else
+    l_prime = table_6_4_1_1_3_4_pusch_dmrs_positions_l[row][colomn];
+
+  AssertFatal(l_prime>0,"invalid l_prime < 0\n");
+
+  return l_prime;
+}
+
+/*******************************************************************
+*
+* NAME :         get_L_ptrs
+*
+* PARAMETERS :   mcs(i)                 higher layer parameter in PTRS-UplinkConfig
+*                I_mcs                  MCS index used for PUSCH
+*                mcs_table              0 for table 5.1.3.1-1, 1 for table 5.1.3.1-1
+*
+* RETURN :       the parameter L_ptrs
+*
+* DESCRIPTION :  3GPP TS 38.214 section 6.2.3.1
+*
+*********************************************************************/
+
+uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table) {
+
+  uint8_t mcs4;
+
+  if(mcs_table == 0)
+    mcs4 = 29;
+  else
+    mcs4 = 28;
+
+  if (I_mcs < mcs1) {
+    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    return -1;
+  } else if (I_mcs >= mcs1 && I_mcs < mcs2)
+    return 2;
+  else if (I_mcs >= mcs2 && I_mcs < mcs3)
+    return 1;
+  else if (I_mcs >= mcs3 && I_mcs < mcs4)
+    return 0;
+  else {
+    LOG_I(PHY, "PT-RS time-density determination is obtained from the DCI for the same transport block in the initial transmission\n");
+    return -1;
+  }
+}
+
+/*******************************************************************
+*
+* NAME :         get_K_ptrs
+*
+* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+*                N_RB                   number of RBs scheduled for PUSCH
+*
+* RETURN :       the parameter K_ptrs
+*
+* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-2
+*
+*********************************************************************/
+
+uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
+
+  if (N_RB < nrb0) {
+    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    return -1;
+  } else if (N_RB >= nrb0 && N_RB < nrb1)
+    return 0;
+  else
+    return 1;
 }
 
 uint16_t nr_dci_size(nr_dci_format_t format,

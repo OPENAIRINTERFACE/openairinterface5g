@@ -31,7 +31,7 @@
 __m64 byte2m64_re[256];
 __m64 byte2m64_im[256];
 
-void init_byte2m64() {
+void init_byte2m64(void) {
 
   for (int s=0;s<256;s++) {
     byte2m64_re[s] = _mm_insert_pi16(byte2m64_re[s],(1-2*(s&1)),0);
@@ -53,7 +53,7 @@ void init_byte2m64() {
   }
 }
 
-void init_scrambling_luts() {
+void init_scrambling_luts(void) {
 
   init_byte2m64();
 
