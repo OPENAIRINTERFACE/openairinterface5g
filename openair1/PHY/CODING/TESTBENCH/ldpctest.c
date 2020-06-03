@@ -27,7 +27,9 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-
+// extern "C" {
+#include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
+// }
 #define MAX_NUM_DLSCH_SEGMENTS 16
 #define MAX_BLOCK_LENGTH 8448
 
@@ -102,7 +104,8 @@ int test_ldpc(short No_iteration,
               unsigned int *crc_misses,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
-              n_iter_stats_t *dec_iter)
+              n_iter_stats_t *dec_iter,
+			  short run_cuda)
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -114,7 +117,6 @@ int test_ldpc(short No_iteration,
 
   double sigma;
   sigma = 1.0/sqrt(2*SNR);
-
   opp_enabled=1;
   cpu_freq_GHz = get_cpu_freq_GHz();
   //short test_input[block_length];
@@ -400,12 +402,19 @@ int test_ldpc(short No_iteration,
 
       for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
+
+        if(run_cuda){
+          printf("***********run ldpc by cuda\n");
+          n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
+      }  
+      else{ 
+        printf("**************run ldpc by cpu\n");  
       // decode the sequence
       // decoder supports BG2, Z=128 & 256
       //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
       ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
-          n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-      
+        n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
+      }
 	stop_meas(time_decoder);
       }
 
@@ -513,6 +522,8 @@ int main(int argc, char *argv[])
   short No_iteration=5;
   int n_segments=1;
   //double rate=0.333;
+  short run_cuda = 0;
+  
   int nom_rate=1;
   int denom_rate=3;
   double SNR0=-2.0,SNR,SNR_lin;
@@ -531,7 +542,7 @@ int main(int argc, char *argv[])
 
   short BG=0,Zc,Kb=0;
 
-  while ((c = getopt (argc, argv, "q:r:s:S:l:n:d:i:t:u:h")) != -1)
+  while ((c = getopt (argc, argv, "q:r:s:S:l:G:n:d:i:t:u:h")) != -1)
     switch (c)
     {
       case 'q':
@@ -548,6 +559,10 @@ int main(int argc, char *argv[])
 
       case 'l':
         block_length = atoi(optarg);
+        break;
+		
+      case 'G':
+        run_cuda = atoi(optarg);
         break;
 
       case 'n':
@@ -584,6 +599,7 @@ int main(int argc, char *argv[])
               printf("-r Nominator rate, (1, 2, 22), Default: 1\n");
               printf("-d Denominator rate, (3, 5, 25), Default: 1\n");
               printf("-l Block length (l > 3840 -> BG1, rest BG2 ), Default: 8448\n");
+			  printf("-G give 1 to run cuda for LDPC, Default: 0\n");
               printf("-n Number of simulation trials, Default: 1\n");
               //printf("-M MCS2 for TB 2\n");
               printf("-s SNR per information bit (EbNo) in dB, Default: -2\n");
@@ -674,7 +690,8 @@ int main(int argc, char *argv[])
                                 &crc_misses,
                                 time_optim,
                                 time_decoder,
-                                dec_iter);
+                                dec_iter,
+								run_cuda);
 
     printf("SNR %f, BLER %f (%u/%d)\n", SNR, (float)decoded_errors[i]/(float)n_trials, decoded_errors[i], n_trials);
     printf("SNR %f, BER %f (%u/%d)\n", SNR, (float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments, decoded_errors[i], n_trials);
