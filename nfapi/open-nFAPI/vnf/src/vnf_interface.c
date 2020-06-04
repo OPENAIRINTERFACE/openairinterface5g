@@ -487,7 +487,7 @@ int nfapi_vnf_stop(nfapi_vnf_config_t* config)
 }
 
 int nfapi_vnf_pnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_request_t* req)
-{
+{   printf("nfapi_vnf_pnf_param_req\n");
 	if(config == 0 || req == 0)
 		return -1;
 
@@ -535,7 +535,7 @@ int nfapi_vnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_requ
 
 	return vnf_pack_and_send_p5_message(_this, p5_idx, &req->header, sizeof(nfapi_param_request_t));
 }
-int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_request_t* req)
+int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_request_scf_t* req)
 {
 	if(config == 0 || req == 0)
 		return -1;
@@ -551,19 +551,19 @@ int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_re
 	}
 
 	// set the timing parameters
-	req->nfapi_config.timing_window.tl.tag = NFAPI_NFAPI_TIMING_WINDOW_TAG;
+	req->nfapi_config.timing_window.tl.tag = NFAPI_NR_NFAPI_TIMING_WINDOW_TAG;
 	req->nfapi_config.timing_window.value = phy->timing_window;
 	req->num_tlv++;
 
-	req->nfapi_config.timing_info_mode.tl.tag = NFAPI_NFAPI_TIMING_INFO_MODE_TAG;
+	req->nfapi_config.timing_info_mode.tl.tag = NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG;
 	req->nfapi_config.timing_info_mode.value = phy->timing_info_mode;
 	req->num_tlv++;
 
-	req->nfapi_config.timing_info_period.tl.tag = NFAPI_NFAPI_TIMING_INFO_PERIOD_TAG;
+	req->nfapi_config.timing_info_period.tl.tag = NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG;
 	req->nfapi_config.timing_info_period.value = phy->timing_info_period;
 	req->num_tlv++;
 
-	return vnf_pack_and_send_p5_message(_this, p5_idx, &req->header, sizeof(nfapi_config_request_t));
+	return vnf_pack_and_send_p5_message(_this, p5_idx, &req->header, sizeof(nfapi_nr_config_request_scf_t));
 }
 int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_start_request_t* req)
 {

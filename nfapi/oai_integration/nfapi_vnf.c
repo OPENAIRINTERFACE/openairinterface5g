@@ -981,7 +981,7 @@ void *vnf_p7_thread_start(void *ptr) {
   p7_vnf->config->codec_config.deallocate = &vnf_deallocate;
   p7_vnf->config->allocate_p7_vendor_ext = &phy_allocate_p7_vendor_ext;
   p7_vnf->config->deallocate_p7_vendor_ext = &phy_deallocate_p7_vendor_ext;
-  NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Creating VNF NFAPI start thread %s\n", __FUNCTION__);
+  NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Creating VNF NFAPI P7 start thread %s\n", __FUNCTION__);
   pthread_create(&vnf_p7_start_pthread, NULL, &vnf_p7_start_thread, p7_vnf->config);
   return 0;
 }
@@ -1002,7 +1002,7 @@ int pnf_start_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_start_re
   }
 
   // start all the phys in the pnf.
-  printf("[VNF] Sending NFAPI_PARAM_REQUEST phy_id:%d\n", pnf->phys[0].id);
+  printf("[VNF] Sending NFAPI_VNF_PARAM_REQUEST phy_id:%d\n", pnf->phys[0].id);
   memset(&req, 0, sizeof(req));
   req.header.message_id = NFAPI_PARAM_REQUEST;
   req.header.phy_id = pnf->phys[0].id;
@@ -1019,7 +1019,7 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   pnf_info *pnf = vnf->pnfs;
   phy_info *phy = pnf->phys;
   struct sockaddr_in pnf_p7_sockaddr;
-  nfapi_nr_config_request_t *req = &RC.nrmac[0]->config[0];
+  nfapi_nr_config_request_scf_t *req = &RC.nrmac[0]->config[0];
   phy->remote_port = resp->nfapi_config.p7_pnf_port.value;
   memcpy(&pnf_p7_sockaddr.sin_addr.s_addr, &(resp->nfapi_config.p7_pnf_address_ipv4.address[0]), 4);
   phy->remote_addr = inet_ntoa(pnf_p7_sockaddr.sin_addr);
@@ -1062,7 +1062,7 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   ve2.dummy = 2016;
   req->vendor_extension = &ve2.tl;
   nfapi_vnf_config_req(config, p5_idx, req);
-  printf("[VNF] Sent NFAPI_CONFIG_REQ num_tlv:%u\n",req->num_tlv);
+  printf("[VNF] Sent NFAPI_VNF_CONFIG_REQ num_tlv:%u\n",req->num_tlv);
   return 0;
 }
 
@@ -1075,7 +1075,7 @@ int config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_config_response
   req.header.message_id = NFAPI_START_REQUEST;
   req.header.phy_id = resp->header.phy_id;
   nfapi_vnf_start_req(config, p5_idx, &req);
-  printf("[VNF] Send NFAPI_START_REQUEST idx:%d phy_id:%d\n", p5_idx, resp->header.phy_id);
+  printf("[VNF] Send NFAPI_VNF_START_REQUEST idx:%d phy_id:%d\n", p5_idx, resp->header.phy_id);
   return 0;
 }
 

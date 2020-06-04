@@ -246,7 +246,7 @@ void vnf_handle_param_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "Received PARAM_RESPONSE\n");
 		
-		nfapi_param_response_t msg;
+		nfapi_nr_param_response_scf_t msg;
 		
 		// unpack the message
 		if (nfapi_p5_message_unpack(pRecvMsg, recvMsgLen, &msg, sizeof(msg), &config->codec_config) >= 0)

@@ -459,7 +459,7 @@ int pnf_stop_request(nfapi_pnf_config_t *config, nfapi_pnf_stop_request_t *req) 
 int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_nr_param_request_scf_t *req) {
   printf("[PNF] Received NFAPI_PARAM_REQUEST phy_id:%d\n", req->header.phy_id);
   //pnf_info* pnf = (pnf_info*)(config->user_data);
-  nfapi_param_response_t nfapi_resp;
+  nfapi_nr_param_response_scf_t nfapi_resp;
   pnf_info *pnf = (pnf_info *)(config->user_data);
   memset(&nfapi_resp, 0, sizeof(nfapi_resp));
   nfapi_resp.header.message_id = NFAPI_PARAM_RESPONSE;
@@ -475,7 +475,7 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   nfapi_resp.nfapi_config.p7_pnf_port.value = pnf->phys[0].local_port; // 32123; // DJP - hard code alert!!!! FIXME TODO
   nfapi_resp.num_tlv++;
   nfapi_pnf_param_resp(config, &nfapi_resp);
-  printf("[PNF] Sent NFAPI_PARAM_RESPONSE phy_id:%d number_of_tlvs:%u\n", req->header.phy_id, nfapi_resp.num_tlv);
+  printf("[PNF] Sent NFAPI_PNF_PARAM_RESPONSE phy_id:%d number_of_tlvs:%u\n", req->header.phy_id, nfapi_resp.num_tlv);
   printf("[PNF] param request .. exit\n");
   return 0;
 }
@@ -676,7 +676,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   nfapi_resp.header.phy_id = phy_info->id;
   nfapi_resp.error_code = 0; // DJP - some value resp->error_code;
   nfapi_pnf_config_resp(config, &nfapi_resp);
-  printf("[PNF] Sent NFAPI_CONFIG_RESPONSE phy_id:%d\n", phy_info->id);
+  printf("[PNF] Sent NFAPI_PNF_CONFIG_RESPONSE phy_id:%d\n", phy_info->id);
 
   if(NFAPI_MODE==NFAPI_UE_STUB_PNF)
     free(fp);

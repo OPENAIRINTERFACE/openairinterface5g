@@ -541,7 +541,7 @@ int nfapi_vnf_param_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_requ
  * \param req A pointer to a CONFIG.request message structure
  * \return  0 means success, -1 failure
  */
-int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_request_t* req);
+int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_request_scf_t* req);
 
 /*! Send the START.request
  * \param config A pointer to a vnf config

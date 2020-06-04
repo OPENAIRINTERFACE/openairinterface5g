@@ -459,7 +459,7 @@ typedef struct {
   nfapi_p4_p5_message_header_t  header;
   nfapi_nr_param_errors_e       error_code;
   
-  uint8_t                       number_of_tlvs;
+  uint8_t                       num_tlv;
   nfapi_vendor_extension_tlv_t  vendor_extension;
 
   nfapi_nr_cell_param_t         cell_param;
