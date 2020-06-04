@@ -1026,10 +1026,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
     }
     proc->subframe_rx=proc->sub_frame_start;
     // Initializations for nfapi-L2-emulator mode
-    dl_config_req = NULL;
     ul_config_req = NULL;
-    hi_dci0_req        = NULL;
-    tx_request_pdu_list = NULL;
+    hi_dci0_req = NULL;
 
     // waiting for all UE's threads set phy_stub_ticking->num_single_thread[ue_thread_id] = -1.
     do {
@@ -1130,6 +1128,12 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
     }
 
+    nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
+    nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
+    // if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
+    //   LOG_E(MAC, "In behemoth dl_config_req: %p tx_req_pdu_list: %p\n", dl_config_req, tx_request_pdu_list);
+    // }
+
     if (dl_config_req && tx_request_pdu_list) {
       nfapi_dl_config_request_body_t* dl_config_req_body = &dl_config_req->dl_config_request_body;
       for (int i = 0; i < dl_config_req_body->number_pdu; ++i) {
@@ -1148,7 +1152,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
                                    NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
                                    pdu,
                                    dlsch,
-                                   ue_num);
+                                   ue_num,
+                                   tx_request_pdu_list);
         } else if (pdu->pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE) {
           dl_config_req_UE_MAC_bch(NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),
                                    NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
@@ -1158,7 +1163,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
           dl_config_req_UE_MAC_mch(NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),
                                    NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
                                    pdu,
-                                   ue_num);
+                                   ue_num,
+                                   tx_request_pdu_list);
         }
       }
     }
@@ -1473,11 +1479,6 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
       phy_procedures_UE_SL_RX(UE,proc);
       oai_subframe_ind(timer_frame, timer_subframe);
 
-      if(dl_config_req!= NULL) {
-        AssertFatal(0, "dl_config_req_UE_MAC() not handled\n");
-        //dl_config_req_UE_MAC(dl_config_req, Mod_id);
-      }
-
       //if(UE_mac_inst[Mod_id].hi_dci0_req!= NULL){
       if (hi_dci0_req!=NULL && hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL) {
         AssertFatal(0, "hi_dci0_req_UE_MAC() not handled\n");
@@ -1584,13 +1585,13 @@ void write_dummy(PHY_VARS_UE *UE,  openair0_timestamp timestamp) {
   //
   struct complex16 v= {0};
   void *samplesVoid[UE->frame_parms.nb_antennas_tx];
-  
+
   for ( int i=0; i < UE->frame_parms.nb_antennas_tx; i++)
     samplesVoid[i]=(void *)&v;
-  
+
   AssertFatal( 1 == UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+2*UE->frame_parms.samples_per_tti,
-						samplesVoid, 
+						samplesVoid,
 						1,
 						UE->frame_parms.nb_antennas_tx,
 						1),"");
@@ -1644,7 +1645,7 @@ void *UE_thread(void *arg)
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
-    
+
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
@@ -1654,7 +1655,7 @@ void *UE_thread(void *arg)
 	    for(int sf=0; sf<10; sf++) {
 	      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 		rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
-	      
+
               AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
 						      &timestamp,
 						      rxp,
@@ -1665,7 +1666,7 @@ void *UE_thread(void *arg)
 	  } else {
 	    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 	      rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
-	    
+
 	    AssertFatal( UE->frame_parms.samples_per_tti*10 ==
                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                     &timestamp,
@@ -2267,7 +2268,7 @@ static void *timer_thread( void *param )
       pdu.header.packet_type = TTI_SYNC;
       pdu.header.absSF = (timer_frame*10)+timer_subframe;
 
-      if (NFAPI_MODE != NFAPI_UE_STUB_PNF) {
+      if (NFAPI_MODE != NFAPI_UE_STUB_PNF && NFAPI_MODE != NFAPI_MODE_STANDALONE_PNF) {
         multicast_link_write_sock(0,
                                   (char *)&pdu,
                                   sizeof(UE_tport_header_t));

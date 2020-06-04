@@ -49,10 +49,10 @@ void generate_sldch(PHY_VARS_UE *ue,SLDCH_t *sldch,int frame_tx,int subframe_tx)
          (void*)sldch,
          sizeof(SLDCH_t));
 
-  LOG_I(PHY,"SLDCH configuration %zd bytes, TBS payload %d bytes => %zd bytes\n",
-        sizeof(SLDCH_t)-sizeof(uint8_t*),
-        sldch->payload_length,
-        sldch_header_len+sizeof(SLDCH_t)-sizeof(uint8_t*)+sldch->payload_length);
+//   LOG_I(PHY,"SLDCH configuration %zd bytes, TBS payload %d bytes => %zd bytes\n",
+//         sizeof(SLDCH_t)-sizeof(uint8_t*),
+//         sldch->payload_length,
+//         sldch_header_len+sizeof(SLDCH_t)-sizeof(uint8_t*)+sldch->payload_length);
 
   multicast_link_write_sock(0,
                             (char *)&pdu,

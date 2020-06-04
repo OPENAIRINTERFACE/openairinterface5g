@@ -40,10 +40,57 @@ void configure_nfapi_pnf(char *vnf_ip_addr,
                          int vnf_p7_port);
 
 UL_IND_t *UL_INFO = NULL;
-nfapi_tx_request_pdu_t* tx_request_pdu_list = NULL;
-nfapi_dl_config_request_t* dl_config_req = NULL;
+
 nfapi_ul_config_request_t* ul_config_req = NULL;
 nfapi_hi_dci0_request_t* hi_dci0_req = NULL;
+
+
+queue_t dl_config_req_queue;
+queue_t tx_req_pdu_queue;
+queue_t ul_config_req_queue;
+queue_t hi_dci0_req_queue;
+
+void init_queue(queue_t *q) {
+  memset(q, 0, sizeof(*q));
+  pthread_mutex_init(&q->mutex, NULL);
+}
+
+void put_queue(queue_t *q, void *item) {
+
+  if (pthread_mutex_lock(&q->mutex) != 0) {
+    LOG_E(MAC, "put_queue mutex_lock failed\n");
+    return;
+  }
+
+  if (q->num_items >= MAX_QUEUE_SIZE) {
+    LOG_E(MAC, "Queue is full in put_queue\n");
+  } else {
+    q->items[q->write_index] = item;
+    q->write_index = (q->write_index + 1) % MAX_QUEUE_SIZE;
+    q->num_items++;
+  }
+
+  pthread_mutex_unlock(&q->mutex);
+
+}
+
+void *get_queue(queue_t *q) {
+
+  void *item = NULL;
+  if (pthread_mutex_lock(&q->mutex) != 0) {
+    LOG_E(MAC, "get_queue mutex_lock failed\n");
+    return NULL;
+  }
+
+  if (q->num_items > 0) {
+    item = q->items[q->read_index];
+    q->read_index = (q->read_index + 1) % MAX_QUEUE_SIZE;
+    q->num_items--;
+  }
+
+  pthread_mutex_unlock(&q->mutex);
+  return item;
+}
 
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
 //extern int timer_subframe;
@@ -715,7 +762,8 @@ void dl_config_req_UE_MAC_dci(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *dci,
                               nfapi_dl_config_request_pdu_t *dlsch,
-                              int num_ue) {
+                              int num_ue,
+                              nfapi_tx_request_pdu_t *tx_request_pdu_list) {
   DevAssert(dci->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE);
   DevAssert(dlsch->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE);
 
@@ -730,11 +778,11 @@ void dl_config_req_UE_MAC_dci(int sfn,
 
   const int pdu_index = dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
   if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
-    LOG_E(MAC,
-          "%s(): Problem with receiving data: "
-          "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
-          __func__,
-          sfn, sf, dci->pdu_size, dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+    // LOG_E(MAC,
+    //       "%s(): Problem with receiving data: "
+    //       "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
+    //       __func__,
+    //       sfn, sf, dci->pdu_size, dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
     return;
   }
 
@@ -834,7 +882,8 @@ void dl_config_req_UE_MAC_bch(int sfn,
 void dl_config_req_UE_MAC_mch(int sfn,
                               int sf,
                               nfapi_dl_config_request_pdu_t *mch,
-                              int num_ue) {
+                              int num_ue,
+                              nfapi_tx_request_pdu_t *tx_request_pdu_list) {
   DevAssert(mch->pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE);
 
   for (int ue_id = 0; ue_id < num_ue; ue_id++) {
@@ -850,11 +899,11 @@ void dl_config_req_UE_MAC_mch(int sfn,
     } else {
 	 const int pdu_index = mch->mch_pdu.mch_pdu_rel8.pdu_index;
   	if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
-    	LOG_E(MAC,
-          "%s(): Problem with receiving data: "
-          "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
-          __func__,
-          sfn, sf, mch->pdu_size, mch->mch_pdu.mch_pdu_rel8.pdu_index);
+      // LOG_E(MAC,
+      //     "%s(): Problem with receiving data: "
+      //     "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
+      //     __func__,
+      //     sfn, sf, mch->pdu_size, mch->mch_pdu.mch_pdu_rel8.pdu_index);
     	return;
   	}
         ue_send_mch_sdu(ue_id, 0, sfn,
@@ -911,40 +960,40 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
     p->dl_config_request_body.dl_config_pdu_list[i] =
         req->dl_config_request_body.dl_config_pdu_list[i];
   }
-  dl_config_req = p;
 
+  put_queue(&dl_config_req_queue, p);
   return 0;
 }
 
 int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
 {
   // make same changes as in dl_config_req
-  ul_config_req = malloc(sizeof(nfapi_ul_config_request_t));
+  nfapi_ul_config_request_t *p = malloc(sizeof(nfapi_ul_config_request_t));
 
+  p->sfn_sf = req->sfn_sf;
+  p->vendor_extension = req->vendor_extension;
 
-  ul_config_req->sfn_sf = req->sfn_sf;
-  ul_config_req->vendor_extension = req->vendor_extension;
+  p->ul_config_request_body.number_of_pdus = req->ul_config_request_body.number_of_pdus;
+  p->ul_config_request_body.rach_prach_frequency_resources = req->ul_config_request_body.rach_prach_frequency_resources;
+  p->ul_config_request_body.srs_present = req->ul_config_request_body.srs_present;
 
-  ul_config_req->ul_config_request_body.number_of_pdus = req->ul_config_request_body.number_of_pdus;
-  ul_config_req->ul_config_request_body.rach_prach_frequency_resources = req->ul_config_request_body.rach_prach_frequency_resources;
-  ul_config_req->ul_config_request_body.srs_present = req->ul_config_request_body.srs_present;
+  p->ul_config_request_body.tl.tag = req->ul_config_request_body.tl.tag;
+  p->ul_config_request_body.tl.length = req->ul_config_request_body.tl.length;
 
-  ul_config_req->ul_config_request_body.tl.tag = req->ul_config_request_body.tl.tag;
-  ul_config_req->ul_config_request_body.tl.length = req->ul_config_request_body.tl.length;
-
-  ul_config_req->ul_config_request_body.ul_config_pdu_list =
+  p->ul_config_request_body.ul_config_pdu_list =
       calloc(req->ul_config_request_body.number_of_pdus,
              sizeof(nfapi_ul_config_request_pdu_t));
-  for (int i = 0; i < ul_config_req->ul_config_request_body.number_of_pdus; i++) {
-    ul_config_req->ul_config_request_body.ul_config_pdu_list[i] =
+  for (int i = 0; i < p->ul_config_request_body.number_of_pdus; i++) {
+    p->ul_config_request_body.ul_config_pdu_list[i] =
         req->ul_config_request_body.ul_config_pdu_list[i];
   }
 
+  // put_queue(&ul_config_req_queue, (void *)p);
+  ul_config_req = p;
   return 0;
 }
 
 int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
-  // make same changes as in dl_config_req
   tx_req_num_elems = req->tx_request_body.number_of_pdus;
   nfapi_tx_request_pdu_t *p = calloc(tx_req_num_elems, sizeof(nfapi_tx_request_pdu_t));
   for (int i = 0; i < tx_req_num_elems; i++) {
@@ -962,7 +1011,7 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
       }
     }
   }
-  tx_request_pdu_list = p;
+  put_queue(&tx_req_pdu_queue, p);
 
   return 0;
 }
@@ -971,34 +1020,37 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t* pnf_p7,
 			nfapi_hi_dci0_request_t* req) {
   // make same changes as in dl_config_req
-  hi_dci0_req = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
+  nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
 
 
-  hi_dci0_req->sfn_sf = req->sfn_sf;
-  hi_dci0_req->vendor_extension = req->vendor_extension;
+  p->sfn_sf = req->sfn_sf;
+  p->vendor_extension = req->vendor_extension;
 
-  hi_dci0_req->hi_dci0_request_body.number_of_dci = req->hi_dci0_request_body.number_of_dci;
-  hi_dci0_req->hi_dci0_request_body.number_of_hi = req->hi_dci0_request_body.number_of_hi;
-  hi_dci0_req->hi_dci0_request_body.sfnsf = req->hi_dci0_request_body.sfnsf;
+  p->hi_dci0_request_body.number_of_dci = req->hi_dci0_request_body.number_of_dci;
+  p->hi_dci0_request_body.number_of_hi = req->hi_dci0_request_body.number_of_hi;
+  p->hi_dci0_request_body.sfnsf = req->hi_dci0_request_body.sfnsf;
 
-  // UE_mac_inst[Mod_id].hi_dci0_req->hi_dci0_request_body.tl =
+  // UE_mac_inst[Mod_id].p->hi_dci0_request_body.tl =
   // req->hi_dci0_request_body.tl;
-  hi_dci0_req->hi_dci0_request_body.tl.tag = req->hi_dci0_request_body.tl.tag;
-  hi_dci0_req->hi_dci0_request_body.tl.length = req->hi_dci0_request_body.tl.length;
+  p->hi_dci0_request_body.tl.tag = req->hi_dci0_request_body.tl.tag;
+  p->hi_dci0_request_body.tl.length = req->hi_dci0_request_body.tl.length;
 
-  int total_pdus = hi_dci0_req->hi_dci0_request_body.number_of_dci
-                   + hi_dci0_req->hi_dci0_request_body.number_of_hi;
+  int total_pdus = p->hi_dci0_request_body.number_of_dci
+                   + p->hi_dci0_request_body.number_of_hi;
 
-  hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list =
+  p->hi_dci0_request_body.hi_dci0_pdu_list =
       calloc(total_pdus, sizeof(nfapi_hi_dci0_request_pdu_t));
 
   for (int i = 0; i < total_pdus; i++) {
-    hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list[i] = req->hi_dci0_request_body.hi_dci0_pdu_list[i];
+    p->hi_dci0_request_body.hi_dci0_pdu_list[i] = req->hi_dci0_request_body.hi_dci0_pdu_list[i];
     // LOG_I(MAC, "Original hi_dci0 req. type:%d, Copy type: %d
     // \n",req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type,
-    // UE_mac_inst[Mod_id].hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type);
+    // UE_mac_inst[Mod_id].p->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type);
   }
+  // put_queue(&hi_dci0_req_queue, (void *)p);
+  hi_dci0_req = p;
+
   return 0;
 }
 
@@ -1101,8 +1153,7 @@ void *ue_standalone_pnf_task(void *context)
     }
 
     nfapi_p7_message_header_t header;
-    if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
-    {
+    if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0) {
       LOG_E(MAC, "Header unpack failed for standalone pnf\n");
       continue;
     }
@@ -1119,7 +1170,7 @@ void *ue_standalone_pnf_task(void *context)
       }
       else
       {
-        LOG_I(MAC, "Sending dl_config_req to memcpy function\n");
+        // check to see if dl_config_req is null
         memcpy_dl_config_req(NULL, NULL, &dl_config_req);
       }
       break;
@@ -1127,6 +1178,7 @@ void *ue_standalone_pnf_task(void *context)
     case NFAPI_TX_REQUEST:
     {
       nfapi_tx_request_t tx_req;
+      // lock this tx_req
       if (nfapi_p7_message_unpack((void *)buffer, len, &tx_req,
                                   sizeof(tx_req), NULL) < 0)
       {
@@ -1134,7 +1186,7 @@ void *ue_standalone_pnf_task(void *context)
       }
       else
       {
-        LOG_I(MAC, "Sending tx_req to memcpy function\n");
+        // check to see if tx_req is null
         memcpy_tx_req(NULL, &tx_req);
       }
       break;
