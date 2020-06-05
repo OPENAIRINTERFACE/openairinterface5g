@@ -50,6 +50,7 @@
 #include "openair1/PHY/defs_UE.h"
 #define CHANNELMOD_DYNAMICLOAD
 #include <openair1/SIMULATION/TOOLS/sim.h>
+#include <targets/ARCH/rfsimulator/rfsimulator.h>
 
 #define PORT 4043 //default TCP port for this simulator
 #define CirSize 307200 // 100ms is enough
@@ -146,6 +147,12 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
     // Legacy changes directlty the variable channel_model->path_loss_dB place to place
     // while calling new_channel_desc_scm() with path losses = 0
+    static bool init_done=false;
+    if (!init_done) {
+      randominit(0);
+      tableNor(0);
+      init_done=true;
+    }
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
                                             bridge->channelmod,
                                             bridge->sample_rate,
@@ -561,6 +568,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       pthread_mutex_unlock(&Sockmutex);
       usleep(10000);
       pthread_mutex_lock(&Sockmutex);
+
       if ( t->lastWroteTS < t->nextTimestamp ) {
         // Assuming Tx is not done fully in another thread
         // We can never write is the past from the received time
@@ -574,6 +582,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
         for ( int i=0; i < t->tx_num_channels; i++)
           samplesVoid[i]=(void *)&v;
+
 	LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
 	      t->lastWroteTS, t->nextTimestamp);
         rfsimulator_write_internal(t, t->nextTimestamp,
@@ -716,7 +725,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->rx_num_channels=openair0_cfg->rx_num_channels;
   rfsimulator->sample_rate=openair0_cfg->sample_rate;
   rfsimulator->tx_bw=openair0_cfg->tx_bw;
-  randominit(0);
+  //randominit(0);
   set_taus_seed(0);
   return 0;
 }
