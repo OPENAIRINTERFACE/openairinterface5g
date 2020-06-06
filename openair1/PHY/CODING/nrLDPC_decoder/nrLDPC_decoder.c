@@ -31,8 +31,6 @@
 #include "nrLDPC_mPass.h"
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
-#include "nrLDPC_tools/include/avx512bwintrin.h"
-//#define ___AVX512BW___ 1
 
 
   /*----------------------------------------------------------------------/
