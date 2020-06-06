@@ -232,7 +232,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
                                  UL_IND_t *UL_INFO,
                                  uint8_t ra_PreambleIndex,
                                  uint16_t ra_RNTI) {
-  LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
+  LOG_I(MAC, "fill_rach_indication_UE_MAC 1 \n");
 
   pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
 

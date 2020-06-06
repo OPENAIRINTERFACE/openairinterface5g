@@ -966,7 +966,13 @@ void ue_stub_rx_handler(unsigned int num_bytes,
   }
 }
 
-
+uint64_t clock_usec() {
+  struct timespec t;
+  if (clock_gettime(CLOCK_MONOTONIC, &t) == -1) {
+    abort();
+  }
+  return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
+}
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.
@@ -1047,6 +1053,9 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 
   //PANOS: CAREFUL HERE!
   wait_sync("UE_phy_stub_single_thread_rxn_txnp4");
+
+  int num_pairs = 0;
+  int num_lone = 0;
 
   while (!oai_exit) {
     if(ue_thread_id == 0) {
@@ -1130,9 +1139,38 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
-    // if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
-    //   LOG_E(MAC, "In behemoth dl_config_req: %p tx_req_pdu_list: %p\n", dl_config_req, tx_request_pdu_list);
-    // }
+    if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
+      uint64_t start = clock_usec();
+      uint64_t deadline = start + 10000;
+
+      for (;;) {
+        if (dl_config_req == NULL) {
+          dl_config_req = get_queue(&dl_config_req_queue);
+        }
+        if (tx_request_pdu_list == NULL) {
+          tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
+        }
+        if (dl_config_req && tx_request_pdu_list) {
+          uint64_t elapsed = clock_usec() - start;
+          if (elapsed > 1000) {
+            LOG_E(MAC, "Time difference between dl_config_req & tx_pdu is: %" PRIu64 "usec (%d %d)\n",
+                  elapsed, num_lone, num_pairs);
+          }
+          break;
+        }
+        if (clock_usec() > deadline) {
+          LOG_E(MAC, "In behemoth dl_config_req: %p tx_req_pdu_list: %p (%d %d)\n", dl_config_req,
+                tx_request_pdu_list, num_lone, num_pairs);
+          break;
+        }
+      }
+    }
+
+    if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
+      num_lone++;
+    } else {
+      num_pairs++;
+    }
 
     if (dl_config_req && tx_request_pdu_list) {
       nfapi_dl_config_request_body_t* dl_config_req_body = &dl_config_req->dl_config_request_body;
