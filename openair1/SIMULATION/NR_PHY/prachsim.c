@@ -99,7 +99,9 @@ int main(int argc, char **argv){
   //  double prach_sinr;
   //  uint32_t nsymb;
   //  uint16_t preamble_max, preamble_energy_max;
-
+  FILE *input_fd=NULL;
+  char* input_file=NULL;
+  int n_bytes=0;
 
   NR_DL_FRAME_PARMS *frame_parms;
   NR_PRACH_RESOURCES_t prach_resources;
@@ -292,6 +294,14 @@ int main(int argc, char **argv){
       break;
 
     case 'F':
+      input_fd = fopen(optarg,"r");
+      input_file = optarg;
+      
+      if (input_fd==NULL) {
+	printf("Problem with filename %s\n",optarg);
+	exit(-1);
+      }
+      
       break;
 
     default:
@@ -647,7 +657,7 @@ int main(int argc, char **argv){
 
       for (trial=0; trial<n_frames; trial++) {
 
-
+	if (input_fd==NULL) {
         sigma2_dB = 10*log10((double)tx_lev) - SNR - 10*log10(N_RB_UL*12/N_ZC);
 
         if (n_frames==1)
@@ -673,6 +683,15 @@ int main(int argc, char **argv){
             ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
           }
         }
+	} else {
+	  n_bytes = fread(&ru->common.rxdata[0][rx_prach_start+frame_parms->samples_per_subframe/2],sizeof(int32_t),frame_parms->samples_per_subframe/2,input_fd);
+	  printf("fread %d bytes from file %s\n",n_bytes,input_file);
+	  if (n_bytes!=frame_parms->samples_per_subframe/2) {
+	    printf("expected %d bytes\n",frame_parms->samples_per_subframe/2);
+	    exit(-1);
+	  }
+	}
+
 
         rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, frame, slot);
 
@@ -695,7 +714,7 @@ int main(int argc, char **argv){
 	  LOG_M("prach0.m","prach0", &txdata[0][prach_start], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
             LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][rx_prach_start], frame_parms->samples_per_subframe, 1, 1);
-            //LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][rx_prach_start], frame_parms->samples_per_subframe, 1, 1);
+            LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][rx_prach_start], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("rxsigF0.m","rxsF0", gNB->prach_vars.rxsigF[0], N_ZC, 1, 1);
             LOG_M("prach_preamble.m","prachp", &gNB->X_u[0], N_ZC, 1, 1);
             LOG_M("ue_prach_preamble.m","prachp", &UE->X_u[0], N_ZC, 1, 1);
@@ -703,6 +722,8 @@ int main(int argc, char **argv){
         }
       }
       printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n", SNR, ue_speed, prach_errors, n_frames, delay_avg/(double)(n_frames-prach_errors));
+      if (input_fd)
+	break;
       if (prach_errors)
         break;
     } // UE Speed loop
@@ -710,6 +731,8 @@ int main(int argc, char **argv){
       printf("PRACH test OK\n");
       break;
     }
+    if (input_fd)
+      break;
   } //SNR loop
 
   for (i=0; i<2; i++) {
@@ -723,6 +746,8 @@ int main(int argc, char **argv){
   free(s_im);
   free(r_re);
   free(r_im);
+
+  if (input_fd) fclose(input_fd);
 
   return(0);
 }
