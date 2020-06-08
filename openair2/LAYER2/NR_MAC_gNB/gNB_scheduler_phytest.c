@@ -545,7 +545,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config){
 
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
-  int lcid, offset, i, header_length_last, TBS_bytes;
+  int lcid, offset, i, header_length_last, TBS_bytes = 0;
   int UE_id = 0, CC_id = 0;
   int pucch_sched;
 
@@ -585,14 +585,16 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   //at the upper layers
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test == 0){
 
-    for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
+    lcid = DTCH; 
+
+    //for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 
       // TODO: check if the lcid is active
 
       LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",
         module_idP, frameP, lcid, TBS_bytes, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3);
 
-      if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+      //if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
         rlc_status = mac_rlc_status_ind(module_idP,
                                         rnti,
                                         module_idP,
@@ -617,7 +619,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
 
-         if (TBS_bytes == 0)
+         if (TBS_bytes == 0) 
            return;
 
           LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
@@ -661,10 +663,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
           if (TBS_bytes == 0)
             return; 
         }
-      } else { // no TBS_bytes left
+      /*} else { // no TBS_bytes left
       break;
-      }
-    }
+      }*/
+    //} for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 
   } //if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test)
   else {
