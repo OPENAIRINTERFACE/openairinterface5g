@@ -374,7 +374,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   nr_scheduled_response_t scheduled_response;
 
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
-  if (proc->nr_tti_tx == 8 || UE->frame_parms.frame_type == FDD){ //proc->nr_tti_tx == 19 ||
+  if (proc->nr_tti_tx == 8 || proc->nr_tti_tx == 7 || UE->frame_parms.frame_type == FDD){
 
     mod_id = UE->Mod_id;
 
@@ -420,7 +420,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     nr_ue_scheduled_response(&scheduled_response);
 
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_tx];
+      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_rx];
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
     }
   }
@@ -860,8 +860,9 @@ void *UE_thread(void *arg) {
       usleep(200);
     }
 
-    if (  decoded_frame_rx != curMsg->proc.frame_rx &&
-          ((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx )
+    if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
+          (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
+          (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
       LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 

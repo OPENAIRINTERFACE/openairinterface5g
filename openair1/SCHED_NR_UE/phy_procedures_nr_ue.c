@@ -44,6 +44,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/extern.h"
 #include "SCHED_NR_UE/defs.h"
+#include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "SCHED_NR/extern.h"
 #include "SCHED_NR_UE/phy_sch_processing_time.h"
 //#include <sched.h>
@@ -4032,8 +4033,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
-  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+  uint8_t *harq_pid = &ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
+  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[*harq_pid];
   uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint16_t start_symb_sch = dlsch0_harq->start_symbol;
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
@@ -4144,6 +4145,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (dci_cnt > 0){
     LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
     //to update from pdsch config
+    dlsch0_harq = dlsch[0]->harq_processes[*harq_pid];
     start_symb_sch = dlsch0_harq->start_symbol;
     int symb_dmrs=-1;
     for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
