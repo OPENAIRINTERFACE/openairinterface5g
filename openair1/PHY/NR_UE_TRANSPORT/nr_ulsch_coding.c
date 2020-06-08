@@ -225,7 +225,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   unsigned int crc;
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
-  uint8_t nb_symb_sch ;
   uint32_t A, Z, F;
   uint32_t *pz; 
   uint8_t mod_order; 

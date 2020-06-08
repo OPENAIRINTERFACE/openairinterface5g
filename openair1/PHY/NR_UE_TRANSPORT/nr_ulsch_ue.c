@@ -110,7 +110,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t dmrs_type, nb_dmrs_re_per_rb, number_of_symbols, mcs, Nl;
   int ap, start_symbol, Nid_cell, i;
   int sample_offsetF, N_RE_prime, N_PRB_oh;
-  uint16_t n_rnti, ul_dmrs_symb_pos;
+  uint16_t ul_dmrs_symb_pos;
   uint8_t data_existing =0;
   uint8_t L_ptrs, K_ptrs; // PTRS parameters
   uint16_t beta_ptrs; // PTRS parameter related to power control

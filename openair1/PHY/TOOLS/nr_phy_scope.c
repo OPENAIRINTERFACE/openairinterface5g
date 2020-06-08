@@ -911,19 +911,18 @@ void reset_stats_gNB(FL_OBJECT *button,
 
 
 static void *scope_thread_gNB(void *arg) {
-  int UE_id;
-  int ue_cnt=0;
+  scopeParms_t * p=(scopeParms_t *) arg;	
 //# ifdef ENABLE_XFORMS_WRITE_STATS
 //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
 //#endif
 
   while (!oai_exit) {
-    ue_cnt=0;
+    int ue_cnt=0;
     
-    for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    for(int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
         if ((ue_cnt<scope_enb_num_ue)) {
           //this function needs to be written
-          phy_scope_gNB(form_gnb[ue_cnt], RC.gNB[0], RC.ru[0], UE_id);
+          phy_scope_gNB(form_gnb[ue_cnt], p->gNB, p->ru, UE_id);
           ue_cnt++;
         }
     }
@@ -983,5 +982,5 @@ void startScope(scopeParms_t * p) {
   } // UE_id
 
   pthread_t forms_thread;
-  threadCreate(&forms_thread, scope_thread_gNB, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&forms_thread, scope_thread_gNB, p, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
