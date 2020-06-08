@@ -361,7 +361,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   int UE_id;
   uint64_t *dlsch_in_slot_bitmap=NULL;
   uint64_t *ulsch_in_slot_bitmap=NULL;
-  int pucch_sched;
 
   UE_id=0;
   int bwp_id = 1;
@@ -468,8 +467,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     // Phytest scheduling
     if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
       ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
-      nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
-      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
+      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, num_slots_per_tdd, NULL);
       // resetting ta flag
       gNB->ta_len = 0;
     }
@@ -479,7 +477,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
       allocate_CCEs(module_idP, CC_id, subframeP, 0);
     */
-
   } //is_nr_DL_slot
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) {

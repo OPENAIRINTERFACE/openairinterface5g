@@ -497,7 +497,6 @@ int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
 
-
     pdcch_pdu->dci_pdu.RNTI[pdcch_pdu->numDlDci]=rnti;
 
     if (coreset->pdcch_DMRS_ScramblingID != NULL &&

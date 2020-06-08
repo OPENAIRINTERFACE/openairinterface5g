@@ -541,12 +541,13 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
-                                   NR_sched_pucch *pucch_sched,
+                                   int num_slots_per_tdd,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *dlsch_config){
 
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int lcid, offset, i, header_length_last, TBS_bytes;
   int UE_id = 0, CC_id = 0;
+  int pucch_sched;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
@@ -607,9 +608,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
           LOG_I(MAC, "configure fapi due to data availability \n");
 
+          nr_update_pucch_scheduling(module_idP, UE_id, frameP, slotP, num_slots_per_tdd, &pucch_sched);
+
           TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
-                                    pucch_sched,
+                                    &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched],
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
@@ -646,9 +649,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         }
         else if(ta_len > 0){
           LOG_I(MAC, "configure fapi due to TA \n");
+
+          nr_update_pucch_scheduling(module_idP, UE_id, frameP, slotP, num_slots_per_tdd, &pucch_sched);
           TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
-                                    pucch_sched,
+                                    &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched],
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
@@ -664,9 +669,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   } //if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test)
   else {
 
+    nr_update_pucch_scheduling(module_idP, UE_id, frameP, slotP, num_slots_per_tdd, &pucch_sched);
     TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
-                                    pucch_sched,
+                                    &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched],
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
