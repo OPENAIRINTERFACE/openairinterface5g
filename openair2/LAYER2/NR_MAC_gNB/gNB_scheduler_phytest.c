@@ -258,6 +258,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
                           uint16_t *rbStart) {
 
 
+  LOG_I(MAC, "Inside configure_fapi_dl_pdu() \n");
 
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
@@ -569,7 +570,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   ta_len = gNB_mac->ta_len;
 
-  TBS_bytes = configure_fapi_dl_pdu(module_idP,
+  /*TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
 				    pucch_sched, 
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
@@ -577,7 +578,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
 
   if (TBS_bytes == 0)
-   return;
+   return;*/
  
   //Corresponding to noS1 and EPC_MODE_ENABLED use cases where DLSCH transmissions are scheduled only when there is IP traffic
   //at the upper layers
@@ -603,6 +604,18 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                         0);
 
         if (rlc_status.bytes_in_buffer > 0) {
+
+          LOG_I(MAC, "configure fapi due to data availability \n");
+
+          TBS_bytes = configure_fapi_dl_pdu(module_idP,
+                                    dl_req,
+                                    pucch_sched,
+                                    dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
+                                    dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
+                                    dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
+
+         if (TBS_bytes == 0)
+           return;
 
           LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
             module_idP, frameP, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
@@ -631,6 +644,18 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
           //ue_sched_ctl->uplane_inactivity_timer = 0;
         }
+        else if(ta_len > 0){
+          LOG_I(MAC, "configure fapi due to TA \n");
+          TBS_bytes = configure_fapi_dl_pdu(module_idP,
+                                    dl_req,
+                                    pucch_sched,
+                                    dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
+                                    dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
+                                    dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
+
+          if (TBS_bytes == 0)
+            return; 
+        }
       } else { // no TBS_bytes left
       break;
       }
@@ -638,6 +663,16 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   } //if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test)
   else {
+
+    TBS_bytes = configure_fapi_dl_pdu(module_idP,
+                                    dl_req,
+                                    pucch_sched,
+                                    dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
+                                    dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
+                                    dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
+
+    if (TBS_bytes == 0)
+      return;
 
     //When the --NOS1 option is not enabled, DLSCH transmissions with random data
     //occur every time that the current function is called (dlsch phytest mode)
