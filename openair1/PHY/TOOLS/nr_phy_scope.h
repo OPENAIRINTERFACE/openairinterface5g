@@ -69,18 +69,12 @@ typedef struct {
 typedef struct {
   int *argc;
   char **argv;
+  RU_t* ru;
+  PHY_VARS_gNB *gNB;
 } scopeParms_t;
 
 extern unsigned char scope_enb_num_ue;
-FD_phy_scope_gnb * create_phy_scope_gnb( void );
 FD_phy_scope_nrue * create_phy_scope_nrue( void );
-
-
-void phy_scope_gNB(FD_phy_scope_gnb *form,
-                   PHY_VARS_gNB *phy_vars_gnb,
-		   RU_t *phy_vars_ru,
-                   int UE_id);
-
 
 void phy_scope_nrUE(FD_phy_scope_nrue *form,
                   PHY_VARS_NR_UE *phy_vars_ue,
@@ -90,7 +84,6 @@ void phy_scope_nrUE(FD_phy_scope_nrue *form,
 
 
 void startScope(scopeParms_t * p);
-
 
 extern RAN_CONTEXT_t RC;
 #endif

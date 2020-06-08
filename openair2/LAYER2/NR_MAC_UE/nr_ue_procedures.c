@@ -2670,7 +2670,6 @@ void nr_ue_send_sdu(module_id_t module_idP,
   LOG_D(MAC, "Handling PDU frame %d slot %d\n", frameP, slotP);
 
   uint8_t * pduP = pdu;
-  NR_UE_MAC_INST_t *UE_mac_inst = get_mac_inst(module_idP);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 

@@ -432,15 +432,6 @@ void multipath_tv_channel(channel_desc_t *desc,
 /**@} */
 /**@} */
 
-void rxAddInput( struct complex16 *input_sig,
-                 struct complex16 *after_channel_sig,
-                 int rxAnt,
-                 channel_desc_t *channelDesc,
-                 int nbSamples,
-                 uint64_t TS,
-                 uint32_t CirSize
-               );
-
 int modelid_fromname(char *modelname);
 double channelmod_get_snr_dB(void);
 double channelmod_get_sinr_dB(void);
