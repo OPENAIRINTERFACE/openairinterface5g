@@ -199,7 +199,9 @@ get_prach_resources(module_id_t module_idP,
     UE_mac_inst[module_idP].
     RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER =
       get_Po_NOMINAL_PUSCH(module_idP, CC_id);
-  } else {      // Msg3 is being retransmitted
+  } else {
+    LOG_E(MAC, "Didnt set UE Mode Correctly\n");
+               // Msg3 is being retransmitted
     if (UE_mac_inst[module_idP].RA_usedGroupA == 1) {
       if (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig) {
         UE_mac_inst[module_idP].RA_prach_resources.
@@ -287,6 +289,8 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                                sub_frame_t subframeP) {
   uint8_t Size = 0;
   UE_MODE_t UE_mode;
+
+  LOG_E(MAC, "got inside ue_get_rach\n");
 
   // Modification for phy_stub_ue operation
   if(NFAPI_MODE == NFAPI_UE_STUB_PNF) { // phy_stub_ue mode

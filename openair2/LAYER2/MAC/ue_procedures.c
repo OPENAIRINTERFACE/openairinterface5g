@@ -153,9 +153,9 @@ void ue_init_mac(module_id_t module_idP) {
     UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[i] = 0;
   }
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     pthread_mutex_init(&UE_mac_inst[module_idP].UL_INFO_mutex,NULL);
-    UE_mac_inst[module_idP].UE_mode[0] = NOT_SYNCHED; //PRACH;
+    UE_mac_inst[module_idP].UE_mode[0] = PRACH; //NOT_SYNCHED;
     UE_mac_inst[module_idP].first_ULSCH_Tx =0;
     UE_mac_inst[module_idP].SI_Decoded = 0;
     next_ra_frame = 0;
@@ -439,7 +439,7 @@ ue_send_sdu(module_id_t module_idP,
                       "[UE %d][RAPROC] Contention detected, RA failed\n",
                       module_idP);
 
-                if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // phy_stub mode
+                if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
                   //  Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
                   // PRACH state.
                   LOG_I(MAC, "nfapi_mode3: Setting UE_mode BACK to PRACH 1\n");
@@ -465,7 +465,7 @@ ue_send_sdu(module_id_t module_idP,
             [module_idP].
             RA_contention_resolution_timer_active = 0;
 
-            if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // phy_stub mode
+            if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
               // Modification for phy_stub mode operation here. We only need to change the ue_mode to PUSCH
               UE_mac_inst[module_idP].UE_mode[eNB_index] = PUSCH;
             } else { // Full stack mode
@@ -483,7 +483,7 @@ ue_send_sdu(module_id_t module_idP,
 #endif
 
           // Eliminate call to process_timing_advance for the phy_stub UE operation mode. Is this correct?
-          if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+          if (NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
             process_timing_advance(module_idP,CC_id,payload_ptr[0]);
           }
 
@@ -2152,7 +2152,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
   // build PHR and update the timers
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)) {
-    if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+    if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
       //Substitute with a static value for the MAC layer abstraction (phy_stub mode)
       phr_p->PH = 60;
     } else {
@@ -2600,7 +2600,7 @@ ue_scheduler(const module_id_t module_idP,
             "Module id %u Contention resolution timer expired, RA failed\n",
             module_idP);
 
-      if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // phy_stub mode
+      if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
         // Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
         // PRACH state.
         LOG_I(MAC, "nfapi_mode3: Setting UE_mode to PRACH 2 \n");

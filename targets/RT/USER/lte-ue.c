@@ -1173,6 +1173,9 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
     }
 
     if (dl_config_req && tx_request_pdu_list) {
+      if ((num_pairs % 1000) == 0) {
+        LOG_I(MAC, "num_pairs:%d, num_lone:%d\n", num_pairs, num_lone);
+      }
       nfapi_dl_config_request_body_t* dl_config_req_body = &dl_config_req->dl_config_request_body;
       for (int i = 0; i < dl_config_req_body->number_pdu; ++i) {
         nfapi_dl_config_request_pdu_t* pdu = &dl_config_req_body->dl_config_pdu_list[i];
