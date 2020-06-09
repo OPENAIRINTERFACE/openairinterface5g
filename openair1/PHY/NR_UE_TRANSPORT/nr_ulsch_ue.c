@@ -114,6 +114,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t data_existing =0;
   uint8_t L_ptrs, K_ptrs; // PTRS parameters
   uint16_t beta_ptrs; // PTRS parameter related to power control
+  uint8_t no_data_in_dmrs = 1;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue=NULL;
@@ -147,7 +148,11 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    nb_dmrs_re_per_rb     = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
+
+    if(no_data_in_dmrs)
+      nb_dmrs_re_per_rb = 12;
+    else
+      nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
 
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
 
@@ -223,7 +228,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     unsigned int G = nr_get_G(nb_rb, number_of_symbols,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
-
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
@@ -267,7 +271,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
-  n_dmrs = (nb_rb*nb_dmrs_re_per_rb*number_dmrs_symbols);
+  n_dmrs = (nb_rb*((dmrs_type == pusch_dmrs_type1) ? 6:4)*number_dmrs_symbols);
   int16_t mod_dmrs[n_dmrs<<1];
   ///////////
   ////////////////////////////////////////////////////////////////////////
