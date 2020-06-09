@@ -32,6 +32,8 @@
  * \warning
  */
 
+#ifndef __TELNETSRV_CPUMEASUR_DEF__H__
+#define __TELNETSRV_CPUMEASUR_DEF__H__
 
 #define CPU_PHYENB_MEASURE \
 { \
@@ -97,3 +99,5 @@
   {"pdcp_ip",                &(pdcpvars->pdcp_ip),0},\
   {"ip_pdcp",                &(pdcpvars->ip_pdcp),0},\
 }
+
+#endif

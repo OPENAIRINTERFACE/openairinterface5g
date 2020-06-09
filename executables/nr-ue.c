@@ -157,6 +157,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
+
   // intialize transport
   init_nr_ue_transport(ue, abstraction_flag);
 }
@@ -365,13 +366,14 @@ static void UE_synch(void *arg) {
 }
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
-  uint32_t nb_rb, start_rb;
-  uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
-  uint16_t n_rnti;
-  module_id_t mod_id;
 
+  uint32_t rb_size, rb_start;
+  uint16_t rnti, l_prime_mask, n_rb0, n_rb1, pdu_bit_map;
+  uint8_t nr_of_symbols, start_symbol_index, mcs_index, mcs_table, nrOfLayers, harq_process_id, rv_index, dmrs_config_type;
+  uint8_t ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, ptrs_time_density, ptrs_freq_density;
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
+  module_id_t mod_id;
 
   // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
   if (proc->nr_tti_tx == 8 || proc->nr_tti_tx == 7 || UE->frame_parms.frame_type == FDD){
@@ -392,30 +394,53 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     scheduled_response.frame = proc->frame_rx;
     scheduled_response.slot  = proc->nr_tti_rx;
     //--------------------------Temporary configuration-----------------------------//
-    n_rnti = 0x1234;
-    nb_rb = 50;
-    start_rb = 0;
-    nb_symb_sch = 12;
-    start_symbol = 2;
-    precod_nbr_layers = 1;
-    mcs = 9;
-    harq_pid = 0;
-    rvidx = 0;
+    rnti = 0x1234;
+    rb_size = 50;
+    rb_start = 0;
+    nr_of_symbols = 12;
+    start_symbol_index = 2;
+    nrOfLayers = 1;
+    mcs_index = 9;
+    mcs_table = 0;
+    harq_process_id = 0;
+    rv_index = 0;
+    l_prime_mask = get_l_prime(nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+    dmrs_config_type = 0;
+    ptrs_mcs1 = 2;
+    ptrs_mcs2 = 4;
+    ptrs_mcs3 = 10;
+    n_rb0 = 25;
+    n_rb1 = 75;
+    pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
+    ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, mcs_table);
+    ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, rb_size);
     //------------------------------------------------------------------------------//
 
     scheduled_response.ul_config->slot = 8;
     scheduled_response.ul_config->number_pdus = 1;
     scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = mcs;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask << start_symbol_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
+    scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+
+    if (1 << ptrs_time_density >= nr_of_symbols) {
+      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+    }
 
     nr_ue_scheduled_response(&scheduled_response);
 
@@ -483,7 +508,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   }
 
   // no UL for now
-  // no UL for now
   /*
   if (UE->mac_enabled==1) {
     //  trigger L2 to run ue_scheduler thru IF module
@@ -538,7 +562,7 @@ void UE_processing(void *arg) {
 
     if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
       LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
-      //if (nfapi_mode!=3){
+
       //if (nfapi_mode!=3){
       nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
       ul_time_alignment->ta_frame = -1;
@@ -620,8 +644,7 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash)
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
-  LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
+    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
 
     *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
@@ -641,6 +664,12 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
+
+  if (IS_SOFTMODEM_RFSIM) {
+    LOG_D(PHY,"SET rx_offset %d \n",UE->rx_offset);
+    //UE->rx_offset_diff=0;
+    return 0;
+  }
 
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
@@ -778,7 +807,7 @@ void *UE_thread(void *arg) {
 #ifdef OAI_ADRV9371_ZC706
     /*uint32_t total_gain_dB_prev = 0;
     if (total_gain_dB_prev != UE->rx_total_gain_dB) {
-    total_gain_dB_prev = UE->rx_total_gain_dB;
+        total_gain_dB_prev = UE->rx_total_gain_dB;
         openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB;
         UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
     }*/
@@ -863,7 +892,7 @@ void *UE_thread(void *arg) {
     if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
           (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
           (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
-      LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
+      LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
     nbSlotProcessing++;

@@ -6693,14 +6693,6 @@ char openair_rrc_eNB_configuration(
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_FMT" Init...\n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
-#if OCP_FRAMEWORK
-
-  while ( RC.rrc[enb_mod_idP] == NULL ) {
-    LOG_E(RRC, "RC.rrc not yet initialized, waiting 1 second\n");
-    sleep(1);
-  }
-
-#endif
   AssertFatal(RC.rrc[enb_mod_idP] != NULL, "RC.rrc not initialized!");
   AssertFatal(MAX_MOBILES_PER_ENB < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");

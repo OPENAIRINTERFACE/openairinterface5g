@@ -740,9 +740,7 @@ void init_gNB_proc(int inst) {
   gNB_L1_rxtx_proc_t *L1_proc,*L1_proc_tx;
 //  LOG_I(PHY,"%s(inst:%d) RC.nb_nr_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_nr_CC[inst]);
   gNB = RC.gNB[inst];
-#ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing gNB processes instance:%d CC_id %d \n",inst,CC_id);
-#endif
   
   proc = &gNB->proc;
   L1_proc                        = &proc->L1_proc;
@@ -956,9 +954,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       NR_POLAR_PBCH_PAYLOAD_BITS,
       NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
     LOG_I(PHY,"Initializing gNB %d single_thread_flag:%d\n",inst,gNB->single_thread_flag);
-#ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing gNB %d\n",inst);
-#endif
 
     LOG_I(PHY,"Registering with MAC interface module (before %p)\n",gNB->if_inst);
     AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");

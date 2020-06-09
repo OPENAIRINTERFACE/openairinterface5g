@@ -43,7 +43,7 @@ extern const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern UE_RRC_INST *UE_rrc_inst;
-extern int cqi_to_mcs[16];
+extern const int cqi_to_mcs[16];
 extern uint32_t RRC_CONNECTION_FLAG;
 extern uint8_t rb_table[34];
 extern mac_rlc_am_muilist_t rlc_am_mui;

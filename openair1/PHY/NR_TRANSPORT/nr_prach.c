@@ -531,6 +531,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 uint16_t *max_preamble_delay
 		 )
 {
+  AssertFatal(gNB!=NULL,"Can only be called from gNB\n");
 
   int i;
 
@@ -574,6 +575,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   fp = &gNB->frame_parms;
 
   nb_rx = gNB->gNB_config.carrier_config.num_rx_ant.value;
+
   
   rootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].prach_root_sequence_index.value;
   numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].num_root_sequences.value;
@@ -586,7 +588,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   restricted_set      = cfg->restricted_set_config.value;
 
-
   uint8_t prach_fmt = prach_pdu->prach_format;
   uint16_t N_ZC = (prach_sequence_length==0)?839:139;
 
@@ -597,9 +598,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   if (LOG_DEBUGFLAG(PRACH)){
     if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, msg1_frequencystart %d, rootSequenceIndex %d\n", subframe,msg1_frequencystart,rootSequenceIndex);
   }
-
-
-
 
 
   start_meas(&gNB->rx_prach);

@@ -131,7 +131,6 @@ void *gNB_app_task(void *args_p)
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
-  uint32_t                        x2_register_gnb_pending = 0;
   uint32_t                        register_gnb_pending=0;
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
@@ -171,7 +170,7 @@ void *gNB_app_task(void *args_p)
 
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
-	  x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
+	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
   }
 
   if (EPC_MODE_ENABLED) {

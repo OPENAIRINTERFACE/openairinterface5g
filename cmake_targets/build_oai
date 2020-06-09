@@ -406,8 +406,12 @@ function main() {
             shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
-            echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
+            echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
             shift;;
+    --ninja)
+        CMAKE_CMD="$CMAKE_CMD -GNinja"
+	MAKE_CMD=ninja
+	shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -892,7 +896,7 @@ function main() {
               $build_dir rfsimulator \
               librfsimulator.so $dbin/librfsimulator.so.$REL
 
-          echo_info "Compiling basicsimulator"
+          echo_info "Compiling tcp_bridge_oai"
           compilations \
               $build_dir tcp_bridge_oai \
               libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL

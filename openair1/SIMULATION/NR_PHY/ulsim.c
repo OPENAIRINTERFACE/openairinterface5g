@@ -133,7 +133,7 @@ int main(int argc, char **argv)
   int loglvl = OAILOG_WARNING;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
-  int start_symbol = 0;
+  int start_symbol = 2;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t precod_nbr_layers = 1;
@@ -548,17 +548,31 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = 1;
   unsigned int available_bits;
 
-  uint8_t nb_re_dmrs=12; // no PUSCH REs 
-  uint8_t length_dmrs = 1;
+  uint8_t nb_re_dmrs;
   unsigned char mod_order;
   uint16_t code_rate;
+  uint8_t ptrs_mcs1 = 2;
+  uint8_t ptrs_mcs2 = 4;
+  uint8_t ptrs_mcs3 = 10;
+  uint16_t n_rb0 = 25;
+  uint16_t n_rb1 = 75;
+  uint8_t mcs_table = 0;
+  uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
 
+  uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
+  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
+  uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
+  uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
+
+  if(1<<ptrs_time_density >= nb_symb_sch)
+    pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+
+  for (i = 0; i < nb_symb_sch; i++) {
+    number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
+  }
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
-
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, precod_nbr_layers);
 
   printf("\n");
 
@@ -622,16 +636,16 @@ int main(int argc, char **argv)
 	pusch_pdu->bwp_size = abwp_size;
       }
 
-      pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;  
+      pusch_pdu->pdu_bit_map = pdu_bit_map;
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
-      pusch_pdu->mcs_table = 0; 
+      pusch_pdu->mcs_table = mcs_table;
       pusch_pdu->target_code_rate = code_rate;
       pusch_pdu->qam_mod_order = mod_order;
       pusch_pdu->transform_precoding = 1;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = 1;
-      pusch_pdu->ul_dmrs_symb_pos = (1<<start_symbol);
+      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol;
       pusch_pdu->dmrs_config_type = 0;
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
@@ -648,8 +662,11 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_data.rv_index = 0;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = 0;
-      pusch_pdu->pusch_data.tb_size = TBS>>3;
       pusch_pdu->pusch_data.num_cb = 0;
+      pusch_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
+      pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+      pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
+      pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
       // prepare ULSCH/PUSCH reception
       nr_schedule_response(Sched_INFO);
@@ -667,47 +684,62 @@ int main(int argc, char **argv)
       ul_config.slot = slot;
       ul_config.number_pdus = 1;
       ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-      ul_config.ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = Imcs;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = 0;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
-      ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
+      ul_config.ul_config_list[0].pusch_config_pdu.rnti = n_rnti;
+      ul_config.ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
+      ul_config.ul_config_list[0].pusch_config_pdu.rb_size = nb_rb;
+      ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
+      ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
+      ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
+      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask << start_symbol;
+      ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
+      ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
-      //ul_config.ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.absolute_delta_PUSCH = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
+      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+      available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
+      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
+
+<<<<<<< HEAD
       if (input_fd != NULL) {
-	// set FAPI parameters for UE, put them in the scheduled response and call
-	nr_ue_scheduled_response(&scheduled_response);
-	
-	/////////////////////////phy_procedures_nr_ue_TX///////////////////////
-	///////////
-	
-	phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
-	
-	if (n_trials==1)
-	  LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
-	
-	///////////
-	////////////////////////////////////////////////////
-	tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
-	
-	txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-			      frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
-	
-	txlev_float = (double)txlev; // output of signal_energy is fixed point representation
-	
-	n_errors = 0;
-	n_false_positive = 0;
-	
-	//AWGN
-	sigma_dB = 10*log10(txlev_float)-SNR;
-	sigma    = pow(10,sigma_dB/10);
-      }	
+        pusch_pdu->pusch_data.tb_size = TBS>>3;
+        ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
+        // set FAPI parameters for UE, put them in the scheduled response and call
+        nr_ue_scheduled_response(&scheduled_response);
+
+        /////////////////////////phy_procedures_nr_ue_TX///////////////////////
+        ///////////
+
+        phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+
+        if (n_trials==1)
+          LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
+
+        ///////////
+        ////////////////////////////////////////////////////
+        tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
+
+        txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+                                        frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+        txlev_float = (double)txlev/(double)AMP; // output of signal_energy is fixed point representation
+
+        n_errors = 0;
+        n_false_positive = 0;
+
+        //AWGN
+        sigma_dB = 10*log10(txlev_float)-SNR;
+        sigma    = pow(10,sigma_dB/10);
+        }	
       else n_trials = 1;
 
       for (trial = 0; trial < n_trials; trial++) {
@@ -799,7 +831,7 @@ int main(int argc, char **argv)
 
         if (errors_scrambling > 0) {
 	  if (n_trials==1)
-	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %d\n" "\x1B[0m", frame, trial, errors_scrambling);
+	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling);
         }
 
         for (i = 0; i < TBS; i++) {
@@ -817,13 +849,13 @@ int main(int argc, char **argv)
         if (errors_decoding > 0) {
           n_false_positive++;
 	  if (n_trials==1)
-	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %d\n" "\x1B[0m", frame, trial, errors_decoding);
+	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
         } 
 
       } // trial loop
 
       printf("*****************************************\n");
-      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %d/%d\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, n_trials);
+      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %u/%d\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, n_trials);
       printf("\n");
       printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
       printf("*****************************************\n");
@@ -865,6 +897,9 @@ int main(int argc, char **argv)
 
   if (input_fd)
     fclose(input_fd);
+
+  if (scg_fd)
+    fclose(scg_fd);
 
   return (n_errors);
 }

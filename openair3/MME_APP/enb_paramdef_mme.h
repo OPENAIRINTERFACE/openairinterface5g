@@ -30,6 +30,9 @@
  * \warning
  */
 
+#ifndef __MME_APP_ENB_PARAMDEF_MME__H__
+#define __MME_APP_ENB_PARAMDEF_MME__H__
+
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
 
@@ -172,3 +175,4 @@ typedef struct ccparams_MME_s {
              { .s5= {NULL }}						     \
 }
 
+#endif

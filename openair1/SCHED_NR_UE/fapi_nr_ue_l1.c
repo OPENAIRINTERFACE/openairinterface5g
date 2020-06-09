@@ -116,7 +116,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     if (scheduled_response->ul_config != NULL){
 
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
-
       for (i = 0; i < ul_config->number_pdus; ++i){
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
@@ -124,7 +123,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         NR_PRACH_RESOURCES_t *prach_resources;
         fapi_nr_ul_config_prach_pdu *prach_config_pdu;
         /* PUSCH */
-        fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu;
+        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu;
         /* PUCCH */
         fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
         PUCCH_ConfigCommon_nr_t *pucch_config_common_nr;
@@ -135,16 +134,12 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
           // pusch config pdu
-          pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
-          current_harq_pid = pusch_config_pdu->harq_process_nbr;
-          ulsch0->harq_processes[current_harq_pid]->nb_rb = pusch_config_pdu->number_rbs;
-          ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
-          ulsch0->harq_processes[current_harq_pid]->number_of_symbols = pusch_config_pdu->number_symbols;
-          ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
-          ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
-          ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
-          ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;
-          ulsch0->harq_processes[current_harq_pid]->Nl = pusch_config_pdu->n_layers;
+          pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+          current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
+          nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch0->harq_processes[current_harq_pid]->pusch_pdu;
+
+          memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+
           ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
         break;
 
@@ -214,6 +209,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
   return 0;
 }
+
+
 
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
