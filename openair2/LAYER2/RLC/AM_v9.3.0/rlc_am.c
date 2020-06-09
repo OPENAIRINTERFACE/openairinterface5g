@@ -459,7 +459,6 @@ struct mac_status_resp
 rlc_am_mac_status_indication (
   const protocol_ctxt_t *const ctxt_pP,
   void *const                 rlc_pP,
-  const uint16_t               tb_sizeP,
   struct mac_status_ind        tx_statusP,
   const eNB_flag_t enb_flagP) {
   struct mac_status_resp  status_resp;
@@ -490,10 +489,6 @@ rlc_am_mac_status_indication (
   }
 
   rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
-
-  if (tb_sizeP > 0) {
-    rlc->nb_bytes_requested_by_mac = tb_sizeP;
-  }
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
 
@@ -549,8 +544,7 @@ rlc_am_mac_status_indication (
       NULL,0,
       MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS-IND %u",
       MSC_AS_TIME_ARGS(ctxt_pP),
-      PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc),
-      tb_sizeP);
+      PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc));
     MSC_LOG_TX_MESSAGE(
       (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
       (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_MAC_ENB:MSC_MAC_UE,
@@ -565,24 +559,12 @@ rlc_am_mac_status_indication (
   }
 
   if (LOG_DEBUGFLAG(DEBUG_RLC)) {
-    if (tb_sizeP > 0) {
-      LOG_UI(RLC, PROTOCOL_RLC_AM_CTXT_FMT" MAC_STATUS_INDICATION (DATA) %d bytes -> %d bytes\n",
-             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc),
-             tb_sizeP,
-             status_resp.buffer_occupancy_in_bytes);
-    }
+    LOG_UI(RLC, PROTOCOL_RLC_AM_CTXT_FMT" MAC_STATUS_INDICATION (DATA) -> %d bytes\n",
+           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc),
+           status_resp.buffer_occupancy_in_bytes);
   }
 
   return status_resp;
-}
-
-//-----------------------------------------------------------------------------
-void
-rlc_am_set_nb_bytes_requested_by_mac (
-  void *const            rlc_pP,
-  const tb_size_t         tb_sizeP
-) {
-  ((rlc_am_entity_t *) rlc_pP)->nb_bytes_requested_by_mac = tb_sizeP;
 }
 
 //-----------------------------------------------------------------------------

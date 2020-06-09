@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_UE_TRANSPORT/pucch_nr.c
-* \brief Top-level routines for generating and decoding the PUCCH physical channel
+* \brief Top-level routines for generating the PUCCH physical channel
 * \author A. Mico Pereperez
 * \date 2018
 * \version 0.1
@@ -29,6 +29,9 @@
 * \note
 * \warning
 */
+#ifndef __PUCCH_NR__H__
+#define __PUCCH_NR__H__
+
 //#include "PHY/defs.h"
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_common.h"
@@ -70,6 +73,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         uint8_t nr_bit);
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
                         uint16_t crnti,
+			uint32_t dmrs_scrambling_id,
+			uint32_t data_scrambling_id,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
@@ -415,3 +420,4 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                                          73, 79, 83, 89, 97, 101,103,107,109,113,
                                          127,131,137,139,149,151,157,163,167,173,
                                          179,181,191,193,197,199};
+#endif

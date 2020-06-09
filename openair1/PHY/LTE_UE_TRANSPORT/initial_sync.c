@@ -38,7 +38,6 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 #include "common_lib.h"
 #include "PHY/INIT/phy_init.h"
 

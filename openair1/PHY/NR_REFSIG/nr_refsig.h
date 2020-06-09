@@ -26,7 +26,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-
+#include "PHY/sse_intrin.h"
 
 /*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PBCH DMRS.
 @param PHY_VARS_gNB* gNB structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
@@ -50,4 +50,10 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned short nb_pusch_rb,
                      uint32_t re_offset,
                      uint8_t dmrs_type);
+
+void init_scrambling_luts(void);
+
+extern __m64 byte2m64_re[256];
+extern __m64 byte2m64_im[256];
+
 #endif

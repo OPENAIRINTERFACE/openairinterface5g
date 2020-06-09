@@ -698,7 +698,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     LOG_D(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
 
     x_Overhead = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, 1, dci_pdu_rel15[0].tb_scaling);
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_pdu_rel15[0].tb_scaling);
 
     // DL TX request
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];

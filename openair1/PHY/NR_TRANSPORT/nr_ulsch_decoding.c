@@ -70,13 +70,12 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr,uint8_t N_RB_UL)
       a_segments = a_segments/273;
     }  
 
-    uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
 
       if (ulsch->harq_processes[i]) {
         if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,ulsch_bytes);
+          free16(ulsch->harq_processes[i]->b,a_segments*1056);
           ulsch->harq_processes[i]->b = NULL;
         }
         for (r=0; r<a_segments; r++) {
@@ -714,11 +713,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
 #ifdef DEBUG_ULSCH_DECODING
-  LOG_I(PHY, "Decoder output (payload): \n");
-  for (i = 0; i < harq_process->TBS / 8; i++) {
+  LOG_I(PHY, "Decoder output (payload, TBS: %d): \n", harq_process->TBS);
+  for (i = 0; i < harq_process->TBS; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
 	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-	  printf("0x%02x",harq_process->b[i]);
+	  printf("%02x",harq_process->b[i]);
   }
 #endif
 

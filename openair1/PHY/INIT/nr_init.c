@@ -97,7 +97,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   while(gNB->configured == 0) usleep(10000);
 
-  init_dfts();
+  load_dftslib();
   /*
     LOG_I(PHY,"[gNB %"PRIu8"] Initializing DL_FRAME_PARMS : N_RB_DL %"PRIu8", PHICH Resource %d, PHICH Duration %d nb_antennas_tx:%u nb_antennas_rx:%u PRACH[rootSequenceIndex:%u prach_Config_enabled:%u configIndex:%u highSpeed:%u zeroCorrelationZoneConfig:%u freqOffset:%u]\n",
           gNB->Mod_id,
@@ -113,7 +113,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
           );*/
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
   crcTableInit();
-  init_dfts();
+  init_scrambling_luts();
+  init_pucch2_luts();
   load_nrLDPClib();
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
@@ -176,6 +177,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
+  LOG_D(PHY,"Initializing PUSCH DMRS Gold sequence with (%x,%x)\n",Nid_pusch[0],Nid_pusch[1]);
   nr_gold_pusch(gNB, &Nid_pusch[0]);
 
   /// Transport init necessary for NR synchro

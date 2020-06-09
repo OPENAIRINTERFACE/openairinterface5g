@@ -137,7 +137,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
 
 
   int N_reg = n_rb * pdcch_pdu_rel15->DurationSymbols;
-  int C;
+  int C=-1;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
     int  L = pdcch_pdu_rel15->dci_pdu.AggregationLevel[d];
@@ -210,8 +210,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
-    uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
-
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
 
     int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu.RNTI[i],gNB,SEARCH_EXIST_OR_FREE);
     if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
@@ -220,7 +219,8 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     }
     
     dlsch = gNB->dlsch[dlsch_id][0];
-    int harq_pid = 0;//extract_harq_pid(i,pdu_rel15);
+    int num_slots_tdd = (gNB->frame_parms.slots_per_frame)>>(7-gNB->gNB_config.tdd_table.tdd_period.value);
+    int harq_pid = slot % num_slots_tdd;
 
     dlsch->slot_tx[slot]             = 1;
     dlsch->harq_ids[frame%2][slot]   = harq_pid;
@@ -248,7 +248,7 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
 
   for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
 
-    uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
+    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
 
     // if there's no DL DCI then generate CCE list
     if (gNB->pdcch_pdu) nr_fill_cce_list(gNB,0);  

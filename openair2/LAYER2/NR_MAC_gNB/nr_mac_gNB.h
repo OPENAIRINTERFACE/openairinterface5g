@@ -185,8 +185,14 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-  struct NR_sched_pucch *next_sched_pucch;
 } NR_sched_pucch;
+
+typedef struct NR_UE_harq {
+  uint8_t is_waiting;
+  uint8_t ndi;
+  uint8_t round;
+  uint16_t feedback_slot;
+} NR_UE_harq_t;
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
@@ -195,6 +201,8 @@ typedef struct {
   NR_sched_pucch *sched_pucch;
   uint16_t ta_timer;
   int16_t ta_update;
+  uint8_t current_harq_pid;
+  NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
 } NR_UE_sched_ctrl_t;
 
 typedef struct NR_preamble_ue {

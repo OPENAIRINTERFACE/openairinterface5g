@@ -182,7 +182,7 @@ void insert_sss_nr(int16_t *sss_time,
   }
 
   /* get sss in the frequency domain by applying an inverse FFT */
-  idft2048(synchroF_tmp,          /* complex input */
+  idft(IDFT_2048,synchroF_tmp,          /* complex input */
            synchro_tmp,           /* complex output */
    	   1);                    /* scaling factor */
 

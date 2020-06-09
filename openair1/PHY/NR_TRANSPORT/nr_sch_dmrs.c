@@ -84,6 +84,27 @@ uint16_t get_dmrs_freq_idx(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t d
   return dmrs_idx;
 }
 
+
+uint8_t allowed_pdsch_re_in_dmrs_symbol(uint16_t k,
+                                        uint16_t start_sc,
+                                        uint8_t numDmrsCdmGrpsNoData,
+                                        uint8_t dmrs_type) {
+  uint8_t delta;
+  for (int i = 0; i<numDmrsCdmGrpsNoData; i++){
+    if  (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
+      delta = i;
+      if (((k-start_sc)%2)  == delta)
+        return (0);
+    }
+    else {
+      delta = i<<1;
+      if ( (((k-start_sc)%6)  == delta) || (((k-start_sc)%6)  == (delta+1)) )
+        return (0);
+    }
+  }
+  return (1);
+}
+
 uint8_t get_l0(uint16_t dlDmrsSymbPos) {
 
   uint16_t mask=dlDmrsSymbPos;

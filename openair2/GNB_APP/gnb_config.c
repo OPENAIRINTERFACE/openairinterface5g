@@ -987,8 +987,6 @@ void NRRCConfig(void) {
   paramlist_def_t RUParamList     = {CONFIG_STRING_RU_LIST,NULL,0};
   paramdef_t GNBSParams[]         = GNBSPARAMS_DESC;
   
-  char aprefix[MAX_OPTNAME_SIZE*2 + 8];  
-  
 /* get global parameters, defined outside any section in the config file */
  
   LOG_I(GNB_APP, "Getting GNBSParams\n");

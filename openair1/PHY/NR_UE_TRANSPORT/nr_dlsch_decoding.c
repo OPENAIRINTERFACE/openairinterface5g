@@ -32,6 +32,7 @@
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/harq_nr.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
@@ -69,12 +70,11 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
       a_segments = a_segments/273;
     }  
  
-    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
     for (i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
+          free16(dlsch->harq_processes[i]->b,a_segments*1056);
           dlsch->harq_processes[i]->b = NULL;
         }
 
@@ -133,6 +133,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     memset(dlsch,0,sizeof(NR_UE_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
+    dlsch->number_harq_processes_for_pdsch = Mdlharq;
     dlsch->Nsoft = Nsoft;
     dlsch->Mlimit = 4;
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
@@ -143,6 +144,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(NR_DL_UE_HARQ_t));
+        init_downlink_harq_status(dlsch->harq_processes[i]);
         dlsch->harq_processes[i]->first_tx=1;
         dlsch->harq_processes[i]->b = (uint8_t*)malloc16(dlsch_bytes);
 

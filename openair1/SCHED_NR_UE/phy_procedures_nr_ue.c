@@ -44,6 +44,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/extern.h"
 #include "SCHED_NR_UE/defs.h"
+#include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "SCHED_NR/extern.h"
 #include "SCHED_NR_UE/phy_sch_processing_time.h"
 //#include <sched.h>
@@ -2255,6 +2256,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
+    LOG_D(PHY, "Sending PUCCH\n");
+    pucch_procedures_ue_nr(ue,
+                           gNB_id,
+                           proc,
+                           TRUE);
+
+    LOG_D(PHY, "Sending data \n");
     nr_ue_pusch_common_procedures(ue,
                                   harq_pid,
                                   slot_tx,
@@ -2262,7 +2270,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                   gNB_id,
                                   &ue->frame_parms);
   }
-
+  //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
 
   /* RACH */
   if (get_softmodem_params()->do_ra==1) {
@@ -4025,8 +4033,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   NR_UE_DLSCH_t   **dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  uint8_t harq_pid = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
-  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+  uint8_t *harq_pid = &ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
+  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[*harq_pid];
   uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
   uint16_t start_symb_sch = dlsch0_harq->start_symbol;
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
@@ -4096,10 +4104,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
     nr_slot_fep(ue,
-    		    l,
-				nr_tti_rx,
-				0,
-				0);
+    		l,
+		nr_tti_rx,
+		0,
+		0);
 
     // note: this only works if RBs for PDCCH are contigous!
     LOG_D(PHY,"pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
@@ -4137,6 +4145,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (dci_cnt > 0){
     LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
     //to update from pdsch config
+    dlsch0_harq = dlsch[0]->harq_processes[*harq_pid];
     start_symb_sch = dlsch0_harq->start_symbol;
     int symb_dmrs=-1;
     for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}

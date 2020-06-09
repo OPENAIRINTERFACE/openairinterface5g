@@ -50,8 +50,11 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int32_t **ul_ch_estimates_time = (eNB!=NULL) ? pusch_vars->drs_ch_estimates_time : calibration->drs_ch_estimates_time;
   AssertFatal(ul_ch_estimates_time != NULL, "ul_ch_estimates_time is null\n");
   int32_t **rxdataF_ext = (eNB!=NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
-  int subframe = (eNB!=NULL) ? proc->subframe_rx : ru->proc.tti_rx;
-  uint8_t harq_pid;
+
+  int subframe = proc->subframe_rx;
+
+  uint8_t harq_pid; 
+
   int16_t delta_phase = 0;
   int16_t *ru1 = ru_90;
   int16_t *ru2 = ru_90;
@@ -246,25 +249,25 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 
       switch(frame_parms->N_RB_DL) {
         case 6:
-          idft128((int16_t *) temp_in_ifft_0,
+          idft(IDFT_128,(int16_t *) temp_in_ifft_0,
                   (int16_t *) ul_ch_estimates_time[aa],
                   1);
           break;
 
         case 25:
-          idft512((int16_t *) temp_in_ifft_0,
+          idft(IDFT_512,(int16_t *) temp_in_ifft_0,
                   (int16_t *) ul_ch_estimates_time[aa],
                   1);
           break;
 
         case 50:
-          idft1024((int16_t *) temp_in_ifft_0,
+          idft(IDFT_1024,(int16_t *) temp_in_ifft_0,
                    (int16_t *) ul_ch_estimates_time[aa],
                    1);
           break;
 
         case 100:
-          idft2048((int16_t *) temp_in_ifft_0,
+          idft(IDFT_2048,(int16_t *) temp_in_ifft_0,
                    (int16_t *) ul_ch_estimates_time[aa],
                    1);
           break;
@@ -575,25 +578,25 @@ int32_t lte_ul_channel_estimation_RRU(LTE_DL_FRAME_PARMS *frame_parms,
 
       switch(frame_parms->N_RB_DL) {
         case 6:
-          idft128((int16_t *) temp_in_ifft_0,
+          idft(IDFT_128,(int16_t *) temp_in_ifft_0,
                   (int16_t *) ul_ch_estimates_time[aa],
                   1);
           break;
 
         case 25:
-          idft512((int16_t *) temp_in_ifft_0,
+          idft(IDFT_512,(int16_t *) temp_in_ifft_0,
                   (int16_t *) ul_ch_estimates_time[aa],
                   1);
           break;
 
         case 50:
-          idft1024((int16_t *) temp_in_ifft_0,
+          idft(IDFT_1024,(int16_t *) temp_in_ifft_0,
                    (int16_t *) ul_ch_estimates_time[aa],
                    1);
           break;
 
         case 100:
-          idft2048((int16_t *) temp_in_ifft_0,
+          idft(IDFT_2048,(int16_t *) temp_in_ifft_0,
                    (int16_t *) ul_ch_estimates_time[aa],
                    1);
           break;

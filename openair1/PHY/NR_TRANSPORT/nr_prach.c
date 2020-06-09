@@ -150,6 +150,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   int16_t            **rxsigF=NULL;
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
+  int slot2=slot;
 
   int16_t *prach[ru->nb_rx];
   int prach_sequence_length = ru->config.prach_config.prach_sequence_length.value;
@@ -159,9 +160,10 @@ void rx_nr_prach_ru(RU_t *ru,
   rxsigF            = ru->prach_rxsigF;
 
   AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
-  for (int aa=0; aa<ru->nb_rx; aa++) 
-    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
-  
+  for (int aa=0; aa<ru->nb_rx; aa++){ 
+    if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
+    prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
+  } 
 
 
   int mu = fp->numerology_index;
@@ -170,7 +172,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   if (prach_sequence_length == 0) {
     LOG_D(PHY,"PRACH (ru %d) in %d.%d, format %d, msg1_frequencyStart %d\n",
-	  ru->idx,frame,slot,prachFormat,msg1_frequencystart);
+	  ru->idx,frame,slot2,prachFormat,msg1_frequencystart);
     AssertFatal(prachFormat<4,"Illegal prach format %d for length 839\n",prachFormat);
     switch (prachFormat) {
     case 0:
@@ -282,20 +284,20 @@ void rx_nr_prach_ru(RU_t *ru,
 	if (prach_sequence_length == 0) {
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
             dftlen=49152;
-	    dft49152(prach2,rxsigF[aa],1);
+            dft(DFT_49152,prach2,rxsigF[aa],1);
           }
 	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft49152(prach2+98304,rxsigF[aa]+98304,1);
+            dft(DFT_49152,prach2+98304,rxsigF[aa]+98304,1);
 	    reps++;
 	  }
 	  if (prachFormat == 2) {
-	    dft49152(prach2+(98304*2),rxsigF[aa]+(98304*2),1);
-	    dft49152(prach2+(98304*3),rxsigF[aa]+(98304*3),1);
+	    dft(DFT_49152,prach2+(98304*2),rxsigF[aa]+(98304*2),1);
+	    dft(DFT_49152,prach2+(98304*3),rxsigF[aa]+(98304*3),1);
 	    reps+=2;
 	  }
 	  if (prachFormat == 3) { 
             dftlen=12288;
-	    for (int i=0;i<4;i++) dft12288(prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
+	    for (int i=0;i<4;i++) dft(DFT_12288,prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
 	    reps=4;
 	  }
 	}// 839 sequence
@@ -307,23 +309,23 @@ void rx_nr_prach_ru(RU_t *ru,
 	  if (mu==0) AssertFatal(1==0,"Shouldn't get here\n");
 	  else if (mu==1) {
 	    dftlen=2048;
-	    dft2048(prach2,rxsigF[aa],1);
+	    dft(DFT_2048,prach2,rxsigF[aa],1);
 	    if (prachFormat != 7) { // !=C0
-	      dft2048(prach2+4096,rxsigF[aa]+4096,1);
+	      dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
 	      reps++;
 	    }
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft2048(prach2+4096*2,rxsigF[aa]+4096*2,1);
-	      dft2048(prach2+4096*3,rxsigF[aa]+4096*3,1);
+	      dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
+	      dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
 	      reps+=2;
 	    }
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft2048(prach2+4096*4,rxsigF[aa]+4096*4,1);
-	      dft2048(prach2+4096*5,rxsigF[aa]+4096*5,1);
+	      dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
+	      dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
-	      for (int i=6;i<12;i++) dft2048(prach2+(4096*i),rxsigF[aa]+(4096*i),1);
+	      for (int i=6;i<12;i++) dft(DFT_2048,prach2+(4096*i),rxsigF[aa]+(4096*i),1);
 	      reps+=6;
 	    }
 	  }
@@ -338,21 +340,21 @@ void rx_nr_prach_ru(RU_t *ru,
 	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
 	    dftlen=36864;
-	    dft36864(prach2,rxsigF[aa],1);
+	    dft(DFT_36864,prach2,rxsigF[aa],1);
 	    reps++;
 	  }
 	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft36864(prach2+73728,rxsigF[aa]+73728,1);
+	    dft(DFT_36864,prach2+73728,rxsigF[aa]+73728,1);
 	    reps++;
 	  }
 	  if (prachFormat == 2) {
-	    dft36864(prach2+(73728*2),rxsigF[aa]+(73728*2),1);
-	    dft36864(prach2+(73728*3),rxsigF[aa]+(73728*3),1);
+	    dft(DFT_36864,prach2+(73728*2),rxsigF[aa]+(73728*2),1);
+	    dft(DFT_36864,prach2+(73728*3),rxsigF[aa]+(73728*3),1);
 	    reps+=2;
 	  }
 	  if (prachFormat == 3) {
 	    dftlen=9216;
-	    for (int i=0;i<4;i++) dft9216(prach2+(i*9216*2),rxsigF[aa]+(i*9216*2),1);
+	    for (int i=0;i<4;i++) dft(DFT_9216,prach2+(i*9216*2),rxsigF[aa]+(i*9216*2),1);
 	    reps=4;
 	  }
 	} else {
@@ -362,24 +364,24 @@ void rx_nr_prach_ru(RU_t *ru,
 	  if (mu==0) AssertFatal(1==0,"Shouldn't get here\n");
 	  else if (mu==1) {
 	    dftlen=1536;
-	    dft1536(prach2,rxsigF[aa],1);
+	    dft(DFT_1536,prach2,rxsigF[aa],1);
 	    if (prachFormat != 7) {
-	      dft1536(prach2+3072,rxsigF[aa]+3072,1);
+	      dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
 	      reps++;
 	    }
 	    
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft1536(prach2+3072*2,rxsigF[aa]+3072*2,1);
-	      dft1536(prach2+3072*3,rxsigF[aa]+3072*3,1);
+	      dft(DFT_1536,prach2+3072*2,rxsigF[aa]+3072*2,1);
+	      dft(DFT_1536,prach2+3072*3,rxsigF[aa]+3072*3,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft1536(prach2+3072*4,rxsigF[aa]+3072*4,1);
-	      dft1536(prach2+3072*5,rxsigF[aa]+3072*5,1);
+	      dft(DFT_1536,prach2+3072*4,rxsigF[aa]+3072*4,1);
+	      dft(DFT_1536,prach2+3072*5,rxsigF[aa]+3072*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
-	      for (int i=6;i<12;i++) dft1536(prach2+(3072*i),rxsigF[aa]+(3072*i),1);
+	      for (int i=6;i<12;i++) dft(DFT_1536,prach2+(3072*i),rxsigF[aa]+(3072*i),1);
 	      reps+=6;
 	    }
 	  }// mu==1
@@ -397,20 +399,20 @@ void rx_nr_prach_ru(RU_t *ru,
 	if (prach_sequence_length == 0) {	
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
 	    dftlen=98304;
-	    dft98304(prach2,rxsigF[aa],1);
+	    dft(DFT_98304,prach2,rxsigF[aa],1);
           }
 	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft98304(prach2+196608,rxsigF[aa]+196608,1);
+	    dft(DFT_98304,prach2+196608,rxsigF[aa]+196608,1);
 	    reps++;
 	  }
 	  if (prachFormat == 2) {
-	    dft98304(prach2+196608*2,rxsigF[aa]+196608*2,1);
-	    dft98304(prach2+(196608*3),rxsigF[aa]+(196608*3),1);
+	    dft(DFT_98304,prach2+196608*2,rxsigF[aa]+196608*2,1);
+	    dft(DFT_98304,prach2+(196608*3),rxsigF[aa]+(196608*3),1);
 	    reps+=2;
 	  }
 	  if (prachFormat == 3) {
             dftlen=24576;
-	    for (int i=0;i<4;i++) dft24576(prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
+	    for (int i=0;i<4;i++) dft(DFT_24576,prach2+(i*2*24576),rxsigF[aa]+(i*2*24576),1);
 	    reps=4;
 	  }
 	}
@@ -422,24 +424,24 @@ void rx_nr_prach_ru(RU_t *ru,
 	  if (mu==0) AssertFatal(1==0,"Shouldn't get here\n");
 	  else if (mu==1) {
 	    dftlen=4096;
-	    dft4096(prach2,rxsigF[aa],1);
+	    dft(DFT_4096,prach2,rxsigF[aa],1);
 	    if (prachFormat != 7) { //!=C0 
-	      dft4096(prach2+8192,rxsigF[aa]+8192,1);
+	      dft(DFT_4096,prach2+8192,rxsigF[aa]+8192,1);
 	      reps++;
 	    }
 	    
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft4096(prach2+8192*2,rxsigF[aa]+8192*2,1);
-	      dft4096(prach2+8192*3,rxsigF[aa]+8192*3,1);
+	      dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
+	      dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft4096(prach2+8192*4,rxsigF[aa]+8192*4,1);
-	      dft4096(prach2+8192*5,rxsigF[aa]+8192*5,1);
+	      dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
+	      dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
-	      for (int i=6;i<12;i++) dft4096(prach2+(8192*i),rxsigF[aa]+(8192*i),1);
+	      for (int i=6;i<12;i++) dft(DFT_4096,prach2+(8192*i),rxsigF[aa]+(8192*i),1);
 	      reps+=6;
 	    }
 	  }
@@ -454,16 +456,16 @@ void rx_nr_prach_ru(RU_t *ru,
 	if (prach_sequence_length == 0) {
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
 	    dftlen=73728;
-	    dft73728(prach2,rxsigF[aa],1);
+	    dft(DFT_73728,prach2,rxsigF[aa],1);
 	    reps++;
 	  }
 	  if (prachFormat == 1 || prachFormat == 2) {
-	    dft73728(prach2+(2*73728),rxsigF[aa]+(2*73728),1);
+	    dft(DFT_73728,prach2+(2*73728),rxsigF[aa]+(2*73728),1);
 	    reps++;
 	  }
 	  if (prachFormat == 3) {
 	    dftlen=18432;
-	    for (int i=0;i<4;i++) dft18432(prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
+	    for (int i=0;i<4;i++) dft(DFT_18432,prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
 	    reps=4;
 	  }
 	} else {
@@ -474,24 +476,24 @@ void rx_nr_prach_ru(RU_t *ru,
 	  if (mu==0) AssertFatal(1==0,"Shouldn't get here\n");
 	  else if (mu==1) {
 	    dftlen=3072;
-	    dft3072(prach2,rxsigF[aa],1);
+	    dft(DFT_3072,prach2,rxsigF[aa],1);
 	    if (prachFormat != 7) { //!=C0
-	      dft3072(prach2+6144,rxsigF[aa]+6144,1);
+	      dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
 	      reps++;
 	    }
 	    
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft3072(prach2+6144*2,rxsigF[aa]+6144*2,1);
-	      dft3072(prach2+6144*3,rxsigF[aa]+6144*3,1);
+	      dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
+	      dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft3072(prach2+6144*4,rxsigF[aa]+6144*4,1);
-	      dft3072(prach2+6144*5,rxsigF[aa]+6144*5,1);
+	      dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
+	      dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
-	      for (int i=6;i<12;i++) dft3072(prach2+(6144*i),rxsigF[aa]+(6144*i),1);
+	      for (int i=6;i<12;i++) dft(DFT_3072,prach2+(6144*i),rxsigF[aa]+(6144*i),1);
 	      reps+=6;
 	    }
 	  }
@@ -503,6 +505,7 @@ void rx_nr_prach_ru(RU_t *ru,
     }
 
     //Coherent combining of PRACH repetitions (assumes channel does not change, to be revisted for "long" PRACH)
+    LOG_D(PHY,"Doing PRACH combining of %d reptitions N_ZC %d\n",reps,N_ZC);
     int16_t rxsigF_tmp[N_ZC<<1];
     //    if (k+N_ZC > dftlen) { // PRACH signal is split around DC 
     int16_t *rxsigF2=rxsigF[aa];
@@ -583,8 +586,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   restricted_set      = cfg->restricted_set_config.value;
 
-  AssertFatal(prach_sequence_length == 1, "no support yet for long prachSequenceLength\n");
-
 
   uint8_t prach_fmt = prach_pdu->prach_format;
   uint16_t N_ZC = (prach_sequence_length==0)?839:139;
@@ -624,7 +625,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
     if (LOG_DEBUGFLAG(PRACH)){
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],(N_ZC==839) ? 840: 140));
-      if (en>60) LOG_I(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
+      if (en>60) LOG_D(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
     }
     if (restricted_set == 0) {
       // This is the relative offset in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
@@ -738,22 +739,22 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	// Now do IFFT of size 1024 (N_ZC=839) or 256 (N_ZC=139)
 	if (N_ZC == 839) {
 	  log2_ifft_size = 10;
-	  idft1024(prachF,prach_ifft_tmp,1);
+	  idft(IDFT_1024,prachF,prach_ifft_tmp,1);
 	  // compute energy and accumulate over receive antennas
 	  for (i=0;i<2048;i++)
 	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[i<<1] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
 	} else {
-	  idft256(prachF,prach_ifft_tmp,1);
+	  idft(IDFT_256,prachF,prach_ifft_tmp,1);
 	  log2_ifft_size = 8;
 	  // compute energy and accumulate over receive antennas and repetitions for BR
 	  for (i=0;i<256;i++)
 	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
 	}
 
-        if (LOG_DUMPFLAG(PRACH)) {	
+	if (LOG_DUMPFLAG(PRACH)) {	
 	  if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
           if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
-        }
+	}
       }// antennas_rx
     } // new dft
     
@@ -766,6 +767,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       lev = (int32_t)prach_ifft[(preamble_shift2+i)];
       levdB = dB_fixed_times10(lev);
       if (levdB>*max_preamble_energy) {
+	LOG_D(PHY,"preamble_index %d, delay %d en %d dB > %d dB\n",preamble_index,i,levdB,*max_preamble_energy);
 	*max_preamble_energy  = levdB;
 	*max_preamble_delay   = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate 
 	*max_preamble         = preamble_index;

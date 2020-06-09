@@ -145,7 +145,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
-                                   NR_sched_pucch *pucch_sched,
+                                   int num_slots_per_tdd,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
 void nr_schedule_uss_ulsch_phytest(int Mod_idP,
@@ -157,7 +157,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
                                 frame_t frameP,
                                 sub_frame_t slotP,
                                 int slots_per_tdd,
-                                NR_sched_pucch *sched_pucch);
+                                int *pucch_id);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
@@ -226,7 +226,7 @@ int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
-                   uint8_t nodata_dmrs,
+                   uint8_t numdmrscdmgroupnodata,
                    uint8_t tb_scaling);
 /** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);

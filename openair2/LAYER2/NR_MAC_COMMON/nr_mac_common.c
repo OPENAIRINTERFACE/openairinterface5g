@@ -46,6 +46,7 @@ uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,8
 uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
 
 const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
+const char *prachfmt03[]={"0","1","2","3"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
@@ -903,7 +904,7 @@ int get_nr_prach_info_from_index(uint8_t index,
     if ( (frame%x)==y || (frame%x)==y2 ) {
       slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
-      if ( (s_map>>slot_60khz)&0x01 ) {
+      if ( ((s_map>>slot_60khz)&0x01) ) {
         if (mu == 3) {
           if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 0) )
             return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
@@ -943,7 +944,7 @@ int get_nr_prach_info_from_index(uint8_t index,
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
           if (mu == 1) {
-            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] == 1) && (slot%2 == 0) )
+            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
@@ -953,9 +954,9 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %d) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
               slot,
-              index,
+              index, table_6_3_3_2_3_prachConfig_Index[index][6],
               pointa,
               mu,
               unpaired,
@@ -979,7 +980,7 @@ int get_nr_prach_info_from_index(uint8_t index,
         s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
           if (mu == 1) {
-            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] == 1) && (slot%2 == 0) )
+            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
@@ -1064,7 +1065,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   uint8_t ncs_index = rach_config->rach_ConfigGeneric.zeroCorrelationZoneConfig;
   uint16_t format0 = get_format0(config_index, unpaired);
   uint16_t NCS = get_NCS(ncs_index, format0, rach_config->restrictedSetConfig);
-  uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present) ? 139 : 839;
+  uint16_t L_ra = (rach_config->prach_RootSequenceIndex.present==NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139) ? 139 : 839;
   uint16_t r,u,index,q,d_u,n_shift_ra,n_shift_ra_bar,d_start;
   uint32_t w;
   uint8_t found_preambles = 0;
@@ -1419,7 +1420,7 @@ int32_t get_nr_uldl_offset(int nr_bandP)
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
-                   uint8_t nodata_dmrs,
+                   uint8_t numdmrscdmgroupnodata,
                    uint8_t tb_scaling) {
 
   LOG_D(MAC, "TBS calculation\n");
@@ -1427,10 +1428,14 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_rel15 = &pdsch_pdu->pdsch_pdu_rel15;
   uint16_t N_PRB_oh = x_overhead;
   uint8_t N_PRB_DMRS;
-  if (nodata_dmrs)
-    N_PRB_DMRS = 12;
-  else
-    N_PRB_DMRS = (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
+  if (pdsch_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    N_PRB_DMRS = numdmrscdmgroupnodata*6;
+  }
+  else {
+    N_PRB_DMRS = numdmrscdmgroupnodata*4;
+  }
   uint8_t N_sh_symb = pdsch_rel15->NrOfSymbols;
   uint8_t Imcs = pdsch_rel15->mcsIndex[0];
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
@@ -1452,7 +1457,7 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                        R,
 		       pdsch_rel15->rbSize,
 		       N_sh_symb,
-		       N_PRB_DMRS,
+		       N_PRB_DMRS, // FIXME // This should be multiplied by the number of dmrs symbols
 		       N_PRB_oh,
                        tb_scaling,
 		       pdsch_rel15->nrOfLayers)>>3;
@@ -1742,7 +1747,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       size += dci_pdu->time_domain_assignment.nbits;
       // VRB to PRB mapping 
-      if (pdsch_config->resourceAllocation == 1) {
+      if ((pdsch_config->resourceAllocation == 1) && (bwp->bwp_Dedicated->pdsch_Config->choice.setup->vrb_ToPRB_Interleaver != NULL)) {
         dci_pdu->vrb_to_prb_mapping.nbits = 1;
         size += dci_pdu->vrb_to_prb_mapping.nbits;
       }
@@ -1791,7 +1796,7 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       NR_SetupRelease_DMRS_DownlinkConfig_t *typeA = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA;
       NR_SetupRelease_DMRS_DownlinkConfig_t *typeB = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB;
       dci_pdu->antenna_ports.nbits = getAntPortBitWidth(typeA,typeB);
-      size += dci_pdu->antenna_ports.nbits; 
+      size += dci_pdu->antenna_ports.nbits;
       // Tx Config Indication
       long *isTciEnable = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI;
       if (isTciEnable != NULL) {

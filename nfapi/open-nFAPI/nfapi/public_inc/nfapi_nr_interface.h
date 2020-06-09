@@ -10,6 +10,7 @@
 #define _NFAPI_NR_INTERFACE_H_
 
 #include "nfapi_interface.h"
+#include <nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h>
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
