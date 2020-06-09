@@ -611,6 +611,9 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
+      // prepare ULSCH/PUSCH reception
+      nr_schedule_response(Sched_INFO);
+
       // --------- setting parameters for UE --------
 
       scheduled_response.module_id = 0;
