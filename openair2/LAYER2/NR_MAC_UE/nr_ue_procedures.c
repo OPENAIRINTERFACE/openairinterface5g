@@ -3101,7 +3101,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
         mac_sdu_len = 0x0000;
         rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
 
-              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", rx_lcid, pdu_len);
+        LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", rx_lcid, pdu_len);
         switch(rx_lcid){
             //  MAC CE
 
@@ -3255,12 +3255,12 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                 LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                    LOG_D(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
-                    for (int i = 0; i < 32; i++)
-                      LOG_D(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
+                    for (i = 0; i < 32; i++)
+                      LOG_T(MAC, "%x.", (pdu_ptr + mac_subheader_len)[i]);
 
-                    LOG_D(MAC, "\n");
+                    LOG_T(MAC, "\n");
                 #endif
 
                 if (IS_SOFTMODEM_NOS1){

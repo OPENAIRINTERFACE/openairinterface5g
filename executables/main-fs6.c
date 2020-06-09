@@ -401,7 +401,7 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   hULUE(newUDPheader)->O_ACK=eNB->ulsch[UE_id]->harq_processes[harq_pid]->O_ACK;
   memcpy(hULUE(newUDPheader)->o_ACK, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
-  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
+  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o));

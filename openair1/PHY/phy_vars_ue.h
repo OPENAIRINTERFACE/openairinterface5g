@@ -119,7 +119,6 @@ double beta2_dlsch[6][MCS_COUNT] = { {2.52163, 0.83231, 0.77472, 1.36536, 1.1682
 
 */
 
-
 const char NB_functions[7][20]={"eNodeB_3GPP","eNodeB_3GPP_BBU","NGFI_RAU_IF4p5","NGFI_RRU_IF5","NGFI_RRU_IF4p5","gNodeB_3GPP",};
 const char NB_timing[2][20]={"synch_to_ext_device","synch_to_other"};
 const char ru_if_types[MAX_RU_IF_TYPES][20]={"local RF","IF5 RRU","IF5 Mobipass","IF4p5 RRU","IF1pp RRU"};
@@ -130,5 +129,4 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
 uint8_t max_turbo_iterations=4;
-
 #endif /* __PHY_VARS_UE__H__ */

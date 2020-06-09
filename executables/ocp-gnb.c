@@ -99,7 +99,11 @@ int flexran_agent_start(mid_t mod_id) {
 }
 void flexran_agent_slice_update(mid_t module_idP) {
 }
-
+int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p){
+	return 0;
+}
+void proto_agent_stop(mod_id_t mod_id){
+}
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
@@ -395,7 +399,6 @@ void OCPconfig_RU(RU_t *ru) {
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
   config_getlist( &RUParamList, RUParams, sizeof(RUParams)/sizeof(paramdef_t), NULL);
   AssertFatal( RUParamList.numelt == 1 && RC.nb_nr_L1_inst ==1,""  );
-  printf("Set RU mask to %lx\n",RC.ru_mask);
   ru->idx=0;
   ru->nr_frame_parms                      = (NR_DL_FRAME_PARMS *)malloc(sizeof(NR_DL_FRAME_PARMS));
   ru->frame_parms                         = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
@@ -788,7 +791,7 @@ void launch_NR_RU(RU_t *ru, char *rf_config_file) {
     ru->num_gNB=1;
     LOG_I(PHY,"Copying frame parms from gNB in RC to ru %d and frame_parms in ru\n",ru->idx);
     RU_proc_t *proc = &ru->proc;
-    threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
+    threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "MainLoop", -1, OAI_PRIORITY_RT_MAX );
   }
 }
 
@@ -855,7 +858,7 @@ int main( int argc, char **argv ) {
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
   LOG_E(PHY,"configuring RU from file,  hardcoded one gNB for one RU, one carrier\n");
-  RU_t ru;
+  RU_t ru={0};
   OCPconfig_RU(&ru);
   ru.nr_frame_parms->threequarter_fs=threequarter_fs;
   fill_rf_config(&ru,ru.rf_config_file);
@@ -876,7 +879,7 @@ int main( int argc, char **argv ) {
   }
 
   if (do_forms==1) {
-    scopeParms_t tmp= {&argc, argv, NULL, NULL};
+    scopeParms_t tmp= {&argc, argv, &ru, RC.gNB[0]};
     startScope(&tmp);
   }
 

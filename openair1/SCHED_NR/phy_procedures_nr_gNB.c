@@ -146,7 +146,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
 
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
-  LOG_D(PHY,"phy_procedures_gNB_TX: %d/%d\n", frame,slot);
+
   // clear the transmit data array for the current subframe
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
     memset(&gNB->common_vars.txdataF[aa][txdataF_offset],0,fp->samples_per_slot_wCP*sizeof(int32_t));

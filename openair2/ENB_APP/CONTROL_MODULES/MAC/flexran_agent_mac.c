@@ -1579,12 +1579,6 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id)
   return 0;
 }
 
-#if 0
-AGENT_MAC_xface *flexran_agent_get_mac_xface(mid_t mod_id)
-{
-  return agent_mac_xface[mod_id];
-}
-#endif
 
 void flexran_create_config_structures(mid_t mod_id)
 {
