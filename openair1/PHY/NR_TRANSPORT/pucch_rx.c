@@ -153,7 +153,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
    * Defining cyclic shift hopping TS 38.211 Subclause 6.3.2.2.2
    */
   // alpha is cyclic shift
-  double alpha;
+  //double alpha;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
   //uint8_t lnormal;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
@@ -192,7 +192,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   for(i=0;i<nr_sequences;i++){ 
   // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
     for (l=0; l<pucch_pdu->nr_of_symbols; l++){
-      alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
+      double alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
 #ifdef DEBUG_NR_PUCCH_RX
       printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d/%d,mcs %d)\n",u,v,alpha,l,l+pucch_pdu->start_symbol_index,mcs[i]);
       printf("lut output %d\n",gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index]);
@@ -265,7 +265,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   const int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
   int16_t xr[24]  __attribute__((aligned(32)));
-  int16_t xrt[24] __attribute__((aligned(32)));
+  //int16_t xrt[24] __attribute__((aligned(32)));
   int32_t xrtmag=0;
   int maxpos=0;
   int n2=0;
@@ -958,7 +958,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
+  //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
 
   AssertFatal(pucch_pdu->nr_of_symbols==1 || pucch_pdu->nr_of_symbols==2,
 	      "Illegal number of symbols  for PUCCH 2 %d\n",pucch_pdu->nr_of_symbols);
