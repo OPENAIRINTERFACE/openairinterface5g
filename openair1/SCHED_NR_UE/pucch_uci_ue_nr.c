@@ -743,7 +743,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
           }
           else {
 
-            dai_current = harq_status->vDAI_DL;
+            dai_current = harq_status->vDAI_DL+1; // DCI DAI to counter DAI conversion
 
             if (dai_current == 0) {
               LOG_E(PHY,"PUCCH Downlink dai is invalid : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
@@ -756,10 +756,10 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
             ack_data[code_word][dai_current - 1] = harq_status->ack;
             dai[code_word][dai_current - 1] = dai_current;
           }
+          if (do_reset == TRUE) {
+            init_downlink_harq_status(ue->dlsch[thread_idx][gNB_id][code_word]->harq_processes[dl_harq_pid]);
+          }
         }
-      }
-      if (do_reset == TRUE) {
-        init_downlink_harq_status(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]);
       }
     }
   }
