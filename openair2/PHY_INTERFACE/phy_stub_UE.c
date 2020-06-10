@@ -1136,7 +1136,7 @@ int ue_init_standalone_socket(const char *addr, int port)
 
 void *ue_standalone_pnf_task(void *context)
 {
-
+  uint16_t sfn_sf = 0;
   const char *standalone_addr = "127.0.0.1";
   int standalone_port = 3289;
   char buffer[1024];
@@ -1152,51 +1152,64 @@ void *ue_standalone_pnf_task(void *context)
       continue;
     }
 
-    nfapi_p7_message_header_t header;
-    if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0) {
-      LOG_E(MAC, "Header unpack failed for standalone pnf\n");
-      continue;
+    if (len == 2 && len > 0)
+    {
+      memcpy((void *)&sfn_sf, buffer, sizeof(sfn_sf));
+      if (sfn_sf % 300 == 0)
+      {
+        LOG_I(MAC, "Unpacked sfn_sf sf: %u sfn: %u\n", NFAPI_SFNSF2SFN(sfn_sf),
+              NFAPI_SFNSF2SF(sfn_sf));
+      }
     }
+    else
+    {
+      nfapi_p7_message_header_t header;
+      if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
+      {
+        LOG_E(MAC, "Header unpack failed for standalone pnf\n");
+        continue;
+      }
 
-    switch (header.message_id)
-    {
-    case NFAPI_DL_CONFIG_REQUEST:
-    {
-      nfapi_dl_config_request_t dl_config_req;
-      if (nfapi_p7_message_unpack((void *)buffer, len, &dl_config_req,
-                                  sizeof(dl_config_req), NULL) < 0)
+      switch (header.message_id)
       {
-        LOG_E(MAC, "Message dl_config_req failed to unpack\n");
-      }
-      else
+      case NFAPI_DL_CONFIG_REQUEST:
       {
-        // check to see if dl_config_req is null
-        memcpy_dl_config_req(NULL, NULL, &dl_config_req);
+        nfapi_dl_config_request_t dl_config_req;
+        if (nfapi_p7_message_unpack((void *)buffer, len, &dl_config_req,
+                                    sizeof(dl_config_req), NULL) < 0)
+        {
+          LOG_E(MAC, "Message dl_config_req failed to unpack\n");
+        }
+        else
+        {
+          // check to see if dl_config_req is null
+          memcpy_dl_config_req(NULL, NULL, &dl_config_req);
+        }
+        break;
       }
-      break;
-    }
-    case NFAPI_TX_REQUEST:
-    {
-      nfapi_tx_request_t tx_req;
-      // lock this tx_req
-      if (nfapi_p7_message_unpack((void *)buffer, len, &tx_req,
-                                  sizeof(tx_req), NULL) < 0)
+      case NFAPI_TX_REQUEST:
       {
-        LOG_E(MAC, "Message tx_req failed to unpack\n");
+        nfapi_tx_request_t tx_req;
+        // lock this tx_req
+        if (nfapi_p7_message_unpack((void *)buffer, len, &tx_req,
+                                    sizeof(tx_req), NULL) < 0)
+        {
+          LOG_E(MAC, "Message tx_req failed to unpack\n");
+        }
+        else
+        {
+          // check to see if tx_req is null
+          memcpy_tx_req(NULL, &tx_req);
+        }
+        break;
       }
-      else
-      {
-        // check to see if tx_req is null
-        memcpy_tx_req(NULL, &tx_req);
-      }
-      break;
-    }
-    case NFAPI_HI_DCI0_REQUEST:
-      break;
+      case NFAPI_HI_DCI0_REQUEST:
+        break;
 
-    default:
-      LOG_E(MAC, "Case Statement has no corresponding nfapi message\n");
-      break;
+      default:
+        LOG_E(MAC, "Case Statement has no corresponding nfapi message\n");
+        break;
+      }
     }
   }
 }
