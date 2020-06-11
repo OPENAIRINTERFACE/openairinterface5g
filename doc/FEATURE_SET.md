@@ -127,7 +127,7 @@ The current PDCP layer is header compliant with **3GPP 36.323** Rel 10.1.0 and i
 
 ## eNB RRC Layer ##
 
-The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following functions:
+The RRC layer is based on **3GPP 36.331** v15.6 and implements the following functions:
 
 - System Information broadcast (SIB 1, 2, 3, and 13)
   * SIB1: Up to 6 PLMN IDs broadcast
@@ -154,6 +154,10 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - X2 timers (t_reloc_prep, tx2_reloc_overall)
  - Handover Cancel
  - X2-U interface implemented
+ - EN-DC is implemented
+ - X2AP : Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete
+ - RRC  : Handling of RRC Connection Reconfiguration with 5G cell info, configuration of 5G-NR measurements
+ - S1AP : Handling of E-RAB Modification Indication / Confirmation 
 
 ## eNB/MCE M2AP ##
 
@@ -175,9 +179,6 @@ The M3AP layer is based on **3GPP 36.444** v14.0.1:
  - M3 Session Start Request
  - M3 Session Start Response
 
-## eNB Advanced Features ##
-
-**To be completed**
 
 # OpenAirInterface UE Feature Set #
 
