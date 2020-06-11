@@ -89,6 +89,7 @@
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
+#define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
@@ -142,6 +143,10 @@ extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
+
+extern int emulate_rf;
+extern int numerology;
+extern int usrp_tx_thread;
 
 extern volatile int start_eNB;
 extern volatile int start_UE;
