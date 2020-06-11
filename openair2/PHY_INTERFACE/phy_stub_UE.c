@@ -96,8 +96,8 @@ void *get_queue(queue_t *q) {
 }
 
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
-//extern int timer_subframe;
-//extern int timer_frame;
+extern int timer_subframe;
+extern int timer_frame;
 
 extern uint16_t sf_ahead;
 

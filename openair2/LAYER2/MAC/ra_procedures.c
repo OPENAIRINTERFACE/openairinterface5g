@@ -293,7 +293,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
   LOG_E(MAC, "got inside ue_get_rach\n");
 
   // Modification for phy_stub_ue operation
-  if(NFAPI_MODE == NFAPI_UE_STUB_PNF) { // phy_stub_ue mode
+  if(NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) { // phy_stub_ue mode
     UE_mode = UE_mac_inst[module_idP].UE_mode[0];
     LOG_D(MAC, "ue_get_rach , UE_mode: %d", UE_mode);
   } else { // Full stack mode

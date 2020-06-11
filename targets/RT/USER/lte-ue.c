@@ -1296,12 +1296,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
               next_ra_frame++;
               if (next_ra_frame > 500) {
                 // check if we have PRACH opportunity
-                // LOG_I(MAC, "is_prach_subframe: %d UE_mac_inst[ue_MOD_id].SI_Decoded: %u\n",
-                //       is_prach_subframe(&UE->frame_parms, proc->frame_tx, proc->subframe_tx),
-                //       UE_mac_inst[ue_Mod_id].SI_Decoded);
-                LOG_I(MAC, "is_prach_subframe: %d UE_mac_inst %d\n",
-                      is_prach_subframe(&UE->frame_parms, proc->frame_tx, proc->subframe_tx),
-                       UE_mac_inst[ue_Mod_id].SI_Decoded);
                 if (is_prach_subframe(&UE->frame_parms, proc->frame_tx, proc->subframe_tx) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
                   // The one working strangely...
                   //if (is_prach_subframe(&UE->frame_parms,proc->frame_tx, proc->subframe_tx && Mod_id == (module_id_t) init_ra_UE) ) {
