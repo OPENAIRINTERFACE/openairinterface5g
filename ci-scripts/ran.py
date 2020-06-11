@@ -366,7 +366,7 @@ class RANManagement():
 		count = 40
 		buildOAIprocess = True
 		while (count > 0) and buildOAIprocess:
-			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 3)
+			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
 			if result is None:
 				buildOAIprocess = False
@@ -607,7 +607,11 @@ class RANManagement():
 					enbDidSync = True
 					time.sleep(10)
 
-		if enbDidSync and eNBinNoS1:
+		rruCheck = False
+		result = re.search('^rru|^du.band', str(config_file))
+		if result is not None:
+			rruCheck = True
+		if enbDidSync and eNBinNoS1 and not rruCheck:
 			mySSH.command('ifconfig oaitun_enb1', '\$', 4)
 			mySSH.command('ifconfig oaitun_enb1', '\$', 4)
 			result = re.search('inet addr:1|inet 1', mySSH.getBefore())
@@ -1031,7 +1035,7 @@ class RANManagement():
 					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
 					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
 					htmleNBFailureMsg += rruMsg + '\n'
-					self.prematureExit(True)
+					self.prematureExit = True
 					global_status = CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
