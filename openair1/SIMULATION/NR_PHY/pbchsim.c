@@ -62,6 +62,8 @@ uint16_t NB_UE_INST = 1;
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint64_t get_softmodem_optmask(void) {return 0;}
 
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
                                int N_RB_UL,
