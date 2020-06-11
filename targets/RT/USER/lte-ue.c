@@ -1234,6 +1234,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 
     //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++) {
     if (sfn_sf_changed) {
+      sfn_sf_changed = false;
       for (ue_index = 0; ue_index < ue_num; ue_index++) {
         ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index;
         UE = PHY_vars_UE_g[ue_Mod_id][0];
