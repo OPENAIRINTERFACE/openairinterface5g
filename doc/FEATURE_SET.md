@@ -82,7 +82,11 @@ TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | 3.0 Mbit/s          | TM1: 4.21 Mbits/s  
 The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels. 
 
 - RRC interface for CCCH, DCCH, and DTCH
-- Proportional fair scheduler (round robin scheduler soon)
+- Proportional fair scheduler (round robin scheduler soon), with the following improvements:
+	- Up to 30 users tested in the L2 simulator, CCE allocation in the preprocessor ; the scheduler was also simplified and made more modular
+	- Adaptative UL-HARQ
+	- Should remove out-of-sync UEs (to be clarified)
+	- No use of the `first_rb` in the UL scheduler ; respects `vrb_map_UL` and `vrb_map` in the DL
 - DCI generation
 - HARQ Support
 - RA procedures and RNTI management
