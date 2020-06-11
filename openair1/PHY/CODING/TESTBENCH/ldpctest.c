@@ -400,7 +400,7 @@ int test_ldpc(short No_iteration,
 
       for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
-#ifdef __CUDACC__ 
+#ifdef CUDA_FLAG
         if(run_cuda){
           printf("***********run ldpc by cuda\n");
           n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
