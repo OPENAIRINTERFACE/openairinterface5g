@@ -806,18 +806,26 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
   // c_init=nRNTI*2^15+n_id according to TS 38.211 Subclause 6.3.2.6.1
   //x2 = (rnti) + ((uint32_t)(1+nr_tti_tx)<<16)*(1+(fp->Nid_cell<<1));
   x2 = ((rnti)<<15)+n_id;
-  s = lte_gold_generic(&x1, &x2, 1);
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%x\n",s);
 #endif
 
-  for (i=0; i<M_bit; i++) {
-    c = (uint8_t)((s>>i)&1);
-    btilde[i] = (((B>>i)&1) ^ c);
+  uint8_t *btildep=btilde;
+  int M_bit2=M_bit > 31 ? 32 : (M_bit&31), M_bit3=M_bit;
+  for (int iprime=0;iprime<=(M_bit>>5);iprime++,btildep+=32) {
+    s = lte_gold_generic(&x1, &x2, (iprime==0) ? 1 : 0);
+
+    for (i=0; i<M_bit2; i++) {
+      c = (uint8_t)((s>>i)&1);
+      btildep[i] = (((B>>i)&1) ^ c);
 #ifdef DEBUG_NR_PUCCH_TX
-    //printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
+      printf("\t\t\t btilde[%d]=%lx from unscrambled bit %d and scrambling %d (%x)\n",i+(iprime<<5),btilde[i],((B>>i)&1),c,s>>i);
 #endif
+    }
+    M_bit3-=32;
+    M_bit2=M_bit3 > 31 ? 32 : (M_bit3&31);
   }
+
 
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t\t [nr_pucch2_3_4_scrambling] scrambling M_bit=%d bits\n", M_bit);

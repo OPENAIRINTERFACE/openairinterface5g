@@ -20,15 +20,15 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/pucch_rx.c
-* \brief Top-level routines for decoding the PUCCH physical channel
-* \author A. Mico Pereperez, Padarthi Naga Prasanth, Francesco Mani, Raymond Knopp
-* \date 2020
-* \version 0.2
-* \company Eurecom
-* \email:
-* \note
-* \warning
-*/
+ * \brief Top-level routines for decoding the PUCCH physical channel
+ * \author A. Mico Pereperez, Padarthi Naga Prasanth, Francesco Mani, Raymond Knopp
+ * \date 2020
+ * \version 0.2
+ * \company Eurecom
+ * \email:
+ * \note
+ * \warning
+ */
 #include<stdio.h>
 #include <string.h>
 #include <math.h>
@@ -190,7 +190,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int16_t x_n_re[nr_sequences][24],x_n_im[nr_sequences][24];
 
   for(i=0;i<nr_sequences;i++){ 
-  // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
+    // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
     for (l=0; l<pucch_pdu->nr_of_symbols; l++){
       alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
 #ifdef DEBUG_NR_PUCCH_RX
@@ -200,14 +200,14 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       alpha=0.0;
       for (n=0; n<12; n++){
         x_n_re[i][(12*l)+n] = (int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
-                                  - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))); // Re part of base sequence shifted by alpha
+						   - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))); // Re part of base sequence shifted by alpha
         x_n_im[i][(12*l)+n] =(int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
-                                  + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)))); // Im part of base sequence shifted by alpha
+						  + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)))); // Im part of base sequence shifted by alpha
 #ifdef DEBUG_NR_PUCCH_RX
-          printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d) %d,%d\n",
-		 u,v,alpha,l,n,x_n_re[i][(12*l)+n],x_n_im[i][(12*l)+n],
-		 (int32_t)(round(32767*cos(alpha*n))),
-		 (int32_t)(round(32767*sin(alpha*n))));
+	printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d) %d,%d\n",
+	       u,v,alpha,l,n,x_n_re[i][(12*l)+n],x_n_im[i][(12*l)+n],
+	       (int32_t)(round(32767*cos(alpha*n))),
+	       (int32_t)(round(32767*sin(alpha*n))));
 #endif
       }
     }
@@ -229,12 +229,12 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
       r_re[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0];
       r_im[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1];
-      #ifdef DEBUG_NR_PUCCH_RX
-        printf("\t [nr_generate_pucch0] mapping to RE \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-                frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size)+re_offset,
-                l,n,((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0],
-                ((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1]);
-      #endif
+#ifdef DEBUG_NR_PUCCH_RX
+      printf("\t [nr_generate_pucch0] mapping to RE \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+	     frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size)+re_offset,
+	     l,n,((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0],
+	     ((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1]);
+#endif
       re_offset++;
       if (re_offset>= frame_parms->ofdm_symbol_size) 
         re_offset-=frame_parms->ofdm_symbol_size;
@@ -299,7 +299,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     n2=0;
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
 
-       seq_index = (pucch_pdu->initial_cyclic_shift+
+      seq_index = (pucch_pdu->initial_cyclic_shift+
 		   mcs[i]+
 		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
       for (n=0;n<12;n++,n2+=2) {
@@ -504,13 +504,13 @@ void nr_decode_pucch1(  int32_t **rxdataF,
       if (l%2 == 0) { // mapping DM-RS signal according to TS38.211 subclause 6.4.1.3.1
         z_dmrs_re_rx[i+n] = ((int16_t *)&rxdataF[0][re_offset])[0];
         z_dmrs_im_rx[i+n] = ((int16_t *)&rxdataF[0][re_offset])[1];
-//	printf("%d\t%d\t%d\n",l,z_dmrs_re_rx[i+n],z_dmrs_im_rx[i+n]);
+	//	printf("%d\t%d\t%d\n",l,z_dmrs_re_rx[i+n],z_dmrs_im_rx[i+n]);
 #ifdef DEBUG_NR_PUCCH_RX
         printf("\t [nr_generate_pucch1] mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+n,re_offset,
                l,n,((int16_t *)&rxdataF[0][re_offset])[0],((int16_t *)&rxdataF[0][re_offset])[1]);
 #endif
-//        printf("l=%d\ti=%d\tre_offset=%d\treceived dmrs re=%d\tim=%d\n",l,i,re_offset,z_dmrs_re_rx[i+n],z_dmrs_im_rx[i+n]);
+	//        printf("l=%d\ti=%d\tre_offset=%d\treceived dmrs re=%d\tim=%d\n",l,i,re_offset,z_dmrs_re_rx[i+n],z_dmrs_im_rx[i+n]);
       }
 
       re_offset++;
@@ -529,7 +529,7 @@ void nr_decode_pucch1(  int32_t **rxdataF,
            l,lprime);
 #endif
     // y_n contains the complex value d multiplied by the sequence r_u_v
-   if ((intraSlotFrequencyHopping == 1) && (l >= (int)floor(nrofSymbols/2))) n_hop = 1; // n_hop = 1 for second hop
+    if ((intraSlotFrequencyHopping == 1) && (l >= (int)floor(nrofSymbols/2))) n_hop = 1; // n_hop = 1 for second hop
 
 #ifdef DEBUG_NR_PUCCH_RX
     printf("\t [nr_generate_pucch1] entering function nr_group_sequence_hopping with n_hop=%d, nr_tti_tx=%d\n",
@@ -547,18 +547,18 @@ void nr_decode_pucch1(  int32_t **rxdataF,
       }
       else{
         r_u_v_alpha_delta_dmrs_re[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
-                                       - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15))); // Re part of DMRS base sequence shifted by alpha
+						  - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15))); // Re part of DMRS base sequence shifted by alpha
         r_u_v_alpha_delta_dmrs_im[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
-                                       + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15))); // Im part of DMRS base sequence shifted by alpha
+						  + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15))); // Im part of DMRS base sequence shifted by alpha
         r_u_v_alpha_delta_dmrs_re[n] = (int16_t)(((int32_t)(amp*r_u_v_alpha_delta_dmrs_re[n]))>>15);
         r_u_v_alpha_delta_dmrs_im[n] = (int16_t)(((int32_t)(amp*r_u_v_alpha_delta_dmrs_im[n]))>>15);
       }
-//      printf("symbol=%d\tr_u_rx_re=%d\tr_u_rx_im=%d\n",l,r_u_v_alpha_delta_dmrs_re[n], r_u_v_alpha_delta_dmrs_im[n]);
+      //      printf("symbol=%d\tr_u_rx_re=%d\tr_u_rx_im=%d\n",l,r_u_v_alpha_delta_dmrs_re[n], r_u_v_alpha_delta_dmrs_im[n]);
       // PUCCH sequence = DM-RS sequence multiplied by d(0)
-/*      y_n_re[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_re)>>15)
-                                           - (((int32_t)(r_u_v_alpha_delta_im[n])*d_im)>>15))); // Re part of y(n)
-      y_n_im[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_im)>>15)
-                                           + (((int32_t)(r_u_v_alpha_delta_im[n])*d_re)>>15))); // Im part of y(n) */
+      /*      y_n_re[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_re)>>15)
+	      - (((int32_t)(r_u_v_alpha_delta_im[n])*d_im)>>15))); // Re part of y(n)
+	      y_n_im[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_im)>>15)
+	      + (((int32_t)(r_u_v_alpha_delta_im[n])*d_re)>>15))); // Im part of y(n) */
 #ifdef DEBUG_NR_PUCCH_RX
       printf("\t [nr_generate_pucch1] sequence generation \tu=%d \tv=%d \talpha=%lf \tr_u_v_alpha_delta[n=%d]=(%d,%d) \ty_n[n=%d]=(%d,%d)\n",
              u,v,alpha,n,r_u_v_alpha_delta_re[n],r_u_v_alpha_delta_im[n],n,y_n_re[n],y_n_im[n]);
@@ -608,12 +608,12 @@ void nr_decode_pucch1(  int32_t **rxdataF,
 	  if(floor(l/2)*12==(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)){
             for (int n=0; n<12 ; n++) {
               z_re_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                  + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
+				     + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
               z_im_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                  - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
+				     - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
               z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]=z_re_temp; 
               z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]=z_im_temp; 
-//	      printf("symbol=%d\tz_re_rx=%d\tz_im_rx=%d\t",l,(int)z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+	      //	      printf("symbol=%d\tz_re_rx=%d\tz_im_rx=%d\t",l,(int)z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #ifdef DEBUG_NR_PUCCH_RX
               printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
                      mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
@@ -623,15 +623,15 @@ void nr_decode_pucch1(  int32_t **rxdataF,
 #endif   
 	      // multiplying with conjugate of low papr sequence  
 	      z_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                                              + (((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 
+				     + (((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 
               z_im_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                                              - (((int32_t)(r_u_v_alpha_delta_im[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
+				     - (((int32_t)(r_u_v_alpha_delta_im[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
               z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n] = z_re_temp;
               z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n] = z_im_temp;
-/*	      if(z_re_temp<0){
-                      printf("\nBug detection %d\t%d\t%d\t%d\n",r_u_v_alpha_delta_re[n],z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(((int32_t)(r_u_v_alpha_delta_re[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15),(((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15));
-              }
-	      printf("z1_re_rx=%d\tz1_im_rx=%d\n",(int)z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]); */ 
+	      /*	      if(z_re_temp<0){
+			      printf("\nBug detection %d\t%d\t%d\t%d\n",r_u_v_alpha_delta_re[n],z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(((int32_t)(r_u_v_alpha_delta_re[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15),(((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15));
+			      }
+			      printf("z1_re_rx=%d\tz1_im_rx=%d\n",(int)z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]); */ 
 	    }
 	  }
         }
@@ -642,12 +642,12 @@ void nr_decode_pucch1(  int32_t **rxdataF,
           if(floor(l/2)*12==(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)){
             for (int n=0; n<12 ; n++) {
               z_dmrs_re_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                  + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
+					  + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
               z_dmrs_im_temp =  (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                  - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
+					   - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
               z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_re_temp;
               z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_im_temp;
-//              printf("symbol=%d\tz_dmrs_re_rx=%d\tz_dmrs_im_rx=%d\t",l,(int)z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+	      //              printf("symbol=%d\tz_dmrs_re_rx=%d\tz_dmrs_im_rx=%d\t",l,(int)z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #ifdef DEBUG_NR_PUCCH_RX
               printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
                      mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
@@ -657,17 +657,17 @@ void nr_decode_pucch1(  int32_t **rxdataF,
 #endif
               //finding channel coeffcients by dividing received dmrs with actual dmrs and storing them in z_dmrs_re_rx and z_dmrs_im_rx arrays
               z_dmrs_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                                           + (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1); 
+					  + (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1); 
               z_dmrs_im_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                                           - (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
-/*	      if(z_dmrs_re_temp<0){
-		      printf("\nBug detection %d\t%d\t%d\t%d\n",r_u_v_alpha_delta_dmrs_re[n],z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15),(((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15));
-	      }*/
+					  - (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
+	      /*	      if(z_dmrs_re_temp<0){
+			      printf("\nBug detection %d\t%d\t%d\t%d\n",r_u_v_alpha_delta_dmrs_re[n],z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15),(((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15));
+			      }*/
 	      z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_re_temp;
 	      z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_im_temp; 
-//	      printf("z1_dmrs_re_rx=%d\tz1_dmrs_im_rx=%d\n",(int)z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
-	     /* z_dmrs_re_rx[(int)(l/2)*12+n]=z_dmrs_re_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_re[n]; 
-              z_dmrs_im_rx[(int)(l/2)*12+n]=z_dmrs_im_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_im[n]; */
+	      //	      printf("z1_dmrs_re_rx=%d\tz1_dmrs_im_rx=%d\n",(int)z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],(int)z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+	      /* z_dmrs_re_rx[(int)(l/2)*12+n]=z_dmrs_re_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_re[n]; 
+		 z_dmrs_im_rx[(int)(l/2)*12+n]=z_dmrs_im_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_im[n]; */
 	    }
 	  }
         }
@@ -694,9 +694,9 @@ void nr_decode_pucch1(  int32_t **rxdataF,
             if(floor(l/2)*12==(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)){
               for (int n=0; n<12 ; n++) {
                 z_re_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                             + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
+				       + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
                 z_im_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                              - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
+				       - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1);
                 z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n] = z_re_temp;
                 z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n] = z_im_temp;
 #ifdef DEBUG_NR_PUCCH_RX
@@ -707,9 +707,9 @@ void nr_decode_pucch1(  int32_t **rxdataF,
                        z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
 #endif 
                 z_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                            + (((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 
+				       + (((int32_t)(r_u_v_alpha_delta_im[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 
                 z_im_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15)
-                             - (((int32_t)(r_u_v_alpha_delta_im[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 	  
+				       - (((int32_t)(r_u_v_alpha_delta_im[n])*z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n])>>15))>>1); 	  
 	        z_re_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n] = z_re_temp; 
                 z_im_rx[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n] = z_im_temp; 
 	      }
@@ -722,9 +722,9 @@ void nr_decode_pucch1(  int32_t **rxdataF,
             if(floor(l/2)*12==(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)){
               for (int n=0; n<12 ; n++) {
                 z_dmrs_re_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                                   + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
+					    + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
                 z_dmrs_im_temp = (int16_t)(((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                                   - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
+					    - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_DMRS_1][w_index][m])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
                 z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_re_temp; 
                 z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_im_temp; 
 #ifdef DEBUG_NR_PUCCH_RX
@@ -736,14 +736,14 @@ void nr_decode_pucch1(  int32_t **rxdataF,
 #endif
                 //finding channel coeffcients by dividing received dmrs with actual dmrs and storing them in z_dmrs_re_rx and z_dmrs_im_rx arrays
                 z_dmrs_re_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                                  + (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1); 
+					    + (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1); 
                 z_dmrs_im_temp = (int16_t)(((((int32_t)(r_u_v_alpha_delta_dmrs_re[n])*z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15)
-                                  - (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
+					    - (((int32_t)(r_u_v_alpha_delta_dmrs_im[n])*z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n])>>15))>>1);
 	        z_dmrs_re_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_re_temp; 
                 z_dmrs_im_rx[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = z_dmrs_im_temp; 
 
-	    /* 	z_dmrs_re_rx[(int)(l/2)*12+n]=z_dmrs_re_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_re[n]; 
-                z_dmrs_im_rx[(int)(l/2)*12+n]=z_dmrs_im_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_im[n]; */
+		/* 	z_dmrs_re_rx[(int)(l/2)*12+n]=z_dmrs_re_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_re[n]; 
+			z_dmrs_im_rx[(int)(l/2)*12+n]=z_dmrs_im_rx[(int)(l/2)*12+n]/r_u_v_alpha_delta_dmrs_im[n]; */
 	      }
 	    }
 	  }
@@ -795,8 +795,8 @@ void nr_decode_pucch1(  int32_t **rxdataF,
         for(int n=0;n<12;n++){
           y_n_re[n]=round(z_re_rx[l*12+n]/floor(nrofSymbols/4))+y_n_re[n];
           y_n_im[n]=round(z_im_rx[l*12+n]/floor(nrofSymbols/4))+y_n_im[n];
-      }	     
-    }
+	}	     
+      }
       else{
         for(int n=0;n<12;n++){
           y1_n_re[n]=round(z_re_rx[l*12+n]/round(nrofSymbols/4))+y1_n_re[n];
@@ -828,12 +828,12 @@ void nr_decode_pucch1(  int32_t **rxdataF,
   }
   //Decoding QPSK or BPSK symbols to obtain payload bits
   if(nr_bit==1){
-   if((d_re+d_im)>0){
-     *payload=0;
-   }
-   else{
-     *payload=1;
-   } 
+    if((d_re+d_im)>0){
+      *payload=0;
+    }
+    else{
+      *payload=1;
+    } 
   }
   else if(nr_bit==2){
     if((d_re>0)&&(d_im>0)){
@@ -871,7 +871,7 @@ __m256i *pucch2_lut[9]={pucch2_3bit,
 			pucch2_10bit,
 			pucch2_11bit};
 
-__m64 pucch2_polar_8bit[256*2];
+__m64 pucch2_polar_4bit[16];
 
 void init_pucch2_luts() {
 
@@ -952,25 +952,17 @@ void init_pucch2_luts() {
       *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,15);
     }
   }
-  for (uint16_t i=0;i<256;i++) {
-    __m64 *lut_i=&pucch2_polar_8bit[i<<1];
-    __m64 *lut_ip1=&pucch2_polar_8bit[1+(i<<1)];
-    bit = (out&0x1) > 0 ? -1 : 1;
+  for (uint16_t i=0;i<16;i++) {
+    __m64 *lut_i=&pucch2_polar_4bit[i];
+
+    bit = (i&0x1) > 0 ? -1 : 1;
     *lut_i = _mm_insert_pi16(*lut_i,bit,0);
-    bit = (out&0x2) > 0 ? -1 : 1;
-    *lut_ip1 = _mm_insert_pi16(*lut_ip1,bit,0);
-    bit = (out&0x4) > 0 ? -1 : 1;
+    bit = (i&0x2) > 0 ? -1 : 1;
     *lut_i = _mm_insert_pi16(*lut_i,bit,1);
-    bit = (out&0x8) > 0 ? -1 : 1;
-    *lut_ip1 = _mm_insert_pi16(*lut_ip1,bit,1);
-    bit = (out&0x10) > 0 ? -1 : 1;
+    bit = (i&0x4) > 0 ? -1 : 1;
     *lut_i = _mm_insert_pi16(*lut_i,bit,2);
-    bit = (out&0x20) > 0 ? -1 : 1;
-    *lut_ip1 = _mm_insert_pi16(*lut_ip1,bit,2);
-    bit = (out&0x40) > 0 ? -1 : 1;
+    bit = (i&0x8) > 0 ? -1 : 1;
     *lut_i = _mm_insert_pi16(*lut_i,bit,3);
-    bit = (out&0x80) > 0 ? -1 : 1;
-    *lut_ip1 = _mm_insert_pi16(*lut_ip1,bit,3);
   }
 }
 
@@ -1024,165 +1016,166 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   for (int aa=0;aa<Prx;aa++) for (int group=0;group<ngroup;group++) { corr32_re[group][aa]=0; corr32_im[group][aa]=0;}
 
   if (pucch_pdu->nr_of_symbols == 1) {
-     AssertFatal((pucch_pdu->prb_size&1) == 0,"prb_size %d is not a multiple of 2\n",pucch_pdu->prb_size);
-     // 24 PRBs contains 48x16-bit, so 6x8x16-bit 
-     for (int prb=0;prb<pucch_pdu->prb_size;prb+=2) {
-        for (int aa=0;aa<Prx;aa++) {
-	  r_re_ext_p=&r_re_ext[aa][8*prb];
-	  r_im_ext_p=&r_im_ext[aa][8*prb];
-	  rd_re_ext_p=&r_re_ext[aa][4*prb];
-	  rd_im_ext_p=&r_im_ext[aa][4*prb];
+    AssertFatal((pucch_pdu->prb_size&1) == 0,"prb_size %d is not a multiple of 2\n",pucch_pdu->prb_size);
+    // 24 PRBs contains 48x16-bit, so 6x8x16-bit 
+    for (int prb=0;prb<pucch_pdu->prb_size;prb+=2) {
+      for (int aa=0;aa<Prx;aa++) {
+	r_re_ext_p=&r_re_ext[aa][8*prb];
+	r_im_ext_p=&r_im_ext[aa][8*prb];
+	rd_re_ext_p=&rd_re_ext[aa][4*prb];
+	rd_im_ext_p=&rd_im_ext[aa][4*prb];
 
-	  r_re_ext_p[0]=rp[aa][0];
-	  r_im_ext_p[0]=rp[aa][1];
-	  rd_re_ext_p[0]=rp[aa][2];
-	  rd_im_ext_p[0]=rp[aa][3];
-	  r_re_ext_p[1]=rp[aa][4];
-	  r_im_ext_p[1]=rp[aa][5];
+	r_re_ext_p[0]=rp[aa][0];
+	r_im_ext_p[0]=rp[aa][1];
+	rd_re_ext_p[0]=rp[aa][2];
+	rd_im_ext_p[0]=rp[aa][3];
+	r_re_ext_p[1]=rp[aa][4];
+	r_im_ext_p[1]=rp[aa][5];
 
-	  r_re_ext_p[2]=rp[aa][6];
-	  r_im_ext_p[2]=rp[aa][7];
-	  rd_re_ext_p[1]=rp[aa][8];
-	  rd_im_ext_p[1]=rp[aa][9];
-	  r_re_ext_p[3]=rp[aa][10];
-	  r_im_ext_p[3]=rp[aa][11];
+	r_re_ext_p[2]=rp[aa][6];
+	r_im_ext_p[2]=rp[aa][7];
+	rd_re_ext_p[1]=rp[aa][8];
+	rd_im_ext_p[1]=rp[aa][9];
+	r_re_ext_p[3]=rp[aa][10];
+	r_im_ext_p[3]=rp[aa][11];
 
-	  r_re_ext_p[4]=rp[aa][12];
-	  r_im_ext_p[4]=rp[aa][13];
-	  rd_re_ext_p[2]=rp[aa][14];
-	  rd_im_ext_p[2]=rp[aa][15];
-	  r_re_ext_p[5]=rp[aa][16];
-	  r_im_ext_p[5]=rp[aa][17];
+	r_re_ext_p[4]=rp[aa][12];
+	r_im_ext_p[4]=rp[aa][13];
+	rd_re_ext_p[2]=rp[aa][14];
+	rd_im_ext_p[2]=rp[aa][15];
+	r_re_ext_p[5]=rp[aa][16];
+	r_im_ext_p[5]=rp[aa][17];
 
-	  r_re_ext_p[6]=rp[aa][18];
-	  r_im_ext_p[6]=rp[aa][19];
-	  rd_re_ext_p[3]=rp[aa][20];
-	  rd_im_ext_p[3]=rp[aa][21];
-	  r_re_ext_p[7]=rp[aa][22];
-	  r_im_ext_p[7]=rp[aa][23];
+	r_re_ext_p[6]=rp[aa][18];
+	r_im_ext_p[6]=rp[aa][19];
+	rd_re_ext_p[3]=rp[aa][20];
+	rd_im_ext_p[3]=rp[aa][21];
+	r_re_ext_p[7]=rp[aa][22];
+	r_im_ext_p[7]=rp[aa][23];
 
-	  r_re_ext_p[8]=rp[aa][24];
-	  r_im_ext_p[8]=rp[aa][25];
-	  rd_re_ext_p[4]=rp[aa][26];
-	  rd_im_ext_p[4]=rp[aa][27];
-	  r_re_ext_p[9]=rp[aa][28];
-	  r_im_ext_p[9]=rp[aa][29];
+	r_re_ext_p[8]=rp[aa][24];
+	r_im_ext_p[8]=rp[aa][25];
+	rd_re_ext_p[4]=rp[aa][26];
+	rd_im_ext_p[4]=rp[aa][27];
+	r_re_ext_p[9]=rp[aa][28];
+	r_im_ext_p[9]=rp[aa][29];
 
-	  r_re_ext_p[10]=rp[aa][30];
-	  r_im_ext_p[10]=rp[aa][31];
-	  rd_re_ext_p[5]=rp[aa][32];
-	  rd_im_ext_p[5]=rp[aa][33];
-	  r_re_ext_p[11]=rp[aa][34];
-	  r_im_ext_p[11]=rp[aa][35];
+	r_re_ext_p[10]=rp[aa][30];
+	r_im_ext_p[10]=rp[aa][31];
+	rd_re_ext_p[5]=rp[aa][32];
+	rd_im_ext_p[5]=rp[aa][33];
+	r_re_ext_p[11]=rp[aa][34];
+	r_im_ext_p[11]=rp[aa][35];
 
-	  r_re_ext_p[12]=rp[aa][36];
-	  r_im_ext_p[12]=rp[aa][37];
-	  rd_re_ext_p[6]=rp[aa][38];
-	  rd_im_ext_p[6]=rp[aa][39];
-	  r_re_ext_p[13]=rp[aa][40];
-	  r_im_ext_p[13]=rp[aa][41];
+	r_re_ext_p[12]=rp[aa][36];
+	r_im_ext_p[12]=rp[aa][37];
+	rd_re_ext_p[6]=rp[aa][38];
+	rd_im_ext_p[6]=rp[aa][39];
+	r_re_ext_p[13]=rp[aa][40];
+	r_im_ext_p[13]=rp[aa][41];
 
-	  r_re_ext_p[14]=rp[aa][42];
-	  r_im_ext_p[14]=rp[aa][43];
-	  rd_re_ext_p[7]=rp[aa][44];
-	  rd_im_ext_p[7]=rp[aa][45];
-	  r_re_ext_p[15]=rp[aa][46];
-	  r_im_ext_p[15]=rp[aa][47];
+	r_re_ext_p[14]=rp[aa][42];
+	r_im_ext_p[14]=rp[aa][43];
+	rd_re_ext_p[7]=rp[aa][44];
+	rd_im_ext_p[7]=rp[aa][45];
+	r_re_ext_p[15]=rp[aa][46];
+	r_im_ext_p[15]=rp[aa][47];
 		  
 #ifdef DEBUG_NR_PUCCH_RX
-	  for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext_p[i],rd_im_ext_p[i],i);
+	for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext_p[i],rd_im_ext_p[i],i);
+	for (int i=0;i<16;i++) printf("Ant %d PRB %d data[%d] -> (%d,%d)\n",aa,prb+(i>>3),i,r_re_ext_p[i],r_im_ext_p[i],i);
 #endif
-	  rp[aa]+=48;
-	} // aa
-     } // prb
+	rp[aa]+=48;
+      } // aa
+    } // prb
 
 
-     // first compute DMRS component
-     uint32_t x1, x2, s=0;
-     x2 = (((1<<17)*((14*slot) + (pucch_pdu->start_symbol_index) + 1)*((2*pucch_pdu->dmrs_scrambling_id) + 1)) + (2*pucch_pdu->dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
+    // first compute DMRS component
+    uint32_t x1, x2, s=0;
+    x2 = (((1<<17)*((14*slot) + (pucch_pdu->start_symbol_index) + 1)*((2*pucch_pdu->dmrs_scrambling_id) + 1)) + (2*pucch_pdu->dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
 #ifdef DEBUG_NR_PUCCH_RX
-     printf("slot %d, start_symbol_index %d, dmrs_scrambling_id %d\n",
-       slot,pucch_pdu->start_symbol_index,pucch_pdu->dmrs_scrambling_id);
+    printf("slot %d, start_symbol_index %d, dmrs_scrambling_id %d\n",
+	   slot,pucch_pdu->start_symbol_index,pucch_pdu->dmrs_scrambling_id);
 #endif
-     s = lte_gold_generic(&x1, &x2, 1);
+    s = lte_gold_generic(&x1, &x2, 1);
 
-     for (int group=0;group<ngroup;group++) {
-     // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
-     // non-coherent combining across groups
-       dmrs_re = byte2m64_re[((uint8_t*)&s)[(group&1)<<1]];
-       dmrs_im = byte2m64_im[((uint8_t*)&s)[(group&1)<<1]];
+    for (int group=0;group<ngroup;group++) {
+      // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
+      // non-coherent combining across groups
+      dmrs_re = byte2m64_re[((uint8_t*)&s)[(group&1)<<1]];
+      dmrs_im = byte2m64_im[((uint8_t*)&s)[(group&1)<<1]];
 #ifdef DEBUG_NR_PUCCH_RX
-       printf("Group %d: s %x x2 %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-	      group,
-	      ((uint16_t*)&s)[0],x2,
-	      ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],    
-	      ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],    
-	      ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],    
-	      ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);   
+      printf("Group %d: s %x x2 %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+	     group,
+	     ((uint16_t*)&s)[0],x2,
+	     ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],    
+	     ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],    
+	     ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],    
+	     ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);   
 #endif
-       for (int aa=0;aa<Prx;aa++) {
-	 rd_re_ext_p=&r_re_ext[aa][8*group];
-	 rd_im_ext_p=&r_im_ext[aa][8*group];
+      for (int aa=0;aa<Prx;aa++) {
+	rd_re_ext_p=&rd_re_ext[aa][8*group];
+	rd_im_ext_p=&rd_im_ext[aa][8*group];
 
 #ifdef DEBUG_NR_PUCCH_RX
-	 printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-		group,
-		rd_re_ext_p[0],rd_im_ext_p[0],
-		rd_re_ext_p[1],rd_im_ext_p[1],
-		rd_re_ext_p[2],rd_im_ext_p[2],
-		rd_re_ext_p[3],rd_im_ext_p[3]);
+	printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+	       group,
+	       rd_re_ext_p[0],rd_im_ext_p[0],
+	       rd_re_ext_p[1],rd_im_ext_p[1],
+	       rd_re_ext_p[2],rd_im_ext_p[2],
+	       rd_re_ext_p[3],rd_im_ext_p[3]);
 #endif
-	 corr32_re[group][aa]+=(rd_re_ext_p[0]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_im)[0]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[0]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_re)[0]); 
-	 corr32_re[group][aa]+=(rd_re_ext_p[1]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_im)[1]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[1]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_re)[1]); 
-	 corr32_re[group][aa]+=(rd_re_ext_p[2]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_im)[2]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[2]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_re)[2]); 
-	 corr32_re[group][aa]+=(rd_re_ext_p[3]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_im)[3]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[3]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_re)[3]); 
-       }
-       dmrs_re = byte2m64_re[((uint8_t*)&s)[1+((group&1)<<1)]];
-       dmrs_im = byte2m64_im[((uint8_t*)&s)[1+((group&1)<<1)]];
+	corr32_re[group][aa]+=(rd_re_ext_p[0]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_im)[0]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[0]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_re)[0]); 
+	corr32_re[group][aa]+=(rd_re_ext_p[1]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_im)[1]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[1]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_re)[1]); 
+	corr32_re[group][aa]+=(rd_re_ext_p[2]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_im)[2]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[2]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_re)[2]); 
+	corr32_re[group][aa]+=(rd_re_ext_p[3]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_im)[3]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[3]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_re)[3]); 
+      }
+      dmrs_re = byte2m64_re[((uint8_t*)&s)[1+((group&1)<<1)]];
+      dmrs_im = byte2m64_im[((uint8_t*)&s)[1+((group&1)<<1)]];
 #ifdef DEBUG_NR_PUCCH_RX
-       printf("Group %d: s %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-	      group,
-	      ((uint16_t*)&s)[1],
-	      ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],    
-	      ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],    
-	      ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],    
-	      ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);
+      printf("Group %d: s %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+	     group,
+	     ((uint16_t*)&s)[1],
+	     ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],    
+	     ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],    
+	     ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],    
+	     ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);
 #endif
-       for (int aa=0;aa<Prx;aa++) {
-	 rd_re_ext_p=&r_re_ext[aa][8*group];
-	 rd_im_ext_p=&r_im_ext[aa][8*group];
+      for (int aa=0;aa<Prx;aa++) {
+	rd_re_ext_p=&rd_re_ext[aa][8*group];
+	rd_im_ext_p=&rd_im_ext[aa][8*group];
 #ifdef DEBUG_NR_PUCCH_RX
-	 printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-		group,
-		rd_re_ext_p[4],rd_im_ext_p[4],
-		rd_re_ext_p[5],rd_im_ext_p[5],
-		rd_re_ext_p[6],rd_im_ext_p[6],
-		rd_re_ext_p[7],rd_im_ext_p[7]);
+	printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+	       group,
+	       rd_re_ext_p[4],rd_im_ext_p[4],
+	       rd_re_ext_p[5],rd_im_ext_p[5],
+	       rd_re_ext_p[6],rd_im_ext_p[6],
+	       rd_re_ext_p[7],rd_im_ext_p[7]);
 #endif
-	 corr32_re[group][aa]+=(rd_re_ext_p[4]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_im)[0]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[4]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_re)[0]); 
-	 corr32_re[group][aa]+=(rd_re_ext_p[5]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_im)[1]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[5]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_re)[1]); 
-	 corr32_re[group][aa]+=(rd_re_ext_p[6]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_im)[2]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[6]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_re)[2]); 
-	 corr32_re[group][aa]+=(rd_re_ext_p[7]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_im)[3]); 
-	 corr32_im[group][aa]+=(-rd_re_ext_p[7]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_re)[3]); 
-	 corr32_re[group][aa]>>=5;
-	 corr32_im[group][aa]>>=5;
+	corr32_re[group][aa]+=(rd_re_ext_p[4]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_im)[0]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[4]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_re)[0]); 
+	corr32_re[group][aa]+=(rd_re_ext_p[5]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_im)[1]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[5]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_re)[1]); 
+	corr32_re[group][aa]+=(rd_re_ext_p[6]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_im)[2]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[6]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_re)[2]); 
+	corr32_re[group][aa]+=(rd_re_ext_p[7]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_im)[3]); 
+	corr32_im[group][aa]+=(-rd_re_ext_p[7]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_re)[3]); 
+	corr32_re[group][aa]>>=5;
+	corr32_im[group][aa]>>=5;
 #ifdef DEBUG_NR_PUCCH_RX
-	 printf("Group %d: corr32 (%d,%d)\n",group,corr32_re[group][aa],corr32_im[group][aa]);
+	printf("Group %d: corr32 (%d,%d)\n",group,corr32_re[group][aa],corr32_im[group][aa]);
 #endif
-       } //aa    
+      } //aa    
        
-       if ((group&1) == 1) s = lte_gold_generic(&x1, &x2, 0);
-     } // group
+      if ((group&1) == 1) s = lte_gold_generic(&x1, &x2, 0);
+    } // group
   }
   else { // 2 symbol case
-     AssertFatal(1==0, "Fill in 2 symbol PUCCH2 case\n");
+    AssertFatal(1==0, "Fill in 2 symbol PUCCH2 case\n");
   }
 
   uint32_t x1, x2, s=0;  
@@ -1207,47 +1200,47 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     for (int aa=0;aa<Prx;aa++) {
 #ifdef DEBUG_NR_PUCCH_RX
       printf("prb %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-		prb,
-		r_re_ext[aa][re_offset],r_im_ext[aa][re_offset],
-		r_re_ext[aa][re_offset+1],r_im_ext[aa][re_offset+1],
-		r_re_ext[aa][re_offset+2],r_im_ext[aa][re_offset+2],
-		r_re_ext[aa][re_offset+3],r_im_ext[aa][re_offset+3],
-		r_re_ext[aa][re_offset+4],r_im_ext[aa][re_offset+4],
-		r_re_ext[aa][re_offset+5],r_im_ext[aa][re_offset+5],
-		r_re_ext[aa][re_offset+6],r_im_ext[aa][re_offset+6],
-		r_re_ext[aa][re_offset+7],r_im_ext[aa][re_offset+7]);
-      printf("prb %d: c ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-		prb,
-		((int16_t*)&c_re0)[0],((int16_t*)&c_im0)[0],
-		((int16_t*)&c_re0)[1],((int16_t*)&c_im0)[1],
-		((int16_t*)&c_re0)[2],((int16_t*)&c_im0)[2],
-		((int16_t*)&c_re0)[3],((int16_t*)&c_im0)[3],
-		((int16_t*)&c_re1)[0],((int16_t*)&c_im1)[0],
-		((int16_t*)&c_re1)[1],((int16_t*)&c_im1)[1],
-		((int16_t*)&c_re1)[2],((int16_t*)&c_im1)[2],
-		((int16_t*)&c_re1)[3],((int16_t*)&c_im1)[3]
-		);
+	     prb,
+	     r_re_ext[aa][re_offset],r_im_ext[aa][re_offset],
+	     r_re_ext[aa][re_offset+1],r_im_ext[aa][re_offset+1],
+	     r_re_ext[aa][re_offset+2],r_im_ext[aa][re_offset+2],
+	     r_re_ext[aa][re_offset+3],r_im_ext[aa][re_offset+3],
+	     r_re_ext[aa][re_offset+4],r_im_ext[aa][re_offset+4],
+	     r_re_ext[aa][re_offset+5],r_im_ext[aa][re_offset+5],
+	     r_re_ext[aa][re_offset+6],r_im_ext[aa][re_offset+6],
+	     r_re_ext[aa][re_offset+7],r_im_ext[aa][re_offset+7]);
+      printf("prb %d (%x): c ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+	     prb,s,
+	     ((int16_t*)&c_re0)[0],((int16_t*)&c_im0)[0],
+	     ((int16_t*)&c_re0)[1],((int16_t*)&c_im0)[1],
+	     ((int16_t*)&c_re0)[2],((int16_t*)&c_im0)[2],
+	     ((int16_t*)&c_re0)[3],((int16_t*)&c_im0)[3],
+	     ((int16_t*)&c_re1)[0],((int16_t*)&c_im1)[0],
+	     ((int16_t*)&c_re1)[1],((int16_t*)&c_im1)[1],
+	     ((int16_t*)&c_re1)[2],((int16_t*)&c_im1)[2],
+	     ((int16_t*)&c_re1)[3],((int16_t*)&c_im1)[3]
+	     );
       printf("prb %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-		prb+1,
-		r_re_ext[aa][re_offset+8],r_im_ext[aa][re_offset+8],
-		r_re_ext[aa][re_offset+9],r_im_ext[aa][re_offset+9],
-		r_re_ext[aa][re_offset+10],r_im_ext[aa][re_offset+10],
-		r_re_ext[aa][re_offset+11],r_im_ext[aa][re_offset+11],
-		r_re_ext[aa][re_offset+12],r_im_ext[aa][re_offset+12],
-		r_re_ext[aa][re_offset+13],r_im_ext[aa][re_offset+13],
-		r_re_ext[aa][re_offset+14],r_im_ext[aa][re_offset+14],
-		r_re_ext[aa][re_offset+15],r_im_ext[aa][re_offset+15]);
-      printf("prb %d: c ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-		prb+1,
-		((int16_t*)&c_re2)[0],((int16_t*)&c_im2)[0],
-		((int16_t*)&c_re2)[1],((int16_t*)&c_im2)[1],
-		((int16_t*)&c_re2)[2],((int16_t*)&c_im2)[2],
-		((int16_t*)&c_re2)[3],((int16_t*)&c_im2)[3],
-		((int16_t*)&c_re3)[0],((int16_t*)&c_im3)[0],
-		((int16_t*)&c_re3)[1],((int16_t*)&c_im3)[1],
-		((int16_t*)&c_re3)[2],((int16_t*)&c_im3)[2],
-		((int16_t*)&c_re3)[3],((int16_t*)&c_im3)[3]
-		);
+	     prb+1,
+	     r_re_ext[aa][re_offset+8],r_im_ext[aa][re_offset+8],
+	     r_re_ext[aa][re_offset+9],r_im_ext[aa][re_offset+9],
+	     r_re_ext[aa][re_offset+10],r_im_ext[aa][re_offset+10],
+	     r_re_ext[aa][re_offset+11],r_im_ext[aa][re_offset+11],
+	     r_re_ext[aa][re_offset+12],r_im_ext[aa][re_offset+12],
+	     r_re_ext[aa][re_offset+13],r_im_ext[aa][re_offset+13],
+	     r_re_ext[aa][re_offset+14],r_im_ext[aa][re_offset+14],
+	     r_re_ext[aa][re_offset+15],r_im_ext[aa][re_offset+15]);
+      printf("prb %d (%x): c ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
+	     prb+1,s,
+	     ((int16_t*)&c_re2)[0],((int16_t*)&c_im2)[0],
+	     ((int16_t*)&c_re2)[1],((int16_t*)&c_im2)[1],
+	     ((int16_t*)&c_re2)[2],((int16_t*)&c_im2)[2],
+	     ((int16_t*)&c_re2)[3],((int16_t*)&c_im2)[3],
+	     ((int16_t*)&c_re3)[0],((int16_t*)&c_im3)[0],
+	     ((int16_t*)&c_re3)[1],((int16_t*)&c_im3)[1],
+	     ((int16_t*)&c_re3)[2],((int16_t*)&c_im3)[2],
+	     ((int16_t*)&c_re3)[3],((int16_t*)&c_im3)[3]
+	     );
 #endif
 
       ((__m64*)&r_re_ext2[aa][re_offset])[0] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][re_offset])[0],c_im0);
@@ -1294,6 +1287,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 #endif      
     }
     s = lte_gold_generic(&x1, &x2, 0);
+#ifdef DEBUG_NR_PUCCH_RX
+    printf("\n");
+#endif
   }
   AssertFatal(pucch_pdu->bit_len_csi_part1 + pucch_pdu->bit_len_csi_part2 == 0,"no csi for now\n");
   AssertFatal((pucch_pdu->bit_len_harq+pucch_pdu->sr_flag > 2 ) && (pucch_pdu->bit_len_harq+pucch_pdu->sr_flag < 65),"illegal length (%d,%d)\n",pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
@@ -1331,6 +1327,19 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 							  _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp_im[aa][0])),5);
 	prod_im[aa] = _mm256_srai_epi16(_mm256_subs_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp2_im[aa][0]),
 							  _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp2_re[aa][0])),5);
+#ifdef DEBUG_NR_PUCCH_RX
+	printf("prod_re[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)",aa,
+	       ((int16_t*)&prod_re[aa])[0],((int16_t*)&prod_re[aa])[1],((int16_t*)&prod_re[aa])[2],((int16_t*)&prod_re[aa])[3],
+	       ((int16_t*)&prod_re[aa])[4],((int16_t*)&prod_re[aa])[5],((int16_t*)&prod_re[aa])[6],((int16_t*)&prod_re[aa])[7],
+	       ((int16_t*)&prod_re[aa])[8],((int16_t*)&prod_re[aa])[9],((int16_t*)&prod_re[aa])[10],((int16_t*)&prod_re[aa])[11],
+	       ((int16_t*)&prod_re[aa])[12],((int16_t*)&prod_re[aa])[13],((int16_t*)&prod_re[aa])[14],((int16_t*)&prod_re[aa])[15]);
+	printf("prod_im[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)",aa,
+	       ((int16_t*)&prod_im[aa])[0],((int16_t*)&prod_im[aa])[1],((int16_t*)&prod_im[aa])[2],((int16_t*)&prod_im[aa])[3],
+	       ((int16_t*)&prod_im[aa])[4],((int16_t*)&prod_im[aa])[5],((int16_t*)&prod_im[aa])[6],((int16_t*)&prod_im[aa])[7],
+	       ((int16_t*)&prod_im[aa])[8],((int16_t*)&prod_im[aa])[9],((int16_t*)&prod_im[aa])[10],((int16_t*)&prod_im[aa])[11],
+	       ((int16_t*)&prod_im[aa])[12],((int16_t*)&prod_im[aa])[13],((int16_t*)&prod_im[aa])[14],((int16_t*)&prod_im[aa])[15]);
+
+#endif
 	prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1
 	prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
 	prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
@@ -1383,58 +1392,69 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     }
   }
   else { // polar coded case
-  __m64 *rp_re[Prx2];
-  __m64 *rp2_re[Prx2];
-  __m64 *rp_im[Prx2];
-  __m64 *rp2_im[Prx2];
-  for (int aa=0;aa<Prx;aa++) {
-    rp_re[aa] = (__m64*)r_re_ext[aa];
-    rp_im[aa] = (__m64*)r_im_ext[aa];
-    rp2_re[aa] = (__m64*)r_re_ext2[aa];
-    rp2_im[aa] = (__m64*)r_im_ext2[aa];
-  }
-  __m64 prod_re[Prx2],prod_im[Prx2];
-
-  for (int cw=0;cw<256;cw++) {
-#ifdef DEBUG_NR_PUCCH_RX
-    printf("cw %d:",cw);
-    for (int i=0;i<32;i+=2) {
-      printf("%d,%d,",
-	     ((int16_t*)&pucch2_lut[nb_bit-3][cw<<1])[i>>1],
-	     ((int16_t*)&pucch2_lut[nb_bit-3][cw<<1])[1+(i>>1)]);
+    __m64 *rp_re[Prx2];
+    __m64 *rp2_re[Prx2];
+    __m64 *rp_im[Prx2];
+    __m64 *rp2_im[Prx2];
+    for (int aa=0;aa<Prx;aa++) {
+      rp_re[aa] = (__m64*)r_re_ext[aa];
+      rp_im[aa] = (__m64*)r_im_ext[aa];
+      rp2_re[aa] = (__m64*)r_re_ext2[aa];
+      rp2_im[aa] = (__m64*)r_im_ext2[aa];
     }
-    printf("\n");
+    __m64 prod_re[Prx2],prod_im[Prx2];
+
+    for (int cw=0;cw<16;cw++) {
+#ifdef DEBUG_NR_PUCCH_RX
+      printf("cw %d:",cw);
+      for (int i=0;i<4;i++) {
+	printf("%d,",
+	       ((int16_t*)&pucch2_polar_4bit[cw])[i>>1]);
+      }
+      printf("\n");
 #endif
     
-  }
-  // non-coherent LLR computation on groups of 4 REs (half-PRBs)
-  for (in half_prb=0;half_prb<(2*pucch_pdu->prb_size);half_prb++) {
-    for (int cw=0;cw<256;cw++) {
-      for (int aa=0;aa<Prx;aa++) { 
-	prod_re[aa] = _mm_srai_pi16(_mm_adds_pi16(_mm_mullo_pi16(pucch2_polar_8bit[cw<<1],rp_re[aa][half_prb]),
-						  _mm_mullo_pi16(pucch2_polar_8bit[(cw<<1)+1],rp_im[aa][half_prb])),5);
-	prod_im[aa] = _mm_srai_pi16(_mm_subs_pi16(_mm_mullo_pi16(pucch2_polar_8bit[cw<<1],rp2_im[aa][half_prb]),
-						  _mm_mullo_pi16(pucch2_polar_8bit[(cw<<1)+1],rp2_re[aa][half_prb])),5);
-	prod_re[aa] = _mm_hadds_pi16(prod_re[aa],prod_re[aa]);// 0+1
-	prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
-	prod_re[aa] = _mm_hadds_pi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
-	prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
-
-
-	LOG_D(PHY,"pucch2 half_prb %d cw %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",half_prb,cw,aa,
-	      corr32_re[half_prb>>2][aa],corr32_im[half_prb>>2][aa],
-	      ((int16_t*)(&prod_re[aa]))[0],
-	      ((int16_t*)(&prod_im[aa]))[0],
-	      corr32_re[half_prb>>2][aa]+((int16_t*)(&prod_re[aa]))[0],
-	      corr32_im[half_prb>>2][aa]+((int16_t*)(&prod_im[aa]))[0]);
+    }
+    // non-coherent LLR computation on groups of 4 REs (half-PRBs)
+    int32_t corr_re,corr_im,corr_tmp;
+    for (int half_prb=0;half_prb<(2*pucch_pdu->prb_size);half_prb++) {
+      for (int cw=0;cw<256;cw++) {
+	corr_tmp=0;
+	for (int aa=0;aa<Prx;aa++) { 
+	  prod_re[aa] = _mm_srai_pi16(_mm_adds_pi16(_mm_mullo_pi16(pucch2_polar_4bit[cw&15],rp_re[aa][half_prb]),
+						    _mm_mullo_pi16(pucch2_polar_4bit[cw>>4],rp_im[aa][half_prb])),5);
+	  prod_im[aa] = _mm_srai_pi16(_mm_subs_pi16(_mm_mullo_pi16(pucch2_polar_4bit[cw&15],rp2_im[aa][half_prb]),
+						    _mm_mullo_pi16(pucch2_polar_4bit[cw>>4],rp2_re[aa][half_prb])),5);
+	  prod_re[aa] = _mm_hadds_pi16(prod_re[aa],prod_re[aa]);// 0+1
+	  prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
+	  prod_re[aa] = _mm_hadds_pi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
+	  prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
 	
-	corr_re = ( corr32_re[half_prb>>2][aa]+((int16_t*)(&prod_re[aa]))[0]);
-	corr_im = ( corr32_im[half_prb>>2][aa]+((int16_t*)(&prod_im[aa]))[0]);
-	corr_tmp += corr_re*corr_re + corr_im*corr_im;		
+	
+	  corr_re = ( corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
+	  corr_im = ( corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
+	  corr_tmp += corr_re*corr_re + corr_im*corr_im;
+	  LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
+		half_prb,cw,cw&15,cw>>4,aa,
+		((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
+		((int16_t*)&pucch2_polar_4bit[cw&15])[1],((int16_t*)&pucch2_polar_4bit[cw>>4])[1],
+		((int16_t*)&pucch2_polar_4bit[cw&15])[2],((int16_t*)&pucch2_polar_4bit[cw>>4])[2],
+		((int16_t*)&pucch2_polar_4bit[cw&15])[3],((int16_t*)&pucch2_polar_4bit[cw>>4])[3],
+		((int16_t*)&rp_re[aa][half_prb])[0],((int16_t*)&rp_im[aa][half_prb])[0],
+		((int16_t*)&rp_re[aa][half_prb])[1],((int16_t*)&rp_im[aa][half_prb])[1],
+		((int16_t*)&rp_re[aa][half_prb])[2],((int16_t*)&rp_im[aa][half_prb])[2],
+		((int16_t*)&rp_re[aa][half_prb])[3],((int16_t*)&rp_im[aa][half_prb])[3],
+		corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2),corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2),
+		((int16_t*)(&prod_re[aa]))[0],
+		((int16_t*)(&prod_im[aa]))[0],
+		corr_re,
+		corr_im,
+		corr_tmp);
+	}
       }
-      int64_t corr_tmp = corr_re*corr_re + corr_im*corr_im;
-  }
-   AssertFatal(1==0,"stopping here\n");
-  }
+    } // half_prb
+    AssertFatal(1==0,"stopping here\n");
+
+  } // n_bit > 11
 }
     
