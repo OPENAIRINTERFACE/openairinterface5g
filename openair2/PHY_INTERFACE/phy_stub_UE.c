@@ -50,6 +50,9 @@ queue_t tx_req_pdu_queue;
 queue_t ul_config_req_queue;
 queue_t hi_dci0_req_queue;
 
+int subframe_sf = 0;
+int frame_sfn = 0;
+
 void init_queue(queue_t *q) {
   memset(q, 0, sizeof(*q));
   pthread_mutex_init(&q->mutex, NULL);
@@ -1152,14 +1155,11 @@ void *ue_standalone_pnf_task(void *context)
       continue;
     }
 
-    if (len == 2 && len > 0)
+    if (len == sizeof(uint16_t))
     {
       memcpy((void *)&sfn_sf, buffer, sizeof(sfn_sf));
-      if (sfn_sf % 300 == 0)
-      {
-        LOG_I(MAC, "Unpacked sfn_sf sf: %u sfn: %u\n", NFAPI_SFNSF2SFN(sfn_sf),
-              NFAPI_SFNSF2SF(sfn_sf));
-      }
+      subframe_sf = NFAPI_SFNSF2SF(sfn_sf);
+      frame_sfn = NFAPI_SFNSF2SFN(sfn_sf);
     }
     else
     {
