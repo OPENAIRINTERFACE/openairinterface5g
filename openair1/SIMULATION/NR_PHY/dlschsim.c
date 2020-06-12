@@ -66,6 +66,8 @@ PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
 int main(int argc, char **argv)
 {
 	char c;
