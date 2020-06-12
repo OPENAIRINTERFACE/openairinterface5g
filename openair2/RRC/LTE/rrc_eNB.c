@@ -8084,29 +8084,46 @@ rrc_eNB_decode_dcch(
         break;
 
       case LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2: //SidelinkUEInformation
-        //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
-        LOG_I(RRC,"THINH [LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
-        LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+        if(ul_dcch_msg->message.choice.messageClassExtension.choice.c2.present ==
+          LTE_UL_DCCH_MessageType__messageClassExtension__c2_PR_scgFailureInformationNR_r15){
+          if (ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.
+            criticalExtensions.present == LTE_SCGFailureInformationNR_r15__criticalExtensions_PR_c1){
+            if (ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
+              choice.c1.present == LTE_SCGFailureInformationNR_r15__criticalExtensions__c1_PR_scgFailureInformationNR_r15){
+              if (ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
+                choice.c1.choice.scgFailureInformationNR_r15.failureReportSCG_NR_r15!=NULL) {
+                LOG_E(RRC, "Received NR scgFailureInformation from UE, failure type: %ld \n",
+                  ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
+                  choice.c1.choice.scgFailureInformationNR_r15.failureReportSCG_NR_r15->failureType_r15);
+              }
+            }
+          }
+        }
+        else if(ul_dcch_msg->message.choice.messageClassExtension.choice.c2.present == LTE_UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12){
+          //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
+          LOG_I(RRC,"THINH [LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
+          LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                     "[MSG] RRC SidelinkUEInformation \n");
-        MSC_LOG_RX_MESSAGE(
-          MSC_RRC_ENB,
-          MSC_RRC_UE,
-          Rx_sdu,
-          sdu_sizeP,
-          MSC_AS_TIME_FMT" SidelinkUEInformation UE %x size %u",
-          MSC_AS_TIME_ARGS(ctxt_pP),
-          ue_context_p->ue_context.rnti,
-          sdu_sizeP);
-        LOG_I(RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
-              "(SidelinkUEInformation) ---> RRC_eNB\n",
-              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-              DCCH,
+          MSC_LOG_RX_MESSAGE(
+              MSC_RRC_ENB,
+              MSC_RRC_UE,
+              Rx_sdu,
+              sdu_sizeP,
+              MSC_AS_TIME_FMT" SidelinkUEInformation UE %x size %u",
+              MSC_AS_TIME_ARGS(ctxt_pP),
+              ue_context_p->ue_context.rnti,
               sdu_sizeP);
-        rrc_eNB_process_SidelinkUEInformation(
-          ctxt_pP,
-          ue_context_p,
-          &ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.sidelinkUEInformation_r12);
+          LOG_I(RRC,
+            PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
+            "(SidelinkUEInformation) ---> RRC_eNB\n",
+            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+            DCCH,
+            sdu_sizeP);
+          rrc_eNB_process_SidelinkUEInformation(
+            ctxt_pP,
+            ue_context_p,
+            &ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.sidelinkUEInformation_r12);
+          }
         break;
 
       default:
