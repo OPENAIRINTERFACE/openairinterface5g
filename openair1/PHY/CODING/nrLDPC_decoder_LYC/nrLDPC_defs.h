@@ -39,8 +39,8 @@
  * \warning
 * */
 
-#ifndef __NR_LDPC_DEFS__H__
-#define __NR_LDPC_DEFS__H__
+#ifndef __NR_LDPC_DECODER_LYC__NR_LDPC_DEFS__H__
+#define __NR_LDPC_DECODER_LYC__NR_LDPC_DEFS__H__
 
 // ==============================================================================
 // DEFINES

@@ -28,8 +28,8 @@
  * \warning
  */
 
-#ifndef __NR_LDPC_TYPES__H__
-#define __NR_LDPC_TYPES__H__
+#ifndef __NR_LDPC_DECODER_LYC__NR_LDPC_TYPES__H__
+#define __NR_LDPC_DECODER_LYC__NR_LDPC_TYPES__H__
 
 #include "PHY/TOOLS/time_meas.h"
 #include "nrLDPC_defs.h"
