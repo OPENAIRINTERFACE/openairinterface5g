@@ -679,7 +679,11 @@ void rx_rf(RU_t *ru,
     resynch=1;
   }
 
-  proc->timestamp_rx = ts-ru->ts_offset;
+  if(get_softmodem_params()->emulate_rf) {
+    proc->timestamp_rx = old_ts + fp->samples_per_tti;
+  } else {
+    proc->timestamp_rx = ts-ru->ts_offset;
+  }
 
   //  AssertFatal(rxs == fp->samples_per_tti,
   //        "rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
@@ -2337,7 +2341,7 @@ void init_RU_proc(RU_t *ru) {
     LOG_I(PHY,"%s() DJP - added creation of pthread_prach\n", __FUNCTION__);
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void *)ru );
     ru->state=RU_RUN;
-    fill_rf_config(ru,ru->rf_config_file);
+    /*fill_rf_config(ru,ru->rf_config_file);
     init_frame_parms(ru->frame_parms,1);
     ru->frame_parms->nb_antennas_rx = ru->nb_rx;
     phy_init_RU(ru);
@@ -2350,7 +2354,7 @@ void init_RU_proc(RU_t *ru) {
     if (setup_RU_buffers(ru)!=0) {
       LOG_I(PHY,"Exiting, cannot initialize RU Buffers\n");
       exit(1);
-    }
+    }*/
   }
 
   if (get_thread_worker_conf() == WORKER_ENABLE) {
