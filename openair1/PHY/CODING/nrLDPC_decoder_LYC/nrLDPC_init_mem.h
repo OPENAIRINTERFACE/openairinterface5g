@@ -28,8 +28,8 @@
  * \warning
  */
 
-#ifndef __NR_LDPC_INIT_MEM__H__
-#define __NR_LDPC_INIT_MEM__H__
+#ifndef __NR_LDPC_DECODER_LYC__NR_LDPC_INIT_MEM__H__
+#define __NR_LDPC_DECODER_LYC__NR_LDPC_INIT_MEM__H__
 
 #include <stdlib.h>
 #include "nrLDPC_defs.h"
