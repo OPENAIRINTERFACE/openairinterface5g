@@ -523,9 +523,9 @@ function install_epc_on_vm {
         echo "############################################################"
         echo "[ -f 01proxy ] && sudo cp 01proxy /etc/apt/apt.conf.d/" > $LOC_EPC_VM_CMDS
         echo "touch /home/ubuntu/.hushlogin" >> $LOC_EPC_VM_CMDS
-        echo "echo \"sudo apt-get --yes --quiet install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf\"" >> $LOC_EPC_VM_CMDS
+        echo "echo \"sudo apt-get --yes --quiet install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev iperf\"" >> $LOC_EPC_VM_CMDS
         echo "sudo apt-get update > zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
-        echo "sudo apt-get --yes install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
+        echo "sudo apt-get --yes install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev iperf >> zip-install.txt 2>&1" >> $LOC_EPC_VM_CMDS
 
         # Installing HSS
         echo "echo \"cd /opt\"" >> $LOC_EPC_VM_CMDS
@@ -588,8 +588,6 @@ function start_epc {
         echo "echo \"cd /opt/hss_sim0609\"" > $LOC_EPC_VM_CMDS
         echo "cd /opt/hss_sim0609" >> $LOC_EPC_VM_CMDS
         echo "sudo rm -f hss.log" >> $LOC_EPC_VM_CMDS
-        #echo "echo \"sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real\"" >> $LOC_EPC_VM_CMDS
-        #echo "sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real" >> $LOC_EPC_VM_CMDS
         echo "echo \"screen -dm -S simulated_hss ./starthss_real\"" >> $LOC_EPC_VM_CMDS
         echo "sudo su -c \"screen -dm -S simulated_hss ./starthss_real\"" >> $LOC_EPC_VM_CMDS
 
@@ -656,8 +654,6 @@ function terminate_epc {
         echo "cd /opt/ltebox/tools" >> $1
         echo "echo \"sudo ./stop_ltebox\"" >> $1
         echo "sudo ./stop_ltebox" >> $1
-        echo "echo \"sudo daemon --name=simulated_hss --stop\"" >> $1
-        echo "sudo daemon --name=simulated_hss --stop" >> $1
         echo "echo \"sudo killall --signal SIGKILL hss_sim\"" >> $1
         echo "sudo killall --signal SIGKILL hss_sim" >> $1
         ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
