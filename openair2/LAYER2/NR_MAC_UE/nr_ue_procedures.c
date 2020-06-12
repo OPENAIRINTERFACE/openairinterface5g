@@ -755,7 +755,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
       */
     }
-  } else if (ul_info) {
+  } else if (ul_info && ul_info->slot_tx == 8) {
     module_id_t mod_id    = ul_info->module_id;
     uint32_t gNB_index    = ul_info->gNB_index;
     int cc_id             = ul_info->cc_id;
