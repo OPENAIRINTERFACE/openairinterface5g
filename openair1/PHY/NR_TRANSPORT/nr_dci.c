@@ -131,13 +131,13 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
 void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t size,
                          uint32_t Nid,
-                         uint32_t n_RNTI,
+                         uint32_t scrambling_RNTI,
                          uint32_t *out) {
   uint8_t reset;
   uint32_t x1, x2, s=0;
   reset = 1;
-  x2 = (n_RNTI<<16) + Nid;
-  LOG_D(PHY,"PDCCH Scrambling x2 %x : n_RNTI %x\n",x2,n_RNTI);
+  x2 = (scrambling_RNTI<<16) + Nid;
+  LOG_D(PHY,"PDCCH Scrambling x2 %x : scrambling_RNTI %x \n", x2, scrambling_RNTI);
   for (int i=0; i<size; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);

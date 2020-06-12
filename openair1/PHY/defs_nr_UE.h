@@ -884,8 +884,6 @@ typedef struct {
 
   fapi_nr_config_request_t nrUE_config;
 
-  uint16_t frame_gap;
-
   // the following structures are not part of PHY_vars_UE anymore as it is not thread safe. They are now on the stack of the functions that actually need them
   
   //nr_downlink_indication_t dl_indication;

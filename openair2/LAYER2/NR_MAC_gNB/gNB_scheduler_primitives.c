@@ -497,7 +497,6 @@ int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
 
-
     pdcch_pdu->dci_pdu.RNTI[pdcch_pdu->numDlDci]=rnti;
 
     if (coreset->pdcch_DMRS_ScramblingID != NULL &&
@@ -1471,77 +1470,6 @@ void nr_update_pucch_scheduling(int Mod_idP,
 }
 
 
-void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
-                                               uint16_t *slot_period,
-                                               uint16_t *offset) {
-
-  switch(ss->monitoringSlotPeriodicityAndOffset->present) {
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
-      *slot_period = 1;
-      *offset = 0;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
-      *slot_period = 2;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
-      *slot_period = 4;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl4;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
-      *slot_period = 5;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl5;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
-      *slot_period = 8;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl8;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
-      *slot_period = 10;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl10;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
-      *slot_period = 16;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl16;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
-      *slot_period = 20;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl20;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
-      *slot_period = 40;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl40;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
-      *slot_period = 80;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl80;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
-      *slot_period = 160;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl160;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
-      *slot_period = 320;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl320;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
-      *slot_period = 640;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl640;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
-      *slot_period = 1280;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl1280;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
-      *slot_period = 2560;
-      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2560;
-      break;
-  default:
-    AssertFatal(1==0,"Invalid monitoring slot periodicity and offset value\n");
-    break;
-  }
-}
-
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
                                  NR_SearchSpace_t *ss) {
@@ -1567,6 +1495,7 @@ void find_aggregation_candidates(uint8_t *aggregation_level,
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
   }
 }
+
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,

@@ -34,7 +34,7 @@
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_TRANSPORT/nr_prach.h"
-#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"

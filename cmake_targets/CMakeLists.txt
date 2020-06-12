@@ -2875,8 +2875,8 @@ add_executable(nr_prachsim
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
-target_link_libraries(nr_prachsim
-   -Wl,--start-group UTIL SIMU SIMU_COMMON PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB MAC_UE_NR SCHED_NR_UE_LIB RRC_LIB NR_RRC_LIB L2_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+target_link_libraries(nr_prachsim  
+   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB MAC_UE_NR SCHED_NR_UE_LIB RRC_LIB NR_RRC_LIB L2_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c

@@ -31,8 +31,8 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
@@ -160,12 +160,13 @@ void rx_nr_prach_ru(RU_t *ru,
   rxsigF            = ru->prach_rxsigF;
 
   AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
+
   for (int aa=0; aa<ru->nb_rx; aa++){ 
     if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
     prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
   } 
 
-
+  int dftlen=0;
   int mu = fp->numerology_index;
   int Ncp;
   int16_t *prach2;
@@ -267,12 +268,10 @@ void rx_nr_prach_ru(RU_t *ru,
   k*=K;
   k+=kbar; 
   int reps=1;
-  int dftlen=0;
 
   for (int aa=0; aa<ru->nb_rx; aa++) {
     AssertFatal(prach[aa]!=NULL,"prach[%d] is null\n",aa);
 
-  
     // do DFT
     if (fp->N_RB_UL <= 100)
       AssertFatal(1==0,"N_RB_UL %d not support for NR PRACH yet\n",fp->N_RB_UL);
@@ -295,7 +294,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	    dft(DFT_49152,prach2+(98304*3),rxsigF[aa]+(98304*3),1);
 	    reps+=2;
 	  }
-	  if (prachFormat == 3) { 
+	  if (prachFormat == 3) {
             dftlen=12288;
 	    for (int i=0;i<4;i++) dft(DFT_12288,prach2+(i*12288*2),rxsigF[aa]+(i*12288*2),1);
 	    reps=4;
@@ -308,20 +307,20 @@ void rx_nr_prach_ru(RU_t *ru,
 
 	  if (mu==0) AssertFatal(1==0,"Shouldn't get here\n");
 	  else if (mu==1) {
-	    dftlen=2048;
-	    dft(DFT_2048,prach2,rxsigF[aa],1);
+            dftlen=2048;
+            dft(DFT_2048,prach2,rxsigF[aa],1);
 	    if (prachFormat != 7) { // !=C0
 	      dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
 	      reps++;
 	    }
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
-	      dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
+              dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
+              dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
 	      reps+=2;
 	    }
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
-	      dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
+              dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
+              dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
@@ -339,8 +338,8 @@ void rx_nr_prach_ru(RU_t *ru,
 	if (prach_sequence_length == 0) {
 	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-	    dftlen=36864;
-	    dft(DFT_36864,prach2,rxsigF[aa],1);
+            dftlen=36864;
+            dft(DFT_36864,prach2,rxsigF[aa],1);
 	    reps++;
 	  }
 	  if (prachFormat == 1 || prachFormat == 2) {
@@ -348,7 +347,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps++;
 	  }
 	  if (prachFormat == 2) {
-	    dft(DFT_36864,prach2+(73728*2),rxsigF[aa]+(73728*2),1);
+            dft(DFT_36864,prach2+(73728*2),rxsigF[aa]+(73728*2),1);
 	    dft(DFT_36864,prach2+(73728*3),rxsigF[aa]+(73728*3),1);
 	    reps+=2;
 	  }
@@ -398,15 +397,15 @@ void rx_nr_prach_ru(RU_t *ru,
 
 	if (prach_sequence_length == 0) {	
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-	    dftlen=98304;
-	    dft(DFT_98304,prach2,rxsigF[aa],1);
+            dftlen=98304;
+            dft(DFT_98304,prach2,rxsigF[aa],1);
           }
 	  if (prachFormat == 1 || prachFormat == 2) {
 	    dft(DFT_98304,prach2+196608,rxsigF[aa]+196608,1);
 	    reps++;
 	  }
 	  if (prachFormat == 2) {
-	    dft(DFT_98304,prach2+196608*2,rxsigF[aa]+196608*2,1);
+	    dft(DFT_98304,prach2+(196608*2),rxsigF[aa]+(196608*2),1);
 	    dft(DFT_98304,prach2+(196608*3),rxsigF[aa]+(196608*3),1);
 	    reps+=2;
 	  }
@@ -431,13 +430,13 @@ void rx_nr_prach_ru(RU_t *ru,
 	    }
 	    
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
-	      dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
+              dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
+              dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
-	      dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
+              dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
+              dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
@@ -455,7 +454,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	//	80 MHz @ 92.16 Ms/s
 	if (prach_sequence_length == 0) {
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
-	    dftlen=73728;
+            dftlen=73728;
 	    dft(DFT_73728,prach2,rxsigF[aa],1);
 	    reps++;
 	  }
@@ -464,7 +463,7 @@ void rx_nr_prach_ru(RU_t *ru,
 	    reps++;
 	  }
 	  if (prachFormat == 3) {
-	    dftlen=18432;
+            dftlen=18432;
 	    for (int i=0;i<4;i++) dft(DFT_18432,prach2+(i*2*18432),rxsigF[aa]+(i*2*18432),1);
 	    reps=4;
 	  }
@@ -483,13 +482,13 @@ void rx_nr_prach_ru(RU_t *ru,
 	    }
 	    
 	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
-	      dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
-	      dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
+              dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
+              dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
-	      dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
-	      dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
+              dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
+              dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
 	      reps+=2;
 	    } 
 	    if (prachFormat == 6) {
@@ -575,7 +574,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   fp = &gNB->frame_parms;
 
   nb_rx = gNB->gNB_config.carrier_config.num_rx_ant.value;
-
   
   rootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].prach_root_sequence_index.value;
   numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].num_root_sequences.value;
@@ -599,9 +597,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, msg1_frequencystart %d, rootSequenceIndex %d\n", subframe,msg1_frequencystart,rootSequenceIndex);
   }
 
-
   start_meas(&gNB->rx_prach);
-
 
   prach_root_sequence_map = (cfg->prach_sequence_length.value==0) ? prach_root_sequence_map_0_3 : prach_root_sequence_map_abc;
 

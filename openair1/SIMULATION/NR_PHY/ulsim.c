@@ -41,7 +41,6 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
@@ -545,9 +544,8 @@ int main(int argc, char **argv)
   fapi_nr_ul_config_request_t ul_config;
 
   unsigned int TBS;
-  uint16_t number_dmrs_symbols = 1;
+  uint16_t number_dmrs_symbols = 0;
   unsigned int available_bits;
-
   uint8_t nb_re_dmrs;
   unsigned char mod_order;
   uint16_t code_rate;
@@ -705,16 +703,21 @@ int main(int argc, char **argv)
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
-      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+      if(no_data_in_dmrs)
+        nb_re_dmrs = 12;
+      else
+        nb_re_dmrs = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
       TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
-<<<<<<< HEAD
+
       if (input_fd != NULL) {
         pusch_pdu->pusch_data.tb_size = TBS>>3;
         ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
         // set FAPI parameters for UE, put them in the scheduled response and call
         nr_ue_scheduled_response(&scheduled_response);
+
 
         /////////////////////////phy_procedures_nr_ue_TX///////////////////////
         ///////////

@@ -72,7 +72,8 @@ typedef struct {
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
     fapi_nr_rx_indication_t *rx_ind;
-
+    /// ssb_index, if ssb is not present in current TTI, value set to -1
+    int ssb_index;
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
 
@@ -94,8 +95,6 @@ typedef struct {
     frame_t frame_tx;
     /// slot tx
     uint32_t slot_tx;
-    /// ssb_index, if ssb is not present in current TTI, thie value set to -1
-    int ssb_index;
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
 } nr_uplink_indication_t;

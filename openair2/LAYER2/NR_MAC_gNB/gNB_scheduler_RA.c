@@ -44,6 +44,7 @@
 extern RAN_CONTEXT_t RC;
 
 const uint8_t nr_slots_per_frame_mac[5] = {10, 20, 40, 80, 160};
+
 uint8_t DELTA[4]= {2,3,4,6};
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {

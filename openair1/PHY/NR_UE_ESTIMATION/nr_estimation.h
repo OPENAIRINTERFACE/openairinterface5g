@@ -75,6 +75,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         PHY_VARS_NR_UE *ue,
                         module_id_t eNB_id,
+                        uint8_t frame,
                         uint8_t subframe,
                         unsigned char clear,
                         short coef);
