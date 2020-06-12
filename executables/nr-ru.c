@@ -1467,7 +1467,6 @@ void *ru_thread( void *param ) {
 
     // start trx write thread
     if(usrp_tx_thread == 1){
-printf("~~~~~~~~~~~testing if the command is get\n");
       if (ru->start_write_thread){
         if(ru->start_write_thread(ru) != 0){
           LOG_E(HW,"Could not start tx write thread\n");
