@@ -426,6 +426,10 @@ void init_UE_stub_single_thread(int nb_inst,
 
 void init_UE_standalone_thread()
 {
+  const char *standalone_addr = "127.0.0.1"; // these two lines go into init
+  int standalone_port = 3289;
+  ue_init_standalone_socket(standalone_addr, standalone_port);
+
   pthread_t thread;
   if (pthread_create(&thread, NULL, ue_standalone_pnf_task, NULL) != 0) {
     LOG_E(MAC, "pthread_create failed for calling ue_standalone_pnf_task");

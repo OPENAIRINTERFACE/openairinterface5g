@@ -14,6 +14,7 @@
 #include "nfapi_interface.h"
 #include "nfapi_pnf_interface.h"
 #include <pthread.h>
+#include "nfapi/oai_integration/vendor_ext.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
@@ -128,7 +129,7 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfa
 void UE_config_stub_pnf(void);
 
 // This function is used to open an SCTP socket with a standalone PNF module
-int ue_init_standalone_socket(const char *addr, int port);
+void ue_init_standalone_socket(const char *addr, int port);
 
 // This function is used to read from standalone pnf socket call corresponding memcpy functions
 void *ue_standalone_pnf_task(void *context);

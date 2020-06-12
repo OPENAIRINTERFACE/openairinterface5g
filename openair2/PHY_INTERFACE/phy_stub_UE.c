@@ -38,7 +38,7 @@ void configure_nfapi_pnf(char *vnf_ip_addr,
                          char *pnf_ip_addr,
                          int pnf_p7_port,
                          int vnf_p7_port);
-
+void send_standalone_rach(nfapi_rach_indication_t *ind);
 UL_IND_t *UL_INFO = NULL;
 
 nfapi_ul_config_request_t* ul_config_req = NULL;
@@ -52,6 +52,8 @@ queue_t hi_dci0_req_queue;
 
 int subframe_sf = 0;
 int frame_sfn = 0;
+
+static int ue_sock_descriptor = -1;
 
 void init_queue(queue_t *q) {
   memset(q, 0, sizeof(*q));
@@ -283,7 +285,12 @@ void fill_rach_indication_UE_MAC(int Mod_id,
   // should call it when we merge with that branch.
   // Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
   // as soon as numberof preambles
-  oai_nfapi_rach_ind(&UL_INFO->rach_ind);
+  if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
+    send_standalone_rach(&UL_INFO->rach_ind);
+  } else {
+    oai_nfapi_rach_ind(&UL_INFO->rach_ind);
+  }
+
   free(UL_INFO->rach_ind.rach_indication_body.preamble_list);
 
   pthread_mutex_unlock(&fill_ul_mutex.rach_mutex);
@@ -1108,9 +1115,8 @@ void UE_config_stub_pnf(void) {
   }
 }
 
-int ue_init_standalone_socket(const char *addr, int port)
+void ue_init_standalone_socket(const char *addr, int port)
 {
-
   struct sockaddr_in server_address;
   int addr_len = sizeof(server_address);
   memset(&server_address, 0, addr_len);
@@ -1120,32 +1126,31 @@ int ue_init_standalone_socket(const char *addr, int port)
   int sd = socket(server_address.sin_family, SOCK_STREAM, IPPROTO_SCTP);
   if (sd < 0) {
     LOG_E(MAC, "Socket creation error standalone PNF\n");
-    return -1;
+    return;
   }
 
   if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0) {
     LOG_E(MAC, "Invalid standalone PNF Address\n");
     close(sd);
-    return -1;
+    return;
   }
 
   while (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0) {
     LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
     sleep(1);
   }
-    LOG_I(MAC, "Succeeded Now\n");
-  return sd;
+  LOG_I(MAC, "Succeeded Now\n");
+  assert(ue_sock_descriptor == -1);
+  ue_sock_descriptor = sd;
 }
 
 void *ue_standalone_pnf_task(void *context)
 {
   uint16_t sfn_sf = 0;
-  const char *standalone_addr = "127.0.0.1";
-  int standalone_port = 3289;
   char buffer[1024];
 
-  int sd = ue_init_standalone_socket(standalone_addr, standalone_port);
-
+  int sd = ue_sock_descriptor;
+  assert(sd > 0);
   while (true)
   {
     ssize_t len = read(sd, buffer, sizeof(buffer));
@@ -1211,6 +1216,22 @@ void *ue_standalone_pnf_task(void *context)
         break;
       }
     }
+  }
+}
+
+void send_standalone_rach(nfapi_rach_indication_t *ind)
+{
+  char buffer[1024];
+  int encoded_size = nfapi_p7_message_pack(ind, buffer, sizeof(buffer), NULL);
+  if (encoded_size < 0)
+  {
+    LOG_E(MAC, "standalone rach pack failed\n");
+    return;
+  }
+  if (send(ue_sock_descriptor, buffer, encoded_size, 0) < 0)
+  {
+    LOG_E(MAC, "Send NFAPI_DL_CONFIG_REQUEST to OAI UE failed\n");
+    return;
   }
 }
 
