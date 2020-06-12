@@ -135,7 +135,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
       
-      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
+      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_im;
       
       // generate a list of SSB structures
       if (best_ssb == NULL)
