@@ -844,13 +844,18 @@ schedule_ue_spec(module_id_t module_idP,
         if (ue_sched_ctrl->dl_lc_bytes[i] == 0) // no data in this LC!
           continue;
 
-        LOG_D(MAC, "[eNB %d] SFN/SF %d.%d, LC%d->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+        const uint32_t data =
+            min(ue_sched_ctrl->dl_lc_bytes[i],
+                TBS - ta_len - header_length_total - sdu_length_total - 3);
+        LOG_D(MAC,
+              "[eNB %d] SFN/SF %d.%d, LC%d->DLSCH CC_id %d, Requesting %d "
+              "bytes from RLC (RRC message)\n",
               module_idP,
               frameP,
               subframeP,
               lcid,
               CC_id,
-              TBS - ta_len - header_length_total - sdu_length_total - 3);
+              data);
 
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                                  rnti,
@@ -859,7 +864,7 @@ schedule_ue_spec(module_id_t module_idP,
                                                  ENB_FLAG_YES,
                                                  MBMS_FLAG_NO,
                                                  lcid,
-                                                 TBS - ta_len - header_length_total - sdu_length_total - 3,
+                                                 data,
                                                  (char *)&dlsch_buffer[sdu_length_total],
                                                  0,
                                                  0
