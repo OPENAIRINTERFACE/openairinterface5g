@@ -105,7 +105,6 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
 }
 
 
-
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
                      unsigned int Ns,
                      unsigned int *nr_gold_pdsch,

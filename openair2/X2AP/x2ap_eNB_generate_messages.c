@@ -1689,7 +1689,6 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 
 		// Currently hardcoded (dummy) values filling the fields of SgNB_addition_request message. To be substituted
 		// with values coming from RRC.
-
 		//uint16_t nRencryptionAlgorithms = 0;
 		//uint16_t nRintegrityProtectionAlgorithms = 0;
 		//uint8_t  SgNBSecurityKey[32] = { 0 };

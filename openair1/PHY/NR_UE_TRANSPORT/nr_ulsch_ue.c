@@ -114,6 +114,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t data_existing =0;
   uint8_t L_ptrs, K_ptrs; // PTRS parameters
   uint16_t beta_ptrs; // PTRS parameter related to power control
+  uint8_t no_data_in_dmrs = 1;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue=NULL;
@@ -147,7 +148,11 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
-    nb_dmrs_re_per_rb     = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
+
+    if(no_data_in_dmrs)
+      nb_dmrs_re_per_rb = 12;
+    else
+      nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
 
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
 
@@ -192,26 +197,25 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if (!IS_SOFTMODEM_NOS1 || !data_existing) {
         //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
         //and block this traffic from being forwarded to the upper layers at the gNB
-        uint16_t payload_offset = 5;
         LOG_D(PHY, "Random data to be tranmsitted: \n");
 
-        //Give the header bytes a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-        //in order to block the random packet at the MAC layer of the receiver
-        for (i = 0; i<payload_offset; i++)
-          harq_process_ul_ue->a[i] = 64;
+        //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+        //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+        //have a valid LCID (nr_process_mac_pdu function)
+        harq_process_ul_ue->a[0] = 0x31;
 
-        for (i = payload_offset; i < TBS / 8; i++) {
+        for (i = 1; i < TBS / 8; i++) {
           harq_process_ul_ue->a[i] = (unsigned char) rand();
           //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
         }
       }
-      #ifdef DEBUG_MAC_PDU
-      LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", harq_process_ul_ue->TBS/8);
-      for (i = 0; i < harq_process_ul_ue->TBS / 8; i++) {
+#ifdef DEBUG_MAC_PDU
+      LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS/8);
+      for (i = 0; i < TBS / 8; i++) {
         printf("%02x",harq_process_ul_ue->a[i]);
       }
       printf("\n");
-	  #endif
+#endif
     } else {
       LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
       return;
@@ -224,7 +228,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     unsigned int G = nr_get_G(nb_rb, number_of_symbols,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
-
     nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
@@ -268,7 +271,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
-  n_dmrs = (nb_rb*nb_dmrs_re_per_rb*number_dmrs_symbols);
+  n_dmrs = (nb_rb*((dmrs_type == pusch_dmrs_type1) ? 6:4)*number_dmrs_symbols);
   int16_t mod_dmrs[n_dmrs<<1];
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -436,18 +439,24 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else {
+        } else if (((ul_dmrs_symb_pos >> l) & 0x01) == 0) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
 
-          #ifdef DEBUG_PUSCH_MAPPING
+        #ifdef DEBUG_PUSCH_MAPPING
           printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
           m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
-          #endif
+        #endif
 
           m++;
+
+        } else {
+
+          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = 0;
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = 0;
+
         }
 
         if (++k >= frame_parms->ofdm_symbol_size)

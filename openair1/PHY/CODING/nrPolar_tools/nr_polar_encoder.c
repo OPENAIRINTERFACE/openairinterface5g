@@ -296,7 +296,7 @@ static inline void polar_rate_matching(t_nrPolar_params *polarParams,void *in,vo
 void build_polar_tables(t_nrPolar_params *polarParams) {
   // build table b -> c'
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
-  AssertFatal(polarParams->K < 129, "K = %d > 64, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n", polarParams->K);
   int bit_i,ip;
   int numbytes = polarParams->K>>3;
   int residue = polarParams->K&7;

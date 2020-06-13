@@ -84,23 +84,9 @@ NR_UE_MAC_INST_t *get_mac_inst(
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
-   \param module_id     module id
-   \param gNB_index     corresponding gNB index
-   \param cc_id         component carrier id
-   \param rx_frame      receive frame number
-   \param rx_slot       receive slot number
-   \param tx_frame      transmit frame number
-   \param tx_slot       transmit slot number*/
-NR_UE_L2_STATE_t nr_ue_scheduler(
-    const module_id_t module_id,
-    const uint8_t gNB_index,
-    const int cc_id,
-    const frame_t rx_frame,
-    const slot_t rx_slot,
-    const int32_t ssb_index,
-    const frame_t tx_frame,
-    const slot_t tx_slot);
-
+   \param dl_info     DL indication
+   \param ul_info     UL indication*/
+NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
@@ -168,7 +154,7 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
 
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot);
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
 void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                          int dci_format,
@@ -249,14 +235,14 @@ andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 
 @param frame
 @param gNB_id gNB index
 @param nr_tti_tx slot for PRACH transmission
-@returns void */
-void nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
-                    module_id_t mod_id,
-                    int CC_id,
-                    UE_MODE_t UE_mode,
-                    frame_t frame,
-                    uint8_t gNB_id,
-                    int nr_tti_tx);
+@returns indication to generate PRACH to phy */
+uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                       module_id_t mod_id,
+                       int CC_id,
+                       UE_MODE_t UE_mode,
+                       frame_t frame,
+                       uint8_t gNB_id,
+                       int nr_tti_tx);
 
 /* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
 @param module_idP Index of UE instance

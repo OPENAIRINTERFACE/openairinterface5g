@@ -59,7 +59,7 @@
 
 #include "executables/softmodem-common.h"
 
-const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
+const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
@@ -370,9 +370,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   NR_UE_list_t *UE_list = &gNB->UE_list;
 
   NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-  NR_COMMON_channels_t *cc      = RC.nrmac[module_idP]->common_channels;
+  NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-  int num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])>>(7-scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+  int num_slots_per_tdd = (slots_per_frame[*scc->ssbSubcarrierSpacing])>>(7-scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
 
   int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)

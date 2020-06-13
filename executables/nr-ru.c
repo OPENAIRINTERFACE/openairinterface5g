@@ -51,13 +51,12 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/INIT/phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
 
-#include "NR_MAC_COMMON/nr_mac_extern.h"
-
+#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
