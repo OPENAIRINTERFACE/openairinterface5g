@@ -1805,6 +1805,7 @@ set (MAC_NR_SRC
 
 set (MAC_SRC_UE
   ${PHY_INTERFACE_DIR}/phy_stub_UE.c
+  ${PHY_INTERFACE_DIR}/queue.c
   ${MAC_DIR}/main_ue.c
   ${MAC_DIR}/ue_procedures.c
   ${MAC_DIR}/ra_procedures.c

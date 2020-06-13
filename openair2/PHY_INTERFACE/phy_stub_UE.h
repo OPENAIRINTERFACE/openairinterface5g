@@ -18,6 +18,7 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
+#include "queue.h"
 
 // this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
 FILL_UL_INFO_MUTEX_t fill_ul_mutex;
@@ -134,25 +135,10 @@ void ue_init_standalone_socket(const char *addr, int port);
 // This function is used to read from standalone pnf socket call corresponding memcpy functions
 void *ue_standalone_pnf_task(void *context);
 
-#define MAX_QUEUE_SIZE 512
-
-typedef struct queue_t {
-  void *items[MAX_QUEUE_SIZE];
-  size_t read_index, write_index;
-  size_t num_items;
-  pthread_mutex_t mutex;
-} queue_t;
-
-
-void init_queue(queue_t *q);
-void put_queue(queue_t *q, void *item);
-void *get_queue(queue_t *q);
-
 extern queue_t dl_config_req_queue;
 extern queue_t tx_req_pdu_queue;
 extern queue_t ul_config_req_queue;
 extern queue_t hi_dci0_req_queue;
-
 
 extern nfapi_ul_config_request_t* ul_config_req;
 extern nfapi_hi_dci0_request_t* hi_dci0_req;

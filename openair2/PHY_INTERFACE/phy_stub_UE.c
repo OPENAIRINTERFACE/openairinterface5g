@@ -55,48 +55,6 @@ int frame_sfn = 0;
 
 static int ue_sock_descriptor = -1;
 
-void init_queue(queue_t *q) {
-  memset(q, 0, sizeof(*q));
-  pthread_mutex_init(&q->mutex, NULL);
-}
-
-void put_queue(queue_t *q, void *item) {
-
-  if (pthread_mutex_lock(&q->mutex) != 0) {
-    LOG_E(MAC, "put_queue mutex_lock failed\n");
-    return;
-  }
-
-  if (q->num_items >= MAX_QUEUE_SIZE) {
-    LOG_E(MAC, "Queue is full in put_queue\n");
-  } else {
-    q->items[q->write_index] = item;
-    q->write_index = (q->write_index + 1) % MAX_QUEUE_SIZE;
-    q->num_items++;
-  }
-
-  pthread_mutex_unlock(&q->mutex);
-
-}
-
-void *get_queue(queue_t *q) {
-
-  void *item = NULL;
-  if (pthread_mutex_lock(&q->mutex) != 0) {
-    LOG_E(MAC, "get_queue mutex_lock failed\n");
-    return NULL;
-  }
-
-  if (q->num_items > 0) {
-    item = q->items[q->read_index];
-    q->read_index = (q->read_index + 1) % MAX_QUEUE_SIZE;
-    q->num_items--;
-  }
-
-  pthread_mutex_unlock(&q->mutex);
-  return item;
-}
-
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
 extern int timer_subframe;
 extern int timer_frame;
@@ -971,7 +929,9 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
         req->dl_config_request_body.dl_config_pdu_list[i];
   }
 
-  put_queue(&dl_config_req_queue, p);
+  if (!put_queue(&dl_config_req_queue, p)) {
+    free(p);
+  }
   return 0;
 }
 
@@ -998,7 +958,11 @@ int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, n
         req->ul_config_request_body.ul_config_pdu_list[i];
   }
 
-  // put_queue(&ul_config_req_queue, (void *)p);
+#if 0 // TODO not using queue here yet
+  if (!put_queue(&ul_config_req_queue, p)) {
+    free(p);
+  }
+#endif
   ul_config_req = p;
   return 0;
 }
@@ -1021,7 +985,9 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
       }
     }
   }
-  put_queue(&tx_req_pdu_queue, p);
+  if (!put_queue(&tx_req_pdu_queue, p)) {
+    free(p);
+  }
 
   return 0;
 }
@@ -1058,7 +1024,12 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
     // \n",req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type,
     // UE_mac_inst[Mod_id].p->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type);
   }
-  // put_queue(&hi_dci0_req_queue, (void *)p);
+
+#if 0 // TODO not using queue here yet
+  if (!put_queue(&hi_dci0_req_queue, p)) {
+    free(p);
+  }
+#endif
   hi_dci0_req = p;
 
   return 0;
