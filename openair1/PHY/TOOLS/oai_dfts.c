@@ -9607,6 +9607,7 @@ int dfts_autoinit(void)
   init_rad3(12288,twa12288,twb12288);
   init_rad3(18432,twa18432,twb18432);
   init_rad3(24576,twa24576,twb24576);
+  init_rad3(36864,twa36864,twb36864);
   init_rad3(49152,twa49152,twb49152);
   init_rad3(98304,twa98304,twb98304);
 
@@ -10588,7 +10589,7 @@ int main(int argc, char**argv)
   reset_meas(&ts);
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    idft36864((int16_t *)x,(int16_t *)y,1);
+    dft36864((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 

@@ -44,7 +44,7 @@
 #include "T.h"
 #include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
-#define NR_PRACH_DEBUG 1
+//#define NR_PRACH_DEBUG 1
 
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];

@@ -800,7 +800,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   if (LOG_DUMPFLAG(PRACH)) {
     int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));  
-    if (en>60) {
+    //    if (en>60) {
       int k = (12*n_ra_prb) - 6*fp->N_RB_UL;
       
       if (k<0) k+=fp->ofdm_symbol_size;
@@ -814,7 +814,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
       LOG_M("Xu.m","xu",Xu,N_ZC,1,1);
       LOG_M("prach_ifft0.m","prach_t0",prach_ifft,1024,1,1);
-    }
+      //    }
   } /* LOG_DUMPFLAG(PRACH) */
   stop_meas(&gNB->rx_prach);
 
