@@ -35,6 +35,9 @@ int	tx_req_num_elems;
 //module_id_t next_Mod_id;
 eth_params_t         stub_eth_params;
 
+
+
+
 // This function should return all the sched_response config messages which concern a specific UE. Inside this
 // function we should somehow make the translation of config message's rnti to Mod_ID.
 Sched_Rsp_t get_nfapi_sched_response(uint8_t Mod_id);
@@ -129,10 +132,10 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfa
 
 void UE_config_stub_pnf(void);
 
-// This function is used to open an SCTP socket with a standalone PNF module
+// open an SCTP socket with a standalone PNF module
 void ue_init_standalone_socket(const char *addr, int port);
 
-// This function is used to read from standalone pnf socket call corresponding memcpy functions
+// read from standalone pnf socket call corresponding memcpy functions
 void *ue_standalone_pnf_task(void *context);
 
 extern queue_t dl_config_req_queue;

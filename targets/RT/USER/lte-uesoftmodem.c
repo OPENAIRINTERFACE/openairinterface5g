@@ -653,10 +653,10 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-
-
+  
+  
 #if 0 // #ifndef DEADLINE_SCHEDULER
-
+  
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   cpu_set_t cpuset;
@@ -668,7 +668,7 @@ int main( int argc, char **argv ) {
   if (get_nprocs() > 2) {
     for (j = 2; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
-
+    
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
     if (s != 0) {
@@ -709,7 +709,6 @@ int main( int argc, char **argv ) {
     UE_config_stub_pnf();
   }
 
-  // end of test
   printf("ITTI tasks created\n");
   mlockall(MCL_CURRENT | MCL_FUTURE);
   rt_sleep_ns(10*100000000ULL);
@@ -729,8 +728,7 @@ int main( int argc, char **argv ) {
     config_sync_var=0;
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
     init_UE_standalone_thread();
-  }
-  else {
+  } else {
     init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
             frame_parms[0]);
   }

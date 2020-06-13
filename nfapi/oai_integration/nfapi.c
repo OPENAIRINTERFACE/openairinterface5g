@@ -23,7 +23,16 @@
 #include <pthread.h>
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/log.h"
-static char nfapi_str_mode[][24] = {"MONOLITHIC","PNF","VNF","UE_STUB_PNF","UE_STUB_OFFNET","STANDALONE_PNF","<UNKNOWN NFAPI MODE>"};
+
+static char nfapi_str_mode[][24] = {
+    "MONOLITHIC",
+    "PNF",
+    "VNF",
+    "UE_STUB_PNF",
+    "UE_STUB_OFFNET",
+    "STANDALONE_PNF",
+    "<UNKNOWN NFAPI MODE>"
+};
 
 typedef struct {
   nfapi_mode_t nfapi_mode;

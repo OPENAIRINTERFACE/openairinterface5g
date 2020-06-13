@@ -94,6 +94,7 @@ extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
+
 extern uint16_t sf_ahead;
 //extern int tx_req_UE_MAC1();
 
@@ -976,6 +977,7 @@ static uint64_t clock_usec() {
   }
   return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
 }
+
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.
@@ -1036,17 +1038,15 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
     proc->subframe_rx=proc->sub_frame_start;
     // Initializations for nfapi-L2-emulator mode
     ul_config_req = NULL;
-    hi_dci0_req = NULL;
+    hi_dci0_req        = NULL;
 
     // waiting for all UE's threads set phy_stub_ticking->num_single_thread[ue_thread_id] = -1.
     do {
       end_flag = 1;
 
       for(uint16_t i = 0; i< NB_THREAD_INST; i++) {
-        if (phy_stub_ticking != NULL) {
-          if (phy_stub_ticking->num_single_thread[i] == 0) {
-            end_flag = 0;
-          }
+        if(phy_stub_ticking != NULL && phy_stub_ticking->num_single_thread[i] == 0) {
+          end_flag = 0;
         }
       }
     } while(end_flag == 0);
@@ -1068,7 +1068,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
     if (ue_thread_id == 0) {
       if (phy_stub_ticking != NULL) {
         if (pthread_mutex_lock(&phy_stub_ticking->mutex_ticking) != 0) {
-          LOG_E(MAC, "[SCHED][UE] error locking mutex for UE RXTX\n");
+          LOG_E( MAC, "[SCHED][UE] error locking mutex for UE RXTX\n" );
           exit_fun("nothing to add");
         }
         while (phy_stub_ticking->ticking_var < 0) {
@@ -1269,7 +1269,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         start_meas(&UE->generic_stat);
 #endif
 
-        if (UE->mac_enabled == 1) {
+        if (UE->mac_enabled==1) {
           ret = ue_scheduler(ue_Mod_id,
                              proc->frame_rx,
                              proc->subframe_rx,
@@ -1324,32 +1324,30 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
             // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
             // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
             // Generate UL_indications which correspond to UL traffic.
-            if (ul_config_req != NULL) {                                                    //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
+            if(ul_config_req!=NULL) { //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
               ul_config_req_UE_MAC(ul_config_req, timer_frame, timer_subframe, ue_Mod_id);  // Andrew - send over socket to proxy here
             }                                                                               // Andrew - else send a dummy over the socket
           }
 
-        phy_procedures_UE_SL_RX(UE, proc);
-      }  //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
+        phy_procedures_UE_SL_RX(UE,proc);
+      } //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
     }
-    if (phy_stub_ticking != NULL) {
+    if(phy_stub_ticking != NULL) {
       phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
     }
     // waiting for all UE's threads set phy_stub_ticking->num_single_thread[ue_thread_id] = -1.
-    if (ue_thread_id == 0) {
+    if(ue_thread_id == 0) {
       do {
         end_flag = 1;
 
-        for (uint16_t i = 0; i < NB_THREAD_INST; i++) {
-          if (phy_stub_ticking != NULL) {
-            if (phy_stub_ticking->num_single_thread[i] == 0) {
-              end_flag = 0;
-            }
+        for(uint16_t i = 0; i< NB_THREAD_INST; i++) {
+          if(phy_stub_ticking != NULL && phy_stub_ticking->num_single_thread[i] == 0) {
+            end_flag = 0;
           }
         }
-      } while (end_flag == 0);
+      } while(end_flag == 0);
 
-      if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs > 0) {
+      if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs>0) {
         //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.2, SFN/SF of PNF counter:%d.%d, number_of_crcs: %d \n", timer_frame, timer_subframe, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
         oai_nfapi_crc_indication(&UL_INFO->crc_ind);
@@ -1357,12 +1355,12 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
       }
 
-      if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus > 0) {
+      if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus>0) {
         //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
         oai_nfapi_rx_ind(&UL_INFO->rx_ind);
 
-        for (uint8_t num_pdu = 0; num_pdu < UL_INFO->rx_ind.rx_indication_body.number_of_pdus; num_pdu++) {
+        for(uint8_t num_pdu = 0; num_pdu < UL_INFO->rx_ind.rx_indication_body.number_of_pdus; num_pdu++) {
           free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[num_pdu].data);
         }
 
@@ -1375,14 +1373,14 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
       }
 
-      if (UL_INFO->harq_ind.harq_indication_body.number_of_harqs > 0) {
+      if(UL_INFO->harq_ind.harq_indication_body.number_of_harqs>0) {
         //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
         oai_nfapi_harq_indication(&UL_INFO->harq_ind);
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.41 \n");
-        UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
+        UL_INFO->harq_ind.harq_indication_body.number_of_harqs =0;
       }
 
-      if (UL_INFO->sr_ind.sr_indication_body.number_of_srs > 0) {
+      if(UL_INFO->sr_ind.sr_indication_body.number_of_srs>0) {
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.5, SFN/SF of PNF counter:%d.%d, number_of_srs: %d \n", timer_frame, timer_subframe, UL_INFO->sr_ind.sr_indication_body.number_of_srs);
         oai_nfapi_sr_indication(&UL_INFO->sr_ind);
         //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
@@ -1390,13 +1388,13 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
       }
 
       // De-allocate memory of nfapi requests copies before next subframe round
-      if (dl_config_req != NULL) {
-        if (dl_config_req->vendor_extension != NULL) {
+      if(dl_config_req!=NULL) {
+        if(dl_config_req->vendor_extension!=NULL) {
           free(dl_config_req->vendor_extension);
           dl_config_req->vendor_extension = NULL;
         }
 
-        if (dl_config_req->dl_config_request_body.dl_config_pdu_list != NULL) {
+        if(dl_config_req->dl_config_request_body.dl_config_pdu_list!=NULL) {
           free(dl_config_req->dl_config_request_body.dl_config_pdu_list);
           dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
         }
@@ -1405,7 +1403,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         dl_config_req = NULL;
       }
 
-      if (tx_request_pdu_list != NULL) {
+      if(tx_request_pdu_list!=NULL) {
         for (int i = 0; i < tx_req_num_elems; i++) {
           for (int j = 0; j < tx_request_pdu_list[i].num_segments; j++) {
             free(tx_request_pdu_list[i].segments[j].segment_data);
@@ -1417,8 +1415,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         tx_request_pdu_list = NULL;
       }
 
-      if (ul_config_req != NULL) {
-        if (ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL) {
+      if(ul_config_req!=NULL) {
+        if(ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL) {
           free(ul_config_req->ul_config_request_body.ul_config_pdu_list);
           ul_config_req->ul_config_request_body.ul_config_pdu_list = NULL;
         }
@@ -1427,8 +1425,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         ul_config_req = NULL;
       }
 
-      if (hi_dci0_req != NULL) {
-        if (hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list != NULL) {
+      if(hi_dci0_req!=NULL) {
+        if(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL) {
           free(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list);
           hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list = NULL;
         }
@@ -1477,9 +1475,7 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
   struct rx_tx_thread_data *rtd = arg;
   UE_rxtx_proc_t *proc = rtd->proc;
   PHY_VARS_UE    *UE   = rtd->UE;
-
   phy_stub_ticking->ticking_var = -1;
-
   proc->subframe_rx=proc->sub_frame_start;
   // CAREFUL HERE!
   wait_sync("UE_phy_stub_thread_rxn_txnp4");
@@ -1638,13 +1634,13 @@ void write_dummy(PHY_VARS_UE *UE,  openair0_timestamp timestamp) {
   //
   struct complex16 v= {0};
   void *samplesVoid[UE->frame_parms.nb_antennas_tx];
-
+  
   for ( int i=0; i < UE->frame_parms.nb_antennas_tx; i++)
     samplesVoid[i]=(void *)&v;
-
+  
   AssertFatal( 1 == UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+2*UE->frame_parms.samples_per_tti,
-						samplesVoid,
+						samplesVoid, 
 						1,
 						UE->frame_parms.nb_antennas_tx,
 						1),"");
@@ -1698,7 +1694,7 @@ void *UE_thread(void *arg)
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
-
+    
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
@@ -1708,7 +1704,7 @@ void *UE_thread(void *arg)
 	    for(int sf=0; sf<10; sf++) {
 	      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 		rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
-
+	      
               AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
 						      &timestamp,
 						      rxp,
@@ -1719,7 +1715,7 @@ void *UE_thread(void *arg)
 	  } else {
 	    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 	      rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
-
+	    
 	    AssertFatal( UE->frame_parms.samples_per_tti*10 ==
                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                     &timestamp,
