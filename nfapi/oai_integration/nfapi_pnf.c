@@ -498,15 +498,14 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
 
   phy_info *phy_info = pnf->phys;
 
-  // TODO: change all these tags to NR
-  #if 0
-  if(req->nfapi_config.timing_window.tl.tag == NFAPI_NFAPI_TIMING_WINDOW_TAG) {
+
+  if(req->nfapi_config.timing_window.tl.tag == NFAPI_NR_NFAPI_TIMING_WINDOW_TAG) {
     phy_info->timing_window = req->nfapi_config.timing_window.value;
     printf("Phy_info:Timing window:%u NFAPI_CONFIG:timing_window:%u\n", phy_info->timing_window, req->nfapi_config.timing_window.value);
     num_tlv++;
   }
 
-  if(req->nfapi_config.timing_info_mode.tl.tag == NFAPI_NFAPI_TIMING_INFO_MODE_TAG) {
+  if(req->nfapi_config.timing_info_mode.tl.tag == NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG) {
     printf("timing info mode:%d\n", req->nfapi_config.timing_info_mode.value);
     phy_info->timing_info_mode = req->nfapi_config.timing_info_mode.value;
     num_tlv++;
@@ -515,7 +514,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     printf("NO timing info mode provided\n");
   }
 
-  if(req->nfapi_config.timing_info_period.tl.tag == NFAPI_NFAPI_TIMING_INFO_PERIOD_TAG) {
+  if(req->nfapi_config.timing_info_period.tl.tag == NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG) {
     printf("timing info period provided value:%d\n", req->nfapi_config.timing_info_period.value);
     phy_info->timing_info_period = req->nfapi_config.timing_info_period.value;
     num_tlv++;
@@ -523,135 +522,138 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     phy_info->timing_info_period = 0;
   }
 
-  if(req->rf_config.dl_channel_bandwidth.tl.tag == NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG) {
-    phy_info->dl_channel_bw_support = req->rf_config.dl_channel_bandwidth.value;
-    fp->N_RB_DL = req->rf_config.dl_channel_bandwidth.value;
+  if(req->carrier_config.dl_bandwidth.tl.tag == NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG) {
+    phy_info->dl_channel_bw_support = req->carrier_config.dl_bandwidth.value; //rf_config.dl_channel_bandwidth.value;
+    fp->N_RB_DL = req->carrier_config.dl_bandwidth.value; //rf_config.dl_channel_bandwidth.value;
     num_tlv++;
-    NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG N_RB_DL:%u\n", __FUNCTION__, fp->N_RB_DL);
+    NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG N_RB_DL:%u\n", __FUNCTION__, fp->N_RB_DL);
   } else {
-    NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() Missing NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG\n", __FUNCTION__);
+    NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() Missing NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG\n", __FUNCTION__);
   }
 
-  if(req->rf_config.ul_channel_bandwidth.tl.tag == NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG) {
-    phy_info->ul_channel_bw_support = req->rf_config.ul_channel_bandwidth.value;
-    fp->N_RB_UL = req->rf_config.ul_channel_bandwidth.value;
+  if(req->carrier_config.uplink_bandwidth.tl.tag == NFAPI_NR_CONFIG_UPLINK_BANDWIDTH_TAG) {
+    phy_info->ul_channel_bw_support = req->carrier_config.uplink_bandwidth.value; //req->rf_config.ul_channel_bandwidth.value;
+    fp->N_RB_UL = req->carrier_config.uplink_bandwidth.value; //req->rf_config.ul_channel_bandwidth.value;
     num_tlv++;
   }
 
-  if(req->nfapi_config.rf_bands.tl.tag == NFAPI_NFAPI_RF_BANDS_TAG) {
+
+  if(req->nfapi_config.rf_bands.tl.tag == NFAPI_NR_NFAPI_RF_BANDS_TAG) {
     pnf->rfs[0].band = req->nfapi_config.rf_bands.rf_band[0];
-    fp->eutra_band = req->nfapi_config.rf_bands.rf_band[0];
+    fp->nr_band = req->nfapi_config.rf_bands.rf_band[0];
     num_tlv++;
   }
 
-  if(req->nfapi_config.earfcn.tl.tag == NFAPI_NFAPI_EARFCN_TAG) {
-    fp->dl_CarrierFreq = from_earfcn(fp->eutra_band, req->nfapi_config.earfcn.value);
-    fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(fp->eutra_band) * 1e5);
+  if(req->nfapi_config.nrarfcn.tl.tag == NFAPI_NR_NFAPI_NRARFCN_TAG) {
+    fp->dl_CarrierFreq = from_nrarfcn(fp->nr_band, 0 , req->nfapi_config.nrarfcn.value); // TODO: give SCS index
+    fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_nr_uldl_offset(fp->nr_band) * 1e5); // TODO: why 1e5 ?
     num_tlv++;
-    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() earfcn:%u dl_carrierFreq:%u ul_CarrierFreq:%u band:%u N_RB_DL:%u\n",
-                __FUNCTION__, req->nfapi_config.earfcn.value, fp->dl_CarrierFreq, fp->ul_CarrierFreq, pnf->rfs[0].band, fp->N_RB_DL);
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() nrarfcn:%u dl_carrierFreq:%u ul_CarrierFreq:%u band:%u N_RB_DL:%u\n",
+                __FUNCTION__, req->nfapi_config.nrarfcn.value, fp->dl_CarrierFreq, fp->ul_CarrierFreq, pnf->rfs[0].band, fp->N_RB_DL);
   }
-
-  if (req->subframe_config.duplex_mode.tl.tag == NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG) {
+#if SUBFRAME // TODO: add subframe struct to nr config request struct
+  if (req->subframe_config.duplex_mode.tl.tag == NFAPI_NR_SUBFRAME_CONFIG_DUPLEX_MODE_TAG) {
     fp->frame_type = req->subframe_config.duplex_mode.value==0 ? TDD : FDD;
     num_tlv++;
     NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() frame_type:%d\n", __FUNCTION__, fp->frame_type);
-  }
-
-  if (req->subframe_config.dl_cyclic_prefix_type.tl.tag == NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG) {
+  
+req->tdd_table.
+  if (req->subframe_config.dl_cyclic_prefix_type.tl.tag == NFAPI_NR_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG) {
     fp->Ncp = req->subframe_config.dl_cyclic_prefix_type.value;
     num_tlv++;
   }
 
-  if (req->subframe_config.ul_cyclic_prefix_type.tl.tag == NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG) {
+  if (req->subframe_config.ul_cyclic_prefix_type.tl.tag == NFAPI_NR_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG) {
     fp->Ncp_UL = req->subframe_config.ul_cyclic_prefix_type.value;
     num_tlv++;
   }
 
   fp->num_MBSFN_config = 0; // DJP - hard code alert
+#endif
 
-  if (req->sch_config.physical_cell_id.tl.tag == NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG) {
-    fp->Nid_cell = req->sch_config.physical_cell_id.value;
+  if (req->cell_config.phy_cell_id.tl.tag == NFAPI_NR_CONFIG_PHY_CELL_ID_TAG) {
+    fp->Nid_cell = req->cell_config.phy_cell_id.value; //sch_config.physical_cell_id.value;
     fp->nushift = fp->Nid_cell%6;
     num_tlv++;
   }
-
-  if (req->rf_config.tx_antenna_ports.tl.tag == NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG) {
+#if LTE
+  if (req->rf_config.tx_antenna_ports.tl.tag == NFAPI_NR_RF_CONFIG_TX_ANTENNA_PORTS_TAG) {
     fp->nb_antennas_tx = req->rf_config.tx_antenna_ports.value;
     fp->nb_antenna_ports_eNB = 1;
     num_tlv++;
   }
 
-  if (req->rf_config.rx_antenna_ports.tl.tag == NFAPI_RF_CONFIG_RX_ANTENNA_PORTS_TAG) {
+  if (req->rf_config.rx_antenna_ports.tl.tag == NFAPI_NR_RF_CONFIG_RX_ANTENNA_PORTS_TAG) {
     fp->nb_antennas_rx = req->rf_config.rx_antenna_ports.value;
     num_tlv++;
   }
 
-  if (req->phich_config.phich_resource.tl.tag == NFAPI_PHICH_CONFIG_PHICH_RESOURCE_TAG) {
+  if (req->phich_config.phich_resource.tl.tag == NFAPI_NR_PHICH_CONFIG_PHICH_RESOURCE_TAG) {
     fp->phich_config_common.phich_resource = req->phich_config.phich_resource.value;
     num_tlv++;
   }
 
-  if (req->phich_config.phich_duration.tl.tag == NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG) {
+  if (req->phich_config.phich_duration.tl.tag == NFAPI_NR_PHICH_CONFIG_PHICH_DURATION_TAG) {
     fp->phich_config_common.phich_duration = req->phich_config.phich_duration.value;
     num_tlv++;
   }
 
-  if (req->phich_config.phich_power_offset.tl.tag == NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG) {
+  if (req->phich_config.phich_power_offset.tl.tag == NFAPI_NR_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG) {
     LOG_E(PHY, "%s() NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG tag:%d not supported\n", __FUNCTION__, req->phich_config.phich_power_offset.tl.tag);
     //fp->phich_config_common.phich_power_offset = req->phich_config.
     num_tlv++;
   }
 
   // UL RS Config
-  if (req->uplink_reference_signal_config.cyclic_shift_1_for_drms.tl.tag == NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_CYCLIC_SHIFT_1_FOR_DRMS_TAG) {
+  if (req->uplink_reference_signal_config.cyclic_shift_1_for_drms.tl.tag == NFAPI_NR_UPLINK_REFERENCE_SIGNAL_CONFIG_CYCLIC_SHIFT_1_FOR_DRMS_TAG) {
     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = req->uplink_reference_signal_config.cyclic_shift_1_for_drms.value;
     num_tlv++;
   }
 
-  if (req->uplink_reference_signal_config.uplink_rs_hopping.tl.tag == NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG) {
+  if (req->uplink_reference_signal_config.uplink_rs_hopping.tl.tag == NFAPI_NR_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG) {
     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = req->uplink_reference_signal_config.uplink_rs_hopping.value;
     num_tlv++;
   }
 
-  if (req->uplink_reference_signal_config.group_assignment.tl.tag == NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG) {
+  if (req->uplink_reference_signal_config.group_assignment.tl.tag == NFAPI_NR_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG) {
     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = req->uplink_reference_signal_config.group_assignment.value;
     num_tlv++;
   }
 
-  if (req->pusch_config.hopping_mode.tl.tag == NFAPI_PUSCH_CONFIG_HOPPING_MODE_TAG) {
+  if (req->pusch_config.hopping_mode.tl.tag == NFAPI_NR_PUSCH_CONFIG_HOPPING_MODE_TAG) {
   }  // DJP - not being handled?
 
-  if (req->pusch_config.hopping_offset.tl.tag == NFAPI_PUSCH_CONFIG_HOPPING_OFFSET_TAG) {
+  if (req->pusch_config.hopping_offset.tl.tag == NFAPI_NR_PUSCH_CONFIG_HOPPING_OFFSET_TAG) {
   }  // DJP - not being handled?
 
-  if (req->pusch_config.number_of_subbands.tl.tag == NFAPI_PUSCH_CONFIG_NUMBER_OF_SUBBANDS_TAG) {
+  if (req->pusch_config.number_of_subbands.tl.tag == NFAPI_NR_PUSCH_CONFIG_NUMBER_OF_SUBBANDS_TAG) {
   }  // DJP - not being handled?
 
-  if (req->prach_config.configuration_index.tl.tag == NFAPI_PRACH_CONFIG_CONFIGURATION_INDEX_TAG) {
+  if (req->prach_config.configuration_index.tl.tag == NFAPI_NR_PRACH_CONFIG_CONFIGURATION_INDEX_TAG) {
     fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=req->prach_config.configuration_index.value;
     num_tlv++;
   }
 
-  if (req->prach_config.root_sequence_index.tl.tag == NFAPI_PRACH_CONFIG_ROOT_SEQUENCE_INDEX_TAG) {
+  if (req->prach_config.root_sequence_index.tl.tag == NFAPI_NR_PRACH_CONFIG_ROOT_SEQUENCE_INDEX_TAG) {
     fp->prach_config_common.rootSequenceIndex=req->prach_config.root_sequence_index.value;
     num_tlv++;
   }
 
-  if (req->prach_config.zero_correlation_zone_configuration.tl.tag == NFAPI_PRACH_CONFIG_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG) {
+  if (req->prach_config.zero_correlation_zone_configuration.tl.tag == NFAPI_NR_PRACH_CONFIG_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG) {
     fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=req->prach_config.zero_correlation_zone_configuration.value;
     num_tlv++;
   }
 
-  if (req->prach_config.high_speed_flag.tl.tag == NFAPI_PRACH_CONFIG_HIGH_SPEED_FLAG_TAG) {
+  if (req->prach_config.high_speed_flag.tl.tag == NFAPI_NR_PRACH_CONFIG_HIGH_SPEED_FLAG_TAG) {
     fp->prach_config_common.prach_ConfigInfo.highSpeedFlag=req->prach_config.high_speed_flag.value;
     num_tlv++;
   }
 
-  if (req->prach_config.frequency_offset.tl.tag == NFAPI_PRACH_CONFIG_FREQUENCY_OFFSET_TAG) {
+  if (req->prach_config.frequency_offset.tl.tag == NFAPI_NR_PRACH_CONFIG_FREQUENCY_OFFSET_TAG) {
     fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset=req->prach_config.frequency_offset.value;
     num_tlv++;
   }
+#endif
 
   if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
     printf("[PNF] CONFIG_REQUEST[num_tlv:%d] TLVs processed:%d\n", req->num_tlv, num_tlv);
@@ -663,7 +665,6 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     nr_phy_config_request(&nr_phy_config);
     nr_dump_frame_parms(fp);
   }
-  #endif
   phy_info->remote_port = req->nfapi_config.p7_vnf_port.value;
   struct sockaddr_in vnf_p7_sockaddr;
   memcpy(&vnf_p7_sockaddr.sin_addr.s_addr, &(req->nfapi_config.p7_vnf_address_ipv4.address[0]), 4);
@@ -995,6 +996,7 @@ int pnf_sim_pack_vendor_extention_tlv(void *ve, uint8_t **ppWritePackedMsg, uint
   //printf("%s\n", __FUNCTION__);
   (void)ve;
   (void)ppWritePackedMsg;
+  
   return -1;
 }
 

@@ -1019,7 +1019,8 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   pnf_info *pnf = vnf->pnfs;
   phy_info *phy = pnf->phys;
   struct sockaddr_in pnf_p7_sockaddr;
-  nfapi_nr_config_request_scf_t *req = &RC.nrmac[0]->config[0];
+  nfapi_nr_config_request_scf_t *req = &RC.nrmac[0]->config[0]; // check
+
   phy->remote_port = resp->nfapi_config.p7_pnf_port.value;
   memcpy(&pnf_p7_sockaddr.sin_addr.s_addr, &(resp->nfapi_config.p7_pnf_address_ipv4.address[0]), 4);
   phy->remote_addr = inet_ntoa(pnf_p7_sockaddr.sin_addr);
@@ -1055,7 +1056,7 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
       req->num_tlv++;
     }
   }
-
+  
   vendor_ext_tlv_2 ve2;
   memset(&ve2, 0, sizeof(ve2));
   ve2.tl.tag = VENDOR_EXT_TLV_2_TAG;

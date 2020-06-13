@@ -473,6 +473,9 @@ typedef struct {
   nfapi_nr_nfapi_t              nfapi_config;
 } nfapi_nr_param_response_scf_t;
 
+//------------------------------//
+//3.3.2 CONFIG
+
 /* CONFIG.REQUEST */
 typedef struct {
   nfapi_p4_p5_message_header_t  header;
@@ -491,9 +494,15 @@ typedef struct {
   nfapi_nr_nfapi_t              nfapi_config;
 } nfapi_nr_config_request_scf_t;
 
+
 /* CONFIG.RESPONSE */
 typedef struct {
   // TODO: add here
+  nfapi_p4_p5_message_header_t  header;
+  nfapi_nr_param_errors_e error_code;
+  uint8_t num_invalid_tlvs;
+
+   nfapi_vendor_extension_tlv_t  vendor_extension;
 } nfapi_nr_config_response_scf_t;
 
 //------------------------------//

@@ -546,7 +546,7 @@ int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config
 
 	if(phy == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_WARN, "%s failed to find phy inforation phy_id:%d\n", __FUNCTION__, req->header.phy_id);
+		NFAPI_TRACE(NFAPI_TRACE_WARN, "%s failed to find phy information phy_id:%d\n", __FUNCTION__, req->header.phy_id);
 		return -1;
 	}
 

@@ -463,13 +463,14 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + gNB_config->carrier_config.dl_frequency.value)*1000 ;
 
   int32_t dlul_offset = 0;
-  lte_frame_type_t frame_type = 0;
+  lte_frame_type_t frame_type = 0; // FDD
   
   get_band(fp->dl_CarrierFreq,&fp->nr_band,&dlul_offset,&frame_type);
 
   uint64_t ul_bw_khz = (12*gNB_config->carrier_config.ul_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
   fp->ul_CarrierFreq = ((ul_bw_khz>>1) + gNB_config->carrier_config.uplink_frequency.value)*1000 ;
 
+  printf("\n%d\t%d\t%d\n", fp->ul_CarrierFreq, fp->dl_CarrierFreq, dlul_offset );
   AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+dlul_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
   
   fp->threequarter_fs = openair0_cfg[0].threequarter_fs;
