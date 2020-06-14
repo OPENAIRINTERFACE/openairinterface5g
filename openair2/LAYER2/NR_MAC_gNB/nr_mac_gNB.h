@@ -244,13 +244,14 @@ typedef struct UE_info {
   pdschTciStatesActDeact_t pdsch_TCI_States_ActDeact;
 } NR_UE_mac_ce_ctrl_t;
 
+typedef struct NR_sched_pucch {
+  int frame;
   int ul_slot;
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
   struct NR_sched_pucch *next_sched_pucch;
 } NR_sched_pucch;
-
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
