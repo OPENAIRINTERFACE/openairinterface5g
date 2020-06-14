@@ -43,11 +43,12 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
                           uint8_t aggregation_level,
 			  int decoder_flag) {
   t_nrPolar_params *currentPtr = *polarParams;
-  uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
+  uint16_t aggregation_prime = (messageType >= 2) ? aggregation_level : nr_polar_aggregation_prime(aggregation_level);
 
   //Parse the list. If the node is already created, return without initialization.
   while (currentPtr != NULL) {
     //printf("currentPtr->idx %d, (%d,%d)\n",currentPtr->idx,currentPtr->payloadBits,currentPtr->encoderLength);
+    LOG_D(PHY,"Looking for index %d\n",(messageType * messageLength * aggregation_prime));
     if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
     else currentPtr = currentPtr->nextPtr;
   }
@@ -57,6 +58,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
   t_nrPolar_params *newPolarInitNode = calloc(sizeof(t_nrPolar_params),1);
 
   if (newPolarInitNode != NULL) {
+    LOG_D(PHY,"Setting new polarParams index %d, messageType %d, messageLength %d, aggregation_prime %d\n",(messageType * messageLength * aggregation_prime),messageType,messageLength,aggregation_prime);
     newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
     newPolarInitNode->nextPtr = NULL;
     //printf("newPolarInitNode->idx %d, (%d,%d,%d:%d)\n",newPolarInitNode->idx,messageType,messageLength,aggregation_prime,aggregation_level);
@@ -116,6 +118,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
       newPolarInitNode->payloadBits = messageLength;
       newPolarInitNode->crcCorrectionBits = NR_POLAR_PUCCH_CRC_ERROR_CORRECTION_BITS;
       //newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
+      LOG_D(PHY,"New polar node, encoderLength %d, aggregation_level %d\n",newPolarInitNode->encoderLength,aggregation_level);
     } else {
       AssertFatal(1 == 0, "[nr_polar_init] Incorrect Message Type(%d)", messageType);
     }
@@ -219,16 +222,19 @@ t_nrPolar_params *nr_polar_params (int8_t messageType,
   nr_polar_init(polarList_ext != NULL ? polarList_ext : &polarList, 
 		messageType,messageLength,aggregation_level,decoding_flag);
   t_nrPolar_params *polarParams=polarList_ext != NULL ? *polarList_ext : polarList;
-  const int tag=messageType * messageLength * nr_polar_aggregation_prime(aggregation_level);
+  const int tag=messageType * messageLength * (messageType>=2 ? aggregation_level : nr_polar_aggregation_prime(aggregation_level));
 
+
+	
   while (polarParams != NULL) {
+    LOG_D(PHY,"nr_polar_params : tag %d (from nr_polar_init %d)\n",tag,polarParams->idx);
     if (polarParams->idx == tag)
       return polarParams;
 
     polarParams = polarParams->nextPtr;
   }
 
-  AssertFatal(false,"Polar Init tables internal failure\n");
+  AssertFatal(false,"Polar Init tables internal failure, no polarParams found\n");
   return NULL;
 }
 

@@ -667,6 +667,8 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
+  t_nrPolar_params    *uci_polarParams;
+
   uint8_t pbch_configured;
   char gNB_generate_rar;
 

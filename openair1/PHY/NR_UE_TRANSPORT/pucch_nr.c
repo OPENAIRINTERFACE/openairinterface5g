@@ -798,8 +798,8 @@ void nr_generate_pucch1_old(PHY_VARS_NR_UE *ue,
 }
 #endif //0
 
-inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint32_t B,uint8_t *btilde) __attribute__((always_inline));
-inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint32_t B,uint8_t *btilde) {
+inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) __attribute__((always_inline));
+inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) {
   uint32_t x1, x2, s=0;
   int i;
   uint8_t c;
@@ -807,14 +807,26 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
   //x2 = (rnti) + ((uint32_t)(1+nr_tti_tx)<<16)*(1+(fp->Nid_cell<<1));
   x2 = ((rnti)<<15)+n_id;
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%x\n",s);
+  printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%x, M_bit %d\n",s,M_bit);
 #endif
 
   uint8_t *btildep=btilde;
   int M_bit2=M_bit > 31 ? 32 : (M_bit&31), M_bit3=M_bit;
+  uint32_t B;
   for (int iprime=0;iprime<=(M_bit>>5);iprime++,btildep+=32) {
     s = lte_gold_generic(&x1, &x2, (iprime==0) ? 1 : 0);
-
+    B=((uint32_t*)B64)[iprime];
+    for (int n=0;n<M_bit2;n+=8)
+      LOG_D(PHY,"PUCCH2 encoded %d : %d,%d,%d,%d,%d,%d,%d,%d\n",n,
+	    (B>>n)&1,
+	    (B>>(n+1))&1,
+	    (B>>(n+2))&1,
+	    (B>>(n+3))&1,
+	    (B>>(n+4))&1,
+	    (B>>(n+5))&1,
+	    (B>>(n+6))&1,
+	    (B>>(n+7))&1
+	    );
     for (i=0; i<M_bit2; i++) {
       c = (uint8_t)((s>>i)&1);
       btildep[i] = (((B>>i)&1) ^ c);
@@ -946,7 +958,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   printf("\t [nr_generate_pucch2] start function at slot(nr_tti_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_tti_tx, payload, nr_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
-  uint64_t b;
+  uint64_t b[16]; // limit to 1024-bit encoded length
   // M_bit is the number of bits of block b (payload after encoding)
   uint16_t M_bit;
   nr_uci_encoding(payload,nr_bit,pucch_format2_nr,0,nrofSymbols,nrofPRB,1,0,0,&b,&M_bit);

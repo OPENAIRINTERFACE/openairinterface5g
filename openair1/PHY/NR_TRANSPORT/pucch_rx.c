@@ -50,7 +50,7 @@
 
 #include "T.h"
 
-#define DEBUG_NR_PUCCH_RX 1
+//#define DEBUG_NR_PUCCH_RX 1
 
 int get_pucch0_cs_lut_index(PHY_VARS_gNB *gNB,nfapi_nr_pucch_pdu_t* pucch_pdu) {
 
@@ -326,7 +326,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   index=maxpos;
 #endif
   // first bit of bitmap for sr presence and second bit for acknack presence
-  uci_pdu->pdu_bit_map = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
+  uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
   uci_pdu->ul_cqi = 0xff; // currently not valid
   uci_pdu->timing_advance = 0xffff; // currently not valid
@@ -872,6 +872,7 @@ __m256i *pucch2_lut[9]={pucch2_3bit,
 			pucch2_11bit};
 
 __m64 pucch2_polar_4bit[16];
+__m128i pucch2_polar_llr_num_lut[256],pucch2_polar_llr_den_lut[256];
 
 void init_pucch2_luts() {
 
@@ -964,6 +965,50 @@ void init_pucch2_luts() {
     bit = (i&0x8) > 0 ? -1 : 1;
     *lut_i = _mm_insert_pi16(*lut_i,bit,3);
   }
+  for (int i=0;i<256;i++) {
+    __m128i *lut_num_i=&pucch2_polar_llr_num_lut[i];
+    __m128i *lut_den_i=&pucch2_polar_llr_den_lut[i];
+    bit = (i&0x1) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,0);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,0);
+
+    bit = (i&0x10) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,1);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,1);
+
+    bit = (i&0x2) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,2);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,2);
+
+    bit = (i&0x20) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,3);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,3);
+
+    bit = (i&0x4) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,4);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,4);
+
+    bit = (i&0x40) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,5);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,5);
+
+    bit = (i&0x8) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,6);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,6);
+
+    bit = (i&0x80) > 0 ? 0 : 1;
+   *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,7);
+   *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,7);
+   printf("i %d, lut_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",i,
+	  ((int16_t *)lut_num_i)[0],
+	  ((int16_t *)lut_num_i)[1],
+	  ((int16_t *)lut_num_i)[2],
+	  ((int16_t *)lut_num_i)[3],
+	  ((int16_t *)lut_num_i)[4],
+	  ((int16_t *)lut_num_i)[5],
+	  ((int16_t *)lut_num_i)[6],
+	  ((int16_t *)lut_num_i)[7]);
+  }
 }
 
 
@@ -975,6 +1020,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
+
+
 
   AssertFatal(pucch_pdu->nr_of_symbols==1 || pucch_pdu->nr_of_symbols==2,
 	      "Illegal number of symbols  for PUCCH 2 %d\n",pucch_pdu->nr_of_symbols);
@@ -1291,10 +1338,12 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     printf("\n");
 #endif
   }
-  AssertFatal(pucch_pdu->bit_len_csi_part1 + pucch_pdu->bit_len_csi_part2 == 0,"no csi for now\n");
-  AssertFatal((pucch_pdu->bit_len_harq+pucch_pdu->sr_flag > 2 ) && (pucch_pdu->bit_len_harq+pucch_pdu->sr_flag < 65),"illegal length (%d,%d)\n",pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
-  int nb_bit = pucch_pdu->bit_len_harq+pucch_pdu->sr_flag;
+  int nb_bit = pucch_pdu->bit_len_harq+pucch_pdu->sr_flag+pucch_pdu->bit_len_csi_part1+pucch_pdu->bit_len_csi_part2;
+  AssertFatal(nb_bit > 2  && nb_bit< 65,"illegal length (%d : %d,%d,%d,%d)\n",nb_bit,pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,pucch_pdu->bit_len_csi_part1,pucch_pdu->bit_len_csi_part2);
 
+  uint64_t decodedPayload[2];
+  uint8_t corr_dB;
+  int decoderState=2;
   if (nb_bit < 12) { // short blocklength case
     __m256i *rp_re[Prx2];
     __m256i *rp2_re[Prx2];
@@ -1371,31 +1420,19 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	cw_ML=cw;
       }
     }
-    uint8_t corr_dB = dB_fixed64((uint64_t)corr);
+    corr_dB = dB_fixed64((uint64_t)corr);
     LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
-    uci_pdu->harq.harq_bit_len = pucch_pdu->bit_len_harq;
-    
-    
-    int harq_bytes=pucch_pdu->bit_len_harq>>3;
-    if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
-    uci_pdu->harq.harq_payload = (nfapi_nr_harq_t*)malloc(harq_bytes);
-    uci_pdu->harq.harq_crc = 2;
-    for (int i=0;i<harq_bytes;i++) {
-      uci_pdu->harq.harq_payload[i] = cw_ML & 255;
-      cw_ML>>=8;
-    }
-    
-    if (pucch_pdu->sr_flag == 1) {
-      uci_pdu->sr.sr_bit_len = 1;
-      uci_pdu->sr.sr_payload = malloc(1);
-      uci_pdu->sr.sr_payload[0] = cw_ML;
-    }
+    decodedPayload[0]=(uint64_t)cw_ML;
   }
   else { // polar coded case
+
+    t_nrPolar_params *currentPtr = nr_polar_params(2,nb_bit,pucch_pdu->prb_size,1,&gNB->uci_polarParams);
     __m64 *rp_re[Prx2];
     __m64 *rp2_re[Prx2];
     __m64 *rp_im[Prx2];
     __m64 *rp2_im[Prx2];
+    __m128i llrs[pucch_pdu->prb_size*2];
+
     for (int aa=0;aa<Prx;aa++) {
       rp_re[aa] = (__m64*)r_re_ext[aa];
       rp_im[aa] = (__m64*)r_im_ext[aa];
@@ -1404,20 +1441,25 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     }
     __m64 prod_re[Prx2],prod_im[Prx2];
 
-    for (int cw=0;cw<16;cw++) {
 #ifdef DEBUG_NR_PUCCH_RX
+    for (int cw=0;cw<16;cw++) {
+
       printf("cw %d:",cw);
       for (int i=0;i<4;i++) {
 	printf("%d,",
 	       ((int16_t*)&pucch2_polar_4bit[cw])[i>>1]);
       }
       printf("\n");
+    }
 #endif
     
-    }
     // non-coherent LLR computation on groups of 4 REs (half-PRBs)
     int32_t corr_re,corr_im,corr_tmp;
+    __m128i corr16,llr_num,llr_den;
+    uint64_t corr;
+
     for (int half_prb=0;half_prb<(2*pucch_pdu->prb_size);half_prb++) {
+    llr_num=_mm_set1_epi16(0);llr_den=_mm_set1_epi16(0);
       for (int cw=0;cw<256;cw++) {
 	corr_tmp=0;
 	for (int aa=0;aa<Prx;aa++) { 
@@ -1429,11 +1471,16 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
 	  prod_re[aa] = _mm_hadds_pi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
 	  prod_im[aa] = _mm_hadds_pi16(prod_im[aa],prod_im[aa]);
-	
+
+	  // this is for UL CQI measurement
+	  if (cw==0) corr += ((int64_t)corr32_re[half_prb>>2][aa]*corr32_re[half_prb>>2][aa])+
+		       ((int64_t)corr32_im[half_prb>>2][aa]*corr32_im[half_prb>>2][aa]);
+
 	
 	  corr_re = ( corr32_re[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
 	  corr_im = ( corr32_im[half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
 	  corr_tmp += corr_re*corr_re + corr_im*corr_im;
+	  /*
 	  LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
 		half_prb,cw,cw&15,cw>>4,aa,
 		((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
@@ -1450,11 +1497,115 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 		corr_re,
 		corr_im,
 		corr_tmp);
+	  */
 	}
+	corr16 = _mm_set1_epi16((int16_t)(corr_tmp>>8));
+	/*	
+	LOG_D(PHY,"half_prb %d cw %d corr16 %d\n",half_prb,cw,corr_tmp>>8);
+	*/
+	llr_num = _mm_max_epi16(_mm_mullo_epi16(corr16,pucch2_polar_llr_num_lut[cw]),llr_num);
+	llr_den = _mm_max_epi16(_mm_mullo_epi16(corr16,pucch2_polar_llr_den_lut[cw]),llr_den);
+	/*
+	LOG_D(PHY,"lut_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[0],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[1],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[2],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[3],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[4],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[5],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[6],
+	      ((int16_t*)&pucch2_polar_llr_num_lut[cw])[7]);
+	
+	LOG_D(PHY,"llr_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",
+	      ((int16_t*)&llr_num)[0],
+	      ((int16_t*)&llr_num)[1],
+	      ((int16_t*)&llr_num)[2],
+	      ((int16_t*)&llr_num)[3],
+	      ((int16_t*)&llr_num)[4],
+	      ((int16_t*)&llr_num)[5],
+	      ((int16_t*)&llr_num)[6],
+	      ((int16_t*)&llr_num)[7]);
+	LOG_D(PHY,"llr_den (%d,%d,%d,%d,%d,%d,%d,%d)\n",
+	      ((int16_t*)&llr_den)[0],
+	      ((int16_t*)&llr_den)[1],
+	      ((int16_t*)&llr_den)[2],
+	      ((int16_t*)&llr_den)[3],
+	      ((int16_t*)&llr_den)[4],
+	      ((int16_t*)&llr_den)[5],
+	      ((int16_t*)&llr_den)[6],
+	      ((int16_t*)&llr_den)[7]);
+	*/	
       }
+      // compute llrs
+      llrs[half_prb] = _mm_subs_epi16(llr_num,llr_den);
+      LOG_D(PHY,"llrs[%d] : (%d,%d,%d,%d,%d,%d,%d,%d)\n",
+	    half_prb,
+	    ((int16_t*)&llrs[half_prb])[0],
+	    ((int16_t*)&llrs[half_prb])[1],
+	    ((int16_t*)&llrs[half_prb])[2],
+	    ((int16_t*)&llrs[half_prb])[3],
+	    ((int16_t*)&llrs[half_prb])[4],
+	    ((int16_t*)&llrs[half_prb])[5],
+	    ((int16_t*)&llrs[half_prb])[6],
+	    ((int16_t*)&llrs[half_prb])[7]);
     } // half_prb
-    AssertFatal(1==0,"stopping here\n");
+    // run polar decoder on llrs
+    decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, currentPtr);
+    LOG_D(PHY,"UCI decoderState %d, payload[0] %llux\n",decoderState,(unsigned long long)decodedPayload[0]);
+    if (decoderState>0) decoderState=1;
+    corr_dB = dB_fixed64(corr);
+    LOG_D(PHY,"metric %d dB\n",corr_dB);
+  }
+  uci_pdu->harq.harq_bit_len = pucch_pdu->bit_len_harq;
+  uci_pdu->pduBitmap=0;
+  uci_pdu->rnti=pucch_pdu->rnti;
+  uci_pdu->handle=pucch_pdu->handle;
+  uci_pdu->pucch_format=0;
+  uci_pdu->ul_cqi=corr_dB;
+  // need to fill these field!
+  uci_pdu->timing_advance=31;
+  uci_pdu->rssi=0;
+  if (pucch_pdu->bit_len_harq>0) {
+    int harq_bytes=pucch_pdu->bit_len_harq>>3;
+    if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
+    uci_pdu->pduBitmap|=1;
+    uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
+    uci_pdu->harq.harq_crc = decoderState > 0 ? 1 : 0;
+    int i=0;
+    for (;i<harq_bytes-1;i++) {
+      uci_pdu->harq.harq_payload[i] = decodedPayload[0] & 255;
+      decodedPayload[0]>>=8;
+    }
+    uci_pdu->harq.harq_payload[i] = decodedPayload[0] & ((1<<(pucch_pdu->bit_len_harq&7))-1);
+    decodedPayload[0] >>= pucch_pdu->bit_len_harq;
+  }
+  
+  if (pucch_pdu->sr_flag == 1) {
+    uci_pdu->pduBitmap|=2;
+    uci_pdu->sr.sr_bit_len = 1;
+    uci_pdu->sr.sr_payload = malloc(1);
+    uci_pdu->sr.sr_payload[0] = decodedPayload[0]&1;
+    decodedPayload[0]>>1;
+  }
+  // csi
+  if (pucch_pdu->bit_len_csi_part1>0) {
+    uci_pdu->pduBitmap|=4;
+    int csi_part1_bytes=pucch_pdu->bit_len_csi_part1>>3;
+    if ((pucch_pdu->bit_len_csi_part1&7) > 0) csi_part1_bytes++;
+    uci_pdu->csi_part1.csi_part1_payload = (uint8_t*)malloc(csi_part1_bytes);
+    uci_pdu->csi_part1.csi_part1_crc = decoderState > 0 ? 1 : 0;
+    int i=0;
+    for (;i<csi_part1_bytes-1;i++) {
+      uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & 255;
+      decodedPayload[0]>>=8;
+    }
+    uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<(pucch_pdu->bit_len_csi_part1&7))-1);
+    decodedPayload[0] >>= pucch_pdu->bit_len_csi_part1;      
+  }
+  
+  if (pucch_pdu->bit_len_csi_part2>0) {
+    uci_pdu->pduBitmap|=8;
+  }
 
-  } // n_bit > 11
 }
     
