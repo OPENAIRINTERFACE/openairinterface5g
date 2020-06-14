@@ -255,6 +255,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   cfg->num_tlv++;
   cfg->num_tlv++;
 
+
   // TDD Table Configuration
   //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
   cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
@@ -305,6 +306,71 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
     cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[i].value=*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2;
   }*/
 
+
+
+  cfg->carrier_config.frequency_shift_7p5khz.tl.tag =			 NFAPI_NR_CONFIG_FREQUENCY_SHIFT_7P5KHZ_TAG;
+  cfg->num_tlv++;
+
+  cfg->measurement_config.rssi_measurement.tl.tag =			    NFAPI_NR_CONFIG_RSSI_MEASUREMENT_TAG;
+  cfg->num_tlv++;
+
+  cfg->prach_config.prach_multiple_carriers_in_a_band.tl.tag =             NFAPI_NR_CONFIG_PRACH_MULTIPLE_CARRIERS_IN_A_BAND_TAG;
+  cfg->num_tlv++;
+
+  cfg->ssb_config.bch_payload.tl.tag = NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG;
+  cfg->num_tlv++;
+
+  cfg->ssb_table.beta_pss.tl.tag =			 NFAPI_NR_CONFIG_BETA_PSS_TAG;
+  cfg->num_tlv++;
+
+  cfg->ssb_table.MIB.tl.tag =			 NFAPI_NR_CONFIG_MIB_TAG;
+  cfg->num_tlv++;
+
+  cfg->ssb_table.multiple_cells_ss_pbch_in_a_carrier.tl.tag =			 NFAPI_NR_CONFIG_MULTIPLE_CELLS_SS_PBCH_IN_A_CARRIER_TAG;
+  cfg->num_tlv++;
+
+  cfg->ssb_table.ss_pbch_multiple_carriers_in_a_band.tl.tag =			 NFAPI_NR_CONFIG_SS_PBCH_MULTIPLE_CARRIERS_IN_A_BAND_TAG;
+  cfg->num_tlv++;
+
+  if(cfg->ssb_table.ssb_beam_id_list!=NULL)
+  {
+    cfg->ssb_table.ssb_beam_id_list[0].beam_id->tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
+    cfg->num_tlv++;
+  }
+
+  // TODO: assign values to nfapi_config struct
+
+  cfg->nfapi_config.dl_ue_per_sf.tl.tag =			 NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.max_transmit_power.tl.tag =			 NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.nrarfcn.tl.tag =			 NFAPI_NR_NFAPI_NRARFCN_TAG;
+  cfg->nfapi_config.nrarfcn.value = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.p7_pnf_address_ipv4.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.p7_pnf_address_ipv6.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV6_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.p7_pnf_port.tl.tag =			 NFAPI_NR_NFAPI_P7_PNF_PORT_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.p7_vnf_address_ipv6.tl.tag =			 NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.rf_bands.tl.tag =			 NFAPI_NR_NFAPI_RF_BANDS_TAG;
+  cfg->num_tlv++;
+  cfg->nfapi_config.rf_bands.rf_band[0] = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  
+
+  cfg->nfapi_config.ul_ue_per_sf.tl.tag =			 NFAPI_NR_NFAPI_UPLINK_UES_PER_SUBFRAME_TAG;
+  cfg->num_tlv++;
+
+                                                        
 
 }
 

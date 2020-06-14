@@ -42,6 +42,9 @@
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
 #include "common/ran_context.h"
+
+#define TEST
+
 extern RAN_CONTEXT_t RC;
 extern UL_RCC_IND_t  UL_RCC_INFO;
 
@@ -1013,6 +1016,15 @@ int pnf_start_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_start_re
 extern uint32_t to_earfcn(int eutra_bandP,uint32_t dl_CarrierFreq,uint32_t bw);
 
 int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_response_scf_t *resp) {
+
+#ifdef TEST
+  if(resp->cell_param.phy_state.tl.tag == NFAPI_NR_PARAM_TLV_PHY_STATE_TAG)
+    printf("\n\nMatched\n\n");
+  // like this we can check for all the tags
+#endif
+
+
+
   printf("[VNF] Received NFAPI_PARAM_RESP idx:%d phy_id:%d\n", p5_idx, resp->header.phy_id);
   vnf_info *vnf = (vnf_info *)(config->user_data);
   vnf_p7_info *p7_vnf = vnf->p7_vnfs;
@@ -1020,7 +1032,6 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   phy_info *phy = pnf->phys;
   struct sockaddr_in pnf_p7_sockaddr;
   nfapi_nr_config_request_scf_t *req = &RC.nrmac[0]->config[0]; // check
-
   phy->remote_port = resp->nfapi_config.p7_pnf_port.value;
   memcpy(&pnf_p7_sockaddr.sin_addr.s_addr, &(resp->nfapi_config.p7_pnf_address_ipv4.address[0]), 4);
   phy->remote_addr = inet_ntoa(pnf_p7_sockaddr.sin_addr);
@@ -1030,6 +1041,8 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   req->header.message_id = NFAPI_CONFIG_REQUEST;
   req->header.phy_id = phy->id;
   printf("[VNF] Send NFAPI_CONFIG_REQUEST\n");
+  printf("\n NR bandP =%d\n",req->nfapi_config.rf_bands.rf_band[0]);
+
   req->nfapi_config.p7_vnf_port.tl.tag = NFAPI_NR_NFAPI_P7_VNF_PORT_TAG;
   req->nfapi_config.p7_vnf_port.value = p7_vnf->local_port;
   req->num_tlv++;
@@ -1042,7 +1055,7 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   printf("[VNF] DJP local_addr:%s\n", p7_vnf->local_addr);
   req->nfapi_config.timing_window.tl.tag = NFAPI_NR_NFAPI_TIMING_WINDOW_TAG;
   req->nfapi_config.timing_window.value = p7_vnf->timing_window;
-  printf("[VNF] Timing window:%u\n", p7_vnf->timing_window);
+  printf("\n[VNF]Timing window tag : %d Timing window:%u\n",NFAPI_NR_NFAPI_TIMING_WINDOW_TAG, p7_vnf->timing_window);
   req->num_tlv++;
 
   if(p7_vnf->periodic_timing_enabled || p7_vnf->aperiodic_timing_enabled) {

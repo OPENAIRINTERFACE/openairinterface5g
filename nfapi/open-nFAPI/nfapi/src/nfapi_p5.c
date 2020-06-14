@@ -697,8 +697,8 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_NR_CONFIG_MIB_TAG, &(pNfapiMsg->ssb_table.MIB), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_MULTIPLE_CELLS_SS_PBCH_IN_A_CARRIER_TAG, &(pNfapiMsg->ssb_table.multiple_cells_ss_pbch_in_a_carrier), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SS_PBCH_MULTIPLE_CARRIERS_IN_A_BAND_TAG, &(pNfapiMsg->ssb_table.ss_pbch_multiple_carriers_in_a_band), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			//pack_tlv(NFAPI_NR_CONFIG_BEAM_ID_TAG, &(pNfapiMsg->ssb_table.ssb_beam_id_list->beam_id), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			//pack_tlv(NFAPI_NR_CONFIG_SSB_MASK_TAG, &(pNfapiMsg->ssb_table.ssb_mask_list->ssb_mask), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			// pack_tlv(NFAPI_NR_CONFIG_BEAM_ID_TAG, &(pNfapiMsg->ssb_table.ssb_beam_id_list[0].beam_id), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_NR_CONFIG_SSB_MASK_TAG, &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG, &(pNfapiMsg->ssb_table.ssb_offset_point_a), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SSB_PERIOD_TAG, &(pNfapiMsg->ssb_table.ssb_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG, &(pNfapiMsg->ssb_table.ssb_subcarrier_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
@@ -1611,6 +1611,7 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 
 	unpack_tlv_t unpack_fns[] =
 	{
+		{ NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG,  &(pNfapiMsg->carrier_config.dl_bandwidth),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_DL_FREQUENCY_TAG,  &(pNfapiMsg->carrier_config.dl_frequency),  &unpack_uint32_tlv_value},
 		{ NFAPI_NR_CONFIG_DL_GRID_SIZE_TAG,  &(pNfapiMsg->carrier_config.dl_grid_size),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_DL_K0_TAG,  &(pNfapiMsg->carrier_config.dl_k0),  &unpack_uint16_tlv_value},
@@ -1637,6 +1638,8 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		{ NFAPI_NR_CONFIG_MIB_TAG,  &(pNfapiMsg->ssb_table.MIB),  &unpack_uint32_tlv_value},
 		{ NFAPI_NR_CONFIG_MULTIPLE_CELLS_SS_PBCH_IN_A_CARRIER_TAG,  &(pNfapiMsg->ssb_table.multiple_cells_ss_pbch_in_a_carrier),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SS_PBCH_MULTIPLE_CARRIERS_IN_A_BAND_TAG,  &(pNfapiMsg->ssb_table.ss_pbch_multiple_carriers_in_a_band),  &unpack_uint8_tlv_value},
+		// { NFAPI_NR_CONFIG_BEAM_ID_TAG,  &(pNfapiMsg->ssb_table.ssb_beam_id_list[0].beam_id),  &unpack_uint16_tlv_value},
+		{ NFAPI_NR_CONFIG_SSB_MASK_TAG,  &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG,  &(pNfapiMsg->ssb_table.ssb_offset_point_a),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_PERIOD_TAG,  &(pNfapiMsg->ssb_table.ssb_period),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG,  &(pNfapiMsg->ssb_table.ssb_subcarrier_offset),  &unpack_uint8_tlv_value},
@@ -1774,8 +1777,10 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 
 	};
 #endif
-	return ( pull8(ppReadPackedMsg, &pNfapiMsg->num_tlv, end) &&
-		     unpack_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
+
+	return ( pull8(ppReadPackedMsg, &pNfapiMsg->error_code, end) && 
+			 pull8(ppReadPackedMsg, &pNfapiMsg->num_tlv, end) &&
+			 unpack_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
 
 }
 
