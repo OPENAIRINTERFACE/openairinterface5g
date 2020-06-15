@@ -73,7 +73,7 @@ void mac_rlc_data_ind     (
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 7: rb = ue->drb[channel_idP - 4]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -114,7 +114,7 @@ tbs_size_t mac_rlc_data_req(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 7: rb = ue->drb[channel_idP - 4]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -167,7 +167,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 7: rb = ue->drb[channel_idP - 4]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -228,7 +228,7 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 7: rb = ue->drb[channel_idP - 4]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
