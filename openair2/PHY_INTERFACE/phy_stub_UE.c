@@ -50,8 +50,7 @@ queue_t tx_req_pdu_queue;
 queue_t ul_config_req_queue;
 queue_t hi_dci0_req_queue;
 
-int subframe_sf = 0;
-int frame_sfn = 0;
+int current_sfn_sf;
 
 static int ue_sock_descriptor = -1;
 
@@ -244,7 +243,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
   // Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
   // as soon as numberof preambles
   if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-    send_standalone_rach(&UL_INFO->rach_ind);
+    send_standalone_rach(&UL_INFO->rach_ind); // dont
   } else {
     oai_nfapi_rach_ind(&UL_INFO->rach_ind);
   }
@@ -1115,7 +1114,7 @@ void ue_init_standalone_socket(const char *addr, int port)
 
 void *ue_standalone_pnf_task(void *context)
 {
-  uint16_t sfn_sf = 0;
+
   char buffer[1024];
 
   int sd = ue_sock_descriptor;
@@ -1131,9 +1130,9 @@ void *ue_standalone_pnf_task(void *context)
 
     if (len == sizeof(uint16_t))
     {
+      uint16_t sfn_sf = 0;
       memcpy((void *)&sfn_sf, buffer, sizeof(sfn_sf));
-      subframe_sf = NFAPI_SFNSF2SF(sfn_sf);
-      frame_sfn = NFAPI_SFNSF2SFN(sfn_sf);
+      current_sfn_sf = sfn_sf;
     }
     else
     {

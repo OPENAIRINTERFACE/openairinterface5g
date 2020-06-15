@@ -146,7 +146,6 @@ extern queue_t hi_dci0_req_queue;
 extern nfapi_ul_config_request_t* ul_config_req;
 extern nfapi_hi_dci0_request_t* hi_dci0_req;
 
-extern int subframe_sf;
-extern int frame_sfn;
+extern int current_sfn_sf;
 
 #endif /* PHY_STUB_UE_H_ */

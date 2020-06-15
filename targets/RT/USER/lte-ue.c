@@ -986,9 +986,8 @@ static uint64_t clock_usec() {
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 
-static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
-{
-  thread_top_init("UE_phy_stub_thread_rxn_txnp4",1,870000L,1000000L,1000000L);
+static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
+  thread_top_init("UE_phy_stub_thread_rxn_txnp4", 1, 870000L, 1000000L, 1000000L);
   // for multipule UE's L2-emulator
   //module_id_t Mod_id = 0;
   //int init_ra_UE = -1; // This counter is used to initiate the RA of each UE in different SFrames
@@ -996,24 +995,19 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   struct rx_tx_thread_data *rtd = arg;
 
   if (rtd == NULL) {
-    LOG_E( MAC, "[SCHED][UE] rx_tx_thread_data *rtd: NULL pointer\n" );
+    LOG_E(MAC, "[SCHED][UE] rx_tx_thread_data *rtd: NULL pointer\n");
     exit_fun("nothing to add");
   }
 
   UE_rxtx_proc_t *proc = rtd->proc;
   // settings for nfapi-L2-emulator mode
   module_id_t ue_thread_id = rtd->ue_thread_id;
-  uint16_t     ue_index = 0;
-  uint16_t     ue_num = NB_UE_INST/NB_THREAD_INST+((NB_UE_INST%NB_THREAD_INST > ue_thread_id) ? 1 :0);
+  uint16_t ue_index = 0;
+  uint16_t ue_num = NB_UE_INST / NB_THREAD_INST + ((NB_UE_INST % NB_THREAD_INST > ue_thread_id) ? 1 : 0);
   module_id_t ue_Mod_id;
-  PHY_VARS_UE    *UE = NULL;
+  PHY_VARS_UE *UE = NULL;
   int ret;
-  uint8_t   end_flag;
   proc = &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0];
-
-  if (phy_stub_ticking != NULL) {
-    phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
-  }
 
   UE = rtd->UE;
 
@@ -1026,131 +1020,38 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
   UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_sr_indication_pdu_t));
   UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list =  calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_pdu_t));
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_pdu_t));
   UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_cqi_indication_raw_pdu_t));
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
-  if(ue_thread_id == 0) {
-
-    if (phy_stub_ticking != NULL) {
-      phy_stub_ticking->ticking_var = -1;
-    }
-    proc->subframe_rx=proc->sub_frame_start;
-    // Initializations for nfapi-L2-emulator mode
-    ul_config_req = NULL;
-    hi_dci0_req        = NULL;
-
-    // waiting for all UE's threads set phy_stub_ticking->num_single_thread[ue_thread_id] = -1.
-    do {
-      end_flag = 1;
-
-      for(uint16_t i = 0; i< NB_THREAD_INST; i++) {
-        if(phy_stub_ticking != NULL && phy_stub_ticking->num_single_thread[i] == 0) {
-          end_flag = 0;
-        }
-      }
-    } while(end_flag == 0);
-
-    sync_var=0;
-  }
+  proc->subframe_rx = proc->sub_frame_start;
+  // Initializations for nfapi-L2-emulator mode
+  ul_config_req = NULL;
+  hi_dci0_req = NULL;
+  sync_var = 0;
 
   //PANOS: CAREFUL HERE!
   wait_sync("UE_phy_stub_single_thread_rxn_txnp4");
 
   int num_pairs = 0;
   int num_lone = 0;
-  int last_sf = 0;
-  int last_sfn = 0;
-  bool sfn_sf_changed = false;
-
+  int last_sfn_sf = -1;
 
   while (!oai_exit) {
-    if (ue_thread_id == 0) {
-      if (phy_stub_ticking != NULL) {
-        if (pthread_mutex_lock(&phy_stub_ticking->mutex_ticking) != 0) {
-          LOG_E( MAC, "[SCHED][UE] error locking mutex for UE RXTX\n" );
-          exit_fun("nothing to add");
-        }
-        while (phy_stub_ticking->ticking_var < 0) {
-          // most of the time, the thread is waiting here
-          //pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx )
-          LOG_D(MAC, "Waiting for ticking_var\n");
-          pthread_cond_wait(&phy_stub_ticking->cond_ticking, &phy_stub_ticking->mutex_ticking);
-        }
-
-        phy_stub_ticking->ticking_var--;
-
-        if (pthread_mutex_unlock(&phy_stub_ticking->mutex_ticking) != 0) {
-          LOG_E(MAC, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n");
-          exit_fun("nothing to add");
-        }
-      }
-      proc->subframe_rx = subframe_sf;
-      proc->frame_rx = frame_sfn;
-
-      if (proc->subframe_rx != last_sf && proc->frame_rx != last_sfn) {
-        last_sf = proc->subframe_rx;
-        last_sfn = proc->frame_rx;
-        sfn_sf_changed = true;
-      }
-
-      // FDD and TDD tx timing settings.
-      // XXX:It is the result of timing adjustment in debug.
-      // It is necessary to investigate why this will work in the future.
-      proc->subframe_tx = (proc->subframe_rx + sf_ahead) % 10;
-      proc->frame_tx = proc->frame_rx + (proc->subframe_rx > (9 - sf_ahead) ? 1 : 0);
-      //oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
-      if (NFAPI_MODE != NFAPI_MODE_STANDALONE_PNF) {
-        if (UE != NULL) {
-          if (UE->frame_parms.frame_type == FDD) {
-            oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
-          } else {
-            oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
-          }
-        } else {
-          // Default will be FDD
-          oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
-        }
-      }
-
-      //Guessing that the next 4 lines are not needed for the phy_stub mode.
-      /*initRefTimes(t2);
-        initRefTimes(t3);
-        pickTime(current);
-        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");*/
-      if (phy_stub_ticking != NULL) {
-        if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
-          LOG_E(MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
-          exit_fun("nothing to add");
-        }
-
-        memset(&phy_stub_ticking->num_single_thread[0], 0, sizeof(int) * NB_THREAD_INST);
-        pthread_cond_broadcast(&phy_stub_ticking->cond_single_thread);
-
-        if (pthread_mutex_unlock(&phy_stub_ticking->mutex_single_thread) != 0) {
-          LOG_E(MAC, "[SCHED][UE] error unlocking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
-          exit_fun("nothing to add");
-        }
-      }
-    } else {
-      if (phy_stub_ticking != NULL) {
-        if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
-          LOG_E(MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
-          exit_fun("nothing to add");
-        }
-
-        while (phy_stub_ticking->num_single_thread[ue_thread_id] < 0) {
-          // most of the time, the thread is waiting here
-          LOG_D(MAC, "Waiting for single_thread (ue_thread_id %d)\n", ue_thread_id);
-          pthread_cond_wait(&phy_stub_ticking->cond_single_thread, &phy_stub_ticking->mutex_single_thread);
-        }
-
-        if (pthread_mutex_unlock(&phy_stub_ticking->mutex_single_thread) != 0) {
-          LOG_E(MAC, "[SCHED][UE] error unlocking mutex for ue_thread_id %d (mutex_single_thread)\n", ue_thread_id);
-          exit_fun("nothing to add");
-        }
-      }
+    int sfn_sf = current_sfn_sf;
+    if (sfn_sf == last_sfn_sf) {
+      usleep(100);
+      continue;
     }
+    last_sfn_sf = sfn_sf;
+    proc->subframe_rx = NFAPI_SFNSF2SF(sfn_sf);
+    proc->frame_rx = NFAPI_SFNSF2SFN(sfn_sf);
+
+    // FDD and TDD tx timing settings.
+    // XXX:It is the result of timing adjustment in debug.
+    // It is necessary to investigate why this will work in the future.
+    proc->subframe_tx = (proc->subframe_rx + sf_ahead) % 10;
+    proc->frame_tx = proc->frame_rx + (proc->subframe_rx > (9 - sf_ahead) ? 1 : 0);
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
@@ -1237,203 +1138,193 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
     }
 
     //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++) {
-    if (sfn_sf_changed) {
-      sfn_sf_changed = false;
-      for (ue_index = 0; ue_index < ue_num; ue_index++) {
-        ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index;
-        UE = PHY_vars_UE_g[ue_Mod_id][0];
-        //LOG_D(MAC, "UE_phy_stub_single_thread_rxn_txnp4, NB_UE_INST:%d, Mod_id:%d \n", NB_UE_INST, Mod_id);
-        //UE = PHY_vars_UE_g[Mod_id][0];
-        lte_subframe_t sf_type = subframe_select(&UE->frame_parms, proc->subframe_rx);
+    // if (sfn_sf_changed) {
+    // sfn_sf_changed = false;
+    for (ue_index = 0; ue_index < ue_num; ue_index++) {
+      ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index;
+      UE = PHY_vars_UE_g[ue_Mod_id][0];
+      //LOG_D(MAC, "UE_phy_stub_single_thread_rxn_txnp4, NB_UE_INST:%d, Mod_id:%d \n", NB_UE_INST, Mod_id);
+      //UE = PHY_vars_UE_g[Mod_id][0];
+      lte_subframe_t sf_type = subframe_select(&UE->frame_parms, proc->subframe_rx);
 
-        if ((sf_type == SF_DL) ||
-            (UE->frame_parms.frame_type == FDD) ||
-            (sf_type == SF_S)) {
-          if (UE->frame_parms.frame_type == TDD) {
-            LOG_D(PHY, "TDD%d,%s: calling UE_RX\n",
-                  UE->frame_parms.tdd_config,
-                  (sf_type == SF_DL ? "SF_DL" : (sf_type == SF_UL ? "SF_UL" : (sf_type == SF_S ? "SF_S" : "UNKNOWN_SF_TYPE"))));
-          } else {
-            LOG_D(PHY, "%s,%s: calling UE_RX\n",
-                  (UE->frame_parms.frame_type == FDD ? "FDD" : (UE->frame_parms.frame_type == TDD ? "TDD" : "UNKNOWN_DUPLEX_MODE")),
-                  (sf_type == SF_DL ? "SF_DL" : (sf_type == SF_UL ? "SF_UL" : (sf_type == SF_S ? "SF_S" : "UNKNOWN_SF_TYPE"))));
-          }
-
-          phy_procedures_UE_SL_RX(UE, proc);
-
-          if (NFAPI_MODE != NFAPI_UE_STUB_PNF && NFAPI_MODE != NFAPI_MODE_STANDALONE_PNF)
-            phy_procedures_UE_SL_TX(UE, proc);
+      if ((sf_type == SF_DL) ||
+          (UE->frame_parms.frame_type == FDD) ||
+          (sf_type == SF_S)) {
+        if (UE->frame_parms.frame_type == TDD) {
+          LOG_D(PHY, "TDD%d,%s: calling UE_RX\n",
+                UE->frame_parms.tdd_config,
+                (sf_type == SF_DL ? "SF_DL" : (sf_type == SF_UL ? "SF_UL" : (sf_type == SF_S ? "SF_S" : "UNKNOWN_SF_TYPE"))));
+        } else {
+          LOG_D(PHY, "%s,%s: calling UE_RX\n",
+                (UE->frame_parms.frame_type == FDD ? "FDD" : (UE->frame_parms.frame_type == TDD ? "TDD" : "UNKNOWN_DUPLEX_MODE")),
+                (sf_type == SF_DL ? "SF_DL" : (sf_type == SF_UL ? "SF_UL" : (sf_type == SF_S ? "SF_S" : "UNKNOWN_SF_TYPE"))));
         }
 
+        phy_procedures_UE_SL_RX(UE, proc);
+      }
+
 #if UE_TIMING_TRACE
-        start_meas(&UE->generic_stat);
+      start_meas(&UE->generic_stat);
 #endif
 
-        if (UE->mac_enabled==1) {
-          ret = ue_scheduler(ue_Mod_id,
-                             proc->frame_rx,
-                             proc->subframe_rx,
-                             proc->frame_tx,
-                             proc->subframe_tx,
-                             subframe_select(&UE->frame_parms, proc->subframe_tx),
-                             0,
-                             0 /*FIXME CC_id*/);
+      if (UE->mac_enabled == 1) {
+        ret = ue_scheduler(ue_Mod_id,
+                           proc->frame_rx,
+                           proc->subframe_rx,
+                           proc->frame_tx,
+                           proc->subframe_tx,
+                           subframe_select(&UE->frame_parms, proc->subframe_tx),
+                           0,
+                           0 /*FIXME CC_id*/);
 
-          if (ret != CONNECTION_OK) {
-            LOG_E(PHY, "[UE %" PRIu8 "] Frame %" PRIu32 ", subframe %u %s\n",
-                  UE->Mod_id, proc->frame_rx, proc->subframe_tx, get_connectionloss_errstr(ret));
-          }
+        if (ret != CONNECTION_OK) {
+          LOG_E(PHY, "[UE %" PRIu8 "] Frame %" PRIu32 ", subframe %u %s\n",
+                UE->Mod_id, proc->frame_rx, proc->subframe_tx, get_connectionloss_errstr(ret));
         }
+      }
 
 #if UE_TIMING_TRACE
-        stop_meas(&UE->generic_stat);
+      stop_meas(&UE->generic_stat);
 #endif
 
-        // Prepare the future Tx data
-
-        if ((subframe_select(&UE->frame_parms, proc->subframe_tx) == SF_UL) ||
-            (UE->frame_parms.frame_type == FDD))
-          if (UE->mode != loop_through_memory) {
-            // We make the start of RA between consecutive UEs differ by 20 frames
-            //if ((UE_mac_inst[Mod_id].UE_mode[0] == PRACH  && Mod_id == 0) || (UE_mac_inst[Mod_id].UE_mode[0] == PRACH && Mod_id>0 && proc->frame_rx >= UE_mac_inst[Mod_id-1].ra_frame + 20) ) {
-            if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH && ue_Mod_id == next_Mod_id) {
-              next_ra_frame++;
-              if (next_ra_frame > 500) {
-                // check if we have PRACH opportunity
-                if (is_prach_subframe(&UE->frame_parms, proc->frame_tx, proc->subframe_tx) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
-                  // The one working strangely...
-                  //if (is_prach_subframe(&UE->frame_parms,proc->frame_tx, proc->subframe_tx && Mod_id == (module_id_t) init_ra_UE) ) {
-                  PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, proc->frame_tx, 0, proc->subframe_tx);
-                  LOG_I(MAC, "Celtics prach_resources %p\n", prach_resources);
-                  if (prach_resources != NULL) {
-                    UE_mac_inst[ue_Mod_id].ra_frame = proc->frame_rx;
-                    LOG_I(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, proc->frame_tx, proc->subframe_tx);
-                    fill_rach_indication_UE_MAC(ue_Mod_id, proc->frame_tx, proc->subframe_tx, UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
-                    Msg1_transmitted(ue_Mod_id, 0, proc->frame_tx, 0);
-                    UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
-                    next_Mod_id = ue_Mod_id + 1;
-                    //next_ra_frame = (proc->frame_rx + 20)%1000;
-                    next_ra_frame = 0;
-                  }
-
-                  //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
+      // Prepare the future Tx data
+      bool sent_any = false;
+      if ((subframe_select(&UE->frame_parms, proc->subframe_tx) == SF_UL) ||
+          (UE->frame_parms.frame_type == FDD))
+        if (UE->mode != loop_through_memory) {
+          // We make the start of RA between consecutive UEs differ by 20 frames
+          //if ((UE_mac_inst[Mod_id].UE_mode[0] == PRACH  && Mod_id == 0) || (UE_mac_inst[Mod_id].UE_mode[0] == PRACH && Mod_id>0 && proc->frame_rx >= UE_mac_inst[Mod_id-1].ra_frame + 20) ) {
+          if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH && ue_Mod_id == next_Mod_id) {
+            next_ra_frame++;
+            if (next_ra_frame > 500) {
+              // check if we have PRACH opportunity
+              if (is_prach_subframe(&UE->frame_parms, proc->frame_tx, proc->subframe_tx) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
+                // The one working strangely...
+                //if (is_prach_subframe(&UE->frame_parms,proc->frame_tx, proc->subframe_tx && Mod_id == (module_id_t) init_ra_UE) ) {
+                PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, proc->frame_tx, 0, proc->subframe_tx);
+                LOG_I(MAC, "Celtics prach_resources %p\n", prach_resources);
+                if (prach_resources != NULL) {
+                  UE_mac_inst[ue_Mod_id].ra_frame = proc->frame_rx;
+                  LOG_I(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, proc->frame_tx, proc->subframe_tx);
+                  fill_rach_indication_UE_MAC(ue_Mod_id, proc->frame_tx, proc->subframe_tx, UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
+                  sent_any = true;
+                  Msg1_transmitted(ue_Mod_id, 0, proc->frame_tx, 0);
+                  UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
+                  next_Mod_id = ue_Mod_id + 1;
+                  //next_ra_frame = (proc->frame_rx + 20)%1000;
+                  next_ra_frame = 0;
                 }
+
+                //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
               }
-            }  // mode is PRACH
+            }
+          }  // mode is PRACH
 
-            // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
-            // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
-            // Generate UL_indications which correspond to UL traffic.
-            if(ul_config_req!=NULL) { //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
-              ul_config_req_UE_MAC(ul_config_req, timer_frame, timer_subframe, ue_Mod_id);  // Andrew - send over socket to proxy here
-            }                                                                               // Andrew - else send a dummy over the socket
-          }
+          // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
+          // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
+          // Generate UL_indications which correspond to UL traffic.
+          if (ul_config_req != NULL) {                                                    //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
+            ul_config_req_UE_MAC(ul_config_req, timer_frame, timer_subframe, ue_Mod_id);  // Andrew - send over socket to proxy here
+          }                                                                               // Andrew - else send a dummy over the socket
+        }
 
-        phy_procedures_UE_SL_RX(UE,proc);
-      } //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
+      phy_procedures_UE_SL_RX(UE, proc);
+    }  //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
+
+    if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs > 0) {
+      //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.2, SFN/SF of PNF counter:%d.%d, number_of_crcs: %d \n", timer_frame, timer_subframe, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
+      oai_nfapi_crc_indication(&UL_INFO->crc_ind);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.21 \n");
+      UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
     }
-    if(phy_stub_ticking != NULL) {
-      phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
+
+    if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus > 0) {
+      //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
+      oai_nfapi_rx_ind(&UL_INFO->rx_ind);
+      sent_any = true;
+
+      for (uint8_t num_pdu = 0; num_pdu < UL_INFO->rx_ind.rx_indication_body.number_of_pdus; num_pdu++) {
+        free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[num_pdu].data);
+      }
+
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.31 \n");
+      UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
     }
-    // waiting for all UE's threads set phy_stub_ticking->num_single_thread[ue_thread_id] = -1.
-    if(ue_thread_id == 0) {
-      do {
-        end_flag = 1;
 
-        for(uint16_t i = 0; i< NB_THREAD_INST; i++) {
-          if(phy_stub_ticking != NULL && phy_stub_ticking->num_single_thread[i] == 0) {
-            end_flag = 0;
-          }
+    if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
+      oai_nfapi_cqi_indication(&UL_INFO->cqi_ind);
+      sent_any = true;
+      UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
+    }
+
+    if (UL_INFO->harq_ind.harq_indication_body.number_of_harqs > 0) {
+      //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
+      oai_nfapi_harq_indication(&UL_INFO->harq_ind);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.41 \n");
+      UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
+    }
+
+    if (UL_INFO->sr_ind.sr_indication_body.number_of_srs > 0) {
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.5, SFN/SF of PNF counter:%d.%d, number_of_srs: %d \n", timer_frame, timer_subframe, UL_INFO->sr_ind.sr_indication_body.number_of_srs);
+      oai_nfapi_sr_indication(&UL_INFO->sr_ind);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
+      UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
+    }
+
+    // De-allocate memory of nfapi requests copies before next subframe round
+    if (dl_config_req != NULL) {
+      if (dl_config_req->vendor_extension != NULL) {
+        free(dl_config_req->vendor_extension);
+        dl_config_req->vendor_extension = NULL;
+      }
+
+      if (dl_config_req->dl_config_request_body.dl_config_pdu_list != NULL) {
+        free(dl_config_req->dl_config_request_body.dl_config_pdu_list);
+        dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
+      }
+
+      free(dl_config_req);
+      dl_config_req = NULL;
+    }
+
+    if (tx_request_pdu_list != NULL) {
+      for (int i = 0; i < tx_req_num_elems; i++) {
+        for (int j = 0; j < tx_request_pdu_list[i].num_segments; j++) {
+          free(tx_request_pdu_list[i].segments[j].segment_data);
+          tx_request_pdu_list[i].segments[j].segment_data = NULL;
         }
-      } while(end_flag == 0);
+      }
+      tx_req_num_elems = 0;
+      free(tx_request_pdu_list);
+      tx_request_pdu_list = NULL;
+    }
 
-      if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs>0) {
-        //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.2, SFN/SF of PNF counter:%d.%d, number_of_crcs: %d \n", timer_frame, timer_subframe, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
-        oai_nfapi_crc_indication(&UL_INFO->crc_ind);
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.21 \n");
-        UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
+    if (ul_config_req != NULL) {
+      if (ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL) {
+        free(ul_config_req->ul_config_request_body.ul_config_pdu_list);
+        ul_config_req->ul_config_request_body.ul_config_pdu_list = NULL;
       }
 
-      if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus>0) {
-        //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
-        oai_nfapi_rx_ind(&UL_INFO->rx_ind);
+      free(ul_config_req);
+      ul_config_req = NULL;
+    }
 
-        for(uint8_t num_pdu = 0; num_pdu < UL_INFO->rx_ind.rx_indication_body.number_of_pdus; num_pdu++) {
-          free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[num_pdu].data);
-        }
-
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.31 \n");
-        UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
+    if (hi_dci0_req != NULL) {
+      if (hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list != NULL) {
+        free(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list);
+        hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list = NULL;
       }
 
-      if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
-        oai_nfapi_cqi_indication(&UL_INFO->cqi_ind);
-        UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
-      }
-
-      if(UL_INFO->harq_ind.harq_indication_body.number_of_harqs>0) {
-        //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-        oai_nfapi_harq_indication(&UL_INFO->harq_ind);
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.41 \n");
-        UL_INFO->harq_ind.harq_indication_body.number_of_harqs =0;
-      }
-
-      if(UL_INFO->sr_ind.sr_indication_body.number_of_srs>0) {
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.5, SFN/SF of PNF counter:%d.%d, number_of_srs: %d \n", timer_frame, timer_subframe, UL_INFO->sr_ind.sr_indication_body.number_of_srs);
-        oai_nfapi_sr_indication(&UL_INFO->sr_ind);
-        //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
-        UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-      }
-
-      // De-allocate memory of nfapi requests copies before next subframe round
-      if(dl_config_req!=NULL) {
-        if(dl_config_req->vendor_extension!=NULL) {
-          free(dl_config_req->vendor_extension);
-          dl_config_req->vendor_extension = NULL;
-        }
-
-        if(dl_config_req->dl_config_request_body.dl_config_pdu_list!=NULL) {
-          free(dl_config_req->dl_config_request_body.dl_config_pdu_list);
-          dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
-        }
-
-        free(dl_config_req);
-        dl_config_req = NULL;
-      }
-
-      if(tx_request_pdu_list!=NULL) {
-        for (int i = 0; i < tx_req_num_elems; i++) {
-          for (int j = 0; j < tx_request_pdu_list[i].num_segments; j++) {
-            free(tx_request_pdu_list[i].segments[j].segment_data);
-            tx_request_pdu_list[i].segments[j].segment_data = NULL;
-          }
-        }
-        tx_req_num_elems = 0;
-        free(tx_request_pdu_list);
-        tx_request_pdu_list = NULL;
-      }
-
-      if(ul_config_req!=NULL) {
-        if(ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL) {
-          free(ul_config_req->ul_config_request_body.ul_config_pdu_list);
-          ul_config_req->ul_config_request_body.ul_config_pdu_list = NULL;
-        }
-
-        free(ul_config_req);
-        ul_config_req = NULL;
-      }
-
-      if(hi_dci0_req!=NULL) {
-        if(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL) {
-          free(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list);
-          hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list = NULL;
-        }
-
-        free(hi_dci0_req);
-        hi_dci0_req = NULL;
-      }
+      free(hi_dci0_req);
+      hi_dci0_req = NULL;
+    }
+    if (!sent_any) {
+      // TODO: send_dummy
     }
   }
 
@@ -1457,7 +1348,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
   free(arg);
   return &UE_thread_rxtx_retval;
 }
-
 
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
@@ -1634,13 +1524,13 @@ void write_dummy(PHY_VARS_UE *UE,  openair0_timestamp timestamp) {
   //
   struct complex16 v= {0};
   void *samplesVoid[UE->frame_parms.nb_antennas_tx];
-  
+
   for ( int i=0; i < UE->frame_parms.nb_antennas_tx; i++)
     samplesVoid[i]=(void *)&v;
-  
+
   AssertFatal( 1 == UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+2*UE->frame_parms.samples_per_tti,
-						samplesVoid, 
+						samplesVoid,
 						1,
 						UE->frame_parms.nb_antennas_tx,
 						1),"");
@@ -1694,7 +1584,7 @@ void *UE_thread(void *arg)
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
-    
+
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
@@ -1704,7 +1594,7 @@ void *UE_thread(void *arg)
 	    for(int sf=0; sf<10; sf++) {
 	      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 		rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
-	      
+
               AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
 						      &timestamp,
 						      rxp,
@@ -1715,7 +1605,7 @@ void *UE_thread(void *arg)
 	  } else {
 	    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 	      rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
-	    
+
 	    AssertFatal( UE->frame_parms.samples_per_tti*10 ==
                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                     &timestamp,

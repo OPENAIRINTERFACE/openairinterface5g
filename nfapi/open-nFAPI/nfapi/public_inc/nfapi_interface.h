@@ -2723,7 +2723,7 @@ typedef struct {
 } nfapi_preamble_pdu_rel13_t;
 #define NFAPI_PREAMBLE_REL13_TAG 0x2051
 
-typedef struct { 
+typedef struct {
 	uint16_t					instance_length;
 	nfapi_preamble_pdu_rel8_t	preamble_rel8;
 	nfapi_preamble_pdu_rel9_t	preamble_rel9;
@@ -2734,7 +2734,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t number_of_preambles;
-	nfapi_preamble_pdu_t*			preamble_list;
+	nfapi_preamble_pdu_t* preamble_list;
 } nfapi_rach_indication_body_t;
 #define NFAPI_RACH_INDICATION_BODY_TAG 0x2031
 
@@ -2749,13 +2749,13 @@ typedef struct {
 } nfapi_srs_indication_fdd_rel8_t;
 #define NFAPI_SRS_INDICATION_FDD_REL8_TAG 0x2035
 
-typedef struct { 
+typedef struct {
 	nfapi_tl_t tl;
 	uint16_t timing_advance_r9;
 } nfapi_srs_indication_fdd_rel9_t;
 #define NFAPI_SRS_INDICATION_FDD_REL9_TAG 0x2036
 
-typedef struct { 
+typedef struct {
 	nfapi_tl_t tl;
 	uint8_t uppts_symbol;
 } nfapi_srs_indication_ttd_rel10_t;
