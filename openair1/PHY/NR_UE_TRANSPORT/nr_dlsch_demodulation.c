@@ -30,6 +30,7 @@
  */
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nr_transport_proto_ue.h"
 //#include "SCHED/defs.h"
 //#include "PHY/defs.h"
@@ -131,7 +132,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   unsigned short nb_rb = 0, round;
   int avgs = 0;// rb;
-  NR_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
+  NR_DL_UE_HARQ_t *dlsch0_harq, *dlsch1_harq = NULL;
 
   uint8_t beamforming_mode;
 
@@ -156,82 +157,87 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   int32_t median[16];
   uint32_t len;
 
-
   switch (type) {
   case SI_PDSCH:
     pdsch_vars = ue->pdsch_vars_SI;
     dlsch = &ue->dlsch_SI[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-    beamforming_mode  = 0;
+    beamforming_mode = 0;
     break;
 
   case RA_PDSCH:
     pdsch_vars = ue->pdsch_vars_ra;
     dlsch = &ue->dlsch_ra[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-    beamforming_mode  = 0;
+    beamforming_mode = 0;
+
     break;
 
   case PDSCH:
     pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
-    dlsch[0]->harq_processes[harq_pid]->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
-    dlsch[0]->harq_processes[harq_pid]->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
-    
+    beamforming_mode = ue->transmission_mode[eNB_id] < 7 ? 0 :ue->transmission_mode[eNB_id];
+
+    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+    dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
+
     //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
-    LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
-	  frame,nr_tti_rx,symbol,harq_pid,
-	  dlsch[0]->harq_processes[harq_pid]->status,
-	  dlsch[1]->harq_processes[harq_pid]->status);
-    
-    if ((dlsch[0]->harq_processes[harq_pid]->status == ACTIVE) &&
-        (dlsch[1]->harq_processes[harq_pid]->status == ACTIVE)){
-      codeword_TB0 = dlsch[0]->harq_processes[harq_pid]->codeword;
-      codeword_TB1 = dlsch[1]->harq_processes[harq_pid]->codeword;
+    LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
+
+    if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status == ACTIVE)){
+      codeword_TB0 = dlsch0_harq->codeword;
+      codeword_TB1 = dlsch1_harq->codeword;
       dlsch0_harq = dlsch[codeword_TB0]->harq_processes[harq_pid];
       dlsch1_harq = dlsch[codeword_TB1]->harq_processes[harq_pid];
-#ifdef DEBUG_HARQ
-      printf("[DEMOD] I am assuming both TBs are active\n");
-#endif
-    }
-    else if ((dlsch[0]->harq_processes[harq_pid]->status == ACTIVE) &&
-	     (dlsch[1]->harq_processes[harq_pid]->status != ACTIVE) ) {
-      codeword_TB0 = dlsch[0]->harq_processes[harq_pid]->codeword;
+
+      #ifdef DEBUG_HARQ
+        printf("[DEMOD] I am assuming both TBs are active\n");
+      #endif
+
+    } else if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status != ACTIVE) ) {
+      codeword_TB0 = dlsch0_harq->codeword;
+      codeword_TB1 = -1;
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
       dlsch1_harq = NULL;
-      codeword_TB1 = -1;
-#ifdef DEBUG_HARQ
-      printf("[DEMOD] I am assuming only TB0 is active\n");
-#endif
-    }
-    else if ((dlsch[0]->harq_processes[harq_pid]->status != ACTIVE) &&
-	     (dlsch[1]->harq_processes[harq_pid]->status == ACTIVE) ){
-      codeword_TB1 = dlsch[1]->harq_processes[harq_pid]->codeword;
-      dlsch0_harq  = dlsch[1]->harq_processes[harq_pid];
-      dlsch1_harq  = NULL;
+
+      #ifdef DEBUG_HARQ
+        printf("[DEMOD] I am assuming only TB0 is active\n");
+      #endif
+
+    } else if ((dlsch0_harq->status != ACTIVE) && (dlsch1_harq->status == ACTIVE)){
       codeword_TB0 = -1;
-#ifdef DEBUG_HARQ
-      printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", dlsch0_harq->codeword);
-#endif
-    }
-    else {
-      LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n",nr_tti_rx);
+      codeword_TB1 = dlsch1_harq->codeword;
+      dlsch0_harq  = NULL;
+      dlsch1_harq  = dlsch[1]->harq_processes[codeword_TB1];
+
+      #ifdef DEBUG_HARQ
+        printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", dlsch0_harq->codeword);
+      #endif
+
+      AssertFatal(1 == 0, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
+
+    } else {
+      LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
       return(-1);
     }
-    beamforming_mode  = ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id];
-    break;
-    
-  default:
-    AssertFatal(1==0,"[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n",nr_tti_rx,type);
-    return(-1);
-    break;
+
+      break;
+
+    default:
+      AssertFatal(1 == 0, "[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n", nr_tti_rx, type);
+      return(-1);
+      break;
+
   }
 
-#ifdef DEBUG_HARQ
-  printf("[DEMOD] MIMO mode = %d\n", dlsch0_harq->mimo_mode);
-  printf("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
-#endif
-  
+  dlsch0_harq->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
+  dlsch0_harq->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
+
+  #ifdef DEBUG_HARQ
+    printf("[DEMOD] MIMO mode = %d\n", dlsch0_harq->mimo_mode);
+    printf("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
+  #endif
+
   start_rb = dlsch0_harq->start_rb;
   nb_rb_pdsch =  dlsch0_harq->nb_rb;
 
@@ -268,7 +274,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     LOG_E(PHY,"This transmission mode is not yet supported!\n");
     return(-1);
   }
-
 
   if (dlsch0_harq->mimo_mode==NR_DUALSTREAM)  {
     DevAssert(dlsch1_harq);
@@ -964,45 +969,46 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
     break;
   }
+
   if (dlsch1_harq) {
-  switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
-  case 2 :
-    if (rx_type==rx_standard) {
-        nr_dlsch_qpsk_llr(frame_parms,
-                       pdsch_vars[eNB_id]->rxdataF_comp0,
-                       pllr_symbol_cw0,
-                       symbol,len,first_symbol_flag,nb_rb,
-                       beamforming_mode);
+    switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
+      case 2 :
+        if (rx_type==rx_standard) {
+            nr_dlsch_qpsk_llr(frame_parms,
+                              pdsch_vars[eNB_id]->rxdataF_comp0,
+                              pllr_symbol_cw0,
+                              symbol,len,first_symbol_flag,nb_rb,
+                              beamforming_mode);
+        }
+        break;
+      case 4:
+        if (rx_type==rx_standard) {
+          nr_dlsch_16qam_llr(frame_parms,
+                             pdsch_vars[eNB_id]->rxdataF_comp0,
+                             pdsch_vars[eNB_id]->llr[0],
+                             pdsch_vars[eNB_id]->dl_ch_mag0,
+                             symbol,len,first_symbol_flag,nb_rb,
+                             pdsch_vars[eNB_id]->llr128,
+                             beamforming_mode);
+        }
+        break;
+      case 6 :
+        if (rx_type==rx_standard) {
+          nr_dlsch_64qam_llr(frame_parms,
+                             pdsch_vars[eNB_id]->rxdataF_comp0,
+                             pllr_symbol_cw0,
+                             pdsch_vars[eNB_id]->dl_ch_mag0,
+                             pdsch_vars[eNB_id]->dl_ch_magb0,
+                             symbol,len,first_symbol_flag,nb_rb,
+                             pdsch_vars[eNB_id]->llr_offset[symbol],
+                             beamforming_mode);
+        }
+        break;
+      default:
+        LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
+        return(-1);
+        break;
     }
-    break;
-  case 4:
-    if (rx_type==rx_standard) {
-      nr_dlsch_16qam_llr(frame_parms,
-                      pdsch_vars[eNB_id]->rxdataF_comp0,
-                      pdsch_vars[eNB_id]->llr[0],
-                      pdsch_vars[eNB_id]->dl_ch_mag0,
-                      symbol,len,first_symbol_flag,nb_rb,
-                      pdsch_vars[eNB_id]->llr128,
-                      beamforming_mode);
-    }
-    break;
-  case 6 :
-    if (rx_type==rx_standard) {
-      nr_dlsch_64qam_llr(frame_parms,
-                      pdsch_vars[eNB_id]->rxdataF_comp0,
-                      pllr_symbol_cw0,
-                      pdsch_vars[eNB_id]->dl_ch_mag0,
-                      pdsch_vars[eNB_id]->dl_ch_magb0,
-                      symbol,len,first_symbol_flag,nb_rb,
-                      pdsch_vars[eNB_id]->llr_offset[symbol],
-                      beamforming_mode);
-  }
-    break;
-  default:
-    LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
-    return(-1);
-    break;
-  }
   }  
 
   //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);

@@ -23,7 +23,6 @@
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
@@ -382,7 +381,6 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
@@ -428,7 +426,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     NR_UL_gNB_HARQ_t *ulsch_harq;
 
     if ((ulsch) &&
-	(ulsch->rnti > 0)) {
+        (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
 	ulsch_harq = ulsch->harq_processes[harq_pid];

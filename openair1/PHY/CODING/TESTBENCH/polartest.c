@@ -12,7 +12,6 @@
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-//#include "PHY/NR_TRANSPORT/nr_transport.h"
 //#include "common/utils/LOG/log.h"
 
 //#define DEBUG_DCI_POLAR_PARAMS

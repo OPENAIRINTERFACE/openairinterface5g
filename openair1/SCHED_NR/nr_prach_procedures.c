@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nfapi_nr_interface_scf.h"
 #include "fapi_nr_l1.h"
 #include "nfapi_pnf.h"
@@ -76,7 +76,6 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
       gNB->prach_vars.rxsigF[aa] = gNB->RU_list[i]->prach_rxsigF[ru_aa];
     }
   }
-
 
   rx_nr_prach(gNB,
 	      prach_pdu,

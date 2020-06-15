@@ -252,7 +252,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 int configure_fapi_dl_pdu(int Mod_idP,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
-			  NR_sched_pucch *pucch_sched,
+                          NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
                           uint16_t *rbSize,
                           uint16_t *rbStart) {
@@ -438,7 +438,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 
   fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,bwp_id);
 
-  LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
+  LOG_D(MAC, "DCI params: rnti %x, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
 	pdcch_pdu_rel15->dci_pdu.RNTI[0],
 	rnti_types[0],
@@ -573,7 +573,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
-				    pucch_sched, 
+                                    pucch_sched,
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);

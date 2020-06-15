@@ -188,6 +188,8 @@ typedef struct {
   /* Random Access parameters */
   /// state of RA procedure
   RA_state_t ra_state;
+  /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
+  uint8_t RA_offset;
   /// RA-rnti
   uint16_t ra_rnti;
   /// Temporary CRNTI
@@ -220,6 +222,10 @@ typedef struct {
   uint32_t RA_tx_frame;
   /// Random-access variable for window calculation (subframe of last change in window counter)
   uint8_t RA_tx_subframe;
+  /// Scheduled RX frame for RA Msg2
+  uint16_t msg2_rx_frame;
+  /// Scheduled RX slot for RA Msg2
+  uint16_t msg2_rx_slot;
   /// Random-access Group B maximum path-loss
   /// Random-access variable for backoff (frame of last change in backoff counter)
   uint32_t RA_backoff_frame;
@@ -239,6 +245,8 @@ typedef struct {
   uint8_t RA_RAPID_found;
   /// Flag to monitor if BI was received in RAR
   uint8_t RA_BI_found;
+  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
+  uint8_t generate_nr_prach;
 
   ////	FAPI-like interface message
   fapi_nr_tx_request_t tx_request;
