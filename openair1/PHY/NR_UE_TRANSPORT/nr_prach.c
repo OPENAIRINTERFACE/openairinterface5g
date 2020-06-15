@@ -38,8 +38,10 @@
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
 #include "T.h"
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
 
 

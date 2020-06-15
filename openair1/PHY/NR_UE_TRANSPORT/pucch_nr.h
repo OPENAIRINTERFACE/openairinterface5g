@@ -29,6 +29,9 @@
 * \note
 * \warning
 */
+#ifndef __PUCCH_NR__H__
+#define __PUCCH_NR__H__
+
 //#include "PHY/defs.h"
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_common.h"
@@ -417,3 +420,4 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                                          73, 79, 83, 89, 97, 101,103,107,109,113,
                                          127,131,137,139,149,151,157,163,167,173,
                                          179,181,191,193,197,199};
+#endif

@@ -62,6 +62,9 @@ class EPCManagement():
 		self.Type = ''
 		self.PcapFileName = ''
 		self.htmlObj = None
+		self.testCase_id = ''
+		self.MmeIPAddress = ''
+		self.containerPrefix = 'prod'
 
 #-----------------------------------------------------------
 # Setter and Getters on Public Members
@@ -89,6 +92,12 @@ class EPCManagement():
 		return self.Type
 	def SetHtmlObj(self, obj):
 		self.htmlObj = obj
+	def SetTestCase_id(self, idx):
+		self.testCase_id = idx
+	def GetMmeIPAddress(self):
+		return self.MmeIPAddress
+	def SetContainerPrefix(self, prefix):
+		self.containerPrefix = prefix
 
 #-----------------------------------------------------------
 # EPC management functions
@@ -101,7 +110,14 @@ class EPCManagement():
 			sys.exit('Insufficient EPC Parameters')
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS in Docker')
+			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
+			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-hss /bin/bash -c "nohup tshark -i eth0 -i eth1 -w /tmp/hss_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			time.sleep(5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-hss /bin/bash -c "nohup ./bin/oai_hss -j ./etc/hss_rel14.json --reloadkey true > hss_check_run.log 2>&1"', '\$', 5)
+		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 Cassandra-based HSS')
 			mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 			logging.debug('\u001B[1m Launching tshark on all interfaces \u001B[0m')
@@ -139,7 +155,12 @@ class EPCManagement():
 			sys.exit('Insufficient EPC Parameters')
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			logging.debug('Using the OAI EPC Release 14 MME in Docker')
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			time.sleep(5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup ./bin/oai_mme -c ./etc/mme.conf > mme_check_run.log 2>&1"', '\$', 5)
+		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 MME')
 			mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f mme_' + self.testCase_id + '.log', '\$', 5)
@@ -166,6 +187,25 @@ class EPCManagement():
 		if self.htmlObj is not None:
 			self.htmlObj.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 
+	def SetMmeIPAddress(self):
+		# Not an error if we don't need an EPC
+		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
+			return
+		if self.IPAddress == 'none':
+			return
+		# Only in case of Docker containers, MME IP address is not the EPC HOST IP address
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH = SSH.SSHConnection() 
+			mySSH.open(self.IPAddress, self.UserName, self.Password)
+			mySSH.command('docker inspect --format="MME_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ' + self.containerPrefix + '-oai-mme', '\$', 5)
+			result = re.search('MME_IP_ADDR = (?P<mme_ip_addr>[0-9\.]+)', mySSH.getBefore())
+			if result is not None:
+				self.MmeIPAddress = result.group('mme_ip_addr')
+				logging.debug('MME IP Address is ' + self.MmeIPAddress)
+			mySSH.close()
+		else:
+			self.MmeIPAddress = self.IPAddress
+
 	def InitializeSPGW(self):
 		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
 			HELP.GenericHelp(CONST.Version)
@@ -173,7 +213,15 @@ class EPCManagement():
 			sys.exit('Insufficient EPC Parameters')
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS in Docker')
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			time.sleep(5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup ./bin/oai_spgwc -o -c ./etc/spgw_c.conf > spgwc_check_run.log 2>&1"', '\$', 5)
+			time.sleep(5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "nohup ./bin/oai_spgwu -o -c ./etc/spgw_u.conf > spgwu_check_run.log 2>&1"', '\$', 5)
+		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS')
 			mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f spgwc_' + self.testCase_id + '.log spgwu_' + self.testCase_id + '.log', '\$', 5)
@@ -202,8 +250,11 @@ class EPCManagement():
 		try:
 			mySSH = SSH.SSHConnection() 
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
-			mySSH.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
-			if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-hss /bin/bash -c "ps aux | grep oai_hss"', '\$', 5)
+			else:
+				mySSH.command('stdbuf -o0 ps -aux | grep --color=never hss | grep -v grep', '\$', 5)
+			if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
 				result = re.search('oai_hss -j', mySSH.getBefore())
 			elif re.match('OAI', self.Type, re.IGNORECASE):
 				result = re.search('\/bin\/bash .\/run_', mySSH.getBefore())
@@ -224,8 +275,13 @@ class EPCManagement():
 		try:
 			mySSH = SSH.SSHConnection() 
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
-			mySSH.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
-			if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-mme /bin/bash -c "ps aux | grep oai_mme"', '\$', 5)
+			else:
+				mySSH.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
+			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+				result = re.search('oai_mme -c ', mySSH.getBefore())
+			elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 				result = re.search('mme -c', mySSH.getBefore())
 			elif re.match('OAI', self.Type, re.IGNORECASE):
 				result = re.search('\/bin\/bash .\/run_', mySSH.getBefore())
@@ -246,7 +302,13 @@ class EPCManagement():
 		try:
 			mySSH = SSH.SSHConnection() 
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
-			if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "ps aux | grep oai_spgwc"', '\$', 5)
+				result = re.search('oai_spgwc -o -c ', mySSH.getBefore())
+				if result is not None:
+					mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "ps aux | grep oai_spgwu"', '\$', 5)
+					result = re.search('oai_spgwu -o -c ', mySSH.getBefore())
+			elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 				mySSH.command('stdbuf -o0 ps -aux | grep --color=never spgw | grep -v grep', '\$', 5)
 				result = re.search('spgwu -c ', mySSH.getBefore())
 			elif re.match('OAI', self.Type, re.IGNORECASE):
@@ -269,7 +331,14 @@ class EPCManagement():
 	def TerminateHSS(self):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-hss /bin/bash -c "killall --signal SIGINT oai_hss tshark"', '\$', 5)
+			time.sleep(2)
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-hss /bin/bash -c "ps aux | grep oai_hss"', '\$', 5)
+			result = re.search('oai_hss -j ', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-hss /bin/bash -c "killall --signal SIGKILL oai_hss"', '\$', 5)
+		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGINT oai_hss || true', '\$', 5)
 			time.sleep(2)
 			mySSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
@@ -298,7 +367,14 @@ class EPCManagement():
 	def TerminateMME(self):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		if re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-mme /bin/bash -c "killall --signal SIGINT oai_mme tshark"', '\$', 5)
+			time.sleep(2)
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-mme /bin/bash -c "ps aux | grep oai_mme"', '\$', 5)
+			result = re.search('oai_mme -c ', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-mme /bin/bash -c "killall --signal SIGKILL oai_mme"', '\$', 5)
+		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGINT run_mme mme || true', '\$', 5)
 			time.sleep(2)
 			mySSH.command('stdbuf -o0 ps -aux | grep mme | grep -v grep', '\$', 5)
@@ -318,7 +394,19 @@ class EPCManagement():
 	def TerminateSPGW(self):
 		mySSH = SSH.SSHConnection() 
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "killall --signal SIGINT oai_spgwc tshark"', '\$', 5)
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "killall --signal SIGINT oai_spgwu tshark"', '\$', 5)
+			time.sleep(2)
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "ps aux | grep oai_spgwc"', '\$', 5)
+			result = re.search('oai_spgwc -o -c ', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "killall --signal SIGKILL oai_spgwc"', '\$', 5)
+			mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "ps aux | grep oai_spgwu"', '\$', 5)
+			result = re.search('oai_spgwu -o -c ', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('docker exec -it ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "killall --signal SIGKILL oai_spgwu"', '\$', 5)
+		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGINT spgwc spgwu || true', '\$', 5)
 			time.sleep(2)
 			mySSH.command('stdbuf -o0 ps -aux | grep spgw | grep -v grep', '\$', 5)
@@ -352,7 +440,11 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.command('rm -f hss.log.zip', '\$', 5)
-		if re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/openair-hss/hss_check_run.log .', '\$', 60)
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/tmp/hss_check_run.pcap .', '\$', 60)
+			mySSH.command('zip hss.log.zip hss_check_run.*', '\$', 60)
+		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip hss.log.zip hss*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm hss*.log', '\$', 5)
 			if re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
@@ -370,7 +462,11 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.command('rm -f mme.log.zip', '\$', 5)
-		if re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/openair-mme/mme_check_run.log .', '\$', 60)
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/tmp/mme_check_run.pcap .', '\$', 60)
+			mySSH.command('zip mme.log.zip mme_check_run.*', '\$', 60)
+		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip mme.log.zip mme*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm mme*.log', '\$', 5)
 		elif re.match('ltebox', self.Type, re.IGNORECASE):
@@ -385,7 +481,13 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.command('rm -f spgw.log.zip', '\$', 5)
-		if re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
+		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/openair-spgwc/spgwc_check_run.log .', '\$', 60)
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/openair-spgwu-tiny/spgwu_check_run.log .', '\$', 60)
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/tmp/spgwc_check_run.pcap .', '\$', 60)
+			mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap .', '\$', 60)
+			mySSH.command('zip spgw.log.zip spgw*_check_run.*', '\$', 60)
+		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip spgw.log.zip spgw*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm spgw*.log', '\$', 5)
 		elif re.match('ltebox', self.Type, re.IGNORECASE):

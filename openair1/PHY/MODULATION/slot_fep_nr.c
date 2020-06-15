@@ -25,6 +25,7 @@
 #include "nr_modulation.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
+#include <common/utils/LOG/log.h>
 
 //#define DEBUG_FEP
 
@@ -338,7 +339,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 #endif
 
 
-        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][rx_offset],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
@@ -362,7 +363,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
         dft(dftsize,(int16_t *)tmp_dft_in,
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
-        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
+        dft(dftsize,(int16_t *) &common_vars->rxdata[aa][rx_offset],
             (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
 #if UE_TIMING_TRACE

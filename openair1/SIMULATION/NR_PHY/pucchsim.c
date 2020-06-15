@@ -467,7 +467,7 @@ int main(int argc, char **argv)
       mcs=table1_mcs[actual_payload];
     else if(nr_bit==2)
       mcs=table2_mcs[actual_payload];
-    else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n");
+    else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n", nr_bit, sr_flag);
   }
   else if (format == 2 && nr_bit > 11) gNB->uci_polarParams = nr_polar_params(2, nr_bit, nrofPRB, 1, NULL);
   
@@ -501,7 +501,7 @@ int main(int argc, char **argv)
       }
       int rxlev = signal_energy(&rxdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
 				frame_parms->ofdm_symbol_size);
-      //      printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
+      if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
 	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
 	nfapi_nr_pucch_pdu_t pucch_pdu;

@@ -26,8 +26,8 @@
  * \version 0.1
  */
 
-#ifndef M2AP_ENB_GENERATE_MESSAGES_H_
-#define M2AP_ENB_GENERATE_MESSAGES_H_
+#ifndef __M3AP_MCE_GENERATE_MESSAGES__H__
+#define __M3AP_MCE_GENERATE_MESSAGES__H__
 
 #include "m2ap_eNB_defs.h"
 #include "m2ap_common.h"
@@ -37,27 +37,8 @@ int m2ap_eNB_generate_m2_setup_request(m2ap_eNB_instance_t *instance_p,
 
 int m2ap_MCE_generate_m2_setup_response(m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t *m2ap_eNB_data_p);
 
-/*int m2ap_MCE_generate_m2_setup_failure(instance_t instance,
-                                       uint32_t assoc_id,
-                                       M2AP_Cause_PR cause_type,
-                                       long cause_value,
-                                       long time_to_wait);*/
-
 int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
                         M2AP_Cause_PR cause_type,
                         long cause_value);
 
-//int m2ap_eNB_generate_m2_handover_request (m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t *m2ap_eNB_data_p,
-//                                           m2ap_handover_req_t *m2ap_handover_req, int ue_id);
-//
-//int m2ap_eNB_generate_m2_handover_request_ack (m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t *m2ap_eNB_data_p,
-//                                               m2ap_handover_req_ack_t *m2ap_handover_req_ack);
-//
-//int m2ap_eNB_generate_m2_ue_context_release (m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t *m2ap_eNB_data_p,
-//                                             m2ap_ue_context_release_t *m2ap_ue_context_release);
-//
-//int m2ap_eNB_generate_m2_handover_cancel (m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t *m2ap_eNB_data_p,
-//                                          int m2_ue_id,
-//                                          m2ap_handover_cancel_cause_t cause);
-
-#endif /*  M2AP_ENB_GENERATE_MESSAGES_H_ */
+#endif /*  __M3AP_MCE_GENERATE_MESSAGES__H__ */

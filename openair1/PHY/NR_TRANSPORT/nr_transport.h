@@ -123,6 +123,14 @@ void rx_nr_prach_ru(RU_t *ru,
 		    int frame,
 		    int subframe);
 
+void compute_nr_prach_seq(uint16_t rootSequenceIndex,
+			  uint8_t prach_ConfigIndex,
+			  uint8_t zeroCorrelationZoneConfig,
+			  uint8_t highSpeedFlag,
+			  lte_frame_type_t frame_type,
+			  nr_frequency_range_e fr,
+			  uint32_t X_u[64][839]);
+
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
                       uint32_t n_id,       // hoppingID higher layer parameter
@@ -142,6 +150,5 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 		      int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
-
 
 #endif /*__NR_TRANSPORT__H__*/

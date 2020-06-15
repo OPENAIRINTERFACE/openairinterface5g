@@ -150,7 +150,9 @@ clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
- rm -rf $dir/ran_build $dir/lte-simulators/build
+ rm -rf $dir/ran_build $dir/ran_build_noLOG
+ rm -rf $dir/lte-simulators/build 
+ rm -rf $dir/phy_simulators/build $dir/nas_sim_tools/build 
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
@@ -167,7 +169,7 @@ check_warnings() {
   #we look for 'warning:' in the compilation log file
   #this is how gcc starts a warning
   #this is not perfect, we may get false positive
-  warning_count=`grep "warning:" "$1"|wc -l`
+  warning_count=`grep "warning:" "$1" | egrep -v "jobserver unavailable|disabling jobserver mode" | wc -l`
   if [ $warning_count -gt 0 ]; then
     echo_error "WARNING: $warning_count warnings. See $1"
   fi
@@ -177,16 +179,19 @@ compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   set +e
   {
-    rm -f $3
     if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
         COV_SCAN_PREFIX="cov-build --dir cov-int"
     else
         COV_SCAN_PREFIX=""
     fi
+    if [ "$MAKE_CMD" != "" ]; then
+       $MAKE_CMD $2
+    else 
     if [ "$VERBOSE_COMPILE" == "1" ]; then
        $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
     else
        $COV_SCAN_PREFIX make -j`nproc` $2
+    fi
     fi
 
   } > $dlog/$2.$REL.txt 2>&1
@@ -619,6 +624,7 @@ check_install_oai_software() {
 	build-essential \
 	cmake \
 	cmake-curses-gui  \
+        ninja-build \
 	doxygen \
 	doxygen-gui \
 	texlive-latex-base \

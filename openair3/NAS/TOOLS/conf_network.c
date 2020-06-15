@@ -43,7 +43,7 @@ void gen_network_record_from_conf(const plmn_conf_param_t *conf, network_record_
 		strcpy(record->fullname, conf->fullname);
 		strcpy(record->shortname, conf->shortname);
 
-		char num[6];
+		char num[60];
 		sprintf(num, "%s%s", conf->mcc, conf->mnc);
 		record->num = atoi(num);
 

@@ -551,7 +551,7 @@ void polar_encoder_fast(uint64_t *A,
              crc24c((uint8_t *)A,bitlen)>>8);
   }
 
-#endif
+ #endif
   /*  printf("Bbytes : %x.%x.%x.%x.%x.%x.%x.%x\n",Bbyte[0],Bbyte[1],Bbyte[2],Bbyte[3],Bbyte[4],Bbyte[5],Bbyte[6],Bbyte[7]);
   printf("%llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",polarParams->cprime_tab[0][Bbyte[0]] ,
       polarParams->cprime_tab[1][Bbyte[1]] ,

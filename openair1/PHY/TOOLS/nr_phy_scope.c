@@ -157,9 +157,9 @@ void phy_scope_gNB(FD_phy_scope_gnb *form,
 {
   int i, arx; //int i,i2,arx,atx,ind,k;
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_gnb->frame_parms;
-  int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
+  //int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
+  //uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
   int16_t **rxsig_t, **rxsig_f;
   // int16_t **chest_t=NULL;
   // int16_t **chest_f=NULL;
@@ -911,19 +911,18 @@ void reset_stats_gNB(FL_OBJECT *button,
 
 
 static void *scope_thread_gNB(void *arg) {
-  int UE_id;
-  int ue_cnt=0;
+  scopeParms_t * p=(scopeParms_t *) arg;	
 //# ifdef ENABLE_XFORMS_WRITE_STATS
 //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
 //#endif
 
   while (!oai_exit) {
-    ue_cnt=0;
+    int ue_cnt=0;
     
-    for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    for(int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
         if ((ue_cnt<scope_enb_num_ue)) {
           //this function needs to be written
-          phy_scope_gNB(form_gnb[ue_cnt], RC.gNB[0], RC.ru[0], UE_id);
+          phy_scope_gNB(form_gnb[ue_cnt], p->gNB, p->ru, UE_id);
           ue_cnt++;
         }
     }
@@ -966,7 +965,7 @@ FD_stats_form * create_form_stats_form( void ) {
 }
 
 void startScope(scopeParms_t * p) {
-  FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
+  //FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
   char title[255];
   fl_initialize (p->argc, p->argv, NULL, 0, 0);
   /*
@@ -983,5 +982,5 @@ void startScope(scopeParms_t * p) {
   } // UE_id
 
   pthread_t forms_thread;
-  threadCreate(&forms_thread, scope_thread_gNB, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&forms_thread, scope_thread_gNB, p, "scope", -1, OAI_PRIORITY_RT_LOW);
 }

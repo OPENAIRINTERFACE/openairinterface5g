@@ -148,11 +148,7 @@ static inline void* malloc16_clear( size_t size )
 #define NB_BANDS_MAX_NB_IoT 8
 
 
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {normal_txrx_NB_IoT=0,rx_calib_ue_NB_IoT=1,rx_calib_ue_med_NB_IoT=2,rx_calib_ue_byp_NB_IoT=3,debug_prach_NB_IoT=4,no_L2_connect_NB_IoT=5,calib_prach_tx_NB_IoT=6,rx_dump_frame_NB_IoT=7,loop_through_memory_NB_IoT=8} runmode_NB_IoT_t;
-#endif
 /*
 enum transmission_access_mode {
   NO_ACCESS=0,
