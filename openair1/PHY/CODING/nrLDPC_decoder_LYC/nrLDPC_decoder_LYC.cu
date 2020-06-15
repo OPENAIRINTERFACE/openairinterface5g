@@ -12,8 +12,8 @@
 #include <unistd.h>
 #include <cuda_runtime.h>
 #include <cuda.h>
-#include "PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_types.h"
-#include "PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_defs.h"
+#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+#include "PHY/CODING/nrLDPC_decoder/nrLDPCdecoder_defs.h"
 
 #include "bgs/BG1_I0"
 #include "bgs/BG1_I1"
