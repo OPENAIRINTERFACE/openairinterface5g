@@ -654,11 +654,11 @@ static void add_drb_am(int rnti, struct LTE_DRB_ToAddMod *s)
     exit(1);
   }
 
-  /*if (channel_id != drb_id + 2) {
+  if (channel_id != drb_id + 3) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
-  }*/
+  }
 
   logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
 
@@ -737,11 +737,11 @@ static void add_drb_um(int rnti, struct LTE_DRB_ToAddMod *s)
     exit(1);
   }
 
-  /*if (channel_id != drb_id + 2) {
+  if (channel_id != drb_id + 3) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
-  }*/
+  }
 
   logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
 
