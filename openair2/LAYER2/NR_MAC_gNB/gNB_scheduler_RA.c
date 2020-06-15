@@ -590,7 +590,11 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     LOG_D(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
 
-    mcsIndex = 0; // Qm>2 not allowed for RAR
+    // Qm>2 not allowed for RAR
+    if (get_softmodem_params()->do_ra)
+      mcsIndex = 9;
+    else
+      mcsIndex = 0;
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = RA_rnti;
