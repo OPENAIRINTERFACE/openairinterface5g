@@ -2312,7 +2312,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
   AssertFatal(mac->ULbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
 
-  const uint16_t n_RB_DLBWP = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
+  const uint16_t n_RB_DLBWP = (mac->ra_state == WAIT_RAR) ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275) : NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
   const uint16_t n_RB_ULBWP = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   LOG_D(MAC,"nr_ue_process_dci at MAC layer with dci_format=%d (DL BWP %d, UL BWP %d)\n",dci_format,n_RB_DLBWP,n_RB_ULBWP);
@@ -2767,7 +2767,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* HARQ_PROCESS_NUMBER (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
     dlsch_config_pdu_1_0->harq_process_nbr = dci->harq_process_number;
     /* DAI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
-    dlsch_config_pdu_1_0->dai = dci ->dai;
+    dlsch_config_pdu_1_0->dai = dci->dai;
     /* TB_SCALING (only if CRC scrambled by P-RNTI or RA-RNTI) */
     // according to TS 38.214 Table 5.1.3.2-3
     if (dci->tb_scaling == 0) dlsch_config_pdu_1_0->scaling_factor_S = 1;
@@ -3129,6 +3129,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_DL_DCI_FORMAT_1_0:
     switch(rnti_type) {
     case NR_RNTI_RA:
+      N_RB = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275); // TBR hotfix
       // Freq domain assignment
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos=fsize;

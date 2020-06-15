@@ -150,7 +150,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   if (N_RB != 273) {
     a_segments = a_segments*N_RB;
-    a_segments = a_segments/273;
+    a_segments = (a_segments + 272) / 273;
   }  
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment

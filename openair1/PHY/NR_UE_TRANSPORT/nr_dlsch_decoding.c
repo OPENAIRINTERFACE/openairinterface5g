@@ -406,7 +406,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = (a_segments + 272) / 273;
   }  
 
   if (harq_process->C > a_segments) {
