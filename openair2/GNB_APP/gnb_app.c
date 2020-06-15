@@ -131,7 +131,6 @@ void *gNB_app_task(void *args_p)
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
-  uint32_t                        x2_register_gnb_pending = 0;
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
   const char                      *msg_name        = NULL;

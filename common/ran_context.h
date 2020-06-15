@@ -113,11 +113,11 @@ typedef struct {
   // LTS: not coherent (xxx_frame_parms cardinatlity wtih xNB (so one carrier))
   struct RU_t_s **ru;
   /// Mask to indicate fronthaul setup status of RU (hard-limit to 64 RUs)
-  //uint64_t ru_mask;
+  uint64_t ru_mask;
   /// Mutex for protecting ru_mask
-  //pthread_mutex_t ru_mutex;
+  pthread_mutex_t ru_mutex;
   /// condition variable for signaling setup completion of an RU
-  //pthread_cond_t ru_cond;
+  pthread_cond_t ru_cond;
 } RAN_CONTEXT_t;
 
 

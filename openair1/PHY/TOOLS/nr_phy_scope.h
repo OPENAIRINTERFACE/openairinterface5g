@@ -35,37 +35,6 @@
 //#include "PHY/impl_defs_top.h"
 #include "PHY/defs_nr_UE.h"
 
-/* Forms and Objects */
-typedef struct {
-  FL_FORM   * phy_scope_gnb;
-  FL_OBJECT * rxsig_t;
-  FL_OBJECT * chest_f;
-  FL_OBJECT * chest_t;
-  FL_OBJECT * pusch_comp;
-  FL_OBJECT * pucch_comp;
-  FL_OBJECT * pucch_comp1;
-  FL_OBJECT * pusch_llr;
-  FL_OBJECT * pusch_tput;
-  FL_OBJECT * button_0;
-} FD_phy_scope_gnb;
-
-typedef struct {
-    FL_FORM   * phy_scope_nrue;
-    FL_OBJECT * rxsig_t;
-    FL_OBJECT * chest_f;
-    FL_OBJECT * chest_t;
-    FL_OBJECT * pbch_comp;
-    FL_OBJECT * pbch_llr;
-    FL_OBJECT * pdcch_comp;
-    FL_OBJECT * pdcch_llr;
-    FL_OBJECT * pdsch_comp;
-    FL_OBJECT * pdsch_llr;
-    FL_OBJECT * pdsch_comp1;
-    FL_OBJECT * pdsch_llr1;
-    FL_OBJECT * pdsch_tput;
-    FL_OBJECT * button_0;
-} FD_phy_scope_nrue;
-
 typedef struct {
   int *argc;
   char **argv;
@@ -73,17 +42,8 @@ typedef struct {
   PHY_VARS_gNB *gNB;
 } scopeParms_t;
 
-extern unsigned char scope_enb_num_ue;
-FD_phy_scope_nrue * create_phy_scope_nrue( void );
-
-void phy_scope_nrUE(FD_phy_scope_nrue *form,
-                  PHY_VARS_NR_UE *phy_vars_ue,
-                  int eNB_id,
-                  int UE_id,
-                  uint8_t subframe);
-
-
 void startScope(scopeParms_t * p);
+void init_scope(PHY_VARS_NR_UE *ue);
 
 extern RAN_CONTEXT_t RC;
 #endif
