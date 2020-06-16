@@ -2393,6 +2393,18 @@ void ulsch_scheduler_pre_ue_select_fairRR(
         break;
       }
 
+      for(i = 0; i<ulsch_ue_select[CC_id].ue_num; i++) {
+        if(ulsch_ue_select[CC_id].list[i].UE_id == first_ue_id[CC_id][temp]) {
+          break;
+        }
+      }
+
+      if(i < ulsch_ue_select[CC_id].ue_num){
+        LOG_E(MAC,"ulsch_scheduler_pre_ue_select_fairRR: UE volte select(last_ulsch_ue_id %d l_last_ulsch_ue_id_volte %d)\n",
+               last_ulsch_ue_id[CC_id],l_last_ulsch_ue_id_volte[CC_id]);
+        continue;
+      }
+
       hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
       format_flag = 2;
       rnti = UE_RNTI(module_idP,first_ue_id[CC_id][temp]);
