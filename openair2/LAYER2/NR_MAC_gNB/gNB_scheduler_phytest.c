@@ -653,7 +653,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     }
     //Sending SDUs with size 1
     //Initialize elements of sdu_lcids and sdu_lengths
-    sdu_lcids[0] = 0x05; // DRB
+    sdu_lcids[0] = 0x3f; // DRB
     sdu_lengths[0] = TBS_bytes - ta_len - 3;
     header_length_total += 2 + (sdu_lengths[0] >= 128);
     sdu_length_total += sdu_lengths[0];
