@@ -1,8 +1,6 @@
 #ifndef __NR_LDPC_DECODER_LYC__H__
 #define __NR_LDPC_DECODER_LYC__H__
 
-#include "nrLDPC_types.h"
-#include "nrLDPC_init_mem.h"
 
 /*! \file PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h
  * \brief LDPC cuda support BG1 all length
