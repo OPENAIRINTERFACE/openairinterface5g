@@ -137,6 +137,8 @@ void ue_init_standalone_socket(const char *addr, int port);
 
 // read from standalone pnf socket call corresponding memcpy functions
 void *ue_standalone_pnf_task(void *context);
+void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type);
+void send_standalone_dummy(void);
 
 extern queue_t dl_config_req_queue;
 extern queue_t tx_req_pdu_queue;

@@ -33,12 +33,14 @@
 #include <arpa/inet.h>
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
+
+void send_standalone_dummy();
+
 void configure_nfapi_pnf(char *vnf_ip_addr,
                          int vnf_p5_port,
                          char *pnf_ip_addr,
                          int pnf_p7_port,
                          int vnf_p7_port);
-void send_standalone_rach(nfapi_rach_indication_t *ind);
 UL_IND_t *UL_INFO = NULL;
 
 nfapi_ul_config_request_t* ul_config_req = NULL;
@@ -243,7 +245,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
   // Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
   // as soon as numberof preambles
   if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-    send_standalone_msg(&UL_INFO, UL_INFO->rach_ind.header.message_id);
+    send_standalone_msg(UL_INFO, UL_INFO->rach_ind.header.message_id);
   } else {
     oai_nfapi_rach_ind(&UL_INFO->rach_ind);
   }
@@ -1211,15 +1213,27 @@ void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
   case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
     encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
     break;
+  default:
+    return;
   }
   if (encoded_size < 0)
   {
-    LOG_E(MAC, "standalone rach pack failed\n");
+    LOG_E(MAC, "standalone pack failed\n");
     return;
   }
   if (send(ue_sock_descriptor, buffer, encoded_size, 0) < 0)
   {
-    LOG_E(MAC, "Send NFAPI_DL_CONFIG_REQUEST to OAI UE failed\n");
+    LOG_E(MAC, "Send Proxy UE failed\n");
+    return;
+  }
+}
+
+void send_standalone_dummy()
+{
+  static const uint16_t dummy[] = {0, 0};
+  if (send(ue_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
+  {
+    LOG_E(MAC, "Send dummy to OAI UE failed\n");
     return;
   }
 }

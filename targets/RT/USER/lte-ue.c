@@ -1038,6 +1038,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
   int last_sfn_sf = -1;
 
   while (!oai_exit) {
+    bool sent_any = false;
     int sfn_sf = current_sfn_sf;
     if (sfn_sf == last_sfn_sf) {
       usleep(100);
@@ -1188,7 +1189,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
 #endif
 
       // Prepare the future Tx data
-      bool sent_any = false;
       if ((subframe_select(&UE->frame_parms, proc->subframe_tx) == SF_UL) ||
           (UE->frame_parms.frame_type == FDD))
         if (UE->mode != loop_through_memory) {
@@ -1234,12 +1234,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
     if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs > 0) {
       //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.2, SFN/SF of PNF counter:%d.%d, number_of_crcs: %d \n", timer_frame, timer_subframe, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
-      if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-        send_standalone_msg(&UL_INFO, UL_INFO->crc_ind.header.message_id);
-        sent_any = true;
-      } else {
-        oai_nfapi_crc_indication(&UL_INFO->crc_ind);
-      }
+      send_standalone_msg(UL_INFO, UL_INFO->crc_ind.header.message_id);
+      sent_any = true;
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.21 \n");
       UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
     }
@@ -1247,12 +1243,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
     if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus > 0) {
       //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
-      if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-        send_standalone_msg(&UL_INFO, UL_INFO->rx_ind.header.message_id);
-        sent_any = true;
-      } else {
-        oai_nfapi_rx_ind(&UL_INFO->rx_ind);
-      }
+      send_standalone_msg(UL_INFO, UL_INFO->rx_ind.header.message_id);
+      sent_any = true;
 
       for (uint8_t num_pdu = 0; num_pdu < UL_INFO->rx_ind.rx_indication_body.number_of_pdus; num_pdu++) {
         free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[num_pdu].data);
@@ -1263,35 +1255,23 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
     }
 
     if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
-      if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-        send_standalone_msg(&UL_INFO, UL_INFO->cqi_ind.header.message_id);
+        send_standalone_msg(UL_INFO, UL_INFO->cqi_ind.header.message_id);
         sent_any = true;
-      } else {
-        oai_nfapi_cqi_indication(&UL_INFO->cqi_ind);
-      }
       UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
     }
 
     if (UL_INFO->harq_ind.harq_indication_body.number_of_harqs > 0) {
       //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-      if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-        send_standalone_msg(&UL_INFO, UL_INFO->harq_ind.header.message_id);
+        send_standalone_msg(UL_INFO, UL_INFO->harq_ind.header.message_id);
         sent_any = true;
-      } else {
-        oai_nfapi_harq_indication(&UL_INFO->harq_ind);
-      }
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.41 \n");
       UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
     }
 
     if (UL_INFO->sr_ind.sr_indication_body.number_of_srs > 0) {
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.5, SFN/SF of PNF counter:%d.%d, number_of_srs: %d \n", timer_frame, timer_subframe, UL_INFO->sr_ind.sr_indication_body.number_of_srs);
-      if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-        send_standalone_msg(&UL_INFO, UL_INFO->sr_ind.header.message_id);
+        send_standalone_msg(UL_INFO, UL_INFO->sr_ind.header.message_id);
         sent_any = true;
-      } else {
-        oai_nfapi_sr_indication(&UL_INFO->sr_ind);
-      }
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
       UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
     }
@@ -1343,8 +1323,9 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
       free(hi_dci0_req);
       hi_dci0_req = NULL;
     }
-    if (!sent_any) {
-      // TODO: send_dummy
+    if (!sent_any)
+    {
+     send_standalone_dummy();
     }
   }
 
