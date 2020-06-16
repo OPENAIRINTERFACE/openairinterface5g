@@ -3723,7 +3723,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
 /////* ULSCH MAC PDU generation (6.1.2 TS 38.321) */////
 ////////////////////////////////////////////////////////
 
-unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
+uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint8_t *pdu,
                                     uint8_t num_sdus,
                                     uint16_t *sdu_lengths,
@@ -3738,7 +3738,8 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
 
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) pdu;
   unsigned char last_size = 0, i, mac_header_control_elements[16], *ce_ptr, bsr = 0;
-  int mac_ce_size, offset;
+  int mac_ce_size;
+  uint16_t offset = 0;
 
   LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d\n", num_sdus);
 
@@ -3888,7 +3889,7 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
   // compute final offset
   offset = ((unsigned char *) mac_pdu_ptr - pdu);
 
-  //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
+  //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - pdu));
 
   return offset;
 }
