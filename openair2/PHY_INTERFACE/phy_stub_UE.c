@@ -243,7 +243,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
   // Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
   // as soon as numberof preambles
   if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-    send_standalone_rach(&UL_INFO->rach_ind); // dont
+    send_standalone_msg(&UL_INFO, UL_INFO->rach_ind.header.message_id);
   } else {
     oai_nfapi_rach_ind(&UL_INFO->rach_ind);
   }
@@ -1187,10 +1187,31 @@ void *ue_standalone_pnf_task(void *context)
   }
 }
 
-void send_standalone_rach(nfapi_rach_indication_t *ind)
+void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
 {
+  int encoded_size = -1;
   char buffer[1024];
-  int encoded_size = nfapi_p7_message_pack(ind, buffer, sizeof(buffer), NULL);
+  switch (msg_type)
+  {
+  case NFAPI_RACH_INDICATION:
+    encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
+    break;
+  case NFAPI_CRC_INDICATION:
+    encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
+    break;
+  case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
+    encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
+    break;
+  case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
+    encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
+    break;
+  case NFAPI_HARQ_INDICATION:
+    encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
+    break;
+  case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
+    encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
+    break;
+  }
   if (encoded_size < 0)
   {
     LOG_E(MAC, "standalone rach pack failed\n");
