@@ -82,13 +82,13 @@ void exit_function(const char *file, const char *function, const int line, const
   oai_exit = 1;
 
   if (ru_m.rfdevice.trx_end_func) {
-      ru_m.rfdevice.trx_end_func(&ru_m.rfdevice);
-      ru_m.rfdevice.trx_end_func = NULL;
+    ru_m.rfdevice.trx_end_func(&ru_m.rfdevice);
+    ru_m.rfdevice.trx_end_func = NULL;
   }
 
   if (ru_m.ifdevice.trx_end_func) {
-      ru_m.ifdevice.trx_end_func(&ru_m.ifdevice);
-      ru_m.ifdevice.trx_end_func = NULL;
+    ru_m.ifdevice.trx_end_func(&ru_m.ifdevice);
+    ru_m.ifdevice.trx_end_func = NULL;
   }
   
   sleep(1); //allow lte-softmodem threads to exit first
@@ -162,30 +162,175 @@ int main ( int argc, char **argv )
   
 
   config_sync_var=0;
-  // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
-  printf("ALL RUs ready - init eNBs\n");
-    
+
+  paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
+  config_getlist( &RUParamList,NULL,0, NULL);
+  AssertFatal(RUParamList.numelt==1,"Cannot handle %d RUs, only 1\n",RUParamList.numelt);
+
+  int j=0;
+
+  ru->if_timing = synch_to_ext_device;
+  ru->num_eNB = 0;
+  ru->has_ctrl_prt = 1;
+  if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
+    ru->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
+  }
+
+  if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
+    if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
+      ru->openair0_cfg.clock_source = internal;
+      LOG_D(PHY, "RU clock source set as internal\n");
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
+      ru->openair0_cfg.clock_source = external;
+      LOG_D(PHY, "RU clock source set as external\n");
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
+      ru->openair0_cfg.clock_source = gpsdo;
+      LOG_D(PHY, "RU clock source set as gpsdo\n");
+    } else {
+      LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
+    }
+  }
+  else {
+    ru->openair0_cfg.clock_source = unset;
+  }
+
+  if (config_isparamset(RUParamList.paramarray[j], RU_SDR_TME_SRC)) {
+    if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "internal") == 0) {
+      ru->openair0_cfg.time_source = internal;
+      LOG_D(PHY, "RU time source set as internal\n");
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "external") == 0) {
+      ru->openair0_cfg.time_source = external;
+      LOG_D(PHY, "RU time source set as external\n");
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "gpsdo") == 0) {
+      ru->openair0_cfg.time_source = gpsdo;
+      LOG_D(PHY, "RU time source set as gpsdo\n");
+    } else {
+      LOG_E(PHY, "Erroneous RU time source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
+    }
+  }
+  else {
+    ru->openair0_cfg.time_source = unset;
+  }      
+
+  if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
+    if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
+      AssertFatal(1==0,"IF_NAME is required\n");
+    } else {
+      ru->eth_params.local_if_name            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
+      ru->eth_params.my_addr                  = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
+      ru->eth_params.remote_addr              = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
+      ru->eth_params.my_portd                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
+      ru->eth_params.remote_portd             = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
+
+      // Check if control port set
+      if  (!(config_isparamset(RUParamList.paramarray[j],RU_REMOTE_PORTC_IDX)) ) {
+	printf("Removing control port for RU %d\n",j);
+	ru->has_ctrl_prt            = 0;
+      } else {
+	ru->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+	ru->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+	printf(" Control port %u \n",ru->eth_params.my_portc);
+      }
+
+      if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
+	ru->if_south                        = LOCAL_RF;
+	ru->function                        = NGFI_RRU_IF5;
+	ru->eth_params.transp_preference    = ETH_UDP_MODE;
+	printf("Setting function for RU %d to NGFI_RRU_IF5 (udp)\n",j);
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
+	ru->if_south                        = LOCAL_RF;
+	ru->function                        = NGFI_RRU_IF5;
+	ru->eth_params.transp_preference    = ETH_RAW_MODE;
+	printf("Setting function for RU %d to NGFI_RRU_IF5 (raw)\n",j);
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
+	ru->if_south                        = LOCAL_RF;
+	ru->function                        = NGFI_RRU_IF4p5;
+	ru->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
+	printf("Setting function for RU %d to NGFI_RRU_IF4p5 (udp)\n",j);
+      } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
+	ru->if_south                        = LOCAL_RF;
+	ru->function                        = NGFI_RRU_IF4p5;
+	ru->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
+	printf("Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
+      }
+
+      printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
+
+      if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) ru->is_slave=1;
+      else ru->is_slave=0;
+
+      printf("RU %d ota_sync_enabled=%s\n",j,*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr));
+
+      if (strcmp(*(RUParamList.paramarray[j][RU_OTA_SYNC_ENABLE_IDX].strptr), "yes") == 0) ru->ota_sync_enable=1;
+      else ru->ota_sync_enable=0;
+    }
+
+    ru->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
+    ru->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
+    ru->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
+    /* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
+    ru->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
+
+    for (int i=0; i<ru->num_bands; i++) ru->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
+  } //strcmp(local_rf, "yes") == 0
+  else {
+    printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
+    ru->eth_params.local_if_name      = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));
+    ru->eth_params.my_addr            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr));
+    ru->eth_params.remote_addr        = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
+    ru->eth_params.my_portc           = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+    ru->eth_params.remote_portc       = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+    ru->eth_params.my_portd           = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
+    ru->eth_params.remote_portd       = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
+
+    if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
+      ru->if_south                     = REMOTE_IF5;
+      ru->function                     = NGFI_RAU_IF5;
+      ru->eth_params.transp_preference = ETH_UDP_MODE;
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
+      ru->if_south                     = REMOTE_IF5;
+      ru->function                     = NGFI_RAU_IF5;
+      ru->eth_params.transp_preference = ETH_RAW_MODE;
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
+      ru->if_south                     = REMOTE_IF4p5;
+      ru->function                     = NGFI_RAU_IF4p5;
+      ru->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
+    } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
+      ru->if_south                     = REMOTE_IF4p5;
+      ru->function                     = NGFI_RAU_IF4p5;
+      ru->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
+    }
+
+    if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) ru->is_slave=1;
+    else ru->is_slave=0;
+  }  /* strcmp(local_rf, "yes") != 0 */
+      
+  ru->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
+  ru->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
+  ru->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
+  ru->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
+  
   while (oai_exit==0) sleep(1);
   // stop threads
-
+      
   kill_RU_proc(ru);
   phy_free_RU(ru);
-
+      
   free_lte_top();
   end_configmodule();
-
+      
   if (ru->rfdevice.trx_end_func) {
     ru->rfdevice.trx_end_func(&ru->rfdevice);
     ru->rfdevice.trx_end_func = NULL;
   }
-
+      
   if (ru->ifdevice.trx_end_func) {
     ru->ifdevice.trx_end_func(&ru->ifdevice);
     ru->ifdevice.trx_end_func = NULL;
   }
-
+      
   
-
+      
   logClean();
   printf("Bye.\n");
   return 0;
