@@ -62,6 +62,10 @@
 #include <executables/split_headers.h>
 #include <targets/RT/USER/lte-softmodem.h>
 
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
+static int DEFBFW[] = {0x00007fff};
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
