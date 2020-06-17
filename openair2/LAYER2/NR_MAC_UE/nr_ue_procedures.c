@@ -2232,9 +2232,14 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     if (pdsch_TimeDomainAllocationList) {
 
-      AssertFatal(pdsch_TimeDomainAllocationList->list.count > time_domain_ind,
-		  "time_domain_ind %d >= pdsch->TimeDomainAllocationList->list.count %d\n",
-		  time_domain_ind,pdsch_TimeDomainAllocationList->list.count);
+      if (time_domain_ind >= pdsch_TimeDomainAllocationList->list.count) {
+        LOG_E(MAC, "time_domain_ind %d >= pdsch->TimeDomainAllocationList->list.count %d\n",
+              time_domain_ind, pdsch_TimeDomainAllocationList->list.count);
+        dlsch_config_pdu->start_symbol   = 0;
+        dlsch_config_pdu->number_symbols = 0;
+        return -1;
+      }
+
       int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_ind]->startSymbolAndLength;
       int S,L;
       SLIV2SL(startSymbolAndLength,&S,&L);
@@ -2342,10 +2347,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
     nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    nr_ue_process_dci_time_dom_resource_assignment(mac,
-						   pusch_config_pdu_0_0,NULL,
-						   dci->time_dom_resource_assignment);
-
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_0,NULL,dci->time_dom_resource_assignment) < 0)
+      break;
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -2417,8 +2420,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
     nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_1,NULL,
-						   dci->time_dom_resource_assignment);
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_1,NULL,dci->time_dom_resource_assignment) < 0)
+      break;
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -2748,9 +2751,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
     nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,
-						   dci->time_dom_resource_assignment);
-
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_dom_resource_assignment) < 0)
+      break;
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
@@ -2868,8 +2870,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
     nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,
-						   dci->time_dom_resource_assignment);
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_dom_resource_assignment) < 0)
+      break;
     /* VRB_TO_PRB_MAPPING */
     if (mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.resource_allocation != 0)
       dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
@@ -3140,7 +3142,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       pos+=4;
       dci_pdu_rel15->time_dom_resource_assignment = (*dci_pdu >> (dci_size-pos))&0xf;
 #ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_dom_resource_assignment,dci_size-pos,*dci_pdu);
+      LOG_D(MAC,"time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_dom_resource_assignment,dci_size-pos,*dci_pdu);
 #endif
       // VRB to PRB mapping
 	
