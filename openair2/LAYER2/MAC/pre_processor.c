@@ -69,15 +69,26 @@ int get_rbg_size_last(module_id_t Mod_id, int CC_id) {
     return RBGsize;
 }
 
-int g_start_ue_dl = -1;
-int round_robin_dl(module_id_t Mod_id,
-                   int CC_id,
-                   int frame,
-                   int subframe,
-                   UE_list_t *UE_list,
-                   int max_num_ue,
-                   int n_rbg_sched,
-                   uint8_t *rbgalloc_mask) {
+void *rr_dl_setup(void) {
+  void *data = malloc(sizeof(int));
+  *(int *) data = 0;
+  AssertFatal(data, "could not allocate data in %s()\n", __func__);
+  return data;
+}
+void rr_dl_unset(void **data) {
+  if (*data)
+    free(*data);
+  *data = NULL;
+}
+int rr_dl_run(module_id_t Mod_id,
+              int CC_id,
+              int frame,
+              int subframe,
+              UE_list_t *UE_list,
+              int max_num_ue,
+              int n_rbg_sched,
+              uint8_t *rbgalloc_mask,
+              void *data) {
   DevAssert(UE_list->head >= 0);
   DevAssert(n_rbg_sched > 0);
   const int N_RBG = to_rbg(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
@@ -91,10 +102,10 @@ int round_robin_dl(module_id_t Mod_id,
 
   /* just start with the UE after the one we had last time. If it does not
    * exist, this will start at the head */
-  int g_start_ue_dl = data;
-  g_start_ue_dl = next_ue_list_looped(UE_list, g_start_ue_dl);
+  int *start_ue = data;
+  *start_ue = next_ue_list_looped(UE_list, *start_ue);
 
-  int UE_id = g_start_ue_dl;
+  int UE_id = *start_ue;
   UE_list_t UE_sched;
   int *cur_UE = &UE_sched.head;
   // Allocate retransmissions, and mark UEs with new transmissions
@@ -163,7 +174,7 @@ int round_robin_dl(module_id_t Mod_id,
 
 skip_ue:
     UE_id = next_ue_list_looped(UE_list, UE_id);
-  } while (UE_id != g_start_ue_dl);
+  } while (UE_id != *start_ue);
   *cur_UE = -1; // mark end
 
   if (UE_sched.head < 0)
@@ -217,6 +228,14 @@ skip_ue:
 
   return n_rbg_sched;
 }
+default_sched_dl_algo_t round_robin_dl = {
+  .name  = "round_robin_dl",
+  .setup = rr_dl_setup,
+  .unset = rr_dl_unset,
+  .run   = rr_dl_run,
+  .data  = NULL
+};
+
 
 // This function stores the downlink buffer for all the logical channels
 void
@@ -294,8 +313,9 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
                               int CC_id,
                               frame_t frameP,
                               sub_frame_t subframeP) {
-  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
-  const int N_RBG = to_rbg(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+  eNB_MAC_INST *mac = RC.mac[Mod_id];
+  UE_info_t *UE_info = &mac->UE_info;
+  const int N_RBG = to_rbg(mac->common_channels[CC_id].mib->message.dl_Bandwidth);
   const int RBGsize = get_min_rb_unit(Mod_id, CC_id);
 
   store_dlsch_buffer(Mod_id, CC_id, frameP, subframeP);
@@ -352,7 +372,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   if (UE_to_sched.head < 0)
     return;
 
-  uint8_t *vrb_map = RC.mac[Mod_id]->common_channels[CC_id].vrb_map;
+  uint8_t *vrb_map = mac->common_channels[CC_id].vrb_map;
   uint8_t rbgalloc_mask[N_RBG_MAX];
   int n_rbg_sched = 0;
   for (int i = 0; i < N_RBG; i++) {
@@ -364,14 +384,15 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     n_rbg_sched += rbgalloc_mask[i];
   }
 
-  round_robin_dl(Mod_id,
-                 CC_id,
-                 frameP,
-                 subframeP,
-                 &UE_to_sched,
-                 4, // max_num_ue
-                 n_rbg_sched,
-                 rbgalloc_mask);
+  mac->dl_algo.run(Mod_id,
+                   CC_id,
+                   frameP,
+                   subframeP,
+                   &UE_to_sched,
+                   4, // max_num_ue
+                   n_rbg_sched,
+                   rbgalloc_mask,
+                   mac->dl_algo.data);
 
   // the following block is meant for validation of the pre-processor to check
   // whether all UE allocations are non-overlapping and is not necessary for
