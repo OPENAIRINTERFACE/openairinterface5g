@@ -167,6 +167,10 @@ int main ( int argc, char **argv )
   ru->rf_map.card=0;
   ru->rf_map.chain=(get_softmodem_params()->chain_offset);
   
+  LOG_I(PHY, "Initializing RRU descriptor %d : (%s,%s,%d)\n", ru_id, ru_if_types[ru->if_south], NB_timing[ru->if_timing], ru->function);
+  set_function_spec_param(ru);
+  LOG_I(PHY, "Starting ru_thread %d, is_slave %d, send_dmrs %d\n", ru_id, ru->is_slave, ru->generate_dmrs_sync);
+  init_RU_proc(ru);
 
   config_sync_var=0;
 
@@ -316,6 +320,9 @@ int main ( int argc, char **argv )
   ru->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
   ru->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
   ru->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
+
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
   
   while (oai_exit==0) sleep(1);
   // stop threads
