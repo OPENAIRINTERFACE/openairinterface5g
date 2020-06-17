@@ -56,7 +56,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
-
+#include "openair2/ENB_APP/enb_paramdef.h"
 #include "system.h"
 
 #include <executables/split_headers.h>
@@ -70,6 +70,9 @@ int config_sync_var=-1;
 volatile int             oai_exit = 0;
 uint16_t sf_ahead = 4;
 RU_t ru_m;
+
+
+static int DEFBANDS[] = {7};
 
 void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync);
 
