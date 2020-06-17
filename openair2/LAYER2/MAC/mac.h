@@ -1274,6 +1274,19 @@ typedef struct {
   int length;
 } contig_rbs_t;
 
+/**
+ * definition of a scheduling algorithm implementation used in the
+ * default scheduler
+ */
+typedef struct {
+  char *name;
+  void *(*setup)(void);
+  void (*unset)(void **);
+  int (*run)(
+      module_id_t, int, int, int, UE_list_t *, int, int, uint8_t *, void *);
+  void *data;
+} default_sched_dl_algo_t;
+
 /*! \brief eNB common channels */
 typedef struct {
   int physCellId;
@@ -1432,6 +1445,8 @@ typedef struct eNB_MAC_INST_s {
   UE_free_list_t UE_free_list;
   /// for scheduling selection
   SCHEDULER_MODES scheduler_mode;
+  /// scheduling algorithm used in default scheduler
+  default_sched_dl_algo_t dl_algo;
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;

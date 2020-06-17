@@ -128,7 +128,11 @@ void mac_top_init_eNB(void)
     }
 
     mac[i]->if_inst = IF_Module_init(i);
-
+    char *s = "round_robin_dl";
+    void *d = dlsym(NULL, s);
+    AssertFatal(d, "%s(): no scheduler algo '%s' found\n", __func__, s);
+    mac[i]->dl_algo = *(default_sched_dl_algo_t *) d;
+    mac[i]->dl_algo.data = mac[i]->dl_algo.setup();
     init_UE_info(&mac[i]->UE_info);
     init_slice_info(&mac[i]->slice_info);
   }
