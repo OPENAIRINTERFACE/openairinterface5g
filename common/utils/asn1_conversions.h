@@ -33,7 +33,11 @@
  *\return the extracted value.
  */
 static inline uint8_t BIT_STRING_to_uint8(BIT_STRING_t *asn) {
-  DevCheck ((asn->size == 1), asn->size, 0, 0);
+  //DevCheck ((asn->size == 1), asn->size, 0, 0);
+  if(!(asn->size == 1)) {
+    printf("BIT_STRING_to_uint8 size %ld\n", asn->size);
+    return 0;
+  }
 
   return asn->buf[0] >> asn->bits_unused;
 }
@@ -47,7 +51,11 @@ static inline uint16_t BIT_STRING_to_uint16(BIT_STRING_t *asn) {
   uint16_t result = 0;
   int index = 0;
 
-  DevCheck ((asn->size > 0) && (asn->size <= 2), asn->size, 0, 0);
+  //DevCheck ((asn->size > 0) && (asn->size <= 2), asn->size, 0, 0);
+  if(!((asn->size > 0) && (asn->size <= 2))) {
+    printf("BIT_STRING_to_uint16 size %ld\n", asn->size);
+    return 0;
+  }
 
   switch (asn->size) {
     case 2:
@@ -74,7 +82,11 @@ static inline uint32_t BIT_STRING_to_uint32(BIT_STRING_t *asn) {
   int index;
   int shift;
 
-  DevCheck ((asn->size > 0) && (asn->size <= 4), asn->size, 0, 0);
+  //DevCheck ((asn->size > 0) && (asn->size <= 4), asn->size, 0, 0);
+  if(!((asn->size > 0) && (asn->size <= 4))) {
+    printf("BIT_STRING_to_uint32 size %ld\n", asn->size);
+    return 0;
+  }
 
   shift = ((asn->size - 1) * 8) - asn->bits_unused;
   for (index = 0; index < (asn->size - 1); index++) {
@@ -97,7 +109,11 @@ static inline uint64_t BIT_STRING_to_uint64(BIT_STRING_t *asn) {
   int index;
   int shift;
 
-  DevCheck ((asn->size > 0) && (asn->size <= 8), asn->size, 0, 0);
+  //DevCheck ((asn->size > 0) && (asn->size <= 8), asn->size, 0, 0);
+  if(!((asn->size > 0) && (asn->size <= 8))) {
+    printf("BIT_STRING_to_uint64 size %ld\n", asn->size);
+    return 0;
+  }
 
   shift = ((asn->size - 1) * 8) - asn->bits_unused;
   for (index = 0; index < (asn->size - 1); index++) {

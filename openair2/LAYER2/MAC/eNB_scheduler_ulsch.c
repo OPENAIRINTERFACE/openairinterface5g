@@ -683,7 +683,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
     switch (rx_lcids[i]) {
       case CCCH:
-        if (rx_lengths[i] > CCCH_PAYLOAD_SIZE_MAX) {
+        if ((rx_lengths[i] > CCCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > sdu_lenP)) {
           LOG_E(MAC, "[eNB %d/%d] frame %d received CCCH of size %d (too big, maximum allowed is %d, sdu_len %d), dropping packet\n",
                 enb_mod_idP,
                 CC_idP,
@@ -804,6 +804,17 @@ rx_sdu(const module_id_t enb_mod_idP,
         LOG_T(MAC, "\n");
 #endif
 
+      if ((rx_lengths[i] > DCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > sdu_lenP)) {
+        LOG_E(MAC, "[eNB %d/%d] frame %d received DCCH of size %d (too big, maximum allowed is %d, sdu_len %d), dropping packet\n",
+              enb_mod_idP,
+              CC_idP,
+              frameP,
+              rx_lengths[i],
+              DCH_PAYLOAD_SIZE_MAX,
+              sdu_lenP);
+        break;
+      }
+
         if (UE_id != -1) {
           if (lcgid_updated[UE_template_ptr->lcgidmap[rx_lcids[i]]] == 0) {
             /* Adjust buffer occupancy of the correponding logical channel group */
@@ -853,6 +864,17 @@ rx_sdu(const module_id_t enb_mod_idP,
 #endif
 
         if (rx_lcids[i] < NB_RB_MAX) {
+          if ((rx_lengths[i] > SCH_PAYLOAD_SIZE_MAX) || (rx_lengths[i] < 0) || (rx_lengths[i] > sdu_lenP)) {
+            LOG_E(MAC, "[eNB %d/%d] frame %d received DTCH of size %d (too big, maximum allowed is %d, sdu_len %d), dropping packet\n",
+                  enb_mod_idP,
+                  CC_idP,
+                  frameP,
+                  rx_lengths[i],
+                  DCH_PAYLOAD_SIZE_MAX,
+                  sdu_lenP);
+            UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+            break;
+          }
           LOG_D(MAC, "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d\n",
                 enb_mod_idP,
                 CC_idP,
@@ -862,6 +884,25 @@ rx_sdu(const module_id_t enb_mod_idP,
                 rx_lcids[i]);
 
           if (UE_id != -1) {
+            ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], current_rnti);
+            if (ue_contextP != NULL) {
+              if (ue_contextP->ue_context.DRB_active[rx_lcids[i] - 2] == 0) {
+                LOG_E(MAC, "[eNB %d/%d] frame %d received non active DTCH of size %d ( sdu_len %d, lcid %d), dropping packet\n",
+                    enb_mod_idP,
+                    CC_idP,
+                    frameP,
+                    rx_lengths[i],
+                    sdu_lenP,rx_lcids[i]);
+                UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
+                break;
+              }
+            }else{
+              LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
+                    enb_mod_idP,
+                    CC_idP,
+                    current_rnti);
+               break;
+            }
             /* Adjust buffer occupancy of the correponding logical channel group */
             LOG_D(MAC, "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH, received %d bytes from UE %d for lcid %d, removing from LCGID %ld, %d\n",
                   enb_mod_idP,
@@ -890,16 +931,12 @@ rx_sdu(const module_id_t enb_mod_idP,
               }
             }
 
-            if ((rx_lengths[i] < SCH_PAYLOAD_SIZE_MAX) && (rx_lengths[i] > 0)) {  // MAX SIZE OF transport block
               mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);
               UE_info->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
               UE_info->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
               /* Clear uplane_inactivity_timer */
               UE_scheduling_control->uplane_inactivity_timer = 0;
               /* Reset RRC inactivity timer after uplane activity */
-              ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], current_rnti);
-
-              if (ue_contextP != NULL) {
                 ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
               } else {
                 LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
