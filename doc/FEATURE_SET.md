@@ -1,6 +1,8 @@
 **Table of Contents**
 
-1. [OpenAirInterface eNB Feature Set](#openairinterface-enb-feature-set)
+1. [Functional Split Architecture](#functional-split-architecture)
+2. [OpenAirInterface Block Diagram](#openairinterface-block-diagram)
+2. [OpenAirInterface 4G-LTE eNB Feature Set](#openairinterface-4g-lte-enb-feature-set)
    1. [eNB PHY Layer](#enb-phy-layer)
    2. [eNB MAC Layer](#enb-mac-layer)
    3. [eNB RLC Layer](#enb-rlc-layer)
@@ -9,29 +11,38 @@
    6. [eNB X2AP](#enb-x2ap)
    7. [eNB/MCE M2AP](#enbmce-m2ap)
    8. [MCE/MME M3AP](#mcemme-m3ap)
-   9. [eNB Advanced Features](#enb-advanced-features)
-2. [OpenAirInterface Functional Split](#openairinterface-functional-split)
-3. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
+3. [OpenAirInterface 4G-LTE UE Feature Set](#openairinterface-4g-lte-ue-feature-set)
    1.  [LTE UE PHY Layer](#lte-ue-phy-layer)
    2.  [LTE UE MAC Layer](#lte-ue-mac-layer)
    3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
    4.  [LTE UE PDCP Layer](#lte-ue-pdcp-layer)
    5.  [LTE UE RRC Layer](#lte-ue-rrc-layer)
-4. [OpenAirInterface Functional Split](#openairinterface-functional-split)
-5. [OpenAirInterface 5G-NR Feature Set](#openairinterface-5g-nr-feature-set)
+4. [OpenAirInterface 5G-NR gNB Feature Set](#openairinterface-5g-nr-feature-set)
    1. [General Parameters](#general-parameters)
-   2. [gNB Features](#gnb-features)
-      1. [gNB Physical Layer](#gnb-phy-layer)
-      2. [gNB Higher Layers](#gnb-higher-layers)
-   3. [NR UE Features](#nr-ue-features)
-      1. [NR UE Physical Layer](#nr-ue-phy-layer)
-      2. [NR UE Higher Layers](#nr-ue-higher-layers)
+   2. [gNB Physical Layer](#gnb-phy-layer)
+   3. [gNB Higher Layers](#gnb-higher-layers)
+5. [OpenAirInterface 5G-NR UE Feature Set](#openairinterface-5g-nr-ue-feature-set)
+   1. [UE Physical Layer](#ue-phy-layer)
+   2. [UE Higher Layers](#ue-higher-layers)
 
-# OpenAirInterface Block diagram #
+
+# Functional Split Architecture #
+
+-  RCC: Radio-Cloud Center
+-  RAU: Radio-Access Unit
+-  RRU: Remote Radio-Unit
+-  IF4.5 / IF5 : similar to IEEE P1914.1
+-  FAPI (IF2)  : specified by Small Cell Forum (open-nFAPI implementation)
+-  IF1         : F1 in 3GPP Release 15
+
+![Functional Split Architecture](./oai_enb_func_split_arch.png)
+
+
+# OpenAirInterface Block Diagram #
 
 ![Block Diagram](./oai_enb_block_diagram.png)
 
-# OpenAirInterface eNB Feature Set #
+# OpenAirInterface 4G LTE eNB Feature Set #
 
 ## eNB PHY Layer ##
 
@@ -82,7 +93,11 @@ TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | 3.0 Mbit/s          | TM1: 4.21 Mbits/s  
 The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels. 
 
 - RRC interface for CCCH, DCCH, and DTCH
-- Proportional fair scheduler (round robin scheduler soon)
+- Proportional fair scheduler (round robin scheduler soon), with the following improvements:
+	- Up to 30 users tested in the L2 simulator, CCE allocation in the preprocessor ; the scheduler was also simplified and made more modular
+	- Adaptative UL-HARQ
+	- Remove out-of-sync UEs
+	- No use of the `first_rb` in the UL scheduler ; respects `vrb_map_UL` and `vrb_map` in the DL
 - DCI generation
 - HARQ Support
 - RA procedures and RNTI management
@@ -123,7 +138,7 @@ The current PDCP layer is header compliant with **3GPP 36.323** Rel 10.1.0 and i
 
 ## eNB RRC Layer ##
 
-The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following functions:
+The RRC layer is based on **3GPP 36.331** v15.6 and implements the following functions:
 
 - System Information broadcast (SIB 1, 2, 3, and 13)
   * SIB1: Up to 6 PLMN IDs broadcast
@@ -150,6 +165,10 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - X2 timers (t_reloc_prep, tx2_reloc_overall)
  - Handover Cancel
  - X2-U interface implemented
+ - EN-DC is implemented
+ - X2AP : Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete
+ - RRC  : Handling of RRC Connection Reconfiguration with 5G cell info, configuration of 5G-NR measurements
+ - S1AP : Handling of E-RAB Modification Indication / Confirmation 
 
 ## eNB/MCE M2AP ##
 
@@ -171,11 +190,8 @@ The M3AP layer is based on **3GPP 36.444** v14.0.1:
  - M3 Session Start Request
  - M3 Session Start Response
 
-## eNB Advanced Features ##
 
-**To be completed**
-
-# OpenAirInterface UE Feature Set #
+# OpenAirInterface 4G LTE UE Feature Set #
 
 ## LTE UE PHY Layer ##
 
@@ -230,17 +246,6 @@ The NAS layer is based on **3GPP 24.301** and implements the following functions
 - EMM attach/detach, authentication, tracking area update, and more
 - ESM default/dedicated bearer, PDN connectivity, and more
 
-# OpenAirInterface Functional Split #
-
--  RCC: Radio-Cloud Center
--  RAU: Radio-Access Unit
--  RRU: Remote Radio-Unit
-
-![Functional Split Architecture](./oai_enb_func_split_arch.png)
-
--  IF4.5 / IF5 : similar to IEEE P1914.1
--  FAPI (IF2)  : specified by Small Cell Forum (open-nFAPI implementation)
--  IF1         : F1 in 3GPP Release 15
 
 # OpenAirInterface 5G-NR Feature Set #
 
@@ -258,49 +263,103 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short blocks
 
-## gNB Features ##
 
-### gNB PHY Layer ###
+## gNB PHY Layer ##
 
-*  Generation of PSS/SSS/PBCH for multiple beams and
-*  Generation of PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
+*  30KHz SCS for FR1 and 120 KHz SCS for FR2
+*  Generation of NR-PSS/NR-SSS
+*  NR-PBCH supports multiple SSBs and flexible periodicity
+*  Generation of NR-PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
    - common search space configured by MIB
    - user-specific search space configured by RRC
-   - DCI formats: 00, 10
-*  Generation of PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
-   - Single symbol DMRS, dmrs-TypeA-Position Pos2,  DMRS configuration type 1
-   - PDSCH mapping type A 
+   - DCI formats: 00, 10 (01 and 11 **under integration**)
+*  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+   - Single symbol DMRS, DMRS-TypeA-Position Pos2,  DMRS configuration type 1
+   - PDSCH mapping type A
+*  NR-CSI Generation of sequence at PHY (**under integration**)
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
 *  NR-PUCCH 
-   - Format 0 (ACK/NACK)
+   - Format 0 (2 bits, mainly for ACK/NACK)
+   - Format 2 (up to 64 bits, mainly for CSI feedback)
+*  NR-PRACH
+   - Formats 0,1,2,3, A1-A3, B1-B3
+*  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
+*  Highly efficient 3GPP compliant polar encoder and decoder
+*  Encoder and decoder for short block
    
-### gNB higher Layers ###
-  
+## gNB Higher Layers ##
+
+**gNB RRC**  
 - NR RRC (38.331) Rel 15 messages using new asn1c 
 - LTE RRC (36.331) also updated to Rel 15 
-- Generation of MIB
+- Generation of CellGroupConfig (for eNB) and MIB
 - Application to read configuration file and program gNB RRC
-- RRC -> MAC configuration
-- MAC -> PHY configuration (using NR FAPI P5 interface)
-- FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
+- RRC can configure PDCP, RLC, MAC
 
-For more details see [this document](https://gitlab.eurecom.fr/oai/openairinterface5g/uploads/ba5368448d627743a28c770c29e8978e/OAI_Software_Architecture_for_Dual_Connectivity_in_E-UTRA_and_5G-NR_and_nFAPI_for_MAC-PHY_Interface.docx)
+**gNB X2AP**
+- X2 setup with eNB
+- Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete 
 
-## NR UE Features ##
+**gNB MAC**
+- MAC -> PHY configuration using NR FAPI P5 interface
+- MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
+- Scheduler for RA procedreat gNB
+- MAC downlink scheduler (fixed allocations)
+- MAC header generation (including timing advance)
+- ACK / NACK handling and HARQ procedures for downlink
+- **As of May 2020** only DL was validated with COTS phone ; UL in progress, validated with OAI UE in noS1 mode
 
-### NR UE PHY Layer ###
 
-- initial synchronization
-- Time tracking based on PDCCH DMRS
-- Frequency offset estimation
-- PBCH RX
-- PDCCH RX 
-- PDSCH RX
-  - including first version of dual stream receiver for PDSCH
+# OpenAirInterface 5G-NR UE Feature Set #
 
-### NR UE higher Layers ###
+**as of May 2020** only supporting "noS1" mode (DL):
+- Creates TUN interface to PDCP to inject and receive user-place traffic
+- Will only work with OAI gNB configured in the same mode
 
-For more details see [this document](https://gitlab.eurecom.fr/oai/openairinterface5g/uploads/f7386f3a64806fd6b2ac1fc3d0252fff/UE_FAPI-like_interface.docx)
+##  UE PHY Layer ##
+
+*  Initial synchronization
+*  Time tracking based on PBCH DMRS
+*  Time tracking based on PBCH DMRS
+*  Frequency offset estimation
+*  PBCH RX
+*  PDCCH RX
+*  PDSCH RX, including a first version of dual stream receiver for PDSCH  
+*  30KHz SCS for FR1 and 120 KHz SCS for FR2
+*  Generation of NR-PSS/NR-SSS
+*  NR-PBCH supports multiple SSBs and flexible periodicity
+*  Generation of NR-PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
+   - common search space configured by MIB
+   - user-specific search space configured by RRC
+   - DCI formats: 00, 10 (01 and 11 **under integration**)
+*  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+   - Single symbol DMRS, DMRS-TypeA-Position Pos2,  DMRS configuration type 1
+   - PDSCH mapping type A
+*  NR-CSI Generation of sequence at PHY (**under integration**)
+*  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+*  NR-PUCCH 
+   - Format 0 (2 bits, mainly for ACK/NACK)
+   - Format 2 (up to 64 bits, mainly for CSI feedback)
+*  NR-PRACH
+   - Formats 0,1,2,3, A1-A3, B1-B3
+*  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
+*  Highly efficient 3GPP compliant polar encoder and decoder
+*  Encoder and decoder for short block
+
+
+## UE Higher Layers ##
+
+**gNB MAC**
+- Initial sync and MIB detection
+- MAC -> PHY configuration of PHY via UE FAPI P5 interface
+- Basic MAC to control PHY via UE FAPI P7 interface
+- Random ccess procedure
+
+**RLC**
+
+**PDCP**
+
+
 
 [OAI wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
 

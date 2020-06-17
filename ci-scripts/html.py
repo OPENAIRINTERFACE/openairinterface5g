@@ -326,7 +326,7 @@ class HTMLManagement():
 					continue
 
 				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <th colspan=8>' + str('eNB') + ' Server Characteristics</th>\n')
+				self.htmlFile.write('        <th colspan=8>' + str(machine) + ' Server Characteristics</th>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td>OS Version</td>\n')
