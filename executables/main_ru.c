@@ -56,11 +56,15 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
-
+#include "openair2/ENB_APP/enb_paramdef.h"
 #include "system.h"
 
 #include <executables/split_headers.h>
 #include <targets/RT/USER/lte-softmodem.h>
+
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
+static int DEFBFW[] = {0x00007fff};
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
