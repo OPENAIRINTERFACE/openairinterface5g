@@ -163,9 +163,9 @@ int main ( int argc, char **argv )
 
   config_sync_var=0;
 
+  paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-  config_getlist( &RUParamList,NULL,0, NULL);
-  AssertFatal(RUParamList.numelt==1,"Cannot handle %d RUs, only 1\n",RUParamList.numelt);
+  config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
 
   int j=0;
 
