@@ -89,6 +89,9 @@ function start_basic_sim_enb {
         fi
     done
     ENB_SYNC=0
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -151,6 +154,9 @@ function start_basic_sim_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -764,6 +770,9 @@ function start_l2_sim_enb {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
     rm $1
     ENB_SYNC=1
     if [ $i -lt 50 ]
@@ -872,6 +881,9 @@ function start_l2_sim_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
     UE_SYNC=1
     if [ $i -lt 50 ]
@@ -985,6 +997,9 @@ function start_rf_sim_enb {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -1114,6 +1129,9 @@ function start_rf_sim_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -1236,6 +1254,10 @@ function start_rf_sim_gnb {
         fi
     fi
     sleep 10
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
+    rm $1
     # Copy the RAW files from the gNB run for the NR-UE
     scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/rbconfig.raw .
     scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/reconfig.raw .
@@ -1310,6 +1332,9 @@ function start_rf_sim_nr_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
