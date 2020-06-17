@@ -30,6 +30,7 @@
 
 import constants as CONST
 
+
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -3061,7 +3062,7 @@ class OaiCiTest():
 		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
+	if action!='Build_PhySim' and action!='Run_PhySim' and  action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -3208,6 +3209,11 @@ def GetParametersFromXML(action):
 			else:
 				CiTestObj.x2_ho_options = string_field
 
+	if action == 'Build_PhySim':
+		ldpc.buildargs  = test.findtext('physim_build_args')
+
+	if action == 'Run_PhySim':
+		ldpc.runargs = test.findtext('physim_run_args')
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -3243,6 +3249,9 @@ EPC.SetHtmlObj(HTML)
 RAN.SetHtmlObj(HTML)
 RAN.SetEpcObj(EPC)
 
+import cls_physim           #class PhySim for physical simulators build and test
+ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
+
 argvs = sys.argv
 argc = len(argvs)
 cwd = os.getcwd()
@@ -3264,12 +3273,14 @@ while len(argvs) > 1:
 		CiTestObj.ranRepository = matchReg.group(1)
 		RAN.SetranRepository(matchReg.group(1))
 		HTML.SetranRepository(matchReg.group(1))
+		ldpc.ranRepository=matchReg.group(1)
 	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		doMerge = matchReg.group(1)
+		ldpc.ranAllowMerge=matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
 			CiTestObj.ranAllowMerge = True
 			RAN.SetranAllowMerge(True)
@@ -3282,6 +3293,7 @@ while len(argvs) > 1:
 		CiTestObj.ranBranch = matchReg.group(1)
 		RAN.SetranBranch(matchReg.group(1))
 		HTML.SetranBranch(matchReg.group(1))
+		ldpc.ranBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
@@ -3290,6 +3302,7 @@ while len(argvs) > 1:
 		CiTestObj.ranCommitID = matchReg.group(1)
 		RAN.SetranCommitID(matchReg.group(1))
 		HTML.SetranCommitID(matchReg.group(1))
+		ldpc.ranCommitID=matchReg.group(1)
 	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
@@ -3298,10 +3311,12 @@ while len(argvs) > 1:
 		CiTestObj.ranTargetBranch = matchReg.group(1)
 		RAN.SetranTargetBranch(matchReg.group(1))
 		HTML.SetranTargetBranch(matchReg.group(1))
+		ldpc.ranTargetBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBIPAddress(matchReg.group(1))
+			ldpc.eNBIpAddr=matchReg.group(1)
 		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1IPAddress(matchReg.group(1))
@@ -3312,6 +3327,7 @@ while len(argvs) > 1:
 		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBUserName(matchReg.group(1))
+			ldpc.eNBUserName=matchReg.group(1)
 		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1UserName(matchReg.group(1))
@@ -3322,6 +3338,7 @@ while len(argvs) > 1:
 		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBPassword(matchReg.group(1))
+			ldpc.eNBPassWord=matchReg.group(1)
 		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1Password(matchReg.group(1))
@@ -3332,6 +3349,7 @@ while len(argvs) > 1:
 		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBSourceCodePath(matchReg.group(1))
+			ldpc.eNBSourceCodePath=matchReg.group(1)
 		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1SourceCodePath(matchReg.group(1))
@@ -3702,6 +3720,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CiTestObj.IdleSleep()
 				elif action == 'Perform_X2_Handover':
 					CiTestObj.Perform_X2_Handover()
+				elif action == 'Build_PhySim':
+					HTML=ldpc.Build_PhySim(HTML,CONST)
+					if ldpc.exitStatus==1:sys.exit()
+				elif action == 'Run_PhySim':
+					ldpc.Run_PhySim(HTML,CONST)
 				else:
 					sys.exit('Invalid action')
 		CiTestObj.FailReportCnt += 1
