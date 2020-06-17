@@ -58,6 +58,7 @@
 #define CONFIG_STRING_MACRLC_SCHED_MODE                    "scheduler_mode"
 #define CONFIG_MACRLC_PUSCH10xSNR                          "puSch10xSnr"
 #define CONFIG_MACRLC_PUCCH10xSNR                          "puCch10xSnr"
+#define CONFIG_STRING_MACRLC_DEFAULT_SCHED_DL_ALGO         "default_sched_dl_algo"
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            MacRLC  configuration parameters                                                                           */
@@ -84,6 +85,7 @@
 {CONFIG_STRING_MACRLC_SCHED_MODE,                        NULL,     0,          strptr:NULL,         defstrval:"default",       TYPE_STRING,   0},        \
 {CONFIG_MACRLC_PUSCH10xSNR,  		                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 {CONFIG_MACRLC_PUCCH10xSNR,  		                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_DEFAULT_SCHED_DL_ALGO,             NULL,     0,          strptr:NULL,         defstrval:"round_robin_dl", TYPE_STRING,   0},        \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -105,6 +107,7 @@
 #define MACRLC_SCHED_MODE_IDX                                  17
 #define MACRLC_PUSCH10xSNR_IDX                                 18
 #define MACRLC_PUCCH10xSNR_IDX                                 19 
+#define MACRLC_DEFAULT_SCHED_DL_ALGO_IDX                       20
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #endif
