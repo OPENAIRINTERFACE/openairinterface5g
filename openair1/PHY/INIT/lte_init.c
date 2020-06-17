@@ -384,6 +384,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   lte_gold (fp, eNB->lte_gold_table, fp->Nid_cell);
   generate_pcfich_reg_mapping (fp);
   generate_phich_reg_mapping (fp);
+  init_sss();
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
     eNB->first_run_timing_advance[UE_id] =

@@ -2601,6 +2601,31 @@ target_link_libraries(du_test
   ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl ${ITTI_LIB}
 )
 
+add_executable(oairu
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR_TARGETS}/RT/USER/ru_control.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
+  ${OPENAIR_DIR}/openair1/SCHED/phy_procedures_lte_common.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
+  ${OPENAIR_DIR}/executables/main_ru.c
+  ${T_SOURCE}
+  ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${CONFIG_SOURCES}
+  ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${SHLIB_LOADER_SOURCES}
+)
+target_link_libraries (oairu
+  -Wl,--start-group
+  SCHED_RU_LIB 
+  PHY_COMMON PHY_RU 
+  -Wl,--end-group z dl)
+  
+target_link_libraries (oairu pthread m ${CONFIG_LIB} rt ${CMAKE_DL_LIBS} ${T_LIB})
+
 # lte-uesoftmodem is  UE implementation
 #######################################
 

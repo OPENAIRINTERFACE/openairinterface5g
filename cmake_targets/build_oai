@@ -100,6 +100,8 @@ Options
   Makes the NR softmodem
 --nrUE
   Makes the NR UE softmodem
+--RU
+  Makes the OAI RRU (without full stack) 
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -242,6 +244,10 @@ function main() {
             NR="True"
             echo_info "Will compile gNB"
             shift;;
+       --RU)
+	    RU=1
+            echo_info "Will compile RRU"
+	    shift;;
        -a | --agent)
             echo_info "FlexRAN support is always compiled into the eNB"
             shift;;
@@ -443,7 +449,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$gNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$gNB" = "1" =o "$RU" = "1"] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -574,7 +580,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
     # softmodem compilation
 
@@ -608,6 +614,9 @@ function main() {
     fi
     if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
+    fi
+    if [ "$RU" = "1" ] ; then
+      execlist="$execlist oairu"
     fi
     if [ "$UE" = 1 ] ; then
       execlist="$execlist lte-uesoftmodem"
@@ -820,7 +829,7 @@ function main() {
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then

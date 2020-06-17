@@ -2677,9 +2677,38 @@ void set_function_spec_param(RU_t *ru) {
   } // switch on interface type
 }
 
-//extern void RCconfig_RU(void);
+void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync) {
 
+  ru->rf_config_file = rf_config_file;
+  ru->idx            = ru_id;
+  ru->ts_offset      = 0;
+  
+  if (ru->is_slave == 1) {
+    ru->in_synch = 0;
+    ru->generate_dmrs_sync = 0;
+  } else {
+    ru->in_synch = 1;
+    ru->generate_dmrs_sync = send_dmrssync;
+  }
+  
+  ru->cmd = EMPTY;
+  ru->south_out_cnt = 0;
+  // use eNB_list[0] as a reference for RU frame parameters
+  // NOTE: multiple CC_id are not handled here yet!
+  
+  //ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+  if ((ru->is_slave == 0) && (ru->ota_sync_enable == 1))
+    ru->generate_dmrs_sync = 1;
+  else
+    ru->generate_dmrs_sync = 0;
+  
+  ru->wakeup_L1_sleeptime = 2000;
+  ru->wakeup_L1_sleep_cnt_max  = 3;
+  
 
+}
+
+// This part if on eNB side 
 void init_RU(char *rf_config_file, int send_dmrssync) {
   int ru_id, i, CC_id;
   RU_t *ru;
@@ -2699,38 +2728,14 @@ void init_RU(char *rf_config_file, int send_dmrssync) {
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     LOG_D(PHY,"Process RC.ru[%d]\n",ru_id);
     ru                 = RC.ru[ru_id];
-    ru->rf_config_file = rf_config_file;
-    ru->idx            = ru_id;
-    ru->ts_offset      = 0;
-
-    if (ru->is_slave == 1) {
-      ru->in_synch = 0;
-      ru->generate_dmrs_sync = 0;
-    } else {
-      ru->in_synch = 1;
-      ru->generate_dmrs_sync = send_dmrssync;
-    }
-
-    ru->cmd = EMPTY;
-    ru->south_out_cnt = 0;
-    // use eNB_list[0] as a reference for RU frame parameters
-    // NOTE: multiple CC_id are not handled here yet!
-
-    //ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
-    if ((ru->is_slave == 0) && (ru->ota_sync_enable == 1))
-      ru->generate_dmrs_sync = 1;
-    else
-      ru->generate_dmrs_sync = 0;
-
-    ru->wakeup_L1_sleeptime = 2000;
-    ru->wakeup_L1_sleep_cnt_max  = 3;
+    init_RU0(ru,ru_id,rf_config_file,send_dmrssync);
 
     if (ru->num_eNB > 0) {
       LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
-
+      
       if (ru->eNB_list[0] == 0) {
-        LOG_E(PHY,"%s() DJP - ru->eNB_list ru->num_eNB are not initialized - so do it manually\n", __FUNCTION__);
-        ru->eNB_list[0] = RC.eNB[0][0];
+	LOG_E(PHY,"%s() DJP - ru->eNB_list ru->num_eNB are not initialized - so do it manually\n", __FUNCTION__);
+	ru->eNB_list[0] = RC.eNB[0][0];
         ru->num_eNB=1;
         //
         // DJP - feptx_prec() / feptx_ofdm() parses the eNB_list (based on num_eNB) and copies the txdata_F to txdata in RU
@@ -2739,7 +2744,7 @@ void init_RU(char *rf_config_file, int send_dmrssync) {
         LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
       }
     }
-
+    
     eNB0 = ru->eNB_list[0];
     fp   = ru->frame_parms;
     LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);

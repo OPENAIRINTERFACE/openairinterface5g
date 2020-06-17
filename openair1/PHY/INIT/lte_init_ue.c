@@ -629,6 +629,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   init_frame_parms(&ue->frame_parms,1);
   lte_sync_time_init(&ue->frame_parms);
   init_lte_top(&ue->frame_parms);
+  init_sss();
   init_7_5KHz();
   init_ul_hopping(&ue->frame_parms);
   // many memory allocation sizes are hard coded
