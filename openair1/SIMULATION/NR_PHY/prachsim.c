@@ -87,7 +87,7 @@ int main(int argc, char **argv){
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs, bw;
   int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
-  uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format;
+  uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format = 0;
   uint8_t frame = 1, subframe = 19, config_index = 98, prach_sequence_length = 1, num_root_sequences = 16, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
   uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;

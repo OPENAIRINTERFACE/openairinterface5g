@@ -4487,7 +4487,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
-  uint8_t nr_prach;
+  uint8_t nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 

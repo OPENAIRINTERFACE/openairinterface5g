@@ -232,7 +232,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
   unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx;
-  uint8_t K_ptrs;
+  uint8_t K_ptrs = 0;
   uint32_t rxF_ext_index = 0;
   uint32_t ul_ch0_ext_index = 0;
   uint32_t ul_ch0_index = 0;

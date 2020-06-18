@@ -214,7 +214,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", dlsch1_harq->codeword);
       #endif
 
-      AssertFatal(1 == 0, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported %d\n");
+      AssertFatal(1 == 0, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
 
     } else {
       LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
@@ -230,7 +230,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   }
 
-  if (dlsch0_harq = NULL)
+  if (dlsch0_harq == NULL)
      AssertFatal(1 == 0, "Done\n");
 
   dlsch0_harq->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);

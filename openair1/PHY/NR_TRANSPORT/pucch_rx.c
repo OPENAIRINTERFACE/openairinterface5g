@@ -1585,7 +1585,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     uci_pdu->sr.sr_bit_len = 1;
     uci_pdu->sr.sr_payload = malloc(1);
     uci_pdu->sr.sr_payload[0] = decodedPayload[0]&1;
-    decodedPayload[0]>>1;
+    decodedPayload[0] = decodedPayload[0]>>1;
   }
   // csi
   if (pucch_pdu->bit_len_csi_part1>0) {

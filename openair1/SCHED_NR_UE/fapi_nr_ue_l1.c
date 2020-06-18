@@ -51,7 +51,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
-    NR_UE_DLSCH_t *dlsch0;
+    NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
 
@@ -123,7 +123,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
         /* PRACH */
-        NR_PRACH_RESOURCES_t *prach_resources;
+        //NR_PRACH_RESOURCES_t *prach_resources;
         fapi_nr_ul_config_prach_pdu *prach_config_pdu;
         /* PUSCH */
         nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu;
@@ -193,7 +193,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
-          prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
+          //prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
           PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_Config_enabled = 1;

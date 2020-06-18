@@ -164,7 +164,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   int dftlen=0;
   int mu = fp->numerology_index;
-  int Ncp;
+  int Ncp = 0;
   int16_t *prach2;
 
   if (prach_sequence_length == 0) {

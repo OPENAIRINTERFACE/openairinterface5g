@@ -84,7 +84,7 @@ int main(int argc, char **argv)
   int format=0;
   //uint8_t extended_prefix_flag=0;
   FILE *input_fd=NULL;
-  uint8_t nacktoack_flag=0;
+  //uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
   int nr_tti_tx=0; 
   uint64_t actual_payload=0,payload_received;
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
       actual_payload=atoi(optarg);
       break;
     case 'T':
-      nacktoack_flag=(uint8_t)atoi(optarg);
+      //nacktoack_flag=(uint8_t)atoi(optarg);
       target_error_rate=0.001;
       break;
     default:
@@ -457,7 +457,7 @@ int main(int argc, char **argv)
   pucch_GroupHopping_t PUCCH_GroupHopping=UE->pucch_config_common_nr->pucch_GroupHopping;
   uint32_t hopping_id=UE->pucch_config_common_nr->hoppingId;
   uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
-  t_nrPolar_params *currentPtr;
+  //t_nrPolar_params *currentPtr;
 
   if(format==0){
   // for now we are not considering SR just HARQ-ACK

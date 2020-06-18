@@ -157,7 +157,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   if (mac->crnti > 0) {
 
     NR_SearchSpace_t *css;
-    NR_SearchSpace_t *uss;
+    NR_SearchSpace_t *uss = NULL;
     NR_ServingCellConfigCommon_t *scc;
     NR_SearchSpaceId_t ra_SearchSpaceId;
     rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
