@@ -114,7 +114,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t data_existing =0;
   uint8_t L_ptrs, K_ptrs; // PTRS parameters
   uint16_t beta_ptrs; // PTRS parameter related to power control
-  uint8_t no_data_in_dmrs = 1;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue=NULL;
@@ -127,7 +126,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   Nid_cell = 0;
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   number_dmrs_symbols = 0;
-
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
@@ -149,10 +147,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
 
-    if(no_data_in_dmrs)
-      nb_dmrs_re_per_rb = 12;
-    else
-      nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
+    nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data;
 
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
 
@@ -173,7 +168,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                              0,
                                              0,
                                              harq_process_ul_ue->pusch_pdu.nrOfLayers);
-
 
     uint8_t access_mode = SCHEDULED_ACCESS;
 
@@ -439,7 +433,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else if (((ul_dmrs_symb_pos >> l) & 0x01) == 0) {
+        } else if (allowed_ulsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
@@ -471,6 +465,27 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ////////////////////////////////////////////////////////////////////////
 
   LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
+}
+
+
+uint8_t allowed_ulsch_re_in_dmrs_symbol(uint16_t k,
+                                        uint16_t start_sc,
+                                        uint8_t numDmrsCdmGrpsNoData,
+                                        uint8_t dmrs_type) {
+  uint8_t delta;
+  for (int i = 0; i<numDmrsCdmGrpsNoData; i++){
+    if  (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
+      delta = i;
+      if (((k-start_sc)%2)  == delta)
+        return (0);
+    }
+    else {
+      delta = i<<1;
+      if ( (((k-start_sc)%6)  == delta) || (((k-start_sc)%6)  == (delta+1)) )
+        return (0);
+    }
+  }
+  return (1);
 }
 
 

@@ -872,6 +872,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
                                                  0,
 						 pusch_pdu->nrOfLayers)>>3;
 
+
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;
   //pusch_pdu->pusch_uci;

@@ -648,7 +648,7 @@ int main(int argc, char **argv)
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
       pusch_pdu->dmrs_ports = 1;
-      pusch_pdu->num_dmrs_cdm_grps_no_data = 2;
+      pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
       pusch_pdu->resource_alloc = 1; 
       pusch_pdu->rb_start = start_rb;
       pusch_pdu->rb_size = nb_rb;
@@ -703,10 +703,7 @@ int main(int argc, char **argv)
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
-      if(no_data_in_dmrs)
-        nb_re_dmrs = 12;
-      else
-        nb_re_dmrs = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+      nb_re_dmrs = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
 
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
       TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
