@@ -84,7 +84,7 @@
 
 int attach_rru(RU_t *ru);
 void configure_ru(int idx, void *arg);
-void configure_rru(int idx, void *arg);
+void configure_rru(RU_t *ru, void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
 void* ru_thread_control( void* param );
 
@@ -335,7 +335,7 @@ int connect_rau(RU_t *ru)
 	    ((RRU_config_t *)&rru_config_msg.msg[0])->prach_FreqOffset[0],
 	    ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
       
-      configure_rru(ru->idx,
+      configure_rru(ru,
 		    (void*)&rru_config_msg.msg[0]);
       configuration_received = 1;
     }
@@ -440,11 +440,10 @@ void configure_ru(int idx,
   phy_init_RU(ru);
 }
 
-void configure_rru(int idx,
+void configure_rru(RU_t *ru,
                    void *arg)
 {
   RRU_config_t *config = (RRU_config_t *)arg;
-  RU_t         *ru     = RC.ru[idx];
 
   ru->frame_parms->eutra_band                                               = config->band_list[0];
   ru->frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
@@ -603,7 +602,7 @@ void* ru_thread_control( void* param )
 		      ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
 	      
 		ru->frame_parms = calloc(1, sizeof(*ru->frame_parms));
-		configure_rru(ru->idx, (void*)&rru_config_msg.msg[0]);
+		configure_rru(ru, (void*)&rru_config_msg.msg[0]);
 
  					  
 		fill_rf_config(ru,ru->rf_config_file);

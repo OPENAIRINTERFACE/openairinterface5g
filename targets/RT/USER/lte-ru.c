@@ -534,7 +534,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,
   LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,tti_tx);
 
   // dump VCD output for first RU in list
-  if (ru == RC.ru[0]) {
+  if (ru->idx == 0) {
     /*VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );*/
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_NORTH_ASYNCH_IN, frame_tx);
@@ -730,7 +730,7 @@ void rx_rf(RU_t *ru,
           proc->tti_rx);
 
     // dump VCD output for first RU in list
-    if (ru == RC.ru[0]) {
+    if (ru->idx == 0) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
 
@@ -1731,8 +1731,10 @@ static void *ru_thread( void *param ) {
 
     // wait to be woken up
     if (ru->function!=eNodeB_3GPP && ru->has_ctrl_prt == 1) {
+      LOG_I(PHY,"Waiting for control thread to say go\n");
       if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
-    } else wait_sync("ru_thread");
+    } else wait_sync("ru_thread"); 
+    LOG_I(PHY,"Got start from control thread\n");
 
     if(!(get_softmodem_params()->emulate_rf)) {
       if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
@@ -1760,7 +1762,7 @@ static void *ru_thread( void *param ) {
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
-    LOG_D(PHY,"Starting steady-state operation\n");
+    LOG_I(PHY,"Starting steady-state operation\n");
 
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN || ru->state == RU_CHECK_SYNC) {

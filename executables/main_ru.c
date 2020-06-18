@@ -76,7 +76,6 @@ uint16_t sf_ahead = 4;
 RU_t ru_m;
 
 
-static int DEFBANDS[] = {7};
 
 void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync);
 
@@ -163,16 +162,6 @@ int main ( int argc, char **argv )
   
 
   RU_t *ru=&ru_m;
-  init_RU0(ru,0,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
-  ru->rf_map.card=0;
-  ru->rf_map.chain=(get_softmodem_params()->chain_offset);
-  
-  LOG_I(PHY, "Initializing RRU descriptor %d : (%s,%s,%d)\n", ru_id, ru_if_types[ru->if_south], NB_timing[ru->if_timing], ru->function);
-  set_function_spec_param(ru);
-  LOG_I(PHY, "Starting ru_thread %d, is_slave %d, send_dmrs %d\n", ru_id, ru->is_slave, ru->generate_dmrs_sync);
-  init_RU_proc(ru);
-
-  config_sync_var=0;
 
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
@@ -323,7 +312,24 @@ int main ( int argc, char **argv )
 
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
-  
+  pthread_cond_init(&sync_cond,NULL);
+  pthread_mutex_init(&sync_mutex, NULL);
+ 
+  init_RU0(ru,0,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
+  ru->rf_map.card=0;
+  ru->rf_map.chain=(get_softmodem_params()->chain_offset);
+
+  LOG_I(PHY, "Initializing RRU descriptor : (%s,%s,%d)\n", ru_if_types[ru->if_south], NB_timing[ru->if_timing], ru->function);
+  set_function_spec_param(ru);
+  LOG_I(PHY, "Starting ru_thread , is_slave %d, send_dmrs %d\n", ru->is_slave, ru->generate_dmrs_sync);
+  init_RU_proc(ru);
+
+  config_sync_var=0;
+  pthread_mutex_lock(&sync_mutex);
+  sync_var=0;
+  pthread_cond_broadcast(&sync_cond);
+  pthread_mutex_unlock(&sync_mutex);
+ 
   while (oai_exit==0) sleep(1);
   // stop threads
       
