@@ -49,6 +49,8 @@ message flex_cell_config {
 }
 
 message flex_slice_config {
+  optional flex_slice_dl_ul_config dl = 6;
+  optional flex_slice_dl_ul_config ul = 7;
 }
 
 message flex_ue_config {

@@ -1025,60 +1025,166 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   
 }
 
-Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul)
-{
-  Protocol__FlexSliceConfig *fsc = malloc(sizeof(Protocol__FlexSliceConfig));
-  if (!fsc) return NULL;
-  protocol__flex_slice_config__init(fsc);
-
-  /* TODO */
-  return fsc;
-}
-
-void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *sup)
-{
-}
-
-
-void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config)
-{
-  if (n_ue_slice_assoc_updates == 10) {
-    LOG_E(FLEXRAN_AGENT,
-          "[%d] can not handle flex_ue_config message, buffer is full; try again later\n",
-          mod_id);
-    return;
+void update_or_remove_dl(mid_t mod_id, Protocol__FlexSlice *s) {
+  if (s->params_case == PROTOCOL__FLEX_SLICE__PARAMS__NOT_SET
+      && !s->label && !s->scheduler) {
+    LOG_I(FLEXRAN_AGENT, "remove DL slice ID %d\n", s->id);
+    const int rc = flexran_remove_dl_slice(mod_id, s);
+    if (!rc)
+      LOG_W(FLEXRAN_AGENT, "error while removing slice ID %d\n", s->id);
+  } else {
+    LOG_I(FLEXRAN_AGENT, "updating DL slice ID %d\n", s->id);
+    const int rc = flexran_create_dl_slice(mod_id, s);
+    if (rc < 0)
+      LOG_W(FLEXRAN_AGENT,
+            "error while update slice ID %d: flexran_create_dl_slice() -> %d\n",
+            s->id, rc);
   }
+}
+
+void update_or_remove_ul(mid_t mod_id, Protocol__FlexSlice *s) {
+  if (s->params_case == PROTOCOL__FLEX_SLICE__PARAMS__NOT_SET
+      && !s->label && !s->scheduler) {
+    LOG_I(FLEXRAN_AGENT, "remove UL slice ID %d\n", s->id);
+    const int rc = flexran_remove_ul_slice(mod_id, s);
+    if (!rc)
+      LOG_W(FLEXRAN_AGENT, "error while removing slice ID %d\n", s->id);
+  } else {
+    LOG_I(FLEXRAN_AGENT, "updating UL slice ID %d\n", s->id);
+    const int rc = flexran_create_ul_slice(mod_id, s);
+    if (rc < 0)
+      LOG_W(FLEXRAN_AGENT,
+            "error while updating slice ID %d: flexran_create_ul_slice() -> %d)\n",
+            s->id, rc);
+  }
+}
+
+void apply_update_dl_slice_config(mid_t mod_id, Protocol__FlexSliceDlUlConfig *dl) {
+  if (!dl)
+    return;
+
+  Protocol__FlexSliceAlgorithm dl_algo = flexran_get_dl_slice_algo(mod_id);
+  if (dl->has_algorithm && dl_algo != dl->algorithm) {
+    LOG_I(FLEXRAN_AGENT, "loading new DL slice algorithm %d\n", dl->algorithm);
+    dl_algo = dl->algorithm;
+    flexran_set_dl_slice_algo(mod_id, dl_algo);
+  }
+
+  /* first update existing slices, then create new. Thus, we go through the
+   * list twice. First round, if a slice exists, handle and mark as such. Then,
+   * apply all others in the second round */
+  if (dl->n_slices > 0) {
+    if (dl_algo == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update slices: no algorithm loaded\n");
+      return;
+    }
+    int handled_dl[dl->n_slices];
+    for (int i = 0; i < dl->n_slices; ++i) {
+      if (flexran_find_dl_slice(mod_id, dl->slices[i]->id) < 0) {
+        handled_dl[i] = 0;
+        continue;
+      }
+      update_or_remove_dl(mod_id, dl->slices[i]);
+      handled_dl[i] = 1;
+    }
+    for (int i = 0; i < dl->n_slices; ++i) {
+      if (handled_dl[i])
+        continue;
+      update_or_remove_dl(mod_id, dl->slices[i]);
+    }
+  }
+
+  if (dl->scheduler) {
+    if (dl_algo != PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update scheduling algorithm: slice algorithm loaded\n");
+      return;
+    }
+    LOG_I(FLEXRAN_AGENT, "loading DL new scheduling algorithm '%s'\n", dl->scheduler);
+    const int rc = flexran_set_dl_scheduler(mod_id, dl->scheduler);
+    if (rc < 0) {
+      LOG_E(FLEXRAN_AGENT,
+            "error while updating scheduling algorithm: "
+            "flexran_update_dl_sched_algo() -> %d)\n",
+            rc);
+      return;
+    }
+  }
+}
+
+void apply_update_ul_slice_config(mid_t mod_id, Protocol__FlexSliceDlUlConfig *ul) {
+  if (!ul)
+    return;
+
+  Protocol__FlexSliceAlgorithm ul_algo = flexran_get_ul_slice_algo(mod_id);
+  if (ul->has_algorithm && ul_algo != ul->algorithm) {
+    LOG_I(FLEXRAN_AGENT, "loading new UL slice algorithm %d\n", ul->algorithm);
+    ul_algo = ul->algorithm;
+    flexran_set_ul_slice_algo(mod_id, ul_algo);
+  }
+  if (ul->n_slices > 0) {
+    if (ul_algo == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update slices: no algorithm loaded\n");
+      return;
+    }
+    int handled_ul[ul->n_slices];
+    for (int i = 0; i < ul->n_slices; ++i) {
+      if (flexran_find_ul_slice(mod_id, ul->slices[i]->id) < 0) {
+        handled_ul[i] = 0;
+        continue;
+      }
+      update_or_remove_ul(mod_id, ul->slices[i]);
+      handled_ul[i] = 1;
+    }
+    for (int i = 0; i < ul->n_slices; ++i) {
+      if (handled_ul[i])
+        continue;
+      update_or_remove_ul(mod_id, ul->slices[i]);
+    }
+  }
+
+  if (ul->scheduler) {
+    if (ul_algo != PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update scheduling algorithm: slice algorithm loaded\n");
+      return;
+    }
+    LOG_I(FLEXRAN_AGENT, "loading new UL scheduling algorithm '%s'\n", ul->scheduler);
+    const int rc = flexran_set_ul_scheduler(mod_id, ul->scheduler);
+    if (rc < 0) {
+      LOG_E(FLEXRAN_AGENT,
+            "error while updating scheduling algorithm: "
+            "flexran_update_dl_sched_algo() -> %d)\n",
+            rc);
+      return;
+    }
+  }
+}
+
+int apply_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config)
+{
   if (!ue_config->has_rnti) {
     LOG_E(FLEXRAN_AGENT,
           "[%d] cannot update UE to slice association, no RNTI in flex_ue_config message\n",
           mod_id);
-    return;
+    return 0;
   }
-  if (ue_config->has_dl_slice_id)
-    LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %#x to DL slice ID %d\n",
-          mod_id, ue_config->rnti, ue_config->dl_slice_id);
-  if (ue_config->has_ul_slice_id)
-    LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %#x to UL slice ID %d\n",
-          mod_id, ue_config->rnti, ue_config->ul_slice_id);
-  ue_slice_assoc_update[n_ue_slice_assoc_updates++] = ue_config;
-  perform_slice_config_update_count = 2;
-}
-
-int apply_ue_slice_assoc_update(mid_t mod_id)
-{
-  int i;
-  int changes = 0;
-  for (i = 0; i < n_ue_slice_assoc_updates; i++) {
-    int ue_id = find_UE_id(mod_id, ue_slice_assoc_update[i]->rnti);
-    if (ue_id < 0 || ue_id > MAX_MOBILES_PER_ENB){
-      LOG_E(FLEXRAN_AGENT,"UE_id %d is wrong!!\n",ue_id);
-      continue;
-    }
-    if (ue_slice_assoc_update[i]->has_dl_slice_id) {
-    }
-    if (ue_slice_assoc_update[i]->has_ul_slice_id) {
+  int UE_id = flexran_get_mac_ue_id_rnti(mod_id, ue_config->rnti);
+  if (ue_config->has_dl_slice_id) {
+    if (flexran_get_dl_slice_algo(mod_id) == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "no DL slice algorithm loaded\n");
+    } else {
+      LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %04x - %d/UE %d to DL slice ID %d\n",
+            mod_id, ue_config->rnti, ue_config->rnti, UE_id, ue_config->dl_slice_id);
+      flexran_set_ue_dl_slice_id(mod_id, UE_id, ue_config->dl_slice_id);
     }
   }
-  n_ue_slice_assoc_updates = 0;
-  return changes;
+  if (ue_config->has_ul_slice_id) {
+    if (flexran_get_ul_slice_algo(mod_id) == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "no UL slice algorithm loaded\n");
+    } else {
+      LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %04x - %d/UE %d to UL slice ID %d\n",
+            mod_id, ue_config->rnti, ue_config->rnti, UE_id, ue_config->ul_slice_id);
+      flexran_set_ue_ul_slice_id(mod_id, UE_id, ue_config->ul_slice_id);
+    }
+  }
+  return 0;
 }

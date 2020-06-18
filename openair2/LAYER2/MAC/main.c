@@ -100,6 +100,7 @@ void mac_top_init_eNB(void)
 
     mac[i]->if_inst = IF_Module_init(i);
 
+    mac[i]->pre_processor_dl.algorithm = 0;
     mac[i]->pre_processor_dl.dl = dlsch_scheduler_pre_processor;
     char *s = "round_robin_dl";
     void *d = dlsym(NULL, s);
@@ -107,6 +108,7 @@ void mac_top_init_eNB(void)
     mac[i]->pre_processor_dl.dl_algo = *(default_sched_dl_algo_t *) d;
     mac[i]->pre_processor_dl.dl_algo.data = mac[i]->pre_processor_dl.dl_algo.setup();
 
+    mac[i]->pre_processor_ul.algorithm = 0;
     mac[i]->pre_processor_ul.ul = ulsch_scheduler_pre_processor;
     s = "round_robin_ul";
     d = dlsym(NULL, s);

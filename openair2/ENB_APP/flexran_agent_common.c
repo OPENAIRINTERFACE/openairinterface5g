@@ -306,6 +306,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
     if (reply->cell_config[i]->mbsfn_subframe_config_sfalloc)
       free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
 
+    /* si_config is shared between MAC and RRC, free here */
     if (reply->cell_config[i]->si_config) {
       for(int j = 0; j < reply->cell_config[i]->si_config->n_si_message; j++) {
         free(reply->cell_config[i]->si_config->si_message[j]);
@@ -316,8 +317,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
     }
 
     if (reply->cell_config[i]->slice_config) {
-      /* TODO */
-      free(reply->cell_config[i]->slice_config);
+      flexran_agent_destroy_mac_slice_config(reply->cell_config[i]);
     }
 
     free(reply->cell_config[i]);
@@ -880,7 +880,7 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (enb_config->n_cell_config > 0) {
     if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
-      prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
+      prepare_update_slice_config(mod_id, &enb_config->cell_config[0]->slice_config);
     }
     if (enb_config->cell_config[0]->has_eutra_band
         && enb_config->cell_config[0]->has_dl_freq
@@ -921,7 +921,11 @@ int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void *params, Proto
   Protocol__FlexUeConfigReply *ue_config_reply = input->ue_config_reply_msg;
 
   for (i = 0; flexran_agent_get_mac_xface(mod_id) && i < ue_config_reply->n_ue_config; i++)
-    prepare_ue_slice_assoc_update(mod_id, ue_config_reply->ue_config[i]);
+    prepare_ue_slice_assoc_update(mod_id, &ue_config_reply->ue_config[i]);
+  /* prepare_ue_slice_assoc_update takes ownership of the individual
+   * FlexUeConfig messages. Therefore, mark zero messages to not accidentally
+   * free them twice */
+  ue_config_reply->n_ue_config = 0;
 
   *msg = NULL;
   return 0;

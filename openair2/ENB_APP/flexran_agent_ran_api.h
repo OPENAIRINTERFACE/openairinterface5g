@@ -656,41 +656,66 @@ int flexran_agent_rrc_gtp_get_teid_sgw(mid_t mod_id, rnti_t rnti, int index);
 uint32_t flexran_get_rrc_enb_ue_s1ap_id(mid_t mod_id, rnti_t rnti);
 
 /************************** Slice configuration **************************/
+/* Get the currently active DL slicing algorithm */
+Protocol__FlexSliceAlgorithm flexran_get_dl_slice_algo(mid_t mod_id);
+/* Set the active DL slicing algorithm */
+int flexran_set_dl_slice_algo(mid_t mod_id, Protocol__FlexSliceAlgorithm algo);
+
+/* Get the currently active UL slicing algorithm */
+Protocol__FlexSliceAlgorithm flexran_get_ul_slice_algo(mid_t mod_id);
+/* Set the active UL slicing algorithm */
+int flexran_set_ul_slice_algo(mid_t mod_id, Protocol__FlexSliceAlgorithm algo);
 
 /* Get the DL slice ID for a UE */
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id);
-/* Set the DL slice index(!) for a UE */
-//void flexran_set_ue_dl_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx);
+/* Set the DL slice for a UE */
+void flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
 
 /* Get the UL slice ID for a UE */
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id);
-/* Set the UL slice index(!) for a UE */
-//void flexran_set_ue_ul_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx);
+/* Set the UL slice for a UE */
+void flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
 
 /* Create slice in DL, returns the new slice index */
-//int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id);
+int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s);
 /* Remove slice in DL, returns new number of slices or -1 on error */
-//int flexran_remove_dl_slice(mid_t mod_id, int slice_idx);
+int flexran_remove_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s);
 
 /* Finds slice in DL with given slice_id and returns slice index */
 int flexran_find_dl_slice(mid_t mod_id, slice_id_t slice_id);
 /* Return the parameters of slice at index slice_idx */
-//void flexran_get_dl_slice(mid_t mod_id, int slice_idx, Protocol__FlexSlice *s);
+void flexran_get_dl_slice(mid_t mod_id,
+                          int slice_idx,
+                          Protocol__FlexSlice *slice,
+                          Protocol__FlexSliceAlgorithm algo);
 /* Get the number of slices in DL */
 int flexran_get_num_dl_slices(mid_t mod_id);
 
 /* Create slice in UL, returns the new slice index */
-//int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id);
+int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s);
 /* Remove slice in UL */
-//int flexran_remove_ul_slice(mid_t mod_id, int slice_idx);
+int flexran_remove_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s);
 
 /* Finds slice in DL with given slice_id and returns slice index */
 int flexran_find_ul_slice(mid_t mod_id, slice_id_t slice_id);
 /* Return the parameters of slice at index slice_idx */
-//void flexran_get_ul_slice(mid_t mod_id, int slice_idx, Protocol__FlexSlice *s);
+void flexran_get_ul_slice(mid_t mod_id,
+                          int slice_idx,
+                          Protocol__FlexSlice *slice,
+                          Protocol__FlexSliceAlgorithm algo);
 /* Get the number of slices in UL */
 int flexran_get_num_ul_slices(mid_t mod_id);
 
+/* Get the name of/Set the DL scheduling algorithm. If slicing is active, this
+ * corresponds to the default algorithm for slices, otherwise the currently
+ * used one. */
+char *flexran_get_dl_scheduler_name(mid_t mod_id);
+int flexran_set_dl_scheduler(mid_t mod_id, char *sched);
+
+/* Get the name of/Set the UL scheduler algorithm. Same applies as for the DL
+ * case */
+char *flexran_get_ul_scheduler_name(mid_t mod_id);
+int flexran_set_ul_scheduler(mid_t mod_id, char *sched);
 
 /************************** S1AP **************************/
 /* Get the number of MMEs to be connected */
