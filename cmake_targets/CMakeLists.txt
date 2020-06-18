@@ -39,6 +39,33 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
+
+
+##############################################
+# Base CUDA setting
+##############################################
+find_package(CUDA)
+if (CUDA_FOUND)
+    message ("cuda include ${CUDA_INCLUDE_DIRS}")
+    message ("cuda library ${CUDA_LIBRARY_DIRS}")
+
+    add_definitions("-L/usr/local/cuda/lib64")
+
+    SET(CUDA_NVCC_FLAGS
+      "${CUDA_NVCC_FLAGS};-arch=sm_60;")
+
+    # Disable warnings for CUDA
+    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
+    SET(CUDA_VERBOSE_BUILD ON)
+    SET(CUDA_HOST_COMPILER "/usr/bin/g++")
+
+    SET(CUDA_SEPARABLE_COMPILATION ON)
+
+else (CUDA_FOUND)
+   message ("No CUDA tool installed")
+endif ()
+
+
 ###########################################
 # macros to define options as there is numerous options in oai
 ################################################
@@ -169,13 +196,30 @@ endif()
 set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
 # add autotools definitions that were maybe used!
-set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
-set(CMAKE_C_FLAGS
-	"${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
-)
-set(CMAKE_CXX_FLAGS
+if (CUDA_FOUND)
+	set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
+    set(CUDA_CMAKE_C_FLAGS
+           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D CUDA_FLAG"
+    )
+    set(CUDA_CMAKE_CXX_FLAGS
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D CUDA_FLAG"
+    )
+	
+	set(CMAKE_C_FLAGS
+           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER} -D CUDA_FLAG"
+    )
+    set(CMAKE_CXX_FLAGS
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER} -D CUDA_FLAG"
+    )
+else (CUDA_FOUND)
+    set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
+    set(CMAKE_C_FLAGS
+           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
+    )
+    set(CMAKE_CXX_FLAGS
 	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
-)
+    )
+endif ()
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
@@ -2821,12 +2865,54 @@ target_link_libraries(smallblocktest
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-add_executable(ldpctest  
-  ${PHY_NR_CODINGIF}
-  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-  ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
-  )
+
+# temp_C_flag = CMAKE_C_FLAGS
+#set(CMAKE_C_FLAGS " ")
+set (TEMP_C_FLAG ${CMAKE_C_FLAGS}) 
+set (CMAKE_C_FLAGS ${CUDA_CMAKE_C_FLAGS})
+
+set (TEMP_CXX_FLAG ${CMAKE_CXX_FLAGS}) 
+set (CMAKE_CXX_FLAGS ${CUDA_CMAKE_CXX_FLAGS})
+if (CUDA_FOUND)
+###################################################
+# For CUDA library 
+###################################################
+    
+    CUDA_ADD_LIBRARY(LDPC_CU 
+      ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
+      )
+    CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
+    cuda_add_executable(ldpctest
+      ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+      ${T_SOURCE}
+      ${SHLIB_LOADER_SOURCES}
+      )
+    target_link_libraries(ldpctest -ldl
+      -Wl,--start-group 
+      LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB 
+      -Wl,--end-group
+      m pthread ${ATLAS_LIBRARIES} dl
+      )
+
+else (CUDA_FOUND)
+    add_executable(ldpctest  
+       ${PHY_NR_CODINGIF}
+       ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+       ${T_SOURCE}
+       ${SHLIB_LOADER_SOURCES}
+       )
+
+endif ()
+set (CMAKE_C_FLAGS ${TEMP_C_FLAG})
+set (CMAKE_CXX_FLAGS ${TEMP_CXX_FLAG})
+
+
+# add_executable(ldpctest  
+  # ${PHY_NR_CODINGIF}
+  # ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+  # ${T_SOURCE}
+  # ${SHLIB_LOADER_SOURCES}
+  # )
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ) 
 
 target_link_libraries(ldpctest
