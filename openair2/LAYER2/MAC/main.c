@@ -133,6 +133,11 @@ void mac_top_init_eNB(void)
     AssertFatal(d, "%s(): no scheduler algo '%s' found\n", __func__, s);
     mac[i]->dl_algo = *(default_sched_dl_algo_t *) d;
     mac[i]->dl_algo.data = mac[i]->dl_algo.setup();
+    s = "round_robin_ul";
+    d = dlsym(NULL, s);
+    AssertFatal(d, "%s(): no scheduler algo '%s' found\n", __func__, s);
+    mac[i]->ul_algo = *(default_sched_ul_algo_t *) d;
+    mac[i]->ul_algo.data = mac[i]->ul_algo.setup();
     init_UE_info(&mac[i]->UE_info);
     init_slice_info(&mac[i]->slice_info);
   }
