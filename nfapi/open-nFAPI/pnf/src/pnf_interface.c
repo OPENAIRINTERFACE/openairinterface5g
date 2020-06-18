@@ -182,7 +182,7 @@ int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf
 	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_param_response_scf_t));
 }
 
-int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_config_response_t* resp)
+int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_scf_t* resp)
 {
 	if (config == NULL || resp == NULL)
 	{
@@ -207,7 +207,7 @@ int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_config_response_t* r
 		return -1;
 	}
 
-	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_config_response_t));
+	return pnf_pack_and_send_p5_message(_this, &(resp->header), sizeof(nfapi_nr_config_response_scf_t));
 }
 
 int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_start_response_t* resp)

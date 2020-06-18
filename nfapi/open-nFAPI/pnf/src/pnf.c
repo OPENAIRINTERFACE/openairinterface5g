@@ -411,7 +411,7 @@ void pnf_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 	}
 	else
 	{
-		nfapi_start_request_t req;
+		 nfapi_nr_start_request_scf_t req;
 	
 		nfapi_pnf_config_t* config = &(pnf->_public);
 	

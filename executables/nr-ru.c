@@ -1038,7 +1038,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   openair0_config_t *cfg   = &ru->openair0_cfg;
   int mu = gNB_config->ssb_config.scs_common.value;
   int N_RB = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;
-
+  N_RB = 106; // TODO: hard coding (change later)
   if (mu == NR_MU_0) { //or if LTE
     if(N_RB == 100) {
       if (fp->threequarter_fs) {

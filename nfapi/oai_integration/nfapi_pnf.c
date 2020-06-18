@@ -669,7 +669,7 @@ int param_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   memcpy(nfapi_resp.nfapi_config.p7_pnf_address_ipv4.address, &pnf_p7_sockaddr.sin_addr.s_addr, 4);
   nfapi_resp.num_tlv++;
   // P7 PNF Port
-printf("TAG value :%d",nfapi_resp.cell_param.phy_state.tl.tag);
+  printf("TAG value :%d",nfapi_resp.cell_param.phy_state.tl.tag);
   nfapi_pnf_param_resp(config, &nfapi_resp);
 
   printf("[PNF] Sent NFAPI_PNF_PARAM_RESPONSE phy_id:%d number_of_tlvs:%u\n", req->header.phy_id, nfapi_resp.num_tlv);
@@ -742,8 +742,11 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   }
 
   if(req->nfapi_config.nrarfcn.tl.tag == NFAPI_NR_NFAPI_NRARFCN_TAG) {
-    fp->dl_CarrierFreq = from_nrarfcn(78, req->ssb_config.scs_common.value , req->nfapi_config.nrarfcn.value);
-    fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_nr_uldl_offset(fp->nr_band) * 1e5); // TODO: why 1e5 ?
+    // fp->dl_CarrierFreq = from_nrarfcn(78, req->ssb_config.scs_common.value , req->nfapi_config.nrarfcn.value);// TODO: get value nr_bandP
+    // fp->dl_CarrierFreq = req->carrier_config.dl_frequency.value;
+    // fp->ul_CarrierFreq = req->carrier_config.uplink_frequency.value;
+
+    //fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_nr_uldl_offset(fp->nr_band) * 1e5); // TODO: why 1e5 ?
     num_tlv++;
     NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() nrarfcn:%u dl_carrierFreq:%u ul_CarrierFreq:%u band:%u N_RB_DL:%u\n",
                 __FUNCTION__, req->nfapi_config.nrarfcn.value, fp->dl_CarrierFreq, fp->ul_CarrierFreq, pnf->rfs[0].band, fp->N_RB_DL);
@@ -868,7 +871,7 @@ req->tdd_table.
   phy_info->remote_addr = inet_ntoa(vnf_p7_sockaddr.sin_addr);
   printf("[PNF] %d vnf p7 %s:%d timing %d %d %d\n", phy_info->id, phy_info->remote_addr, phy_info->remote_port,
          phy_info->timing_window, phy_info->timing_info_mode, phy_info->timing_info_period);
-  nfapi_config_response_t nfapi_resp;
+  nfapi_nr_config_response_scf_t nfapi_resp;
   memset(&nfapi_resp, 0, sizeof(nfapi_resp));
   nfapi_resp.header.message_id = NFAPI_CONFIG_RESPONSE;
   nfapi_resp.header.phy_id = phy_info->id;
@@ -1202,7 +1205,7 @@ nfapi_tx_request_t dummy_tx_req;
 
 nfapi_pnf_p7_subframe_buffer_t dummy_subframe;
 
-int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_start_request_t *req) {
+int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfapi_nr_start_request_scf_t *req) {
   printf("[PNF] Received NFAPI_START_REQ phy_id:%d\n", req->header.phy_id);
   nfapi_set_trace_level(NFAPI_TRACE_INFO);
   pnf_info *pnf = (pnf_info *)(config->user_data);

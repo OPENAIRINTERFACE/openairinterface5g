@@ -857,15 +857,15 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 
 static uint8_t pack_config_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
 {
-	nfapi_config_response_t *pNfapiMsg = (nfapi_config_response_t*)msg;
+	nfapi_nr_config_response_scf_t *pNfapiMsg = (nfapi_nr_config_response_scf_t*)msg;
 
-	return ( push32(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
+	return ( push8(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
 			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
 }
 
 static uint8_t pack_start_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
 {
-	nfapi_start_request_t *pNfapiMsg = (nfapi_start_request_t*)msg;
+	nfapi_nr_start_request_scf_t *pNfapiMsg = (nfapi_nr_start_request_scf_t*)msg;
 	return pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config);
 }
 
@@ -1591,7 +1591,7 @@ static uint8_t unpack_param_response(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 
 	// print ppReadPackedMsg
 	uint8_t *ptr = *ppReadPackedMsg;
-	printf("\n Read message: ");
+	printf("\n Read message unpack_param_response: ");
 	while(ptr < end){
 		printf(" %d ", *ptr);
 		ptr++;
@@ -1786,19 +1786,19 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 
 static uint8_t unpack_config_response(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t* config)
 {
-	nfapi_config_response_t *pNfapiMsg = (nfapi_config_response_t*)msg;
+	nfapi_nr_config_response_scf_t *pNfapiMsg = (nfapi_nr_config_response_scf_t*)msg;
 
 	unpack_tlv_t unpack_fns[] =
 	{
 	};
 
-	return ( pull32(ppReadPackedMsg, &pNfapiMsg->error_code, end) && 
+	return ( pull8(ppReadPackedMsg, &pNfapiMsg->error_code, end) && 
 			 unpack_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &(pNfapiMsg->vendor_extension)));
 }
 
 static uint8_t unpack_start_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t* config)
 {
-	nfapi_start_request_t *pNfapiMsg = (nfapi_start_request_t*)msg;
+	 nfapi_nr_start_request_scf_t *pNfapiMsg = ( nfapi_nr_start_request_scf_t*)msg;
 
 	unpack_tlv_t unpack_fns[] =
 	{
@@ -1952,8 +1952,8 @@ static int check_unpack_length(nfapi_message_id_e msgId, uint32_t unpackedBufLen
 			break;
 
 		case NFAPI_START_REQUEST:
-			if (unpackedBufLen >= sizeof(nfapi_start_request_t))
-				retLen = sizeof(nfapi_start_request_t);
+			if (unpackedBufLen >= sizeof( nfapi_nr_start_request_scf_t))
+				retLen = sizeof( nfapi_nr_start_request_scf_t);
 			break;
 
 		case NFAPI_START_RESPONSE:
@@ -2037,7 +2037,7 @@ int nfapi_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 	}
 
 	uint8_t *ptr = pReadPackedMessage;
-	printf("\n Read message: ");
+	printf("\n Read message unpack: ");
 	while(ptr < end){
 		printf(" %d ", *ptr);
 		ptr++;

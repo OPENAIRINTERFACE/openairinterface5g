@@ -501,7 +501,7 @@ typedef struct {
   nfapi_p4_p5_message_header_t  header;
   nfapi_nr_param_errors_e error_code;
   uint8_t num_invalid_tlvs;
-
+  // TODO: add list of invalid/unsupported TLVs (see Table 3.18)
    nfapi_vendor_extension_tlv_t  vendor_extension;
 } nfapi_nr_config_response_scf_t;
 
@@ -511,7 +511,7 @@ typedef struct {
 typedef struct {
 	nfapi_p4_p5_message_header_t header;
 	nfapi_vendor_extension_tlv_t vendor_extension;
-} nfapi_nr_start_request_t;
+} nfapi_nr_start_request_scf_t;
 
 typedef enum {
 	NFAPI_NR_START_MSG_INVALID_STATE

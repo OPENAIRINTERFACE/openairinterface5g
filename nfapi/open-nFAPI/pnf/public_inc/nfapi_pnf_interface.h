@@ -193,7 +193,7 @@ typedef struct nfapi_pnf_config
 	 * 	The client is expected to send the START.response after the client has received the
 	 *  first subframe indication from FAPI.
 	 */
-	int (*start_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi_start_request_t* req);
+	int (*start_req)(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy,  nfapi_nr_start_request_scf_t* req);
 	
 	/*! A callback for the STOP.request
 	 *  \param config A pointer to the pnf configuration
@@ -413,7 +413,7 @@ int nfapi_pnf_param_resp(nfapi_pnf_config_t* config, nfapi_nr_param_response_scf
  * \return 0 for success, -1 for failure
  * 
  */
-int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_config_response_t* resp);
+int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_scf_t* resp);
 
 /*! Send the START.response
  * \param config A pointer to a pnf configuraiton

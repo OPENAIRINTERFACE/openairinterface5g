@@ -1080,11 +1080,11 @@ int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_respons
   return 0;
 }
 
-int config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_config_response_t *resp) {
-  nfapi_start_request_t req;
+int config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_config_response_scf_t *resp) {
+  nfapi_nr_start_request_scf_t req;
   printf("[VNF] Received NFAPI_CONFIG_RESP idx:%d phy_id:%d\n", p5_idx, resp->header.phy_id);
   printf("[VNF] Calling oai_enb_init()\n");
-  oai_enb_init();
+  oai_enb_init(); // TODO: change to gnb
   memset(&req, 0, sizeof(req));
   req.header.message_id = NFAPI_START_REQUEST;
   req.header.phy_id = resp->header.phy_id;

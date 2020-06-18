@@ -565,14 +565,14 @@ int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config
 
 	return vnf_pack_and_send_p5_message(_this, p5_idx, &req->header, sizeof(nfapi_nr_config_request_scf_t));
 }
-int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_start_request_t* req)
+int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_request_scf_t * req)
 {
 	if(config == 0 || req == 0)
 		return -1;
 
 	vnf_t* _this = (vnf_t*)(config);
 
-	return vnf_pack_and_send_p5_message(_this, p5_idx, &req->header, sizeof(nfapi_start_request_t));
+	return vnf_pack_and_send_p5_message(_this, p5_idx, &req->header, sizeof(nfapi_nr_start_request_scf_t));
 }
 int nfapi_vnf_stop_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_stop_request_t* req)
 {

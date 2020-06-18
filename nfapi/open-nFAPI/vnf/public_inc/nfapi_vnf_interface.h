@@ -19,7 +19,7 @@
 
 #include "nfapi_interface.h"
 #include "nfapi_nr_interface_scf.h"
- 	#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface.h"
 
 #include "debug.h"
 
@@ -549,7 +549,7 @@ int nfapi_vnf_config_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config
  * \param req A pointer to a START.request message structure
  * \return  0 means success, -1 failure
  */
-int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_start_request_t* req);
+int nfapi_vnf_start_req(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_request_scf_t* req);
 
 /*! Send the STOP.request
  * \param config A pointer to a vnf config
