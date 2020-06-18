@@ -228,31 +228,30 @@ void fh_if4p5_south_in(RU_t *ru,
     symbol_mask_full = (1<<fp->symbols_per_tti)-1;
 
   LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d, mask %x\n",ru->idx,*frame,*subframe,ru->idx,proc->symbol_mask[*subframe]);
-  AssertFatal(proc->symbol_mask[*subframe]==0 || proc->symbol_mask[*subframe]==symbol_mask_full,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
+  AssertFatal(proc->symbol_mask[*subframe]==0 || proc->symbol_mask[*subframe]>=symbol_mask_full,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]); // >= because PULTICK for S-subframe could have been received during normal subframe
 
-  if (proc->symbol_mask[*subframe]==0) { // this is normal case, if not true then we received a PULTICK before the previous subframe was finished
+  if (proc->symbol_mask[*subframe]<symbol_mask_full) { // this is normal case, if not true then we received a PULTICK before the previous subframe was finished
     do {
       recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
-      LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, f %d, sf %d\n",ru->idx,*frame,*subframe,f,sf);
+      LOG_D(PHY,"fh_if4p5_south_in (%s/%d): RU %d, frame %d, subframe %d, f %d, sf %d, symbol %d\n",packet_type == IF4p5_PULFFT ? "PULFFT" : "PULTICK",packet_type,ru->idx,*frame,*subframe,f,sf,symbol_number);
 
       if (oai_exit == 1 || ru->cmd== STOP_RU) break;
 
       if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
       else if (packet_type == IF4p5_PULTICK) {
-        proc->symbol_mask[sf] = symbol_mask_full;
+        proc->symbol_mask[sf] = 0xffff;
         pultick_received++;
-
         /*
                  if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d (RU %d) \n",f,*frame, ru->idx);
                  else if ((proc->first_rx==0) && (sf!=*subframe)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);
                  else break; */
-        if (f==*frame || sf==*subframe) break;
+        //if (f==*frame || sf==*subframe) break;
       } else if (packet_type == IF4p5_PRACH) {
         // nothing in RU for RAU
       }
 
-      LOG_D(PHY,"rx_fh_if4p5 for RU %d: subframe %d, sf %d, symbol mask %x\n",ru->idx,*subframe,sf,proc->symbol_mask[sf]);
-    } while(proc->symbol_mask[sf] != symbol_mask_full);
+      LOG_D(PHY,"rx_fh_if4p5 for RU %d: subframe %d, sf %d, symbol %d, symbol mask %x\n",ru->idx,*subframe,sf,symbol_number,proc->symbol_mask[sf]);
+    } while(proc->symbol_mask[*subframe] < symbol_mask_full);
   } else {
     f = *frame;
     sf = *subframe;
@@ -264,7 +263,7 @@ void fh_if4p5_south_in(RU_t *ru,
   proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->tti_rx ) * fp->samples_per_tti ;
 
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
-  if (get_nprocs()<=4) {
+  if (get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     proc->tti_tx   = (sf+sf_ahead)%10;
     proc->frame_tx = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
   }
