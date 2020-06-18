@@ -2390,7 +2390,7 @@ void nr_ip_over_LTE_DRB_preconfiguration(void){
 	  // 1 + drb_identiy_index;
 	  DRB_config->drb_Identity = 1;
 	  DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
-	  *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
+	  *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 3; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
 
 	  DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
 	  DRB_config->rlc_Config = DRB_rlc_config;

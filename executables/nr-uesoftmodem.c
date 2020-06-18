@@ -71,8 +71,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/INIT/phy_init.h"
 #include "system.h"
 #include <openair2/RRC/NR_UE/rrc_proto.h>
-#include <openair2/LAYER2/NR_MAC_UE/mac_defs.h>
-#include <openair2/LAYER2/NR_MAC_UE/mac_proto.h>
+#include "NR_MAC_UE/mac_defs.h"
+#include "NR_MAC_UE/mac_proto.h"
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
@@ -720,6 +720,9 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
 
+  if (get_softmodem_params()->do_ra)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
     frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
@@ -746,11 +749,6 @@ int main( int argc, char **argv ) {
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
-    if (get_softmodem_params()->phy_test==1)
-      UE[CC_id]->mac_enabled = 0;
-    else
-      UE[CC_id]->mac_enabled = 1;
-
     UE[CC_id]->mac_enabled = 1;
     UE[CC_id]->if_inst = nr_ue_if_module_init(0);
     UE[CC_id]->UE_scan = UE_scan;
@@ -763,15 +761,49 @@ int main( int argc, char **argv ) {
     UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
     UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
-    if (frame_parms[CC_id]->frame_type==FDD) {
+    if (UE[CC_id]->frame_parms.frame_type == FDD) {
       UE[CC_id]->N_TA_offset = 0;
     } else {
-      if (frame_parms[CC_id]->N_RB_DL == 100)
-        UE[CC_id]->N_TA_offset = 624;
-      else if (frame_parms[CC_id]->N_RB_DL == 50)
-        UE[CC_id]->N_TA_offset = 624/2;
-      else if (frame_parms[CC_id]->N_RB_DL == 25)
-        UE[CC_id]->N_TA_offset = 624/4;
+      int N_RB = UE[CC_id]->frame_parms.N_RB_DL;
+      int N_TA_offset = UE[CC_id]->frame_parms.ul_CarrierFreq < 6e9 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
+      double factor=1;
+      switch (UE[CC_id]->frame_parms.numerology_index) {
+        case 0: //15 kHz scs
+          AssertFatal(N_TA_offset == 400, "scs_common 15kHz only for FR1\n");
+          if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
+          else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
+          else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
+          else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
+          else AssertFatal(1==0,"Too many PRBS for mu=0\n");
+          break;
+        case 1: //30 kHz sc
+          AssertFatal(N_TA_offset == 400, "scs_common 30kHz only for FR1\n");
+          if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
+          else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
+          break;
+        case 2: //60 kHz scs
+          AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+          break;
+        case 3: //120 kHz scs
+          AssertFatal(N_TA_offset == 431, "scs_common 120kHz only for FR2\n");
+          break;
+        case 4: //240 kHz scs
+          AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+          if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
+          else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
+          else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
+          break;
+
+        if (N_RB == 100)
+          UE[CC_id]->N_TA_offset = 624;
+        else if (N_RB == 50)
+          UE[CC_id]->N_TA_offset = 624/2;
+        else if (N_RB == 25)
+          UE[CC_id]->N_TA_offset = 624/4;
+      }
+      if (UE[CC_id]->frame_parms.threequarter_fs == 1) factor = factor*.75;
+      UE[CC_id]->N_TA_offset = (int)(N_TA_offset * factor);
+      LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
     }
   }
 

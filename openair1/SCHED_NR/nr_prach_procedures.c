@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nfapi_nr_interface_scf.h"
 #include "fapi_nr_l1.h"
 #include "nfapi_pnf.h"
@@ -77,15 +77,14 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
     }
   }
 
-
- /* rx_nr_prach(gNB,
+  rx_nr_prach(gNB,
 	      prach_pdu,
 	      frame,
 	      slot,
 	      &max_preamble[0],
 	      &max_preamble_energy[0],
 	      &max_preamble_delay[0]
-	      );*/
+	      );
 
   LOG_D(PHY,"[RAPROC] Frame %d, slot %d : Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d)\n",
         frame,slot,

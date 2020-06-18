@@ -41,11 +41,11 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/TOOLS/tools_defs.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
@@ -53,10 +53,12 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
+//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
+
 //#define DEBUG_ULSIM
 
 PHY_VARS_gNB *gNB;
@@ -357,7 +359,8 @@ int main(int argc, char **argv)
   T_stdout = 1;
 
   get_softmodem_params()->phy_test = 1;
-    
+  get_softmodem_params()->do_ra = 0;
+
   if (snr1set == 0)
     snr1 = snr0 + 10;
 
@@ -486,7 +489,11 @@ int main(int argc, char **argv)
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &gNB->UL_tti_req;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
+  NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
+  memset((void*)Sched_INFO,0,sizeof(*Sched_INFO));
+  Sched_INFO->UL_tti_req=UL_tti_req;
+
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
   NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
@@ -505,7 +512,7 @@ int main(int argc, char **argv)
   unsigned int TBS;
   uint16_t number_dmrs_symbols = 0;
   unsigned int available_bits;
-  uint8_t nb_re_dmrs;
+  uint8_t nb_re_dmrs, no_data_in_dmrs = 1;
   unsigned char mod_order;
   uint16_t code_rate;
   uint8_t ptrs_mcs1 = 2;
@@ -604,6 +611,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
+
       // --------- setting parameters for UE --------
 
       scheduled_response.module_id = 0;
@@ -638,12 +646,20 @@ int main(int argc, char **argv)
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
-      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+      if(no_data_in_dmrs)
+        nb_re_dmrs = 12;
+      else
+        nb_re_dmrs = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
-      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, precod_nbr_layers);
+      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
       pusch_pdu->pusch_data.tb_size = TBS>>3;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
+
+      // prepare ULSCH/PUSCH reception
+      nr_schedule_response(Sched_INFO);
+
       // set FAPI parameters for UE, put them in the scheduled response and call
       nr_ue_scheduled_response(&scheduled_response);
 
@@ -659,10 +675,10 @@ int main(int argc, char **argv)
       ////////////////////////////////////////////////////
       tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
 
-      txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+      txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
               frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
-      txlev_float = (double)txlev/(double)AMP; // output of signal_energy is fixed point representation
+      txlev_float = (double)txlev; // output of signal_energy is fixed point representation
 
       n_errors = 0;
       n_false_positive = 0;
@@ -681,8 +697,8 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         for (i=0; i<frame_length_complex_samples; i++) {
           for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-            ((short*) gNB->common_vars.rxdata[ap])[(2*i) + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])   + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP); // convert to fixed point
-            ((short*) gNB->common_vars.rxdata[ap])[2*i+1 + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)*(double)AMP);
+            ((short*) gNB->common_vars.rxdata[ap])[(2*i) + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])   + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)); // convert to fixed point
+            ((short*) gNB->common_vars.rxdata[ap])[2*i+1 + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0));
           }
         }
         ////////////////////////////////////////////////////////////

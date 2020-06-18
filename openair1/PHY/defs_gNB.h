@@ -43,6 +43,8 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
+#include "nfapi_nr_interface_scf.h"
+
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 #define MAX_PUCCH0_NID 8
 
@@ -51,6 +53,7 @@ typedef struct {
   int Nid[MAX_PUCCH0_NID];
   int lut[MAX_PUCCH0_NID][160][14];
 } NR_gNB_PUCCH0_LUT_t;
+
 
 typedef struct {
   uint32_t pbch_a;
@@ -156,6 +159,14 @@ typedef struct {
 } NR_gNB_DLSCH_t;
 
 typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_prach_pdu_t pdu;  
+} gNB_PRACH_list_t;
+
+#define NUMBER_OF_NR_PRACH_MAX 8
+
+typedef struct {
   /// \brief ?.
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
@@ -165,6 +176,7 @@ typedef struct {
   int16_t **rxsigF;
   /// \brief local buffer to compute prach_ifft
   int32_t *prach_ifft;
+  gNB_PRACH_list_t list[NUMBER_OF_NR_PRACH_MAX];
 } NR_gNB_PRACH;
 
 typedef struct {
@@ -172,8 +184,8 @@ typedef struct {
   nfapi_nr_pusch_pdu_t ulsch_pdu;
   /// Frame where current HARQ round was sent
   uint32_t frame;
-  /// Subframe where current HARQ round was sent
-  uint32_t subframe;
+  /// Slot where current HARQ round was sent
+  uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// Last TPC command

@@ -1205,9 +1205,8 @@
 		      -R 106 -i 1 -P 2 -b 8 -s4 -n1000
 		      -R 106 -i 1 -P 2 -b 9 -s5 -n1000
 		      -R 106 -i 1 -P 2 -b 10 -s6 -n1000
-		      -R 106 -i 1 -P 2 -b 11 -s6 -n1000
-                      </main_exec_args>
-      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4 nr_pucchsim.test5 nr_pucchsim.test6 nr_pucchsim.test7 nr_pucchsim.test8 nr_pucchsim.test9 nr_pucchsim.test10 nr_pucchsim.test11 nr_pucchsim.test12 </tags>
+		      -R 106 -i 1 -P 2 -b 11 -s6 -n1000</main_exec_args>
+      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4 nr_pucchsim.test5 nr_pucchsim.test6 nr_pucchsim.test7 nr_pucchsim.test8 nr_pucchsim.test9 nr_pucchsim.test10 nr_pucchsim.test11 nr_pucchsim.test12</tags>
       <search_expr_true>PUCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1271,6 +1270,26 @@
                       -n100 -m9 -R273 -r273 -s5</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+    <testCase id="015112">
+      <class>execution</class>
+      <desc>nr_prachsim Test cases. (Test1: 106 PRBs),
+                                    (Test2: 217 PRBs),
+                                    (Test3: 273 PRBs)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_prachsim.Rel15</main_exec>
+      <main_exec_args>-a -s -30 -n 100 -p 16 -R 106
+                      -a -s -30 -n 100 -p 16 -R 217
+                      -a -s -30 -n 100 -p 16 -R 273</main_exec_args>
+      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3</tags>
+      <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>

@@ -22,6 +22,7 @@
 #include "phy_init.h"
 #include "SCHED/sched_common.h"
 #include "PHY/phy_extern.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "SIMULATION/TOOLS/sim.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -39,14 +40,19 @@ int nr_phy_init_RU(RU_t *ru) {
   int p;
   int re;
 
+  // For memory allocation of ru->prach_rxsigF
+  int mu = fp->numerology_index;
+
   LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
   nfapi_nr_config_request_scf_t *cfg;
   ru->nb_log_antennas=0;
   for (int n=0;n<RC.nb_nr_L1_inst;n++) {
-    cfg = &RC.gNB[n]->gNB_config;
+    cfg = &ru->config;
     if (cfg->carrier_config.num_tx_ant.value > ru->nb_log_antennas) ru->nb_log_antennas = cfg->carrier_config.num_tx_ant.value;   
   }
+  // copy configuration from gNB[0] in to RU, assume that all gNB instances sharing RU use the same configuration (at least the parts that are needed by the RU, numerology and PRACH)
+
   AssertFatal(ru->nb_log_antennas > 0 && ru->nb_log_antennas < 13, "ru->nb_log_antennas %d ! \n",ru->nb_log_antennas);
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals 
     // Time-domain signals
@@ -107,7 +113,8 @@ int nr_phy_init_RU(RU_t *ru) {
     ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
 
     for (i=0; i<ru->nb_rx; i++) {
-      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+      // for preamble format 1 and 2, more memory should be allocated
+      ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*(1<<mu)*2*sizeof(int16_t) );
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
     }
     
@@ -143,6 +150,8 @@ int nr_phy_init_RU(RU_t *ru) {
   } // !=IF5
 
   ru->common.sync_corr = (uint32_t*)malloc16_clear( LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(uint32_t)*fp->samples_per_subframe_wCP );
+
+  init_prach_ru_list(ru);
 
   return(0);
 }

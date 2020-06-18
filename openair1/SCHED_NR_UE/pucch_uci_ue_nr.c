@@ -37,7 +37,7 @@
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 #ifndef NO_RAT_NR
 
