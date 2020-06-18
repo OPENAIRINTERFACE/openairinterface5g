@@ -29,7 +29,6 @@
 #include <openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
 #include "common/ran_context.h"
 #include <openair1/PHY/defs_gNB.h>
-#include <forms.h>
 #include "PHY/defs_gNB.h"
 //#include "PHY/defs_nrUE.h"
 //#include "PHY/impl_defs_top.h"
@@ -38,12 +37,12 @@
 typedef struct {
   int *argc;
   char **argv;
-  RU_t* ru;
+  RU_t *ru;
   PHY_VARS_gNB *gNB;
 } scopeParms_t;
 
-void startScope(scopeParms_t * p);
-void init_scope(PHY_VARS_NR_UE *ue);
+void gNBinitScope(scopeParms_t *p);
+void nrUEinitScope(PHY_VARS_NR_UE *ue);
 
 extern RAN_CONTEXT_t RC;
 #endif

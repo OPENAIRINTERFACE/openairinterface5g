@@ -1,18 +1,10 @@
 # OpenAirInterface for SystemX
 
-<<<<<<< HEAD
-#Terminology
-
-****This document use the 5G terminology****
-
-**Central Unit (CU): **It is a logical node that includes the gNB
-=======
 # Terminology
 
 ****This document use the 5G terminology****
 
 **Central Unit (CU):** It is a logical node that includes the gNB
->>>>>>> da54778c4ab381743c388078676103663addafcc
 functions like Transfer of user data, Mobility control, Radio access
 network sharing, Positioning, Session Management etc., except those
 functions allocated exclusively to the DU. CU controls the operation of
@@ -27,13 +19,9 @@ names like RRH/RRU/RE/RU/PNF.
 In OpenAir code, the terminology is often RU and BBU.
 
 # OpenAirUsage
-<<<<<<< HEAD
-##EPC and general environment
-=======
 
 ## EPC and general environment
 
->>>>>>> da54778c4ab381743c388078676103663addafcc
 ### OAI EPC
 
 Use the stable OAI EPC, that can run in one machine (VM or standalone)
@@ -41,16 +29,10 @@ Use the stable OAI EPC, that can run in one machine (VM or standalone)
 Draft description:
 <https://open-cells.com/index.php/2017/08/22/all-in-one-openairinterface-august-22nd/>
 
-<<<<<<< HEAD
-##Standalone 4G
-
-EPC+eNB on one machine, the UE can be commercial or OAI UE.
-=======
 ## Standalone 4G
 
 EPC+eNB on one machine, the UE can be commercial or OAI UE.
 
->>>>>>> da54778c4ab381743c388078676103663addafcc
 ### USRP B210
 
 Main current issue: traffic is good only on coaxial link between UE and
@@ -76,12 +58,8 @@ the same IP tunnel end point as the UE.
 
 So, we have to create a network namespace for the UE and to route data
 in/out of the namespace.
-<<<<<<< HEAD
-``` bash
-=======
 
 ```bash
->>>>>>> da54778c4ab381743c388078676103663addafcc
 ip netns delete aNameSpace 2&gt; /dev/null
 
 ip link delete v-eth1 2&gt; /dev/null
@@ -96,11 +74,7 @@ ip addr add 10.200.1.1/24 dev v-eth1
 
 ip link set v-eth1 up
 
-<<<<<<< HEAD
-iptables -t nat -A POSTROUTING -s 10.200.1.0/255.255.255.0 -o enp0s31f6
-=======
 iptables -t nat -A POSTROUTING -s 10.200.1.0/255.255.255.0 -o enp0s31f6 \
->>>>>>> da54778c4ab381743c388078676103663addafcc
 -j MASQUERADE
 
 iptables -A FORWARD -i enp0s31f6 -o v-eth1 -j ACCEPT
@@ -122,15 +96,6 @@ to run the UE.
 To make user plan traffic, the traffic generator has to run in the same
 namespace
 
-<<<<<<< HEAD
-`ip netns exec aNameSpace bash
-`
-
-The traffic genenrator has to specify the interface:
-
-`route add default oaitun_ue1
-`
-=======
 ```bash
 ip netns exec aNameSpace bash
 ```
@@ -140,7 +105,6 @@ The traffic genenrator has to specify the interface:
 ```bash
 route add default oaitun_ue1
 ```
->>>>>>> da54778c4ab381743c388078676103663addafcc
 
 or specify the outgoing route in the traffic generator (like option “-I”
 in ping command).
@@ -153,10 +117,7 @@ is this work the downlink “functional split 6”.
 The customer required after signature to develop also the uplink
 functional split 6. This is accepted, as long as the whole work is
 research with no delivery completeness warranty.
-<<<<<<< HEAD
-=======
 
->>>>>>> da54778c4ab381743c388078676103663addafcc
 ### Simulation
 
 To be able to verify the new features and to help in all future
@@ -165,19 +126,12 @@ during this contract.
 
 We added the channel modeling simulation, that offer to simulate various
 3GPP defined channels.
-<<<<<<< HEAD
-=======
 
->>>>>>> da54778c4ab381743c388078676103663addafcc
 ### Main loop
 
 The main log is in RF simulator is in
 
-<<<<<<< HEAD
- targets/RT/USER/lte-ru.c and targets/RT/USER/lte-enb.c
-=======
  `targets/RT/USER/lte-ru.c and targets/RT/USER/lte-enb.c`
->>>>>>> da54778c4ab381743c388078676103663addafcc
 
 As this piece of SW is very complex and doesn’t meet our goals
 (functional split 6), a cleaned version replaces these 2 files in
@@ -196,13 +150,8 @@ The reworked main loop take care of a uniq variable that comes directly from har
 
 To use OAI, we need to set all OAI variables that derivates from this timestamp value. The function setAllfromTS() implements this.
 
-<<<<<<< HEAD
-
-### Splitted main level
-=======
 ### Splitted main level
 
->>>>>>> da54778c4ab381743c388078676103663addafcc
 When FS6 is actived, a main loop for DU (du_fs6()) a main loop for CU case replaces the uniq eNB main loop.
 
 Each of these main loops calls initialization of OAI LTE data and the FS6 transport layer initialization.
@@ -321,31 +270,6 @@ The end line option “--split73” enables the fs6 (also called split 7.3) mode
 
 Example:
 
-<<<<<<< HEAD
-./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 cu:127.0.0.1
-`
-Run the CU init of the split 6 eNB, that will call du on 127.0.0.1 address
-
-./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 du:127.0.0.1
-
-will run the du, calling the cu on 127.0.0.1
-`
-If the CU and the DU are not on the same machine, the remote address of each side need to be specified as per this example
-
-./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 du:192.168.1.55
-`
-runs the functional split 6 DU
-
-`./lte-uesoftmodem -C 2685000000 -r 50 --rfsim --rfsimulator.serveraddr 192.168.1.1 -d
-`
-
-Runs the UE (to have the UE signal scope, compile it with make uescope)
-
-CU+DU+UE can run with option --noS1 to avoid to use a EPC and/or with --rfsim to simulate RF board
-
-
-##5G and F1
-=======
 ```bash
 ./ocp-softmodem -O $OPENAIR_DIR/enb.fs6.example.conf --rfsim  --log_config.phy_log_level debug --split73 cu:127.0.0.1
 ```
@@ -376,7 +300,6 @@ CU+DU+UE can run with option `--noS1` to avoid to use a EPC and/or with `--rfsim
 
 
 ## 5G and F1
->>>>>>> da54778c4ab381743c388078676103663addafcc
 
 Today 5G achievement is limited to physical layer.
 
@@ -397,18 +320,6 @@ frames).
 
 Usage with RFsimulator:
 
-<<<<<<< HEAD
-gNB
-
-`sudo RFSIMULATOR=server ./nr-softmodem -O
-../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf
---parallel-config PARALLEL\_SINGLE\_THREAD`
-
-nrUE
-
-`sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C
-3510000000 -d`
-=======
 **gNB**
 
 ```bash
@@ -423,4 +334,3 @@ sudo RFSIMULATOR=server ./nr-softmodem -O \
 sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C \
 3510000000 -d
 ```
->>>>>>> da54778c4ab381743c388078676103663addafcc

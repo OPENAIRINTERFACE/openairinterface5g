@@ -880,7 +880,7 @@ int main( int argc, char **argv ) {
 
   if (do_forms==1) {
     scopeParms_t tmp= {&argc, argv, &ru, RC.gNB[0]};
-    startScope(&tmp);
+    gNBinitScope(&tmp);
   }
 
   while(!oai_exit)

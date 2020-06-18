@@ -249,7 +249,7 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void reset_stats(FL_OBJECT *button, long arg) {
+void reset_stats(long arg) {
   //int i,j,k;
   /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 
@@ -729,7 +729,7 @@ int main( int argc, char **argv ) {
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
   if (do_forms)
-     init_scope(PHY_vars_UE_g[0][0]);
+     nrUEinitScope(PHY_vars_UE_g[0][0]);
   number_of_cards = 1;
 
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

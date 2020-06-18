@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "nr_phy_scope.h"
 #include "executables/nr-softmodem-common.h"
+#include <forms.h>
 
 #define TPUT_WINDOW_LENGTH 100
 #define localBuff(NaMe,SiZe) float NaMe[SiZe]; memset(NaMe,0,sizeof(NaMe));
@@ -38,6 +39,12 @@ float tput_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue_max[NUMBER_OF_UE_MAX] = {0};
+
+typedef struct {
+  int16_t r;
+  int16_t i;
+} scopeSample_t;
+#define SquaredNorm(VaR) ((VaR).r*(VaR).r+(VaR).i*(VaR).i)
 
 typedef struct OAIgraph {
   FL_OBJECT *graph;
@@ -62,7 +69,7 @@ typedef struct {
 } FD_stats_form;
 
 static void drawsymbol(FL_OBJECT *obj, int id,
-                FL_POINT *p, int n, int w, int h) {
+                       FL_POINT *p, int n, int w, int h) {
   fl_points( p, n, FL_YELLOW);
 }
 
@@ -91,7 +98,7 @@ static void dl_traffic_on_off( FL_OBJECT *button, long arg) {
 }
 
 static FL_OBJECT *commonGraph( int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
-  FL_OBJECT * graph;
+  FL_OBJECT *graph;
   graph=fl_add_xyplot(type, x, y, w, h, label);
   fl_set_object_boxtype(graph, FL_EMBOSSED_BOX );
   fl_set_object_lcolor(graph, FL_WHITE ); // Label color
@@ -101,7 +108,7 @@ static FL_OBJECT *commonGraph( int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_
 }
 
 static OAIgraph_t gNBcommonGraph( void (*funct) (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id),
-                           int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
+                                  int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
   OAIgraph_t graph;
   graph.graph=commonGraph(type, x, y, w, h, label, pointColor);
   graph.gNBfunct=funct;
@@ -110,7 +117,7 @@ static OAIgraph_t gNBcommonGraph( void (*funct) (FL_OBJECT *graph, PHY_VARS_gNB 
 }
 
 static OAIgraph_t nrUEcommonGraph( void (*funct) (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id),
-                            int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
+                                   int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
   OAIgraph_t graph;
   graph.graph=commonGraph(type, x, y, w, h, label, pointColor);
   graph.gNBfunct=NULL;
@@ -122,13 +129,15 @@ void phy_scope_gNB(FD_phy_scope_t *form,
                    PHY_VARS_gNB *phy_vars_gnb,
                    RU_t *phy_vars_ru,
                    int UE_id) {
-    static FD_phy_scope_t *remeberForm=NULL;
+  static FD_phy_scope_t *remeberForm=NULL;
 
   if (form==NULL)
     form=remeberForm;
   else
     remeberForm=form;
+
   if (form==NULL) return;
+
   int i=0;
 
   while (form->graph[i].graph) {
@@ -146,70 +155,51 @@ static void timeSignal (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_
 
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  int16_t **rxsig_t = phy_vars_ru->common.rxdata;
-  float rxsig_t_dB[nb_antennas_rx][frame_parms->samples_per_frame];
+  scopeSample_t **rxsig_t = (scopeSample_t **)phy_vars_ru->common.rxdata;
+  float rxsig_t_dB[frame_parms->samples_per_frame];
   float time[frame_parms->samples_per_frame];
 
-  if (rxsig_t[0] != NULL) {
-    for (int i=0; i<frame_parms->samples_per_frame; i++) {
-      rxsig_t_dB[0][i] = 10*log10(1.0+(float) ((rxsig_t[0][2*i])*(rxsig_t[0][2*i])+
-                                  (rxsig_t[0][2*i+1])*(rxsig_t[0][2*i+1])));
-      time[i] = (float) i;
-    }
-
-    fl_set_xyplot_data(graph,time,rxsig_t_dB[0],frame_parms->samples_per_frame,"","","");
-  }
-
-  for (int arx=1; arx<nb_antennas_rx; arx++) {
+  for (int arx=0; arx<nb_antennas_rx; arx++) {
     if (rxsig_t[arx] != NULL) {
       for (int i=0; i<frame_parms->samples_per_frame; i++) {
-        rxsig_t_dB[arx][i] = 10*log10(1.0+(float) ((rxsig_t[arx][2*i])*(rxsig_t[arx][2*i])+
-                                      (rxsig_t[arx][2*i+1])*(rxsig_t[arx][2*i+1])));
+        rxsig_t_dB[i] = 10*log10(1.0+SquaredNorm(rxsig_t[arx][i]));
       }
 
-      fl_add_xyplot_overlay(graph,arx,time,rxsig_t_dB[arx],frame_parms->samples_per_frame,rx_antenna_colors[arx]);
+      if (arx==0)
+        fl_set_xyplot_data(graph,time,rxsig_t_dB, frame_parms->samples_per_frame,"","","");
+      else
+        fl_add_xyplot_overlay(graph,arx,time,rxsig_t_dB,frame_parms->samples_per_frame,rx_antenna_colors[arx]);
     }
   }
 }
 
 static void timeResponse (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id) {
-  // Channel Impulse Response
   if (!phy_vars_gnb->pusch_vars[UE_id]->ul_ch_estimates_time)
     return;
 
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  int16_t **chest_t = (int16_t **) phy_vars_gnb->pusch_vars[UE_id]->ul_ch_estimates_time;
+  scopeSample_t **chest_t = (scopeSample_t **) phy_vars_gnb->pusch_vars[UE_id]->ul_ch_estimates_time;
   int ymax = 0;
   float time2[2*frame_parms->ofdm_symbol_size];
-  float chest_t_abs[nb_antennas_rx][2*frame_parms->ofdm_symbol_size];
+  float chest_t_abs[2*frame_parms->ofdm_symbol_size];
 
-  if (chest_t[0] !=NULL) {
-    for (int i=0; i<(2*frame_parms->ofdm_symbol_size); i++) {
-      //i2 = (i+(frame_parms->ofdm_symbol_size>>1))%frame_parms->ofdm_symbol_size;
-      int i2=i;
-      //time2[i] = (float)(i-(frame_parms->ofdm_symbol_size>>1));
-      time2[i] = (float)i;
-      chest_t_abs[0][i] = 10*log10((float) (1+chest_t[0][2*i2]*chest_t[0][2*i2]+chest_t[0][2*i2+1]*chest_t[0][2*i2+1]));
-
-      if (chest_t_abs[0][i] > ymax)
-        ymax = chest_t_abs[0][i];
-    }
-
-    fl_set_xyplot_data(graph,time2,chest_t_abs[0],(2*frame_parms->ofdm_symbol_size),"","","");
-  }
-
-  for (int arx=1; arx<nb_antennas_rx; arx++) {
+  for (int arx=0; arx<nb_antennas_rx; arx++) {
     if (chest_t[arx] !=NULL) {
-      for (int i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-        chest_t_abs[arx][i] = 10*log10((float) (1+chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]));
+      for (int i=0; i<(2*frame_parms->ofdm_symbol_size); i++) {
+        time2[i] = (float)i;
+        chest_t_abs[i] = 10*log10(1.0 + SquaredNorm(chest_t[0][i]));
 
-        if (chest_t_abs[arx][i] > ymax)
-          ymax = chest_t_abs[arx][i];
+        if (chest_t_abs[i] > ymax)
+          ymax = chest_t_abs[i];
       }
 
-      fl_add_xyplot_overlay(graph,arx,time2,chest_t_abs[arx],(frame_parms->ofdm_symbol_size>>3),rx_antenna_colors[arx]);
-      fl_set_xyplot_overlay_type(graph,arx,FL_DASHED_XYPLOT);
+      if (arx==0)
+        fl_set_xyplot_data(graph,time2,chest_t_abs,(2*frame_parms->ofdm_symbol_size),"","","");
+      else {
+        fl_add_xyplot_overlay(graph,arx,time2,chest_t_abs,(frame_parms->ofdm_symbol_size>>3),rx_antenna_colors[arx]);
+        fl_set_xyplot_overlay_type(graph,arx,FL_DASHED_XYPLOT);
+      }
     }
   }
 
@@ -224,58 +214,38 @@ static void frequencyResponse (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_
     return;
 
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
-  uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  int16_t **rxsig_f = (int16_t **) phy_vars_ru->common.rxdataF;
-  float rxsig_f_dB[nb_antennas_rx][frame_parms->samples_per_slot_wCP];
+  //uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
+  scopeSample_t **rxsig_f = (scopeSample_t **) phy_vars_ru->common.rxdataF;
+  float rxsig_f_dB[frame_parms->samples_per_slot_wCP];
   float time[frame_parms->samples_per_slot_wCP];
 
   if (rxsig_f[0] != NULL) {
     for (int i=0; i<frame_parms->samples_per_slot_wCP; i++) {
-      rxsig_f_dB[0][i] = 10*log10(1.0+(float) ((rxsig_f[0][2*i])*(rxsig_f[0][2*i])+(rxsig_f[0][2*i+1])*(rxsig_f[0][2*i+1])));
+      rxsig_f_dB[i] = 10*log10(1.0+ SquaredNorm(rxsig_f[0][i]));
       time[i] = (float) i;
     }
 
-    fl_set_xyplot_data(graph,time,rxsig_f_dB[0],frame_parms->samples_per_slot_wCP,"","","");
+    fl_set_xyplot_data(graph,time,rxsig_f_dB,frame_parms->samples_per_slot_wCP,"","","");
   }
 
   /*
-    for (arx=0; arx<nb_antennas_rx; arx++) {
+  for (int arx=1; arx<nb_antennas_rx; arx++) {
     if (chest_f[(atx<<1)+arx] != NULL) {
-    for (k=0; k<nsymb_ce; k++) {
-    freq[ind] = (float)ind;
-    Re = (float)(chest_f[(atx<<1)+arx][(2*k)]);
-    Im = (float)(chest_f[(atx<<1)+arx][(2*k)+1]);
-
-    chest_f_abs[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im));
-    ind++;
+      for (int k=0; k<nsymb_ce; k++) {
+  time[k] = (float)ind;
+  chest_f_abs[k] = (short)10*log10(1.0+SquaredNorm(chest_f[(atx<<1)+arx][k]));
+  ind++;
+      }
+      fl_add_xyplot_overlay(form->chest_f,1,time,chest_f_abs,nsymb_ce,rx_antenna_colors[arx]);
     }
-    }
-    }
-
+  }
+  */
+  /*
     // tx antenna 0
     fl_set_xyplot_xbounds(form->chest_f,0,nb_antennas_rx*nb_antennas_tx*nsymb_ce);
     fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*frame_parms->symbols_per_tti,3);
     fl_set_xyplot_xgrid(form->chest_f,FL_GRID_MAJOR);
     fl_set_xyplot_data(form->chest_f,freq,chest_f_abs,nsymb_ce,"","","");
-
-    for (arx=1; arx<nb_antennas_rx; arx++) {
-    fl_add_xyplot_overlay(form->chest_f,1,&freq[arx*nsymb_ce],&chest_f_abs[arx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
-    }
-
-    // other tx antennas
-    if (nb_antennas_tx > 1) {
-    if (nb_antennas_rx > 1) {
-    for (atx=1; atx<nb_antennas_tx; atx++) {
-    for (arx=0; arx<nb_antennas_rx; arx++) {
-    fl_add_xyplot_overlay(form->chest_f,(atx<<1)+arx,&freq[((atx<<1)+arx)*nsymb_ce],&chest_f_abs[((atx<<1)+arx)*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
-    }
-    }
-    } else { // 1 rx antenna
-    atx=1;
-    arx=0;
-    fl_add_xyplot_overlay(form->chest_f,atx,&freq[atx*nsymb_ce],&chest_f_abs[atx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
-    }
-    }
   */
 }
 
@@ -284,10 +254,10 @@ static void puschLLR (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_va
   if (!phy_vars_gnb->pusch_vars[UE_id]->llr)
     return;
 
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
-  int Qm = 2;
+  //NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+  //int Qm = 2;
   int16_t *pusch_llr = (int16_t *) phy_vars_gnb->pusch_vars[UE_id]->llr;
-  int coded_bits_per_codeword = frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
+  int coded_bits_per_codeword =3*8*6144+12; // (8*((3*8*6144)+12)); // frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
   float llr[coded_bits_per_codeword];
   float bit[coded_bits_per_codeword];
 
@@ -305,20 +275,16 @@ static void puschIQ (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_var
     return;
 
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
-  int32_t *pusch_comp = (int32_t *) phy_vars_gnb->pusch_vars[UE_id]->rxdataF_comp;
-  int sz=frame_parms->symbols_per_tti*12*frame_parms->N_RB_UL;
+  scopeSample_t *pusch_comp = (scopeSample_t *) phy_vars_gnb->pusch_vars[UE_id]->rxdataF_comp[0];
+  int sz=frame_parms->N_RB_UL*12*frame_parms->symbols_per_slot;
   float I[sz], Q[sz];
-  int ind=0;
 
-  for (int k=0; k<frame_parms->symbols_per_tti; k++) {
-    for (int i=0; i<12*frame_parms->N_RB_UL; i++) {
-      I[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i];
-      Q[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1];
-      ind++;
-    }
+  for (int k=0; k<sz; k++ ) {
+    I[k] = pusch_comp[k].r;
+    Q[k] = pusch_comp[k].i;
   }
 
-  fl_set_xyplot_data(graph,I,Q,ind,"","","");
+  fl_set_xyplot_data(graph,I,Q,sz,"","","");
 
   // PUSCH I/Q of MF Output
   if (NULL) {
@@ -423,6 +389,11 @@ static void *scope_thread_gNB(void *arg) {
   //# ifdef ENABLE_XFORMS_WRITE_STATS
   //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
   //#endif
+  size_t stksize;
+  pthread_attr_t atr;
+  pthread_attr_getstacksize(&atr, &stksize);
+  pthread_attr_setstacksize(&atr,32*1024*1024 );
+  sleep(3); // no clean interthread barriers
 
   while (!oai_exit) {
     int ue_cnt=0;
@@ -453,22 +424,24 @@ static void *scope_thread_gNB(void *arg) {
   return NULL;
 }
 
-void startScope(scopeParms_t *p) {
+void gNBinitScope(scopeParms_t *p) {
   //FD_stats_form *form_stats=NULL,*form_stats_l2=NULL;
   fl_initialize (p->argc, p->argv, NULL, 0, 0);
+
   /*
     form_stats_l2 = create_form_stats_form();
     fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
     form_stats = create_form_stats_form();
     fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
   */
-
   for(int UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
     form_gnb[UE_id] = create_phy_scope_gnb(UE_id);
   } // UE_id
 
+  static scopeParms_t parms;
+  memcpy(&parms,p,sizeof(parms));
   pthread_t forms_thread;
-  threadCreate(&forms_thread, scope_thread_gNB, p, "scope", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&forms_thread, scope_thread_gNB, &parms, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
 
 static void ueTimeResponse  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
@@ -479,26 +452,26 @@ static void ueTimeResponse  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int 
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   int samples_per_frame = frame_parms->samples_per_frame;
-  int16_t **rxsig_t = (int16_t **) phy_vars_ue->common_vars.rxdata;
-  float rxsig_t_dB[nb_antennas_rx][samples_per_frame];
+  scopeSample_t **rxsig_t = (scopeSample_t **) phy_vars_ue->common_vars.rxdata;
+  float rxsig_t_dB[samples_per_frame];
   float  time[samples_per_frame];
 
   if (rxsig_t[0] != NULL) {
     for (int i=0; i<samples_per_frame; i++) {
-      rxsig_t_dB[0][i] = 10*log10(1.0+(float) ((rxsig_t[0][2*i])*(rxsig_t[0][2*i])+(rxsig_t[0][2*i+1])*(rxsig_t[0][2*i+1])));
+      rxsig_t_dB[i] = 10*log10(1.0+SquaredNorm(rxsig_t[0][i]));
       time[i] = (float) i;
     }
 
-    fl_set_xyplot_data(graph,time,rxsig_t_dB[0],samples_per_frame,"","","");
+    fl_set_xyplot_data(graph,time,rxsig_t_dB,samples_per_frame,"","","");
   }
 
   for (int arx=1; arx<nb_antennas_rx; arx++) {
     if (rxsig_t[arx] != NULL) {
       for (int i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
-        rxsig_t_dB[arx][i] = 10*log10(1.0+(float) ((rxsig_t[arx][2*i])*(rxsig_t[arx][2*i])+(rxsig_t[arx][2*i+1])*(rxsig_t[arx][2*i+1])));
+        rxsig_t_dB[i] = 10*log10(1.0+SquaredNorm(rxsig_t[arx][i]));
       }
 
-      fl_add_xyplot_overlay(graph,arx,time,rxsig_t_dB[arx],FRAME_LENGTH_COMPLEX_SAMPLES,rx_antenna_colors[arx]);
+      fl_add_xyplot_overlay(graph,arx,time,rxsig_t_dB,FRAME_LENGTH_COMPLEX_SAMPLES,rx_antenna_colors[arx]);
     }
   }
 
@@ -533,33 +506,33 @@ static void ueChannelResponse  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, i
 
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  int16_t **chest_t = (int16_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates_time;
+  scopeSample_t **chest_t = (scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates_time;
   int ymax = 0;
-  float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
+  float chest_t_abs[frame_parms->ofdm_symbol_size];
   float time[frame_parms->ofdm_symbol_size>>3];
 
   if (chest_t[0] !=NULL) {
     for (int i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-      chest_t_abs[0][i] = (float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]);
+      chest_t_abs[i] = SquaredNorm(chest_t[0][i]);
       time[i] = (float) i;
 
-      if (chest_t_abs[0][i] > ymax)
-        ymax = chest_t_abs[0][i];
+      if (chest_t_abs[i] > ymax)
+        ymax = chest_t_abs[i];
     }
 
-    fl_set_xyplot_data(graph,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size>>3),"","","");
+    fl_set_xyplot_data(graph,time,chest_t_abs,(frame_parms->ofdm_symbol_size>>3),"","","");
   }
 
   for (int arx=1; arx<nb_antennas_rx; arx++) {
     if (chest_t[arx] !=NULL) {
       for (int i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-        chest_t_abs[arx][i] = (float) (chest_t[arx][4*i]*chest_t[arx][4*i]+chest_t[arx][4*i+1]*chest_t[arx][4*i+1]);
+        chest_t_abs[i] = SquaredNorm(chest_t[arx][i]);
 
-        if (chest_t_abs[arx][i] > ymax)
-          ymax = chest_t_abs[arx][i];
+        if (chest_t_abs[i] > ymax)
+          ymax = chest_t_abs[i];
       }
 
-      fl_add_xyplot_overlay(graph,arx,time,chest_t_abs[arx],(frame_parms->ofdm_symbol_size>>3),rx_antenna_colors[arx]);
+      fl_add_xyplot_overlay(graph,arx,time,chest_t_abs,(frame_parms->ofdm_symbol_size>>3),rx_antenna_colors[arx]);
       fl_set_xyplot_overlay_type(graph,arx,FL_DASHED_XYPLOT);
     }
   }
@@ -577,7 +550,7 @@ static void uePbchFrequencyResp  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue,
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_gNB;
-  int16_t   **chest_f = (int16_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
+  scopeSample_t   **chest_f = (scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
   int ind = 0;
   float chest_f_abs[frame_parms->ofdm_symbol_size];
   float freq[frame_parms->ofdm_symbol_size];
@@ -587,9 +560,7 @@ static void uePbchFrequencyResp  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue,
       if (chest_f[(atx<<1)+arx] != NULL) {
         for (int k=0; k<frame_parms->ofdm_symbol_size; k++) {
           freq[ind] = (float)ind;
-          float Re = (float)(chest_f[(atx<<1)+arx][6144+(2*k)]);
-          float Im = (float)(chest_f[(atx<<1)+arx][6144+(2*k)+1]);
-          chest_f_abs[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im));
+          chest_f_abs[ind] = (short)10*log10(1.0+SquaredNorm(chest_f[(atx<<1)+arx][6144+k]));
           ind++;
         }
       }
@@ -610,7 +581,7 @@ static void uePbchLLR  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
     return;
 
   int16_t *pbch_llr = (int16_t *) phy_vars_ue->pbch_vars[eNB_id]->llr;
-  float llr_pbch[1920], bit_pbch[1920];
+  float llr_pbch[864], bit_pbch[864];
 
   for (int i=0; i<864; i++) {
     llr_pbch[i] = (float) pbch_llr[i];
@@ -653,7 +624,6 @@ static void uePbchIQ  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id
 }
 
 static void uePcchLLR  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
-
   // PDCCH LLRs
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
     return;
@@ -661,7 +631,7 @@ static void uePcchLLR  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
-  int16_t   **chest_f = (int16_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
+  scopeSample_t **chest_f = (scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
   int ind = 0;
   float chest_f_abs[frame_parms->ofdm_symbol_size];
   float freq[frame_parms->ofdm_symbol_size];
@@ -671,9 +641,7 @@ static void uePcchLLR  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
       if (chest_f[(atx<<1)+arx] != NULL) {
         for (int k=0; k<frame_parms->ofdm_symbol_size; k++) {
           freq[ind] = (float)ind;
-          float Re = (float)(chest_f[(atx<<1)+arx][6144+(2*k)]);
-          float Im = (float)(chest_f[(atx<<1)+arx][6144+(2*k)+1]);
-          chest_f_abs[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im));
+          chest_f_abs[ind] = (short)10*log10(1.0+SquaredNorm(chest_f[(atx<<1)+arx][6144+k]));
           ind++;
         }
       }
@@ -689,7 +657,6 @@ static void uePcchLLR  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
 }
 
 static void uePcchIQ  (FL_OBJECT *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
-
   // PDCCH I/Q of MF Output
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->rxdataF_comp[0])
     return;
@@ -836,7 +803,7 @@ static FD_phy_scope_t *create_phy_scope_nrue( int ID ) {
   fl_hide_object(fdui->button_0);
   fl_end_form( );
   fdui->phy_scope->fdui = fdui;
-    char buf[100];
+  char buf[100];
   sprintf(buf,"NR DL SCOPE UE %d", ID);
   fl_show_form (fdui->phy_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, buf);
   return fdui;
@@ -852,23 +819,55 @@ void phy_scope_nrUE(FD_phy_scope_t *form,
     form=remeberForm;
   else
     remeberForm=form;
+
   if (form==NULL)
     return;
+
   int i=0;
 
   while (form->graph[i].graph) {
     form->graph[i].nrUEfunct(form->graph[i].graph, phy_vars_ue, eNB_id, UE_id);
     i++;
   }
-  
+
   fl_check_forms();
 }
 
+static FD_phy_scope_t  *form_nrue[NUMBER_OF_UE_MAX];
+static pthread_t forms_thread;
+
+static void *nrUEscopeThread(void *arg) {
+  PHY_VARS_NR_UE *ue=(PHY_VARS_NR_UE *)arg;
+  size_t stksize;
+  pthread_attr_t atr;
+  pthread_attr_getstacksize(&atr, &stksize);
+  pthread_attr_setstacksize(&atr,32*1024*1024 );
+
+  while (!oai_exit) {
+    phy_scope_nrUE(form_nrue[0],
+                   ue,
+                   0,0);
+    usleep(99*1000);
+  }
+
+  pthread_exit((void *)arg);
+}
+
+void nrUEinitScope(PHY_VARS_NR_UE *ue) {
+  int fl_argc=1;
+  char *name="5G-UE-scope";
+  fl_initialize (&fl_argc, &name, NULL, 0, 0);
+  form_nrue[0] = create_phy_scope_nrue(0);
+  threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
+}
+
+// Kept to put back the functionality soon
+#if 0
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 //char                            title[255];
 //static pthread_t                forms_thread; //xforms
 static void reset_stats_gNB(FL_OBJECT *button,
-                     long arg) {
+                            long arg) {
   int i,k;
   //PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
 
@@ -907,32 +906,7 @@ static FD_stats_form *create_form_stats_form(int ID) {
   fdui->stats_form->fdui = fdui;
   return fdui;
 }
-
-static FD_phy_scope_t  *form_nrue[NUMBER_OF_UE_MAX];
-static pthread_t forms_thread;
-
-static void *scope_thread(void *arg) {
-  PHY_VARS_NR_UE *ue=(PHY_VARS_NR_UE *)arg;
-
-  while (!oai_exit) {
-    phy_scope_nrUE(form_nrue[0],
-                   ue,
-                   0,0);
-    sleep(100*1000);
-  }
-
-  pthread_exit((void *)arg);
-}
-
-void init_scope(PHY_VARS_NR_UE *ue) {
-  int fl_argc=1;
-  char *name="5G-UE-scope";
-  fl_initialize (&fl_argc, &name, NULL, 0, 0);
-  form_nrue[0] = create_phy_scope_nrue(0);
-  threadCreate(&forms_thread, scope_thread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
-}
-
-
+#endif
 
 
 

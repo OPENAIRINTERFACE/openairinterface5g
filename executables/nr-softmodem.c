@@ -954,7 +954,9 @@ if(!IS_SOFTMODEM_NOS1)
     scopeParms_t p;
     p.argc=&argc;
     p.argv=argv;
-    startScope(&p);
+    p.gNB=RC.gNB[0];
+    p.ru=RC.ru[0];
+    gNBinitScope(&p);
   }
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {
