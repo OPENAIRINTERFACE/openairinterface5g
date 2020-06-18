@@ -267,10 +267,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       rel15->coreset.scrambling_rnti = mac->t_crnti;
     } else {
       rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
-      if(mac->ra_state == WAIT_RAR)
-        rel15->coreset.scrambling_rnti = 0;
-      else
-        rel15->coreset.scrambling_rnti = rel15->rnti;
+      rel15->coreset.scrambling_rnti = 0;
     }
 
     if (add_dci){

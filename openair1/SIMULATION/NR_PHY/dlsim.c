@@ -736,7 +736,7 @@ int main(int argc, char **argv)
 
       NR_UE_DLSCH_t *dlsch0 = UE->dlsch[UE->current_thread_id[UE_proc.nr_tti_rx]][0][0];
 
-      int harq_pid = dlsch0->current_harq_pid;
+      int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
 
       NR_gNB_DLSCH_t *gNB_dlsch = gNB->dlsch[0][0];
@@ -752,10 +752,11 @@ int main(int argc, char **argv)
         memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[0].ndi = !(trial&1);
+        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[0].round = round;   
-        gNB->dlsch[0][0]->harq_processes[0]->round = round;
+        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;   
+        UE_list->UE_sched_ctrl[0].current_harq_pid = harq_pid;
+        gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
       
         if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&pucch_sched,&dlsch_config);
         else               nr_schedule_css_dlsch_phytest(0,frame,slot);
