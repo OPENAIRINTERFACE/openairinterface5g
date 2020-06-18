@@ -88,7 +88,7 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
-  int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3;
+  int messagePowerOffsetGroupB = 0, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, prach_ConfigIndex, SFN_nbr, Msg3_size;
 
   AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);

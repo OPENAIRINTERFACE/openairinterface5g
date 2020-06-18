@@ -1456,7 +1456,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     // non-coherent LLR computation on groups of 4 REs (half-PRBs)
     int32_t corr_re,corr_im,corr_tmp;
     __m128i corr16,llr_num,llr_den;
-    uint64_t corr;
+    uint64_t corr = 0;
 
     for (int half_prb=0;half_prb<(2*pucch_pdu->prb_size);half_prb++) {
       llr_num=_mm_set1_epi16(0);llr_den=_mm_set1_epi16(0);

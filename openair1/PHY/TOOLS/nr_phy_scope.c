@@ -286,6 +286,8 @@ static void puschIQ (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_var
   fl_set_xyplot_data(graph,I,Q,sz,"","","");
 
   // PUSCH I/Q of MF Output
+// Code to fixed, disabled for cppcheck
+#if 0
   if (NULL) {
     int32_t *pucch1ab_comp = (int32_t *) NULL; //phy_vars_gnb->pucch1ab_stats[UE_id];
     int32_t *pucch1_comp = (int32_t *) NULL; //phy_vars_gnb->pucch1_stats[UE_id];
@@ -307,6 +309,7 @@ static void puschIQ (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_var
     fl_set_xyplot_xbounds(graph,-5000,5000);
     fl_set_xyplot_ybounds(graph,0,80);
   }
+#endif
 }
 
 static void pucchEnergy (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id) {

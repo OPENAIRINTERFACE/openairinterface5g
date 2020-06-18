@@ -934,7 +934,7 @@ void nr_ue_msg2_scheduler(module_id_t mod_id,
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while ((*msg2_slot > slot_limit) || ((*msg2_frame*nr_slots_per_frame[mu] + *msg2_slot - monitoring_offset) % monitoring_slot_period != 0))  {
     if((*msg2_slot % tdd_period_slot) > 0)
-      *msg2_slot--;
+      (*msg2_slot)--;
     else
       AssertFatal(1 == 0, "No available DL slot to schedule reception of msg2 has been found");
   }

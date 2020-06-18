@@ -180,7 +180,7 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
             printf_params("[LIBCONFIG] %s: %llu\n", cfgpath,(long long unsigned)(*(cfgoptions[i].u64ptr)) );
           } else {
             *(cfgoptions[i].i64ptr) = llu;
-            printf_params("[LIBCONFIG] %s: %llu\n", cfgpath,(long long)(*(cfgoptions[i].i64ptr)) );
+            printf_params("[LIBCONFIG] %s: %lld\n", cfgpath,(long long)(*(cfgoptions[i].i64ptr)) );
           }
         } else {
           defval=config_setdefault_int64(&(cfgoptions[i]),prefix);

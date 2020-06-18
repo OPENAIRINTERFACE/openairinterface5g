@@ -4111,12 +4111,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
 
-    NR_UE_DLSCH_t *dlsch;
+    NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1){
       dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0];
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }
+    AssertFatal(dlsch != NULL, "Unsupported mode\n");
     uint8_t harq_pid = dlsch->current_harq_pid;
     NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
     uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;

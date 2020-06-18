@@ -563,9 +563,6 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   int16_t prach_ifft_tmp[2048*2] __attribute__((aligned(32)));
   int32_t *prach_ifft=(int32_t*)NULL;
   
-
-  AssertFatal(gNB!=NULL,"gNB is null\n");
-
   fp = &gNB->frame_parms;
 
   nb_rx = gNB->gNB_config.carrier_config.num_rx_ant.value;

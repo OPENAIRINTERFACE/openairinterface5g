@@ -91,7 +91,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon;
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
-  int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3;
+  int messagePowerOffsetGroupB = 0, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, msg1_FDM, prach_ConfigIndex, SFN_nbr, Msg3_size;
 
   // NR_RSRP_Range_t rsrp_ThresholdSSB; // todo
