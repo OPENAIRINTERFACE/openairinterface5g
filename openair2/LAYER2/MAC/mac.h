@@ -1276,7 +1276,7 @@ typedef struct {
 
 /**
  * definition of a scheduling algorithm implementation used in the
- * default scheduler
+ * default DL scheduler
  */
 typedef struct {
   char *name;
@@ -1286,6 +1286,19 @@ typedef struct {
       module_id_t, int, int, int, UE_list_t *, int, int, uint8_t *, void *);
   void *data;
 } default_sched_dl_algo_t;
+
+/**
+ * definition of a scheduling algorithm implementation used in the
+ * default UL scheduler
+ */
+typedef struct {
+  char *name;
+  void *(*setup)(void);
+  void (*unset)(void **);
+  int (*run)(
+      module_id_t, int, int, int, int, int, UE_list_t *, int, int, contig_rbs_t *, void *);
+  void *data;
+} default_sched_ul_algo_t;
 
 /*! \brief eNB common channels */
 typedef struct {
@@ -1447,6 +1460,7 @@ typedef struct eNB_MAC_INST_s {
   SCHEDULER_MODES scheduler_mode;
   /// scheduling algorithm used in default scheduler
   default_sched_dl_algo_t dl_algo;
+  default_sched_ul_algo_t ul_algo;
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;

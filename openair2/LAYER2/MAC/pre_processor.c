@@ -818,17 +818,28 @@ int pp_find_rb_table_index(int approximate) {
   return p + 1;
 }
 
-int g_start_ue_ul = -1;
-int round_robin_ul(module_id_t Mod_id,
-                   int CC_id,
-                   int frame,
-                   int subframe,
-                   int sched_frame,
-                   int sched_subframe,
-                   UE_list_t *UE_list,
-                   int max_num_ue,
-                   int num_contig_rb,
-                   contig_rbs_t *rbs) {
+void *rr_ul_setup(void) {
+  void *data = malloc(sizeof(int));
+  *(int *) data = 0;
+  AssertFatal(data, "could not allocate data in %s()\n", __func__);
+  return data;
+}
+void rr_ul_unset(void **data) {
+  if (*data)
+    free(*data);
+  *data = NULL;
+}
+int rr_ul_run(module_id_t Mod_id,
+              int CC_id,
+              int frame,
+              int subframe,
+              int sched_frame,
+              int sched_subframe,
+              UE_list_t *UE_list,
+              int max_num_ue,
+              int num_contig_rb,
+              contig_rbs_t *rbs,
+              void *data) {
   AssertFatal(num_contig_rb <= 2, "cannot handle more than two contiguous RB regions\n");
   UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
   const int max_rb = num_contig_rb > 1 ? MAX(rbs[0].length, rbs[1].length) : rbs[0].length;
@@ -968,9 +979,10 @@ int round_robin_ul(module_id_t Mod_id,
     end = la > lb ? 2 : -1;
   }
 
-  if (g_start_ue_ul == -1)
-    g_start_ue_ul = UE_list->head;
-  int sUE_id = g_start_ue_ul;
+  int *start_ue = data;
+  if (*start_ue == -1)
+    *start_ue = UE_list->head;
+  int sUE_id = *start_ue;
   int rb_idx_given[MAX_MOBILES_PER_ENB];
   memset(rb_idx_given, 0, sizeof(rb_idx_given));
 
@@ -1049,10 +1061,17 @@ int round_robin_ul(module_id_t Mod_id,
   }
 
   /* just start with the next UE next time */
-  g_start_ue_ul = next_ue_list_looped(UE_list, g_start_ue_ul);
+  *start_ue = next_ue_list_looped(UE_list, *start_ue);
 
   return rbs[0].length + (num_contig_rb > 1 ? rbs[1].length : 0);
 }
+default_sched_ul_algo_t round_robin_ul = {
+  .name  = "round_robin_ul",
+  .setup = rr_ul_setup,
+  .unset = rr_ul_unset,
+  .run   = rr_ul_run,
+  .data  = NULL
+};
 
 void ulsch_scheduler_pre_processor(module_id_t Mod_id,
                                    int CC_id,
@@ -1060,9 +1079,10 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
                                    sub_frame_t subframeP,
                                    int sched_frameP,
                                    unsigned char sched_subframeP) {
-  UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
-  const int N_RB_UL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].ul_Bandwidth);
-  COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
+  eNB_MAC_INST *mac = RC.mac[Mod_id];
+  UE_info_t *UE_info = &mac->UE_info;
+  const int N_RB_UL = to_prb(mac->common_channels[CC_id].ul_Bandwidth);
+  COMMON_channels_t *cc = &mac->common_channels[CC_id];
 
   UE_list_t UE_to_sched;
   UE_to_sched.head = -1;
@@ -1119,16 +1139,17 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
     }
   }
 
-  round_robin_ul(Mod_id,
-                 CC_id,
-                 frameP,
-                 subframeP,
-                 sched_frameP,
-                 sched_subframeP,
-                 &UE_to_sched,
-                 4, // max_num_ue
-                 n_contig,
-                 rbs);
+  mac->ul_algo.run(Mod_id,
+                   CC_id,
+                   frameP,
+                   subframeP,
+                   sched_frameP,
+                   sched_subframeP,
+                   &UE_to_sched,
+                   4, // max_num_ue
+                   n_contig,
+                   rbs,
+                   mac->ul_algo.data);
 
   // the following block is meant for validation of the pre-processor to check
   // whether all UE allocations are non-overlapping and is not necessary for
@@ -1147,7 +1168,7 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
       continue;
 
     print = 1;
-    uint8_t harq_pid = subframe2harqpid(&RC.mac[Mod_id]->common_channels[CC_id],
+    uint8_t harq_pid = subframe2harqpid(&mac->common_channels[CC_id],
                                         sched_frameP, sched_subframeP);
     LOG_D(MAC, "%4d.%d UE%d %d RBs (index %d) at start %d, pre MCS %d %s\n",
           frameP,
