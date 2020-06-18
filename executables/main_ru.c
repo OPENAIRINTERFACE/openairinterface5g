@@ -76,8 +76,6 @@ uint16_t sf_ahead = 4;
 RU_t ru_m;
 
 
-static int DEFBANDS[] = {7};
-
 void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync);
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
@@ -163,7 +161,8 @@ int main ( int argc, char **argv )
   
 
   RU_t *ru=&ru_m;
-  init_RU0(ru,0,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
+  int ru_id = 0;
+  init_RU0(ru,ru_id,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
   ru->rf_map.card=0;
   ru->rf_map.chain=(get_softmodem_params()->chain_offset);
   
