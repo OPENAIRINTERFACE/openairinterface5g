@@ -258,13 +258,26 @@ int addmod_static_slice_ul(slice_info_t *si,
   return si->num - 1;
 }
 
-int remove_static_slice(slice_info_t *si, uint8_t slice_idx) {
+int remove_static_slice_dl(slice_info_t *si, uint8_t slice_idx) {
   if (slice_idx == 0)
     return 0;
   slice_t *sr = _remove_slice(&si->num, si->s, si->UE_assoc_slice, slice_idx);
   if (!sr)
     return 0;
   free(sr->algo_data);
+  sr->dl_algo.unset(&sr->dl_algo.data);
+  free(sr);
+  return 1;
+}
+
+int remove_static_slice_ul(slice_info_t *si, uint8_t slice_idx) {
+  if (slice_idx == 0)
+    return 0;
+  slice_t *sr = _remove_slice(&si->num, si->s, si->UE_assoc_slice, slice_idx);
+  if (!sr)
+    return 0;
+  free(sr->algo_data);
+  sr->ul_algo.unset(&sr->ul_algo.data);
   free(sr);
   return 1;
 }
@@ -528,6 +541,7 @@ pp_impl_param_t static_dl_init(module_id_t mod_id, int CC_id) {
   dlp->posLow = 0;
   dlp->posHigh = to_rbg(RC.mac[mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth) - 1;
   default_sched_dl_algo_t *algo = &RC.mac[mod_id]->pre_processor_dl.dl_algo;
+  algo->data = NULL;
   DevAssert(0 == addmod_static_slice_dl(si, 0, strdup("default"), algo, dlp));
   const UE_list_t *UE_list = &RC.mac[mod_id]->UE_info.list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id])
@@ -539,7 +553,7 @@ pp_impl_param_t static_dl_init(module_id_t mod_id, int CC_id) {
   sttc.remove_UE = slicing_remove_UE;
   sttc.move_UE = slicing_move_UE;
   sttc.addmod_slice = addmod_static_slice_dl;
-  sttc.remove_slice = remove_static_slice;
+  sttc.remove_slice = remove_static_slice_dl;
   sttc.dl = static_dl;
   // current DL algo becomes default scheduler
   sttc.dl_algo = *algo;
@@ -564,6 +578,7 @@ pp_impl_param_t static_ul_init(module_id_t mod_id, int CC_id) {
   ulp->posLow = 0;
   ulp->posHigh = to_prb(RC.mac[mod_id]->common_channels[CC_id].ul_Bandwidth) - 1;
   default_sched_ul_algo_t *algo = &RC.mac[mod_id]->pre_processor_ul.ul_algo;
+  algo->data = NULL;
   DevAssert(0 == addmod_static_slice_ul(si, 0, strdup("default"), algo, ulp));
   const UE_list_t *UE_list = &RC.mac[mod_id]->UE_info.list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id])
@@ -575,7 +590,7 @@ pp_impl_param_t static_ul_init(module_id_t mod_id, int CC_id) {
   sttc.remove_UE = slicing_remove_UE;
   sttc.move_UE = slicing_move_UE;
   sttc.addmod_slice = addmod_static_slice_ul;
-  sttc.remove_slice = remove_static_slice;
+  sttc.remove_slice = remove_static_slice_ul;
   sttc.ul = static_ul;
   // current DL algo becomes default scheduler
   sttc.ul_algo = *algo;

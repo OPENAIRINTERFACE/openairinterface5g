@@ -103,23 +103,11 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name);
 
 /*** Functions for handling a slice config ***/
 
-/* allocate memory for a Protocol__FlexSliceConfig structure with n_dl DL slice
- * configs and m_ul UL slice configs */
-Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul);
-
-/* read the general slice parameters via RAN into the given
- * Protocol__FlexSliceConfig struct */
-void flexran_agent_read_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *s);
-
-/* reads content of slice over the sc_update structure, so that it can be
- * applied later by performing a diff between slice_config and sc_update */
-void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *slice);
-
-/* inserts a new ue_config into the structure keeping ue to slice association
- * updates and marks so it can be applied */
-void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config);
+/* Prepare the application of a slicing config */
+void apply_update_dl_slice_config(mid_t mod_id, Protocol__FlexSliceDlUlConfig *slice);
+void apply_update_ul_slice_config(mid_t mod_id, Protocol__FlexSliceDlUlConfig *slice);
 
 /* apply a new association between a UE and a slice (both DL and UL) */
-int apply_ue_slice_assoc_update(mid_t mod_id);
+int apply_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config);
 
 #endif /*FLEXRAN_AGENT_MAC_INTERNAL_H_*/

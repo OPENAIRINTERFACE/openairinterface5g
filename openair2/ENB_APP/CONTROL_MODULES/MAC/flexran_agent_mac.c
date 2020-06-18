@@ -1452,9 +1452,74 @@ void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
     conf->si_config->has_sfn = 1;
   }
 
-  /* get a pointer to the config which is maintained in the agent throughout
-  * its lifetime */
-  conf->slice_config = flexran_agent_get_slice_config(mod_id);
+  conf->slice_config = malloc(sizeof(Protocol__FlexSliceConfig));
+  if (conf->slice_config) {
+    protocol__flex_slice_config__init(conf->slice_config);
+    Protocol__FlexSliceConfig *sc = conf->slice_config;
+
+    sc->dl = malloc(sizeof(Protocol__FlexSliceDlUlConfig));
+    DevAssert(sc->dl);
+    protocol__flex_slice_dl_ul_config__init(sc->dl);
+    sc->dl->algorithm = flexran_get_dl_slice_algo(mod_id);
+    sc->dl->has_algorithm = 1;
+    sc->dl->n_slices = flexran_get_num_dl_slices(mod_id);
+    if (sc->dl->n_slices > 0) {
+      sc->dl->slices = calloc(sc->dl->n_slices, sizeof(Protocol__FlexSlice *));
+      DevAssert(sc->dl->slices);
+      for (int i = 0; i < sc->dl->n_slices; ++i) {
+        sc->dl->slices[i] = malloc(sizeof(Protocol__FlexSlice));
+        DevAssert(sc->dl->slices[i]);
+        protocol__flex_slice__init(sc->dl->slices[i]);
+        flexran_get_dl_slice(mod_id, i, sc->dl->slices[i], sc->dl->algorithm);
+      }
+    } else {
+      sc->dl->scheduler = flexran_get_dl_scheduler_name(mod_id);
+    }
+
+    sc->ul = malloc(sizeof(Protocol__FlexSliceDlUlConfig));
+    DevAssert(sc->ul);
+    protocol__flex_slice_dl_ul_config__init(sc->ul);
+    sc->ul->algorithm = flexran_get_ul_slice_algo(mod_id);
+    sc->ul->has_algorithm = 1;
+    sc->ul->n_slices = flexran_get_num_ul_slices(mod_id);
+    if (sc->ul->n_slices > 0) {
+      sc->ul->slices = calloc(sc->ul->n_slices, sizeof(Protocol__FlexSlice *));
+      DevAssert(sc->ul->slices);
+      for (int i = 0; i < sc->ul->n_slices; ++i) {
+        sc->ul->slices[i] = malloc(sizeof(Protocol__FlexSlice));
+        DevAssert(sc->ul->slices[i]);
+        protocol__flex_slice__init(sc->ul->slices[i]);
+        flexran_get_ul_slice(mod_id, i, sc->ul->slices[i], sc->ul->algorithm);
+      }
+    } else {
+      sc->ul->scheduler = flexran_get_ul_scheduler_name(mod_id);
+    }
+  }
+}
+
+void flexran_agent_destroy_mac_slice_config(Protocol__FlexCellConfig *conf) {
+  Protocol__FlexSliceConfig *sc = conf->slice_config;
+  for (int i = 0; i < sc->dl->n_slices; ++i) {
+    free(sc->dl->slices[i]);
+    sc->dl->slices[i] = NULL;
+    /* scheduler names are not freed: we assume we read them directly from the
+     * underlying memory and do not dispose it */
+  }
+  free(sc->dl->slices);
+  /* scheduler name is not freed */
+  free(sc->dl);
+  sc->dl = NULL;
+  for (int i = 0; i < sc->ul->n_slices; ++i) {
+    free(sc->ul->slices[i]);
+    sc->ul->slices[i] = NULL;
+    /* scheduler names are not freed */
+  }
+  free(sc->ul->slices);
+  /* scheduler name is not freed */
+  free(sc->ul);
+  sc->ul = NULL;
+  free(conf->slice_config);
+  conf->slice_config = NULL;
 }
 
 void flexran_agent_fill_mac_ue_config(mid_t mod_id, mid_t ue_id,
@@ -1568,46 +1633,46 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id)
   return 0;
 }
 
-
-void flexran_create_config_structures(mid_t mod_id)
-{
-  int i;
-  int n_dl = flexran_get_num_dl_slices(mod_id);
-  int m_ul = flexran_get_num_ul_slices(mod_id);
-  slice_config[mod_id] = flexran_agent_create_slice_config(n_dl, m_ul);
-  sc_update[mod_id] = flexran_agent_create_slice_config(n_dl, m_ul);
-  if (!slice_config[mod_id] || !sc_update[mod_id]) return;
-
-  //flexran_agent_read_slice_config(mod_id, slice_config[mod_id]);
-  //flexran_agent_read_slice_config(mod_id, sc_update[mod_id]);
-  for (i = 0; i < n_dl; i++) {
-    //flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
-    //flexran_agent_read_slice_dl_config(mod_id, i, sc_update[mod_id]->dl[i]);
+void helper_destroy_mac_slice_config(Protocol__FlexSliceConfig *slice_config) {
+  if (slice_config->dl) {
+    if (slice_config->dl->scheduler)
+      free(slice_config->dl->scheduler);
+    for (int i = 0; i < slice_config->dl->n_slices; i++)
+      if (slice_config->dl->slices[i]->scheduler)
+        free(slice_config->dl->slices[i]->scheduler);
   }
-  for (i = 0; i < m_ul; i++) {
-    //flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
-    //flexran_agent_read_slice_ul_config(mod_id, i, sc_update[mod_id]->ul[i]);
+  if (slice_config->ul) {
+    if (slice_config->ul->scheduler)
+      free(slice_config->ul->scheduler);
+    for (int i = 0; i < slice_config->ul->n_slices; i++)
+      if (slice_config->ul->slices[i]->scheduler)
+        free(slice_config->ul->slices[i]->scheduler);
   }
+
+  Protocol__FlexCellConfig helper;
+  helper.slice_config = slice_config;
+  flexran_agent_destroy_mac_slice_config(&helper);
 }
 
-void flexran_check_and_remove_slices(mid_t mod_id)
-{
+void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice_config) {
+  if (!*slice_config) return;
+  Protocol__FlexSliceConfig *sc = *slice_config;
+  *slice_config = NULL;
+
+  /* TODO handle using lock-free queue */
+  apply_update_dl_slice_config(mod_id, sc->dl);
+  apply_update_ul_slice_config(mod_id, sc->ul);
+
+  helper_destroy_mac_slice_config(*slice_config);
 }
 
-void flexran_agent_slice_update(mid_t mod_id)
-{
+void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig **ue_config) {
+  /* TODO handle using lock-free queue */
+  apply_ue_slice_assoc_update(mod_id, *ue_config);
+
+  free(*ue_config);
+  *ue_config = NULL;
 }
 
-Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id)
-{
-  if (!slice_config[mod_id]) return NULL;
-  Protocol__FlexSliceConfig *config = NULL;
-
-  pthread_mutex_lock(&sc_update_mtx);
-  if (!config) {
-    pthread_mutex_unlock(&sc_update_mtx);
-    return NULL;
-  }
-  pthread_mutex_unlock(&sc_update_mtx);
-  return config;
+void flexran_agent_slice_update(mid_t mod_id) {
 }

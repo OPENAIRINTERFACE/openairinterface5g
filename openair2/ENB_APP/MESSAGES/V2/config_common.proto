@@ -61,6 +61,31 @@ enum flex_qam {
 //
 // Slice config related structures and enums
 //
+enum flex_slice_algorithm {
+  None = 0;
+  Static = 1;
+  NVS = 2;
+}
+
+message flex_slice_static {
+  optional uint32 posLow = 1;
+  optional uint32 posHigh = 2;
+}
+
+message flex_slice {
+  optional uint32 id = 1;
+  optional string label = 2;
+  optional string scheduler = 3;
+  oneof params {
+    flex_slice_static static = 10;
+  }
+}
+
+message flex_slice_dl_ul_config {
+  optional flex_slice_algorithm algorithm = 1;
+  repeated flex_slice slices = 2;
+  optional string scheduler = 3; // if no slicing
+}
 
 //
 // UE config related structures and enums
