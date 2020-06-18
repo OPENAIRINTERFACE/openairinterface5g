@@ -757,7 +757,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
       */
     }
-  } else if (ul_info) {
+  } else if (ul_info && ul_info->slot_tx == 8) {
     module_id_t mod_id    = ul_info->module_id;
     uint32_t gNB_index    = ul_info->gNB_index;
     int cc_id             = ul_info->cc_id;
@@ -3809,7 +3809,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
 /////* ULSCH MAC PDU generation (6.1.2 TS 38.321) */////
 ////////////////////////////////////////////////////////
 
-unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
+uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint8_t *pdu,
                                     uint8_t num_sdus,
                                     uint16_t *sdu_lengths,
@@ -3824,7 +3824,8 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
 
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) pdu;
   unsigned char last_size = 0, i, mac_header_control_elements[16], *ce_ptr, bsr = 0;
-  int mac_ce_size, offset;
+  int mac_ce_size;
+  uint16_t offset = 0;
 
   LOG_D(MAC, "[UE] Generating ULSCH PDU : num_sdus %d\n", num_sdus);
 
@@ -3974,7 +3975,7 @@ unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
   // compute final offset
   offset = ((unsigned char *) mac_pdu_ptr - pdu);
 
-  //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - mac_pdu));
+  //printf("Offset %d \n", ((unsigned char *) mac_pdu_ptr - pdu));
 
   return offset;
 }

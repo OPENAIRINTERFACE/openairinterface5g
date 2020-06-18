@@ -139,7 +139,7 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                            NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
 
 
-unsigned char nr_generate_ulsch_pdu(uint8_t *sdus_payload,
+uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     uint8_t *pdu,
                                     uint8_t num_sdus,
                                     uint16_t *sdu_lengths,

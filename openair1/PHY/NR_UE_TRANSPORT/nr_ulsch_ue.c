@@ -460,6 +460,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   }
 
   //}
+  NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;
+  harq_process_ulsch = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid];
+  harq_process_ulsch->status = SCH_IDLE;
 
   ///////////
   ////////////////////////////////////////////////////////////////////////

@@ -70,7 +70,7 @@ This setup requires an EPC, an OAI eNB and gNB, and a COTS Phone. A dedicated pa
 
 ### Launch eNB
 
-```bash sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf
+```bash sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf```
 
 
 

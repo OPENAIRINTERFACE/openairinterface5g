@@ -152,6 +152,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
 
           ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
+          ulsch0->harq_processes[current_harq_pid]->status = ACTIVE;
         break;
 
         case (FAPI_NR_UL_CONFIG_TYPE_PUCCH):
