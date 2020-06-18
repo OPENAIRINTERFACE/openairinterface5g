@@ -366,7 +366,7 @@ class RANManagement():
 		count = 40
 		buildOAIprocess = True
 		while (count > 0) and buildOAIprocess:
-			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 3)
+			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
 			if result is None:
 				buildOAIprocess = False
@@ -610,7 +610,11 @@ class RANManagement():
 					enbDidSync = True
 					time.sleep(10)
 
-		if enbDidSync and eNBinNoS1:
+		rruCheck = False
+		result = re.search('^rru|^du.band', str(config_file))
+		if result is not None:
+			rruCheck = True
+		if enbDidSync and eNBinNoS1 and not rruCheck:
 			mySSH.command('ifconfig oaitun_enb1', '\$', 4)
 			mySSH.command('ifconfig oaitun_enb1', '\$', 4)
 			result = re.search('inet addr:1|inet 1', mySSH.getBefore())
@@ -815,6 +819,7 @@ class RANManagement():
 		X2HO_state = CONST.X2_HO_REQ_STATE__IDLE
 		X2HO_inNbProcedures = 0
 		X2HO_outNbProcedures = 0
+		global_status = CONST.ALL_PROCESSES_OK
 		for line in enb_log_file.readlines():
 			if X2HO_state == CONST.X2_HO_REQ_STATE__IDLE:
 				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
@@ -1033,30 +1038,23 @@ class RANManagement():
 					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
 					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
 					htmleNBFailureMsg += rruMsg + '\n'
-					self.prematureExit(True)
-					return CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
+					self.prematureExit = True
+					global_status = CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
-			if self.htmlObj is not None:
-				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-			return CONST.ENB_PROCESS_SEG_FAULT
+			global_status = CONST.ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with an assertion! \u001B[0m')
 			htmleNBFailureMsg += msgAssertion
-			if self.htmlObj is not None:
-				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-			return CONST.ENB_PROCESS_ASSERTION
+			global_status = CONST.ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
 			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
-			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if rlcDiscardBuffer > 0:
 			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
 			htmleNBFailureMsg += rlcMsg + '\n'
-			if self.htmlObj is not None:
-				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-			return CONST.ENB_PROCESS_REALTIME_ISSUE
+			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
 			self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-		return 0
+		return global_status

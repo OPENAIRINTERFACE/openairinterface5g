@@ -303,9 +303,11 @@ The following features are valid for the gNB and the 5G-NR UE.
 **gNB MAC**
 - MAC -> PHY configuration using NR FAPI P5 interface
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
-- Scheduler for RA procedure at gNB
+- Scheduler for RA procedreat gNB
 - MAC downlink scheduler (fixed allocations)
 - MAC header generation (including timing advance)
+- ACK / NACK handling and HARQ procedures for downlink
+- **As of May 2020** only DL was validated with COTS phone ; UL in progress, validated with OAI UE in noS1 mode
 
 
 # OpenAirInterface 5G-NR UE Feature Set #
@@ -351,7 +353,11 @@ The following features are valid for the gNB and the 5G-NR UE.
 - Initial sync and MIB detection
 - MAC -> PHY configuration of PHY via UE FAPI P5 interface
 - Basic MAC to control PHY via UE FAPI P7 interface
+<<<<<<< HEAD
 - Random access procedure
+=======
+- Random ccess procedure
+>>>>>>> origin/develop
 
 **RLC**
 
