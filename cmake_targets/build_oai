@@ -449,7 +449,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$gNB" = "1" =o "$RU" = "1"] ; then
+  if [ "$eNB" = "1" -o "$gNB" = "1" -o "$RU" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi

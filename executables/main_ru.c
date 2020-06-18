@@ -76,7 +76,6 @@ uint16_t sf_ahead = 4;
 RU_t ru_m;
 
 
-
 void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync);
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
