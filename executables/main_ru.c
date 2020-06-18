@@ -61,6 +61,7 @@
 
 #include <executables/split_headers.h>
 #include <targets/RT/USER/lte-softmodem.h>
+#include <executables/thread-common.h>
 
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
@@ -128,6 +129,7 @@ void oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {
 void wait_eNBs(void){ return; }
 
 uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
+
 
 int main ( int argc, char **argv )
 {
@@ -309,6 +311,8 @@ int main ( int argc, char **argv )
   ru->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
   ru->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
 
+
+  set_worker_conf("WORKER_ENABLE");
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
   pthread_cond_init(&sync_cond,NULL);
