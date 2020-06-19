@@ -8077,7 +8077,7 @@ rrc_eNB_decode_dcch(
     return 0;
     //TTN for D2D
   } else if (ul_dcch_msg->message.present == LTE_UL_DCCH_MessageType_PR_messageClassExtension) {
-    LOG_I(RRC, "THINH [LTE_UL_DCCH_MessageType_PR_messageClassExtension]\n");
+    LOG_I(RRC, "[LTE_UL_DCCH_MessageType_PR_messageClassExtension]\n");
 
     switch (ul_dcch_msg->message.choice.messageClassExtension.present) {
       case LTE_UL_DCCH_MessageType__messageClassExtension_PR_NOTHING: /* No components present */
@@ -8095,6 +8095,7 @@ rrc_eNB_decode_dcch(
                 LOG_E(RRC, "Received NR scgFailureInformation from UE, failure type: %ld \n",
                   ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
                   choice.c1.choice.scgFailureInformationNR_r15.failureReportSCG_NR_r15->failureType_r15);
+                xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)ul_dcch_msg);
               }
             }
           }
