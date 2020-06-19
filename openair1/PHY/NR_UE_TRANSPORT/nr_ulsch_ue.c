@@ -366,7 +366,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     
 
     uint8_t k_prime=0;
-    uint8_t is_dmrs, is_ptrs;
+    uint8_t is_dmrs, is_ptrs, is_dmrs_symbol;
     uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+number_of_symbols; l++) {
@@ -381,8 +381,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         is_dmrs = 0;
         is_ptrs = 0;
+        is_dmrs_symbol = 0;
 
         if((ul_dmrs_symb_pos >> l) & 0x01) {
+          is_dmrs_symbol = 1;
           if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%frame_parms->ofdm_symbol_size))
             is_dmrs = 1;
         }
@@ -433,7 +435,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else if (!is_dmrs || allowed_ulsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
+        } else if (!is_dmrs_symbol || allowed_ulsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
