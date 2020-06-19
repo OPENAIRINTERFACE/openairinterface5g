@@ -48,23 +48,32 @@ class PhySim:
 		self.ranAllowMerge= ""
 		self.ranTargetBranch= ""
 		self.exitStatus=0
-		self.workSpacePath=''
-		self.buildLogFile='compile_oai_enb.log'
-		self.runLogFile='ldpctest_run_results.log'
-		self.runResults=[]
+		#private attributes
+		self.__workSpacePath=''
+		self.__buildLogFile='compile_oai_enb.log'
+		self.__runLogFile='ldpctest_run_results.log'
+		self.__runResults=[]
+
+
+#-----------------
+#PRIVATE Methods
+#-----------------
 
 	def __CheckResults_PhySim(self,HTML,CONST):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
-		#retrieve run log file locally$
-		mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, self.workSpacePath+self.runLogFile, '.')
+		#retrieve run log file and store it locally$
+		mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, self.__workSpacePath+self.__runLogFile, '.')
 		mySSH.close()
-		with open(self.runLogFile) as f:
+		#parse results looking for Encoding and Decoding mean values
+		with open(self.__runLogFile) as f:
 			for line in f:
 				if 'mean' in line:
-					self.runResults.append(line)
-		info=self.runResults[-1]+self.runResults[-2]
+					self.__runResults.append(line)
+		#the value are appended for each test, so we take the last 2 values from the list
+		info=self.__runResults[-1]+self.__runResults[-2]
 
+		#updating the HTML with results
 		html_cell = '<pre style="background-color:white">' + info  + '</pre>'
 		html_queue=SimpleQueue()
 		html_queue.put(html_cell)
@@ -73,17 +82,18 @@ class PhySim:
 
 
 	def __CheckBuild_PhySim(self, HTML, CONST):
-		self.workSpacePath=self.eNBSourceCodePath+'/cmake_targets/'
+		self.__workSpacePath=self.eNBSourceCodePath+'/cmake_targets/'
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
-		#retrieve compile log file locally
-		mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, self.workSpacePath+self.buildLogFile, '.')
+		#retrieve compile log file and store it locally
+		mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, self.__workSpacePath+self.__buildLogFile, '.')
 		#delete older run log file
-		mySSH.command('rm ' + self.workSpacePath+self.runLogFile, '\$', 5)
+		mySSH.command('rm ' + self.__workSpacePath+self.__runLogFile, '\$', 5)
 		mySSH.close()
 		#check build result from local compile log file
 		buildStatus=False
-		with open(self.buildLogFile) as f:
+		with open(self.__buildLogFile) as f:
+		#nr_prachsim is the last compile step
 			if 'nr_prachsim compiled' in f.read():
 				buildStatus=True
 		#update HTML based on build status
@@ -94,8 +104,14 @@ class PhySim:
 			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.buildargs, 'KO', CONST.ALL_PROCESSES_OK, 'LDPC')
 			HTML.CreateHtmlTabFooter(False)
+			#exitStatus=1 will do a sys.exit in main
 			self.exitStatus=1
 		return HTML
+
+
+#-----------------$
+#PUBLIC Methods$
+#-----------------$
 
 	def Build_PhySim(self,htmlObj,constObj):
 		mySSH = sshconnection.SSHConnection()    
@@ -145,11 +161,14 @@ class PhySim:
 
 
 	def Run_PhySim(self,htmlObj,constObj):
+		#open a session for test run
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
-		mySSH.command('cd '+self.workSpacePath,'\$',5)
-		mySSH.command(self.workSpacePath+'phy_simulators/build/ldpctest ' + self.runargs + ' >> '+self.runLogFile, '\$', 30)   
+		mySSH.command('cd '+self.__workSpacePath,'\$',5)
+		#run and redirect the results to a log file
+		mySSH.command(self.__workSpacePath+'phy_simulators/build/ldpctest ' + self.runargs + ' >> '+self.__runLogFile, '\$', 30)   
 		mySSH.close()
+		#return updated HTML to main
 		lHTML = html.HTMLManagement()
 		lHTML=self.__CheckResults_PhySim(htmlObj,constObj)
 		return lHTML
