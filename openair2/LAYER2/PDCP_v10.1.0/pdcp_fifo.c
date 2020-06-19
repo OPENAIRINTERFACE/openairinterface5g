@@ -55,7 +55,6 @@ extern int otg_enabled;
 #include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "UTIL/FIFO/pad_list.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "platform_constants.h"
 #include "msc.h"
@@ -91,7 +90,6 @@ extern struct msghdr nas_msg_rx;
   extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
 #endif
 
-extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 
 #  include "gtpv1u_eNB_task.h"
