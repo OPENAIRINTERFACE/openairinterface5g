@@ -435,7 +435,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else if (!is_dmrs_symbol || allowed_ulsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
+        } else if (!is_dmrs_symbol || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
@@ -470,27 +470,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ////////////////////////////////////////////////////////////////////////
 
   LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
-}
-
-
-uint8_t allowed_ulsch_re_in_dmrs_symbol(uint16_t k,
-                                        uint16_t start_sc,
-                                        uint8_t numDmrsCdmGrpsNoData,
-                                        uint8_t dmrs_type) {
-  uint8_t delta;
-  for (int i = 0; i<numDmrsCdmGrpsNoData; i++){
-    if  (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
-      delta = i;
-      if (((k-start_sc)%2)  == delta)
-        return (0);
-    }
-    else {
-      delta = i<<1;
-      if ( (((k-start_sc)%6)  == delta) || (((k-start_sc)%6)  == (delta+1)) )
-        return (0);
-    }
-  }
-  return (1);
 }
 
 
