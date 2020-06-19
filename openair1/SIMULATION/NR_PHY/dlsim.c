@@ -866,7 +866,7 @@ int main(int argc, char **argv)
       NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
       int16_t *UE_llr = pdsch_vars[0]->llr[0];
       
-      TBS                  = rel15->TBSize[0];
+      TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
       uint16_t length_dmrs = 1;
       uint16_t nb_rb       = rel15->rbSize;
       uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4;
