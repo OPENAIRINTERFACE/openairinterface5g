@@ -3287,9 +3287,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  //nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
-  uint8_t nb_re_dmrs = 12; //(dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4;
+  nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
+  uint8_t dmrs_type = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[0].value; // TODO: HARDCODED pdsch index
+  uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4; // TODO: should changed my mac
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
