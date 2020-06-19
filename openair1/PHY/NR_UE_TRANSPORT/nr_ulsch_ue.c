@@ -433,7 +433,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else if (allowed_ulsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
+        } else if (!is_dmrs || allowed_ulsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];
