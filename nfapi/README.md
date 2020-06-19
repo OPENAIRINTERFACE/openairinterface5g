@@ -27,3 +27,8 @@
 * Need the `N_RB` value to be non-zero and obtained from the config file. (carrier config grid size)
 `int N_RB = gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value;`
 * how is this `gNB_config` assigned its values?
+
+### 19/06/20
+* `ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);` sloc: 1428 in `nr-ru.c`
+* the `ru->rfdevice` has all members zero or null.
+* This issue was solved by adding `sdr_addrs` to config file of PNF.

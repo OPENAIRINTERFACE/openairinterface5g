@@ -607,7 +607,7 @@ typedef struct {
 	uint16_t sfn; //0->1023   
   uint16_t slot;//0->319
   
-} nfapi_nr_slot_indication_t;
+} nfapi_nr_slot_indication_scf_t;
 
 // 3.4.2 
 

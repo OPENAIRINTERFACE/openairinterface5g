@@ -1285,7 +1285,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   pthread_create(&p7_thread, NULL, &pnf_p7_thread_start, p7_config);
   //((pnf_phy_user_data_t*)(phy_info->fapi->user_data))->p7_config = p7_config;
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Calling l1_north_init_eNB() %s\n", __FUNCTION__);
-  l1_north_init_eNB();
+  l1_north_init_gNB();
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] DJP - HACK - Set p7_config global ready for subframe ind%s\n", __FUNCTION__);
   p7_config_g = p7_config;
 
@@ -1321,6 +1321,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   nfapi_send_pnf_start_resp(config, p7_config->phy_id);
   printf("[PNF] Sending first P7 subframe ind\n");
   nfapi_pnf_p7_subframe_ind(p7_config, p7_config->phy_id, 0); // DJP - SFN_SF set to zero - correct???
+  //TODO: Change to nfapi_pnf_p7_slot_ind
   printf("[PNF] Sent first P7 subframe ind\n");
   return 0;
 }
