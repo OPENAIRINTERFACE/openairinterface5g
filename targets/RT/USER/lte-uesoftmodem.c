@@ -632,7 +632,7 @@ int main( int argc, char **argv ) {
 
   NB_INST=1;
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // || NFAPI_MODE_STANDALONE_PNF
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);
 
     for (int i=0; i<NB_UE_INST; i++) {
@@ -653,10 +653,10 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-
-
+  
+  
 #if 0 // #ifndef DEADLINE_SCHEDULER
-
+  
   printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   cpu_set_t cpuset;
@@ -668,7 +668,7 @@ int main( int argc, char **argv ) {
   if (get_nprocs() > 2) {
     for (j = 2; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
-
+    
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
     if (s != 0) {

@@ -35,12 +35,12 @@
 #include <errno.h>
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
-
 void configure_nfapi_pnf(char *vnf_ip_addr,
                          int vnf_p5_port,
                          char *pnf_ip_addr,
                          int pnf_p7_port,
                          int vnf_p7_port);
+
 UL_IND_t *UL_INFO = NULL;
 
 nfapi_ul_config_request_t* ul_config_req = NULL;
@@ -56,8 +56,8 @@ int current_sfn_sf;
 static int ue_sock_descriptor = -1;
 
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
-extern int timer_subframe;
-extern int timer_frame;
+//extern int timer_subframe;
+//extern int timer_frame;
 
 extern uint16_t sf_ahead;
 
@@ -195,7 +195,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
                                  UL_IND_t *UL_INFO,
                                  uint8_t ra_PreambleIndex,
                                  uint16_t ra_RNTI) {
-  LOG_I(MAC, "fill_rach_indication_UE_MAC 1 \n");
+  LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
 
   pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
 
@@ -241,7 +241,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
 
   // This function is currently defined only in the nfapi-RU-RAU-split so we
   // should call it when we merge with that branch.
-  // Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
+  // TODO Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
   // as soon as numberof preambles
   if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
     send_standalone_msg(UL_INFO, UL_INFO->rach_ind.header.message_id);

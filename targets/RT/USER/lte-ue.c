@@ -1951,13 +1951,13 @@ void write_dummy(PHY_VARS_UE *UE,  openair0_timestamp timestamp) {
   //
   struct complex16 v= {0};
   void *samplesVoid[UE->frame_parms.nb_antennas_tx];
-
+  
   for ( int i=0; i < UE->frame_parms.nb_antennas_tx; i++)
     samplesVoid[i]=(void *)&v;
-
+  
   AssertFatal( 1 == UE->rfdevice.trx_write_func(&UE->rfdevice,
 						timestamp+2*UE->frame_parms.samples_per_tti,
-						samplesVoid,
+						samplesVoid, 
 						1,
 						UE->frame_parms.nb_antennas_tx,
 						1),"");
@@ -2011,7 +2011,7 @@ void *UE_thread(void *arg)
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
-
+    
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
         // grab 10 ms of signal and wakeup synch thread
@@ -2021,7 +2021,7 @@ void *UE_thread(void *arg)
 	    for(int sf=0; sf<10; sf++) {
 	      for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 		rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
-
+	      
               AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
 						      &timestamp,
 						      rxp,
@@ -2032,7 +2032,7 @@ void *UE_thread(void *arg)
 	  } else {
 	    for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 	      rxp[i] = (void *)&UE->common_vars.rxdata[i][0];
-
+	    
 	    AssertFatal( UE->frame_parms.samples_per_tti*10 ==
                          UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                     &timestamp,
