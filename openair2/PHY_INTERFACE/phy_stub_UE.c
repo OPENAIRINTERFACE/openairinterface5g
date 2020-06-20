@@ -31,10 +31,10 @@
 #include "common/config/config_load_configmodule.h"
 #include "common/config/config_userapi.h"
 #include <arpa/inet.h>
+#include <string.h>
+#include <errno.h>
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
-
-void send_standalone_dummy();
 
 void configure_nfapi_pnf(char *vnf_ip_addr,
                          int vnf_p5_port,
@@ -45,7 +45,6 @@ UL_IND_t *UL_INFO = NULL;
 
 nfapi_ul_config_request_t* ul_config_req = NULL;
 nfapi_hi_dci0_request_t* hi_dci0_req = NULL;
-
 
 queue_t dl_config_req_queue;
 queue_t tx_req_pdu_queue;
@@ -1233,7 +1232,7 @@ void send_standalone_dummy()
   static const uint16_t dummy[] = {0, 0};
   if (send(ue_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
   {
-    LOG_E(MAC, "Send dummy to OAI UE failed\n");
+    LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));
     return;
   }
 }
