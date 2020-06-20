@@ -24,7 +24,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/log.h"
 
-static char nfapi_str_mode[][24] = {
+static const char *const nfapi_str_mode[] = {
     "MONOLITHIC",
     "PNF",
     "VNF",
@@ -63,7 +63,7 @@ void set_thread_priority(int priority) {
   }
 }
 
-char *nfapi_get_strmode(void) {
+const char *nfapi_get_strmode(void) {
   if (nfapi_params.nfapi_mode > NFAPI_MODE_UNKNOWN)
     return nfapi_str_mode[NFAPI_MODE_UNKNOWN];
 
