@@ -99,10 +99,10 @@ int flexran_agent_start(mid_t mod_id) {
 }
 void flexran_agent_slice_update(mid_t module_idP) {
 }
-int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p){
-	return 0;
+int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p) {
+  return 0;
 }
-void proto_agent_stop(mod_id_t mod_id){
+void proto_agent_stop(mod_id_t mod_id) {
 }
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
@@ -400,8 +400,8 @@ void OCPconfig_RU(RU_t *ru) {
   config_getlist( &RUParamList, RUParams, sizeof(RUParams)/sizeof(paramdef_t), NULL);
   AssertFatal( RUParamList.numelt == 1 && RC.nb_nr_L1_inst ==1,""  );
   ru->idx=0;
-  ru->nr_frame_parms                      = (NR_DL_FRAME_PARMS *)malloc(sizeof(NR_DL_FRAME_PARMS));
-  ru->frame_parms                         = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
+  ru->nr_frame_parms                      = (NR_DL_FRAME_PARMS *)calloc(sizeof(NR_DL_FRAME_PARMS),1);
+  ru->frame_parms                         = (LTE_DL_FRAME_PARMS *)calloc(sizeof(LTE_DL_FRAME_PARMS),1);
   ru->if_timing                           = synch_to_ext_device;
   ru->num_gNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
   ru->gNB_list[i] = &RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];
@@ -858,7 +858,7 @@ int main( int argc, char **argv ) {
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
   LOG_E(PHY,"configuring RU from file,  hardcoded one gNB for one RU, one carrier\n");
-  RU_t ru={0};
+  RU_t ru= {0};
   OCPconfig_RU(&ru);
   ru.nr_frame_parms->threequarter_fs=threequarter_fs;
   fill_rf_config(&ru,ru.rf_config_file);

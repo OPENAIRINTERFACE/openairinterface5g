@@ -162,19 +162,28 @@ static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int laye
 }
 
 static void genericLogPowerPerAntena(OAIgraph_t *graph, const int nb_ant, const scopeSample_t **data, const int len) {
-  float values[len];
-  float time[len];
+  float *values=malloc(len*sizeof(*values));
+  float *time=malloc(len*sizeof(*time));
 
   for (int ant=0; ant<nb_ant; ant++) {
     if (data[ant] != NULL) {
-      for (int i=0; i<len; i++) {
-        values[i] = 10*log10(1.0+SquaredNorm(data[ant][i]));
-        time[i] = i;
+      for (int i=0; i<len; i+=8) {
+        float *vals=values+i;
+        float *tim=time+i;
+        const scopeSample_t *in=&(data[ant][i]);
+
+        for (int k=0; k<8; k++ ) {
+          vals[k] = 10*log10(1.0+SquaredNorm(in[k]));
+          tim[k] = i+k;
+        }
       }
 
       oai_xygraph(graph,time,values, len, ant, 10);
     }
   }
+
+  free(values);
+  free(time);
 }
 
 static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const scopeSample_t **data, const int len) {
@@ -322,7 +331,7 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   fl_set_object_color( obj, FL_BLACK, FL_WHITE );
   int curY=0,x,y,w,h;
   // Received signal
-  fdui->graph[0] = gNBcommonGraph( timeSignal, FL_FILL_XYPLOT, 0, curY, 400, 100,
+  fdui->graph[0] = gNBcommonGraph( timeSignal, FL_NORMAL_XYPLOT, 0, curY, 400, 100,
                                    "Received Signal (Time-Domain, dB)", FL_RED );
   // Time-domain channel response
   fdui->graph[1] = gNBcommonGraph( timeResponse, FL_NORMAL_XYPLOT, 410, curY, 400, 100,
@@ -330,7 +339,7 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   fl_get_object_bbox(fdui->graph[0].graph,&x, &y,&w, &h);
   curY+=h;
   // Frequency-domain channel response
-  fdui->graph[2] = gNBcommonGraph( frequencyResponse, FL_FILL_XYPLOT, 0, curY, 800, 100,
+  fdui->graph[2] = gNBcommonGraph( frequencyResponse, FL_NORMAL_XYPLOT, 0, curY, 800, 100,
                                    "Channel Frequency  Response (RE, dB)", FL_RED );
   fl_get_object_bbox(fdui->graph[2].graph,&x, &y,&w, &h);
   curY+=h;
@@ -390,8 +399,8 @@ static void *scope_thread_gNB(void *arg) {
   //# ifdef ENABLE_XFORMS_WRITE_STATS
   //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
   //#endif
-  size_t stksize;
-  pthread_attr_t atr;
+  size_t stksize=0;
+  pthread_attr_t atr= {0};
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
   sleep(3); // no clean interthread barriers
@@ -649,7 +658,7 @@ static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   int curY=0,x,y,w,h;
   // Received signal
   fdui->graph[0] = nrUEcommonGraph(ueTimeResponse,
-                                   FL_FILL_XYPLOT, 0, curY, 400, 100, "Received Signal (Time-Domain, dB)", FL_RED );
+                                   FL_NORMAL_XYPLOT, 0, curY, 400, 100, "Received Signal (Time-Domain, dB)", FL_RED );
   // Time-domain channel response
   fdui->graph[1] = nrUEcommonGraph(ueChannelResponse,
                                    FL_NORMAL_XYPLOT, 400, curY, 400, 100, "Channel Impulse Response (samples, abs)", FL_RED );
