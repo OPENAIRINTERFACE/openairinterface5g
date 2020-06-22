@@ -95,10 +95,10 @@ At the UE the --phy-test flag will
 
 Some other useful paramters of the UE are
 
---ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
---usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
---clock-source: sets the clock-source (internal or external). 
---time-source: sets the time-source (internal or external). 
+ - --ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
+ - --usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
+ - --clock-source: sets the clock-source (internal or external). 
+ - --time-source: sets the time-source (internal or external). 
 
 
 ## noS1 setup with OAI UE
