@@ -162,6 +162,7 @@ static void timeSignal (FL_OBJECT *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_
     if (rxsig_t[arx] != NULL) {
       for (int i=0; i<frame_parms->samples_per_frame; i++) {
         rxsig_t_dB[i] = 10*log10(1.0+SquaredNorm(rxsig_t[arx][i]));
+	time[i] = i;
       }
 
       if (arx==0)
