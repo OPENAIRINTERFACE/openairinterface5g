@@ -19,7 +19,7 @@ https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop
 
 photos and schemes
 
-![image info](./testing_gnb_w_cots_ue_resources/oppo.jpg)
+![image info](./testing_gnb_w_cots_ue_resources/oai_fr1_setup.jpg)
 
 
 ## Build / Install
