@@ -1,4 +1,3 @@
-
 ## Configuration Overview:
 
 * Non Standalone (NSA) configuration  : initial Control Plane established between UE and RAN eNB, then User Plane established between UE and gNB, Core network is 4G based supporting rel 15
@@ -20,15 +19,15 @@ https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop
 
 photos and schemes
 
-![image info](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/oppo.jpg)
+![image info](./testing_gnb_w_cots_ue_resources/oppo.jpg)
 
 
-## Build and Install
+## Build / Install
 
 General guidelines for building :
 See https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/doc/BUILD.md#building-ues-enodeb-and-gnodeb-executables
 
-### **EPC**
+- **EPC**
 
 for reference:
 https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
@@ -39,7 +38,7 @@ cd /opt/hss_sim0609
 ./starthss_real
 ```
 
-### **eNB**
+- **eNB**
 
 ```
 sudo bash
@@ -47,7 +46,7 @@ cd /opt/hss_sim0609
 ./starthss_real
 ```
 
-### **gNB**
+- **gNB**
 
 ```
 sudo bash
@@ -55,9 +54,15 @@ cd /opt/hss_sim0609
 ./starthss_real
 ```
 
-## Testing
+## Conf Files
 
-* EPC launching (on EPC host):
+where are they
+usage
+
+## Run / Test
+
+
+- **EPC** (on EPC host):
 
 ```
 sudo bash
@@ -77,7 +82,7 @@ cd /opt/ltebox/tools
 Note: when terminated the testing session, you shall stop the EPC by "./stop_ltebox"
 
 
-* eNB launching (on the eNB host):
+- **eNB** (on the eNB host):
 
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf (-E)
 
@@ -85,14 +90,26 @@ Note: when terminated the testing session, you shall stop the EPC by "./stop_lte
 eNB is using branch NR_RRCConfiguration patched with enb.diff
 
 
-* gNB launching (on the gNB host)
+- **gNB** (on the gNB host)
 
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf (-E)
 
 Note: gNB is using branch NR_RRC_PRACH_procedures patched with gnb.diff
 
 
-Status of the interoperability is as follows:
+## Test Case
+
+Test case description
+
+## Expected Logs to check
+
+what and where to check
+
+## Required traces for debug
+
+
+
+## Status of the interoperability
 - setup of the CP in 4G
 - setup of the measurements in 5G
 - Random access procedure initiation by the UE in the 5G cell
