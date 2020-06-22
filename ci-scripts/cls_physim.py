@@ -27,6 +27,8 @@
 #     pexpect
 #---------------------------------------------------------------------
 
+#to use logging.info()
+import logging
 #to create a SSH object locally in the methods
 import sshconnection
 #to update the HTML object
@@ -50,7 +52,7 @@ class PhySim:
 		self.exitStatus=0
 		#private attributes
 		self.__workSpacePath=''
-		self.__buildLogFile='compile_oai_enb.log'
+		self.__buildLogFile='compile_phy_sim.log'
 		self.__runLogFile='ldpctest_run_results.log'
 		self.__runResults=[]
 
@@ -101,7 +103,7 @@ class PhySim:
 			HTML.CreateHtmlTestRow(self.buildargs, 'OK', CONST.ALL_PROCESSES_OK, 'LDPC')
 			self.exitStatus=0
 		else:
-			logging.error('\u001B[1m Building OAI UE Failed\u001B[0m')
+			logging.error('\u001B[1m Building Physical Simulators Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.buildargs, 'KO', CONST.ALL_PROCESSES_OK, 'LDPC')
 			HTML.CreateHtmlTabFooter(False)
 			#exitStatus=1 will do a sys.exit in main
@@ -143,7 +145,7 @@ class PhySim:
 				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				print('Merging with the target branch: ' + self.ranTargetBranch)
+				logging.info('Merging with the target branch: ' + self.ranTargetBranch)
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 
 		#build

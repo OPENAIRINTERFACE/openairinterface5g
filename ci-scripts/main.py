@@ -3517,7 +3517,7 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 			foundCount += 1
 		count += 1
 	if foundCount != HTML.GetnbTestXMLfiles():
-		HTML.SetnbTestXMLfiles(foundcount)
+		HTML.SetnbTestXMLfiles(foundCount)
 	
 	if (CiTestObj.ADBIPAddress != 'none'):
 		terminate_ue_flag = False
