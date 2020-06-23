@@ -635,12 +635,10 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   store_dlsch_buffer(Mod_id, CC_id, frameP, subframeP);
 
   UE_list_t UE_to_sched;
-  UE_to_sched.head = -1;
   for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
     UE_to_sched.next[i] = -1;
+  int *cur = &UE_to_sched.head;
 
-  int first = 1;
-  int last_UE_id = -1;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const UE_TEMPLATE *ue_template = &UE_info->UE_template[CC_id][UE_id];
@@ -673,15 +671,10 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     }
 
     /* define UEs to schedule */
-    if (first) {
-      first = 0;
-      UE_to_sched.head = UE_id;
-    } else {
-      UE_to_sched.next[last_UE_id] = UE_id;
-    }
-    UE_to_sched.next[UE_id] = -1;
-    last_UE_id = UE_id;
+    *cur = UE_id;
+    cur = &UE_to_sched.next[UE_id];
   }
+  *cur = -1;
 
   if (UE_to_sched.head < 0)
     return;
@@ -1085,11 +1078,10 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
   COMMON_channels_t *cc = &mac->common_channels[CC_id];
 
   UE_list_t UE_to_sched;
-  UE_to_sched.head = -1;
   for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
     UE_to_sched.next[i] = -1;
+  int *cur = &UE_to_sched.head;
 
-  int last_UE_id = -1;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
     UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -1112,13 +1104,10 @@ void ulsch_scheduler_pre_processor(module_id_t Mod_id,
       continue;
 
     /* define UEs to schedule */
-    if (UE_to_sched.head < 0)
-      UE_to_sched.head = UE_id;
-    else
-      UE_to_sched.next[last_UE_id] = UE_id;
-    UE_to_sched.next[UE_id] = -1;
-    last_UE_id = UE_id;
+    *cur = UE_id;
+    cur = &UE_to_sched.next[UE_id];
   }
+  *cur = -1;
 
   if (UE_to_sched.head < 0)
     return;
