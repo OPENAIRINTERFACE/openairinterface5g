@@ -1791,8 +1791,8 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   S1AP_E_RABToBeModifiedItemBearerModInd_t 	  *E_RAB_ToBeModifiedItem_BearerModInd = NULL;
   S1AP_E_RABToBeModifiedItemBearerModIndIEs_t *E_RAB_ToBeModifiedItem_BearerModInd_IEs = NULL;
 
-  S1AP_E_RABNotToBeModifiedItemBearerModInd_t 	  *E_RAB_NotToBeModifiedItem_BearerModInd = NULL;
-  S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t  *E_RAB_NotToBeModifiedItem_BearerModInd_IEs = NULL;
+  //S1AP_E_RABNotToBeModifiedItemBearerModInd_t 	  *E_RAB_NotToBeModifiedItem_BearerModInd = NULL;
+  //S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t  *E_RAB_NotToBeModifiedItem_BearerModInd_IEs = NULL;
 
 
   s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
@@ -1804,10 +1804,10 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   DevAssert(e_rab_modification_ind != NULL);
 
   int num_e_rabs_tobemodified = e_rab_modification_ind->nb_of_e_rabs_tobemodified;
-  int num_e_rabs_nottobemodified = e_rab_modification_ind->nb_of_e_rabs_nottobemodified;
+  //int num_e_rabs_nottobemodified = e_rab_modification_ind->nb_of_e_rabs_nottobemodified;
 
-  uint32_t CSG_id = 0;
-  uint32_t pseudo_gtp_teid = 10;
+  //uint32_t CSG_id = 0;
+  //uint32_t pseudo_gtp_teid = 10;
 
   if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
 		  e_rab_modification_ind->eNB_ue_s1ap_id)) == NULL) {

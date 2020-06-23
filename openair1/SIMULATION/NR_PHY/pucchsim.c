@@ -84,7 +84,7 @@ int main(int argc, char **argv)
   int format=0;
   //uint8_t extended_prefix_flag=0;
   FILE *input_fd=NULL;
-  uint8_t nacktoack_flag=0;
+  //uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
   int nr_tti_tx=0; 
   uint64_t actual_payload=0,payload_received;
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
       actual_payload=atoi(optarg);
       break;
     case 'T':
-      nacktoack_flag=(uint8_t)atoi(optarg);
+      //nacktoack_flag=(uint8_t)atoi(optarg);
       target_error_rate=0.001;
       break;
     default:
@@ -336,7 +336,7 @@ int main(int argc, char **argv)
   }
 
   AssertFatal(((format < 2)&&(nr_bit<3)&&(actual_payload<4)) ||
-	      ((format == 2)&&(nr_bit>2)&&(nr_bit<12)),"illegal combination format %d, nr_bit %d\n",
+	      ((format == 2)&&(nr_bit>2)&&(nr_bit<65)),"illegal combination format %d, nr_bit %d\n",
 	      format,nr_bit);
 
   actual_payload &= ((1<<nr_bit)-1);
@@ -457,6 +457,8 @@ int main(int argc, char **argv)
   pucch_GroupHopping_t PUCCH_GroupHopping=UE->pucch_config_common_nr->pucch_GroupHopping;
   uint32_t hopping_id=UE->pucch_config_common_nr->hoppingId;
   uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
+  //t_nrPolar_params *currentPtr;
+
   if(format==0){
   // for now we are not considering SR just HARQ-ACK
     if (nr_bit ==0) 
@@ -467,7 +469,8 @@ int main(int argc, char **argv)
       mcs=table2_mcs[actual_payload];
     else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n", nr_bit, sr_flag);
   }
-
+  else if (format == 2 && nr_bit > 11) gNB->uci_polarParams = nr_polar_params(2, nr_bit, nrofPRB, 1, NULL);
+  
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     ack_nack_errors=0;
     n_errors = 0;
@@ -498,7 +501,7 @@ int main(int argc, char **argv)
       }
       int rxlev = signal_energy(&rxdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
 				frame_parms->ofdm_symbol_size);
-      //      printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
+      if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
 	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
 	nfapi_nr_pucch_pdu_t pucch_pdu;
@@ -506,6 +509,8 @@ int main(int argc, char **argv)
 	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
 	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
 	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.bit_len_csi_part1     = 0;
+	pucch_pdu.bit_len_csi_part2     = 0;
 	pucch_pdu.sr_flag               = sr_flag;
 	pucch_pdu.nr_of_symbols         = nrofSymbols;
 	pucch_pdu.hopping_id            = hopping_id;
@@ -534,7 +539,9 @@ int main(int argc, char **argv)
 	pucch_pdu.subcarrier_spacing    = 1;
 	pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;
 	pucch_pdu.sequence_hop_flag     = (PUCCH_GroupHopping>>1)&1;
-	pucch_pdu.bit_len_harq          = nr_bit;
+	pucch_pdu.bit_len_csi_part1     = nr_bit;
+	pucch_pdu.bit_len_harq          = 0;
+	pucch_pdu.bit_len_csi_part2     = 0;
 	pucch_pdu.sr_flag               = 0;
 	pucch_pdu.nr_of_symbols         = nrofSymbols;
 	pucch_pdu.hopping_id            = hopping_id;
@@ -545,14 +552,15 @@ int main(int argc, char **argv)
 	pucch_pdu.dmrs_scrambling_id    = dmrs_scrambling_id;
 	pucch_pdu.data_scrambling_id    = data_scrambling_id;
         nr_decode_pucch2(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
-	int harq_bytes=pucch_pdu.bit_len_harq>>3;
-	if ((pucch_pdu.bit_len_harq&7) > 0) harq_bytes++;
-	for (int i=0;i<harq_bytes;i++)
-	  if (uci_pdu.harq.harq_payload[i] != ((int8_t*)&actual_payload)[i]) {
+	int csi_part1_bytes=pucch_pdu.bit_len_csi_part1>>3;
+	if ((pucch_pdu.bit_len_csi_part1&7) > 0) csi_part1_bytes++;
+	for (int i=0;i<csi_part1_bytes;i++) {
+	  if (uci_pdu.csi_part1.csi_part1_payload[i] != ((uint8_t*)&actual_payload)[i]) {
 	    ack_nack_errors++;
 	    break;
 	  }
-	free(uci_pdu.harq.harq_payload);
+	}
+	free(uci_pdu.csi_part1.csi_part1_payload);
 
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;

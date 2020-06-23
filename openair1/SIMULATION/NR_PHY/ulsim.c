@@ -118,7 +118,7 @@ int main(int argc, char **argv)
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
   uint8_t n_tx = 1, n_rx = 1;
   //uint8_t transmission_mode = 1;
-  uint16_t Nid_cell = 0;
+  //uint16_t Nid_cell = 0;
   channel_desc_t *gNB2UE;
   uint8_t extended_prefix_flag = 0;
   //int8_t interf1 = -21, interf2 = -21;
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   int frame_length_complex_samples,frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
-  uint64_t SSB_positions=0x01;
+  //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 2;
   uint16_t nb_rb = 50;
@@ -294,11 +294,11 @@ int main(int argc, char **argv)
         break;
 
       case 'M':
-        SSB_positions = atoi(optarg);
+        //SSB_positions = atoi(optarg);
         break;
 
       case 'N':
-        Nid_cell = atoi(optarg);
+        //Nid_cell = atoi(optarg);
         break;
 
       case 'R':
@@ -510,9 +510,9 @@ int main(int argc, char **argv)
   fapi_nr_ul_config_request_t ul_config;
 
   unsigned int TBS;
-  uint16_t number_dmrs_symbols = 1;
+  uint16_t number_dmrs_symbols = 0;
   unsigned int available_bits;
-  uint8_t nb_re_dmrs;
+  uint8_t nb_re_dmrs, no_data_in_dmrs = 1;
   unsigned char mod_order;
   uint16_t code_rate;
   uint8_t ptrs_mcs1 = 2;
@@ -611,8 +611,6 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      // prepare ULSCH/PUSCH reception
-      nr_schedule_response(Sched_INFO);
 
       // --------- setting parameters for UE --------
 
@@ -648,12 +646,20 @@ int main(int argc, char **argv)
       //there are plenty of other parameters that we don't seem to be using for now. e.g.
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
-      nb_re_dmrs     = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+      if(no_data_in_dmrs)
+        nb_re_dmrs = 12;
+      else
+        nb_re_dmrs = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
+
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
       TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
       pusch_pdu->pusch_data.tb_size = TBS>>3;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
+
+      // prepare ULSCH/PUSCH reception
+      nr_schedule_response(Sched_INFO);
+
       // set FAPI parameters for UE, put them in the scheduled response and call
       nr_ue_scheduled_response(&scheduled_response);
 

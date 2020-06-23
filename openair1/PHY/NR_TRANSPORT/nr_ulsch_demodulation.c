@@ -232,7 +232,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
   unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx;
-  uint8_t K_ptrs;
+  uint8_t K_ptrs = 0;
   uint32_t rxF_ext_index = 0;
   uint32_t ul_ch0_ext_index = 0;
   uint32_t ul_ch0_index = 0;
@@ -1145,8 +1145,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   //-------------------- LLRs computation --------------------
   //----------------------------------------------------------
-
     start_meas(&gNB->ulsch_llr_stats);
+    AssertFatal(gNB->pusch_vars[UE_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order+nb_re_pusch*rel15_ul->qam_mod_order < (8*((3*8*6144)+12)) , "Mysterious llr buffer size check");
     nr_ulsch_compute_llr(&gNB->pusch_vars[UE_id]->rxdataF_comp[0][symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB],
                          gNB->pusch_vars[UE_id]->ul_ch_mag0,
                          gNB->pusch_vars[UE_id]->ul_ch_magb0,

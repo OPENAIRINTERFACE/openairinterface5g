@@ -70,7 +70,7 @@ This setup requires an EPC, an OAI eNB and gNB, and a COTS Phone. A dedicated pa
 
 ### Launch eNB
 
-```bash sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf
+```bash sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf```
 
 
 
@@ -92,6 +92,14 @@ At the UE the --phy-test flag will
 ### Launch UE in another window
 
 ```bash sudo ./nr-uesoftmodem --phy-test [--rrc_config_path ../../../ci-scripts/rrc-files]```
+
+Some other useful paramters of the UE are
+
+ - --ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
+ - --usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
+ - --clock-source: sets the clock-source (internal or external). 
+ - --time-source: sets the time-source (internal or external). 
+
 
 ## noS1 setup with OAI UE
 

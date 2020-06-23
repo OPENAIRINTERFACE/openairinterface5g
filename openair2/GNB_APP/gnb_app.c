@@ -75,12 +75,12 @@ static void configure_nr_rrc(uint32_t gnb_id)
 static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, const Enb_properties_array_t *enb_properties)
 {
   uint32_t         gnb_id;
-  MessageDef      *msg_p;
+  //MessageDef      *msg_p;
   uint32_t         register_gnb_pending = 0;
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      s1ap_register_enb_req_t *s1ap_register_gNB; //Type Temporarily reuse
+      //s1ap_register_enb_req_t *s1ap_register_gNB; //Type Temporarily reuse
 
       // note:  there is an implicit relationship between the data structure and the message name 
       /*msg_p = itti_alloc_new_message (TASK_GNB_APP, S1AP_REGISTER_ENB_REQ); //Message Temporarily reuse

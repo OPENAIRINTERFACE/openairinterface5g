@@ -2436,6 +2436,7 @@ class OaiCiTest():
 		nrCRCOK = 0
 		mbms_messages = 0
 		HTML.SethtmlUEFailureMsg('')
+		global_status = CONST.ALL_PROCESSES_OK
 		for line in ue_log_file.readlines():
 			result = re.search('nr_synchro_time', str(line))
 			if result is not None:
@@ -2629,36 +2630,36 @@ class OaiCiTest():
 			else:
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
+				global_status = OAI_UE_PROCESS_NO_MBMS_MSGS
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			if not nrUEFlag:
-				return CONST.OAI_UE_PROCESS_SEG_FAULT
+				global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 			else:
 				if not frequency_found:
-					return CONST.OAI_UE_PROCESS_SEG_FAULT
+					global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE showed an assertion!\n')
 			if not nrUEFlag:
 				if not mib_found or not frequency_found:
-					return CONST.OAI_UE_PROCESS_ASSERTION
+					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 			else:
 				if not frequency_found:
-					return CONST.OAI_UE_PROCESS_ASSERTION
+					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE faced real time issues!\n')
-			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if nrUEFlag:
 			if not frequency_found:
-				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		else:
 			if no_cell_sync_found and not mib_found:
 				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
 				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE could not synchronize!\n')
-				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
-		return 0
+				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+		return global_status
 
 
 	def TerminateFlexranCtrl(self):

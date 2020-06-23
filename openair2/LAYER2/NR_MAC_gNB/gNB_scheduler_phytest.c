@@ -623,8 +623,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     // fill dlsch_buffer with random data
     for (i = 0; i < TBS_bytes; i++){
-      //mac_sdus[i] = (unsigned char) rand(); 
-      ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
+      mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+      //((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
     }
     //Sending SDUs with size 1
     //Initialize elements of sdu_lcids and sdu_lengths
@@ -662,7 +662,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     offset = nr_generate_dlsch_pdu(module_idP,
                                    (unsigned char *) mac_sdus,
-                                   (unsigned char *) gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0], //(unsigned char *) mac_pdu,
+                                   (unsigned char *) gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0],
                                    num_sdus, //num_sdus
                                    sdu_lengths,
                                    sdu_lcids,

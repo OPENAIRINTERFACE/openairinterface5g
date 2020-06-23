@@ -2233,7 +2233,9 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 #endif
 
   if (ue->UE_mode[gNB_id] == PUSCH || get_softmodem_params()->phy_test == 1){
-    nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, thread_id, gNB_id);
+    if (ue->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
+      nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, thread_id, gNB_id);
+
 
 /*
   if (ue->UE_mode[eNB_id] == PUSCH) {
@@ -4109,12 +4111,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
 
-    NR_UE_DLSCH_t *dlsch;
+    NR_UE_DLSCH_t *dlsch = NULL;
     if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1){
       dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0];
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }
+    AssertFatal(dlsch != NULL, "Unsupported mode\n");
     uint8_t harq_pid = dlsch->current_harq_pid;
     NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
     uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
@@ -4484,7 +4487,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t mod_id = ue->Mod_id;
   UE_MODE_t UE_mode = get_nrUE_mode(mod_id, ue->CC_id, gNB_id);
   NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
-  uint8_t nr_prach;
+  uint8_t nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
