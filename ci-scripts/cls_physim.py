@@ -34,7 +34,8 @@ import sshconnection
 #to update the HTML object
 import html
 from multiprocessing import SimpleQueue
-
+#for log folder maintenance
+import os
 
 class PhySim:
 	def __init__(self):
@@ -53,27 +54,32 @@ class PhySim:
 		#private attributes
 		self.__workSpacePath=''
 		self.__buildLogFile='compile_phy_sim.log'
-		self.__runLogFile='ldpctest_run_results.log'
+		self.__runLogFile=''
 		self.__runResults=[]
+		self.__runLogPath='phy_sim_logs'
 
 
 #-----------------
 #PRIVATE Methods
 #-----------------
 
-	def __CheckResults_PhySim(self,HTML,CONST):
+	def __CheckResults_PhySim(self,HTML,CONST,testcase_id):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
 		#retrieve run log file and store it locally$
 		mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, self.__workSpacePath+self.__runLogFile, '.')
 		mySSH.close()
 		#parse results looking for Encoding and Decoding mean values
+		self.__runResults=[]
 		with open(self.__runLogFile) as f:
 			for line in f:
 				if 'mean' in line:
 					self.__runResults.append(line)
-		#the value are appended for each test, so we take the last 2 values from the list
-		info=self.__runResults[-1]+self.__runResults[-2]
+		#the value are appended for each mean value (2), so we take these 2 values from the list
+		info=self.__runResults[0]+self.__runResults[1]
+
+		#once parsed move the local logfile to its folder for tidiness
+		os.system('mv '+self.__runLogFile+' '+ self.__runLogPath+'/.')
 
 		#updating the HTML with results
 		html_cell = '<pre style="background-color:white">' + info  + '</pre>'
@@ -153,7 +159,7 @@ class PhySim:
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
 		mySSH.command('chmod 777 log', '\$', 5)
-		mySSH.command('stdbuf -o0 ./build_oai ' + self.buildargs + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500) 
+		mySSH.command('stdbuf -o0 ./build_oai ' + self.buildargs + ' 2>&1 | stdbuf -o0 tee ' + self.__buildLogFile, 'Bypassing the Tests|build have failed', 1500) 
 
 		mySSH.close()
 		#check build status and update HTML object
@@ -162,7 +168,11 @@ class PhySim:
 		return lHTML
 
 
-	def Run_PhySim(self,htmlObj,constObj):
+	def Run_PhySim(self,htmlObj,constObj,testcase_id):
+		#create run logs folder locally
+		os.system('mkdir -p ./'+self.__runLogPath)
+		#log file is tc_<testcase_id>.log remotely
+		self.__runLogFile='physim_'+str(testcase_id)+'.log'
 		#open a session for test run
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
@@ -172,5 +182,5 @@ class PhySim:
 		mySSH.close()
 		#return updated HTML to main
 		lHTML = html.HTMLManagement()
-		lHTML=self.__CheckResults_PhySim(htmlObj,constObj)
+		lHTML=self.__CheckResults_PhySim(htmlObj,constObj,testcase_id)
 		return lHTML

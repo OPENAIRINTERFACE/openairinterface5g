@@ -3724,7 +3724,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Build_PhySim(HTML,CONST)
 					if ldpc.exitStatus==1:sys.exit()
 				elif action == 'Run_PhySim':
-					ldpc.Run_PhySim(HTML,CONST)
+					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				else:
 					sys.exit('Invalid action')
 		CiTestObj.FailReportCnt += 1
