@@ -1619,6 +1619,11 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id)
     LOG_E(FLEXRAN_AGENT, "MAC agent CM for eNB %d is not registered\n", mod_id);
     return -1;
   }
+
+  lfds700_ringbuffer_cleanup(&ringbuffer_state[mod_id], NULL );
+  free(dl_mac_config_array[mod_id]);
+  lfds700_misc_library_cleanup();
+
   AGENT_MAC_xface *xface = agent_mac_xface[mod_id];
   xface->flexran_agent_send_sr_info = NULL;
   xface->flexran_agent_send_sf_trigger = NULL;
