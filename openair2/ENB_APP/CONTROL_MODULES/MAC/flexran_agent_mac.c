@@ -49,6 +49,14 @@ struct lfds700_misc_prng_state ps[NUM_MAX_ENB];
 struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 
+/* Ringbuffer-related to slice configuration */
+struct lfds700_ringbuffer_element *slice_config_array[NUM_MAX_ENB];
+struct lfds700_ringbuffer_state slice_config_ringbuffer_state[NUM_MAX_ENB];
+
+/* Ringbuffer-related to slice configuration */
+struct lfds700_ringbuffer_element *ue_assoc_array[NUM_MAX_ENB];
+struct lfds700_ringbuffer_state ue_assoc_ringbuffer_state[NUM_MAX_ENB];
+
 int flexran_agent_mac_stats_reply_ue(mid_t mod_id,
                                     Protocol__FlexUeStatsReport **ue_report,
                                     int      n_ue,
@@ -1341,6 +1349,33 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
   AssertFatal(i == 0, "posix_memalign(): could not allocate aligned memory for lfds library\n");
   lfds700_ringbuffer_init_valid_on_current_logical_core(&ringbuffer_state[mod_id],
       dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL);
+
+  struct lfds700_misc_prng_state scrng;
+  i = posix_memalign((void **) &slice_config_array[mod_id],
+                     LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES,
+                     sizeof(struct lfds700_ringbuffer_element) * num_elements);
+  AssertFatal(i == 0,
+              "posix_memalign(): could not allocate aligned memory\n");
+  lfds700_ringbuffer_init_valid_on_current_logical_core(
+      &slice_config_ringbuffer_state[mod_id],
+      slice_config_array[mod_id],
+      num_elements,
+      &scrng,
+      NULL);
+
+  struct lfds700_misc_prng_state uarng;
+  i = posix_memalign((void **) &ue_assoc_array[mod_id],
+                     LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES,
+                     sizeof(struct lfds700_ringbuffer_element) * num_elements);
+  AssertFatal(i == 0,
+              "posix_memalign(): could not allocate aligned memory\n");
+  lfds700_ringbuffer_init_valid_on_current_logical_core(
+      &ue_assoc_ringbuffer_state[mod_id],
+      ue_assoc_array[mod_id],
+      num_elements,
+      &uarng,
+      NULL);
+
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     for (j = 0; j < 8; j++) {
       if (RC.mac && RC.mac[mod_id])
@@ -1622,6 +1657,10 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id)
 
   lfds700_ringbuffer_cleanup(&ringbuffer_state[mod_id], NULL );
   free(dl_mac_config_array[mod_id]);
+  lfds700_ringbuffer_cleanup(&slice_config_ringbuffer_state[mod_id], NULL );
+  free(slice_config_array[mod_id]);
+  lfds700_ringbuffer_cleanup(&ue_assoc_ringbuffer_state[mod_id], NULL );
+  free(ue_assoc_array[mod_id]);
   lfds700_misc_library_cleanup();
 
   AGENT_MAC_xface *xface = agent_mac_xface[mod_id];
@@ -1661,23 +1700,68 @@ void helper_destroy_mac_slice_config(Protocol__FlexSliceConfig *slice_config) {
 
 void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice_config) {
   if (!*slice_config) return;
+  /* just use the memory and set to NULL in original */
   Protocol__FlexSliceConfig *sc = *slice_config;
   *slice_config = NULL;
 
-  /* TODO handle using lock-free queue */
-  apply_update_dl_slice_config(mod_id, sc->dl);
-  apply_update_ul_slice_config(mod_id, sc->ul);
+  struct lfds700_misc_prng_state ls;
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+  enum lfds700_misc_flag overwrite_occurred_flag;
 
-  helper_destroy_mac_slice_config(*slice_config);
+  Protocol__FlexSliceConfig *overwritten_sc;
+  lfds700_ringbuffer_write(&slice_config_ringbuffer_state[mod_id],
+                           NULL,
+                           (void *)sc,
+                           &overwrite_occurred_flag,
+                           NULL,
+                           (void **)&overwritten_sc,
+                           &ls);
+
+  if (overwrite_occurred_flag == LFDS700_MISC_FLAG_RAISED) {
+    helper_destroy_mac_slice_config(overwritten_sc);
+    LOG_E(FLEXRAN_AGENT, "lost slice config: too many reconfigurations at once\n");
+  }
 }
 
 void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig **ue_config) {
-  /* TODO handle using lock-free queue */
-  apply_ue_slice_assoc_update(mod_id, *ue_config);
+  struct lfds700_misc_prng_state ls;
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+  enum lfds700_misc_flag overwrite_occurred_flag;
 
-  free(*ue_config);
-  *ue_config = NULL;
+  Protocol__FlexUeConfig *overwritten_ue_config;
+  lfds700_ringbuffer_write(&ue_assoc_ringbuffer_state[mod_id],
+                           NULL,
+                           (void *) *ue_config,
+                           &overwrite_occurred_flag,
+                           NULL,
+                           (void **)&overwritten_ue_config,
+                           &ls);
+
+  if (overwrite_occurred_flag == LFDS700_MISC_FLAG_RAISED) {
+    free(overwritten_ue_config);
+    LOG_E(FLEXRAN_AGENT, "lost UE-slice association: too many UE-slice associations at once\n");
+  }
 }
 
 void flexran_agent_slice_update(mid_t mod_id) {
+  struct lfds700_misc_prng_state ls;
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+
+  Protocol__FlexSliceConfig *sc = NULL;
+  struct lfds700_ringbuffer_state *state = &slice_config_ringbuffer_state[mod_id];
+  if (lfds700_ringbuffer_read(state, NULL, (void **) &sc, &ls) != 0) {
+    apply_update_dl_slice_config(mod_id, sc->dl);
+    apply_update_ul_slice_config(mod_id, sc->ul);
+    helper_destroy_mac_slice_config(sc);
+  }
+
+  Protocol__FlexUeConfig *ue_config = NULL;
+  state = &ue_assoc_ringbuffer_state[mod_id];
+  if (lfds700_ringbuffer_read(state, NULL, (void **) &ue_config, &ls) != 0) {
+    apply_ue_slice_assoc_update(mod_id, ue_config);
+    free(ue_config);
+  }
 }
