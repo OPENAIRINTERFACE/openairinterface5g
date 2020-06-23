@@ -1,3 +1,5 @@
+DISCLAIMER : This page is under complete review and update, thanks for your patience
+
 ## Configuration Overview:
 
 * Non Standalone (NSA) configuration  : initial Control Plane established between UE and RAN eNB, then User Plane established between UE and gNB, Core network is 4G based supporting rel 15
