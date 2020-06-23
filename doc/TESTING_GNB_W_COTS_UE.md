@@ -5,7 +5,7 @@
 * Commercial UE: Oppo Reno 5G
 * OAI Software Defined gNB and eNB
 * eNB RF front end: USRP (ETTUS) B200 Mini or B210
-* gNB RF front end: USRP (ETTUS) B200 Mini or B210 (N300 will be needed for MIMO and wider BW's)
+* gNB RF front end: USRP (ETTUS) B200 Mini or B210 (N310 will be needed for MIMO and wider BW's)
 * 5G TDD duplexing mode
 * 5G FR1 Band n78 (3.5 GHz)
 * BW: 40MHz
@@ -17,7 +17,7 @@ https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop
 
 ## Architecture Setup
 
-photos and schemes
+The scheme below depicts our typical setup:
 
 ![image info](./testing_gnb_w_cots_ue_resources/oai_fr1_setup.jpg)
 
@@ -32,32 +32,27 @@ See https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/doc/BUILD.md#b
 for reference:
 https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
 
+
 ```
-sudo bash
-cd /opt/hss_sim0609
-./starthss_real
+sudo 
 ```
 
 - **eNB**
 
 ```
-sudo bash
-cd /opt/hss_sim0609
-./starthss_real
+sudo 
 ```
 
 - **gNB**
 
 ```
-sudo bash
-cd /opt/hss_sim0609
-./starthss_real
+sudo 
 ```
 
 ## Conf Files
 
-where are they
-usage
+where are the config files located
+how to use them
 
 ## Run / Test
 
@@ -65,9 +60,7 @@ usage
 - **EPC** (on EPC host):
 
 ```
-sudo bash
-cd /opt/hss_sim0609
-./starthss_real
+sudo 
 ```
 
 Open another window and:
@@ -75,8 +68,7 @@ Open another window and:
 ```
 sudo bash
 cd /opt/ltebox/tools
-./stop_ltebox
-./start_ltebox
+
 ```
 
 Note: when terminated the testing session, you shall stop the EPC by "./stop_ltebox"
@@ -99,15 +91,15 @@ Note: gNB is using branch NR_RRC_PRACH_procedures patched with gnb.diff
 
 ## Test Case
 
-Test case description
+Test case description  : UE attachement
 
 ## Expected Logs to check
 
-what and where to check
+what logs and where to check, to ensure that your setup works fine
 
 ## Required traces for debug
 
-
+What info/traces/logs are needed for us to support the debug
 
 ## Status of the interoperability
 - setup of the CP in 4G
