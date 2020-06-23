@@ -31,11 +31,9 @@
  */
 
 //#include "mac_defs.h"
-#include "mac_proto.h"
-
+#include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
-
-#include "../NR_MAC_gNB/nr_mac_common.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "SCHED_NR/phy_frame_config_nr.h"
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
@@ -151,8 +149,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
   int i;
 
-    mac->phy_config.Mod_id = module_id;
-    mac->phy_config.CC_id = cc_idP;    
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_idP;
   
   // carrier config
 
@@ -203,12 +201,20 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     }
   }
 
+  lte_frame_type_t frame_type;
+  uint16_t band;
+  int32_t offset;
+
+  get_band((cfg->carrier_config.dl_frequency)*1000,
+           &band,
+           &offset,
+           &frame_type);
+
 
   // cell config
 
   cfg->cell_config.phy_cell_id = *scc->physCellId;
-  cfg->cell_config.frame_duplex_type = 1;
-
+  cfg->cell_config.frame_duplex_type = frame_type;
 
   // SSB config
   cfg->ssb_config.ss_pbch_power = scc->ss_PBCH_BlockPower;
@@ -270,6 +276,53 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       LOG_I(PHY,"TDD has been properly configurated\n");
   }
 
+  // PRACH configuration
+
+  uint8_t nb_preambles = 64;
+  if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
+     nb_preambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
+
+  cfg->prach_config.prach_sequence_length = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1;
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+    cfg->prach_config.prach_sub_c_spacing = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+  else 
+    cfg->prach_config.prach_sub_c_spacing = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+
+  cfg->prach_config.restricted_set_config = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig;
+
+  switch (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM) {
+    case 0 :
+      cfg->prach_config.num_prach_fd_occasions = 1;
+      break;
+    case 1 :
+      cfg->prach_config.num_prach_fd_occasions = 2;
+      break;
+    case 2 :
+      cfg->prach_config.num_prach_fd_occasions = 4;
+      break;
+    case 3 :
+      cfg->prach_config.num_prach_fd_occasions = 8;
+      break;
+    default:
+      AssertFatal(1==0,"msg1 FDM identifier %ld undefined (0,1,2,3) \n", scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM);
+  }
+
+  cfg->prach_config.num_prach_fd_occasions_list = (fapi_nr_num_prach_fd_occasions_t *) malloc(cfg->prach_config.num_prach_fd_occasions*sizeof(fapi_nr_num_prach_fd_occasions_t));
+  for (i=0; i<cfg->prach_config.num_prach_fd_occasions; i++) {
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
+    if (cfg->prach_config.prach_sequence_length)
+      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
+    else
+      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
+
+    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
+    cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, frame_type);
+    //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
+  }
+
+  cfg->prach_config.ssb_per_rach = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
 
 }
 
@@ -297,10 +350,11 @@ int nr_rrc_mac_config_req_ue(
     if(spCell_ConfigP != NULL ){
       mac->servCellIndex = *spCell_ConfigP->servCellIndex;
       if (spCell_ConfigP->reconfigurationWithSync) {
-	mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
-	config_common_ue(mac,module_id,cc_idP);
-	mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
-	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
+        mac->rach_ConfigDedicated = spCell_ConfigP->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+        mac->scc = spCell_ConfigP->reconfigurationWithSync->spCellConfigCommon;
+        config_common_ue(mac,module_id,cc_idP);
+        mac->crnti = spCell_ConfigP->reconfigurationWithSync->newUE_Identity;
+        LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
       mac->scd = spCell_ConfigP->spCellConfigDedicated;
 

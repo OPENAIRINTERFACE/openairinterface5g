@@ -186,7 +186,7 @@ function variant__v3__phy_sim {
     BUILD_OPTIONS="--phy_simulators"
     VM_MEMORY=8192
     VM_DISK=20
-    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510* 015111\" -q -np -b"
+    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510* 015111 015112\" -q -np -b"
 }
 
 function variant__v4__cppcheck {
@@ -197,7 +197,7 @@ function variant__v4__cppcheck {
 }
 
 function variant__v5__gnb_usrp {
-    VM_MEMORY=8192
+    VM_MEMORY=10240
     VM_CPU=8
     NB_PATTERN_FILES=9
     BUILD_OPTIONS="--gNB -w USRP"

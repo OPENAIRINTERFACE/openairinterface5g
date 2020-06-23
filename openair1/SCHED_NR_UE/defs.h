@@ -218,6 +218,15 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
  */
 void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
+/*! \brief UE PRACH procedures.
+    @param
+    @param
+    @param
+ */
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t mode);
+
+int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe);
+
 #if 0
 /*! \brief Compute ACK/NACK information for PUSCH/PUCCH for UE transmission in subframe n. This function implements table 10.1-1 of 36.213, p. 69.
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -322,13 +331,14 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t SR);
 
 #endif
+
 /*! \brief This function retrieves the PHY UE mode. It is used as a helper function for the UE MAC.
   @param Mod_id Local UE index on which to act
   @param CC_id Component Carrier Index
-  @param eNB_index ID of eNB
+  @param gNB_index ID of gNB
   @returns UE mode
 */
-UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
 
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables

@@ -57,3 +57,14 @@ nr_mac_rrc_data_ind_ue(
     return(0);
 
 }
+
+int8_t mac_rrc_nr_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t *const    buffer_pP ){
+
+  // todo
+
+  return 0;
+}

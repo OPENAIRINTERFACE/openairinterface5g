@@ -28,9 +28,11 @@
  * @ingroup _mac
  */
 
+
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
+
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -87,7 +89,13 @@ void nr_process_mac_pdu(
             /*#ifdef DEBUG_HEADER_PARSING
               LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
             #endif*/
-
+        case UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY:
+              // 38.321 Ch6.1.3.20
+              mac_ce_len = 2;
+              break;
+        case UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION:
+                // 38.321 Ch6.1.3.7
+                break;
         case UL_SCH_LCID_S_BSR:
         	//38.321 section 6.1.3.1
         	//fixed length
@@ -170,6 +178,24 @@ void nr_process_mac_pdu(
         	//  end of MAC PDU, can ignore the rest.
         	break;
 
+        // MAC SDUs
+        case UL_SCH_LCID_SRB1:
+              // todo
+              break;
+        case UL_SCH_LCID_SRB2:
+              // todo
+              break;
+        case UL_SCH_LCID_SRB3:
+              // todo
+              break;
+        case UL_SCH_LCID_CCCH_MSG3:
+              // todo
+              break;
+        case UL_SCH_LCID_CCCH:
+              // todo
+              mac_subheader_len = 2;
+              break;
+
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
@@ -183,7 +209,7 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+                LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
@@ -223,12 +249,11 @@ void nr_process_mac_pdu(
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
         if (pdu_len < 0) {
-          LOG_E(MAC, "%s() residual mac pdu length < 0!\n", __func__);
+          LOG_E(MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
           return;
         }
     }
 }
-
 
 /*
 * When data are received on PHY and transmitted to MAC
@@ -276,9 +301,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      //UE_scheduling_control->ta_update = timing_advance;
+      UE_scheduling_control->ta_update = timing_advance;
       LOG_D(MAC, "Received PDU at MAC gNB \n");
       nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
     }
   }
 }
+

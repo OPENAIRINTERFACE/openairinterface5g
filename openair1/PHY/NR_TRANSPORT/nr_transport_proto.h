@@ -30,7 +30,98 @@
 * \warning
 */
 
+#ifndef __NR_TRANSPORT__H__
+#define __NR_TRANSPORT__H__
+
 #include "PHY/defs_nr_common.h"
+#include "PHY/defs_gNB.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
+#define NR_PBCH_PDU_BITS 24
+
+/*!
+\fn int nr_generate_pss
+\brief Generation of the NR PSS
+@param
+@returns 0 on success
+ */
+int nr_generate_pss(int16_t *d_pss,
+                    int32_t *txdataF,
+                    int16_t amp,
+                    uint8_t ssb_start_symbol,
+                    nfapi_nr_config_request_scf_t *config,
+                    NR_DL_FRAME_PARMS *frame_parms);
+
+/*!
+\fn int nr_generate_sss
+\brief Generation of the NR SSS
+@param
+@returns 0 on success
+ */
+int nr_generate_sss(int16_t *d_sss,
+                    int32_t *txdataF,
+                    int16_t amp,
+                    uint8_t ssb_start_symbol,
+                    nfapi_nr_config_request_scf_t *config,
+                    NR_DL_FRAME_PARMS *frame_parms);
+
+/*!
+\fn int nr_generate_pbch_dmrs
+\brief Generation of the DMRS for the PBCH
+@param
+@returns 0 on success
+ */
+int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
+                          int32_t *txdataF,
+                          int16_t amp,
+                          uint8_t ssb_start_symbol,
+                          nfapi_nr_config_request_scf_t *config,
+                          NR_DL_FRAME_PARMS *frame_parms);
+
+/*!
+\fn int nr_pbch_scrambling
+\brief PBCH scrambling function
+@param
+ */
+void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
+                        uint32_t Nid,
+                        uint8_t nushift,
+                        uint16_t M,
+                        uint16_t length,
+                        uint8_t encoded,
+                        uint32_t unscrambling_mask);
+
+/*!
+\fn int nr_generate_pbch
+\brief Generation of the PBCH
+@param
+@returns 0 on success
+ */
+int nr_generate_pbch(NR_gNB_PBCH *pbch,
+                     nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
+                     uint8_t *interleaver,
+                     int32_t *txdataF,
+                     int16_t amp,
+                     uint8_t ssb_start_symbol,
+                     uint8_t n_hf,
+                     int sfn,
+                     nfapi_nr_config_request_scf_t *config,
+                     NR_DL_FRAME_PARMS *frame_parms);
+
+/*!
+\fn int nr_generate_pbch
+\brief PBCH interleaving function
+@param bit index i of the input payload
+@returns the bit index of the output
+ */
+void nr_init_pbch_interleaver(uint8_t *interleaver);
+
+NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
+                              unsigned char Kmimo,
+                              unsigned char Mdlharq,
+                              uint32_t Nsoft,
+                              uint8_t abstraction_flag,
+                              uint16_t N_RB);
 
 /** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
@@ -53,7 +144,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char symbol,
                  unsigned char harq_pid);
 
-
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
     @param rxdataF pointer to the received frequency domain signal
     @param rxdataF_ext pointer to the extracted frequency domain signal
@@ -62,8 +152,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param start_rb The starting RB in the RB allocation (used for Resource Allocation Type 1 in NR)
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
-    @param is_dmrs_symbol, flag to indicate wether this OFDM symbol contains DMRS symbols or not.
-
 */
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
@@ -80,7 +168,6 @@ void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             uint16_t nb_rb,
                             pusch_dmrs_type_t pusch_dmrs_type);
 
-
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param ul_ch_estimates_ext Channel estimates in allocated RBs
     @param frame_parms Pointer to frame descriptor
@@ -94,7 +181,6 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             uint8_t symbol,
                             uint32_t len,
                             unsigned short nb_rb);
-
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
     @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
@@ -195,20 +281,56 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int slot,
                    nfapi_nr_pusch_pdu_t *ulsch_pdu);
 
-uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
-
-uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
-
-uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
+void nr_fill_prach(PHY_VARS_gNB *gNB,
+                   int SFN,
+                   int Slot,
+                   nfapi_nr_prach_pdu_t *prach_pdu);
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
-		 int frame,
-		 int subframe,
-		 uint16_t *max_preamble,
-		 uint16_t *max_preamble_energy,
-		 uint16_t *max_preamble_delay
-		 );
+                 nfapi_nr_prach_pdu_t *prach_pdu,
+                 int frame,
+                 int subframe,
+                 uint16_t *max_preamble,
+                 uint16_t *max_preamble_energy,
+                 uint16_t *max_preamble_delay);
+
+void rx_nr_prach_ru(RU_t *ru,
+                    int prach_fmt,
+                    int numRA,
+                    int prachStartSymbol,
+                    int frame,
+                    int subframe);
+
+void nr_fill_prach_ru(RU_t *ru,
+                      int SFN,
+                      int Slot,
+                      nfapi_nr_prach_pdu_t *prach_pdu);
+
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type);
+int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
+
+void init_prach_list(PHY_VARS_gNB *gNB);
+void init_prach_ru_list(RU_t *ru);
+void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
+
+void nr_decode_pucch1(int32_t **rxdataF,
+                      pucch_GroupHopping_t pucch_GroupHopping,
+                      uint32_t n_id,       // hoppingID higher layer parameter
+                      uint64_t *payload,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      int16_t amp,
+                      int nr_tti_tx,
+                      uint8_t m0,
+                      uint8_t nrofSymbols,
+                      uint8_t startingSymbolIndex,
+                      uint16_t startingPRB,
+                      uint16_t startingPRB_intraSlotHopping,
+                      uint8_t timeDomainOCC,
+                      uint8_t nr_bit);
+
+void nr_decode_pucch0(PHY_VARS_gNB *gNB,
+              int slot,
+                      nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
+                      nfapi_nr_pucch_pdu_t* pucch_pdu);
+
+#endif /*__NR_TRANSPORT__H__*/
