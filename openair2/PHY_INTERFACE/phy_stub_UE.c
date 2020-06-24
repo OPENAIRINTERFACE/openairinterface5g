@@ -73,8 +73,11 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   nfapi_rx_indication_pdu_t *pdu;
   int timing_advance_update;
 
+  LOG_I(MAC, "Entered fill_rx_indication_UE_MAC\n");
+
   pthread_mutex_lock(&fill_ul_mutex.rx_mutex);
 
+  UL_INFO->rx_ind.header.message_id = NFAPI_RX_ULSCH_INDICATION;
   UL_INFO->rx_ind.sfn_sf = frame << 4 | subframe;
   UL_INFO->rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
   UL_INFO->rx_ind.vendor_extension = ul_config_req->vendor_extension;
@@ -121,6 +124,8 @@ void fill_sr_indication_UE_MAC(int Mod_id,
                                nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
 
+  LOG_I(MAC, "Entered fill_sr_indication_UE_MAC\n");
+
   nfapi_sr_indication_t *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t *sr_ind_body = &sr_ind->sr_indication_body;
   nfapi_sr_indication_pdu_t *pdu = &sr_ind_body->sr_pdu_list[sr_ind_body->number_of_srs];
@@ -161,6 +166,8 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 uint16_t rnti,
                                 nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
+
+  LOG_I(MAC, "Entered fill_crc_indication_UE_MAC\n");
 
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
@@ -267,6 +274,8 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
       &UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list
            [UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
 
+  LOG_I(MAC, "Entered fill_ulsch_cqi_indication_UE_MAC\n");
+
   UL_INFO->cqi_ind.sfn_sf = frame << 4 | subframe;
   // because of nfapi_vnf.c:733, set message id to 0, not
   // NFAPI_RX_CQI_INDICATION;
@@ -305,6 +314,8 @@ void fill_ulsch_harq_indication_UE_MAC(
     uint16_t rnti,
     nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
+
+  LOG_I(MAC, "Entered fill_ulsch_harq_indication_UE_MAC\n");
 
   nfapi_harq_indication_pdu_t *pdu =
       &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list
@@ -354,6 +365,8 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   nfapi_harq_indication_pdu_t *pdu =
       &body->harq_pdu_list[UL_INFO->harq_ind.harq_indication_body
                                .number_of_harqs];
+
+  LOG_I(MAC, "Entered fill_uci_harq_indication_UE_MAC\n");
 
   UL_INFO->harq_ind.vendor_extension = ul_config_req->vendor_extension;
 
@@ -1245,20 +1258,26 @@ void *ue_standalone_pnf_task(void *context)
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
+      LOG_D(MAC, "CRC_IND sent to Proxy\n");
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
+      LOG_D(MAC, "RX_IND sent to Proxy\n");
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
+      LOG_D(MAC, "CQI_IND sent to Proxy\n");
       break;
     case NFAPI_HARQ_INDICATION:
+      LOG_D(MAC, "HARQ_IND sent to Proxy\n");
       encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
       break;
     case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
+      LOG_D(MAC, "SR_IND sent to Proxy\n");
       break;
     default:
+      LOG_E(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
       return;
     }
     if (encoded_size < 0)

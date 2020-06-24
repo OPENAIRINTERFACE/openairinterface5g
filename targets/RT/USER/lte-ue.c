@@ -1014,7 +1014,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
   UE = rtd->UE;
 
-  UL_INFO = (UL_IND_t *)malloc(sizeof(UL_IND_t));
+  UL_INFO = (UL_IND_t *)calloc(1, sizeof(UL_IND_t));
   UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_rx_indication_pdu_t));
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
   UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = calloc(NB_UE_INST, sizeof(nfapi_crc_indication_pdu_t));
@@ -1244,6 +1244,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus > 0) {
+
       //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
       send_standalone_msg(UL_INFO, UL_INFO->rx_ind.header.message_id);
