@@ -249,7 +249,7 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void reset_stats(FL_OBJECT *button, long arg) {
+void reset_stats(long arg) {
   //int i,j,k;
   /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 

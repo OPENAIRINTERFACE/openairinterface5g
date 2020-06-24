@@ -34,10 +34,6 @@
 #ifndef __PDCP_H__
 #    define __PDCP_H__
 //-----------------------------------------------------------------------------
-#ifndef NON_ACCESS_STRATUM
-  #include "UTIL/MEM/mem_block.h"
-  #include "UTIL/LISTS/list.h"
-#endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
 #include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
