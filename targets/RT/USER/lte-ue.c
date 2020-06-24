@@ -1029,8 +1029,6 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
   proc->subframe_rx = proc->sub_frame_start;
   // Initializations for nfapi-L2-emulator mode
-  ul_config_req = NULL;
-  hi_dci0_req = NULL;
   sync_var = 0;
 
   //PANOS: CAREFUL HERE!
@@ -1059,6 +1057,8 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
+    nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
+    nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
     if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
       uint64_t start = clock_usec();
       uint64_t deadline = start + 10000;
@@ -1786,6 +1786,7 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
 
 static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
 {
+  #if 0
   thread_top_init("UE_phy_stub_thread_rxn_txnp4",1,870000L,1000000L,1000000L);
   module_id_t Mod_id = 0;
   static __thread int UE_thread_rxtx_retval;
@@ -1929,10 +1930,10 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
 
     phy_procedures_UE_SL_RX(UE,proc);
   }
-
+  #endif // disabled
   // thread finished
   free(arg);
-  return &UE_thread_rxtx_retval;
+  return NULL; //return &UE_thread_rxtx_retval;
 }
 
 

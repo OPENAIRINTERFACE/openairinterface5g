@@ -43,9 +43,6 @@ void configure_nfapi_pnf(char *vnf_ip_addr,
 
 UL_IND_t *UL_INFO = NULL;
 
-nfapi_ul_config_request_t* ul_config_req = NULL;
-nfapi_hi_dci0_request_t* hi_dci0_req = NULL;
-
 queue_t dl_config_req_queue;
 queue_t tx_req_pdu_queue;
 queue_t ul_config_req_queue;
@@ -71,7 +68,8 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
                                uint8_t *ulsch_buffer,
                                uint16_t buflen,
                                uint16_t rnti,
-                               int index) {
+                               int index,
+                               nfapi_ul_config_request_t *ul_config_req) {
   nfapi_rx_indication_pdu_t *pdu;
   int timing_advance_update;
 
@@ -119,7 +117,8 @@ void fill_sr_indication_UE_MAC(int Mod_id,
                                int frame,
                                int subframe,
                                UL_IND_t *UL_INFO,
-                               uint16_t rnti) {
+                               uint16_t rnti,
+                               nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
 
   nfapi_sr_indication_t *sr_ind = &UL_INFO->sr_ind;
@@ -159,7 +158,8 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 UL_IND_t *UL_INFO,
                                 uint8_t crc_flag,
                                 int index,
-                                uint16_t rnti) {
+                                uint16_t rnti,
+                                nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
 
   nfapi_crc_indication_pdu_t *pdu =
@@ -302,7 +302,8 @@ void fill_ulsch_harq_indication_UE_MAC(
     int subframe,
     UL_IND_t *UL_INFO,
     nfapi_ul_config_ulsch_harq_information *harq_information,
-    uint16_t rnti) {
+    uint16_t rnti,
+    nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
 
   nfapi_harq_indication_pdu_t *pdu =
@@ -344,7 +345,8 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 			      int subframe,
 			      UL_IND_t *UL_INFO,
 			      nfapi_ul_config_harq_information *harq_information,
-			      uint16_t rnti) {
+			      uint16_t rnti,
+            nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
 
   nfapi_harq_indication_t *ind = &UL_INFO->harq_ind;
@@ -902,9 +904,8 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
-			nfapi_pnf_p7_config_t *pnf_p7,
-                         nfapi_dl_config_request_t *req) {
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req)
+{
 
   nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -957,12 +958,9 @@ int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, n
         req->ul_config_request_body.ul_config_pdu_list[i];
   }
 
-#if 0 // TODO not using queue here yet
   if (!put_queue(&ul_config_req_queue, p)) {
     free(p);
   }
-#endif
-  ul_config_req = p;
   return 0;
 }
 
@@ -984,6 +982,7 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
       }
     }
   }
+
   if (!put_queue(&tx_req_pdu_queue, p)) {
     free(p);
   }
@@ -991,9 +990,8 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
-			nfapi_pnf_p7_config_t* pnf_p7, 
-			nfapi_hi_dci0_request_t* req) {
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req)
+{
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
 
@@ -1023,12 +1021,9 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc,
     // UE_mac_inst[Mod_id].p->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type);
   }
 
-#if 0 // TODO not using queue here yet
   if (!put_queue(&hi_dci0_req_queue, p)) {
     free(p);
   }
-#endif
-  hi_dci0_req = p;
 
   return 0;
 }
@@ -1178,8 +1173,36 @@ void *ue_standalone_pnf_task(void *context)
         break;
       }
       case NFAPI_HI_DCI0_REQUEST:
+      {
+        nfapi_hi_dci0_request_t hi_dci0_req;
+        // lock this hi_dci0_req
+        if (nfapi_p7_message_unpack((void *)buffer, len, &hi_dci0_req,
+                                    sizeof(hi_dci0_req), NULL) < 0)
+        {
+          LOG_E(MAC, "Message hi_dci0_req failed to unpack\n");
+        }
+        else
+        {
+          // check to see if hi_dci0_req is null
+          memcpy_hi_dci0_req(NULL, NULL, &hi_dci0_req);
+        }
         break;
-
+      }
+      case NFAPI_UL_CONFIG_REQUEST:
+      {
+        nfapi_ul_config_request_t ul_config_req;
+        // lock this ul_config_req
+        if (nfapi_p7_message_unpack((void *)buffer, len, &ul_config_req,
+                                    sizeof(ul_config_req), NULL) < 0)
+        {
+          LOG_E(MAC, "Message ul_config_req failed to unpack\n");
+        }
+        else
+        {
+          // check to see if ul_config_req is null
+          memcpy_ul_config_req(NULL, NULL, &ul_config_req);
+        }
+      }
       default:
         LOG_E(MAC, "Case Statement has no corresponding nfapi message\n");
         break;
@@ -1188,128 +1211,142 @@ void *ue_standalone_pnf_task(void *context)
   }
 }
 
-void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
-{
-  int encoded_size = -1;
-  char buffer[1024];
-  switch (msg_type)
+  void send_standalone_msg(UL_IND_t * UL, nfapi_message_id_e msg_type)
   {
-  case NFAPI_RACH_INDICATION:
-    encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
-    break;
-  case NFAPI_CRC_INDICATION:
-    encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-    break;
-  case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
-    encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-    break;
-  case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
-    encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
-    break;
-  case NFAPI_HARQ_INDICATION:
-    encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
-    break;
-  case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
-    encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
-    break;
-  default:
-    return;
+    int encoded_size = -1;
+    char buffer[1024];
+    switch (msg_type)
+    {
+    case NFAPI_RACH_INDICATION:
+      encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
+      break;
+    case NFAPI_CRC_INDICATION:
+      encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
+      break;
+    case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
+      encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
+      break;
+    case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
+      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
+      break;
+    case NFAPI_HARQ_INDICATION:
+      encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
+      break;
+    case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
+      encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
+      break;
+    default:
+      return;
+    }
+    if (encoded_size < 0)
+    {
+      LOG_E(MAC, "standalone pack failed\n");
+      return;
+    }
+    if (send(ue_sock_descriptor, buffer, encoded_size, 0) < 0)
+    {
+      LOG_E(MAC, "Send Proxy UE failed\n");
+      return;
+    }
   }
-  if (encoded_size < 0)
+
+  void send_standalone_dummy()
   {
-    LOG_E(MAC, "standalone pack failed\n");
-    return;
+    static const uint16_t dummy[] = {0, 0};
+    if (send(ue_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
+    {
+      LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));
+      return;
+    }
   }
-  if (send(ue_sock_descriptor, buffer, encoded_size, 0) < 0)
+
+  /* Dummy functions*/
+
+  void handle_nfapi_hi_dci0_dci_pdu(
+      PHY_VARS_eNB * eNB,
+      int frame,
+      int subframe,
+      L1_rxtx_proc_t *proc,
+      nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
   {
-    LOG_E(MAC, "Send Proxy UE failed\n");
-    return;
   }
-}
 
-void send_standalone_dummy()
-{
-  static const uint16_t dummy[] = {0, 0};
-  if (send(ue_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
+  void handle_nfapi_hi_dci0_hi_pdu(
+      PHY_VARS_eNB * eNB,
+      int frame,
+      int subframe,
+      L1_rxtx_proc_t *proc,
+      nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
   {
-    LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));
-    return;
   }
-}
 
-/* Dummy functions*/
+  void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB * eNB,
+                               int frame,
+                               int subframe,
+                               L1_rxtx_proc_t *proc,
+                               nfapi_dl_config_request_pdu_t *dl_config_pdu)
+  {
+  }
 
-void handle_nfapi_hi_dci0_dci_pdu(
-    PHY_VARS_eNB *eNB,
-    int frame,
-    int subframe,
-    L1_rxtx_proc_t *proc,
-    nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
-}
+  void handle_nfapi_bch_pdu(PHY_VARS_eNB * eNB,
+                            L1_rxtx_proc_t * proc,
+                            nfapi_dl_config_request_pdu_t * dl_config_pdu,
+                            uint8_t * sdu)
+  {
+  }
 
-void handle_nfapi_hi_dci0_hi_pdu(
-    PHY_VARS_eNB *eNB,
-    int frame,
-    int subframe,
-    L1_rxtx_proc_t *proc,
-    nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu) {
-}
+  void handle_nfapi_dlsch_pdu(PHY_VARS_eNB * eNB,
+                              int frame,
+                              int subframe,
+                              L1_rxtx_proc_t *proc,
+                              nfapi_dl_config_request_pdu_t *dl_config_pdu,
+                              uint8_t codeword_index,
+                              uint8_t *sdu)
+  {
+  }
 
-void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
-                             int frame,
-                             int subframe,
-                             L1_rxtx_proc_t *proc,
-                             nfapi_dl_config_request_pdu_t *dl_config_pdu) {
-}
+  void handle_nfapi_ul_pdu(PHY_VARS_eNB * eNB,
+                           L1_rxtx_proc_t * proc,
+                           nfapi_ul_config_request_pdu_t * ul_config_pdu,
+                           uint16_t frame,
+                           uint8_t subframe,
+                           uint8_t srs_present)
+  {
+  }
+  void handle_nfapi_mch_pdu(PHY_VARS_eNB * eNB,
+                            L1_rxtx_proc_t * proc,
+                            nfapi_dl_config_request_pdu_t * dl_config_pdu,
+                            uint8_t * sdu)
+  {
+  }
 
-void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,
-                          L1_rxtx_proc_t *proc,
-                          nfapi_dl_config_request_pdu_t *dl_config_pdu,
-                          uint8_t *sdu) {
-}
+  void phy_config_request(PHY_Config_t * phy_config)
+  {
+  }
 
-void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,
-                            int frame,
-                            int subframe,
-                            L1_rxtx_proc_t *proc,
-			    nfapi_dl_config_request_pdu_t *dl_config_pdu,
-                            uint8_t codeword_index,
-                            uint8_t *sdu) {
-}
+  void phy_config_update_sib2_request(PHY_Config_t * phy_config)
+  {
+  }
 
-void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,
-                         L1_rxtx_proc_t *proc,
-                         nfapi_ul_config_request_pdu_t *ul_config_pdu,
-                         uint16_t frame,
-                         uint8_t subframe,
-                         uint8_t srs_present) {
-}
-void handle_nfapi_mch_pdu(PHY_VARS_eNB *eNB,
-                          L1_rxtx_proc_t *proc,
-                          nfapi_dl_config_request_pdu_t *dl_config_pdu,
-                          uint8_t *sdu) {
-}
+  void phy_config_update_sib13_request(PHY_Config_t * phy_config)
+  {
+  }
 
-void phy_config_request(PHY_Config_t *phy_config) {
-}
+  uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn)
+  {
+    return (0);
+  }
 
-void phy_config_update_sib2_request(PHY_Config_t *phy_config) {
-}
+  int32_t get_uldl_offset(int eutra_bandP)
+  {
+    return (0);
+  }
 
-void phy_config_update_sib13_request(PHY_Config_t *phy_config) {
-}
+  int l1_north_init_eNB(void)
+  {
+    return 0;
+  }
 
-uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) {
-  return (0);
-}
-
-int32_t get_uldl_offset(int eutra_bandP) {
-  return (0);
-}
-
-int l1_north_init_eNB(void) {
-  return 0;
-}
-
-void init_eNB_afterRU(void) {
-}
+  void init_eNB_afterRU(void)
+  {
+  }
