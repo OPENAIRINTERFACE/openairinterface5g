@@ -680,15 +680,15 @@ schedule_ue_spec(module_id_t module_idP,
       const uint32_t rbc = allocate_prbs_sub(
           nb_rb, N_RB_DL, N_RBG, ue_sched_ctrl->rballoc_sub_UE[CC_id]);
 
-      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id]) {
-        LOG_D(MAC,
-              "[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
+      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id])
+        LOG_W(MAC,
+              "[eNB %d] %d.%d CC_id %d : should not schedule UE %d, its "
+              "retransmission takes more resources than we have\n",
               module_idP,
               frameP,
+              subframeP,
               CC_id,
               UE_id);
-        continue;
-      }
 
       /* CDRX */
       ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
