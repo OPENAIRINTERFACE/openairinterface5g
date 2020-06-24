@@ -864,6 +864,8 @@ int main( int argc, char **argv ) {
   fill_rf_config(&ru,ru.rf_config_file);
   init_gNB_phase2();
   memcpy((void *)ru.nr_frame_parms,&RC.gNB[0][0].frame_parms,sizeof(NR_DL_FRAME_PARMS));
+  memcpy((void*)&ru.config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru.config));
+
   nr_phy_init_RU(&ru);
   init_gNB_proc(0); // only instance 0 (one gNB per process)
 

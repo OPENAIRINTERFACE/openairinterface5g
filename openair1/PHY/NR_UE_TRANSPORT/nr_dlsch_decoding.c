@@ -42,6 +42,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 //#define DEBUG_DLSCH_DECODING
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
@@ -214,16 +215,16 @@ void nr_dlsch_unscrambling(int16_t* llr,
 }
 
 uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-                         uint16_t nb_symb_sch,
-                         uint8_t nr_tti_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag)
+			   short *dlsch_llr,
+			   NR_DL_FRAME_PARMS *frame_parms,
+			   NR_UE_DLSCH_t *dlsch,
+			   NR_DL_UE_HARQ_t *harq_process,
+			   uint32_t frame,
+			   uint16_t nb_symb_sch,
+			   uint8_t nr_tti_rx,
+			   uint8_t harq_pid,
+			   uint8_t is_crnti,
+			   uint8_t llr8_flag)
 {
 
 #if UE_TIMING_TRACE
@@ -263,7 +264,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
   AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
-  uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4;
+  uint8_t nb_re_dmrs = 12;//(dmrs_Type==1)?6:4;
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
   AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
 
@@ -317,7 +318,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
 
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, 0, harq_process->Nl);
 
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
@@ -326,7 +327,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  LOG_D(PHY,"DLSCH Decoding, harq_pid %d TBS %d G %d nb_re_dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nb_re_dmrs,harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
+  LOG_D(PHY,"DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,A/8,G, nb_re_dmrs,harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
   if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;
@@ -801,8 +802,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   //nfapi_nr_config_request_t *cfg = &phy_vars_ue->nrUE_config;
   //uint8_t dmrs_type = cfg->pdsch_config.dmrs_type.value;
 
-  uint8_t nb_re_dmrs = (dmrs_type==1)?6:4;
-  uint16_t length_dmrs = get_num_dmrs(harq_process->dlDmrsSymbPos); 
+  uint8_t nb_re_dmrs = 12;//(dmrs_type==1)?6:4;
+  uint16_t length_dmrs = get_num_dmrs(dl_config_pdu->dlDmrsSymbPos); 
 
   uint32_t i,j;
 //  int nbDlProcessing =0;
@@ -854,7 +855,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
 
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, 0, harq_process->Nl);
 
   A = harq_process->TBS;
 
@@ -1431,7 +1432,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
 
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, harq_process->Nl);
+  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*length_dmrs, nb_rb_oh, 0, harq_process->Nl);
 
   A = harq_process->TBS; //2072 for QPSK 1/3
 
@@ -1697,10 +1698,10 @@ void nr_dlsch_decoding_process(void *arg)
         }
 
         no_iteration_ldpc = nrLDPC_decoder(p_decParams,
-               (int8_t*)&pl[0],
-               llrProcBuf,
-                           p_nrLDPC_procBuf,                
-               p_procTime);
+                                           (int8_t*)&pl[0],
+                                           llrProcBuf,
+                                           p_nrLDPC_procBuf,
+                                           p_procTime);
 
         // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
         if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {

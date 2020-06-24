@@ -309,7 +309,6 @@ The following features are valid for the gNB and the 5G-NR UE.
 - ACK / NACK handling and HARQ procedures for downlink
 - **As of May 2020** only DL was validated with COTS phone ; UL in progress, validated with OAI UE in noS1 mode
 
-
 # OpenAirInterface 5G-NR UE Feature Set #
 
 **as of May 2020** only supporting "noS1" mode (DL):

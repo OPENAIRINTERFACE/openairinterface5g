@@ -477,12 +477,12 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         } else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
           if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
-	    for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
-	      for (int a=0; a < nbAnt; a++) {
-		b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
-		b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
-	      }
-	    }
+          for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
+            for (int a=0; a < nbAnt; a++) {
+              b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
+              b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
+            }
+          }
           } else {
 	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
 	  }

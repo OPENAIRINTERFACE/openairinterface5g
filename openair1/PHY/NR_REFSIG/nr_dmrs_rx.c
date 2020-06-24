@@ -45,7 +45,7 @@ int wt1[8][2] = {{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1}};
 int wf2[12][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,1},{1,1},{1,-1},{1,1},{1,1}};
 int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1}};
 
-
+// complex conjugate of mod table
 short nr_rx_mod_table[14]  = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 short nr_rx_nmod_table[14] = {0,0,-23170,23170,23170,-23170,-23170,23170,-23170,-23170,23170,23170,23170,-23170};
 
@@ -57,39 +57,42 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned short p,
                      unsigned char lp,
                      unsigned short nb_pusch_rb,
+                     uint32_t re_offset,
                      uint8_t dmrs_type)
 {
-  int8_t w;
+  int8_t w, nb_dmrs;
   short *mod_table;
   unsigned char idx=0;
-
+  int k;
   typedef int array_of_w[2];
   array_of_w *wf;
   array_of_w *wt;
-
   wf = (dmrs_type==pusch_dmrs_type1) ? wf1 : wf2;
   wt = (dmrs_type==pusch_dmrs_type1) ? wt1 : wt2;
 
+  int dmrs_offset = re_offset/((dmrs_type==pusch_dmrs_type1)?2:3);
+
   if (dmrs_type > 2)
-    LOG_E(PHY,"Bad PUSCH DMRS config type %d\n", dmrs_type);
+    LOG_E(PHY,"PUSCH DMRS config type %d not valid\n", dmrs_type+1);
 
   if ((p>=1000) && (p<((dmrs_type==pusch_dmrs_type1) ? 1008 : 1012))) {
       if (gNB->frame_parms.Ncp == NORMAL) {
-
-        for (int i=0; i<nb_pusch_rb*((dmrs_type==pusch_dmrs_type1) ? 6:4); i++) {
-
+        nb_dmrs = ((dmrs_type==pusch_dmrs_type1) ? 6:4);
+        for (int i=dmrs_offset; i<dmrs_offset+(nb_pusch_rb*nb_dmrs); i++) {
+          k = i-dmrs_offset;
           w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
           mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
 
           idx = ((((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
-        ((int16_t*)output)[i<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-        ((int16_t*)output)[(i<<1)+1] = mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+          ((int16_t*)output)[k<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+          ((int16_t*)output)[(k<<1)+1] = mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PUSCH
-        printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", dmrs_type, p, nb_pusch_rb);
-        printf("wf[%d] = %d wt[%d]= %d\n", i&1, wf[p-1000][i&1], lp, wt[p-1000][lp]);
-        printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-            (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1]);
+          printf("nr_pusch_dmrs_rx dmrs config type %d port %d nb_pusch_rb %d\n", dmrs_type, p, nb_pusch_rb);
+          printf("wf[%d] = %d wt[%d]= %d\n", i&1, wf[p-1000][i&1], lp, wt[p-1000][lp]);
+          printf("i %d idx %d pusch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pusch[(i<<1)>>5], (((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+          (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[k<<1], ((int16_t*)output)[(k<<1)+1]);
 #endif
+
         }
       } else {
         LOG_E(PHY,"extended cp not supported for PUSCH DMRS yet\n");
@@ -100,7 +103,6 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
 
   return(0);
 }
-
 
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,

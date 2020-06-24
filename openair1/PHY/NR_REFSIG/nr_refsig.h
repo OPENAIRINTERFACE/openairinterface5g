@@ -48,6 +48,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned short p,
                      unsigned char lp,
                      unsigned short nb_pusch_rb,
+                     uint32_t re_offset,
                      uint8_t dmrs_type);
 
 void init_scrambling_luts(void);

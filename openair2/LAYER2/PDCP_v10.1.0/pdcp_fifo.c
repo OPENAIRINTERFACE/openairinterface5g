@@ -110,8 +110,8 @@ void debug_pdcp_pc5s_sdu(sidelink_pc5s_element *sl_pc5s_msg, char *title) {
 //-----------------------------------------------------------------------------
 int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
   notifiedFIFO_elt_t  *sdu_p;
-  int  pdcp_nb_sdu_sent = 0;
-  int  ret=0;
+  int              pdcp_nb_sdu_sent = 0;
+  int              ret=0;
   while ((sdu_p = pollNotifiedFIFO(&pdcp_sdu_list)) != NULL ) {
     pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(sdu_p);
     AssertFatal(pdcpHead->inst==ctxt_pP->module_id, "To implement correctly multi module id\n");
@@ -120,7 +120,6 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
       pdcpHead->data_size;
     void * pdcpData=(void*)(pdcpHead+1);
-    
     if (rb_id == 10) { //hardcoded for PC5-Signaling
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
         debug_pdcp_pc5s_sdu((sidelink_pc5s_element *)pdcpData,
@@ -156,7 +155,6 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
     
-    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
 
     if( LOG_DEBUGFLAG(DEBUG_PDCP) )
       log_dump(PDCP, pdcpData, min(sizeToWrite,30) , LOG_DUMP_CHAR,
@@ -176,7 +174,6 @@ int pdcp_fifo_flush_mbms_sdus(const protocol_ctxt_t *const  ctxt_pP) {
   while ((sdu_p = pollNotifiedFIFO(&pdcp_sdu_list)) != NULL ) {
     pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(sdu_p);
     AssertFatal(pdcpHead->inst==ctxt_pP->module_id, "To implement correctly multi module id\n");
-    
     //int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
     //int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
                      //((pdcp_data_ind_header_t *) sdu_p->data)->data_size;
@@ -202,6 +199,7 @@ int pdcp_fifo_flush_mbms_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     //}  //  PDCP_USE_NETLINK
 
     //AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
+
     delNotifiedFIFO_elt (sdu_p);
     pdcp_nb_sdu_sent ++;
   }
