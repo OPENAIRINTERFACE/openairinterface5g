@@ -546,6 +546,9 @@ class RANManagement():
 		# Launch eNB with the modified config file
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
+		if self.air_interface == 'nr':
+			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
+			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
@@ -804,6 +807,8 @@ class RANManagement():
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		ulschAllocateCCEerror = 0
+		uplinkSegmentsAborted = 0
 		ulschReceiveOK = 0
 		gnbRxTxWakeUpFailure = 0
 		cdrxActivationMessageCount = 0
@@ -922,6 +927,12 @@ class RANManagement():
 			result = re.search('ULSCH in error in round|ULSCH 0 in error', str(line))
 			if result is not None:
 				ulschFailure += 1
+			result = re.search('ERROR ALLOCATING CCEs', str(line))
+			if result is not None:
+				ulschAllocateCCEerror += 1
+			result = re.search('uplink segment error.*aborted [1-9] segments', str(line))
+			if result is not None:
+				uplinkSegmentsAborted += 1
 			result = re.search('ULSCH received ok', str(line))
 			if result is not None:
 				ulschReceiveOK += 1
@@ -963,6 +974,14 @@ class RANManagement():
 			htmleNBFailureMsg += statMsg + '\n'
 		if ulschFailure > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			htmleNBFailureMsg += statMsg + '\n'
+		if ulschAllocateCCEerror > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(ulschAllocateCCEerror) + ' "eNB_dlsch_ulsch_scheduler(); ERROR ALLOCATING CCEs" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			htmleNBFailureMsg += statMsg + '\n'
+		if uplinkSegmentsAborted > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(uplinkSegmentsAborted) + ' "uplink segment error 0/2, aborted * segments" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			htmleNBFailureMsg += statMsg + '\n'
 		if dropNotEnoughRBs > 0:

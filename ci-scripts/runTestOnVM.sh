@@ -89,6 +89,9 @@ function start_basic_sim_enb {
         fi
     done
     ENB_SYNC=0
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -151,6 +154,9 @@ function start_basic_sim_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -760,6 +766,9 @@ function start_l2_sim_enb {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
     rm $1
     ENB_SYNC=1
     if [ $i -lt 50 ]
@@ -868,6 +877,9 @@ function start_l2_sim_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
     UE_SYNC=1
     if [ $i -lt 50 ]
@@ -981,6 +993,9 @@ function start_rf_sim_enb {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -1110,6 +1125,9 @@ function start_rf_sim_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -1154,6 +1172,10 @@ function start_rf_sim_gnb {
     local LOC_CONF_FILE=$5
     # 1 is with S1 and 0 without S1 aka noS1
     local LOC_S1_CONFIGURATION=$6
+
+    if [ -e rbconfig.raw ]; then rm -f rbconfig.raw; fi
+    if [ -e reconfig.raw ]; then rm -f reconfig.raw; fi
+
     echo "cd /home/ubuntu/tmp" > $1
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
@@ -1167,6 +1189,7 @@ function start_rf_sim_gnb {
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+    echo "sudo rm -f r*config.raw" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
         echo "echo \"RFSIMULATOR=server ./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
@@ -1227,6 +1250,13 @@ function start_rf_sim_gnb {
         fi
     fi
     sleep 10
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
+    rm $1
+    # Copy the RAW files from the gNB run for the NR-UE
+    scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/rbconfig.raw .
+    scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/reconfig.raw .
 }
 
 function start_rf_sim_nr_ue {
@@ -1237,14 +1267,21 @@ function start_rf_sim_nr_ue {
     local LOC_FREQUENCY=$6
     # 1 is with S1 and 0 without S1 aka noS1
     local LOC_S1_CONFIGURATION=$7
+
+    # Copy the RAW files from the gNB run
+    scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+    scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+    echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+    echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/ci-scripts/rrc-files --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+        echo "echo \"RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}  ./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
     echo "cat ./my-nr-softmodem-run.sh" >> $1
@@ -1291,6 +1328,9 @@ function start_rf_sim_nr_ue {
             i=$[$i+1]
         fi
     done
+    echo "echo \"free -m\"" > $1
+    echo "free -m" >> $1
+    ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_NR_UE_VM_IP_ADDR < $1
     rm $1
     if [ $i -lt 50 ]
     then
@@ -2024,7 +2064,7 @@ function run_test_on_vm {
         NR_STATUS=0
 
         ######### start of loop
-        while [ $try_cnt -lt 5 ]
+        while [ $try_cnt -lt 1 ]
         do
             SYNC_STATUS=0
             PING_STATUS=0
@@ -2046,6 +2086,8 @@ function run_test_on_vm {
                 echo "Problem w/ gNB and NR-UE not syncing"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
                 terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
+                scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
+                scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
                 SYNC_STATUS=-1
                 try_cnt=$[$try_cnt+1]
                 continue
@@ -2085,6 +2127,8 @@ function run_test_on_vm {
                 echo "DL test not OK"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
                 terminate_enb_ue_basic_sim $GNB_VM_CMDS $GNB_VM_IP_ADDR 1
+                scp -o StrictHostKeyChecking=no ubuntu@$GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC
+                scp -o StrictHostKeyChecking=no ubuntu@$NR_UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_NR_UE_LOG_FILE $ARCHIVES_LOC
                 try_cnt=$[$try_cnt+1]
                 continue
             fi

@@ -30,8 +30,8 @@
 
  */
 
-#include "mac_proto.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"

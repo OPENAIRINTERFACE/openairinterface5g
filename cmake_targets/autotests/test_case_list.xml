@@ -1036,7 +1036,9 @@
     <testCase id="015103">
       <class>execution</class>
       <desc>polartest Test cases. (Test1: PBCH polar test),
-                                  (Test2: DCI polar test)</desc>
+                                  (Test2: DCI polar test),
+                                  (Test3: UCI polar test,6-bit CRC),
+                                  (Test4: UCI polar test,11-bit CRC)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1044,8 +1046,10 @@
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
       <main_exec_args>-q -s-10 -f0
-                      -q -s-10 -f0 -m1</main_exec_args>
-      <tags>polartest.test1 polartest.test2</tags>
+                      -q -s-10 -f0 -m1
+                      -q -s-2 -f2 -m2 -k12
+                      -q -s-2 -f2 -m2 -k20</main_exec_args>
+      <tags>polartest.test1 polartest.test2 polartest.test3 polartest.test4</tags>
       <search_expr_true>BLER= 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1179,15 +1183,20 @@
       <desc>nr_pucchsim Test cases. (Test1: Format 0 1-bit ACK miss 106 PRB),
                                     (Test2: Format 0 2-bit ACK miss 106 PRB),
                                     (Test3: Format 0 2-bit ACK miss, 1-bit SR 106 PRB),
-				    (Test4: Format 2 3-bit 106 PRB),
-                                    (Test5: Format 2 4-bit 106 PRB),
-                                    (Test6: Format 2 5-bit 106 PRB),
-                                    (Test7: Format 2 6-bit 106 PRB),
-                                    (Test8: Format 2 7-bit 106 PRB),
-                                    (Test9: Format 2 8-bit 106 PRB),
-                                    (Test10: Format 2 9-bit 106 PRB),
-                                    (Test11: Format 2 10-bit 106 PRB),
-                                    (Test12: Format 2 11-bit 106 PRB)</desc>
+				    (Test4: Format 2 3-bit 2/106 PRB),
+                                    (Test5: Format 2 4-bit 2/106 PRB),
+                                    (Test6: Format 2 5-bit 2/106 PRB),
+                                    (Test7: Format 2 6-bit 2/106 PRB),
+                                    (Test8: Format 2 7-bit 2/106 PRB),
+                                    (Test9: Format 2 8-bit 2/106 PRB),
+                                    (Test10: Format 2 9-bit 2/106 PRB),
+                                    (Test11: Format 2 10-bit 2/106 PRB),
+                                    (Test12: Format 2 11-bit 2/106 PRB),
+                                    (Test13: Format 2 12-bit 8/106 PRB),
+                                    (Test14: Format 2 19-bit 8/106 PRB),
+                                    (Test15: Format 2 32-bit 8/106 PRB),
+                                    (Test16: Format 2 32-bit 16/106 PRB),
+                                    (Test17: Format 2 64-bit 16/106 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1206,8 +1215,14 @@
 		      -R 106 -i 1 -P 2 -b 9 -s5 -n1000
 		      -R 106 -i 1 -P 2 -b 10 -s6 -n1000
 		      -R 106 -i 1 -P 2 -b 11 -s6 -n1000
+		      -R 106 -i 1 -P 2 -q8 -b 12 -s-3 -n1000
+		      -R 106 -i 1 -P 2 -q8 -b 19 -s-3 -n1000
+		      -R 106 -i 1 -P 2 -q8 -b 19 -s-3 -n1000
+		      -R 106 -i 1 -P 2 -q8 -b 32 -s-3 -n1000
+		      -R 106 -i 1 -P 2 -q16 -b 32 -s-3 -n1000
+		      -R 106 -i 1 -P 2 -q16 -b 64 -s-3 -n1000
                       </main_exec_args>
-      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4 nr_pucchsim.test5 nr_pucchsim.test6 nr_pucchsim.test7 nr_pucchsim.test8 nr_pucchsim.test9 nr_pucchsim.test10 nr_pucchsim.test11 nr_pucchsim.test12 </tags>
+      <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4 nr_pucchsim.test5 nr_pucchsim.test6 nr_pucchsim.test7 nr_pucchsim.test8 nr_pucchsim.test9 nr_pucchsim.test10 nr_pucchsim.test11 nr_pucchsim.test12 nr_pucchsim.test13 nr_pucchsim.test14 nr_pucchsim.test15 nr_pucchsim.test16 nr_pucchsim.test17</tags>
       <search_expr_true>PUCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1271,6 +1286,26 @@
                       -n100 -m9 -R273 -r273 -s5</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+    <testCase id="015112">
+      <class>execution</class>
+      <desc>nr_prachsim Test cases. (Test1: 106 PRBs),
+                                    (Test2: 217 PRBs),
+                                    (Test3: 273 PRBs)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_prachsim.Rel15</main_exec>
+      <main_exec_args>-a -s -30 -n 100 -p 16 -R 106
+                      -a -s -30 -n 100 -p 16 -R 217
+                      -a -s -30 -n 100 -p 16 -R 273</main_exec_args>
+      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3</tags>
+      <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>

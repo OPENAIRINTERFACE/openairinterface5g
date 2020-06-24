@@ -522,7 +522,7 @@ pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceC
 
 sdu_size_t             pdcp_output_sdu_bytes_to_write;
 sdu_size_t             pdcp_output_header_bytes_to_write;
-list_t                 pdcp_sdu_list;
+notifiedFIFO_t         pdcp_sdu_list;
 int                    pdcp_sent_a_sdu;
 pdcp_data_req_header_t pdcp_input_header;
 unsigned char          pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];
