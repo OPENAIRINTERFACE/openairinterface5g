@@ -3211,6 +3211,14 @@ def GetParametersFromXML(action):
 
 	if action == 'Build_PhySim':
 		ldpc.buildargs  = test.findtext('physim_build_args')
+		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
+		if (forced_workspace_cleanup is None):
+			ldpc.forced_workspace_cleanup=False
+		else:
+			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+				ldpc.forced_workspace_cleanup=True
+			else:
+				ldpc.forced_workspace_cleanup=False
 
 	if action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')

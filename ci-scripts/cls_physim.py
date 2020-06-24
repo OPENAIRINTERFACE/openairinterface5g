@@ -51,6 +51,7 @@ class PhySim:
 		self.ranAllowMerge= ""
 		self.ranTargetBranch= ""
 		self.exitStatus=0
+		self.forced_workspace_cleanup=False
 		#private attributes
 		self.__workSpacePath=''
 		self.__buildLogFile='compile_phy_sim.log'
@@ -75,7 +76,7 @@ class PhySim:
 			for line in f:
 				if 'mean' in line:
 					self.__runResults.append(line)
-		#the value are appended for each mean value (2), so we take these 2 values from the list
+		#the values are appended for each mean value (2), so we take these 2 values from the list
 		info=self.__runResults[0]+self.__runResults[1]
 
 		#once parsed move the local logfile to its folder for tidiness
@@ -138,8 +139,12 @@ class PhySim:
 		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5) 
 
-		#git clean
-		mySSH.command('echo ' + self.eNBPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		#git clean depending on self.forced_workspace_cleanup captured in xml
+		if self.forced_workspace_cleanup==True:
+			logging.info('Cleaning workspace ...')
+			mySSH.command('echo ' + self.eNBPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		else:
+			logging.info('Workspace cleaning was disabled')
 
 		# if the commit ID is provided, use it to point to it
 		if self.ranCommitID != '':
