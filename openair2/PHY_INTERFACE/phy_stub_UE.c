@@ -438,7 +438,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                 uint16_t frame,
                                 uint8_t subframe,
                                 uint8_t srs_present,
-                                int index) {
+                                int index,
+                                nfapi_ul_config_request_t *ul_config_req) {
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     LOG_D(PHY,
           "Applying UL config for UE, rnti %x for frame %d, subframe %d\n",
@@ -457,7 +458,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
               Mod_id,
               frame,
               subframe);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -465,7 +467,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   UE_mac_inst[Mod_id].RA_prach_resources.Msg3,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index, ul_config_req);
         Msg3_transmitted(Mod_id, 0, frame, 0);
         //  Modification
         UE_mac_inst[Mod_id].UE_mode[0] = PUSCH;
@@ -475,7 +477,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         // UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -483,7 +486,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ulsch_buffer,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
       }
     }
   }
@@ -502,7 +506,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
       if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -510,7 +515,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   UE_mac_inst[Mod_id].RA_prach_resources.Msg3,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
         Msg3_transmitted(Mod_id, 0, frame, 0);
         // UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
         // Modification
@@ -518,7 +524,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -526,12 +533,14 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ulsch_buffer,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
       }
     }
     if (ulsch_harq_information != NULL)
       fill_ulsch_harq_indication_UE_MAC(
-          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti);
+          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
+          ul_config_req);
 
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE) {
     uint8_t ulsch_buffer[5477] __attribute__((aligned(32)));
@@ -541,7 +550,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
       if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -549,7 +559,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   UE_mac_inst[Mod_id].RA_prach_resources.Msg3,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
         Msg3_transmitted(Mod_id, 0, frame, 0);
         // UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
         // Modification
@@ -557,7 +568,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -565,7 +577,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ulsch_buffer,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
       }
     }
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE) {
@@ -578,7 +591,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
       if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -586,7 +600,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   UE_mac_inst[Mod_id].RA_prach_resources.Msg3,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
         Msg3_transmitted(Mod_id, 0, frame, 0);
         // UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
         // Modification
@@ -594,7 +609,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
+                                  ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -602,18 +618,21 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ulsch_buffer,
                                   buflen,
                                   rnti,
-                                  index);
+                                  index,
+                                  ul_config_req);
       }
     }
 
     if (ulsch_harq_information != NULL)
-      fill_ulsch_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti);
+      fill_ulsch_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
+                                      ul_config_req);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
     uint16_t rnti = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
 
     nfapi_ul_config_harq_information *ulsch_harq_information = &ul_config_pdu->uci_harq_pdu.harq_information;
     if (ulsch_harq_information != NULL)
-      fill_uci_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti);
+      fill_uci_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
+                                      ul_config_req);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE) {
     AssertFatal(1 == 0, "NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE not handled yet\n");
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE) {
@@ -627,7 +646,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti;
 
     if (ue_get_SR(Mod_id, 0, frame, 0, rnti, subframe))
-      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
+      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti,
+                                ul_config_req);
 
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE) {
     // AssertFatal((UE_id =
@@ -641,13 +661,15 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     // We fill the sr_indication only if ue_get_sr() would normally instruct PHY
     // to send a SR.
     if (ue_get_SR(Mod_id, 0, frame, 0, rnti, subframe))
-      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
+      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti,
+                                ul_config_req);
 
     nfapi_ul_config_harq_information *ulsch_harq_information =
         &ul_config_pdu->uci_sr_harq_pdu.harq_information;
     if (ulsch_harq_information != NULL)
       fill_uci_harq_indication_UE_MAC(
-          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti);
+          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
+          ul_config_req);
   }
 }
 
@@ -693,7 +715,7 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t *req,
         || (pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE
             && pdu->uci_cqi_sr_harq_pdu.ue_information.ue_information_rel8.rnti == rnti)) {
       handle_nfapi_ul_pdu_UE_MAC(
-          Mod_id, pdu, sfn, sf, req->ul_config_request_body.srs_present, i);
+          Mod_id, pdu, sfn, sf, req->ul_config_request_body.srs_present, i, req);
     } else {
       // NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() PDU:%i UNKNOWN type :%d\n",
       // __FUNCTION__, i, ul_config_pdu_list[i].pdu_type);
@@ -1202,6 +1224,7 @@ void *ue_standalone_pnf_task(void *context)
           // check to see if ul_config_req is null
           memcpy_ul_config_req(NULL, NULL, &ul_config_req);
         }
+        break;
       }
       default:
         LOG_E(MAC, "Case Statement has no corresponding nfapi message\n");
