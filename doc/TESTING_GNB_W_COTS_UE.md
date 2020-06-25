@@ -23,6 +23,9 @@ The scheme below depicts our typical setup:
 
 ![image info](./testing_gnb_w_cots_ue_resources/oai_fr1_setup.jpg)
 
+The photo depicts the FR1 setup part of the scheme above:  
+
+
 ![image info](./testing_gnb_w_cots_ue_resources/oai_fr1_lab.jpg)
 
 ## Build / Install
