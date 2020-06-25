@@ -85,11 +85,6 @@ typedef struct {
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_param_request_t;
 
-typedef enum {
-  NFAPI_NR_PARAM_MSG_OK = 0, 
-	NFAPI_NR_PARAM_MSG_INVALID_STATE
-
-} nfapi_nr_param_errors_e;
 
 /*typedef struct {
   nfapi_nr_param_errors_e error_code;
@@ -262,12 +257,6 @@ typedef struct
 
 //-------------------------------------------//
 //3.3.2 CONFIG
-
-
-typedef enum {
-  NFAPI_NR_CONFIG_MSG_OK = 0,
-  NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
-} nfapi_nr_config_errors_e;
 
 /*typedef struct {
 	nfapi_nr_config_errors_e error_code;
@@ -448,6 +437,25 @@ typedef struct
 
 } nfapi_nr_measurement_config_t;
 
+// ERROR enums
+typedef enum {    // Table 2-22
+  NFAPI_NR_PARAM_MSG_OK = 0, 
+	NFAPI_NR_PARAM_MSG_INVALID_STATE
+} nfapi_nr_param_errors_e;
+
+typedef enum {    // Table 2-25
+  NFAPI_NR_CONFIG_MSG_OK = 0,
+  NFAPI_NR_CONFIG_MSG_INVALID_STATE, //The CONFIG.request was received when the PHY was not in the IDLE state or the CONFIGURED state.
+  NFAPI_NR_CONFIG_MSG_INVALID_CONFIG  //The configuration provided has missing mandatory TLVs, or TLVs that are invalid or unsupported in this state.
+} nfapi_nr_config_errors_e;
+
+typedef enum {    // Table 2-27
+  NFAPI_NR_START_MSG_OK = 0,       
+	NFAPI_NR_START_MSG_INVALID_STATE
+} nfapi_nr_start_errors_e;
+
+
+
 /* PARAM.REQUEST */
 typedef struct {
   nfapi_p4_p5_message_header_t  header;
@@ -479,7 +487,7 @@ typedef struct {
 /* CONFIG.REQUEST */
 typedef struct {
   nfapi_p4_p5_message_header_t  header;
-  nfapi_nr_param_errors_e       error_code;
+  nfapi_nr_param_errors_e       error_code; // TODO: check if needed
 
   uint8_t                       num_tlv;
   nfapi_vendor_extension_tlv_t  vendor_extension;
@@ -497,10 +505,9 @@ typedef struct {
 
 /* CONFIG.RESPONSE */
 typedef struct {
-  // TODO: add here
   nfapi_p4_p5_message_header_t  header;
-  nfapi_nr_param_errors_e error_code;
-  uint8_t num_invalid_tlvs;
+  nfapi_nr_config_errors_e error_code;
+  //uint8_t num_invalid_tlvs;
   // TODO: add list of invalid/unsupported TLVs (see Table 3.18)
    nfapi_vendor_extension_tlv_t  vendor_extension;
 } nfapi_nr_config_response_scf_t;
@@ -513,9 +520,11 @@ typedef struct {
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_start_request_scf_t;
 
-typedef enum {
-	NFAPI_NR_START_MSG_INVALID_STATE
-} nfapi_nr_start_errors_e;
+typedef struct {
+  nfapi_p4_p5_message_header_t header;
+  nfapi_nr_start_errors_e error_code;
+  nfapi_vendor_extension_tlv_t vendor_extension;
+} nfapi_nr_start_response_scf_t;
 
 //3.3.4 STOP
 
@@ -523,6 +532,7 @@ typedef struct {
 	nfapi_p4_p5_message_header_t header;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_stop_request_t;
+
 
 typedef struct {
 	nfapi_p4_p5_message_header_t header;

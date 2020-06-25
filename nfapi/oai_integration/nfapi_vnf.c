@@ -1017,14 +1017,6 @@ extern uint32_t to_earfcn(int eutra_bandP,uint32_t dl_CarrierFreq,uint32_t bw);
 
 int param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_param_response_scf_t *resp) {
 
-#ifdef TEST
-  if(resp->cell_param.phy_state.tl.tag == NFAPI_NR_PARAM_TLV_PHY_STATE_TAG)
-    printf("\n\nMatched\n\n");
-  // like this we can check for all the tags
-#endif
-
-
-
   printf("[VNF] Received NFAPI_PARAM_RESP idx:%d phy_id:%d\n", p5_idx, resp->header.phy_id);
   vnf_info *vnf = (vnf_info *)(config->user_data);
   vnf_p7_info *p7_vnf = vnf->p7_vnfs;
@@ -1093,7 +1085,7 @@ int config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_config_respo
   return 0;
 }
 
-int start_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_start_response_t *resp) {
+int start_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_start_response_scf_t *resp) {
   printf("[VNF] Received NFAPI_START_RESP idx:%d phy_id:%d\n", p5_idx, resp->header.phy_id);
   vnf_info *vnf = (vnf_info *)(config->user_data);
   pnf_info *pnf = vnf->pnfs;

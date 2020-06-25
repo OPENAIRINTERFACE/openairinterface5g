@@ -421,7 +421,7 @@ int nfapi_pnf_config_resp(nfapi_pnf_config_t* config, nfapi_nr_config_response_s
  * \return 0 for success, -1 for failure
  * 
  */
-int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_start_response_t* resp);
+int nfapi_pnf_start_resp(nfapi_pnf_config_t* config, nfapi_nr_start_response_scf_t* resp);
 
 /*! Send the STOP.response
  * \param config A pointer to a pnf configuraiton

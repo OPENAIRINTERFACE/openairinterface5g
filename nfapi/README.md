@@ -32,3 +32,7 @@
 * `ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);` sloc: 1428 in `nr-ru.c`
 * the `ru->rfdevice` has all members zero or null.
 * This issue was solved by adding `sdr_addrs` to config file of PNF.
+
+* `if (cfg->tdd_table.max_tdd_periodicity_list[nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1`
+    * throws segmentation error
+    * `max_tdd_periodicity_list` is not assigned memory

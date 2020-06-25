@@ -302,6 +302,7 @@ void vnf_handle_param_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_
 
 void vnf_handle_config_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_t* config, int p5_idx)
 {
+
 	// ensure it's valid
 	if (pRecvMsg == NULL || config == NULL)
 	{
@@ -316,9 +317,13 @@ void vnf_handle_config_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config
 		// unpack the message
 		if (nfapi_p5_message_unpack(pRecvMsg, recvMsgLen, &msg, sizeof(msg), &config->codec_config) >=0 )
 		{
-			if(config->config_resp)
-			{
-				(config->config_resp)(config, p5_idx, &msg);
+			// check the error code:
+
+			if (msg.error_code == NFAPI_MSG_OK){
+				if(config->config_resp)
+				{
+					(config->config_resp)(config, p5_idx, &msg);
+				}
 			}
 		}
 		else
@@ -343,14 +348,16 @@ void vnf_handle_start_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_
 	{	
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "Received START_RESPONSE\n");
 
-		nfapi_start_response_t msg;
+		nfapi_nr_start_response_scf_t msg;
 		
 		// unpack the message
 		if (nfapi_p5_message_unpack(pRecvMsg, recvMsgLen, &msg, sizeof(msg), &config->codec_config) >= 0)
-		{
-			if(config->start_resp)
-			{
-				(config->start_resp)(config, p5_idx, &msg);
+		{	// check the error code
+			if (msg.error_code == NFAPI_MSG_OK){
+				if(config->start_resp)
+				{
+					(config->start_resp)(config, p5_idx, &msg);
+				}
 			}
 		}
 		else

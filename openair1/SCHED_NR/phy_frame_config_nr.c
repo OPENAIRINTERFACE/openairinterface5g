@@ -311,7 +311,7 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms) {
 *********************************************************************/
 
 int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti) {
-  /* for FFD all slot can be considered as an uplink */
+  /* for FDD all slot can be considered as an uplink */
   int mu = cfg->ssb_config.scs_common.value,check_slot=0;
 
   if (cfg->cell_config.frame_duplex_type.value == FDD) {

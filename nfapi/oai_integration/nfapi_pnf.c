@@ -419,7 +419,7 @@ int pnf_config_request(nfapi_pnf_config_t *config, nfapi_pnf_config_request_t *r
 
 void nfapi_send_pnf_start_resp(nfapi_pnf_config_t *config, uint16_t phy_id) {
   printf("Sending NFAPI_START_RESPONSE config:%p phy_id:%d\n", config, phy_id);
-  nfapi_start_response_t start_resp;
+  nfapi_nr_start_response_scf_t start_resp;
   memset(&start_resp, 0, sizeof(start_resp));
   start_resp.header.message_id = NFAPI_START_RESPONSE;
   start_resp.header.phy_id = phy_id;

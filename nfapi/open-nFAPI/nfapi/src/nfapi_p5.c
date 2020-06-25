@@ -871,7 +871,7 @@ static uint8_t pack_start_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t
 
 static uint8_t pack_start_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
 {
-	nfapi_start_response_t *pNfapiMsg = (nfapi_start_response_t*)msg;
+	nfapi_nr_start_response_scf_t *pNfapiMsg = (nfapi_nr_start_response_scf_t*)msg;
 
 	return ( push32(pNfapiMsg->error_code, ppWritePackedMsg, end ) &&
 			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
@@ -1809,7 +1809,7 @@ static uint8_t unpack_start_request(uint8_t **ppReadPackedMsg, uint8_t *end, voi
 
 static uint8_t unpack_start_response(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t* config)
 {
-	nfapi_start_response_t *pNfapiMsg = (nfapi_start_response_t*)msg;
+	nfapi_nr_start_response_scf_t *pNfapiMsg = (nfapi_nr_start_response_scf_t*)msg;
 
 	unpack_tlv_t unpack_fns[] =
 	{
@@ -1957,8 +1957,8 @@ static int check_unpack_length(nfapi_message_id_e msgId, uint32_t unpackedBufLen
 			break;
 
 		case NFAPI_START_RESPONSE:
-			if (unpackedBufLen >= sizeof(nfapi_start_response_t))
-				retLen = sizeof(nfapi_start_response_t);
+			if (unpackedBufLen >= sizeof(nfapi_nr_start_response_scf_t))
+				retLen = sizeof(nfapi_nr_start_response_scf_t);
 			break;
 
 		case NFAPI_STOP_REQUEST:
