@@ -38,6 +38,7 @@
 #include "NR_CG-Config.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
+#include "executables/softmodem-common.h"
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
@@ -133,6 +134,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
   carrier->initial_csi_index[rrc->Nb_ue] = 0;
+  if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1){
+    ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
+    fill_default_rbconfig(ue_context_p->ue_context.rb_config);
+  }
   fill_default_reconfig(carrier->servingcellconfigcommon,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
@@ -170,7 +175,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
               create_tunnel_req.sgw_S1u_teid[i]);
       }
 
-      //PM: Is this where we should extract the rnti from?
       create_tunnel_req.rnti           = ue_context_p->ue_id_rnti;
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
