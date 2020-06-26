@@ -279,7 +279,7 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   UL_INFO->cqi_ind.sfn_sf = frame << 4 | subframe;
   // because of nfapi_vnf.c:733, set message id to 0, not
   // NFAPI_RX_CQI_INDICATION;
-  UL_INFO->cqi_ind.header.message_id = 0;
+  UL_INFO->cqi_ind.header.message_id = NFAPI_RX_CQI_INDICATION;
   UL_INFO->cqi_ind.cqi_indication_body.tl.tag = NFAPI_CQI_INDICATION_BODY_TAG;
 
   pdu->rx_ue_information.tl.tag = NFAPI_RX_UE_INFORMATION_TAG;
@@ -1247,10 +1247,36 @@ void *ue_standalone_pnf_task(void *context)
   }
 }
 
+const char *hexdump(uint8_t *data, size_t data_len, char *out, size_t out_len)
+{
+    char *p = out;
+    char *endp = out + out_len;
+    uint8_t *q = (uint8_t *)(data);
+    snprintf(p, endp - p, "[%zu]", data_len);
+    p += strlen(p);
+    for (size_t i = 0; i < data_len; ++i)
+    {
+        if (p >= endp)
+        {
+            static const char ellipses[] = "...";
+            char *s = endp - sizeof(ellipses);
+            if (s >= p)
+            {
+                strcpy(s, ellipses);
+            }
+            break;
+        }
+        snprintf(p, endp - p, " %02X", *q++);
+        p += strlen(p);
+    }
+    return out;
+}
+
   void send_standalone_msg(UL_IND_t * UL, nfapi_message_id_e msg_type)
   {
     int encoded_size = -1;
     char buffer[1024];
+    char foo[1024];
     switch (msg_type)
     {
     case NFAPI_RACH_INDICATION:
@@ -1262,6 +1288,7 @@ void *ue_standalone_pnf_task(void *context)
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
+      LOG_E(MAC, "%s %s\n", __func__, hexdump(buffer, encoded_size, foo, sizeof(foo)));
       LOG_D(MAC, "RX_IND sent to Proxy\n");
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
