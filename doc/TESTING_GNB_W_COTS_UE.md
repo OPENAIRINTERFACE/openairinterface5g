@@ -1,4 +1,4 @@
-DISCLAIMER : This page is under complete review and update, thanks for your patience
+STATUS 2020/06/26 : information is up to date, but under continuous improvement
 
 ## Table of Contents ##
 
