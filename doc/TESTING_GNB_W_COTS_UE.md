@@ -162,6 +162,16 @@ gNB config file :
 
 ## Run / Test
 
+The order to run the different components is important:  
+1- first, CN  
+2- then, eNB  
+3- then, gNB  
+4- finally, switch UE from airplane mode OFF to ON  
+
+It is recommended to redirect the run commands to the same log file (fur further analysis and debug), using ```| tee **YOUR_LOG_FILE**``` especially for eNB and gNB.  
+It is not very useful for the CN.  
+
+The test takes typically a few seconds, max 10-15 seconds. If it takes more than 30 seconds, there is a problem. 
 
 - **EPC** (on EPC host):
 
@@ -172,15 +182,31 @@ https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/do
 
 - **eNB** (on the eNB host):
 
+Execute: 
 ```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf (-E)
+~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O **YOUR_ENB_CONF_FILE** | tee **YOUR_LOG_FILE**
+
 ```
+
+for example:
+```
+~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf | tee mylogfile.log
+```
+
 
 
 - **gNB** (on the gNB host)
 
+
+Execute: 
 ```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf (-E)
+~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** | tee **YOUR_LOG_FILE**
+
+```
+
+for example:
+```
+~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf | tee mylogfile.log
 ```
 
 
