@@ -1,6 +1,18 @@
 DISCLAIMER : This page is under complete review and update, thanks for your patience
 
-## Configuration Overview:
+## Table of Contents ##
+
+1.   [Configuration Overview](#configuration-overview)
+2.   [SW Repository / Branch](#repository)
+3.   [Architecture Setup](#architecture-setup)
+4.   [Build / Install](#build-and-install)
+5.   [Run / Test](#run-and-test)
+6.   [Test case](#test-case)
+7.   [Log file monitoring](#log-file-monitoring)
+6.   [Required tools for debug](#required-tools-for-debug)
+7.   [Status of interoperability](#status-of-interoperability) 
+
+## Configuration Overview
 
 * Non Standalone (NSA) configuration  : initial Control Plane established between UE and RAN eNB, then User Plane established between UE and gNB, Core network is 4G based supporting rel 15
 
@@ -13,7 +25,7 @@ DISCLAIMER : This page is under complete review and update, thanks for your pati
 * BW: 40MHz
 * Antenna scheme: SISO
 
-## SW Repository / Branch
+## Repository
 
 https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop
 
@@ -28,7 +40,7 @@ The photo depicts the FR1 setup part of the scheme above:
 
 ![image info](./testing_gnb_w_cots_ue_resources/oai_fr1_lab.jpg)
 
-## Build / Install
+## Build and Install
 
 General guidelines for building :
 See https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/doc/BUILD.md#building-ues-enodeb-and-gnodeb-executables
@@ -59,6 +71,8 @@ These config files are passed as arguments of the run command line, using the op
 
 Some config examples can be found in the following folder:  
 https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/develop/targets/PROJECTS/GENERIC-LTE-EPC/CONF
+
+TO DO : attach base confif files
 
 These files have to be updated manually to set the IP addresses and frequency.  
 
@@ -160,7 +174,7 @@ gNB config file :
 ```
 
 
-## Run / Test
+## Run and Test
 
 The order to run the different components is important:  
 1- first, CN  
@@ -188,7 +202,7 @@ Execute:
 
 ```
 
-for example:
+For example:
 ```
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf | tee mylogfile.log
 ```
@@ -204,7 +218,7 @@ Execute:
 
 ```
 
-for example:
+For example:
 ```
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf | tee mylogfile.log
 ```
@@ -212,17 +226,40 @@ for example:
 
 ## Test Case
 
-Test case description  : UE attachement
+The test case corresponds to the UE attachement, that is the UE connection and its initial access in 5G, as depicted below:
 
-## Expected Logs to check
+**Source** : https://www.sharetechnote.com/html/5G/5G_LTE_Interworking.html  
 
-what logs and where to check, to ensure that your setup works fine (or not ...)
+![image info](./testing_gnb_w_cots_ue_resources/attach_signaling_scheme.jpg)
 
-## Required traces for debug
+The test reaches step **12. E-RAB modifcation confirmation** , eventhough not all the messages will appear in the log file. 
 
-What info/traces/logs are needed for us to support the debug
+## Log file monitoring
 
-## Status of the interoperability
+From the log file that is generated, we can monitor several important steps, to assess that the test was successful:
+
+Step **6. Random Access Procedure** is successfully reached when the following messages are shown:  
+[X2AP ... Received elements for X2P]  
+...  
+[LSCH received ok]  
+
+The next message to check is:  
+[DCI type I payload] indicating some DL traffic for signaling  
+
+Eventually, step **12. E-RAB Modification Confirmation** is successfully reached when the following message is visible:  
+[E-RAB Modification Confirmation], the message is properly received but not treated.  
+
+
+TO DO : attach typical succcessful log file as example, add snaps of msg
+
+## Required tools for debug
+
+- **Wireshark** to trace X2AP and S1AP protocols  
+- **Ttracer** for 5G messages  
+- **GDB debugger** to check function calls  
+
+
+## Status of interoperability
 
 The following parts have been validated with FR1 COTS UE:
 
