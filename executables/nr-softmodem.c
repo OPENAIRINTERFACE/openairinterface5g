@@ -794,8 +794,6 @@ int main( int argc, char **argv )
 {
   int ru_id, CC_id = 0;
 
-  nfapi_mode = (int) (argv[argc-1][0] - '0');
-
   start_background_system();
 
   ///static configuration for NR at the moment
