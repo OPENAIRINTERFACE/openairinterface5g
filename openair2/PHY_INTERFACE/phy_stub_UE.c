@@ -1247,11 +1247,11 @@ void *ue_standalone_pnf_task(void *context)
   }
 }
 
-const char *hexdump(uint8_t *data, size_t data_len, char *out, size_t out_len)
+const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len)
 {
     char *p = out;
     char *endp = out + out_len;
-    uint8_t *q = (uint8_t *)(data);
+    const uint8_t *q = data;
     snprintf(p, endp - p, "[%zu]", data_len);
     p += strlen(p);
     for (size_t i = 0; i < data_len; ++i)
@@ -1276,7 +1276,6 @@ const char *hexdump(uint8_t *data, size_t data_len, char *out, size_t out_len)
   {
     int encoded_size = -1;
     char buffer[1024];
-    char foo[1024];
     switch (msg_type)
     {
     case NFAPI_RACH_INDICATION:
@@ -1288,7 +1287,6 @@ const char *hexdump(uint8_t *data, size_t data_len, char *out, size_t out_len)
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "%s %s\n", __func__, hexdump(buffer, encoded_size, foo, sizeof(foo)));
       LOG_D(MAC, "RX_IND sent to Proxy\n");
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
