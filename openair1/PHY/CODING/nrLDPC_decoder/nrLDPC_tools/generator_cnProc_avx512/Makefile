@@ -8,7 +8,7 @@ OBJ= $(SRC:.c=.o)
 all: $(EXEC)
 
 cnProc_gen_avx512: $(OBJ)
-	@$(CC) -o $@ $^ $(LDFLAGS) -O2  
+	@$(CC) -o $@ $^ $(LDFLAGS) -O3  
 
 #main.o: cnProc_gen_avx512.h
 
