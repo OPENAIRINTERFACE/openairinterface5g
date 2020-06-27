@@ -511,6 +511,14 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main ( int argc, char **argv )
 {
+  struct sched_param param = {
+    .sched_priority = sched_get_priority_max(SCHED_RR)
+  };
+  if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
+    fprintf(stderr,"error setting scheduler ... are you root?\n");
+  else
+    fprintf(stderr,"selected rt scheduler\n");
+
   int i;
   int CC_id = 0;
   int ru_id;

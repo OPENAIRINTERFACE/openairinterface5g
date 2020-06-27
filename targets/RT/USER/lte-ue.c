@@ -1038,6 +1038,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   int num_lone = 0;
   int last_sfn_sf = -1;
 
+  uint64_t last_subframe_start = clock_usec();
   while (!oai_exit) {
     bool sent_any = false;
     int sfn_sf = current_sfn_sf;
@@ -1045,6 +1046,12 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       usleep(100);
       continue;
     }
+
+    uint64_t subframe_start = clock_usec();
+    LOG_I(MAC, "subframe elapsed %" PRIu64 "usec\n",
+          subframe_start - last_subframe_start);
+    last_subframe_start = subframe_start;
+
     last_sfn_sf = sfn_sf;
     proc->subframe_rx = NFAPI_SFNSF2SF(sfn_sf);
     proc->frame_rx = NFAPI_SFNSF2SFN(sfn_sf);

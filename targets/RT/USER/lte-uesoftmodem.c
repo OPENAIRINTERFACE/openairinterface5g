@@ -543,6 +543,14 @@ void init_pdcp(void) {
 }
 
 int main( int argc, char **argv ) {
+  struct sched_param param = {
+    .sched_priority = sched_get_priority_max(SCHED_RR)
+  };
+  if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
+    fprintf(stderr,"error setting scheduler ... are you root?\n");
+  else
+    fprintf(stderr,"selected rt scheduler\n");
+
   int CC_id;
   uint8_t  abstraction_flag=0;
 #ifdef UESIM_EXPANSION
