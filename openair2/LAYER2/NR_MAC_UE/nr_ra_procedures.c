@@ -88,7 +88,7 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   // NR_BeamFailureRecoveryConfig_t *beam_failure_recovery_config = &mac->RA_BeamFailureRecoveryConfig; // todo
 
-  int messagePowerOffsetGroupB, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA, numberOfRA_Preambles, i, deltaPreamble_Msg3;
+  int messagePowerOffsetGroupB = 0, messageSizeGroupA, PLThreshold, sizeOfRA_PreamblesGroupA = 0, numberOfRA_Preambles, i, deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0, s_id, f_id, ul_carrier_id, prach_ConfigIndex, SFN_nbr, Msg3_size;
 
   AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "[UE %d] FATAL nr_rach_ConfigCommon is NULL !!!\n", mod_id);
@@ -345,14 +345,15 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
-  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload, ra_ResponseWindow;
+  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload;
+  //uint8_t ra_ResponseWindow;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
-  fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
+  //fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
-  NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+  //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = mac->rach_ConfigDedicated;
 
   // int32_t frame_diff = 0;

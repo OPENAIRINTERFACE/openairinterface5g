@@ -105,7 +105,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
     NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);            // RAR subPDU pointer
     uint8_t n_subPDUs = 0;        // number of RAR payloads
     uint8_t n_subheaders = 0;     // number of MAC RAR subheaders
-    uint8_t best_rx_rapid = -1;   // the closest RAPID receive from all RARs
+    //uint8_t best_rx_rapid = -1;   // the closest RAPID receive from all RARs
     unsigned char freq_hopping, msg3_t_alloc, mcs, tpc_command, csi_req;
     uint16_t ta_command = 0, msg3_f_alloc, bwp_size;
     int f_alloc, mask;

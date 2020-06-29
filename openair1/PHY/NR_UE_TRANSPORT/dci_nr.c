@@ -846,7 +846,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
 
     rel15 = &pdcch_vars->pdcch_config[i];
     int dci_length = rel15->dci_length;
-    int gNB_id = 0;
+    //int gNB_id = 0;
     int16_t tmp_e[16*108];
     rnti_t n_rnti;
 

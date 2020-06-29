@@ -80,7 +80,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
 
-  int16_t Ncp, amp, *prach, *prach2, *prachF, *Xu;
+  int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im, samp_count;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
   //int restricted_Type;

@@ -382,11 +382,23 @@ unsigned int crc16 (unsigned char * inptr, int bitlen);
 @param bitlen length of inputs in bits*/
 unsigned int crc12 (unsigned char * inptr, int bitlen);
 
+/*!\fn uint32_t crc12(uint8_t *inPtr, int32_t bitlen)
+\brief This computes an 11-bit crc based on 3GPP NR specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits*/
+unsigned int crc11 (unsigned char * inptr, int bitlen);
+
 /*!\fn uint32_t crc8(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 8-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
 unsigned int crc8 (unsigned char * inptr, int bitlen);
+
+/*!\fn uint32_t crc8(uint8_t *inPtr, int32_t bitlen)
+\brief This computes a 6-bit crc based on 3GPP NR specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits*/
+unsigned int crc6 (unsigned char * inptr, int bitlen);
 
 int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type);
     

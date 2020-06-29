@@ -129,14 +129,14 @@ NwGtpv1uRcT gtpv1u_gNB_process_stack_req(
     case NW_GTPV1U_ULP_API_RECV_TPDU: {
       uint8_t              buffer[4096];
       uint32_t             buffer_len;
-      uint16_t             msgType = NW_GTP_GPDU;
-      NwGtpv1uMsgT     *pMsg = NULL;
+      //uint16_t             msgType = NW_GTP_GPDU;
+      //NwGtpv1uMsgT     *pMsg = NULL;
       /* Nw-gptv1u stack has processed a PDU. we can schedule it to PDCP
        * for transmission.
        */
       teid = pUlpApi->apiInfo.recvMsgInfo.teid;
-      pMsg = (NwGtpv1uMsgT *) pUlpApi->apiInfo.recvMsgInfo.hMsg;
-      msgType = pMsg->msgType;
+      //pMsg = (NwGtpv1uMsgT *) pUlpApi->apiInfo.recvMsgInfo.hMsg;
+      //msgType = pMsg->msgType;
 
       if (NW_GTPV1U_OK != nwGtpv1uMsgGetTpdu(pUlpApi->apiInfo.recvMsgInfo.hMsg,
                                              buffer, &buffer_len)) {

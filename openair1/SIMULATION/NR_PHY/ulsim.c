@@ -119,7 +119,7 @@ int main(int argc, char **argv)
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
   uint8_t n_tx = 1, n_rx = 1;
   //uint8_t transmission_mode = 1;
-  uint16_t Nid_cell = 0;
+  //uint16_t Nid_cell = 0;
   channel_desc_t *gNB2UE;
   uint8_t extended_prefix_flag = 0;
   //int8_t interf1 = -21, interf2 = -21;
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   int frame_length_complex_samples,frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
-  uint64_t SSB_positions=0x01;
+  //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 2;
   uint16_t nb_rb = 50;
@@ -377,6 +377,7 @@ int main(int argc, char **argv)
       printf("-P Print ULSCH performances\n");
       exit(-1);
       break;
+
     }
   }
   
