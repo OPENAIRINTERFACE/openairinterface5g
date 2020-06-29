@@ -314,7 +314,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round;
+  pdsch_pdu_rel15->rvIndex[0] = (get_softmodem_params()->phy_test==1) ? 0 : UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
