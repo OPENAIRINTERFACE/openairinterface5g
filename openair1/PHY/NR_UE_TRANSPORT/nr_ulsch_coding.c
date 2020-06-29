@@ -283,6 +283,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       printf("%02x.",a[i]);
     printf("\n");
     */
+
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
       crc = crc24a(harq_process->a,A)>>8;
@@ -312,7 +313,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
       memcpy(harq_process->b,harq_process->a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
     }
-
 ///////////
 ///////////////////////////////////////////////////////////////////////////
 

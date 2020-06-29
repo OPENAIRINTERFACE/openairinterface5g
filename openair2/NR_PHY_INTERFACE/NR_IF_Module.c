@@ -62,15 +62,15 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
     if (UL_info->rach_ind.pdu_list[0].num_preamble>0)
     AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
 		"More than 1 preamble not supported\n");
-
-    /*nr_initiate_ra_proc(UL_info->module_id,
+    
+    nr_initiate_ra_proc(UL_info->module_id,
                         UL_info->CC_id,
                         UL_info->rach_ind.sfn,
                         UL_info->rach_ind.slot,
                         UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
                         UL_info->rach_ind.pdu_list[0].freq_index,
                         UL_info->rach_ind.pdu_list[0].symbol_index,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);*/
+                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);
 
   }
 }
@@ -224,9 +224,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d crcs:%d]\n",
+
+  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
-        module_id,CC_id,
+        module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
   if (nfapi_mode != 1) {

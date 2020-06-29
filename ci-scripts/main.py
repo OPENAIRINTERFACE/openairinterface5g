@@ -332,12 +332,6 @@ class OaiCiTest():
 			logging.debug('Found a N3xx device --> resetting it')
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
-		# in case of NR-UE, we may have rrc_config_path (Temporary?)
-		modifiedUeOptions = str(self.Initialize_OAI_UE_args)
-		if RAN.Getair_interface() == 'nr':
-			result = re.search('--rrc_config_path ', modifiedUeOptions)
-			if result is not None:
-				modifiedUeOptions = modifiedUeOptions.replace('rrc_config_path ', 'rrc_config_path ' + self.UESourceCodePath + '/')
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets/ran_build/build', '\$', 5)
 		if RAN.Getair_interface() == 'lte':
@@ -352,7 +346,17 @@ class OaiCiTest():
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
-		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		else:
+			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
+			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
+			# Copy the RAW files from gNB running directory (maybe on another machine)
+			copyin_res = SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/rbconfig.raw', '.')
+			if (copyin_res == 0):
+				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './rbconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
+			copyin_res = SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/reconfig.raw', '.')
+			if (copyin_res == 0):
+				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './reconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
+		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
@@ -2432,6 +2436,7 @@ class OaiCiTest():
 		nrCRCOK = 0
 		mbms_messages = 0
 		HTML.SethtmlUEFailureMsg('')
+		global_status = CONST.ALL_PROCESSES_OK
 		for line in ue_log_file.readlines():
 			result = re.search('nr_synchro_time', str(line))
 			if result is not None:
@@ -2625,36 +2630,36 @@ class OaiCiTest():
 			else:
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
+				global_status = OAI_UE_PROCESS_NO_MBMS_MSGS
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			if not nrUEFlag:
-				return CONST.OAI_UE_PROCESS_SEG_FAULT
+				global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 			else:
 				if not frequency_found:
-					return CONST.OAI_UE_PROCESS_SEG_FAULT
+					global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE showed an assertion!\n')
 			if not nrUEFlag:
 				if not mib_found or not frequency_found:
-					return CONST.OAI_UE_PROCESS_ASSERTION
+					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 			else:
 				if not frequency_found:
-					return CONST.OAI_UE_PROCESS_ASSERTION
+					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE faced real time issues!\n')
-			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if nrUEFlag:
 			if not frequency_found:
-				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		else:
 			if no_cell_sync_found and not mib_found:
 				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
 				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE could not synchronize!\n')
-				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
-		return 0
+				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+		return global_status
 
 
 	def TerminateFlexranCtrl(self):

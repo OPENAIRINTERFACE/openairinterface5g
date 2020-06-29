@@ -33,9 +33,9 @@
 #include "assertions.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_gNB/mac_proto.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -60,8 +60,6 @@
 #include "executables/softmodem-common.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
-
-uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
@@ -259,18 +257,6 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 }
 */
 
-/*
-void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
-
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-
-  // schedule PRACH for iniital BWP 
-
-  if (is_initialBWP_prach_subframe(frameP,subframeP)<0) return;
- 
-  // fill FAPI
-}
-*/
 
 /*
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
@@ -375,6 +361,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   int CC_id, UE_id = 0;
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &gNB->UE_list;
+  NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_sched_pucch *pucch_sched = (NR_sched_pucch*) malloc(sizeof(NR_sched_pucch));
 
@@ -408,42 +395,42 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
         nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
       
-      
         rnti = 0;//UE_RNTI(module_idP, i);
         CC_id = 0;//UE_PCCID(module_idP, i);
-      
-    } //END if (UE_list->active[i])
-  } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
-  */
+    
+      } //END if (UE_list->active[i])
+    } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
+    */
   
-  // This schedules MIB
-  if((slot_txP == 0) && (frame_txP & 7) == 0){
-    schedule_nr_mib(module_idP, frame_txP, slot_txP);
-  }
+    // This schedules MIB
+    if((slot_txP == 0) && (frame_txP & 7) == 0){
+      schedule_nr_mib(module_idP, frame_txP, slot_txP);
+    }
 
-  // TbD once RACH is available, start ta_timer when UE is connected
-#if 0
-   NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-   if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
+    // TbD once RACH is available, start ta_timer when UE is connected
+    if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
 
-  if (ue_sched_ctl->ta_timer == 0) {
-    gNB->ta_command = ue_sched_ctl->ta_update;
-    /* if time is up, then set the timer to not send it for 5 frames
-    // regardless of the TA value */
-    ue_sched_ctl->ta_timer = 100;
-    /* reset ta_update */
-    ue_sched_ctl->ta_update = 31;
-    /* MAC CE flag indicating TA length */
-    gNB->ta_len = 2;
-  }
-#endif
+    if (ue_sched_ctl->ta_timer == 0) {
+      gNB->ta_command = ue_sched_ctl->ta_update;
+      /* if time is up, then set the timer to not send it for 5 frames
+      // regardless of the TA value */
+      ue_sched_ctl->ta_timer = 100;
+      /* reset ta_update */
+      ue_sched_ctl->ta_update = 31;
+      /* MAC CE flag indicating TA length */
+      gNB->ta_len = 2;
+    }
 
-  // Phytest scheduling
-  if (get_softmodem_params()->phy_test && slot_txP==1){
-    nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, pucch_sched, NULL);
-        // resetting ta flag
-    gNB->ta_len = 0;
-  }
+    if (get_softmodem_params()->phy_test == 0)
+      nr_schedule_RA(module_idP, frame_txP, slot_txP);
+    
+    // Phytest scheduling
+    if (get_softmodem_params()->phy_test && slot_txP==1){
+      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, pucch_sched, NULL);
+      // resetting ta flag
+      gNB->ta_len = 0;
+    }
+
 
     /*
     // Allocate CCEs for good after scheduling is done
@@ -454,6 +441,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   } //is_nr_DL_slot
 
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
+
+    if (get_softmodem_params()->phy_test == 0) {
+      schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
+      nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
+    }
     if (get_softmodem_params()->phy_test && slot_rxP==8){
       nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
     }

@@ -179,8 +179,8 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
             *(cfgoptions[i].u64ptr) = (uint64_t)llu;
             printf_params("[LIBCONFIG] %s: %llu\n", cfgpath,(long long unsigned)(*(cfgoptions[i].u64ptr)) );
           } else {
-            *(cfgoptions[i].iptr) = llu;
-            printf_params("[LIBCONFIG] %s: %llu\n", cfgpath,(long long unsigned)(*(cfgoptions[i].i64ptr)) );
+            *(cfgoptions[i].i64ptr) = llu;
+            printf_params("[LIBCONFIG] %s: %lld\n", cfgpath,(long long)(*(cfgoptions[i].i64ptr)) );
           }
         } else {
           defval=config_setdefault_int64(&(cfgoptions[i]),prefix);
