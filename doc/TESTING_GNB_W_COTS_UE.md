@@ -72,6 +72,10 @@ These config files are passed as arguments of the run command line, using the op
 Some config examples can be found in the following folder:  
 https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/develop/targets/PROJECTS/GENERIC-LTE-EPC/CONF
 
+Also base config files can be found here:  
+[enb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/enb.conf)  
+[gnb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/gnb.conf)
+
 TO DO : attach base confif files
 
 These files have to be updated manually to set the IP addresses and frequency.  
@@ -236,7 +240,10 @@ The test reaches step **12. E-RAB modifcation confirmation** , eventhough not al
 
 ## Log file monitoring
 
-From the log file that is generated, we can monitor several important steps, to assess that the test was successful:
+From the log file that is generated, we can monitor several important steps, to assess that the test was successful.  
+Log files examples can be found here:  
+[enb log file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/oai_enb.log)  
+[gnb log file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/oai_gnb.log)
 
 
 - eNB receives UE capabilities information, including its NR capabilites, and triggers sGNB Addition Request message:
