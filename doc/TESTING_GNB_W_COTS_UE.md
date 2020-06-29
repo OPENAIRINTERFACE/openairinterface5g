@@ -238,19 +238,107 @@ The test reaches step **12. E-RAB modifcation confirmation** , eventhough not al
 
 From the log file that is generated, we can monitor several important steps, to assess that the test was successful:
 
-Step **6. Random Access Procedure** is successfully reached when the following messages are shown:  
-[X2AP ... Received elements for X2P]  
-...  
-[LSCH received ok]  
 
-The next message to check is:  
-[DCI type I payload] indicating some DL traffic for signaling  
+- eNB receives UE capabilities information, including its NR capabilites, and triggers sGNB Addition Request message:
 
-Eventually, step **12. E-RAB Modification Confirmation** is successfully reached when the following message is visible:  
-[E-RAB Modification Confirmation], the message is properly received but not treated.  
+***eNBlog.1315 :***
+```
+[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] received ueCapabilityInformation on UL-DCCH 1 from UE
+...
+[RRC]   [eNB 0] frame 0 subframe 0: UE rnti 43eb switching to NSA mode
+...
+<X2AP-PDU>
+     <initiatingMessage>
+         <procedureCode>27</procedureCode>
+         <criticality><reject/></criticality>
+         <value>
+             <SgNBAdditionRequest>
+                 <protocolIEs>
+                     <SgNBAdditionRequest-IEs>
+                         <id>111</id>
+<criticality><reject/></criticality>
+                         <value>
+                             <UE-X2AP-ID>0</UE-X2AP-ID>
+                         </value>
+                     </SgNBAdditionRequest-IEs>
+```
+
+- gNB receives sGNB Addition request, processes UE capabilities for the corresponding UE and triggers sGNB Addition Request ACK, carrying NR RRC Reconfiguration message:
 
 
-TO DO : attach typical succcessful log file as example, add snaps of msg
+***gNBlog.2291 :***
+```
+<X2AP-PDU>
+     <successfulOutcome>
+         <procedureCode>27</procedureCode>
+         <criticality><reject/></criticality>
+         <value>
+             <SgNBAdditionRequestAcknowledge>
+                 <protocolIEs>
+                     <SgNBAdditionRequestAcknowledge-IEs>
+                         <id>111</id>
+<criticality><reject/></criticality>
+                         <value>
+                             <UE-X2AP-ID>0</UE-X2AP-ID>
+                         </value>
+                     </SgNBAdditionRequestAcknowledge-IEs>
+```
+
+
+- Upon reception of the sGNB Addition Request ACK, the eNB sends a new RRCConnectionReconfiguration message containing the NR Reconfiguration. 
+The UE replies with a Reconfiguration Complete message:
+
+***eNBlog.1686 :***
+```
+[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] UE State = RRC_RECONFIGURED (default DRB, xid 1)
+```
+
+- The Random Access procedure of the UE to the gNB takes place:
+
+***gNBlog.2382 :***
+```
+[PHY]   [gNB 0][RAPROC] Frame 751, slot 19 Initiating RA procedure with 
+preamble 63, energy 35.7 dB, delay 6
+ [0m [0m[MAC]   [gNB 0][RAPROC] CC_id 0 Frame 751, Slot 19 Initiating RA 
+procedure for preamble index 63
+ [0m [0m[MAC]   [gNB 0][RAPROC] CC_id 0 Frame 751 Activating Msg2 
+generation in frame 752, slot 7 using RA rnti 10b
+ [0m [0m[MAC]   [gNB 0] [RAPROC] CC_id 0 Frame 752, slotP 7: Generating 
+RAR DCI, state 1
+ [0m [0m[MAC]   [RAPROC] DCI type 1 payload: freq_alloc 120 (0,6,24), 
+time_alloc 3, vrb to prb 0, mcs 0 tb_scaling 0
+ [0m [0m[MAC]   Frame 752: Subframe 7 : Adding common DL DCI for RA_RNTI 10b
+ [0m [0m[MAC]   Frame 752, Subframe 7: Setting Msg3 reception for Frame 
+752 Subframe 17
+ [0m [0m[PHY]   ULSCH received ok
+```
+
+- The eNB triggers the path switch procedure towards the MME, so that 
+the traffic can be routed now from the SGW towards the gNB on the S1-U 
+plane.
+
+***eNBlog.1691 :***
+```
+<S1AP-PDU>
+     <initiatingMessage>
+         <procedureCode>50</procedureCode>
+         <criticality><reject/></criticality>
+         <value>
+             <E-RABModificationIndication>
+                 <protocolIEs>
+                     <E-RABModificationIndicationIEs>
+                         <id>0</id>
+<criticality><reject/></criticality>
+                         <value>
+<MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                         </value>
+                     </E-RABModificationIndicationIEs>
+```
+
+
+Eventually, step **12. E-RAB Modification Confirmation** is successfully reached
+
+
 
 ## Required tools for debug
 
