@@ -933,104 +933,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   return UE_CONNECTION_OK;
 }
 
-// Notes:
-// - Type1-PDCCH CSS configuration from ra-SearchSpace.
-// - Msg2 is scheduled in the mixed slot or in the last dl slot if they are allowed by the Type 1 Common Search Space configuration
-// todo:
-// - if Type1-PDCCH CSS is not configured in RRC message (Coreset and SearchSpace), UE searches in Type 0 PDCCH CSS.
-void nr_ue_msg2_scheduler(module_id_t mod_id,
-                          uint16_t rach_frame,
-                          uint16_t rach_slot,
-                          uint16_t *msg2_frame,
-                          uint16_t *msg2_slot){
-
-  uint8_t bwp_id = 1;
-  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_ServingCellConfig_t *scd = mac->scd;
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_BWP_Downlink_t *bwp = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
-  NR_SearchSpace_t *ss;
-  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-  uint8_t mu = *scc->ssbSubcarrierSpacing;
-  uint8_t response_window = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow;
-  uint8_t slot_window, slot_limit, frame_limit;
-  uint16_t start_next_period, monitoring_slot_period, monitoring_offset;
-
-  // number of mixed slot or of last dl slot if there is no mixed slot
-  uint16_t last_dl_slot_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-  uint16_t nr_dl_symbols = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
-  uint16_t nr_ul_symbols = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
-
-  // lenght of tdd period in slots
-  uint16_t tdd_period_slot = last_dl_slot_period + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-
-  AssertFatal(commonSearchSpaceList->list.count > 0, "PDCCH common SearchSpace list has 0 elements\n");
-  
-  LOG_D(MAC, "Frame %d, Slot %d: Scheduling Msg2 reception \n", rach_frame, rach_slot);
-
-  // Common searchspace list
-  for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
-    ss = commonSearchSpaceList->list.array[i];
-    if(ss->searchSpaceId == *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)
-    // retrieving ra pdcch monitoring period and offset
-    find_monitoring_periodicity_offset_common(ss, &monitoring_slot_period, &monitoring_offset);
-  }
-
-  if (nr_dl_symbols == 0)
-    last_dl_slot_period--;
-  if ((nr_dl_symbols > 0) || (nr_ul_symbols > 0))
-    tdd_period_slot++;
-
-  // computing start of next period
-  start_next_period = (rach_slot - (rach_slot % tdd_period_slot) + tdd_period_slot) % nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = (*msg2_slot > rach_slot) ? rach_frame : (rach_frame +1);
-
-  switch(response_window){
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
-    slot_window = 1;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl2:
-    slot_window = 2;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl4:
-    slot_window = 4;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl8:
-    slot_window = 8;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl10:
-    slot_window = 10;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl20:
-    slot_window = 20;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl40:
-    slot_window = 40;
-    break;
-  case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl80:
-    slot_window = 80;
-    break;
-  default:
-    AssertFatal(1==0,"Invalid response window value %d\n",response_window);
-  }
-  AssertFatal(slot_window<=nr_slots_per_frame[mu], "Msg2 response window needs to be lower or equal to 10ms");
-
-  // slot and frame limit to transmit msg2 according to response window
-  slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
-  frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
-
-  // go to previous slot if the current scheduled slot is beyond the response window
-  // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
-  while ((*msg2_slot > slot_limit) || ((*msg2_frame*nr_slots_per_frame[mu] + *msg2_slot - monitoring_offset) % monitoring_slot_period != 0))  {
-    if((*msg2_slot % tdd_period_slot) > 0)
-      (*msg2_slot)--;
-    else
-      AssertFatal(1 == 0, "No available DL slot to schedule reception of msg2 has been found");
-  }
-  LOG_D(MAC, "Scheduled Msg2 reception in Frame %d, Slot %d:  \n", *msg2_frame, *msg2_slot);
-}
-
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
 // It fills the PRACH PDU per each FD occasion.
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
@@ -2906,10 +2808,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr
 	  dlsch_config_pdu_1_0->pucch_resource_id,
 	  dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
 
-    if (mac->ra_rnti == rnti)
+    if (mac->RA_window_cnt >= 0 && rnti == mac->ra_rnti){
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
-    else
+    } else {
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+    }
 
     //	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
 	    

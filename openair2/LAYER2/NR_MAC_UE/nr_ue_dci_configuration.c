@@ -213,23 +213,23 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
          AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
        }
 
-      if (frame == mac->msg2_rx_frame && slot == mac->msg2_rx_slot){
-        sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
-        monitoringSymbolsWithinSlot = (css->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (css->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-        rel15->rnti = mac->ra_rnti;
-        rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-        rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); // NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
-        rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-        rel15->dci_length = nr_dci_size(rel15->dci_format, NR_RNTI_RA, rel15->BWPSize);
-        for (int i = 0; i < sps; i++)
+      sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+      monitoringSymbolsWithinSlot = (css->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (css->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = mac->ra_rnti;
+      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); // NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+      rel15->dci_length = nr_dci_size(rel15->dci_format, NR_RNTI_RA, rel15->BWPSize);
+
+      for (int i = 0; i < sps; i++){
         if ((monitoringSymbolsWithinSlot >> (sps - 1 - i)) & 1) {
           rel15->coreset.StartSymbolIndex = i;
           break;
         }
-        fill_dci_search_candidates(css, rel15);
-      } else {
-        add_dci = 0;
       }
+
+      fill_dci_search_candidates(css, rel15);
+
     } else if (mac->ra_state == WAIT_CONTENTION_RESOLUTION){
 
       rel15->rnti = mac->t_crnti;

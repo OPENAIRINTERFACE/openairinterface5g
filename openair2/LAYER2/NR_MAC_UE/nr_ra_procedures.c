@@ -363,7 +363,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
-  if (UE_mode == PRACH && prach_resources->init_msg1) {
+  if (UE_mode < PUSCH && prach_resources->init_msg1) {
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
 
@@ -470,7 +470,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
         }
       } 
-    } else { // RACH is active
+    } else if (mac->RA_window_cnt != -1) { // RACH is active
 
       ////////////////////////////////////////////////////////////////
       /////* Random Access Response reception (5.1.4 TS 38.321) */////
@@ -481,7 +481,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // - handle beam failure recovery request
       // - handle DL assignment on PDCCH for RA-RNTI
       // - handle backoff and raResponseWindow params
-      // - disabled contention resolution as OAI NSA is contention-free based
 
       // LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
       //   mod_id, frame, nr_tti_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
@@ -494,12 +493,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
 
-        // mac->ra_state = WAIT_CONTENTION_RESOLUTION;
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
+        mac->ra_state = WAIT_CONTENTION_RESOLUTION;
+        mac->RA_window_cnt = -1;
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR reception failed \n", mod_id, frame, nr_tti_tx);
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR reception failed \n", mod_id, frame, nr_tti_tx);
 
         mac->ra_state = RA_UE_IDLE;
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
@@ -578,7 +578,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         mac->RA_window_cnt--;
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR reception not successful, (RA window count %d) \n",
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR reception not successful, (RA window count %d) \n",
           mod_id,
           frame,
           nr_tti_tx,
