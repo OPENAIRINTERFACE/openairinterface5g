@@ -1280,26 +1280,27 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     {
     case NFAPI_RACH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
+      LOG_D(MAC, "RACH_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "CRC_IND sent to Proxy\n");
+      LOG_D(MAC, "CRC_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "RX_IND sent to Proxy\n");
+      LOG_D(MAC, "RX_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "CQI_IND sent to Proxy\n");
+      LOG_D(MAC, "CQI_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_HARQ_INDICATION:
-      LOG_D(MAC, "HARQ_IND sent to Proxy\n");
+      LOG_D(MAC, "HARQ_IND sent to Proxy, Size: %d\n", encoded_size);
       encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
       break;
     case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "SR_IND sent to Proxy\n");
+      LOG_D(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     default:
       LOG_E(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
@@ -1320,6 +1321,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
   void send_standalone_dummy()
   {
     static const uint16_t dummy[] = {0, 0};
+    LOG_D(MAC, "Dummy sent to Proxy, Size: %zu\n", sizeof(dummy));
     if (send(ue_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
     {
       LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));
