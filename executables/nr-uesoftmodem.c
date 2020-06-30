@@ -173,6 +173,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 int transmission_mode=1;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 /* flag set by eNB conf file to specify if the radio head is local or remote (default option is local) */
 //uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;

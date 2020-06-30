@@ -34,6 +34,7 @@
     {"emulate-rf" ,           CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,   iptr:&emulate_rf,                   defintval:0,                   TYPE_INT,    0},        \
     {"parallel-config",       CONFIG_HLP_PARALLEL_CMD,0,                strptr:(char **)&parallel_config,   defstrval:NULL,                TYPE_STRING, 0},        \
     {"worker-config",         CONFIG_HLP_WORKER_CMD,  0,                strptr:(char **)&worker_config,     defstrval:NULL,                TYPE_STRING, 0},        \
+    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
   }
 

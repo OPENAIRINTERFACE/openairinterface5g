@@ -422,6 +422,6 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
     else
       r_offset += Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
   }
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return(0);
 }
