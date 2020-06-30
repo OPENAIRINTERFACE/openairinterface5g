@@ -704,7 +704,7 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG, &(pNfapiMsg->ssb_table.ssb_subcarrier_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 
 			pack_tlv(NFAPI_NR_CONFIG_TDD_PERIOD_TAG, &(pNfapiMsg->tdd_table.tdd_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-
+			
 			pack_tlv(NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.dl_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG, &(pNfapiMsg->nfapi_config.max_transmit_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_NFAPI_NRARFCN_TAG, &(pNfapiMsg->nfapi_config.nrarfcn), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
@@ -1644,6 +1644,7 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		{ NFAPI_NR_CONFIG_SSB_PERIOD_TAG,  &(pNfapiMsg->ssb_table.ssb_period),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG,  &(pNfapiMsg->ssb_table.ssb_subcarrier_offset),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_TDD_PERIOD_TAG,  &(pNfapiMsg->tdd_table.tdd_period),  &unpack_uint8_tlv_value},
+		
 		{ NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG,  &(pNfapiMsg->nfapi_config.dl_ue_per_sf),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG,  &(pNfapiMsg->nfapi_config.max_transmit_power),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_NFAPI_NRARFCN_TAG,  &(pNfapiMsg->nfapi_config.nrarfcn),  &unpack_uint32_tlv_value},

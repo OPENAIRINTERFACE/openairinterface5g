@@ -118,7 +118,9 @@ int set_tdd_config_nr( nfapi_nr_config_request_scf_t *cfg,
   while(slot_number != nb_slots_to_set) {
     if(nrofDownlinkSlots != 0) {
       for (int number_of_symbol = 0; number_of_symbol < nrofDownlinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.value= 0;
+        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.value= 0; // was 0, made 10 to check
+        // cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config.tl.tag= NFAPI_NR_CONFIG_SLOT_CONFIG_TAG;
+        
 
         if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
           slot_number++;
@@ -318,6 +320,7 @@ int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti)
     return (NR_UPLINK_SLOT | NR_DOWNLINK_SLOT );
   }
 
+#if 1 // Hardcoding, change later
   if (nr_frame%2 == 0) {
     for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
       if (cfg->tdd_table.max_tdd_periodicity_list[nr_tti].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {
@@ -367,6 +370,11 @@ int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti)
       return (NR_MIXED_SLOT);
     }
   }
+#else
+  return (NR_DOWNLINK_SLOT);
+#endif
+
+
 }
 
 /*******************************************************************

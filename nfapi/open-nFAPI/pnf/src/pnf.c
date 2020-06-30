@@ -30,6 +30,25 @@
 #include "nfapi_nr_interface_scf.h"
 #include "pnf.h"
 
+# if 1 // for hard-code (remove later)
+#include "COMMON/platform_types.h"
+#include "COMMON/platform_constants.h"
+#include "common/ran_context.h"
+
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
+#include "NR_BCCH-BCH-Message.h"
+#include "NR_ServingCellConfigCommon.h"
+
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "SCHED_NR/phy_frame_config_nr.h"
+
+#include "NR_MIB.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_common.h"
+
+#endif
+
 #define MAX_SCTP_STREAMS 16
 
 void nfapi_pnf_phy_config_delete_all(nfapi_pnf_config_t* config)
@@ -353,6 +372,11 @@ void pnf_handle_config_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 			if(config->state == NFAPI_PNF_RUNNING)
 			{
 				nfapi_pnf_phy_config_t* phy = nfapi_pnf_phy_config_find(config, req.header.phy_id);
+
+#if 1 // emulate set_config TLV reception (hard-code)
+				int tdd_return = set_tdd_config_nr(&req, 1, 7, 6, 2, 4);
+#endif
+
 				if(phy)
 				{
 					if(phy->state != NFAPI_PNF_PHY_RUNNING)
@@ -360,6 +384,8 @@ void pnf_handle_config_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 						if(config->config_req)
 						{
 							(config->config_req)(config, phy, &req);
+
+					
 						}
 					}
 					else
