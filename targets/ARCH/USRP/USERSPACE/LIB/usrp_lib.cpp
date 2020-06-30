@@ -1251,7 +1251,7 @@ extern "C" {
   LOG_I(HW,"Actual time source %s...\n",s->usrp->get_time_source(0).c_str());
    sleep(1);
   // create tx & rx streamer
-  uhd::stream_args_t stream_args_rx("sc16", "sc16");
+  uhd::stream_args_t stream_args_rx("sc12", "sc12");
   int samples=openair0_cfg[0].sample_rate;
   int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
   samples/=10000;
@@ -1268,7 +1268,7 @@ extern "C" {
     stream_args_rx.channels.push_back(i);
   
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
-  uhd::stream_args_t stream_args_tx("sc16", "sc16");
+  uhd::stream_args_t stream_args_tx("sc12", "sc12");
   
   for (int i = 0; i<openair0_cfg[0].tx_num_channels; i++)
     stream_args_tx.channels.push_back(i);
