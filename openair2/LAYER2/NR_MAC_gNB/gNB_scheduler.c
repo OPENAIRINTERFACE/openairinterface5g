@@ -401,7 +401,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // hardcoding dlsch to be in slot 1
   if (!(slot_txP%num_slots_per_tdd)) {
     if(slot_txP==0)
-      *dlsch_in_slot_bitmap = 0x7e;
+      *dlsch_in_slot_bitmap = 0x02;
     else
       *dlsch_in_slot_bitmap = 0x00;
   }
