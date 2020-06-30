@@ -42,8 +42,29 @@ The photo depicts the FR1 setup part of the scheme above:
 
 ## Build and Install
 
-General guidelines for building :
+General guidelines to build eNB and gNB :
 See https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/doc/BUILD.md#building-ues-enodeb-and-gnodeb-executables
+
+
+- **eNB**
+
+```
+cd <your oai installation directory>/openairinterface5g/
+source oaienv
+cd cmake_targets/
+./build_oai -I -w USRP --eNB
+
+```
+
+- **gNB**
+
+```
+cd <your oai installation directory>/openairinterface5g/
+source oaienv
+cd cmake_targets/
+./build_oai -I -w USRP --gNB
+```
+
 
 - **EPC**
 
@@ -51,18 +72,6 @@ for reference:
 https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
 
 
-
-- **eNB**
-
-```
-sudo 
-```
-
-- **gNB**
-
-```
-sudo 
-```
 
 ## Configuration Files
 
