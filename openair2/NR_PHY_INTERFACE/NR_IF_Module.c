@@ -38,6 +38,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
+#include "executables/softmodem-common.h"
 
 #define MAX_IF_MODULES 100
 
@@ -87,34 +88,36 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
       case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
 
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
-        // handle harq
-        int harq_idx_s = 0;
-        // iterate over received harq bits
-        for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
-          // search for the right harq process
-          for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
-            if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-              if (uci_pdu->harq->harq_list[harq_bit].harq_value == 0)
+        if (get_softmodem_params()->phy_test == 0) {
+          nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+          // handle harq
+          int harq_idx_s = 0;
+          // iterate over received harq bits
+          for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
+            // search for the right harq process
+            for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+              if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+                if (uci_pdu->harq->harq_list[harq_bit].harq_value == 0)
+                  sched_ctrl->harq_processes[harq_idx].round++;
+                if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) ||
+                   (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                  sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                  sched_ctrl->harq_processes[harq_idx].round = 0;
+                }
+                sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+                harq_idx_s = harq_idx + 1;
+                break;
+              }
+              // if gNB fails to receive a ACK/NACK
+              else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                      (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
                 sched_ctrl->harq_processes[harq_idx].round++;
-              if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) ||
-                 (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
-                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-                sched_ctrl->harq_processes[harq_idx].round = 0;
+                if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+                  sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                  sched_ctrl->harq_processes[harq_idx].round = 0;
+                }
+                sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
               }
-              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-              harq_idx_s = harq_idx + 1;
-              break;
-            }
-            // if gNB fails to receive a ACK/NACK
-            else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
-                    (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
-              sched_ctrl->harq_processes[harq_idx].round++;
-              if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-                sched_ctrl->harq_processes[harq_idx].round = 0;
-              }
-              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
             }
           }
         }
