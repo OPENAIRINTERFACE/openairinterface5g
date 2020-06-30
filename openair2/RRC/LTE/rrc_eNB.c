@@ -4490,7 +4490,7 @@ static int encode_CG_ConfigInfo(
 
   ue_cap_rat_container_list = calloc(1,sizeof(LTE_UE_CapabilityRAT_ContainerList_t));
   ue_cap_rat_container_list->list.count = RAT_Container_count;
-  ue_cap_rat_container_list->list.size = sizeof(RAT_Container_count * sizeof(LTE_UE_CapabilityRAT_Container_t));
+  ue_cap_rat_container_list->list.size = RAT_Container_count * sizeof(LTE_UE_CapabilityRAT_Container_t);
   ue_cap_rat_container_list->list.array = calloc(RAT_Container_count,sizeof(LTE_UE_CapabilityRAT_Container_t *));
 
   if(ue_context_pP->ue_context.UE_Capability_MRDC) {
