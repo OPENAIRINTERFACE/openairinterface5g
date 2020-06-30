@@ -139,12 +139,32 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           // pusch config pdu
           pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
           current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
-          nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch0->harq_processes[current_harq_pid]->pusch_pdu;
+          NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch0->harq_processes[current_harq_pid];
 
-          memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+          if (harq_process_ul_ue){
 
-          ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
-          ulsch0->harq_processes[current_harq_pid]->status = ACTIVE;
+            nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
+
+            memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+
+            ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
+
+            if (scheduled_response->tx_request){
+              fapi_nr_tx_request_body_t *tx_req_body = scheduled_response->tx_request->tx_request_body;
+
+              //harq_process_ul_ue->a = (unsigned char*)calloc(TBS/8, sizeof(unsigned char));
+              memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
+
+              harq_process_ul_ue->status = ACTIVE;
+            }
+
+          } else {
+
+            LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+            return -1;
+
+          }
+
         break;
 
         case (FAPI_NR_UL_CONFIG_TYPE_PUCCH):
@@ -206,9 +226,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     } else {
     }
 
-    if (scheduled_response->tx_request != NULL){
-    } else {
-    }
   }
 
   return 0;
