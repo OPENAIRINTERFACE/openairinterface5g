@@ -320,11 +320,11 @@ int main(int argc, char **argv)
       break;
       
     case 'M':
-      SSB_positions = atoi(optarg);
+     // SSB_positions = atoi(optarg);
       break;
       
     case 'N':
-      Nid_cell = atoi(optarg);
+     // Nid_cell = atoi(optarg);
       break;
       
     case 'R':
