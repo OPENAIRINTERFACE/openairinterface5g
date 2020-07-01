@@ -253,7 +253,7 @@ void init_gNB_proc(int inst) {
 }
 
 /// eNB kept in function name for nffapi calls, TO FIX
-void init_gNB_phase2(void) {
+void init_gNB_phase2(RU_t *ru) {
   int inst;
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
@@ -262,6 +262,8 @@ void init_gNB_phase2(void) {
     PHY_VARS_gNB *gNB =  RC.gNB[inst];
     LOG_E(PHY,"hard coded gNB->num_RU:%d\n", gNB->num_RU);
     phy_init_nr_gNB(gNB,0,0);
+    RC.gNB[inst]->num_RU=1;
+    RC.gNB[inst]->RU_list[0]=ru;
     //init_precoding_weights(RC.gNB[inst][CC_id]);
   }
 }
@@ -862,7 +864,7 @@ int main( int argc, char **argv ) {
   OCPconfig_RU(&ru);
   ru.nr_frame_parms->threequarter_fs=threequarter_fs;
   fill_rf_config(&ru,ru.rf_config_file);
-  init_gNB_phase2();
+  init_gNB_phase2(&ru);
   memcpy((void *)ru.nr_frame_parms,&RC.gNB[0][0].frame_parms,sizeof(NR_DL_FRAME_PARMS));
   memcpy((void*)&ru.config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru.config));
 
