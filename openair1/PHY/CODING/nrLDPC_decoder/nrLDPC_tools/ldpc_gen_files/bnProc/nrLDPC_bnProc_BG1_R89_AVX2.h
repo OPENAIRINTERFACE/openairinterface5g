@@ -11,16 +11,12 @@ static inline void nrLDPC_bnProc_BG1_R89_AVX2(int8_t* bnProcBuf,int8_t* bnProcBu
             p_res = &p_bnProcBufRes[0];
             p_llrRes = (__m256i*) &llrRes  [384];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[0 + i]);
-             p_res++;
-             p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
 }
             p_res = &p_bnProcBufRes[36];
             p_llrRes = (__m256i*) &llrRes  [384];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[36 + i]);
-             p_res++;
-             p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
 }
 // Process group with 3 CNs 
        M = (21*Z + 31)>>5;
@@ -29,23 +25,17 @@ static inline void nrLDPC_bnProc_BG1_R89_AVX2(int8_t* bnProcBuf,int8_t* bnProcBu
             p_res = &p_bnProcBufRes[0];
             p_llrRes = (__m256i*) &llrRes  [1536];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[0 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
 }
             p_res = &p_bnProcBufRes[252];
             p_llrRes = (__m256i*) &llrRes  [1536];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[252 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[252 + i]);
 }
             p_res = &p_bnProcBufRes[504];
             p_llrRes = (__m256i*) &llrRes  [1536];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[504 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[504 + i]);
 }
 // Process group with 4 CNs 
        M = (1*Z + 31)>>5;
@@ -54,30 +44,22 @@ static inline void nrLDPC_bnProc_BG1_R89_AVX2(int8_t* bnProcBuf,int8_t* bnProcBu
             p_res = &p_bnProcBufRes[0];
             p_llrRes = (__m256i*) &llrRes  [9600];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[0 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
 }
             p_res = &p_bnProcBufRes[12];
             p_llrRes = (__m256i*) &llrRes  [9600];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[12 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
 }
             p_res = &p_bnProcBufRes[24];
             p_llrRes = (__m256i*) &llrRes  [9600];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[24 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
 }
             p_res = &p_bnProcBufRes[36];
             p_llrRes = (__m256i*) &llrRes  [9600];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[36 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
 }
 // Process group with 5 CNs 
        M = (1*Z + 31)>>5;
@@ -86,37 +68,27 @@ static inline void nrLDPC_bnProc_BG1_R89_AVX2(int8_t* bnProcBuf,int8_t* bnProcBu
             p_res = &p_bnProcBufRes[0];
             p_llrRes = (__m256i*) &llrRes  [9984];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[0 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
 }
             p_res = &p_bnProcBufRes[12];
             p_llrRes = (__m256i*) &llrRes  [9984];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[12 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
 }
             p_res = &p_bnProcBufRes[24];
             p_llrRes = (__m256i*) &llrRes  [9984];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[24 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
 }
             p_res = &p_bnProcBufRes[36];
             p_llrRes = (__m256i*) &llrRes  [9984];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[36 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
 }
             p_res = &p_bnProcBufRes[48];
             p_llrRes = (__m256i*) &llrRes  [9984];
             for (i=0;i<M;i++) {
-            *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[48 + i]);
-            p_res++;
-            p_llrRes++;
+            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
 }
 // Process group with 6 CNs 
 // Process group with 7 CNs 
