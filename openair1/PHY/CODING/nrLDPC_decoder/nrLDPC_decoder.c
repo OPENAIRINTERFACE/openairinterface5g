@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -48,7 +49,6 @@
 #include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG2_R13_AVX512.h"
 #include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG2_R23_AVX512.h"
 
-
 #else
 
 /*----------------------------------------------------------------------
@@ -81,7 +81,18 @@
 #include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG2_R23_AVX2.h"
 
 //bnProc----------------------------------------------------------------
+
+#ifdef __AVX512BW__
 //BG1-------------------------------------------------------------------
+#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG1_R13_AVX512.h"
+#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG1_R23_AVX512.h"
+#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG1_R89_AVX512.h"
+//BG2 --------------------------------------------------------------------
+#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG2_R15_AVX512.h"
+#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG2_R13_AVX512.h"
+#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG2_R23_AVX512.h"
+
+#else
 #include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG1_R13_AVX2.h"
 #include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG1_R23_AVX2.h"
 #include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG1_R89_AVX2.h"
@@ -90,6 +101,7 @@
 #include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG2_R13_AVX2.h"
 #include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG2_R23_AVX2.h"
 
+#endif
 
 
 
@@ -237,7 +249,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
            }
 
         }
-    } 
+    }
     else
     {
         switch (R)
@@ -330,7 +342,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
                 break;
             }
         }
-    } 
+    }
     else
     {
         switch (R)
@@ -380,41 +392,65 @@ if (BG==1)
         {
             case 13:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 23:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R23_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R23_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 89:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R89_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R89_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
         }
-    } 
+    }
     else
     {
         switch (R)
         {
             case 15:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R15_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R15_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 13:
 
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
 
             case 23:
 
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R23_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R23_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
 
@@ -501,7 +537,7 @@ if (BG==1)
            }
 
         }
-    } 
+    }
     else
     {
         switch (R)
@@ -592,7 +628,7 @@ if (BG==1)
                 break;
             }
         }
-    } 
+    }
     else
     {
         switch (R)
@@ -634,54 +670,78 @@ if (BG==1)
 #endif
 //        nrLDPC_bnProc(p_lut, p_procBuf, Z);
 
+
 if (BG==1)
     {
         switch (R)
         {
             case 13:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 23:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R23_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R23_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 89:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R89_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R89_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
         }
-    } 
+    }
     else
     {
         switch (R)
         {
             case 15:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R15_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R15_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 13:
 
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
 
             case 23:
 
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R23_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R23_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
 
 
         }
    }
-
 
 
 
@@ -777,7 +837,7 @@ if (BG==1)
            }
 
         }
-    } 
+    }
     else
     {
         switch (R)
@@ -868,7 +928,7 @@ if (BG==1)
                 break;
             }
         }
-    } 
+    }
     else
     {
         switch (R)
@@ -915,54 +975,78 @@ if (BG==1)
 //nrLDPC_bnProc(p_lut, p_procBuf, Z);
 
 
+
 if (BG==1)
     {
         switch (R)
         {
             case 13:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 23:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R23_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R23_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 89:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG1_R89_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG1_R89_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
         }
-    } 
+    }
     else
     {
         switch (R)
         {
             case 15:
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R15_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R15_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
             case 13:
 
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
 
             case 23:
 
             {
+                #ifdef __AVX512BW__
+                nrLDPC_bnProc_BG2_R23_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #else
                 nrLDPC_bnProc_BG2_R23_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                #endif
                 break;
             }
 
 
         }
    }
-
 
 
 #ifdef NR_LDPC_PROFILER_DETAIL
@@ -1049,8 +1133,6 @@ if (BG==1)
 
     return i;
 }
-
-
 
 
 
