@@ -51,6 +51,7 @@ queue_t hi_dci0_req_queue;
 int current_sfn_sf;
 
 static int ue_sock_descriptor = -1;
+struct sockaddr_in server_address;
 
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
 //extern int timer_subframe;
@@ -1116,13 +1117,12 @@ void UE_config_stub_pnf(void) {
 
 void ue_init_standalone_socket(const char *addr, int port)
 {
-  struct sockaddr_in server_address;
   int addr_len = sizeof(server_address);
   memset(&server_address, 0, addr_len);
   server_address.sin_family = AF_INET;
   server_address.sin_port = htons(port);
 
-  int sd = socket(server_address.sin_family, SOCK_STREAM, IPPROTO_SCTP);
+  int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
   if (sd < 0) {
     LOG_E(MAC, "Socket creation error standalone PNF\n");
     return;
@@ -1134,6 +1134,7 @@ void ue_init_standalone_socket(const char *addr, int port)
     return;
   }
 
+  // Using connect to use send() instead of sendto()
   while (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0) {
     LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
     sleep(1);
@@ -1146,13 +1147,14 @@ void ue_init_standalone_socket(const char *addr, int port)
 void *ue_standalone_pnf_task(void *context)
 {
 
+  int addr_len = sizeof(server_address);
   char buffer[1024];
 
   int sd = ue_sock_descriptor;
   assert(sd > 0);
   while (true)
   {
-    ssize_t len = read(sd, buffer, sizeof(buffer));
+    ssize_t len = recvfrom(sd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_address, &addr_len);
     if (len == -1)
     {
       LOG_E(MAC, "reading from standalone pnf sctp socket failed \n");
