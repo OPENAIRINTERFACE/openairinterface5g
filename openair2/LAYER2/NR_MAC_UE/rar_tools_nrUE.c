@@ -44,6 +44,7 @@
 #include "NR_MAC_UE/mac.h"
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
+#include <common/utils/nr/nr_common.h>
 
 #define DEBUG_RAR
 

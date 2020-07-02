@@ -118,6 +118,7 @@ uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
+extern int usrp_tx_thread;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -1510,12 +1511,14 @@ void *ru_thread( void *param ) {
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
     // start trx write thread
-    if (ru->start_write_thread){
-      if(ru->start_write_thread(ru) != 0){
-        LOG_E(HW,"Could not start tx write thread\n");
-      }
-      else{
-        LOG_I(PHY,"tx write thread ready\n");
+    if(usrp_tx_thread == 1){
+      if (ru->start_write_thread){
+        if(ru->start_write_thread(ru) != 0){
+          LOG_E(HW,"Could not start tx write thread\n");
+        }
+        else{
+          LOG_I(PHY,"tx write thread ready\n");
+        }
       }
     }
   }

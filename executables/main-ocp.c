@@ -78,6 +78,7 @@ int otg_enabled;
 uint64_t  downlink_frequency[MAX_NUM_CCs][4];
 int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];
 int split73;
+int usrp_tx_thread = 0;
 char * split73_config;
 int split73;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};

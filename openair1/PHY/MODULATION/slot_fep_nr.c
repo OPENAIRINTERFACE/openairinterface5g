@@ -465,6 +465,10 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
     dft(dftsize,(int16_t *)&rxdata[rxdata_offset-sample_offset],
         (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size], 1);
 
-
+  LOG_T(PHY,"dft of size: %d done from %d (energy %d) to %d offsets (energy (%d)\n", 
+		  dftsize, 
+		  rxdata_offset-sample_offset, signal_energy(&rxdata[rxdata_offset-sample_offset], dftsize),
+		  symbol * frame_parms->ofdm_symbol_size,  signal_energy(&rxdataF[symbol * frame_parms->ofdm_symbol_size], dftsize)
+		  );
   return(0);
 }

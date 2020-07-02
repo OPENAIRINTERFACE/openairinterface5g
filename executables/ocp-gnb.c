@@ -67,6 +67,7 @@ uint32_t timing_advance = 0;
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 
 int config_sync_var=-1;
@@ -699,6 +700,119 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
            cfg->rx_freq[i]);
   }
 }
+
+/* this function maps the RU tx and rx buffers to the available rf chains.
+   Each rf chain is is addressed by the card number and the chain on the card. The
+   rf_map specifies for each antenna port, on which rf chain the mapping should start. Multiple
+   antennas are mapped to successive RF chains on the same card. */
+int setup_RU_buffers(RU_t *ru) {
+  int i,j;
+  int card,ant;
+  //uint16_t N_TA_offset = 0;
+  NR_DL_FRAME_PARMS *frame_parms;
+  nfapi_nr_config_request_scf_t *config = &ru->config;
+
+  if (ru) {
+    frame_parms = ru->nr_frame_parms;
+    printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
+  } else {
+    printf("ru pointer is NULL\n");
+    return(-1);
+  }
+
+  int mu = config->ssb_config.scs_common.value;
+  int N_RB = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
+
+  if (config->cell_config.frame_duplex_type.value == TDD) {
+    int N_TA_offset =  config->carrier_config.uplink_frequency.value < 6000000 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
+    double factor=1;
+
+    switch (mu) {
+      case 0: //15 kHz scs
+        AssertFatal(N_TA_offset == 400,"scs_common 15kHz only for FR1\n");
+
+        if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
+        else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
+        else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
+        else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
+        else AssertFatal(1==0,"Too many PRBS for mu=0\n");
+
+        break;
+
+      case 1: //30 kHz sc
+        AssertFatal(N_TA_offset == 400,"scs_common 30kHz only for FR1\n");
+
+        if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
+        else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
+
+        break;
+
+      case 2: //60 kHz scs
+        AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+        break;
+
+      case 3: //120 kHz scs
+        AssertFatal(N_TA_offset == 431,"scs_common 120kHz only for FR2\n");
+        break;
+
+      case 4: //240 kHz scs
+        AssertFatal(1==0,"scs_common should not be 60 kHz\n");
+
+        if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
+        else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
+        else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
+
+        break;
+
+        if      (N_RB == 100) ru->N_TA_offset = 624;
+        else if (N_RB == 50)  ru->N_TA_offset = 624/2;
+        else if (N_RB == 25)  ru->N_TA_offset = 624/4;
+    }
+
+    if (frame_parms->threequarter_fs == 1) factor = factor*.75;
+
+    ru->N_TA_offset = (int)(N_TA_offset * factor);
+    LOG_I(PHY,"RU %d Setting N_TA_offset to %d samples (factor %f, UL Freq %d, N_RB %d)\n",ru->idx,ru->N_TA_offset,factor,
+          config->carrier_config.uplink_frequency.value, N_RB);
+  } else ru->N_TA_offset = 0;
+
+  if (ru->openair0_cfg.mmapped_dma == 1) {
+    // replace RX signal buffers with mmaped HW versions
+    for (i=0; i<ru->nb_rx; i++) {
+      card = i/4;
+      ant = i%4;
+      printf("Mapping RU id %u, rx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
+      free(ru->common.rxdata[i]);
+      ru->common.rxdata[i] = ru->openair0_cfg.rxbase[ru->rf_map.chain+ant];
+      printf("rxdata[%d] @ %p\n",i,ru->common.rxdata[i]);
+
+      for (j=0; j<16; j++) {
+        printf("rxbuffer %d: %x\n",j,ru->common.rxdata[i][j]);
+        ru->common.rxdata[i][j] = 16-j;
+      }
+    }
+
+    for (i=0; i<ru->nb_tx; i++) {
+      card = i/4;
+      ant = i%4;
+      printf("Mapping RU id %u, tx_ant %d, on card %d, chain %d\n",ru->idx,i,ru->rf_map.card+card, ru->rf_map.chain+ant);
+      free(ru->common.txdata[i]);
+      ru->common.txdata[i] = ru->openair0_cfg.txbase[ru->rf_map.chain+ant];
+      printf("txdata[%d] @ %p\n",i,ru->common.txdata[i]);
+
+      for (j=0; j<16; j++) {
+        printf("txbuffer %d: %x\n",j,ru->common.txdata[i][j]);
+        ru->common.txdata[i][j] = 16-j;
+      }
+    }
+  } else { // not memory-mapped DMA
+    //nothing to do, everything already allocated in lte_init
+  }
+
+  return(0);
+}
+
+
 static void *ru_thread( void *param ) {
   RU_t               *ru      = (RU_t *)param;
   RU_proc_t          *proc    = &ru->proc;
@@ -866,8 +980,8 @@ int main( int argc, char **argv ) {
   fill_rf_config(&ru,ru.rf_config_file);
   init_gNB_phase2(&ru);
   memcpy((void *)ru.nr_frame_parms,&RC.gNB[0][0].frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  memcpy((void*)&ru.config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru.config));
-
+  memcpy((void *)&ru.config,(void *)&RC.gNB[0]->gNB_config,sizeof(ru.config));
+  AssertFatal(setup_RU_buffers(&ru)==0,"Inconsistent configuration");
   nr_phy_init_RU(&ru);
   init_gNB_proc(0); // only instance 0 (one gNB per process)
 
