@@ -368,7 +368,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &gNB->UE_list;
-
   NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -437,7 +436,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       
         rnti = 0;//UE_RNTI(module_idP, i);
         CC_id = 0;//UE_PCCID(module_idP, i);
-      
+
       } //END if (UE_list->active[i])
     } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
     */
@@ -447,26 +446,31 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       schedule_nr_mib(module_idP, frame_txP, slot_txP);
     }
 
-    // TbD once RACH is available, start ta_timer when UE is connected
-    if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
-
-    if (ue_sched_ctl->ta_timer == 0) {
-      gNB->ta_command = ue_sched_ctl->ta_update;
-      /* if time is up, then set the timer to not send it for 5 frames
-      // regardless of the TA value */
-      ue_sched_ctl->ta_timer = 100;
-      /* reset ta_update */
-      ue_sched_ctl->ta_update = 31;
-      /* MAC CE flag indicating TA length */
-      gNB->ta_len = 2;
-    }
-
     if (get_softmodem_params()->phy_test == 0)
       nr_schedule_RA(module_idP, frame_txP, slot_txP);
     else
       UE_list->fiveG_connected[UE_id] = true;
 
     // Phytest scheduling
+
+    if (get_softmodem_params()->phy_test) {
+
+      // TbD once RACH is available, start ta_timer when UE is connected
+      if (ue_sched_ctl->ta_timer)
+        ue_sched_ctl->ta_timer--;
+
+      if (ue_sched_ctl->ta_timer == 0) {
+        gNB->ta_command = ue_sched_ctl->ta_update;
+        /* if time is up, then set the timer to not send it for 5 frames
+        // regardless of the TA value */
+        ue_sched_ctl->ta_timer = 100;
+        /* reset ta_update */
+        ue_sched_ctl->ta_update = 31;
+        /* MAC CE flag indicating TA length */
+        gNB->ta_len = 2;
+      }
+    }
+
     if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
       ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
