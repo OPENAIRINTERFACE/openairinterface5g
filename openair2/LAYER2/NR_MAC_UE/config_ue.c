@@ -34,7 +34,6 @@
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include "SCHED_NR/phy_frame_config_nr.h"
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                          int mu,

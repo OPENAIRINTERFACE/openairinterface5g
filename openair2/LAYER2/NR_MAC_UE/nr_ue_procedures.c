@@ -892,8 +892,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       scheduled_response.frame      = rx_frame;
       scheduled_response.slot       = rx_slot;
 
-      printf("DEGUG nr_ue_scheduler Scheduling FAPI_NR_UL_CONFIG_TYPE_PUSCH \n");
-
       scheduled_response.ul_config->slot = ul_info->slot_tx;
       scheduled_response.ul_config->number_pdus = 1;
       scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;

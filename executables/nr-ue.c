@@ -35,9 +35,7 @@
 #include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
-//#ifndef NO_RAT_NR
-#include "SCHED_NR/phy_frame_config_nr.h"
-//#endif
+#include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
 
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
