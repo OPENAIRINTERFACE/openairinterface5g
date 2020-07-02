@@ -39,6 +39,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
+#include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;

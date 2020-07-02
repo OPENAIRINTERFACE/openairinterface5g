@@ -2753,10 +2753,8 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 	 pdcch_vars->nb_search_space);
 #endif
 
-  fapi_nr_dci_indication_t dci_ind;
-  nr_downlink_indication_t dl_indication;
-  memset((void*)&dci_ind,0,sizeof(dci_ind));
-  memset((void*)&dl_indication,0,sizeof(dl_indication));
+  fapi_nr_dci_indication_t dci_ind={0};
+  nr_downlink_indication_t dl_indication={0};
   dci_cnt = nr_dci_decoding_procedure(ue,
 				      proc->frame_rx,
 				      nr_tti_rx,
