@@ -811,6 +811,7 @@ class RANManagement():
 		uplinkSegmentsAborted = 0
 		ulschReceiveOK = 0
 		gnbRxTxWakeUpFailure = 0
+		gnbTxWriteThreadEnabled = False
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -924,6 +925,9 @@ class RANManagement():
 			result = re.search('could not wakeup gNB rxtx process', str(line))
 			if result is not None:
 				gnbRxTxWakeUpFailure += 1
+			result = re.search('tx write thread ready', str(line))
+			if result is not None:
+				gnbTxWriteThreadEnabled = True
 			result = re.search('ULSCH in error in round|ULSCH 0 in error', str(line))
 			if result is not None:
 				ulschFailure += 1
@@ -962,6 +966,10 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg + '\n'
 			if gnbRxTxWakeUpFailure > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(gnbRxTxWakeUpFailure) + ' "could not wakeup gNB rxtx process" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if gnbTxWriteThreadEnabled:
+				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
