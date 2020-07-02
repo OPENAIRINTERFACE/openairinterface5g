@@ -691,10 +691,10 @@ int main(int argc, char **argv){
           }
         }
 	} else {
-	  n_bytes = fread(&ru->common.rxdata[0][rx_prach_start+frame_parms->samples_per_subframe/2],sizeof(int32_t),frame_parms->samples_per_subframe/2,input_fd);
+	  n_bytes = fread(&ru->common.rxdata[0][rx_prach_start],sizeof(int32_t),frame_parms->samples_per_subframe,input_fd);
 	  printf("fread %d bytes from file %s\n",n_bytes,input_file);
-	  if (n_bytes!=frame_parms->samples_per_subframe/2) {
-	    printf("expected %d bytes\n",frame_parms->samples_per_subframe/2);
+	  if (n_bytes!=frame_parms->samples_per_subframe) {
+	    printf("expected %d bytes\n",frame_parms->samples_per_subframe);
 	    exit(-1);
 	  }
 	}
