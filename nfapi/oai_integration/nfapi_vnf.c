@@ -1091,7 +1091,10 @@ int start_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_start_respons
   pnf_info *pnf = vnf->pnfs;
   phy_info *phy = pnf->phys;
   vnf_p7_info *p7_vnf = vnf->p7_vnfs;
-  nfapi_vnf_p7_add_pnf((p7_vnf->config), phy->remote_addr, phy->remote_port, phy->id);
+
+  nfapi_vnf_p7_add_pnf((p7_vnf->config), phy->remote_addr, 32123, phy->id);
+ 
+  // nfapi_vnf_p7_add_pnf((p7_vnf->config), phy->remote_addr, phy->remote_port, phy->id);
   return 0;
 }
 

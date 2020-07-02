@@ -48,6 +48,9 @@ typedef struct phy_info
 	uint8_t enabled;
 	uint16_t phy_id;
 	uint16_t sfn_sf;
+	uint16_t sfn;
+	uint16_t slot;
+	
 
 	pthread_t thread;
 
@@ -1205,6 +1208,12 @@ void send_dl_subframe_msgs_interleaved(int p7Sock, int phy_id, struct sockaddr_i
 		e += 2;
 	}
 	//free(req.tx_request_body.tx_pdu_list);
+}
+
+void send_slot_indication(phy_info_t* phy_info)
+{
+	// DONE: add sfn and slot as members in the phy_info
+	nfapi_pnf_p7_slot_ind(phy_info->config, phy_info->phy_id, phy_info->sfn, phy_info->slot);
 }
 
 void send_subframe_indication(phy_info_t* phy_info)

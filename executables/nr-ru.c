@@ -1502,7 +1502,7 @@ void *ru_thread( void *param ) {
           proc->frame_rx,proc->tti_rx,
           proc->frame_tx,proc->tti_tx,
           RC.gNB[0]->proc.frame_rx,RC.gNB[0]->proc.slot_rx,
-	  RC.gNB[0]->proc.frame_tx);
+	        RC.gNB[0]->proc.frame_tx);
     /*
           LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
               ru->do_prach,

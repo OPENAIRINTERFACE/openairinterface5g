@@ -120,6 +120,9 @@ typedef struct {
 } nfapi_tl_t;
 #define NFAPI_TAG_LENGTH_PACKED_LEN 4
 
+// Convenience methods to convert between SFN/SLOT formats
+#define NFAPI_SFNSLOT2DEC(_sfnslot) ((((_sfnslot) >> 6) * 10) + ((_sfnslot) & 0xF))
+
 // Convenience methods to convert between SFN/SFN formats
 #define NFAPI_SFNSF2DEC(_sfnsf) ((((_sfnsf) >> 4) * 10) + ((_sfnsf) & 0xF))
 #define NFAPI_SFNSFDEC2SFNSF(_sfnsf_dec) ((((_sfnsf_dec) / 10) << 4) | (((_sfnsf_dec) - (((_sfnsf_dec) / 10) * 10)) & 0xF))

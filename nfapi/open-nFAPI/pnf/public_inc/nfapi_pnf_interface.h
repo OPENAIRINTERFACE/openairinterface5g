@@ -720,6 +720,21 @@ int nfapi_pnf_p7_start(nfapi_pnf_p7_config_t* config);
  */
 int nfapi_pnf_p7_stop(nfapi_pnf_p7_config_t* config);
 
+/*! NR Slot indication
+ * message copied from nfapi_pnf_p7_subframe_ind
+ * \param config A pointer to a PNF P7 config
+ * \param phy_id The phy_id for the phy instance
+ * \param sfn_sf The SFN and SF in the format of FAPI
+ * \return 0 means success, -1 means failure
+ * 
+ * The client should call the subframe indication every 1ms. The PNF will
+ * respond by invoking the pnf p7 subframe callbacks with the messages from the subframe buffer
+ *
+ * If messages are not in the subframe buffer, they dummy subframe messages will be sent
+ */
+int nfapi_pnf_p7_slot_ind(nfapi_pnf_p7_config_t* config, uint16_t phy_id, uint16_t sfn, uint16_t slot);
+
+
 /*! Subframe indication
  * \param config A pointer to a PNF P7 config
  * \param phy_id The phy_id for the phy instance

@@ -1214,6 +1214,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   p7_config->phy_id = phy->phy_id;
   p7_config->remote_p7_port = phy_info->remote_port;
   p7_config->remote_p7_addr = phy_info->remote_addr;
+  // TODO: remove this hardcoded port
   p7_config->local_p7_port = 32123; // DJP - good grief cannot seem to get the right answer phy_info->local_port;
   //DJP p7_config->local_p7_addr = (char*)phy_info->local_addr.c_str();
   p7_config->local_p7_addr = phy_info->local_addr;
@@ -1319,10 +1320,17 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
 
   printf("[PNF] Sending PNF_START_RESP\n");
   nfapi_send_pnf_start_resp(config, p7_config->phy_id);
-  printf("[PNF] Sending first P7 subframe ind\n");
-  nfapi_pnf_p7_subframe_ind(p7_config, p7_config->phy_id, 0); // DJP - SFN_SF set to zero - correct???
+  printf("[PNF] Sending first P7 slot indication\n");
+#if 1
   //TODO: Change to nfapi_pnf_p7_slot_ind
+  nfapi_pnf_p7_slot_ind(p7_config, p7_config->phy_id, 0, 0);
+  printf("[PNF] Sent first P7 slot ind\n");
+#else
+  nfapi_pnf_p7_subframe_ind(p7_config, p7_config->phy_id, 0); // DJP - SFN_SF set to zero - correct???
   printf("[PNF] Sent first P7 subframe ind\n");
+#endif
+  
+  
   return 0;
 }
 
@@ -1637,6 +1645,59 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
 
   //TODO FIXME - HACK - DJP - using a global to bodge it in
   if (p7_config_g != NULL && sync_var==0) {
+    uint16_t sfn_sf_tx = sfn<<4 | sf; 
+
+    if ((sfn % 100 == 0) && sf==0) {
+      struct timespec ts;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u sf:%u) SFN/SF(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, sf, NFAPI_SFNSF2DEC(sfn_sf_tx));
+    }
+
+    int subframe_ret = nfapi_pnf_p7_subframe_ind(p7_config_g, p7_config_g->phy_id, sfn_sf_tx);
+
+    if (subframe_ret) {
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u subframe:%u) SFN/SF(TX):%u - PROBLEM with pnf_p7_subframe_ind()\n", __FUNCTION__, sfn, sf, sfn_sf_tx, NFAPI_SFNSF2DEC(sfn_sf_tx));
+    } else {
+      //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");
+    }
+  } else {
+  }
+}
+
+
+
+void oai_slot_ind(uint16_t sfn, uint16_t slot) {
+
+#if 1 // Put the NR code here
+  //LOG_D(PHY,"%s(sfn:%d, sf:%d)\n", __FUNCTION__, sfn, sf);
+
+  //TODO FIXME - HACK - DJP - using a global to bodge it in
+  if (p7_config_g != NULL && sync_var==0) {
+    // DONE: changed for NR  x x   x x x x   x x x x  x x x x  - - - - - - : x (Frame), - (Slot) (max_numer =2)
+    uint16_t sfn_slot_tx = sfn<<6 | slot; 
+    if ((sfn % 100 == 0) && slot==0) { // DOUBT: Why 100?
+      struct timespec ts;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u slot:%u) SFN/SLOT(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, slot, NFAPI_SFNSLOT2DEC(sfn_slot_tx));
+    }
+
+    // int subframe_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, 0, 0);
+    int slot_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot);
+
+    // if (subframe_ret) {
+    if (slot_ret) { 
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u slot:%u) SFN/SLOT(TX):%u - PROBLEM with pnf_p7_slot_ind()\n", __FUNCTION__, sfn, slot, sfn_slot_tx, NFAPI_SFNSLOT2DEC(sfn_slot_tx));
+      // printing anything causes error: probably because there isn't enough time to accomodate a print statement
+    } else {
+      //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");
+    }
+  } else {
+  }
+#else
+  //LOG_D(PHY,"%s(sfn:%d, sf:%d)\n", __FUNCTION__, sfn, sf);
+
+  //TODO FIXME - HACK - DJP - using a global to bodge it in
+  if (p7_config_g != NULL && sync_var==0) {
     uint16_t sfn_sf_tx = sfn<<4 | sf;
 
     if ((sfn % 100 == 0) && sf==0) {
@@ -1654,6 +1715,7 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
     }
   } else {
   }
+#endif
 }
 
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {

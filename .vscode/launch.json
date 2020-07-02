@@ -124,6 +124,30 @@
                         }
                     ]
             }
+            {
+                "name": "(rfsim) Launch GNB",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": " /home/glab/NR_nfapi/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
+                "args":["-O",
+                    "/home/glab/NR_nfapi/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpx300.conf",
+                "--rfsim",
+                "--rfsimulator.serveraddr",
+                    "server"],
+                    "stopAtEntry": false,
+                    "cwd": "${workspaceFolder}",
+                    "environment": [],
+                    "externalConsole": false,
+                    "MIMode": "gdb",
+                    "miDebuggerPath": "/usr/bin/gdb",
+                    "setupCommands": [
+                        {
+                            "description": "Enable pretty-printing for gdb",
+                            "text": "-enable-pretty-printing",
+                            "ignoreFailures": true
+                        }
+                    ]
+            }
         ]
     }
 
