@@ -580,7 +580,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     {
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
-                         &ue->pucch_config_dedicated[gNB_id],
+                         mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,
+                         mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0],
                          tx_amp,
                          nr_tti_tx,
                          (uint8_t)m_0,
