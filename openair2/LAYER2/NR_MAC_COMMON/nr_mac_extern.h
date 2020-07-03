@@ -43,7 +43,7 @@ extern const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern UE_RRC_INST *UE_rrc_inst;
-extern int cqi_to_mcs[16];
+extern const int cqi_to_mcs[16];
 extern uint32_t RRC_CONNECTION_FLAG;
 extern uint8_t rb_table[34];
 extern mac_rlc_am_muilist_t rlc_am_mui;
@@ -51,8 +51,6 @@ extern SCHEDULER_MODES global_scheduler_mode;
 extern unsigned char NB_UE_INST;*/
 
 
-extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];	// eNBxUE = 8x8
-extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];	// eNBxUE = 8x8
 extern unsigned char NB_INST;
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_RN_INST;
@@ -65,7 +63,7 @@ extern mac_rlc_am_muilist_t rlc_am_mui;
 extern SCHEDULER_MODES global_scheduler_mode;
 
 /*#if defined(PRE_SCD_THREAD)
-extern int cqi_to_mcs[16];
+extern const int cqi_to_mcs[16];
 extern uint32_t RRC_CONNECTION_FLAG;
 extern uint8_t rb_table[34];
 

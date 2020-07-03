@@ -35,15 +35,14 @@
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
-#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
-#define NR_PRACH_DEBUG 1
+//#define NR_PRACH_DEBUG 1
 
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
@@ -81,7 +80,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
 
-  int16_t Ncp, amp, *prach, *prach2, *prachF, *Xu;
+  int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im, samp_count;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
   //int restricted_Type;
@@ -124,7 +123,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   #else //normal case (simulation)
     prach_start = slot*samp_count - ue->N_TA_offset;
   #endif
-
 
   if (prach_start<0)
     prach_start += (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);

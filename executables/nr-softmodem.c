@@ -183,6 +183,7 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 
 static char *parallel_config = NULL;
@@ -963,7 +964,9 @@ if(!IS_SOFTMODEM_NOS1)
     scopeParms_t p;
     p.argc=&argc;
     p.argv=argv;
-    startScope(&p);
+    p.gNB=RC.gNB[0];
+    p.ru=RC.ru[0];
+    gNBinitScope(&p);
   }
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {

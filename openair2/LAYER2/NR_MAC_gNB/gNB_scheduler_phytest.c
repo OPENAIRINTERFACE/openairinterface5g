@@ -252,7 +252,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 int configure_fapi_dl_pdu(int Mod_idP,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
-			  NR_sched_pucch *pucch_sched,
+                          NR_sched_pucch *pucch_sched,
                           uint8_t *mcsIndex,
                           uint16_t *rbSize,
                           uint16_t *rbStart) {
@@ -315,7 +315,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round;
+  pdsch_pdu_rel15->rvIndex[0] = (get_softmodem_params()->phy_test==1) ? 0 : UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
@@ -439,7 +439,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 
   fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,bwp_id);
 
-  LOG_D(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
+  LOG_D(MAC, "DCI params: rnti %x, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
 	pdcch_pdu_rel15->dci_pdu.RNTI[0],
 	rnti_types[0],
@@ -573,7 +573,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   /*TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
-				    pucch_sched, 
+                                    pucch_sched,
                                     dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
                                     dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
@@ -689,12 +689,12 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     // fill dlsch_buffer with random data
     for (i = 0; i < TBS_bytes; i++){
-      //mac_sdus[i] = (unsigned char) rand(); 
-      ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
+      mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+      //((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
     }
     //Sending SDUs with size 1
     //Initialize elements of sdu_lcids and sdu_lengths
-    sdu_lcids[0] = 0x05; // DRB
+    sdu_lcids[0] = 0x3f; // DRB
     sdu_lengths[0] = TBS_bytes - ta_len - 3;
     header_length_total += 2 + (sdu_lengths[0] >= 128);
     sdu_length_total += sdu_lengths[0];
@@ -728,7 +728,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     offset = nr_generate_dlsch_pdu(module_idP,
                                    (unsigned char *) mac_sdus,
-                                   (unsigned char *) gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0], //(unsigned char *) mac_pdu,
+                                   (unsigned char *) gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0],
                                    num_sdus, //num_sdus
                                    sdu_lengths,
                                    sdu_lcids,
@@ -839,13 +839,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->transform_precoding = 0;
   pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
   pusch_pdu->nrOfLayers = 1;
-  //DMRS
-  pusch_pdu->ul_dmrs_symb_pos = 1<<2; //for now the gnb assumes dmrs in the first symbol of the scheduled pusch resource
-  pusch_pdu->dmrs_config_type = 0;  //dmrs-type 1 (the one with a single DMRS symbol in the beginning)
-  pusch_pdu->ul_dmrs_scrambling_id =  0; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
-  pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
-  pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
-  //pusch_pdu->dmrs_ports; //DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
+
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   pusch_pdu->resource_alloc = 1; //type 1
   //pusch_pdu->rb_bitmap;// for ressource alloc type 0
@@ -858,6 +852,40 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   //Resource Allocation in time domain
   pusch_pdu->start_symbol_index = 2;
   pusch_pdu->nr_of_symbols = 12;
+
+  // --------------------
+  // ------- DMRS -------
+  // --------------------
+  uint16_t l_prime_mask            = get_l_prime(pusch_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
+  pusch_pdu->ul_dmrs_symb_pos      = l_prime_mask << pusch_pdu->start_symbol_index;
+  pusch_pdu->dmrs_config_type      = 0;      // dmrs-type 1 (the one with a single DMRS symbol in the beginning)
+  pusch_pdu->ul_dmrs_scrambling_id = 0;      // If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id
+  pusch_pdu->scid                  = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
+                                             // Should match what is sent in DCI 0_1, otherwise set to 0
+  pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
+  //pusch_pdu->dmrs_ports; // DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports
+                           // Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011,
+                           // and for each bit 0: DMRS port not used 1: DMRS port used
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+
+  // --------------------
+  // ------- PTRS -------
+  // --------------------
+  uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
+  uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
+  uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
+  uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
+  uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
+  pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
+  pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+  pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
+  pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+
+  if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
+    pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+  // --------------------------------------------------------------------------------------------------------------------------------------------
+
+  //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
@@ -884,6 +912,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 						 0, //nb_rb_oh
                                                  0,
 						 pusch_pdu->nrOfLayers)>>3;
+
 
   pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
   //pusch_pdu->pusch_data.cb_present_and_position;

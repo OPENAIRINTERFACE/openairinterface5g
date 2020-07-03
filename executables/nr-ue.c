@@ -157,6 +157,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
+
   // intialize transport
   init_nr_ue_transport(ue, abstraction_flag);
 }
@@ -365,62 +366,31 @@ static void UE_synch(void *arg) {
 }
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
-  uint32_t nb_rb, start_rb;
-  uint8_t nb_symb_sch, start_symbol, mcs, precod_nbr_layers, harq_pid, rvidx;
-  uint16_t n_rnti;
-  module_id_t mod_id;
+  fapi_nr_config_request_t *cfg = &UE->nrUE_config;
+  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_tti_tx);
+  uint8_t gNB_id = 0;
 
-  nr_dcireq_t dcireq;
-  nr_scheduled_response_t scheduled_response;
+  if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
 
-  // program PUSCH. this should actually be done by the MAC upon reception of an UL DCI
-  if (proc->nr_tti_tx == 8 || proc->nr_tti_tx == 7 || UE->frame_parms.frame_type == FDD){
+    // trigger L2 to run ue_scheduler thru IF module
+    // [TODO] mapping right after NR initial sync
+    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
+      nr_uplink_indication_t ul_indication;
+      memset((void*)&ul_indication, 0, sizeof(ul_indication));
 
-    mod_id = UE->Mod_id;
+      ul_indication.module_id = UE->Mod_id;
+      ul_indication.gNB_index = gNB_id;
+      ul_indication.cc_id     = UE->CC_id;
+      ul_indication.frame_rx  = proc->frame_rx;
+      ul_indication.slot_rx   = proc->nr_tti_rx;
+      ul_indication.frame_tx  = proc->frame_tx;
+      ul_indication.slot_tx   = proc->nr_tti_tx;
 
-    dcireq.module_id = mod_id;
-    dcireq.gNB_index = 0;
-    dcireq.cc_id     = 0;
-    dcireq.frame     = proc->frame_rx;
-    dcireq.slot      = proc->nr_tti_rx;
-
-    scheduled_response.dl_config = NULL;
-    scheduled_response.ul_config = &dcireq.ul_config_req;
-    scheduled_response.tx_request = NULL;
-    scheduled_response.module_id = mod_id;
-    scheduled_response.CC_id     = 0;
-    scheduled_response.frame = proc->frame_rx;
-    scheduled_response.slot  = proc->nr_tti_rx;
-    //--------------------------Temporary configuration-----------------------------//
-    n_rnti = 0x1234;
-    nb_rb = 50;
-    start_rb = 0;
-    nb_symb_sch = 12;
-    start_symbol = 2;
-    precod_nbr_layers = 1;
-    mcs = 9;
-    harq_pid = 0;
-    rvidx = 0;
-    //------------------------------------------------------------------------------//
-
-    scheduled_response.ul_config->slot = proc->nr_tti_tx;
-    scheduled_response.ul_config->number_pdus = 1;
-    scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.rnti = n_rnti;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_rbs = nb_rb;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_rb = start_rb;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.start_symbol = start_symbol;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.mcs = mcs;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.ndi = 0;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.rv = rvidx;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = precod_nbr_layers;
-    scheduled_response.ul_config->ul_config_list[0].ulsch_config_pdu.ulsch_pdu_rel15.harq_process_nbr = harq_pid;
-
-    nr_ue_scheduled_response(&scheduled_response);
+      UE->if_inst->ul_indication(&ul_indication);
+    }
 
     if (UE->mode != loop_through_memory) {
-      uint8_t thread_id = PHY_vars_UE_g[mod_id][0]->current_thread_id[proc->nr_tti_rx];
+      uint8_t thread_id = PHY_vars_UE_g[UE->Mod_id][0]->current_thread_id[proc->nr_tti_rx];
       phy_procedures_nrUE_TX(UE,proc,0,thread_id);
     }
   }
@@ -428,41 +398,26 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
 void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
-  nr_dcireq_t dcireq;
-  nr_scheduled_response_t scheduled_response;
-  uint8_t  ssb_period = UE->nrUE_config.ssb_table.ssb_period; 
+  fapi_nr_config_request_t *cfg = &UE->nrUE_config;
+  int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_tti_rx);
+  uint8_t gNB_id = 0;
 
-  //program DCI for slot 1
-  //TODO: all of this has to be moved to the MAC!!!
-  if (proc->nr_tti_rx == NR_DOWNLINK_SLOT || UE->frame_parms.frame_type == FDD){
-    dcireq.module_id = UE->Mod_id;
-    dcireq.gNB_index = 0;
-    dcireq.cc_id     = 0;
-    dcireq.frame     = proc->frame_rx;
-    dcireq.slot      = proc->nr_tti_rx;
-    nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+  if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
 
-    // we should have received a DL DCI here, so configure DL accordingly
-    scheduled_response.dl_config = &dcireq.dl_config_req;
-    scheduled_response.ul_config = NULL;
-    scheduled_response.tx_request = NULL;
-    scheduled_response.module_id = UE->Mod_id;
-    scheduled_response.CC_id     = 0;
-    if (!((proc->frame_rx)%(1<<(ssb_period-1)))) {
-      if(proc->frame_rx > dcireq.dl_config_req.sfn)
-        UE->frame_gap = proc->frame_rx - dcireq.dl_config_req.sfn;
-      if(proc->frame_rx < dcireq.dl_config_req.sfn)
-        UE->frame_gap = dcireq.dl_config_req.sfn - proc->frame_rx;
-      proc->frame_rx = dcireq.dl_config_req.sfn;
+    if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
+      nr_downlink_indication_t dl_indication;
+      memset((void*)&dl_indication, 0, sizeof(dl_indication));
+
+      dl_indication.module_id = UE->Mod_id;
+      dl_indication.gNB_index = gNB_id;
+      dl_indication.cc_id     = UE->CC_id;
+      dl_indication.frame     = proc->frame_rx;
+      dl_indication.slot      = proc->nr_tti_rx;
+
+      UE->if_inst->dl_indication(&dl_indication, NULL);
     }
-    scheduled_response.frame = proc->frame_rx;
-    scheduled_response.slot = proc->nr_tti_rx;
-
-    nr_ue_scheduled_response(&scheduled_response);
-  }
 
   // Process Rx data for one sub-frame
-  if ( proc->nr_tti_rx >=0 && proc->nr_tti_rx <= 1 ) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
@@ -483,7 +438,6 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   }
 
   // no UL for now
-  // no UL for now
   /*
   if (UE->mac_enabled==1) {
     //  trigger L2 to run ue_scheduler thru IF module
@@ -498,6 +452,7 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     }
   }
   */
+
 }
 
 /*!
@@ -518,11 +473,7 @@ void UE_processing(void *arg) {
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
 
-  uint8_t gNB_id = 0, CC_id = 0;
-  module_id_t mod_id = 0;
-
-  nr_uplink_indication_t ul_indication;
-  memset((void*)&ul_indication, 0, sizeof(ul_indication));
+  uint8_t gNB_id = 0;
 
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &UE->ul_time_alignment[gNB_id];
@@ -538,7 +489,7 @@ void UE_processing(void *arg) {
 
     if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
       LOG_D(PHY,"Applying timing advance -- frame %d -- slot %d\n", frame_tx, slot_tx);
-      //if (nfapi_mode!=3){
+
       //if (nfapi_mode!=3){
       nr_process_timing_advance(UE->Mod_id, UE->CC_id, ul_time_alignment->ta_command, numerology, bwp_ul_NB_RB);
       ul_time_alignment->ta_frame = -1;
@@ -548,24 +499,7 @@ void UE_processing(void *arg) {
   }
 
   processSlotRX(UE, proc);
-
-  if (UE->mac_enabled == 1) {
-    // trigger L2 to run ue_scheduler thru IF module
-    // [TODO] mapping right after NR initial sync
-    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
-      ul_indication.module_id = mod_id;
-      ul_indication.gNB_index = gNB_id;
-      ul_indication.cc_id     = CC_id;
-      ul_indication.frame_rx  = proc->frame_rx;
-      ul_indication.slot_rx   = proc->nr_tti_rx;
-      ul_indication.frame_tx  = proc->frame_tx;
-      ul_indication.slot_tx   = proc->nr_tti_tx;
-      UE->if_inst->ul_indication(&ul_indication);
-    }
-  }
-
   processSlotTX(UE, proc);
-
 }
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
@@ -620,8 +554,7 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash)
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
-  LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
+    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
 
     *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
@@ -641,6 +574,12 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
+
+  if (IS_SOFTMODEM_RFSIM) {
+    LOG_D(PHY,"SET rx_offset %d \n",UE->rx_offset);
+    //UE->rx_offset_diff=0;
+    return 0;
+  }
 
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
@@ -707,8 +646,11 @@ void *UE_thread(void *arg) {
       if (res) {
         syncRunning=false;
         syncData_t *tmp=(syncData_t *)NotifiedFifoData(res);
-        // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-        decoded_frame_rx=(tmp->proc.decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
+        if (UE->is_synchronized) {
+          decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
+          // shift the frame index with all the frames we trashed meanwhile we perform the synch search
+          decoded_frame_rx=(decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
+        }
         delNotifiedFIFO_elt(res);
       } else {
         readFrame(UE, &timestamp, true);
@@ -753,6 +695,7 @@ void *UE_thread(void *arg) {
 
 
     absolute_slot++;
+
     // whatever means thread_idx
     // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
     // Slot 3 will overlap if RX_NB_TH is 2
@@ -765,20 +708,20 @@ void *UE_thread(void *arg) {
     curMsg->UE=UE;
     // update thread index for received subframe
     curMsg->UE->current_thread_id[slot_nr] = thread_idx;
-    curMsg->proc.CC_id = 0;
+    curMsg->proc.CC_id = UE->CC_id;
     curMsg->proc.nr_tti_rx= slot_nr;
     curMsg->proc.subframe_rx=slot_nr/(nb_slot_frame/10);
     curMsg->proc.nr_tti_tx = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg->proc.subframe_tx=curMsg->proc.nr_tti_rx;
-    curMsg->proc.frame_rx = ((absolute_slot/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx = (((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame)+UE->frame_gap) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_rx = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg->proc.frame_tx = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg->proc.decoded_frame_rx=-1;
     //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
 
 #ifdef OAI_ADRV9371_ZC706
     /*uint32_t total_gain_dB_prev = 0;
     if (total_gain_dB_prev != UE->rx_total_gain_dB) {
-    total_gain_dB_prev = UE->rx_total_gain_dB;
+        total_gain_dB_prev = UE->rx_total_gain_dB;
         openair0_cfg[0].rx_gain[0] = UE->rx_total_gain_dB;
         UE->rfdevice.trx_set_gains_func(&UE->rfdevice,&openair0_cfg[0]);
     }*/
@@ -863,7 +806,7 @@ void *UE_thread(void *arg) {
     if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
           (((decoded_frame_rx+1) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx) &&
           (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
-      LOG_D(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
+      LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
     nbSlotProcessing++;

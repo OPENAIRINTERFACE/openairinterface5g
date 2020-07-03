@@ -209,7 +209,7 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+                LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
@@ -249,7 +249,7 @@ void nr_process_mac_pdu(
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
         if (pdu_len < 0) {
-          LOG_E(MAC, "%s() residual mac pdu length < 0!\n", __func__);
+          LOG_E(MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
           return;
         }
     }
@@ -270,7 +270,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
   NR_UE_list_t *UE_list = NULL;
-  UE_sched_ctrl_t *UE_scheduling_control = NULL;
+  NR_UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   current_rnti = rntiP;
   UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
@@ -280,13 +280,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
 
-    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
           frameP,
           slotP,
-          UE_scheduling_control->round_UL[CC_idP][harq_pid],
           current_rnti,
           UE_id,
           ul_cqi);

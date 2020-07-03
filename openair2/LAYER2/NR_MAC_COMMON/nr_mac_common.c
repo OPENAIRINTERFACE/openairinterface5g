@@ -32,6 +32,8 @@
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
+
 // Table 6.3.3.1-5 (38.211) NCS for preamble formats with delta_f_RA = 1.25 KHz
 uint16_t NCS_unrestricted_delta_f_RA_125[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 uint16_t NCS_restricted_TypeA_delta_f_RA_125[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case set Type A
@@ -877,7 +879,77 @@ int get_format0(uint8_t index,
 
   return format;
 }
-                
+
+void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
+                                               uint16_t *slot_period,
+                                               uint16_t *offset) {
+
+  switch(ss->monitoringSlotPeriodicityAndOffset->present) {
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
+      *slot_period = 1;
+      *offset = 0;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
+      *slot_period = 2;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
+      *slot_period = 4;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl4;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
+      *slot_period = 5;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl5;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
+      *slot_period = 8;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl8;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
+      *slot_period = 10;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl10;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
+      *slot_period = 16;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl16;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
+      *slot_period = 20;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl20;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
+      *slot_period = 40;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl40;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
+      *slot_period = 80;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl80;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
+      *slot_period = 160;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl160;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
+      *slot_period = 320;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl320;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
+      *slot_period = 640;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl640;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
+      *slot_period = 1280;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl1280;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
+      *slot_period = 2560;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2560;
+      break;
+  default:
+    AssertFatal(1==0,"Invalid monitoring slot periodicity and offset value\n");
+    break;
+  }
+}
 
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
@@ -954,7 +1026,7 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %d) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %ld) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
               slot,
               index, table_6_3_3_2_3_prachConfig_Index[index][6],
               pointa,
@@ -1164,6 +1236,47 @@ nr_bandentry_t nr_bandtable[] = {
   {260,37000000,40000000,37000000,40000000,  2,2229167, 120},
   {261,27500000,28350000,27500000,28350000,  1,2070833,  60},
   {261,27500000,28350000,27500000,28350000,  2,2070833, 120}
+};
+
+
+// TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
+// When l' = l0, it is represented by 1
+// E.g. when symbol duration is 12 in colomn 7, value 1057 ('10000100001') which means l' =  l0, 5, 10.
+
+int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,          1,          1,         1,         1},       //<4              // (DMRS l' position)
+{1,            1,           1,          1,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{1,            1,           1,          1,          1,          5,         5,         5},       //5               // (DMRS l' position)
+{1,            1,           1,          1,          1,          5,         5,         5},       //6               // (DMRS l' position)
+{1,            1,           1,          1,          1,          5,         5,         5},       //7               // (DMRS l' position)
+{1,          129,         129,        129,          1,         65,        73,        73},       //8               // (DMRS l' position)
+{1,          129,         129,        129,          1,         65,        73,        73},       //9               // (DMRS l' position)
+{1,          513,         577,        577,          1,        257,       273,       585},       //10              // (DMRS l' position)
+{1,          513,         577,        577,          1,        257,       273,       585},       //11              // (DMRS l' position)
+{1,          513,         577,       2337,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
+{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
+{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
+};
+
+
+// TS 38.211 Table 6.4.1.1.3-4: PUSCH DMRS positions l' within a slot for double-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
+// When l' = l0, it is represented by 1
+
+int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
+{1,            1,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //5               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //6               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //7               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //8               // (DMRS l' position)
+{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //9               // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //10              // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //11              // (DMRS l' position)
+{1,          257,          -1,         -1,          1,        513,        -1,         -1},       //12              // (DMRS l' position)
+{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
+{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
 };
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
@@ -1654,6 +1767,113 @@ uint8_t getAntPortBitWidth(NR_SetupRelease_DMRS_DownlinkConfig_t *typeA, NR_Setu
 
   nbits = (nbitsA > nbitsB) ? nbitsA : nbitsB;
   return nbits;
+}
+
+
+/*******************************************************************
+*
+* NAME :         get_l0_ul
+*
+* PARAMETERS :   mapping_type : PUSCH mapping type
+*                dmrs_typeA_position  : higher layer parameter
+*
+* RETURN :       demodulation reference signal for PUSCH
+*
+* DESCRIPTION :  see TS 38.211 V15.4.0 Demodulation reference signals for PUSCH
+*
+*********************************************************************/
+
+uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
+
+  return ((mapping_type==typeA)?dmrs_typeA_position:0);
+
+}
+
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength) {
+
+  uint8_t row, colomn;
+  int32_t l_prime;
+
+  colomn = additional_pos;
+
+  if (mapping_type == typeB)
+    colomn += 4;
+
+  if (duration_in_symbols < 4)
+    row = 0;
+  else
+    row = duration_in_symbols - 3;
+
+  if (pusch_maxLength == pusch_len1)
+    l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
+  else
+    l_prime = table_6_4_1_1_3_4_pusch_dmrs_positions_l[row][colomn];
+
+  AssertFatal(l_prime>0,"invalid l_prime < 0\n");
+
+  return l_prime;
+}
+
+/*******************************************************************
+*
+* NAME :         get_L_ptrs
+*
+* PARAMETERS :   mcs(i)                 higher layer parameter in PTRS-UplinkConfig
+*                I_mcs                  MCS index used for PUSCH
+*                mcs_table              0 for table 5.1.3.1-1, 1 for table 5.1.3.1-1
+*
+* RETURN :       the parameter L_ptrs
+*
+* DESCRIPTION :  3GPP TS 38.214 section 6.2.3.1
+*
+*********************************************************************/
+
+uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table) {
+
+  uint8_t mcs4;
+
+  if(mcs_table == 0)
+    mcs4 = 29;
+  else
+    mcs4 = 28;
+
+  if (I_mcs < mcs1) {
+    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    return -1;
+  } else if (I_mcs >= mcs1 && I_mcs < mcs2)
+    return 2;
+  else if (I_mcs >= mcs2 && I_mcs < mcs3)
+    return 1;
+  else if (I_mcs >= mcs3 && I_mcs < mcs4)
+    return 0;
+  else {
+    LOG_I(PHY, "PT-RS time-density determination is obtained from the DCI for the same transport block in the initial transmission\n");
+    return -1;
+  }
+}
+
+/*******************************************************************
+*
+* NAME :         get_K_ptrs
+*
+* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+*                N_RB                   number of RBs scheduled for PUSCH
+*
+* RETURN :       the parameter K_ptrs
+*
+* DESCRIPTION :  3GPP TS 38.214 6.2.3 Table 6.2.3.1-2
+*
+*********************************************************************/
+
+uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
+
+  if (N_RB < nrb0) {
+    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    return -1;
+  } else if (N_RB >= nrb0 && N_RB < nrb1)
+    return 0;
+  else
+    return 1;
 }
 
 uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,

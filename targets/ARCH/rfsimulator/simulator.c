@@ -50,6 +50,7 @@
 #include "openair1/PHY/defs_UE.h"
 #define CHANNELMOD_DYNAMICLOAD
 #include <openair1/SIMULATION/TOOLS/sim.h>
+#include <targets/ARCH/rfsimulator/rfsimulator.h>
 
 #define PORT 4043 //default TCP port for this simulator
 #define CirSize 307200 // 100ms is enough
@@ -146,6 +147,12 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
     // Legacy changes directlty the variable channel_model->path_loss_dB place to place
     // while calling new_channel_desc_scm() with path losses = 0
+    static bool init_done=false;
+    if (!init_done) {
+      randominit(0);
+      tableNor(0);
+      init_done=true;
+    }
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
                                             bridge->channelmod,
                                             bridge->sample_rate,
@@ -469,14 +476,16 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 	  b->trashingPacket=true;
 	} else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
-	  
+          if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
           for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
             for (int a=0; a < nbAnt; a++) {
               b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
               b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
             }
           }
-
+          } else {
+	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
+	  }
           if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
           b->lastReceivedTS=b->th.timestamp;
@@ -561,6 +570,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       pthread_mutex_unlock(&Sockmutex);
       usleep(10000);
       pthread_mutex_lock(&Sockmutex);
+
       if ( t->lastWroteTS < t->nextTimestamp ) {
         // Assuming Tx is not done fully in another thread
         // We can never write is the past from the received time
@@ -574,6 +584,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
         for ( int i=0; i < t->tx_num_channels; i++)
           samplesVoid[i]=(void *)&v;
+
 	LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
 	      t->lastWroteTS, t->nextTimestamp);
         rfsimulator_write_internal(t, t->nextTimestamp,
@@ -637,10 +648,11 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
                     );
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
-
+          const int64_t base=t->nextTimestamp*nbAnt+a;
           for ( int i=0; i < nsamps; i++ ) {
-            out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].r;
-            out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].i;
+	    const int idx=(i*nbAnt+base)%CirSize;
+            out[i].r+=ptr->circularBuf[idx].r;
+            out[i].i+=ptr->circularBuf[idx].i;
           }
         } // end of no channel modeling
       } // end for a...
@@ -679,6 +691,9 @@ int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cf
 int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
+int rfsimulator_write_init(openair0_device *device){
+  return 0;
+}
 __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // to change the log level, use this on command line
@@ -702,6 +717,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->type = USRP_B200_DEV;
   device->openair0_cfg=&openair0_cfg[0];
   device->priv = rfsimulator;
+  device->trx_write_init = rfsimulator_write_init;
 
   for (int i=0; i<FD_SETSIZE; i++)
     rfsimulator->buf[i].conn_sock=-1;
@@ -712,7 +728,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->rx_num_channels=openair0_cfg->rx_num_channels;
   rfsimulator->sample_rate=openair0_cfg->sample_rate;
   rfsimulator->tx_bw=openair0_cfg->tx_bw;
-  randominit(0);
+  //randominit(0);
   set_taus_seed(0);
   return 0;
 }

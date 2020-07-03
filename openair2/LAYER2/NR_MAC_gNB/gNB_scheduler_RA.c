@@ -44,6 +44,7 @@
 extern RAN_CONTEXT_t RC;
 
 const uint8_t nr_slots_per_frame_mac[5] = {10, 20, 40, 80, 160};
+
 uint8_t DELTA[4]= {2,3,4,6};
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
@@ -220,13 +221,14 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame_mac[mu];
-  uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+  //uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while ((*msg2_slot>slot_limit) || ((*msg2_frame*nr_slots_per_frame_mac[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
     if((*msg2_slot%tdd_period_slot) > 0)
-      *msg2_slot--;
+      (*msg2_slot)--;
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
   }
@@ -762,7 +764,8 @@ void nr_fill_rar(uint8_t Mod_idP,
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
   unsigned char csi_req = 0, tpc_command;
-  uint8_t N_UL_Hop, valid_bits;
+  //uint8_t N_UL_Hop;
+  uint8_t valid_bits;
   uint32_t ul_grant;
   uint16_t f_alloc, prb_alloc, bwp_size, truncation=0;
 

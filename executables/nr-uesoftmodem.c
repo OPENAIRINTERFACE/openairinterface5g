@@ -76,36 +76,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
-#include <forms.h>
-
-
-/* Callbacks, globals and object handlers */
-
-extern void reset_stats( FL_OBJECT *, long );
-//extern void initTpool(char *params, tpool_t *pool, bool performanceMeas);
-
-/* Forms and Objects */
-
-typedef struct {
-  FL_FORM    *stats_form;
-  void       *vdata;
-  char       *cdata;
-  long        ldata;
-  FL_OBJECT *stats_text;
-  FL_OBJECT *stats_button;
-} FD_stats_form;
-
-extern FD_stats_form *create_form_stats_form( void );
-
-#include "PHY/TOOLS/nr_phy_scope.h"
 //#include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
+#include "PHY/TOOLS/nr_phy_scope.h"
 // at eNB 0, an UL scope for every UE
-FD_phy_scope_nrue  *form_nrue[NUMBER_OF_UE_MAX];
 //FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-//FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
-char title[255];
-static pthread_t forms_thread; //xforms
 
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
@@ -198,6 +173,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 int transmission_mode=1;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 /* flag set by eNB conf file to specify if the radio head is local or remote (default option is local) */
 //uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
@@ -274,7 +250,7 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void reset_stats(FL_OBJECT *button, long arg) {
+void reset_stats(long arg) {
   //int i,j,k;
   /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 
@@ -302,35 +278,6 @@ void reset_stats(FL_OBJECT *button, long arg) {
       phy_vars_eNB->UE_stats[i].dlsch_NAK_round0=0;
       phy_vars_eNB->UE_stats[i].dlsch_mcs_offset=0;
   }*/
-}
-
-static void *scope_thread(void *arg) {
-  sleep(5);
-
-  while (!oai_exit) {
-    phy_scope_nrUE(form_nrue[0],
-                   PHY_vars_UE_g[0][0],
-                   0,0,1);
-    usleep(100*1000);
-  }
-
-  pthread_exit((void *)arg);
-}
-
-
-void init_scope(void) {
-  int fl_argc=1;
-
-  if (do_forms==1) {
-    char *name="5G-UE-scope";
-    fl_initialize (&fl_argc, &name, NULL, 0, 0);
-    int UE_id = 0;
-    form_nrue[UE_id] = create_phy_scope_nrue();
-    sprintf (title, "NR DL SCOPE UE");
-    fl_show_form (form_nrue[UE_id]->phy_scope_nrue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-    threadCreate(&forms_thread, scope_thread, NULL, "scope", -1, OAI_PRIORITY_RT_LOW);
-  }
-
 }
 
 void *l2l1_task(void *arg) {
@@ -814,7 +761,8 @@ int main( int argc, char **argv ) {
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
-  init_scope();
+  if (do_forms)
+     nrUEinitScope(PHY_vars_UE_g[0][0]);
   number_of_cards = 1;
 
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

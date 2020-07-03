@@ -1492,7 +1492,7 @@ typedef struct
   //for dci_pusch_pdu
 typedef struct
 {
-  uint8_t  pdu_bit_map;
+  uint8_t  pduBitmap;
   uint32_t handle;
   uint16_t rnti;
   uint8_t  ul_cqi;
@@ -1507,7 +1507,7 @@ typedef struct
 //for PUCCH PDU Format 0/1
 typedef struct
 {
-  uint8_t  pdu_bit_map;
+  uint8_t  pduBitmap;
   uint32_t handle;
   uint16_t rnti;
   uint8_t  pucch_format;//PUCCH format Value: 0 -> 1 0: PUCCH Format0 1: PUCCH Format1
@@ -1523,7 +1523,7 @@ typedef struct
 //PUCCH PDU Format 2/3/4
 typedef struct
 {
-  uint8_t  pdu_bit_map;
+  uint8_t  pduBitmap;
   uint32_t handle;
   uint16_t rnti;
   uint8_t  pucch_format;//PUCCH format Value: 0 -> 2 0: PUCCH Format2 1: PUCCH Format3 2: PUCCH Format4

@@ -34,6 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
@@ -304,7 +305,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
         }
 
         else {
-          if( (l != dmrs_symbol) || allowed_pdsch_re_in_dmrs_symbol(k,start_sc,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
+          if( (l != dmrs_symbol) || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
             ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
             ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING

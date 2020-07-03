@@ -42,7 +42,8 @@
 #include "UTIL/LISTS/list.h"
 #endif
 
-//#include "../LTE_TRANSPORT/transport_common.h"
+#include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+
 
 // structures below implement 36-211 and 36-212
 
@@ -84,40 +85,26 @@ typedef struct {
 #endif
 
 typedef struct {
+  /// NDAPI struct for UE
+  nfapi_nr_ue_pusch_pdu_t pusch_pdu;
   /// Indicator of first transmission
   uint8_t first_tx;
-  /// Last Ndi received for this process on DCI (used for C-RNTI only)
-  uint8_t DCINdi;
   /// HARQ tx status
   harq_result_t tx_status;
-  /// Flag indicating that this ULSCH has a new packet (start of new round)
-  //  uint8_t Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_scheduling_flag;
   /// Subframe cba scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_cba_scheduling_flag;
-  /// First Allocated RB
-  uint16_t first_rb;
-  /// Current Number of RBs
-  uint16_t nb_rb;
-  /// number of layers
-  uint8_t Nl;
   /// Last TPC command
   uint8_t TPC;
-  /// Transport block size
-  uint32_t TBS;
   /// The payload + CRC size in bits, "B" from 36-212
   uint32_t B;
   /// Length of ACK information (bits)
   uint8_t O_ACK;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
-  /// MCS format of this ULSCH
-  uint8_t mcs;
-  /// Redundancy-version of the current sub-frame
-  uint8_t rvidx;
   /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
   unsigned char *a;
   /// Pointer to the payload + CRC 
@@ -150,19 +137,11 @@ typedef struct {
   uint32_t G;
   // Number of modulated symbols carrying data
   uint32_t num_of_mod_symbols;
-  // This is "L" in  TS 38.214 V15.4.0 subclause 6.1.2.1
-  uint8_t number_of_symbols;
-  // This is "S" in  TS 38.214 V15.4.0 subclause 6.1.2.1
-  uint8_t start_symbol;
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
-  /// number of DMRS resource elements
-  uint8_t nb_re_dmrs;
-  /// DMRS length
-  uint8_t length_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)
@@ -224,8 +203,6 @@ typedef struct {
   uint8_t power_offset;
   // for cooperative communication
   uint8_t cooperation_flag;
-  /// RNTI attributed to this ULSCH
-  uint16_t rnti;
   /// RNTI type
   uint8_t rnti_type;
   /// Cell ID

@@ -30,6 +30,7 @@
 
 import constants as CONST
 
+
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
@@ -176,7 +177,7 @@ class OaiCiTest():
 		SSH.command('mkdir -p log', '\$', 5)
 		SSH.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 600)
+		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 900)
 		SSH.command('ls ran_build/build', '\$', 3)
 		SSH.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
@@ -332,12 +333,6 @@ class OaiCiTest():
 			logging.debug('Found a N3xx device --> resetting it')
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
-		# in case of NR-UE, we may have rrc_config_path (Temporary?)
-		modifiedUeOptions = str(self.Initialize_OAI_UE_args)
-		if RAN.Getair_interface() == 'nr':
-			result = re.search('--rrc_config_path ', modifiedUeOptions)
-			if result is not None:
-				modifiedUeOptions = modifiedUeOptions.replace('rrc_config_path ', 'rrc_config_path ' + self.UESourceCodePath + '/')
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets/ran_build/build', '\$', 5)
 		if RAN.Getair_interface() == 'lte':
@@ -352,7 +347,17 @@ class OaiCiTest():
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
-		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		else:
+			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
+			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
+			# Copy the RAW files from gNB running directory (maybe on another machine)
+			copyin_res = SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/rbconfig.raw', '.')
+			if (copyin_res == 0):
+				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './rbconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
+			copyin_res = SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/reconfig.raw', '.')
+			if (copyin_res == 0):
+				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './reconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
+		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
@@ -403,23 +408,50 @@ class OaiCiTest():
 				if (outterLoopCounter == 0):
 					doOutterLoop = False
 				continue
+			# We are now checking if sync w/ eNB DOES NOT OCCUR
+			# Usually during the cell synchronization stage, the UE returns with No cell synchronization message
+			# That is the case for LTE
+			# In NR case, it's a positive message that will show if synchronization occurs
+			doLoop = True
 			if RAN.Getair_interface() == 'nr':
-				fullSyncStatus = True
-				doOutterLoop = False
+				loopCounter = 10
 			else:
 				# We are now checking if sync w/ eNB DOES NOT OCCUR
 				# Usually during the cell synchronization stage, the UE returns with No cell synchronization message
-				doLoop = True
 				loopCounter = 10
-				while (doLoop):
-					loopCounter = loopCounter - 1
-					if (loopCounter == 0):
+			while (doLoop):
+				loopCounter = loopCounter - 1
+				if (loopCounter == 0):
+					if RAN.Getair_interface() == 'nr':
+						# Here we do have great chances that UE did NOT cell-sync w/ gNB
+						doLoop = False
+						fullSyncStatus = False
+						logging.debug('Never seen the NR-Sync message (Measured Carrier Frequency) --> try again')
+						time.sleep(6)
+						# Stopping the NR-UE  
+						SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
+						result = re.search('nr-uesoftmodem', SSH.getBefore())
+						if result is not None:
+							SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT nr-uesoftmodem', '\$', 4)
+						time.sleep(6)
+					else:
 						# Here we do have a great chance that the UE did cell-sync w/ eNB
 						doLoop = False
 						doOutterLoop = False
 						fullSyncStatus = True
 						continue
-					SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
+				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Frequency"', '\$', 4)
+				if RAN.Getair_interface() == 'nr':
+					# Positive messaging -->
+					result = re.search('Measured Carrier Frequency', SSH.getBefore())
+					if result is not None:
+						doLoop = False
+						doOutterLoop = False
+						fullSyncStatus = True
+					else:
+						time.sleep(6)
+				else:
+					# Negative messaging -->
 					result = re.search('No cell synchronization found', SSH.getBefore())
 					if result is None:
 						time.sleep(6)
@@ -432,13 +464,22 @@ class OaiCiTest():
 						result = re.search('lte-uesoftmodem', SSH.getBefore())
 						if result is not None:
 							SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
-				outterLoopCounter = outterLoopCounter - 1
-				if (outterLoopCounter == 0):
-					doOutterLoop = False
+			outterLoopCounter = outterLoopCounter - 1
+			if (outterLoopCounter == 0):
+				doOutterLoop = False
 
-		if fullSyncStatus and gotSyncStatus and RAN.Getair_interface() == 'lte':
-			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
-			if result is None:
+		if fullSyncStatus and gotSyncStatus:
+			doInterfaceCheck = False
+			if RAN.Getair_interface() == 'lte':
+				result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+				if result is None:
+					doInterfaceCheck = True
+			# For the moment, only in explicit noS1 without kernel module (ie w/ tunnel interface)
+			if RAN.Getair_interface() == 'nr':
+				result = re.search('--noS1 --nokrnmod 1', str(self.Initialize_OAI_UE_args))
+				if result is not None:
+					doInterfaceCheck = True
+			if doInterfaceCheck:
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
@@ -2396,6 +2437,7 @@ class OaiCiTest():
 		nrCRCOK = 0
 		mbms_messages = 0
 		HTML.SethtmlUEFailureMsg('')
+		global_status = CONST.ALL_PROCESSES_OK
 		for line in ue_log_file.readlines():
 			result = re.search('nr_synchro_time', str(line))
 			if result is not None:
@@ -2589,36 +2631,36 @@ class OaiCiTest():
 			else:
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
+				global_status = OAI_UE_PROCESS_NO_MBMS_MSGS
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			if not nrUEFlag:
-				return CONST.OAI_UE_PROCESS_SEG_FAULT
+				global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 			else:
 				if not frequency_found:
-					return CONST.OAI_UE_PROCESS_SEG_FAULT
+					global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE showed an assertion!\n')
 			if not nrUEFlag:
 				if not mib_found or not frequency_found:
-					return CONST.OAI_UE_PROCESS_ASSERTION
+					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 			else:
 				if not frequency_found:
-					return CONST.OAI_UE_PROCESS_ASSERTION
+					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE faced real time issues!\n')
-			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if nrUEFlag:
 			if not frequency_found:
-				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		else:
 			if no_cell_sync_found and not mib_found:
 				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
 				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE could not synchronize!\n')
-				return CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
-		return 0
+				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
+		return global_status
 
 
 	def TerminateFlexranCtrl(self):
@@ -3025,7 +3067,7 @@ class OaiCiTest():
 		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
+	if action!='Build_PhySim' and action!='Run_PhySim' and  action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -3172,6 +3214,19 @@ def GetParametersFromXML(action):
 			else:
 				CiTestObj.x2_ho_options = string_field
 
+	if action == 'Build_PhySim':
+		ldpc.buildargs  = test.findtext('physim_build_args')
+		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
+		if (forced_workspace_cleanup is None):
+			ldpc.forced_workspace_cleanup=False
+		else:
+			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+				ldpc.forced_workspace_cleanup=True
+			else:
+				ldpc.forced_workspace_cleanup=False
+
+	if action == 'Run_PhySim':
+		ldpc.runargs = test.findtext('physim_run_args')
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -3207,6 +3262,9 @@ EPC.SetHtmlObj(HTML)
 RAN.SetHtmlObj(HTML)
 RAN.SetEpcObj(EPC)
 
+import cls_physim           #class PhySim for physical simulators build and test
+ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
+
 argvs = sys.argv
 argc = len(argvs)
 cwd = os.getcwd()
@@ -3228,12 +3286,14 @@ while len(argvs) > 1:
 		CiTestObj.ranRepository = matchReg.group(1)
 		RAN.SetranRepository(matchReg.group(1))
 		HTML.SetranRepository(matchReg.group(1))
+		ldpc.ranRepository=matchReg.group(1)
 	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		else:
 			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
 		doMerge = matchReg.group(1)
+		ldpc.ranAllowMerge=matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
 			CiTestObj.ranAllowMerge = True
 			RAN.SetranAllowMerge(True)
@@ -3246,6 +3306,7 @@ while len(argvs) > 1:
 		CiTestObj.ranBranch = matchReg.group(1)
 		RAN.SetranBranch(matchReg.group(1))
 		HTML.SetranBranch(matchReg.group(1))
+		ldpc.ranBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
@@ -3254,6 +3315,7 @@ while len(argvs) > 1:
 		CiTestObj.ranCommitID = matchReg.group(1)
 		RAN.SetranCommitID(matchReg.group(1))
 		HTML.SetranCommitID(matchReg.group(1))
+		ldpc.ranCommitID=matchReg.group(1)
 	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
@@ -3262,10 +3324,12 @@ while len(argvs) > 1:
 		CiTestObj.ranTargetBranch = matchReg.group(1)
 		RAN.SetranTargetBranch(matchReg.group(1))
 		HTML.SetranTargetBranch(matchReg.group(1))
+		ldpc.ranTargetBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBIPAddress(matchReg.group(1))
+			ldpc.eNBIpAddr=matchReg.group(1)
 		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1IPAddress(matchReg.group(1))
@@ -3276,6 +3340,7 @@ while len(argvs) > 1:
 		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBUserName(matchReg.group(1))
+			ldpc.eNBUserName=matchReg.group(1)
 		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1UserName(matchReg.group(1))
@@ -3286,6 +3351,7 @@ while len(argvs) > 1:
 		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBPassword(matchReg.group(1))
+			ldpc.eNBPassWord=matchReg.group(1)
 		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1Password(matchReg.group(1))
@@ -3296,6 +3362,7 @@ while len(argvs) > 1:
 		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNBSourceCodePath(matchReg.group(1))
+			ldpc.eNBSourceCodePath=matchReg.group(1)
 		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 			RAN.SeteNB1SourceCodePath(matchReg.group(1))
@@ -3316,10 +3383,13 @@ while len(argvs) > 1:
 		EPC.SetSourceCodePath(matchReg.group(1))
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
-		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE):
+		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE):
 			EPC.SetType(matchReg.group(1))
 		else:
-			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS)')
+			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS or OAI-Rel14-Docker)')
+	elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
+		EPC.SetContainerPrefix(matchReg.group(1))
 	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ADBIPAddress = matchReg.group(1)
@@ -3460,7 +3530,7 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 			foundCount += 1
 		count += 1
 	if foundCount != HTML.GetnbTestXMLfiles():
-		HTML.SetnbTestXMLfiles(foundcount)
+		HTML.SetnbTestXMLfiles(foundCount)
 	
 	if (CiTestObj.ADBIPAddress != 'none'):
 		terminate_ue_flag = False
@@ -3542,6 +3612,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			sys.exit(1)
 	if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation()
+		EPC.SetMmeIPAddress()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -3662,6 +3733,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CiTestObj.IdleSleep()
 				elif action == 'Perform_X2_Handover':
 					CiTestObj.Perform_X2_Handover()
+				elif action == 'Build_PhySim':
+					HTML=ldpc.Build_PhySim(HTML,CONST)
+					if ldpc.exitStatus==1:sys.exit()
+				elif action == 'Run_PhySim':
+					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				else:
 					sys.exit('Invalid action')
 		CiTestObj.FailReportCnt += 1

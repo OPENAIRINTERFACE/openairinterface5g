@@ -296,7 +296,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
   /* 38.321 5.4.2.1  2>  if the uplink grant was received on PDCCH for the C-RNTI and the HARQ buffer of the identified process is empty */
   if ((ulsch->harq_processes[harq_pid]->first_tx == 1) && (rnti_type == _C_RNTI_)) {  /* no transmission yet on this process so consider its harq buffer as empty */
     ulsch->harq_processes[harq_pid]->first_tx = 0;
-    ulsch->harq_processes[harq_pid]->DCINdi = ndi;             /* store first value of ndi */
+    ulsch->harq_processes[harq_pid]->pusch_pdu.pusch_data.new_data_indicator = ndi;             /* store first value of ndi */
     ulsch->harq_processes[harq_pid]->round = 0;
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
@@ -306,8 +306,8 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
   }
   /* 38.321 5.4.2.1  2> if the received grant was not addressed to a Temporary C-RNTI on PDCCH, and the NDI provided in the associated HARQ */
   /* information has been toggled compared to the value in the previous transmission of this TB of this HARQ process */
-  else if ((ulsch->harq_processes[harq_pid]->DCINdi != ndi) && (rnti_type != _TC_RNTI_)) {   /* is ndi toogled so this is a new grant ? */
-    ulsch->harq_processes[harq_pid]->DCINdi = ndi;             /* store first value of ndi */
+  else if ((ulsch->harq_processes[harq_pid]->pusch_pdu.pusch_data.new_data_indicator != ndi) && (rnti_type != _TC_RNTI_)) {   /* is ndi toogled so this is a new grant ? */
+    ulsch->harq_processes[harq_pid]->pusch_pdu.pusch_data.new_data_indicator = ndi;             /* store first value of ndi */
     ulsch->harq_processes[harq_pid]->round = 0;
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
@@ -317,7 +317,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
    }
    /* 38.321 5.4.2.1 2> else (i.e. retransmission): */
    else {
-     ulsch->harq_processes[harq_pid]->DCINdi = ndi;             /* ndi has not toggled si this is a retransmission */
+     ulsch->harq_processes[harq_pid]->pusch_pdu.pusch_data.new_data_indicator = ndi;             /* ndi has not toggled si this is a retransmission */
      ulsch->harq_processes[harq_pid]->round++;                  /* increment number of retransmission */
 
      result_harq = RETRANSMISSION_HARQ;

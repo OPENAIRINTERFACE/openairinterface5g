@@ -32,6 +32,7 @@
 #ifndef PHY_FRAME_CONFIG_NR_H
 #define PHY_FRAME_CONFIG_NR_H
 
+#include <nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h>
 /************** DEFINE ********************************************/
 
 #define TDD_CONFIG_NB_FRAMES           (2)
@@ -79,6 +80,7 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
     @returns nr_slot_t : downlink or uplink */
 
 nr_slot_t nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_tti);
+int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_frame, int nr_tti);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters

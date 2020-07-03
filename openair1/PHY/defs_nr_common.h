@@ -221,8 +221,10 @@ typedef struct {
   uint16_t ra_RNTI;
   /// Pointer to Msg3 payload for UL-grant
   uint8_t *Msg3;
-  /// Flag for the Msg1 generation
-  uint8_t generate_nr_prach;
+  /// Frame of last completed synch
+  uint8_t sync_frame;
+  /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
+  uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

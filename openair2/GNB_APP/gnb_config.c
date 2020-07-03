@@ -259,11 +259,6 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   if (*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder!=0)
     scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder = NULL;
 
-  // fix libconfig (asn1c uses long) 
-  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower-=((long)1<<32); 
-  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant-=((long)1<<32);
-  *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal-=((long)1<<32);
-
   // fix DL and UL Allocation lists
   
   for (int i=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=0;i--) {

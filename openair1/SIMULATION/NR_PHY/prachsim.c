@@ -41,8 +41,8 @@
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "nr_unitary_defs.h"
 #include "OCG_vars.h"
@@ -173,21 +173,27 @@ int main(int argc, char **argv){
 
       case 'H':
         channel_model=Rayleigh8;
+        break;
 
       case 'I':
         channel_model=Rayleigh1;
+        break;
 
       case 'J':
         channel_model=Rayleigh1_corr;
+        break;
 
       case 'K':
         channel_model=Rayleigh1_anticorr;
+        break;
 
       case 'L':
         channel_model=Rice8;
+        break;
 
       case 'M':
         channel_model=Rice1;
+        break;
 
       case 'N':
         channel_model=Rayleigh1_800;
@@ -530,6 +536,7 @@ int main(int argc, char **argv){
     printf("raPreamble %d\n",preamble_tx);
 
   UE->prach_resources[0]->ra_PreambleIndex = preamble_tx;
+  UE->prach_resources[0]->init_msg1 = 1;
 
   // Configure channel
   bw = N_RB_UL*(180e3)*(1 << frame_parms->numerology_index);
@@ -684,10 +691,10 @@ int main(int argc, char **argv){
           }
         }
 	} else {
-	  n_bytes = fread(&ru->common.rxdata[0][rx_prach_start+frame_parms->samples_per_subframe/2],sizeof(int32_t),frame_parms->samples_per_subframe/2,input_fd);
+	  n_bytes = fread(&ru->common.rxdata[0][rx_prach_start],sizeof(int32_t),frame_parms->samples_per_subframe,input_fd);
 	  printf("fread %d bytes from file %s\n",n_bytes,input_file);
-	  if (n_bytes!=frame_parms->samples_per_subframe/2) {
-	    printf("expected %d bytes\n",frame_parms->samples_per_subframe/2);
+	  if (n_bytes!=frame_parms->samples_per_subframe) {
+	    printf("expected %d bytes\n",frame_parms->samples_per_subframe);
 	    exit(-1);
 	  }
 	}
@@ -721,11 +728,13 @@ int main(int argc, char **argv){
           #endif
         }
       }
+
       printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n", SNR, ue_speed, prach_errors, n_frames, delay_avg/(double)(n_frames-prach_errors));
       if (input_fd)
 	break;
       if (prach_errors)
         break;
+
     } // UE Speed loop
     if (!prach_errors) {
       printf("PRACH test OK\n");

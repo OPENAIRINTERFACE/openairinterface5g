@@ -53,8 +53,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
+    NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
-    NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
     NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
     PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
@@ -77,7 +77,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
           LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
 
-        } else {  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
+        } else {
+
+          if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
+          }
+          else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
+          }
 
           fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
           uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
@@ -88,7 +95,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
           //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
-          if (dlsch0_harq != NULL){
+
+          if (dlsch0_harq){
+
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
             dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
             dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
@@ -105,6 +114,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->Nl=1;
             dlsch0_harq->mcs_table=0;
             dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
+            dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
             LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
           }
         }
@@ -121,10 +131,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
         /* PRACH */
-        NR_PRACH_RESOURCES_t *prach_resources;
+        //NR_PRACH_RESOURCES_t *prach_resources;
         fapi_nr_ul_config_prach_pdu *prach_config_pdu;
         /* PUSCH */
-        fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu;
+        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu;
         /* PUCCH */
         fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
         PUCCH_ConfigCommon_nr_t *pucch_config_common_nr;
@@ -135,17 +145,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
           // pusch config pdu
-          pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
-          current_harq_pid = pusch_config_pdu->harq_process_nbr;
-          ulsch0->harq_processes[current_harq_pid]->nb_rb = pusch_config_pdu->number_rbs;
-          ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
-          ulsch0->harq_processes[current_harq_pid]->number_of_symbols = pusch_config_pdu->number_symbols;
-          ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
-          ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
-          ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
-          ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;
-          ulsch0->harq_processes[current_harq_pid]->Nl = pusch_config_pdu->n_layers;
+          pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+          current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
+          nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch0->harq_processes[current_harq_pid]->pusch_pdu;
+
+          memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+
           ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
+          ulsch0->harq_processes[current_harq_pid]->status = ACTIVE;
         break;
 
         case (FAPI_NR_UL_CONFIG_TYPE_PUCCH):
@@ -194,7 +201,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
-          prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
+          //prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
           PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_Config_enabled = 1;
@@ -214,6 +221,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
   return 0;
 }
+
+
 
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){

@@ -315,7 +315,7 @@ typedef struct x2ap_senb_addition_req_ack_s {
 
 typedef struct x2ap_ENDC_sgnb_addition_req_s {
   int ue_x2_id;
-
+  LTE_PhysCellId_t target_physCellId; 
   /* used for RRC->X2AP in source eNB */
   int rnti;
 
@@ -386,6 +386,7 @@ typedef struct x2ap_ENDC_reconf_complete_s {
   int MeNB_ue_x2_id;
 
   int SgNB_ue_x2_id;
+  LTE_PhysCellId_t target_physCellId;
 
   x2ap_sgNB_reconf_response_information_t reconf_response;
 

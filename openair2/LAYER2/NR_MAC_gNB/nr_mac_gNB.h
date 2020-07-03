@@ -179,6 +179,72 @@ typedef struct {
   uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
 
+
+// SP ZP CSI-RS Resource Set Activation/Deactivation MAC CE
+typedef struct sp_zp_csirs {
+  bool is_scheduled;     //ZP CSI-RS ACT/Deact MAC CE is scheduled
+  bool act_deact;        //Activation/Deactivation indication
+  uint8_t serv_cell_id;  //Identity of Serving cell for which MAC CE applies
+  uint8_t bwpid;         //Downlink BWP id
+  uint8_t rsc_id;        //SP ZP CSI-RS resource set
+} sp_zp_csirs_t;
+
+//SP CSI-RS / CSI-IM Resource Set Activation/Deactivation MAC CE
+#define MAX_CSI_RESOURCE_SET 64
+typedef struct csi_rs_im {
+  bool is_scheduled;
+  bool act_deact;
+  uint8_t serv_cellid;
+  uint8_t bwp_id;
+  bool im;
+  uint8_t csi_im_rsc_id;
+  uint8_t nzp_csi_rsc_id;
+  uint8_t nb_tci_resource_set_id;
+  uint8_t tci_state_id [ MAX_CSI_RESOURCE_SET ];
+} csi_rs_im_t;
+
+typedef struct pdcchStateInd {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t coresetId;
+  uint8_t tciStateId;
+} pdcchStateInd_t;
+
+typedef struct SPCSIReportingpucch {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  bool s0tos3_actDeact[4];
+} SPCSIReportingpucch_t;
+
+#define MAX_APERIODIC_TRIGGER_STATES 128 //38.331                               
+typedef struct aperiodicCSI_triggerStateSelection {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  uint8_t highestTriggerStateSelected;
+  bool triggerStateSelection[MAX_APERIODIC_TRIGGER_STATES];
+} aperiodicCSI_triggerStateSelection_t;
+
+#define MAX_TCI_STATES 128 //38.331                                             
+typedef struct pdschTciStatesActDeact {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  uint8_t highestTciStateActivated;
+  bool tciStateActDeact[MAX_TCI_STATES];
+} pdschTciStatesActDeact_t;
+
+typedef struct UE_info {
+  sp_zp_csirs_t sp_zp_csi_rs;
+  csi_rs_im_t csi_im;
+  pdcchStateInd_t pdcch_state_ind;
+  SPCSIReportingpucch_t SP_CSI_reporting_pucch;
+  aperiodicCSI_triggerStateSelection_t aperi_CSI_trigger;
+  pdschTciStatesActDeact_t pdsch_TCI_States_ActDeact;
+} NR_UE_mac_ce_ctrl_t;
+
+
 typedef struct NR_sched_pucch {
   int frame;
   int ul_slot;
@@ -203,6 +269,8 @@ typedef struct {
   int16_t ta_update;
   uint8_t current_harq_pid;
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  int dummy;
+  NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
 
 typedef struct NR_preamble_ue {
@@ -229,7 +297,7 @@ typedef struct {
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
 
-/*! \brief top level gNB MAC structure */
+/*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t                    eth_params_n;
@@ -270,7 +338,7 @@ typedef struct gNB_MAC_INST_s {
   /// UL handle
   uint32_t ul_handle;
 
-    // MAC function execution peformance profiler
+  // MAC function execution peformance profiler
   /// processing time of eNB scheduler
   time_stats_t eNB_scheduler;
   /// processing time of eNB scheduler for SI

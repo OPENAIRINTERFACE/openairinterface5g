@@ -49,23 +49,19 @@
 
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-				     NR_CellGroupConfig_t *secondaryCellGroup,
-				     int scg_id,
-				     int servCellIndex,
-				     int n_physical_antenna_ports,
-				     int initial_csi_index) {
+                                     NR_CellGroupConfig_t *secondaryCellGroup,
+                                     int scg_id,
+                                     int servCellIndex,
+                                     int n_physical_antenna_ports,
+                                     int initial_csi_index) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
-
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
-
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-
-  RLC_BearerConfig->logicalChannelIdentity = 3;
+  RLC_BearerConfig->logicalChannelIdentity = 4;
   RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
-  RLC_BearerConfig->servedRadioBearer->present = 	NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
-
+  RLC_BearerConfig->servedRadioBearer->present =  NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
   RLC_BearerConfig->servedRadioBearer->choice.drb_Identity=1;
   RLC_BearerConfig->reestablishRLC=calloc(1,sizeof(*RLC_BearerConfig->reestablishRLC));
   *RLC_BearerConfig->reestablishRLC=NR_RLC_BearerConfig__reestablishRLC_true;
@@ -85,17 +81,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   /*RLC_BearerConfig->rlc_Config->present = NR_RLC_Config_PR_am;
   RLC_BearerConfig->rlc_Config->choice.am = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am));
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
-  *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =	NR_SN_FieldLengthAM_size18;
+  *RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength   =  NR_SN_FieldLengthAM_size18;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollPDU          = NR_PollPDU_p64;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.pollByte         = NR_PollByte_kB500;
   RLC_BearerConfig->rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
-
   RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1,sizeof(*RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
   *RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
   RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_Reassembly   = NR_T_Reassembly_ms15;
   RLC_BearerConfig->rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;*/
-
   RLC_BearerConfig->mac_LogicalChannelConfig = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig));
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters = calloc(1,sizeof(*RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters));
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->priority            = 1;
@@ -111,10 +105,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = false;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
   RLC_BearerConfig->mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer   = NULL;
-
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
-
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig = NULL;
@@ -138,25 +130,20 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->dummy=false;
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_Type2OtherCell = false;
   secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_ModeOtherCG = NR_PHR_Config__phr_ModeOtherCG_real;
-
   secondaryCellGroup->mac_CellGroupConfig->skipUplinkTxDynamic=false;
   secondaryCellGroup->mac_CellGroupConfig->ext1 = NULL;
-
-
   secondaryCellGroup->physicalCellGroupConfig = calloc(1,sizeof(*secondaryCellGroup->physicalCellGroupConfig));
-
   secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH=NULL;
   secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH=NULL;
   secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1=calloc(1,sizeof(*secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1));
   *secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1=20;
-  secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook=NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;  
+  secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook=NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
   secondaryCellGroup->physicalCellGroupConfig->tpc_SRS_RNTI=NULL;
   secondaryCellGroup->physicalCellGroupConfig->tpc_PUCCH_RNTI=NULL;
   secondaryCellGroup->physicalCellGroupConfig->tpc_PUSCH_RNTI=NULL;
   secondaryCellGroup->physicalCellGroupConfig->sp_CSI_RNTI=NULL;
   secondaryCellGroup->physicalCellGroupConfig->cs_RNTI=NULL;
   secondaryCellGroup->physicalCellGroupConfig->ext1=NULL;
-
   secondaryCellGroup->spCellConfig = calloc(1,sizeof(*secondaryCellGroup->spCellConfig));
   secondaryCellGroup->spCellConfig->servCellIndex = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->servCellIndex));
   *secondaryCellGroup->spCellConfig->servCellIndex = servCellIndex;
@@ -166,7 +153,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->t304=NR_ReconfigurationWithSync__t304_ms2000;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated = NULL;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->ext1                 = NULL;
-
   /* contention free ra */
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated = calloc(1,sizeof(struct NR_ReconfigurationWithSync__rach_ConfigDedicated));
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->present= NR_ReconfigurationWithSync__rach_ConfigDedicated_PR_uplink;
@@ -174,7 +160,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra= calloc(1,sizeof(struct NR_CFRA));
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->ra_Prioritization= NULL;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->occasions= calloc(1,sizeof(struct NR_CFRA__occasions));
-  memcpy(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->occasions->rach_ConfigGeneric, &servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric, sizeof(NR_RACH_ConfigGeneric_t));
+  memcpy(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->occasions->rach_ConfigGeneric,
+         &servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric, sizeof(NR_RACH_ConfigGeneric_t));
   //secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->occasions->ssb_perRACH_Occasion= calloc(1,sizeof(long));
   //*secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->occasions->ssb_perRACH_Occasion = NR_CFRA__occasions__ssb_perRACH_Occasion_one;
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->occasions->ssb_perRACH_Occasion= NULL;
@@ -186,7 +173,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   ssbElem->ra_PreambleIndex= 63;
   ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list,ssbElem);
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->ext1 = NULL;
-
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants));
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->present = NR_SetupRelease_RLF_TimersAndConstants_PR_setup;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup));
@@ -195,21 +181,18 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->n311 = NR_RLF_TimersAndConstants__n311_n1;
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1 = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1));
   secondaryCellGroup->spCellConfig->rlf_TimersAndConstants->choice.setup->ext1->t311_v1530 = NR_RLF_TimersAndConstants__ext1__t311_v1530_ms30000;
-
   secondaryCellGroup->spCellConfig->rlmInSyncOutOfSyncThreshold                   = NULL;
- 
-
-
   secondaryCellGroup->spCellConfig->spCellConfigDedicated = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->tdd_UL_DL_ConfigurationDedicated = NULL;
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP));
-
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdcch_Config=NULL;
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup = calloc(1,
+      sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
+  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,
+      sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
 
@@ -584,6 +567,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
 
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
@@ -2026,15 +2010,13 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
 }
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-			   NR_RRCReconfiguration_IEs_t *reconfig,
-			   NR_CellGroupConfig_t *secondaryCellGroup,
-			   int n_physical_antenna_ports,
-			   int initial_csi_index) {
-
+                           NR_RRCReconfiguration_IEs_t *reconfig,
+                           NR_CellGroupConfig_t *secondaryCellGroup,
+                           int n_physical_antenna_ports,
+                           int initial_csi_index) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(reconfig!=NULL,"reconfig is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
-
   // radioBearerConfig
   reconfig->radioBearerConfig=NULL;
   // secondaryCellGroup
@@ -2044,12 +2026,10 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   char scg_buffer[1024];
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, (void *)secondaryCellGroup, scg_buffer, 1024);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n", enc_rval.failed_type->name, enc_rval.encoded);
-  
- 
   reconfig->secondaryCellGroup = calloc(1,sizeof(*reconfig->secondaryCellGroup));
   OCTET_STRING_fromBuf(reconfig->secondaryCellGroup,
-		       (const char*)scg_buffer,
-		       (enc_rval.encoded+7)>>3);
+                       (const char *)scg_buffer,
+                       (enc_rval.encoded+7)>>3);
   // measConfig
   reconfig->measConfig=NULL;
   // lateNonCriticalExtension
@@ -2058,7 +2038,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   reconfig->nonCriticalExtension = NULL;
 }
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, long eps_BearerIdentity, long drb_Identity) {
+void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig) {
 
   rbconfig->srb_ToAddModList = NULL;
   rbconfig->srb3_ToRelease = NULL;
@@ -2066,8 +2046,8 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, long eps_BearerIden
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
   drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
   drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= eps_BearerIdentity; //5;
-  drb_ToAddMod->drb_Identity = drb_Identity;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 5;
+  drb_ToAddMod->drb_Identity = 1;
   drb_ToAddMod->reestablishPDCP = NULL;
   drb_ToAddMod->recoverPDCP = NULL;
   drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
@@ -2081,15 +2061,15 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, long eps_BearerIden
   drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
   drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
 
-  drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;	
-  drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;	
+  drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;
+  drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;
   drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
   drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
 
   drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
   *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
   drb_ToAddMod->pdcp_Config->ext1 = NULL;
-  
+
   ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
 
   rbconfig->drb_ToReleaseList = NULL;
@@ -2103,4 +2083,5 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig, long eps_BearerIden
 
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
 }
+
 #endif

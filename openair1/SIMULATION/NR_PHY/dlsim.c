@@ -41,7 +41,7 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 #include "SCHED_NR/sched_nr.h"
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:e:m:w")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -394,6 +394,10 @@ int main(int argc, char **argv)
       eff_tp_check = (float)atoi(optarg)/100;
       break;
 
+    case 'w':
+      output_fd = fopen("txdata.dat", "w+");
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -425,6 +429,7 @@ int main(int argc, char **argv)
       printf("-e MSC index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-P Print DLSCH performances\n");
+      printf("-w Write txdata to binary file (one frame)\n");
       exit (-1);
       break;
     }
@@ -731,11 +736,11 @@ int main(int argc, char **argv)
 
       NR_UE_DLSCH_t *dlsch0 = UE->dlsch[UE->current_thread_id[UE_proc.nr_tti_rx]][0][0];
 
-      int harq_pid = dlsch0->current_harq_pid;
+      int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
 
       NR_gNB_DLSCH_t *gNB_dlsch = gNB->dlsch[0][0];
-      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_processes[0]->pdsch_pdu.pdsch_pdu_rel15;
+      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_processes[slot]->pdsch_pdu.pdsch_pdu_rel15;
       
       UE_harq_process->harq_ack.ack = 0;
       round = 0;
@@ -747,10 +752,11 @@ int main(int argc, char **argv)
         memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[0].ndi = !(trial&1);
+        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[0].round = round;   
-        gNB->dlsch[0][0]->harq_processes[0]->round = round;
+        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;   
+        UE_list->UE_sched_ctrl[0].current_harq_pid = harq_pid;
+        gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
       
         if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&pucch_sched,&dlsch_config);
         else               nr_schedule_css_dlsch_phytest(0,frame,slot);
@@ -802,8 +808,10 @@ int main(int argc, char **argv)
           if (gNB->frame_parms.nb_antennas_tx>1)
             LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
         }
-        if (output_fd) 
+        if (output_fd) {
+          printf("writing txdata to binary file\n");
           fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
+        }
         
         int txlev = signal_energy(&txdata[0][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0], frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
         
@@ -858,7 +866,7 @@ int main(int argc, char **argv)
       NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]];
       int16_t *UE_llr = pdsch_vars[0]->llr[0];
       
-      TBS                  = rel15->TBSize[0];
+      TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
       uint16_t length_dmrs = 1;
       uint16_t nb_rb       = rel15->rbSize;
       uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4;
@@ -897,7 +905,7 @@ int main(int argc, char **argv)
       
       if (errors_scrambling > 0) {
 	if (n_trials == 1)
-	  printf("errors_scrambling = %d/%d (trial %d)\n", errors_scrambling, available_bits,trial);
+	  printf("errors_scrambling = %u/%u (trial %d)\n", errors_scrambling, available_bits,trial);
       }
       
       if (errors_bit > 0) {
@@ -1019,6 +1027,8 @@ int main(int argc, char **argv)
   if (input_fd)
     fclose(input_fd);
 
+  if (scg_fd)
+    fclose(scg_fd);
   return(n_errors);
   
 }

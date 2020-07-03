@@ -31,7 +31,6 @@
  */
 #include "fapi_nr_l1.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 

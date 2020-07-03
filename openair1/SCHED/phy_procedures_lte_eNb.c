@@ -1419,7 +1419,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
   pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
   // estimate timing advance for MAC
-  sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
+  sync_pos                               = lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check
 
   //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}

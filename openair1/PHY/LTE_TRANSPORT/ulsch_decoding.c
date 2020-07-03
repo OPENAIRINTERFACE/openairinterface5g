@@ -495,7 +495,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   }
 
   AssertFatal(sumKr>0,
-              "[eNB] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+              "[eNB] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, O_RI %d, O_ACK %d, G %u, subframe %d\n",
               frame_parms->Nid_cell,ulsch->rnti,x2,
               harq_pid,
               ulsch_harq->round,

@@ -48,11 +48,6 @@ uint8_t get_delta(uint8_t ap, uint8_t config);
 
 uint16_t get_dmrs_freq_idx(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type);
 
-uint8_t allowed_pdsch_re_in_dmrs_symbol(uint16_t k,
-                                        uint16_t start_sc,
-                                        uint8_t numDmrsCdmGrpsNoData,
-                                        uint8_t dmrs_type);
-
 uint8_t get_l0(uint16_t dlDmrsSymbPos);
 
 #endif

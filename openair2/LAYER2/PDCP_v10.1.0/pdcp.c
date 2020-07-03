@@ -503,8 +503,6 @@ pdcp_data_ind(
 //-----------------------------------------------------------------------------
 {
   pdcp_t      *pdcp_p          = NULL;
-  list_t      *sdu_list_p      = NULL;
-  mem_block_t *new_sdu_p       = NULL;
   uint8_t      pdcp_header_len = 0;
   uint8_t      pdcp_tailer_len = 0;
   pdcp_sn_t    sequence_number = 0;
@@ -576,7 +574,6 @@ pdcp_data_ind(
     }
   }
 
-  sdu_list_p = &pdcp_sdu_list;
 
   if (sdu_buffer_sizeP == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!\n");
@@ -974,9 +971,8 @@ pdcp_data_ind(
 #endif
 
   if (FALSE == packet_forwarded) {
-    new_sdu_p = get_free_mem_block(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t), __func__);
+    notifiedFIFO_elt_t * new_sdu_p = newNotifiedFIFO_elt(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t), 0, NULL, NULL);
 
-    if (new_sdu_p) {
       if ((MBMS_flagP == 0) && (pdcp_p->rlc_mode == RLC_MODE_AM)) {
         pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
       }
@@ -984,14 +980,15 @@ pdcp_data_ind(
       /*
        * Prepend PDCP indication header which is going to be removed at pdcp_fifo_flush_sdus()
        */
-      memset(new_sdu_p->data, 0, sizeof (pdcp_data_ind_header_t));
-      ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size = sdu_buffer_sizeP - payload_offset;
+      pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(new_sdu_p);
+      memset(pdcpHead, 0, sizeof (pdcp_data_ind_header_t));
+      pdcpHead->data_size = sdu_buffer_sizeP - payload_offset;
       AssertFatal((sdu_buffer_sizeP - payload_offset >= 0), "invalid PDCP SDU size!");
 
       // Here there is no virtualization possible
       // set ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst for IP layer here
       if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id;
+        pdcpHead->rb_id = rb_id;
 
         if (EPC_MODE_ENABLED) {
           /* for the UE compiled in S1 mode, we need 1 here
@@ -1002,45 +999,40 @@ pdcp_data_ind(
 #ifdef UESIM_EXPANSION
 
             if (UE_NAS_USE_TUN) {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+              pdcpHead->inst  = ctxt_pP->module_id;
             } else {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 0;
+              pdcpHead->inst  = 0;
             }
 
 #else
-            ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+            pdcpHead->inst  = ctxt_pP->module_id;
 #endif
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+              pdcpHead->inst  = ctxt_pP->module_id;
             } else {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 1;
+              pdcpHead->inst  = 1;
             }
           } // nfapi_mode
         }
       } else {
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+        pdcpHead->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
+        pdcpHead->inst  = ctxt_pP->module_id;
       }
 
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
         static uint32_t pdcp_inst = 0;
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst = pdcp_inst++;
-        LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
+        pdcpHead->inst = pdcp_inst++;
+        LOG_D(PDCP, "inst=%d size=%d\n", pdcpHead->inst, pdcpHead->data_size);
       }
 
-      memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)],
+      memcpy(pdcpHead+1,
              &sdu_buffer_pP->data[payload_offset],
              sdu_buffer_sizeP - payload_offset);
-      
-      #if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
-      	LOG_I(PDCP, "Printing first bytes of PDCP SDU before adding it to the list: \n");
-      	for (int i=0; i<30; i++){
-    	  LOG_I(PDCP, "%x", sdu_buffer_pP->data[i]);
-      	}
-      #endif
-      list_add_tail_eurecom (new_sdu_p, sdu_list_p);
-    }
+      if( LOG_DEBUGFLAG(DEBUG_PDCP) )
+	log_dump(PDCP, pdcpHead+1, min(sdu_buffer_sizeP - payload_offset,30) , LOG_DUMP_CHAR,
+	         "Printing first bytes of PDCP SDU before adding it to the list: \n");
+      pushNotifiedFIFO(&pdcp_sdu_list, new_sdu_p); 
 
     /* Print octets of incoming data in hexadecimal form */
     LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
@@ -2372,7 +2364,7 @@ void pdcp_layer_init(void)
   /*
    * Initialize SDU list
    */
-  list_init(&pdcp_sdu_list, NULL);
+  initNotifiedFIFO(&pdcp_sdu_list);
   pdcp_coll_p = hashtable_create ((LTE_maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, pdcp_free);
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
@@ -2445,7 +2437,8 @@ void pdcp_layer_init(void)
 void pdcp_layer_cleanup (void)
 //-----------------------------------------------------------------------------
 {
-  list_free (&pdcp_sdu_list);
+  //list_free (&pdcp_sdu_list);
+  while(pollNotifiedFIFO(&pdcp_sdu_list)) {};
   hashtable_destroy(&pdcp_coll_p);
 #ifdef MBMS_MULTICAST_OUT
 

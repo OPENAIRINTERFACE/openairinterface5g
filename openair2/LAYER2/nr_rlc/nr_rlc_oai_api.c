@@ -79,8 +79,8 @@ void mac_rlc_data_ind     (
 	  LOG_I(RLC, "RLC instance for the given UE was not found \n");
 
   switch (channel_idP) {
-  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
-  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -120,8 +120,8 @@ tbs_size_t mac_rlc_data_req(
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
   switch (channel_idP) {
-  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
-  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -130,7 +130,7 @@ tbs_size_t mac_rlc_data_req(
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
     exit(1);
     ret = 0;
   }
@@ -173,8 +173,8 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
   switch (channel_idP) {
-  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
-  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -234,8 +234,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
   switch (channel_idP) {
-  case 1 ... 2: rb = ue->srb[channel_idP - 1]; break;
-  case 3 ... 7: rb = ue->drb[channel_idP - 3]; break;
+  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -661,7 +661,7 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
     exit(1);
   }
 
-  if (channel_id != drb_id + 2) {
+  if (channel_id != drb_id + 3) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -744,7 +744,7 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
     exit(1);
   }
 
-  if (channel_id != drb_id + 2) {
+  if (channel_id != drb_id + 3) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);

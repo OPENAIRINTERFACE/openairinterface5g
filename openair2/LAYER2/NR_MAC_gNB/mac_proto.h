@@ -246,15 +246,6 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
-int get_num_dmrs(uint16_t dmrs_mask );
-
-uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
-                     dci_pdu_rel15_t *dci_pdu,
-                     nr_dci_format_t format,
-                     nr_rnti_type_t rnti_type,
-                     uint16_t N_RB,
-                     int bwp_id);
-
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int bwp_id,
                      int coreset_id,
@@ -290,9 +281,6 @@ void nr_generate_Msg2(module_id_t module_idP,
 
 void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
 
-void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
-                                               uint16_t *slot_period,
-                                               uint16_t *offset);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,

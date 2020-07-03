@@ -19,15 +19,15 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m2ap_MCE_generate_messages.h
- * \brief m2ap procedures for MCE
+/*! \file m3ap_MCE_generate_messages.h
+ * \brief m3ap procedures for MCE
  * \author Javier Morgade <javier.morgade@ieee.org>
  * \date 2019
  * \version 0.1
  */
 
-#ifndef M2AP_MCE_GENERATE_MESSAGES_H_
-#define M2AP_MCE_GENERATE_MESSAGES_H_
+#ifndef M3AP_MCE_GENERATE_MESSAGES_H_
+#define M3AP_MCE_GENERATE_MESSAGES_H_
 
 #include "m2ap_MCE_defs.h"
 #include "m2ap_common.h"
