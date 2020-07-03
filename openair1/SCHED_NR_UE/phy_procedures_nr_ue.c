@@ -2247,11 +2247,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-    LOG_D(PHY, "Sending PUCCH\n");
-    pucch_procedures_ue_nr(ue,
-                           gNB_id,
-                           proc,
-                           TRUE);
+    if (get_softmodem_params()->do_ra==1) {
+      LOG_D(PHY, "Sending PUCCH\n");
+      pucch_procedures_ue_nr(ue,
+                             gNB_id,
+                             proc,
+                             TRUE);
+    }
 
     LOG_D(PHY, "Sending data \n");
     nr_ue_pusch_common_procedures(ue,
