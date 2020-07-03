@@ -28,7 +28,6 @@
 #include <openairinterface5g_limits.h>
 #include "common/ran_context.h"
 #include <openair1/PHY/defs_gNB.h>
-#include <forms.h>
 #include "PHY/defs_gNB.h"
 //#include "PHY/defs_nrUE.h"
 //#include "PHY/impl_defs_top.h"

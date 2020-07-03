@@ -70,6 +70,8 @@
  * @{
  */
 
+extern int usrp_tx_thread;
+
 
 typedef struct {
 
@@ -345,7 +347,6 @@ static int trx_usrp_write(openair0_device *device,
   int flags_msb = (flags>>8)&0xff;
 
   int end;
-  int write_tread = 0;
   openair0_thread_t *write_thread = &device->write_thread;
   openair0_write_package_t *write_package = write_thread->write_package;
 
@@ -382,7 +383,7 @@ static int trx_usrp_write(openair0_device *device,
      last_packet_state  = true;
     }
 
-  if(write_tread == 0){
+  if(usrp_tx_thread == 0){
 #if defined(__x86_64) || defined(__i386__)
   #ifdef __AVX2__
       nsamps2 = (nsamps+7)>>3;
@@ -586,7 +587,7 @@ void *trx_usrp_write_thread(void * arg){
   return NULL;
 }
 
-int trx_write_init(openair0_device *device){
+int trx_usrp_write_init(openair0_device *device){
 
   uhd::set_thread_priority_safe(1.0);
   openair0_thread_t *write_thread = &device->write_thread;
@@ -932,7 +933,7 @@ extern "C" {
     device->trx_stop_func  = trx_usrp_stop;
     device->trx_set_freq_func = trx_usrp_set_freq;
     device->trx_set_gains_func   = trx_usrp_set_gains;
-    device->trx_write_init = trx_write_init;
+    device->trx_write_init = trx_usrp_write_init;
 
 
     // hotfix! to be checked later

@@ -1652,7 +1652,6 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   x2ap_eNB_instance_t                *instance_p;
   x2ap_eNB_data_t                    *x2ap_eNB_data;
   MessageDef                         *msg;
-  int                                ue_id;
 
   DevAssert (pdu != NULL);
   x2SgNBAdditionRequest = &pdu->choice.initiatingMessage.value.choice.SgNBAdditionRequest;
@@ -1683,20 +1682,9 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
   }
-
-
-  // allocate a new X2AP UE ID
-  ue_id = x2ap_allocate_new_id(&instance_p->id_manager);
-  if (ue_id == -1) {
-    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
-    // TODO: cancel handover: send HO preparation failure to source eNB
-    exit(1);
-  }
-  // rnti is unknown yet, must not be set to -1, 0 is fine
-  x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.UE_X2AP_ID, ue_id);
-  x2ap_id_set_state(&instance_p->id_manager, ue_id, X2ID_STATE_TARGET);
-
-  X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_x2_id = ue_id;
+  /* ue_x2_id = MeNB X2AP Id */
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_x2_id = ie->value.choice.UE_X2AP_ID;
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_assoc_id = assoc_id;
 
 
   /* X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities */

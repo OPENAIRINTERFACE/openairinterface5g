@@ -113,7 +113,7 @@ int main(int argc, char **argv)
   double sigma, sigma_dB;
   double snr_step = 1;
   uint8_t snr1set = 0;
-  int slot = 17, frame = 0;
+  int slot = 8, frame = 0;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
@@ -320,11 +320,11 @@ int main(int argc, char **argv)
       break;
       
     case 'M':
-      SSB_positions = atoi(optarg);
+     // SSB_positions = atoi(optarg);
       break;
       
     case 'N':
-      Nid_cell = atoi(optarg);
+     // Nid_cell = atoi(optarg);
       break;
       
     case 'R':
@@ -693,6 +693,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
+      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
@@ -710,7 +711,7 @@ int main(int argc, char **argv)
       TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
 
-      if (input_fd != NULL) {
+      if (input_fd == NULL) {
         pusch_pdu->pusch_data.tb_size = TBS>>3;
         ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
         // set FAPI parameters for UE, put them in the scheduled response and call

@@ -1496,7 +1496,8 @@ int x2ap_eNB_generate_ENDC_x2_setup_response(
 }
 
 int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
-  x2ap_eNB_instance_t *instance_p, x2ap_ENDC_sgnb_addition_req_t *x2ap_ENDC_sgnb_addition_req, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id)
+  x2ap_eNB_instance_t *instance_p, x2ap_ENDC_sgnb_addition_req_t *x2ap_ENDC_sgnb_addition_req, 
+  x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id)
 {
 	X2AP_X2AP_PDU_t                     	 pdu;
 	X2AP_SgNBAdditionRequest_t               *out;
@@ -1507,42 +1508,21 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
 	uint8_t  *buffer;
 	uint32_t  len;
 	int       ret = 0;
-
-	// Currently hardcoded (dummy) values filling the fields of SgNB_addition_request message. To be substituted
-	// with values coming from RRC.
-	uint16_t nRencryptionAlgorithms = 0;
-	uint16_t nRintegrityProtectionAlgorithms = 0;
+	uint16_t nRencryptionAlgorithms = x2ap_ENDC_sgnb_addition_req->security_capabilities.encryption_algorithms; 
+	uint16_t nRintegrityProtectionAlgorithms = x2ap_ENDC_sgnb_addition_req->security_capabilities
+	    .integrity_algorithms;
 	uint8_t  SgNBSecurityKey[32] = { 0 };
-	int uEaggregateMaximumBitRateDownlink = 100000000;
-	int uEaggregateMaximumBitRateUplink = 100000000;
-	int e_rabs_tobeadded = 1;
+	int uEaggregateMaximumBitRateDownlink = x2ap_ENDC_sgnb_addition_req->ue_ambr.br_dl;
+	int uEaggregateMaximumBitRateUplink = x2ap_ENDC_sgnb_addition_req->ue_ambr.br_ul;
+	int e_rabs_tobeadded = x2ap_ENDC_sgnb_addition_req->nb_e_rabs_tobeadded;
 	long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
 	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;
-	long qCI = 1;
-	X2AP_Pre_emptionCapability_t pre_emptionCapability = X2AP_Pre_emptionCapability_shall_not_trigger_pre_emption;
-	X2AP_Pre_emptionVulnerability_t pre_emptionVulnerability = X2AP_Pre_emptionVulnerability_not_pre_emptable;
-	priority_level_t priority_level = PRIORITY_LEVEL_NO_PRIORITY;
-	e_rab_tobe_added_t e_MCG_rabs_tobeadded;
-	e_MCG_rabs_tobeadded.gtp_teid = 0;
-	e_MCG_rabs_tobeadded.sgw_addr.length = 24;
-	uint8_t buf[20] = { 0 };
-	memcpy(e_MCG_rabs_tobeadded.sgw_addr.buffer, buf, 20*sizeof(uint8_t));
-
-	FILE *fd;
-	fd = fopen("../../../executables/uecap.raw","r");
-	if (fd != NULL) {
-		OCTET_STRING_t CG_Config_Info;
-		CG_Config_Info.size = 4096;
-		CG_Config_Info.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));
-		int msg_len=fread(CG_Config_Info.buf,1,CG_Config_Info.size,fd);
-		CG_Config_Info.size = msg_len;
-
-		/*char buffer[4096];
-		int msg_len=fread(buffer,1,4096,fd);*/
-		LOG_I(RRC,"Read in %d bytes for uecap\n",msg_len);
-
-
+	long qCI = 0;
+	X2AP_Pre_emptionCapability_t pre_emptionCapability;
+	X2AP_Pre_emptionVulnerability_t pre_emptionVulnerability;
+	priority_level_t priority_level;
+	memcpy(SgNBSecurityKey, x2ap_ENDC_sgnb_addition_req->kgnb, sizeof(x2ap_ENDC_sgnb_addition_req->kgnb));
 	/*OCTET_STRING_t CG_Config_Info;
 	CG_Config_Info.size = 4096;
 	CG_Config_Info.buf = (uint8_t *)calloc(4096, sizeof(uint8_t));*/
@@ -1618,7 +1598,11 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.mCGresources = mCGresources;
     	e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.sCGresources = sCGresources;
     	if (pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
-    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.present = X2AP_E_RABs_ToBeAdded_SgNBAddReq_Item__resource_configuration_PR_sgNBPDCPpresent;
+    		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.present = X2AP_E_RABs_ToBeAdded_SgNBAddReq_Item__resource_configuration_PR_sgNBPDCPpresent;			
+			qCI = x2ap_ENDC_sgnb_addition_req->e_rab_param[i].qos.qci;
+			priority_level = x2ap_ENDC_sgnb_addition_req->e_rab_param[i].qos.allocation_retention_priority.priority_level;
+			pre_emptionCapability = x2ap_ENDC_sgnb_addition_req->e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability;
+			pre_emptionVulnerability = x2ap_ENDC_sgnb_addition_req->e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability;
 
     		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.qCI = qCI;
     		e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability = pre_emptionCapability;
@@ -1646,25 +1630,24 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
     ie->id = X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer;
     ie->criticality = X2AP_Criticality_reject;
     ie->value.present = X2AP_SgNBAdditionRequest_IEs__value_PR_MeNBtoSgNBContainer;
-    ie->value.choice.MeNBtoSgNBContainer.buf = (uint8_t *)calloc(CG_Config_Info.size, sizeof(uint8_t));
-    memcpy(ie->value.choice.MeNBtoSgNBContainer.buf, CG_Config_Info.buf, CG_Config_Info.size);
-    ie->value.choice.MeNBtoSgNBContainer.size = CG_Config_Info.size; //4096;
+    if(NULL == (ie->value.choice.MeNBtoSgNBContainer.buf = (uint8_t *)
+		calloc(x2ap_ENDC_sgnb_addition_req->rrc_buffer_size, sizeof(uint8_t)))) {
+			X2AP_ERROR("Memory ALLocation failed\n");
+			exit(1);
+	}
+    memcpy(ie->value.choice.MeNBtoSgNBContainer.buf, x2ap_ENDC_sgnb_addition_req->rrc_buffer,
+		x2ap_ENDC_sgnb_addition_req->rrc_buffer_size);
+    ie->value.choice.MeNBtoSgNBContainer.size = x2ap_ENDC_sgnb_addition_req->rrc_buffer_size;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
         X2AP_ERROR("Failed to encode ENDC X2 SgNB_addition request message\n");
         return -1;
     }
-
+	free(ie->value.choice.MeNBtoSgNBContainer.buf);
     MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
     x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
-	fclose(fd);
-	}
-	else {
-		LOG_I(RRC, "uecap.raw file could not be opened... \n");
-		return -1;
-	}
 
 	return ret;
 
@@ -1684,26 +1667,14 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 		uint8_t  *buffer;
 		uint32_t  len;
 		int       ret = 0;
-		int MeNB_UE_X2AP_id = ue_id;
-		int SgNB_UE_X2AP_id = 0;
 
-		// Currently hardcoded (dummy) values filling the fields of SgNB_addition_request message. To be substituted
-		// with values coming from RRC.
-		//uint16_t nRencryptionAlgorithms = 0;
-		//uint16_t nRintegrityProtectionAlgorithms = 0;
-		//uint8_t  SgNBSecurityKey[32] = { 0 };
-		//int uEaggregateMaximumBitRateDownlink = 100000000;
-		//int uEaggregateMaximumBitRateUplink = 100000000;
-
-		int e_rabs_admitted_tobeadded = 1;
+		int MeNB_UE_X2AP_id = x2ap_sgnb_addition_req_ACK->MeNB_ue_x2_id;
+		int SgNB_UE_X2AP_id = ue_id;
+		int e_rabs_admitted_tobeadded = x2ap_sgnb_addition_req_ACK->nb_e_rabs_admitted_tobeadded;
 		long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
 		long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
 		long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;
-		e_rab_setup_t e_SCG_rabs_tobeadded;
-		e_SCG_rabs_tobeadded.gtp_teid = 0;
-		e_SCG_rabs_tobeadded.eNB_addr.length = 24;
-		uint8_t buf[20] = { 0 };
-		memcpy(e_SCG_rabs_tobeadded.eNB_addr.buffer, buf, 20*sizeof(uint8_t));
+
 
 		DevAssert(instance_p != NULL);
 		DevAssert(x2ap_eNB_data_p != NULL);
