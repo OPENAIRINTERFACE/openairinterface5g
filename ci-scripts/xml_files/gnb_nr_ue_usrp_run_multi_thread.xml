@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>run-oai-gnb-nr-ue</htmlTabRef>
-        <htmlTabName>Run-gNB-and-NR-UE</htmlTabName>
+        <htmlTabRef>run-oai-gnb-nr-ue-tx-write-thread</htmlTabRef>
+        <htmlTabName>Run-gNB-and-NR-UE-TX-Write-Thread</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
 	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
@@ -32,7 +32,7 @@
 	
         <testCase id="090103">
                 <class>Initialize_eNB</class>
-                <desc>Initialize gNB USRP (Multi-Threading enabled)</desc>
+                <desc>Initialize gNB USRP (Tx-Write-Threading enabled)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test --usrp-tx-thread-config 1</Initialize_eNB_args>
 		<air_interface>NR</air_interface>
         </testCase>
