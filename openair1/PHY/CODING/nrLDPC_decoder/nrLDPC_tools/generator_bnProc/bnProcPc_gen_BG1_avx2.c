@@ -71,7 +71,7 @@ fprintf(fd,  "// Process group with 1 CNs \n");
 
 
  // Process group with 2 CNs
-
+/*
     if (lut_numBnInBnGroups[0] > 0)
     {
         // If elements in group move to next address
@@ -123,7 +123,7 @@ fprintf(fd,  "// Process group with 1 CNs \n");
     }
       // =====================================================================
     // Process group with 2 CNs
-
+*/
 
 fprintf(fd,  "// Process group with 2 CNs \n");
 

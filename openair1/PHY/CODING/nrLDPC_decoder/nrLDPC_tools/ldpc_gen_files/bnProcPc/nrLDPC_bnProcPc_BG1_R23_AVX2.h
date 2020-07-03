@@ -5,20 +5,6 @@ static inline void nrLDPC_bnProcPc_BG1_R23_AVX2(int8_t* bnProcBuf,int8_t* llrRes
         __m256i* p_llrRes; 
          uint32_t M ;
 // Process group with 1 CNs 
- M = (9*Z + 31)>>5;
-    p_bnProcBuf     = (__m128i*) &bnProcBuf    [0];
-    p_llrProcBuf    = (__m128i*) &llrProcBuf   [0];
-    p_llrRes        = (__m256i*) &llrRes       [0];
-            for (int i=0,j=0;i<M;i++,j+=2) {
-            ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf [j]);
-            ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j + 1]);
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j +1 ]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
-            p_llrRes[i] = _mm256_permute4x64_epi64(ymm0, 0xD8);
-}
 // Process group with 2 CNs 
  M = (1*Z + 31)>>5;
     p_bnProcBuf     = (__m128i*) &bnProcBuf    [3456];

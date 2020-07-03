@@ -4,8 +4,8 @@
 #define NB_R  3
 void nrLDPC_bnProc_BG1_generator_AVX512(int);
 void nrLDPC_bnProc_BG2_generator_AVX512(int);
-//void nrLDPC_bnProcPc_BG1_generator_AVX2(int);
-//void nrLDPC_bnProcPc_BG2_generator_AVX2(int);
+void nrLDPC_bnProcPc_BG1_generator_AVX512(int);
+void nrLDPC_bnProcPc_BG2_generator_AVX512(int);
 
 int main()
 {
@@ -15,8 +15,8 @@ int main()
         nrLDPC_bnProc_BG1_generator_AVX512(R[i]);
 	nrLDPC_bnProc_BG2_generator_AVX512(R[i]);
         
-//	nrLDPC_bnProcPc_BG1_generator_AVX2(R[i]);
-//        nrLDPC_bnProcPc_BG2_generator_AVX2(R[i]);
+	nrLDPC_bnProcPc_BG1_generator_AVX512(R[i]);
+        nrLDPC_bnProcPc_BG2_generator_AVX512(R[i]);
 
 	}
 
