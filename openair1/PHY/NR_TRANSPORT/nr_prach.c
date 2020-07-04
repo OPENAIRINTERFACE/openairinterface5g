@@ -752,8 +752,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     // check energy in nth time shift, for 
 
     preamble_shift2 = ((preamble_shift==0) ? 0 : ((preamble_shift<<log2_ifft_size)/N_ZC));
-    
-    
+
     for (i=0; i<NCS2; i++) {
       lev = (int32_t)prach_ifft[(preamble_shift2+i)];
       levdB = dB_fixed_times10(lev);

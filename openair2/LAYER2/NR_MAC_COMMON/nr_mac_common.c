@@ -52,6 +52,9 @@ const char *prachfmt03[]={"0","1","2","3"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
+  LOG_D(MAC,"get_NCS: indx %d,format0 %d, restriced_set_config %d\n",
+	index,format0,restricted_set_config);
+
   if (format0 < 3) {
     switch(restricted_set_config){
       case 0:
