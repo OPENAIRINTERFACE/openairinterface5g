@@ -2227,6 +2227,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
+  memset(ue->common_vars.txdataF[0], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
+
   LOG_I(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
 #if UE_TIMING_TRACE
@@ -2247,11 +2249,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-    LOG_D(PHY, "Sending PUCCH\n");
-    pucch_procedures_ue_nr(ue,
-                           gNB_id,
-                           proc,
-                           TRUE);
+    if (get_softmodem_params()->do_ra==1) {
+      LOG_D(PHY, "Sending PUCCH\n");
+      pucch_procedures_ue_nr(ue,
+                             gNB_id,
+                             proc,
+                             TRUE);
+    }
 
     LOG_D(PHY, "Sending data \n");
     nr_ue_pusch_common_procedures(ue,
