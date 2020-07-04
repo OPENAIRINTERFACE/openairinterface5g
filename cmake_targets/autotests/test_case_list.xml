@@ -1313,7 +1313,7 @@
                       -a -s -30 -n 100 -p 63 -R 217
                       -a -s -30 -n 100 -p 63 -R 273
 		      -a -s -30 -n 100 -p 63 -R 106 -c 4</main_exec_args>
-      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3</tags>
+      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4</tags>
       <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
