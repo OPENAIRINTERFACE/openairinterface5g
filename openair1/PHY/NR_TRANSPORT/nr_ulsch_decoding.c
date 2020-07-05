@@ -527,7 +527,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #ifdef DEBUG_ULSCH_DECODING
     if (r==0) {
       write_output("decoder_llr.m","decllr",ulsch_llr,G,1,0);
-      write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
+      write_output("decoder_in.m","dec",&harq_process->d[0][0],E,1,0);
     }
 
     printf("decoder input(segment %u) :", r);
@@ -608,7 +608,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   #endif
         ret = ulsch->max_ldpc_iterations + 1;
       }
-
       nb_total_decod++;
 
       if (no_iteration_ldpc > ulsch->max_ldpc_iterations){
