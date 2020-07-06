@@ -1071,9 +1071,9 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
       <main_exec_args>-s0 -S1 -n1000 -R106
                       -s0 -S1 -n10 -I -R106
-		              -s0 -S1 -n1000 -R217
+		      -s0 -S1 -n1000 -R217
                       -s0 -S1 -n10 -I -R217
-		              -s0 -S1 -n1000 -R273
+		      -s0 -S1 -n1000 -R273
                       -s0 -S1 -n10 -I -R273</main_exec_args>
       <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
@@ -1114,8 +1114,7 @@
                   -n100 -e16 -s10 
                   -n100 -s1 -t25
                   -n100 -s1 -t33
-                  -n100 -s1 -t50
-      </main_exec_args>
+                  -n100 -s1 -t50</main_exec_args>
       <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1223,7 +1222,6 @@
 		      -R 106 -i 1 -P 2 -b 10 -s6 -n1000
 		      -R 106 -i 1 -P 2 -b 11 -s6 -n1000
 		      -R 106 -i 1 -P 2 -q8 -b 12 -s-3 -n1000
-		      -R 106 -i 1 -P 2 -q8 -b 19 -s-3 -n1000
 		      -R 106 -i 1 -P 2 -q8 -b 19 -s-3 -n1000
 		      -R 106 -i 1 -P 2 -q8 -b 32 -s-3 -n1000
 		      -R 106 -i 1 -P 2 -q16 -b 32 -s-3 -n1000

@@ -386,6 +386,8 @@ int main(int argc, char **argv)
 
   get_softmodem_params()->phy_test = 1;
   get_softmodem_params()->do_ra = 0;
+  get_softmodem_params()->usim_test = 1;
+
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
