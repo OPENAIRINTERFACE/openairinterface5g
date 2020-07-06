@@ -1,4 +1,5 @@
 
+
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -328,17 +329,17 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 13:
             {
-                nrLDPC_bnProcPc_BG1_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 23:
             {
-                nrLDPC_bnProcPc_BG1_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 89:
             {
-                nrLDPC_bnProcPc_BG1_R89_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R89_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
         }
@@ -349,20 +350,20 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
         {
             case 15:
             {
-                nrLDPC_bnProcPc_BG2_R15_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R15_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 13:
 
             {
-                nrLDPC_bnProcPc_BG2_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
 
             case 23:
 
             {
-                nrLDPC_bnProcPc_BG2_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
 
@@ -614,17 +615,17 @@ if (BG==1)
         {
             case 13:
             {
-                nrLDPC_bnProcPc_BG1_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 23:
             {
-                nrLDPC_bnProcPc_BG1_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 89:
             {
-                nrLDPC_bnProcPc_BG1_R89_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R89_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
         }
@@ -635,20 +636,20 @@ if (BG==1)
         {
             case 15:
             {
-                nrLDPC_bnProcPc_BG2_R15_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R15_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
              case 13:
 
             {
-                nrLDPC_bnProcPc_BG2_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
 
             case 23:
 
             {
-                nrLDPC_bnProcPc_BG2_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
 
@@ -723,7 +724,7 @@ if (BG==1)
                 #ifdef __AVX512BW__
                 nrLDPC_bnProc_BG2_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
                 #else
-                nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
+                nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,+p_procBuf->llrRes, Z);
                 #endif
                 break;
             }
@@ -906,7 +907,7 @@ if (BG==1)
 #ifdef NR_LDPC_PROFILER_DETAIL
         start_meas(&p_profiler->bnProcPc);
 #endif
-        //nrLDPC_bnProcPc(p_lut, p_procBuf, Z);
+  //      nrLDPC_bnProcPc(p_lut, p_procBuf, Z);
 
  if (BG==1)
     {
@@ -914,17 +915,17 @@ if (BG==1)
         {
             case 13:
             {
-                nrLDPC_bnProcPc_BG1_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 23:
             {
-                nrLDPC_bnProcPc_BG1_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 89:
             {
-                nrLDPC_bnProcPc_BG1_R89_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG1_R89_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
         }
@@ -935,20 +936,20 @@ if (BG==1)
         {
             case 15:
             {
-                nrLDPC_bnProcPc_BG2_R15_AVX2(p_procBuf->bnProcBuf, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R15_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes, p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
             case 13:
 
             {
-                nrLDPC_bnProcPc_BG2_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R13_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
 
             case 23:
 
             {
-                nrLDPC_bnProcPc_BG2_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
+                nrLDPC_bnProcPc_BG2_R23_AVX2(p_procBuf->bnProcBuf,p_procBuf->bnProcBufRes,p_procBuf->llrRes, p_procBuf->llrProcBuf, Z);
                 break;
             }
 
@@ -1133,6 +1134,7 @@ if (BG==1)
 
     return i;
 }
+
 
 
 

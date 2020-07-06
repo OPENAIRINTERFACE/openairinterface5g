@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include <immintrin.h>
 void nrLDPC_bnProc_BG2_R13_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,  int8_t* llrRes, uint16_t Z  ) {
         __m256i* p_bnProcBuf; 
         __m256i* p_bnProcBufRes; 
@@ -8,188 +6,112 @@ void nrLDPC_bnProc_BG2_R13_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,  int8_t*
         uint32_t M, i; 
 // Process group with 2 CNs 
  M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [6912];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [6912];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [6912];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[216 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[216 + i ], ((__m256i*) bnProcBuf)[216 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [6912];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[228 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[216 + i ], ((__m256i*) bnProcBuf)[228 + i]);
 }
 // Process group with 3 CNs 
 // Process group with 4 CNs 
        M = (2*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [7680];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [7680];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [7296];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[240 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[228 + i ], ((__m256i*) bnProcBuf)[240 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [7296];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[264 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[228 + i ], ((__m256i*) bnProcBuf)[264 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [7296];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[288 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[228 + i ], ((__m256i*) bnProcBuf)[288 + i]);
 }
-            p_res = &p_bnProcBufRes[72];
-            p_llrRes = (__m256i*) &llrRes  [7296];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[72 + i]);
+            ((__m256i*)bnProcBufRes)[312 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[228 + i ], ((__m256i*) bnProcBuf)[312 + i]);
 }
 // Process group with 5 CNs 
        M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [10752];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [10752];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [8064];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[336 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[252 + i ], ((__m256i*) bnProcBuf)[336 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [8064];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[348 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[252 + i ], ((__m256i*) bnProcBuf)[348 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [8064];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[360 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[252 + i ], ((__m256i*) bnProcBuf)[360 + i]);
 }
-            p_res = &p_bnProcBufRes[36];
-            p_llrRes = (__m256i*) &llrRes  [8064];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
+            ((__m256i*)bnProcBufRes)[372 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[252 + i ], ((__m256i*) bnProcBuf)[372 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [8064];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[384 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[252 + i ], ((__m256i*) bnProcBuf)[384 + i]);
 }
 // Process group with 6 CNs 
        M = (5*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [12672];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [12672];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [8448];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[396 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[264 + i ], ((__m256i*) bnProcBuf)[396 + i]);
 }
-            p_res = &p_bnProcBufRes[60];
-            p_llrRes = (__m256i*) &llrRes  [8448];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[60 + i]);
+            ((__m256i*)bnProcBufRes)[456 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[264 + i ], ((__m256i*) bnProcBuf)[456 + i]);
 }
-            p_res = &p_bnProcBufRes[120];
-            p_llrRes = (__m256i*) &llrRes  [8448];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[120 + i]);
+            ((__m256i*)bnProcBufRes)[516 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[264 + i ], ((__m256i*) bnProcBuf)[516 + i]);
 }
-            p_res = &p_bnProcBufRes[180];
-            p_llrRes = (__m256i*) &llrRes  [8448];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[180 + i]);
+            ((__m256i*)bnProcBufRes)[576 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[264 + i ], ((__m256i*) bnProcBuf)[576 + i]);
 }
-            p_res = &p_bnProcBufRes[240];
-            p_llrRes = (__m256i*) &llrRes  [8448];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[240 + i]);
+            ((__m256i*)bnProcBufRes)[636 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[264 + i ], ((__m256i*) bnProcBuf)[636 + i]);
 }
-            p_res = &p_bnProcBufRes[300];
-            p_llrRes = (__m256i*) &llrRes  [8448];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[300 + i]);
+            ((__m256i*)bnProcBufRes)[696 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[264 + i ], ((__m256i*) bnProcBuf)[696 + i]);
 }
 // Process group with 7 CNs 
        M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [24192];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [24192];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[756 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[756 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[768 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[768 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[780 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[780 + i]);
 }
-            p_res = &p_bnProcBufRes[36];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
+            ((__m256i*)bnProcBufRes)[792 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[792 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[804 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[804 + i]);
 }
-            p_res = &p_bnProcBufRes[60];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[60 + i]);
+            ((__m256i*)bnProcBufRes)[816 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[816 + i]);
 }
-            p_res = &p_bnProcBufRes[72];
-            p_llrRes = (__m256i*) &llrRes  [10368];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[72 + i]);
+            ((__m256i*)bnProcBufRes)[828 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[324 + i ], ((__m256i*) bnProcBuf)[828 + i]);
 }
 // Process group with 8 CNs 
        M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [26880];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [26880];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[840 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[840 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[852 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[852 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[864 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[864 + i]);
 }
-            p_res = &p_bnProcBufRes[36];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
+            ((__m256i*)bnProcBufRes)[876 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[876 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[888 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[888 + i]);
 }
-            p_res = &p_bnProcBufRes[60];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[60 + i]);
+            ((__m256i*)bnProcBufRes)[900 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[900 + i]);
 }
-            p_res = &p_bnProcBufRes[72];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[72 + i]);
+            ((__m256i*)bnProcBufRes)[912 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[912 + i]);
 }
-            p_res = &p_bnProcBufRes[84];
-            p_llrRes = (__m256i*) &llrRes  [10752];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[84 + i]);
+            ((__m256i*)bnProcBufRes)[924 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[336 + i ], ((__m256i*) bnProcBuf)[924 + i]);
 }
 // Process group with 9 CNs 
 // Process group with 10 CNs 
@@ -197,231 +119,139 @@ void nrLDPC_bnProc_BG2_R13_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,  int8_t*
 // Process group with 12 CNs 
 // Process group with 13 CNs 
        M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [29952];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [29952];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[936 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[936 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[948 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[948 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[960 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[960 + i]);
 }
-            p_res = &p_bnProcBufRes[36];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
+            ((__m256i*)bnProcBufRes)[972 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[972 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[984 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[984 + i]);
 }
-            p_res = &p_bnProcBufRes[60];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[60 + i]);
+            ((__m256i*)bnProcBufRes)[996 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[996 + i]);
 }
-            p_res = &p_bnProcBufRes[72];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[72 + i]);
+            ((__m256i*)bnProcBufRes)[1008 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1008 + i]);
 }
-            p_res = &p_bnProcBufRes[84];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[84 + i]);
+            ((__m256i*)bnProcBufRes)[1020 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1020 + i]);
 }
-            p_res = &p_bnProcBufRes[96];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[96 + i]);
+            ((__m256i*)bnProcBufRes)[1032 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1032 + i]);
 }
-            p_res = &p_bnProcBufRes[108];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[108 + i]);
+            ((__m256i*)bnProcBufRes)[1044 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1044 + i]);
 }
-            p_res = &p_bnProcBufRes[120];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[120 + i]);
+            ((__m256i*)bnProcBufRes)[1056 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1056 + i]);
 }
-            p_res = &p_bnProcBufRes[132];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[132 + i]);
+            ((__m256i*)bnProcBufRes)[1068 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1068 + i]);
 }
-            p_res = &p_bnProcBufRes[144];
-            p_llrRes = (__m256i*) &llrRes  [11136];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[144 + i]);
+            ((__m256i*)bnProcBufRes)[1080 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[348 + i ], ((__m256i*) bnProcBuf)[1080 + i]);
 }
 // Process group with 14 CNs 
        M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [34944];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [34944];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[1092 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1092 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[1104 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1104 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[1116 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1116 + i]);
 }
-            p_res = &p_bnProcBufRes[36];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
+            ((__m256i*)bnProcBufRes)[1128 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1128 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[1140 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1140 + i]);
 }
-            p_res = &p_bnProcBufRes[60];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[60 + i]);
+            ((__m256i*)bnProcBufRes)[1152 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1152 + i]);
 }
-            p_res = &p_bnProcBufRes[72];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[72 + i]);
+            ((__m256i*)bnProcBufRes)[1164 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1164 + i]);
 }
-            p_res = &p_bnProcBufRes[84];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[84 + i]);
+            ((__m256i*)bnProcBufRes)[1176 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1176 + i]);
 }
-            p_res = &p_bnProcBufRes[96];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[96 + i]);
+            ((__m256i*)bnProcBufRes)[1188 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1188 + i]);
 }
-            p_res = &p_bnProcBufRes[108];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[108 + i]);
+            ((__m256i*)bnProcBufRes)[1200 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1200 + i]);
 }
-            p_res = &p_bnProcBufRes[120];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[120 + i]);
+            ((__m256i*)bnProcBufRes)[1212 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1212 + i]);
 }
-            p_res = &p_bnProcBufRes[132];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[132 + i]);
+            ((__m256i*)bnProcBufRes)[1224 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1224 + i]);
 }
-            p_res = &p_bnProcBufRes[144];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[144 + i]);
+            ((__m256i*)bnProcBufRes)[1236 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1236 + i]);
 }
-            p_res = &p_bnProcBufRes[156];
-            p_llrRes = (__m256i*) &llrRes  [11520];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[156 + i]);
+            ((__m256i*)bnProcBufRes)[1248 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[360 + i ], ((__m256i*) bnProcBuf)[1248 + i]);
 }
 // Process group with 15 CNs 
 // Process group with 16 CNs 
        M = (1*Z + 31)>>5;
-    p_bnProcBuf     = (__m256i*) &bnProcBuf    [40320];
-   p_bnProcBufRes    = (__m256i*) &bnProcBufRes   [40320];
-            p_res = &p_bnProcBufRes[0];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[0 + i]);
+            ((__m256i*)bnProcBufRes)[1260 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1260 + i]);
 }
-            p_res = &p_bnProcBufRes[12];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[12 + i]);
+            ((__m256i*)bnProcBufRes)[1272 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1272 + i]);
 }
-            p_res = &p_bnProcBufRes[24];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[24 + i]);
+            ((__m256i*)bnProcBufRes)[1284 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1284 + i]);
 }
-            p_res = &p_bnProcBufRes[36];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[36 + i]);
+            ((__m256i*)bnProcBufRes)[1296 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1296 + i]);
 }
-            p_res = &p_bnProcBufRes[48];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[48 + i]);
+            ((__m256i*)bnProcBufRes)[1308 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1308 + i]);
 }
-            p_res = &p_bnProcBufRes[60];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[60 + i]);
+            ((__m256i*)bnProcBufRes)[1320 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1320 + i]);
 }
-            p_res = &p_bnProcBufRes[72];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[72 + i]);
+            ((__m256i*)bnProcBufRes)[1332 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1332 + i]);
 }
-            p_res = &p_bnProcBufRes[84];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[84 + i]);
+            ((__m256i*)bnProcBufRes)[1344 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1344 + i]);
 }
-            p_res = &p_bnProcBufRes[96];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[96 + i]);
+            ((__m256i*)bnProcBufRes)[1356 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1356 + i]);
 }
-            p_res = &p_bnProcBufRes[108];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[108 + i]);
+            ((__m256i*)bnProcBufRes)[1368 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1368 + i]);
 }
-            p_res = &p_bnProcBufRes[120];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[120 + i]);
+            ((__m256i*)bnProcBufRes)[1380 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1380 + i]);
 }
-            p_res = &p_bnProcBufRes[132];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[132 + i]);
+            ((__m256i*)bnProcBufRes)[1392 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1392 + i]);
 }
-            p_res = &p_bnProcBufRes[144];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[144 + i]);
+            ((__m256i*)bnProcBufRes)[1404 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1404 + i]);
 }
-            p_res = &p_bnProcBufRes[156];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[156 + i]);
+            ((__m256i*)bnProcBufRes)[1416 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1416 + i]);
 }
-            p_res = &p_bnProcBufRes[168];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[168 + i]);
+            ((__m256i*)bnProcBufRes)[1428 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1428 + i]);
 }
-            p_res = &p_bnProcBufRes[180];
-            p_llrRes = (__m256i*) &llrRes  [11904];
             for (i=0;i<M;i++) {
-            p_res[i] = _mm256_subs_epi8(p_llrRes[i], p_bnProcBuf[180 + i]);
+            ((__m256i*)bnProcBufRes)[1440 + i ] = _mm256_subs_epi8(((__m256i*)llrRes)[372 + i ], ((__m256i*) bnProcBuf)[1440 + i]);
 }
 // Process group with 17 CNs 
 // Process group with 18 CNs 

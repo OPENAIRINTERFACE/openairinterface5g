@@ -1,4 +1,4 @@
-static inline void nrLDPC_bnProcPc_BG1_R13_AVX2(int8_t* bnProcBuf,int8_t* llrRes ,  int8_t* llrProcBuf, uint16_t Z ) {
+static inline void nrLDPC_bnProcPc_BG1_R13_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,int8_t* llrRes ,  int8_t* llrProcBuf, uint16_t Z ) {
    __m256i ymm0, ymm1, ymmRes0, ymmRes1;  
         __m128i* p_bnProcBuf; 
         __m128i* p_llrProcBuf;

@@ -25,8 +25,8 @@ static inline void nrLDPC_bnProcPc_BG1_R23_AVX512(int8_t* bnProcBuf,int8_t* llrR
     p_llrProcBuf    = (__m256i*) &llrProcBuf   [3456];
     p_llrRes        = (__m512i*) &llrRes       [3456];
             for (int i=0,j=0;i<M;i++,j+=2) {
-            zmm0 = _mm512_cvtepi8_epi16(p_bnProcBuf [j]);
-            zmm1 = _mm512_cvtepi8_epi16(p_bnProcBuf[j + 1]);
+            zmmRes0 = _mm512_cvtepi8_epi16(p_bnProcBuf [j]);
+            zmmRes1 = _mm512_cvtepi8_epi16(p_bnProcBuf[j + 1]);
             zmm0 = _mm512_cvtepi8_epi16(p_bnProcBuf[12 + j]);
             zmmRes0 = _mm512_adds_epi16(zmmRes0, zmm0);
             zmm1 = _mm512_cvtepi8_epi16(p_bnProcBuf[12 + j +1]);

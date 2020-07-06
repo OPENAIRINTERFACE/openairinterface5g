@@ -1,7 +1,3 @@
-
-
-
-
 #include <stdint.h>
 #include <immintrin.h>
 #include "../../nrLDPCdecoder_defs.h"
@@ -148,8 +144,8 @@ fprintf(fd,  "// Process group with 2 CNs \n");
         // Loop over BNs
         fprintf(fd,"            for (int i=0,j=0;i<M;i++,j+=2) {\n");
             // First 16 LLRs of first CN
-        fprintf(fd,"            zmm0 = _mm512_cvtepi8_epi16(p_bnProcBuf [j]);\n");
-        fprintf(fd,"            zmm1 = _mm512_cvtepi8_epi16(p_bnProcBuf[j + 1]);\n");
+        fprintf(fd,"            zmmRes0 = _mm512_cvtepi8_epi16(p_bnProcBuf [j]);\n");
+        fprintf(fd,"            zmmRes1 = _mm512_cvtepi8_epi16(p_bnProcBuf[j + 1]);\n");
 
             // Loop over CNs
         for (k=1; k<2; k++)

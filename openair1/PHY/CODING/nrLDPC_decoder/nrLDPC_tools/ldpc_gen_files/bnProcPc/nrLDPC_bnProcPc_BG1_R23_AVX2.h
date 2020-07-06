@@ -1,4 +1,4 @@
-static inline void nrLDPC_bnProcPc_BG1_R23_AVX2(int8_t* bnProcBuf,int8_t* llrRes ,  int8_t* llrProcBuf, uint16_t Z ) {
+static inline void nrLDPC_bnProcPc_BG1_R23_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,int8_t* llrRes ,  int8_t* llrProcBuf, uint16_t Z ) {
    __m256i ymm0, ymm1, ymmRes0, ymmRes1;  
         __m128i* p_bnProcBuf; 
         __m128i* p_llrProcBuf;
@@ -11,8 +11,8 @@ static inline void nrLDPC_bnProcPc_BG1_R23_AVX2(int8_t* bnProcBuf,int8_t* llrRes
     p_llrProcBuf    = (__m128i*) &llrProcBuf   [3456];
     p_llrRes        = (__m256i*) &llrRes       [3456];
             for (int i=0,j=0;i<M;i++,j+=2) {
-            ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf [j]);
-            ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j + 1]);
+            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf [j]);
+            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j + 1]);
             ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[24 + j]);
             ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
             ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[24 + j +1]);
