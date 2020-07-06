@@ -715,6 +715,8 @@ int main(int argc, char **argv)
       int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
       for (int i=0;i<(TBS>>3);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
+      double scale = 1;
+
       if (input_fd == NULL) {
 
         if (SNR==snr0) { 
@@ -739,13 +741,14 @@ int main(int argc, char **argv)
 	  txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 				frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 	  
-	  txlev_float = (double)txlev/256; // output of signal_energy is fixed point representation
+	  txlev_float = (double)txlev/scale; // output of signal_energy is fixed point representation
 	  
 	  
 	  //AWGN
 	}
       }	
       else n_trials = 1;
+
 
       sigma_dB = 10*log10(txlev_float)-SNR;
       sigma    = pow(10,sigma_dB/10);
@@ -767,8 +770,8 @@ int main(int argc, char **argv)
 	if (input_fd == NULL ) {
 	  for (i=0; i<slot_length; i++) {
 	    for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/16.0   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/16.0 + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/sqrt(scale)   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/sqrt(scale) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
 	    }
 	  }
 	}
