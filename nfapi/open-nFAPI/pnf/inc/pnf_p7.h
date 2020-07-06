@@ -82,7 +82,7 @@ typedef struct {
 	pthread_mutex_t pack_mutex; // should we allow the client to specifiy
 
 	nfapi_pnf_p7_subframe_buffer_t subframe_buffer[30/*NFAPI_MAX_TIMING_WINDOW_SIZE*/];
-
+    nfapi_pnf_p7_slot_buffer_t slot_buffer[30/*NFAPI_MAX_TIMING_WINDOW_SIZE*/];
 	uint32_t sequence_number;
 	uint16_t max_num_segments;
 
@@ -94,6 +94,12 @@ typedef struct {
 	uint16_t sfn_sf;
 	uint32_t sf_start_time_hr;
 	int32_t sfn_sf_shift;
+
+	uint16_t sfn;
+	uint16_t slot;
+	uint16_t sfn_slot;
+	uint32_t slot_start_time_hr;
+	int32_t sfn_slot_shift;
 
 	uint8_t timing_info_period_counter;
 	uint8_t timing_info_aperiodic_send; // 0:false 1:true

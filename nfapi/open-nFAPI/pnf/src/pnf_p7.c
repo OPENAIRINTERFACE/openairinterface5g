@@ -32,7 +32,18 @@
 #define FAPI2_IP_DSCP	0
 
 extern uint16_t sf_ahead;
+extern uint16_t slot_ahead;
+
 //uint16_t sf_ahead=4;
+
+void add_slot(uint16_t *frameP, uint16_t *slotP, int offset)
+{
+	uint16_t num_slots = 20; // set based on numerlogy (fixing for 1)
+
+    *frameP    = (*frameP + ((*slotP + offset) / num_slots))%1024; 
+
+    *slotP = ((*slotP + offset) % num_slots);
+}
 
 void add_sf(uint16_t *frameP, uint16_t *subframeP, int offset)
 {
@@ -48,6 +59,22 @@ void subtract_sf(uint16_t *frameP, uint16_t *subframeP, int offset)
     *frameP = (*frameP+1024-1)%1024;
   }
   *subframeP = (*subframeP+10-offset)%10;
+}
+
+uint32_t sfnslot_add_slot(uint16_t sfn, uint16_t slot, int offset)
+{
+  uint32_t new_sfnslot;
+//   uint16_t sfn = NFAPI_SFNSLOT2SFN(sfnslot);
+//   uint16_t slot  = NFAPI_SFNSLOT2SLOT(sfnslot);
+
+  //printf("%s() sfn:%u sf:%u\n", __FUNCTION__, sfn, sf);
+  add_slot(&sfn, &slot, offset);
+
+  new_sfnslot = sfn<<6|slot;
+
+  //printf("%s() sfn:%u sf:%u offset:%d sfnsf:%d(DEC:%d) new:%d(DEC:%d)\n", __FUNCTION__, sfn, sf, offset, sfnsf, NFAPI_SFNSF2DEC(sfnsf), new_sfnsf, NFAPI_SFNSF2DEC(new_sfnsf));
+
+  return new_sfnslot;
 }
 
 uint16_t sfnsf_add_sf(uint16_t sfnsf, int offset)
@@ -614,65 +641,72 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 	
 	// todo : consider a more efficent lock mechasium
 
-#if 0
+
 	if(pthread_mutex_lock(&(pnf_p7->mutex)) != 0)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to lock mutex\n");
 		return -1;
 	}
 
-	// save the curren time and sfn_sf
-	pnf_p7->sf_start_time_hr = pnf_get_current_time_hr();
-	pnf_p7->sfn_sf = sfn_sf;
+	// save the curren time, sfn and slot
+	pnf_p7->slot_start_time_hr = pnf_get_current_time_hr();
+	pnf_p7->sfn = sfn;
+	pnf_p7->slot = slot;
 
-	uint32_t sfn_sf_tx = sfnsf_add_sf(sfn_sf, sf_ahead);
-	uint32_t tx_sfn_sf_dec = NFAPI_SFNSF2DEC(sfn_sf_tx);
+
+
+	uint32_t sfn_slot_tx = sfnslot_add_slot(sfn, slot, slot_ahead);
+	uint32_t tx_sfn_slot_dec = 20*sfn + slot;
+
+#if 0
+	uint32_t tx_sfn_slot_dec = NFAPI_SFNSLOT2DEC(sfn_slot_tx);
 
 	// If the subframe_buffer has been configured
-	if(pnf_p7->_public.subframe_buffer_size != 0)
+	if(pnf_p7->_public.slot_buffer_size!= 0) // for now value is same as sf_buffer_size
 	{
 
 		// apply the shift to the incoming sfn_sf
-		if(pnf_p7->sfn_sf_shift != 0)
+		if(pnf_p7->sfn_slot_shift != 0) // see in vnf_build_send_dl_node_sync
 		{
-			int32_t sfn_sf_dec = NFAPI_SFNSF2DEC(sfn_sf);
+			int32_t sfn_slot_dec = NFAPI_SFNSLOT2DEC(sfn_slot);
 
-			int32_t shifted_sfn_sf = sfn_sf_dec += pnf_p7->sfn_sf_shift;
+			int32_t shifted_sfn_slot = sfn_slot_dec += pnf_p7->sfn_slot_shift;
 
 			// adjust for wrap-around
-			if(shifted_sfn_sf < 0)
-				shifted_sfn_sf += NFAPI_MAX_SFNSFDEC;
-			else if(shifted_sfn_sf > NFAPI_MAX_SFNSFDEC)
-				shifted_sfn_sf -= NFAPI_MAX_SFNSFDEC;
+			if(shifted_sfn_slot < 0)
+				shifted_sfn_slot += NFAPI_MAX_SFNSLOTDEC;
+			else if(shifted_sfn_slot > NFAPI_MAX_SFNSLOTDEC)
+				shifted_sfn_slot -= NFAPI_MAX_SFNSLOTDEC;
 
-			NFAPI_TRACE(NFAPI_TRACE_INFO, "Applying shift %d to sfn/sf (%d -> %d)\n", pnf_p7->sfn_sf_shift, NFAPI_SFNSF2DEC(sfn_sf), shifted_sfn_sf);
-			sfn_sf = shifted_sfn_sf;
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "Applying shift %d to sfn/slot (%d -> %d)\n", pnf_p7->sfn_slot_shift, NFAPI_SFNSF2DEC(sfn_slot), shifted_sfn_slot);
+			sfn_slot = shifted_sfn_slot;
 
-                        //
-                        // DJP - why does the shift not apply to pnf_p7->sfn_sf???
-                        //
+			//
+			// DJP - why does the shift not apply to pnf_p7->sfn_sf???
+			//
 
-			pnf_p7->sfn_sf_shift = 0;
+			pnf_p7->sfn_slot_shift = 0;
 		}
 
-		uint32_t sfn_sf_dec = NFAPI_SFNSF2DEC(sfn_sf);
-		uint8_t buffer_index = sfn_sf_dec % pnf_p7->_public.subframe_buffer_size;
+		uint32_t sfn_slot_dec = NFAPI_SFNSLOT2DEC(sfn_slot);
+		uint8_t buffer_index = sfn_slot_dec % pnf_p7->_public.slot_buffer_size;
 
-		nfapi_pnf_p7_subframe_buffer_t* subframe_buffer = &(pnf_p7->subframe_buffer[buffer_index]);
+		nfapi_pnf_p7_slot_buffer_t* slot_buffer = &(pnf_p7->subframe_buffer[buffer_index]);
 
-		uint8_t tx_buffer_index = tx_sfn_sf_dec % pnf_p7->_public.subframe_buffer_size;
-		nfapi_pnf_p7_subframe_buffer_t* tx_subframe_buffer = &(pnf_p7->subframe_buffer[tx_buffer_index]);
+		uint8_t tx_buffer_index = tx_sfn_slot_dec % pnf_p7->_public.slot_buffer_size;
+		nfapi_pnf_p7_slot_buffer_t* tx_slot_buffer = &(pnf_p7->slot_buffer[tx_buffer_index]);
 
                 //printf("sfn_sf_dec:%d tx_sfn_sf_dec:%d\n", sfn_sf_dec, tx_sfn_sf_dec);
-
-                if (0) NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() shift:%d subframe_buffer->sfn_sf:%d tx_subframe_buffer->sfn_sf:%d sfn_sf:%d subframe_buffer[buffer_index:%u dl_config_req:%p tx_req:%p] "
+                if (0) NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() shift:%d slot_buffer->sfn_sf:%d tx_slot_buffer->sfn_slot:%d sfn_sf:%d subframe_buffer[buffer_index:%u dl_config_req:%p tx_req:%p] "
                     "TX:sfn_sf:%d:tx_buffer_index:%d[dl_config_req:%p tx_req:%p]\n", 
                     __FUNCTION__, 
-                    pnf_p7->sfn_sf_shift, 
-                    NFAPI_SFNSF2DEC(subframe_buffer->sfn_sf), 
-                    NFAPI_SFNSF2DEC(tx_subframe_buffer->sfn_sf), 
-                       sfn_sf_dec,    buffer_index,    subframe_buffer->dl_config_req,    subframe_buffer->tx_req, 
-                    tx_sfn_sf_dec, tx_buffer_index, tx_subframe_buffer->dl_config_req, tx_subframe_buffer->tx_req);
+                    pnf_p7->sfn_slot_shift, 
+                    NFAPI_SFNSF2DEC(slot_buffer->sfn_slot), 
+                    NFAPI_SFNSF2DEC(tx_slot_buffer->sfn_slot), 
+                       sfn_slot_dec,    buffer_index,    slot_buffer->dl_config_req,    slot_buffer->tx_req, 
+                    tx_sfn_slot_dec, tx_buffer_index, tx_slot_buffer->dl_config_req, tx_slot_buffer->tx_req);
+					//TODO: Change later if required
+
 
 		// if the subframe buffer sfn sf is set then we have atlease 1 message
 		// from the vnf. 
@@ -681,39 +715,40 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 
                 //printf("tx_subframe_buffer->sfn_sf:%d sfn_sf_tx:%d\n", tx_subframe_buffer->sfn_sf, sfn_sf_tx);
                 //printf("subframe_buffer->sfn_sf:%d sfn_sf:%d\n", subframe_buffer->sfn_sf, sfn_sf);
-		if(tx_subframe_buffer->sfn_sf == sfn_sf_tx)
+		if(tx_slot_buffer->sfn_slot == sfn_slot_tx)
 		{
-			if(tx_subframe_buffer->tx_req != 0)
+			if(tx_slot_buffer->tx_req != 0)
 			{
 				if(pnf_p7->_public.tx_req)
-					(pnf_p7->_public.tx_req)(&(pnf_p7->_public), tx_subframe_buffer->tx_req);
+					(pnf_p7->_public.tx_req)(&(pnf_p7->_public), tx_slot_buffer->tx_req);
 
-				//deallocate_nfapi_tx_request(subframe_buffer->tx_req, pnf_p7);
+				//deallocate_nfapi_tx_request(slot_buffer->tx_req, pnf_p7);
 			}
 			else
 			{
 				// send dummy
-				if(pnf_p7->_public.tx_req && pnf_p7->_public.dummy_subframe.tx_req)
+				if(pnf_p7->_public.tx_req && pnf_p7->_public.dummy_slot.tx_req)
 				{
-					pnf_p7->_public.dummy_subframe.tx_req->sfn_sf = sfn_sf_tx;
-					(pnf_p7->_public.tx_req)(&(pnf_p7->_public), pnf_p7->_public.dummy_subframe.tx_req);
+					pnf_p7->_public.dummy_slot.tx_req->sfn_sf = sfn_slot_tx; // TODO: change tx_req to nfapi_nr_tx_data_request_t
+					(pnf_p7->_public.tx_req)(&(pnf_p7->_public), pnf_p7->_public.dummy_slot.tx_req);
 				}
 			}
+		} 
 
-			if(tx_subframe_buffer->dl_config_req != 0)
+			if(tx_slot_buffer->dl_config_req != 0)
 			{
 				if(pnf_p7->_public.dl_config_req)
-					(pnf_p7->_public.dl_config_req)(NULL, &(pnf_p7->_public), tx_subframe_buffer->dl_config_req);
+					(pnf_p7->_public.dl_config_req)(NULL, &(pnf_p7->_public), tx_slot_buffer->dl_config_req);
 
 				//deallocate_nfapi_dl_config_request(subframe_buffer->dl_config_req, pnf_p7);
 			}
 			else
 			{
 				// send dummy
-				if(pnf_p7->_public.dl_config_req && pnf_p7->_public.dummy_subframe.dl_config_req)
+				if(pnf_p7->_public.dl_config_req && pnf_p7->_public.dummy_slot.dl_config_req)
 				{
-					pnf_p7->_public.dummy_subframe.dl_config_req->sfn_sf = sfn_sf_tx;
-					(pnf_p7->_public.dl_config_req)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_subframe.dl_config_req);
+					pnf_p7->_public.dummy_slot.dl_config_req->sfn_sf = sfn_slot_tx; //	TODO: Change dl_config_req to nfapi_nr_dl_tti_request_t 
+					(pnf_p7->_public.dl_config_req)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.dl_config_req);
 				}
 			}
 
@@ -733,6 +768,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 					(pnf_p7->_public.hi_dci0_req)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_subframe.hi_dci0_req);
 				}
 			}
+
 
 			if(tx_subframe_buffer->ue_release_req != 0)
 			{
@@ -859,6 +895,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		{
 			pnf_p7->timing_info_ms_counter++;
 		}
+
 	}
 	else
 	{
@@ -879,14 +916,14 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		memset(&pnf_p7->stats, 0, sizeof(pnf_p7->stats));
 	}
 	pnf_p7->tick++;
-
+#endif
 
 	if(pthread_mutex_unlock(&(pnf_p7->mutex)) != 0)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to unlock mutex\n");
 		return -1;
 	}
-#endif
+
 	return 0;
 }
 

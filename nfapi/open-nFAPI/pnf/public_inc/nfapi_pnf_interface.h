@@ -553,6 +553,20 @@ typedef struct
 	nfapi_ue_release_request_t* ue_release_req;
 } nfapi_pnf_p7_subframe_buffer_t;
 
+typedef struct 
+{
+	uint16_t sfn_slot;
+	//TODO: Change P7 structs to NR
+	nfapi_nr_dl_tti_request_t dl_config_req;//nfapi_dl_config_request_t* dl_config_req; 
+	nfapi_nr_ul_tti_request_t ul_config_req;//nfapi_ul_config_request_t* ul_config_req;
+	nfapi_nr_ul_dci_request_t hi_dci0_req;//nfapi_hi_dci0_request_t* hi_dci0_req;
+	nfapi_nr_tx_data_request_t* tx_req;//nfapi_tx_request_t* tx_req;
+
+	//TODO: check these two later
+	nfapi_lbt_dl_config_request_t* lbt_dl_config_req;
+	nfapi_ue_release_request_t* ue_release_req;
+} nfapi_pnf_p7_slot_buffer_t;
+
 typedef struct nfapi_pnf_p7_config nfapi_pnf_p7_config_t;
 
 /*! The nfapi PNF PHY P7 configuration information created using the nfapi_pnf_p7_create function
@@ -605,6 +619,8 @@ typedef struct nfapi_pnf_p7_config
 	/*! The dummy subframe buffer structure that should be used in case there
 	 * are no 'valid' subframe messages */
 	nfapi_pnf_p7_subframe_buffer_t dummy_subframe;
+
+	nfapi_pnf_p7_slot_buffer_t dummy_slot; // defining a slot equivalent for now
 	
 	/*! Configuration options for the p7 pack unpack functions*/
 	nfapi_p7_codec_config_t codec_config;
@@ -614,6 +630,7 @@ typedef struct nfapi_pnf_p7_config
 
 	// tdb : if these should be public
 	uint16_t subframe_buffer_size;
+	uint16_t slot_buffer_size;
 	uint8_t timing_info_mode_periodic; // 0:false 1:true
 	uint8_t timing_info_mode_aperiodic; // 0:false 1:true
 	uint8_t timing_info_period; // 1..225 in subframes

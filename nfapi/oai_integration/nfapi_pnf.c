@@ -1227,6 +1227,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   p7_config->trace = &pnf_nfapi_trace;
   phy->user_data = p7_config;
   p7_config->subframe_buffer_size = phy_info->timing_window;
+  p7_config->slot_buffer_size = phy_info->timing_window; // TODO: check if correct for NR
   printf("subframe_buffer_size configured using phy_info->timing_window:%d\n", phy_info->timing_window);
 
   if(phy_info->timing_info_mode & 0x1) {
@@ -1322,7 +1323,6 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   nfapi_send_pnf_start_resp(config, p7_config->phy_id);
   printf("[PNF] Sending first P7 slot indication\n");
 #if 1
-  //TODO: Change to nfapi_pnf_p7_slot_ind
   nfapi_pnf_p7_slot_ind(p7_config, p7_config->phy_id, 0, 0);
   printf("[PNF] Sent first P7 slot ind\n");
 #else
@@ -1669,7 +1669,8 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
 void oai_slot_ind(uint16_t sfn, uint16_t slot) {
 
 #if 1 // Put the NR code here
-  //LOG_D(PHY,"%s(sfn:%d, sf:%d)\n", __FUNCTION__, sfn, sf);
+  LOG_I(PHY,"%s(sfn:%d, slot:%d)\n", __FUNCTION__, sfn, slot);
+
 
   //TODO FIXME - HACK - DJP - using a global to bodge it in
   if (p7_config_g != NULL && sync_var==0) {
@@ -1680,9 +1681,9 @@ void oai_slot_ind(uint16_t sfn, uint16_t slot) {
       clock_gettime(CLOCK_MONOTONIC, &ts);
       NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u slot:%u) SFN/SLOT(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, slot, NFAPI_SFNSLOT2DEC(sfn_slot_tx));
     }
-
-    // int subframe_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, 0, 0);
-    int slot_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot);
+    
+    //TODO: send p7_config instead of p7_config_g
+    int slot_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot); 
 
     // if (subframe_ret) {
     if (slot_ret) { 

@@ -113,6 +113,7 @@ int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
 
 uint16_t sf_ahead;
+uint16_t slot_ahead;
 uint16_t sl_ahead;
 
 extern int emulate_rf;

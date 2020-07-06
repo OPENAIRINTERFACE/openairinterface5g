@@ -74,6 +74,7 @@ int config_sync_var=-1;
 volatile int oai_exit = 0;
 double cpuf;
 uint16_t sf_ahead=4;
+uint16_t slot_ahead=6;
 int otg_enabled;
 uint64_t  downlink_frequency[MAX_NUM_CCs][4];
 int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];

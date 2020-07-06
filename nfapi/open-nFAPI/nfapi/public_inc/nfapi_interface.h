@@ -121,7 +121,13 @@ typedef struct {
 #define NFAPI_TAG_LENGTH_PACKED_LEN 4
 
 // Convenience methods to convert between SFN/SLOT formats
-#define NFAPI_SFNSLOT2DEC(_sfnslot) ((((_sfnslot) >> 6) * 10) + ((_sfnslot) & 0xF))
+#define NFAPI_SFNSLOT2DEC(_sfn,_slot) ((((_sfn) >> 6) * 20) + ((_slot) & 0x3F)) // total count of slots
+#define NFAPI_SFNSLOTDEC2SFNSLOT(_sfnslot_dec) ((((_sfnslot_dec) / 20) << 4) | (((_sfnslot_dec) - (((_sfnslot_dec) / 20) * 10)) & 0x3F))
+
+#define NFAPI_SFNSLOT2SFN(_sfnslot) ((_sfnslot) >> 6)
+#define NFAPI_SFNSLOT2SLOT(_sfnslot) ((_sfnslot) & 0x3F)
+
+#define NFAPI_MAX_SFNSLOTDEC 1024*20 // 20 is for numerology 1
 
 // Convenience methods to convert between SFN/SFN formats
 #define NFAPI_SFNSF2DEC(_sfnsf) ((((_sfnsf) >> 4) * 10) + ((_sfnsf) & 0xF))

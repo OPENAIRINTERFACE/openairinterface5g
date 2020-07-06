@@ -1005,6 +1005,7 @@ typedef struct {
   uint16_t SFN;
   /// Slot number (0-319)
   uint16_t Slot;
+  uint16_t sfn_slot;
   nfapi_nr_dl_tti_request_body_t dl_tti_request_body;
   nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_dl_tti_request_t;
@@ -1018,7 +1019,7 @@ typedef struct
   nfapi_nr_dl_tti_ssb_pdu_t* ssb_pdu;
 } nfapi_nr_dl_pdu_configuration_t;
 */
-  /*
+ /* 
 typedef struct 
 {
   uint16_t pdu_type;//0: PDCCH PDU 1: PDSCH PDU 2: CSI-RS PDU 3: SSB PDU, 
