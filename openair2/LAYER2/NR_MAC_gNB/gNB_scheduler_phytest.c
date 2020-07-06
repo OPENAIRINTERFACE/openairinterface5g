@@ -585,7 +585,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   //at the upper layers
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->phy_test == 0){
 
-    lcid = DTCH; 
+    lcid = DL_SCH_LCID_DTCH; 
 
     //for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 
