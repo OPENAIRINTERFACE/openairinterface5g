@@ -148,11 +148,17 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // Legacy changes directlty the variable channel_model->path_loss_dB place to place
     // while calling new_channel_desc_scm() with path losses = 0
     static bool init_done=false;
+
     if (!init_done) {
-      randominit(0);
+      uint64_t rand;
+      FILE *h=fopen("/dev/random","r");
+      fread(&rand,sizeof(rand),1,h);
+      fclose(h);
+      randominit(rand);
       tableNor(0);
       init_done=true;
     }
+
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
                                             bridge->channelmod,
                                             bridge->sample_rate,
@@ -375,6 +381,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (t->lastWroteTS > timestamp+nsamps)
     LOG_E(HW,"Not supported to send Tx out of order (same in USRP) %lu, %lu\n",
           t->lastWroteTS, timestamp);
+
   t->lastWroteTS=timestamp+nsamps;
 
   if (!alreadyLocked)
@@ -476,20 +483,22 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
           b->trashingPacket=true;
         } else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
+
           if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
-          for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
-            for (int a=0; a < nbAnt; a++) {
-              b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
-              b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
+            for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
+              for (int a=0; a < nbAnt; a++) {
+                b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
+                b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
+              }
             }
-          }
           } else {
-	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
-	  }
+            memset(b->circularBuf, 0, sampleToByte(CirSize,1));
+          }
+
           if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
-          b->lastReceivedTS=b->th.timestamp;
 
+          b->lastReceivedTS=b->th.timestamp;
         } else if ( b->lastReceivedTS > b->th.timestamp && b->th.size == 1 ) {
           LOG_W(HW,"Received Rx/Tx synchro out of order\n");
           b->trashingPacket=true;
@@ -649,8 +658,9 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
           const int64_t base=t->nextTimestamp*nbAnt+a;
+
           for ( int i=0; i < nsamps; i++ ) {
-	    const int idx=(i*nbAnt+base)%CirSize;
+            const int idx=(i*nbAnt+base)%CirSize;
             out[i].r+=ptr->circularBuf[idx].r;
             out[i].i+=ptr->circularBuf[idx].i;
           }
@@ -691,7 +701,7 @@ int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cf
 int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
-int rfsimulator_write_init(openair0_device *device){
+int rfsimulator_write_init(openair0_device *device) {
   return 0;
 }
 __attribute__((__visibility__("default")))

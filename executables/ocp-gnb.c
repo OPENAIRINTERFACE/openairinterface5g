@@ -40,6 +40,7 @@
 #include <executables/softmodem-common.h>
 #include <openair2/GNB_APP/gnb_app.h>
 #include <openair2/RRC/NR/nr_rrc_extern.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto.h>
 
 // should be in a shared lib
 #include <forms.h>
@@ -176,11 +177,16 @@ static inline int rxtx(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
   int rx_slot_type         = nr_slot_select(cfg,proc->frame_rx,proc->slot_rx);
 
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
-    // UE-specific RX processing for subframe n
-    // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
+    // Do PRACH RU processing
+    int prach_id=find_nr_prach(gNB,proc->frame_rx,proc->slot_rx,0,SEARCH_EXIST);
+    if (prach_id>=0) {
+      L1_nr_prach_procedures(gNB,proc->frame_rx,proc->slot_rx,&gNB->prach_vars.list[prach_id].pdu);
+      gNB->prach_vars.list[prach_id].frame=-1;
+    }
+    
     phy_procedures_gNB_uespec_RX(gNB, proc->frame_rx, proc->slot_rx);
   }
-
+  
   if (oai_exit) return(-1);
 
   // *****************************************
