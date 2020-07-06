@@ -267,7 +267,13 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
   AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
-  uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4; // should be changed based on MAC parameters
+  uint8_t nb_re_dmrs;
+  if (dmrs_Type==NFAPI_NR_DMRS_TYPE1) {
+    nb_re_dmrs = 6*harq_process->n_dmrs_cdm_groups;
+  }
+  else {
+    nb_re_dmrs = 4*harq_process->n_dmrs_cdm_groups;
+  }
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
   AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
 
