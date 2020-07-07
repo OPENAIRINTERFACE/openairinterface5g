@@ -137,12 +137,12 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     @param symbol Symbol on which to act (within-in nr_TTI_rx)
     @param harq_pid HARQ process ID
 */
-void nr_rx_pusch(PHY_VARS_gNB *gNB,
-                 uint8_t UE_id,
-                 uint32_t frame,
-                 uint8_t nr_tti_rx,
-                 unsigned char symbol,
-                 unsigned char harq_pid);
+int nr_rx_pusch(PHY_VARS_gNB *gNB,
+                uint8_t UE_id,
+                uint32_t frame,
+                uint8_t nr_tti_rx,
+                unsigned char symbol,
+                unsigned char harq_pid);
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
     @param rxdataF pointer to the received frequency domain signal
@@ -309,9 +309,23 @@ void nr_fill_prach_ru(RU_t *ru,
 int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type);
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
+NR_gNB_PUCCH_t *new_gNB_pucch(void);
+
+void nr_fill_pucch(PHY_VARS_gNB *gNB,
+                   int frame,
+                   int slot,
+                   nfapi_nr_pucch_pdu_t *pucch_pdu);
+
+int nr_find_pucch(uint16_t rnti,
+                  int frame,
+                  int slot,
+                  PHY_VARS_gNB *gNB);
+
+
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
+
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,

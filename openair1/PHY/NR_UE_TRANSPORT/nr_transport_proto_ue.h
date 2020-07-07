@@ -1387,8 +1387,10 @@ void ulsch_modulation(int32_t **txdataF,
                       NR_UE_ULSCH_t *ulsch);
 
 
-
-
+uint8_t allowed_ulsch_re_in_dmrs_symbol(uint16_t k,
+                                        uint16_t start_sc,
+                                        uint8_t numDmrsCdmGrpsNoData,
+                                        uint8_t dmrs_type);
 
 
 int generate_ue_dlsch_params_from_dci(int frame,

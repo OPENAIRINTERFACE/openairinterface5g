@@ -34,6 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
@@ -126,26 +127,29 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 			  time_stats_t *dlsch_interleaving_stats,
 			  time_stats_t *dlsch_segmentation_stats) {
 
-  int harq_pid = 0;
+  int harq_pid = dlsch->harq_ids[frame%2][slot];
   NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch->txdataF;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-  uint8_t nodata_dmrs = 1;
   uint8_t dmrs_Type = rel15->dmrsConfigType;
-  int nb_re_dmrs = (dmrs_Type== NFAPI_NR_DMRS_TYPE1) ? 6:4;
-  uint16_t n_dmrs = ((rel15->rbSize+rel15->rbStart)*nb_re_dmrs)<<1;
-  int16_t mod_dmrs[n_dmrs<<1];
-
+  int nb_re_dmrs;
+  uint16_t n_dmrs;
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
+    n_dmrs = ((rel15->rbSize+rel15->rbStart)*6)<<1;
+  }
+  else {
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+    n_dmrs = ((rel15->rbSize+rel15->rbStart)*4)<<1;
+  }
   uint16_t nb_re;
-  if (nodata_dmrs) // no data in dmrs symbol
-    nb_re = ((12*rel15->NrOfSymbols)-12-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
-  else
-    nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
+  nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
   uint8_t Qm = rel15->qamModOrder[0];
   uint32_t encoded_length = nb_re*Qm;
+  int16_t mod_dmrs[n_dmrs<<1];
 
   /// CRC, coding, interleaving and rate matching
   AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -301,7 +305,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
         }
 
         else {
-          if( (l != dmrs_symbol) || !nodata_dmrs) {
+          if( (l != dmrs_symbol) || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
             ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
             ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING

@@ -34,6 +34,8 @@
 
 #include "fapi_nr_ue_interface.h"
 #include "fapi_nr_ue_l1.h"
+#include "harq_nr.h"
+//#include "PHY/phy_vars_nr_ue.h"
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
@@ -54,12 +56,18 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
+    NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
+    PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
+        
+    //        PUCCH_ConfigCommon_nr_t    *pucch_config_common = PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0];
+    //        PUCCH_Config_t             *pucch_config_dedicated = PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0];
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
 
       LOG_D(PHY,"Received %d DL pdus\n",dl_config->number_pdus);
       pdcch_vars->nb_search_space = 0;
+
       for (i = 0; i < dl_config->number_pdus; ++i){
 
         if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
@@ -99,14 +107,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
             dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
             dlsch0_harq->mcs = dlsch_config_pdu->mcs;
-            dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-            dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+            dlsch0_harq->harq_ack.slot_for_feedback_ack = (slot+dlsch_config_pdu->pdsch_to_harq_feedback_time_ind)%frame_parms.slots_per_frame;
             dlsch0_harq->Nl=1;
             dlsch0_harq->mcs_table=0;
-            dlsch0_harq->status = ACTIVE;
+            dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
+            dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
             LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
           }
         }
@@ -213,6 +221,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
   return 0;
 }
+
+
 
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){

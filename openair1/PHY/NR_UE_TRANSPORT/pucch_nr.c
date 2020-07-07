@@ -54,7 +54,8 @@
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                        long pucch_GroupHopping,
+                        long hoppingId,
                         int16_t amp,
                         int nr_tti_tx,
                         uint8_t m0,
@@ -111,7 +112,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   for (int l=0; l<nrofSymbols; l++) {
     // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
     // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
-    nr_group_sequence_hopping(ue->pucch_config_common_nr->pucch_GroupHopping,ue->pucch_config_common_nr->hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+    nr_group_sequence_hopping(pucch_GroupHopping,hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
     alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
 #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);

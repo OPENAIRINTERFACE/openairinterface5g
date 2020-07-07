@@ -42,7 +42,7 @@
 
 #include "T.h"
 
-#define NR_PRACH_DEBUG 1
+//#define NR_PRACH_DEBUG 1
 
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
@@ -59,6 +59,7 @@ extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
 extern const char *prachfmt[9];
+extern const char *prachfmt03[4];
 
 // Note:
 // - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt
@@ -78,6 +79,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
   uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
+
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im, samp_count;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
@@ -207,9 +209,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   #ifdef NR_PRACH_DEBUG
     if (NCS>0)
       LOG_I(PHY, "PRACH [UE %d] generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %s, NCS %d (N_ZC %d): Preamble_offset %d, Preamble_shift %d\n", Mod_id,
-        rootSequenceIndex,
-        preamble_index,
-        prachfmt[prach_fmt_id],
+    rootSequenceIndex,
+    preamble_index,
+    prach_sequence_length == 0 ? prachfmt03[prach_fmt_id]  : prachfmt[prach_fmt_id],
         NCS,
         N_ZC,
         preamble_offset,
@@ -557,7 +559,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
           prach2 = prach+(Ncp<<1);
           idft(IDFT_1536,prachF,prach2,1);
-
           // here we have |empty | Prach1536 |
           if (prach_fmt_id != 7) {
             memmove(prach2+(1536<<1),prach2,(1536<<2));

@@ -296,5 +296,20 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
     }
   }
+  else {
+    // random access pusch with TC-RNTI
+    if (sduP != NULL) { // if the CRC passed
+      for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+        if (UE_list->active[i] == TRUE) {
+          if (UE_list->tc_rnti[i] == current_rnti) {
+            // for now the only thing we are doing is set the UE as 5G connected
+            UE_list->fiveG_connected[i] = true;
+            LOG_I(MAC, "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly and UE_id %d is now 5G connected\n",
+                  gnb_mod_idP, current_rnti, i);
+          }
+        }
+      }
+    }
+  }
 }
 

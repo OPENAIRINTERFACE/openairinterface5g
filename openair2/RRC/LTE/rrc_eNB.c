@@ -3251,8 +3251,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
     MeasObj2->measObjectId = 2;
     MeasObj2->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15;
-    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 =
-      642256; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
+    MeasObj2->measObject.choice.measObjectNR_r15.carrierFreq_r15 =641272; //634000; //(634000 = 3.51GHz) (640000 = 3.6GHz) (641272 = 3619.08MHz = 3600 + 30/1000*106*12/2) (642256 is for 3.6GHz and absoluteFrequencySSB = 642016)
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
@@ -3400,7 +3399,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present = LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.present = LTE_ThresholdNR_r15_PR_nr_RSRP_r15;
-    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 46;
+    ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15 = 0;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.choice.eventB1_NR_r15.reportOnLeave_r15 = FALSE;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis = 2;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger = LTE_TimeToTrigger_ms80;
@@ -8371,36 +8370,54 @@ rrc_eNB_decode_dcch(
     return 0;
     //TTN for D2D
   } else if (ul_dcch_msg->message.present == LTE_UL_DCCH_MessageType_PR_messageClassExtension) {
-    LOG_I(RRC, "THINH [LTE_UL_DCCH_MessageType_PR_messageClassExtension]\n");
+    LOG_I(RRC, "[LTE_UL_DCCH_MessageType_PR_messageClassExtension]\n");
 
     switch (ul_dcch_msg->message.choice.messageClassExtension.present) {
       case LTE_UL_DCCH_MessageType__messageClassExtension_PR_NOTHING: /* No components present */
         break;
 
       case LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2: //SidelinkUEInformation
-        //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
-        LOG_I(RRC,"THINH [LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
-        LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+        if(ul_dcch_msg->message.choice.messageClassExtension.choice.c2.present ==
+          LTE_UL_DCCH_MessageType__messageClassExtension__c2_PR_scgFailureInformationNR_r15){
+          if (ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.
+            criticalExtensions.present == LTE_SCGFailureInformationNR_r15__criticalExtensions_PR_c1){
+            if (ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
+              choice.c1.present == LTE_SCGFailureInformationNR_r15__criticalExtensions__c1_PR_scgFailureInformationNR_r15){
+              if (ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
+                choice.c1.choice.scgFailureInformationNR_r15.failureReportSCG_NR_r15!=NULL) {
+                LOG_E(RRC, "Received NR scgFailureInformation from UE, failure type: %ld \n",
+                  ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.scgFailureInformationNR_r15.criticalExtensions.
+                  choice.c1.choice.scgFailureInformationNR_r15.failureReportSCG_NR_r15->failureType_r15);
+                xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)ul_dcch_msg);
+              }
+            }
+          }
+        }
+        else if(ul_dcch_msg->message.choice.messageClassExtension.choice.c2.present == LTE_UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12){
+          //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
+          LOG_I(RRC,"THINH [LTE_UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
+          LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                     "[MSG] RRC SidelinkUEInformation \n");
-        MSC_LOG_RX_MESSAGE(
-          MSC_RRC_ENB,
-          MSC_RRC_UE,
-          Rx_sdu,
-          sdu_sizeP,
-          MSC_AS_TIME_FMT" SidelinkUEInformation UE %x size %u",
-          MSC_AS_TIME_ARGS(ctxt_pP),
-          ue_context_p->ue_context.rnti,
-          sdu_sizeP);
-        LOG_I(RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
-              "(SidelinkUEInformation) ---> RRC_eNB\n",
-              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-              DCCH,
+          MSC_LOG_RX_MESSAGE(
+              MSC_RRC_ENB,
+              MSC_RRC_UE,
+              Rx_sdu,
+              sdu_sizeP,
+              MSC_AS_TIME_FMT" SidelinkUEInformation UE %x size %u",
+              MSC_AS_TIME_ARGS(ctxt_pP),
+              ue_context_p->ue_context.rnti,
               sdu_sizeP);
-        rrc_eNB_process_SidelinkUEInformation(
-          ctxt_pP,
-          ue_context_p,
-          &ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.sidelinkUEInformation_r12);
+          LOG_I(RRC,
+            PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
+            "(SidelinkUEInformation) ---> RRC_eNB\n",
+            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+            DCCH,
+            sdu_sizeP);
+          rrc_eNB_process_SidelinkUEInformation(
+            ctxt_pP,
+            ue_context_p,
+            &ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.sidelinkUEInformation_r12);
+          }
         break;
 
       default:

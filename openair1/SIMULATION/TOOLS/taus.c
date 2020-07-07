@@ -21,7 +21,8 @@
 
 #include <time.h>
 #include <stdlib.h>
-#include "SIMULATION/TOOLS/sim.h"
+//#include "SIMULATION/TOOLS/sim.h"
+
 
 unsigned int s0, s1, s2, b;
 
