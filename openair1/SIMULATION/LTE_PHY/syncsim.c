@@ -58,7 +58,7 @@
 #define BW 5.0
 
 
-PHY_VARS_eNB *PHY_vars_eNB,*PHY_vars_eNB1,*PHY_vars_eNB2;
+PHY_VARS_eNB *PHY_vars_eNB, *PHY_vars_eNB1, *PHY_vars_eNB2;
 PHY_VARS_UE *PHY_vars_UE[2];
 
 #define DLSCH_RB_ALLOC 0x1fff // igore DC component,RB13
@@ -699,7 +699,7 @@ int main(int argc, char **argv) {
   bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
   bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
 #else
-  txdata = PHY_vars_eNB->lte_eNB_common_vars.txdata[eNb_id];
+  txdata = PHY_vars_eNB->common_vars.txdataF[eNb_id];
   txdata1 = PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id];
   txdata2 = PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id];
 #endif

@@ -32,9 +32,9 @@
 
 #include "PHY/defs_gNB.h"
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
+void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch,uint8_t N_RB_UL);
 
-NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
+NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint8_t abstraction_flag);
 
 
 /*! \brief Perform PUSCH decoding. TS 38.212 V15.4.0 subclause 6.2
@@ -43,6 +43,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8
   @param ulsch_llr, Pointer to received llr in ulsch
   @param frame_parms, Pointer to frame descriptor structure
   @param nb_symb_sch, number of symbols used in the uplink shared channel
+  @param nb_re_dmrs, number of DMRS resource elements in one RB
   @param nr_tti_rx, current received TTI
   @param harq_pid, harq process id
   @param is_crnti
@@ -52,11 +53,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t UE_id,
                            short *ulsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,
+                           nfapi_nr_pusch_pdu_t *pusch_pdu,
                            uint32_t frame,
-                           uint16_t nb_symb_sch,
                            uint8_t nr_tti_rx,
                            uint8_t harq_pid,
-                           uint8_t is_crnti);
+                           uint32_t G);
 
 
 /*! \brief Perform PUSCH unscrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
@@ -79,4 +80,4 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                          int slot_rx,
                          int UE_id,
                          uint8_t harq_pid);
-
+int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);

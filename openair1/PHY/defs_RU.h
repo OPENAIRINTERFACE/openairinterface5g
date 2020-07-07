@@ -37,16 +37,13 @@
 #include "common_lib.h"
 #include "openairinterface5g_limits.h"
 #include "PHY/TOOLS/time_meas.h"
-#include "openair1/PHY/defs_common.h"
-
+#include "defs_common.h"
+#include "nfapi_nr_interface_scf.h"
 
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
 
 
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 
 typedef enum {
   normal_txrx=0,
@@ -92,7 +89,6 @@ typedef enum {
   synch_to_other,          // synch to another source_(timer, other RU)
   synch_to_mobipass_standalone  // special case for mobipass in standalone mode
 } node_timing_t;
-#endif
 
 
 typedef struct {
@@ -104,6 +100,10 @@ typedef struct {
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..]
   int32_t **txdataF_BF;
+  /// \brief holds the transmit data before beamforming in the frequency domain.
+  /// - first index: tx antenna [0..nb_antennas_tx[
+  /// - second index: sample [0..]
+  int32_t **txdataF;
   /// \brief holds the transmit data before beamforming for epdcch/mpdcch
   /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
   /// - second index: sampl [0..]
@@ -146,6 +146,54 @@ typedef struct {
   int32_t **drs_ch_estimates;
 } RU_CALIBRATION;
 
+
+typedef struct RU_prec_t_s{
+  /// \internal This variable is protected by \ref mutex_feptx_prec
+  int instance_cnt_feptx_prec;
+  /// pthread struct for RU TX FEP PREC worker thread
+  pthread_t pthread_feptx_prec;
+  /// pthread attributes for worker feptx prec thread
+  pthread_attr_t attr_feptx_prec;
+  /// condition varible for RU TX FEP PREC thread
+  pthread_cond_t cond_feptx_prec;
+  /// mutex for fep PREC TX worker thread
+  pthread_mutex_t mutex_feptx_prec;
+  int symbol;
+  int p;//logical
+  int aa;//physical MAX nb_tx
+  struct RU_t_s *ru;
+  int index;
+} RU_prec_t;
+
+typedef struct RU_feptx_t_s{
+  /// \internal This variable is protected by \ref mutex_feptx_prec
+  int instance_cnt_feptx;
+  /// pthread struct for RU TX FEP PREC worker thread
+  pthread_t pthread_feptx;
+  /// pthread attributes for worker feptx prec thread
+  pthread_attr_t attr_feptx;
+  /// condition varible for RU TX FEP PREC thread
+  pthread_cond_t cond_feptx;
+  /// mutex for fep PREC TX worker thread
+  pthread_mutex_t mutex_feptx;
+  struct RU_t_s *ru;
+  int aa;//physical MAX nb_tx
+  int half_slot;//first or second half of a slot
+  int slot;//current slot
+  int symbol;//current symbol
+  int nb_antenna_ports;//number of logical port
+  int index;
+}RU_feptx_t;
+
+typedef struct {
+  int frame;
+  int slot;
+  int fmt;
+  int numRA;
+  int prachStartSymbol;
+} RU_PRACH_list_t;
+
+#define NUMBER_OF_NR_RU_PRACH_MAX 8
 
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
@@ -339,8 +387,14 @@ typedef struct RU_proc_t_s {
   int ru_rx_ready;
   int ru_tx_ready;
   int emulate_rf_busy;
-} RU_proc_t;
 
+  /// structure for precoding thread
+  RU_prec_t prec[16];
+  /// structure for feptx thread
+  RU_feptx_t feptx[16];
+  /// mask for checking process finished
+  int feptx_mask;
+} RU_proc_t;
 
 typedef enum {
   LOCAL_RF        =0,
@@ -364,7 +418,7 @@ typedef enum {
 } rru_state_t;
 
 
-/// Some commamds to RRU. Not sure we should do it like this !
+/// Some commands to RRU. Not sure we should do it like this !
 typedef enum {
   EMPTY            = 0,
   STOP_RU          = 1,
@@ -386,7 +440,7 @@ typedef struct RU_t_s {
   node_function_t function;
   /// Ethernet parameters for fronthaul interface
   eth_params_t eth_params;
-  /// flag to indicate the RU is in synch with a master reference
+  /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset
   int rx_offset;
@@ -420,6 +474,8 @@ typedef struct RU_t_s {
   int nb_rx;
   /// number of TX paths on device
   int nb_tx;
+  /// number of logical antennas at TX beamformer input
+  int nb_log_antennas;
   /// maximum PDSCH RS EPRE
   int max_pdschReferenceSignalPower;
   /// maximum RX gain
@@ -430,6 +486,8 @@ typedef struct RU_t_s {
   int att_tx;
   /// flag to indicate precoding operation in RU
   int do_precoding;
+  /// FAPI confiuration
+  nfapi_nr_config_request_scf_t  config;
   /// Frame parameters
   struct LTE_DL_FRAME_PARMS *frame_parms;
   struct NR_DL_FRAME_PARMS *nr_frame_parms;
@@ -490,15 +548,23 @@ typedef struct RU_t_s {
   void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *gNB, struct RU_t_s *ru, int frame, int subframe);
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru, int frame, int subframe);
+  /// function pointer to start a thread of tx write for USRP.
+  int (*start_write_thread)(struct RU_t_s *ru);
 
   /// function pointer to NB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
   void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru);
 
+  /// Timing data copy statistics (TX)
+  time_stats_t txdataF_copy_stats;
+  /// Timing statistics (TX)
+  time_stats_t precoding_stats;
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)
   time_stats_t ofdm_mod_stats;
+  /// Timing statistics (TX)
+  time_stats_t ofdm_total_stats;
   /// Timing wait statistics
   time_stats_t ofdm_demod_wait_stats;
   /// Timing wakeup statistics
@@ -511,17 +577,23 @@ typedef struct RU_t_s {
   time_stats_t rx_fhaul;
   /// Timing statistics (TX Fronthaul + Compression)
   time_stats_t tx_fhaul;
-  /// Timong statistics (Compression)
+  /// Timing statistics (Compression)
   time_stats_t compression;
   /// Timing statistics (Fronthaul transport)
   time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON common;
   RU_CALIBRATION calibration;
-  /// beamforming weight vectors per eNB
+  /// beamforming weight list size
+  int nb_bfw;
+  /// beamforming weight list of values
+  int32_t *bw_list[NUMBER_OF_eNB_MAX+1];
+  /// beamforming weight vectors
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
-  /// beamforming weight vectors per gNB
-  int32_t **nrbeam_weights[NUMBER_OF_gNB_MAX+1][16];
+  /// prach commands
+  RU_PRACH_list_t prach_list[NUMBER_OF_NR_RU_PRACH_MAX];
+  /// mutex for prach_list access
+  pthread_mutex_t prach_list_mutex;
   /// received frequency-domain signal for PRACH (IF4p5 RRU)
   int16_t **prach_rxsigF;
   /// received frequency-domain signal for PRACH BR (IF4p5 RRU)
@@ -548,6 +620,8 @@ typedef struct RU_t_s {
   int wakeup_L1_sleeptime;
   /// maximum number of sleeps
   int wakeup_L1_sleep_cnt_max;
+  /// DL IF frequency in Hz
+  uint64_t if_frequency;
 } RU_t;
 
 
@@ -561,7 +635,9 @@ typedef enum {
   RRU_sync_ok=6,
   RRU_frame_resynch=7,
   RRU_MSG_max_num=8,
-  RRU_check_sync = 9
+  RRU_check_sync = 9,
+  RRU_config_update=10,
+  RRU_config_update_ok=11
 } rru_config_msg_type_t;
 
 
@@ -620,7 +696,7 @@ typedef struct RRU_config_s {
   uint32_t tx_freq[MAX_BANDS_PER_RRU];
   /// RX frequency
   uint32_t rx_freq[MAX_BANDS_PER_RRU];
-  /// TX attenation w.r.t. max
+  /// TX attenuation w.r.t. max
   uint8_t att_tx[MAX_BANDS_PER_RRU];
   /// RX attenuation w.r.t. max
   uint8_t att_rx[MAX_BANDS_PER_RRU];
@@ -639,7 +715,7 @@ typedef struct RRU_config_s {
   int emtc_prach_FreqOffset[MAX_BANDS_PER_RRU][4];
   /// emtc_prach_ConfigIndex for IF4p5 per CE Level
   int emtc_prach_ConfigIndex[MAX_BANDS_PER_RRU][4];
-  /// mutex for asynch RX/TX thread
+  /// mutex for async RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
   pthread_mutex_t mutex_RU;
@@ -655,6 +731,10 @@ typedef struct RRU_config_s {
   time_stats_t ru_arrival_time;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
+  /// embms mbsfn sf config
+  int num_MBSFN_config;
+  /// embms mbsfn sf config
+  MBSFN_config_t MBSFN_config[8];
 } RRU_config_t;
 
 #endif //__PHY_DEFS_RU__H__

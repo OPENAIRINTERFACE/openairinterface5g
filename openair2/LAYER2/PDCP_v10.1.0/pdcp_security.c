@@ -33,7 +33,7 @@
 #include "UTIL/OSA/osa_defs.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#include "executables/softmodem-common.h"
 #include "LAYER2/MAC/mac_extern.h"
 
 #include "pdcp.h"
@@ -128,7 +128,7 @@ pdcp_apply_security(
     /* SRBs */
     uint8_t *mac_i;
 
-    LOG_D(PDCP, "[OSA][RB %d] %s Applying control-plane security %d \n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Applying control-plane security %d \n",
           rb_id, (pdcp_pP->is_ue != 0) ? "UE -> eNB" : "eNB -> UE", pdcp_pP->integrityProtAlgorithm);
 
     encrypt_params.message    = pdcp_pdu_buffer;
@@ -145,7 +145,7 @@ pdcp_apply_security(
 
     encrypt_params.key = pdcp_pP->kRRCenc;  // + 128  // bit key
   } else {
-    LOG_D(PDCP, "[OSA][RB %d] %s Applying user-plane security\n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Applying user-plane security\n",
           rb_id, (pdcp_pP->is_ue != 0) ? "UE -> eNB" : "eNB -> UE");
 
     encrypt_params.key = pdcp_pP->kUPenc;//  + 128;
@@ -200,11 +200,11 @@ pdcp_validate_security(
   decrypt_params.key_length = 16;
 
   if (srb_flagP) {
-    LOG_D(PDCP, "[OSA][RB %d] %s Validating control-plane security\n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Validating control-plane security\n",
           rb_id, (pdcp_pP->is_ue != 0) ? "eNB -> UE" : "UE -> eNB");
     decrypt_params.key = pdcp_pP->kRRCenc;// + 128;
   } else {
-    LOG_D(PDCP, "[OSA][RB %d] %s Validating user-plane security\n",
+    LOG_D(PDCP, "[OSA][RB %ld] %s Validating user-plane security\n",
           rb_id, (pdcp_pP->is_ue != 0) ? "eNB -> UE" : "UE -> eNB");
     decrypt_params.key = pdcp_pP->kUPenc;// + 128;
   }
@@ -213,28 +213,28 @@ pdcp_validate_security(
   stream_decrypt(pdcp_pP->cipheringAlgorithm,
                  &decrypt_params,
                  &buffer_decrypted);
-#if !defined(USRP_REC_PLAY)
-  if (srb_flagP) {
+  if (!IS_SOFTMODEM_IQPLAYER) {
+    if (srb_flagP) {
     /* Now check the integrity of the complete PDU */
-    decrypt_params.message    = pdcp_pdu_buffer;
-    decrypt_params.blength    = sdu_buffer_size << 3;
-    decrypt_params.key        = pdcp_pP->kRRCint + 16;// 128;
+      decrypt_params.message    = pdcp_pdu_buffer;
+      decrypt_params.blength    = sdu_buffer_size << 3;
+      decrypt_params.key        = pdcp_pP->kRRCint + 16;// 128;
 
-    if (stream_check_integrity(pdcp_pP->integrityProtAlgorithm,
-                               &decrypt_params,
-                               &pdcp_pdu_buffer[sdu_buffer_size]) != 0) {
-      MSC_LOG_EVENT(
-    	  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-    	  " Security: failed MAC-I Algo %X UE %"PRIx16" ",
-    	  pdcp_pP->integrityProtAlgorithm,
-    	  ctxt_pP->rnti);
-      LOG_E(PDCP, "[OSA][RB %d] %s failed to validate MAC-I (key %llx) of incoming PDU\n",
-            rb_id, (pdcp_pP->is_ue != 0) ? "UE" : "eNB",((long long unsigned int*)decrypt_params.key)[0]);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
-      return -1;
+      if (stream_check_integrity(pdcp_pP->integrityProtAlgorithm,
+                                 &decrypt_params,
+                                 &pdcp_pdu_buffer[sdu_buffer_size]) != 0) {
+        MSC_LOG_EVENT(
+    	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+    	    " Security: failed MAC-I Algo %X UE %"PRIx16" ",
+    	    pdcp_pP->integrityProtAlgorithm,
+    	    ctxt_pP->rnti);
+        LOG_E(PDCP, "[OSA][RB %ld] %s failed to validate MAC-I (key %llx) of incoming PDU\n",
+              rb_id, (pdcp_pP->is_ue != 0) ? "UE" : "eNB",((long long unsigned int*)decrypt_params.key)[0]);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
+        return -1;
+      }
     }
-  }
-#endif
+  } /* !IQPLAYER */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
 
   return 0;

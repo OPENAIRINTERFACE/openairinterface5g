@@ -34,7 +34,8 @@ void handle_rach(UL_IND_t *UL_info) {
                          NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf),
                          UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.preamble,
                          UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.rnti,0
+                         UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list[0].preamble_rel8.rnti,
+                         0
                         );
         free(UL_RCC_INFO.rach_ind[j].rach_indication_body.preamble_list);
         UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles = 0;
@@ -52,7 +53,8 @@ void handle_rach(UL_IND_t *UL_info) {
                        NFAPI_SFNSF2SF(UL_info->rach_ind.sfn_sf),
                        UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
                        UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
-                       UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti,0
+                       UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti,
+                       0
                       );
     }
   }
@@ -382,10 +384,10 @@ static void dump_ul(UL_IND_t *u) {
 
   A("XXXX     crc_ind  %d\n", u->crc_ind.crc_indication_body.number_of_crcs);
   A("XXXX     sr_ind   %d\n", u->sr_ind.sr_indication_body.number_of_srs);
-  A("XXXX     cqi_ind  %d\n", u->cqi_ind.number_of_cqis);
+  A("XXXX     cqi_ind  %d\n", u->cqi_ind.cqi_indication_body.number_of_cqis);
 
-  for (i = 0; i < u->cqi_ind.number_of_cqis; i++) {
-    nfapi_cqi_indication_pdu_t *v = &u->cqi_ind.cqi_pdu_list[i];
+  for (i = 0; i < u->cqi_ind.cqi_indication_body.number_of_cqis; i++) {
+    nfapi_cqi_indication_pdu_t *v = &u->cqi_ind.cqi_indication_body.cqi_pdu_list[i];
     A("XXXX         cqi ind %d\n", i);
     A("XXXX cqi         ul_cqi %d channel %d\n", v->ul_cqi_information.ul_cqi,
       v->ul_cqi_information.channel);
@@ -683,7 +685,7 @@ static void dump_dl(Sched_Rsp_t *d) {
 /* debug utility functions end                                              */
 /****************************************************************************/
 
-void UL_indication(UL_IND_t *UL_info) {
+void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 #ifdef DUMP_FAPI
   dump_ul(UL_info);
@@ -765,7 +767,7 @@ void UL_indication(UL_IND_t *UL_info) {
                     "schedule_response is null (mod %d, cc %d)\n",
                     module_id,
                     CC_id);
-        ifi->schedule_response(sched_info);
+        ifi->schedule_response(sched_info, proc );
       }
 
       LOG_D(PHY,"Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);

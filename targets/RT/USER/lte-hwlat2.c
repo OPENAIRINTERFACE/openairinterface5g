@@ -670,7 +670,7 @@ void *UE_thread(void *arg) {
       {
         proc = rxtx_proc[i];
         pthread_getname_np(proc->pthread_rxtx,threadname,128 );
-        printf("RxTX Thread unlock latency on thread %s (it. %ld) (us) : max=%8.3f - mean=%8.3f - min=%8.3f\n",
+        printf("RxTX Thread unlock latency on thread %s (it. %lu) (us) : max=%8.3f - mean=%8.3f - min=%8.3f\n",
                   threadname,
                   proc->syr_rdtsc_rxtx_th_unlock_iteration,
                   proc->syr_rdtsc_rxtx_th_unlock_max,
@@ -1192,12 +1192,12 @@ void  histogram_save_in_csv( histo_time_t *histo , char *file_sufix)
 
   for ( i = 0; i < HISTOGRAM_SIZE; i++ ) {
     if ( i + 1 == HISTOGRAM_SIZE )
-      fprintf( fp, "%u+;%u\n", min_val, histo[i].count );
+      fprintf( fp, "%d+;%u\n", min_val, histo[i].count );
     else
-      fprintf( fp, "%u-%.0f;%u\n", min_val, histo[i].max, histo[i].count );
+      fprintf( fp, "%d-%.0f;%u\n", min_val, histo[i].max, histo[i].count );
     min_val = histo[i].max;
   }
-
+  free(csv_filename);
   fclose( fp );
 }
 

@@ -1,0 +1,394 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-05-tm1</htmlTabRef>
+	<htmlTabName>Test-05MHz-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
+	<TestCaseRequestedList>
+ 040101 030201
+ 030103 000002
+ 040301 000002 040504 040605 040606 040645 040646 040401
+ 040301 000002 040505 000001 040401
+ 040301 000002 040506 000001 040401
+ 040301 000002 040507 000001 040401
+ 040301 000002 040508 000001 040401
+ 040301 000002 040509 000001 040401
+ 040301 000002 040510 000001 040401
+ 040301 000002 040511 000001 040401
+ 040301 000002 040512 000001 040401
+ 040301 000002 040513 000001 040401
+ 040301 000002 040514 000001 040401
+ 040301 000002 040515 000001 040401
+ 040301 000002 040516 000001 040401
+ 040301 000002 040517 000001 040401
+ 040301 000002 040518 000001 040401
+ 040301 000002 040519 000001 040401
+ 040301 000002 040520 000001 040401
+ 040301 000002 040521 000001 040401
+ 040301 000002 040522 000001 040401
+ 040301 000002 040523 000001 040401
+ 040301 000002 040524 000001 040401
+ 040301 000002 040525 000001 040401
+ 040301 000002 040526 000001 040401
+ 040301 000002 040527 000001 040401
+ 040301 000002 040528 000001 040401
+ 040301 000002 040529 000001 040401
+ 040301 000002 040530 000001 040401
+ 040301 000002 040531 000001 040401
+ 040301 000002 040532 000001 040401
+ 040301 000002 040533 000001 040401
+ 040301 000002 040534 000001 040401
+ 040301 000002 040535 000001 040401
+ 040301 000002 040536 000001 040401
+ 040301 000002 040537 000001 040401
+ 040301 000002 040538 000001 040401
+ 040301 000002 040539 000001 040401
+ 040201 000002 030201
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep for 10 sec</desc>
+		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep for 3 sec</desc>
+		<idle_sleep_time_in_sec>3</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="030103">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
+	<testCase id="040504">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040505">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040506">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040507">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040508">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040509">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040510">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040511">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040512">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040513">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040514">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040515">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040516">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040517">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040518">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040519">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040520">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040521">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040522">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040523">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040524">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040525">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040526">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040527">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040528">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040529">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040530">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040531">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040532">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040533">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040534">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040535">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040536">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040537">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040538">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040539">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040605">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040606">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040645">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040646">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/3.8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 3.8M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+</testCaseList>

@@ -35,7 +35,7 @@
 
 #include "PHY/impl_defs_top.h"
 #include "defs_common.h"
-#include "nfapi_nr_interface.h"
+#include "nfapi_nr_interface_scf.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
@@ -101,6 +101,15 @@
 #define NR_MAX_PDSCH_ENCODED_LENGTH NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS // 8 is the maximum modulation order (it was 950984 before !!) 
 #define NR_MAX_PUSCH_ENCODED_LENGTH NR_MAX_PDSCH_ENCODED_LENGTH
 #define NR_MAX_PDSCH_TBS 3824
+
+#define MAX_NUM_NR_DLSCH_SEGMENTS 34
+#define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)
+
+#define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
+#define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
+
+#define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
+#define MAX_NUM_NR_RE (14*273*12)
 
 typedef enum {
   NR_MU_0=0,
@@ -189,36 +198,48 @@ typedef struct {
   nr_reg_t reg_list[NR_NB_REG_PER_CCE];
 } nr_cce_t;
 
-
-/// PRACH-ConfigInfo from 36.331 RRC spec
 typedef struct {
-  /// Parameter: prach-ConfigurationIndex, see TS 36.211 (5.7.1). \vr{[0..63]}
-  uint8_t prach_ConfigIndex;
-  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
-  uint8_t highSpeedFlag;
-  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
-  uint8_t zeroCorrelationZoneConfig;
-  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
-  uint8_t prach_FreqOffset;
-} NR_PRACH_CONFIG_INFO;
+  /// PRACH format retrieved from prach_ConfigIndex
+  uint16_t prach_format;
+  /// Preamble index for PRACH (0-63)
+  uint8_t ra_PreambleIndex;
+  /// RACH MaskIndex
+  uint8_t ra_RACH_MaskIndex;
+  /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
+  int ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
+  uint8_t ra_TDD_map_index;
+  /// RA Preamble Power Ramping Step in dB
+  uint32_t RA_PREAMBLE_POWER_RAMPING_STEP;
+  ///
+  uint8_t RA_PREAMBLE_BACKOFF;
+  ///
+  uint8_t RA_SCALING_FACTOR_BI;
+  ///
+  uint8_t RA_PCMAX;
+  /// Corresponding RA-RNTI for UL-grant
+  uint16_t ra_RNTI;
+  /// Pointer to Msg3 payload for UL-grant
+  uint8_t *Msg3;
+  /// Frame of last completed synch
+  uint8_t sync_frame;
+  /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
+  uint8_t init_msg1;
+} NR_PRACH_RESOURCES_t;
 
-/// PRACH-ConfigSIB or PRACH-Config
-typedef struct {
-  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
-  uint16_t rootSequenceIndex;
-  /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
-  uint8_t prach_Config_enabled;
-  /// PRACH Configuration Information
-  NR_PRACH_CONFIG_INFO prach_ConfigInfo;
-} NR_PRACH_CONFIG_COMMON;
+typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
-typedef struct NR_DL_FRAME_PARMS {
+typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
+
+typedef uint32_t (*get_samples_slot_timestamp_t)(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead);
+
+struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
-  /// Placeholder to replace overlapping fields below
-  nfapi_nr_rf_config_t rf_config;
+  //  /// Placeholder to replace overlapping fields below
+  //  nfapi_nr_rf_config_t rf_config;
   /// Placeholder to replace SSB overlapping fields below
-  nfapi_nr_sch_config_t sch_config;
+  //  nfapi_nr_sch_config_t sch_config;
   /// Number of resource blocks (RB) in DL
   int N_RB_DL;
   /// Number of resource blocks (RB) in UL
@@ -227,12 +248,12 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P
   uint8_t N_RBGS;
-  /// EUTRA Band
-  uint8_t eutra_band;
+  /// NR Band
+  uint16_t nr_band;
   /// DL carrier frequency
-  uint32_t dl_CarrierFreq;
+  uint64_t dl_CarrierFreq;
   /// UL carrier frequency
-  uint32_t ul_CarrierFreq;
+  uint64_t ul_CarrierFreq;
   /// TX attenuation
   uint32_t att_tx;
   /// RX attenuation
@@ -240,11 +261,10 @@ typedef struct NR_DL_FRAME_PARMS {
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   /// Frame type (0 FDD, 1 TDD)
   lte_frame_type_t frame_type;
-  /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   uint8_t tdd_config;
-  /// TDD S-subframe configuration (0-9)
   /// Cell ID
   uint16_t Nid_cell;
+  /// subcarrier spacing (15,30,60,120)
   uint32_t subcarrier_spacing;
   /// 3/4 sampling
   uint8_t threequarter_fs;
@@ -260,12 +280,18 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t symbols_per_slot;
   /// Number of slots per subframe
   uint16_t slots_per_subframe;
-    /// Number of slots per frame
+  /// Number of slots per frame
   uint16_t slots_per_frame;
   /// Number of samples in a subframe
   uint32_t samples_per_subframe;
-  /// Number of samples in a slot
-  uint32_t samples_per_slot;
+  /// Number of samples in current slot
+  get_samples_per_slot_t get_samples_per_slot;
+  /// Number of samples before slot
+  get_samples_slot_timestamp_t get_samples_slot_timestamp;
+  /// Number of samples in 0th and center slot of a subframe
+  uint32_t samples_per_slot0;
+  /// Number of samples in other slots of the subframe
+  uint32_t samples_per_slotN0;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
@@ -290,25 +316,26 @@ typedef struct NR_DL_FRAME_PARMS {
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
   /// Number of common transmit antenna ports in eNodeB (1 or 2)
-  uint8_t nb_antenna_ports_eNB;
-  /// PRACH_CONFIG
-  NR_PRACH_CONFIG_COMMON prach_config_common;
+  uint8_t nb_antenna_ports_gNB;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
   SRS_NR srs_nr;
-
+  /// Power used by SSB in order to estimate signal strength and path loss
+  int ss_PBCH_BlockPower;
   /// for NR TDD management
   TDD_UL_DL_configCommon_t  *p_tdd_UL_DL_Configuration;
 
   TDD_UL_DL_configCommon_t  *p_tdd_UL_DL_ConfigurationCommon2;
 
-  TDD_UL_DL_SlotConfig_t    *p_TDD_UL_DL_ConfigDedicated;
+  TDD_UL_DL_SlotConfig_t *p_TDD_UL_DL_ConfigDedicated;
 
   /// TDD configuration
   uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
+
+  uint8_t half_frame_bit;
 
   //SSB related params
   /// Start in Subcarrier index of the SSB block
@@ -319,10 +346,15 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t Lmax;
   /// SS block pattern (max 64 ssb, each bit is on/off ssb)
   uint64_t L_ssb;
+  /// Total number of SSB transmitted
+  uint8_t N_ssb;
+  /// SSB index
+  uint8_t ssb_index;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
+};
 
-} NR_DL_FRAME_PARMS;
+
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)
@@ -333,8 +365,9 @@ typedef struct nr_bandentry_s {
   uint64_t ul_max;
   uint64_t dl_min;
   uint64_t dl_max;
-  uint64_t N_OFFs_DL;
   uint64_t step_size;
+  uint64_t N_OFFs_DL;
+  uint8_t deltaf_raster;
 } nr_bandentry_t;
 
 typedef struct nr_band_info_s {

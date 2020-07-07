@@ -111,7 +111,7 @@ rlc_am_send_sdu (
         char                 message_string[7000];
         size_t               message_string_size = 0;
         int                  octet_index, index;
-        message_string_size += sprintf(&message_string[message_string_size], "Bearer	  : %u\n", rlc_pP->rb_id);
+        message_string_size += sprintf(&message_string[message_string_size], "Bearer	  : %ld\n", rlc_pP->rb_id);
         message_string_size += sprintf(&message_string[message_string_size], "SDU size    : %u\n", rlc_pP->output_sdu_size_to_write);
         message_string_size += sprintf(&message_string[message_string_size], "\nPayload  : \n");
         message_string_size += sprintf(&message_string[message_string_size], "------+-------------------------------------------------|\n");

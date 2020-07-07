@@ -831,7 +831,7 @@ int gtpv1u_delete_x2u_tunnel(
       if (hash_rc == HASH_TABLE_OK) {
         for (erab_index = 0; erab_index < ue_context_p->ue_context.nb_x2u_e_rabs; erab_index++) {
           eps_bearer_id = ue_context_p->ue_context.enb_gtp_x2u_ebi[erab_index];
-          LOG_I(GTPU, "gtpv1u_delete_x2u_tunnel user rnti %x teNB X2U teid %u eps bearer id %u\n",
+          LOG_I(GTPU, "gtpv1u_delete_x2u_tunnel user rnti %x teNB X2U teid %u eps bearer id %ld\n",
                 req_pP->rnti,
                 gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_teNB,
                 ue_context_p->ue_context.enb_gtp_x2u_ebi[erab_index]);
@@ -943,6 +943,8 @@ gtpv1u_create_s1u_tunnel(
       memcpy(&create_tunnel_resp_pP->enb_addr.buffer,
              &RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up,
              sizeof (in_addr_t));
+     
+      LOG_I(GTPU,"Configured GTPu address : %x\n",RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
       create_tunnel_resp_pP->enb_addr.length = sizeof (in_addr_t);
       addrs_length_in_bytes = create_tunnel_req_pP->sgw_addr[i].length / 8;
       AssertFatal((addrs_length_in_bytes == 4) ||
@@ -971,6 +973,15 @@ gtpv1u_create_s1u_tunnel(
       gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_sgw               = create_tunnel_req_pP->sgw_S1u_teid[i];
       gtpv1u_ue_data_p->num_bearers++;
       create_tunnel_resp_pP->enb_S1u_teid[i] = s1u_teid;
+
+      LOG_I(GTPU,"Copied to create_tunnel_resp tunnel: index %d target gNB ip %d.%d.%d.%d length %d gtp teid %u\n",
+    		  i,
+    		  create_tunnel_resp_pP->enb_addr.buffer[0],
+    		  create_tunnel_resp_pP->enb_addr.buffer[1],
+    		  create_tunnel_resp_pP->enb_addr.buffer[2],
+    		  create_tunnel_resp_pP->enb_addr.buffer[3],
+    		  create_tunnel_resp_pP->enb_addr.length,
+    		  create_tunnel_resp_pP->enb_S1u_teid[i]);
     } else {
       create_tunnel_resp_pP->enb_S1u_teid[i] = 0;
       create_tunnel_resp_pP->status         = 0xFF;

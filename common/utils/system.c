@@ -229,7 +229,7 @@ void configure_linux(void) {
     if ( (latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR)) != -1 ) {
       ret = write(latency_target_fd, &latency_target_value, sizeof(latency_target_value));
       if (ret == 0) {
-	printf("# error setting cpu_dma_latency to %d!: %s\n", latency_target_value, strerror(errno));
+	printf("# error setting cpu_dma_latency to %u!: %s\n", latency_target_value, strerror(errno));
 	close(latency_target_fd);
 	latency_target_fd=-1;
 	return;
@@ -237,12 +237,14 @@ void configure_linux(void) {
     }
   }
   if (latency_target_fd != -1) 
-    LOG_I(HW,"# /dev/cpu_dma_latency set to %dus\n", latency_target_value);
+    LOG_I(HW,"# /dev/cpu_dma_latency set to %u us\n", latency_target_value);
   else
-    LOG_E(HW,"Can't set /dev/cpu_dma_latency to %dus\n", latency_target_value);
+    LOG_E(HW,"Can't set /dev/cpu_dma_latency to %u us\n", latency_target_value);
 
   // Set CPU frequency to it's maximum
   if ( 0 != system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done"))
-	  LOG_W(HW,"Can't set cpu frequency\n");
-  
+	  LOG_E(HW,"Can't set cpu frequency\n");
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
 }

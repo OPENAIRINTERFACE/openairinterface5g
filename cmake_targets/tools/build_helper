@@ -102,7 +102,8 @@ check_supported_distribution() {
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
-	"rhel7.6")     return 0 ;;
+        "rhel7.6")     return 0 ;;
+        "rhel7.7")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -149,7 +150,9 @@ clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
- rm -rf $dir/ran_build $dir/lte-simulators/build
+ rm -rf $dir/ran_build $dir/ran_build_noLOG
+ rm -rf $dir/lte-simulators/build 
+ rm -rf $dir/phy_simulators/build $dir/nas_sim_tools/build 
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
@@ -166,36 +169,59 @@ check_warnings() {
   #we look for 'warning:' in the compilation log file
   #this is how gcc starts a warning
   #this is not perfect, we may get false positive
-  warning_count=`grep "warning:" "$1"|wc -l`
+  warning_count=`grep "warning:" "$1" | egrep -v "jobserver unavailable|disabling jobserver mode" | wc -l`
   if [ $warning_count -gt 0 ]; then
     echo_error "WARNING: $warning_count warnings. See $1"
   fi
 }
 
+#check_errors:
+#    print error message if the compilation had errors
+#argument:
+#    $1: log file
+check_errors() {
+  #we look for 'warning:' in the compilation log file
+  error_count=`grep "error:" "$1" | wc -l`
+  if [ $error_count -gt 0 ]; then
+    echo_error "ERROR: $error_count error. See $1"
+  fi
+}
+
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
+  echo_info "Log file for compilation is being written to: $dlog/$2.$REL.txt"
   set +e
   {
-    rm -f $3
     if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
         COV_SCAN_PREFIX="cov-build --dir cov-int"
     else
         COV_SCAN_PREFIX=""
     fi
+    if [ "$MAKE_CMD" != "" ]; then
+       $MAKE_CMD $2
+    else 
     if [ "$VERBOSE_COMPILE" == "1" ]; then
        $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
     else
        $COV_SCAN_PREFIX make -j`nproc` $2
     fi
-
+    fi
+    ret=$?
   } > $dlog/$2.$REL.txt 2>&1
   set -e
-  echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
+  if [[ $ret -ne 0 ]]; then
+     check_warnings "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.$REL.txt"
+     echo_error "$2 compilation failed"
+     exit 1
+  fi
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
      check_warnings "$dlog/$2.$REL.txt"
   else
+     check_warnings "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.$REL.txt"
      echo_error "$2 compilation failed"
      exit 1
   fi
@@ -216,7 +242,7 @@ install_protobuf_from_source(){
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
     rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+    wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
     tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
     cd protobuf-3.3.0/
     ./configure
@@ -295,8 +321,8 @@ check_install_usrp_uhd_driver(){
             x=$((x + 1))
         done
         $SUDO apt-get update
-        $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
+        $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
+        $SUDO apt-get -y install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
         $SUDO -H pip install requests
@@ -319,13 +345,13 @@ install_usrp_uhd_driver() {
     # quick workaround for RHE7.6
     local distribution=$(get_distribution_release)
     if [ -z $1 ]; then
-      if [[ "$distribution" == "rhel7.6" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader
       else
           $SUDO uhd_images_downloader
       fi
     else
-      if [[ "$distribution" == "rhel7.6" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader -i $1
       else
           $SUDO uhd_images_downloader -i $1
@@ -352,8 +378,8 @@ install_bladerf_driver_from_source(){
     $SUDO ldconfig
     echo "Downloading FPGA and firmware images"
     cd /tmp/bladeRF
-    wget https://www.nuand.com/fx3/bladeRF_fw_latest.img
-    wget https://www.nuand.com/fpga/hostedx40-latest.rbf
+    wget --tries=3 --retry-connrefused https://www.nuand.com/fx3/bladeRF_fw_latest.img
+    wget --tries=3 --retry-connrefused https://www.nuand.com/fpga/hostedx40-latest.rbf
     sudo mkdir -p /usr/share/Nuand/bladeRF
     sudo mv bladeRF_fw_latest.img /usr/share/Nuand/bladeRF/bladeRF_fw.img
     sudo mv hostedx40-latest.rbf /usr/share/Nuand/bladeRF/hostedx40.rbf
@@ -366,9 +392,9 @@ check_install_bladerf_driver(){
             $SUDO add-apt-repository -y ppa:bladerf/bladerf
             $SUDO apt-get update
         fi
-        $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40
+        $SUDO apt-get install -y  bladerf libbladerf-dev
+        $SUDO apt-get install -y bladerf-firmware-fx3
+        $SUDO apt-get install -y bladerf-fpga-hostedx40
    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         install_bladerf_driver_from_source
    else
@@ -566,7 +592,7 @@ check_install_additional_tools (){
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
     (
     $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
-    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
+    wget --tries=3 --retry-connrefused -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
     tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
     cd /tmp/netifaces-0.10.4
     $SUDO python setup.py install
@@ -618,6 +644,7 @@ check_install_oai_software() {
 	build-essential \
 	cmake \
 	cmake-curses-gui  \
+        ninja-build \
 	doxygen \
 	doxygen-gui \
 	texlive-latex-base \

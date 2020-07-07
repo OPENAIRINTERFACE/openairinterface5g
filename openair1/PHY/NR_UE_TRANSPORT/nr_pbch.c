@@ -71,7 +71,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
     rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
     rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
 #ifdef DEBUG_PBCH
-    printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
+    printf("extract_rbs (nushift %d): rx_offset=%d, symbol %u\n",frame_parms->nushift,
            (rx_offset + ((symbol+s_offset)*(frame_parms->ofdm_symbol_size))),symbol);
     int16_t *p = (int16_t *)rxF;
 
@@ -93,7 +93,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
               (i!=(nushiftmod4+8))) {
             rxF_ext[j]=rxF[rx_offset];
 #ifdef DEBUG_PBCH
-            printf("rxF ext[%d] = (%d,%d) rxF [%d]= (%d,%d)\n",(9*rb) + j,
+            printf("rxF ext[%d] = (%d,%d) rxF [%u]= (%d,%d)\n",(9*rb) + j,
                    ((int16_t *)&rxF_ext[j])[0],
                    ((int16_t *)&rxF_ext[j])[1],
                    rx_offset,
@@ -116,7 +116,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
                 (i!=(nushiftmod4+8))) {
               rxF_ext[j]=rxF[rx_offset];
 #ifdef DEBUG_PBCH
-              printf("rxF ext[%d] = (%d,%d) rxF [%d]= (%d,%d)\n",(rb<4) ? (9*rb) + j : (9*(rb-12))+j,
+              printf("rxF ext[%d] = (%d,%d) rxF [%u]= (%d,%d)\n",(rb<4) ? (9*rb) + j : (9*(rb-12))+j,
                      ((int16_t *)&rxF_ext[j])[0],
                      ((int16_t *)&rxF_ext[j])[1],
                      rx_offset,
@@ -425,11 +425,12 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int max_h=0;
   int symbol;
   //uint8_t pbch_a[64];
-  uint8_t *pbch_a = malloc(sizeof(uint8_t) * 32);
+//FT ?? cppcheck doesn't like pbch_a allocation because of line 525..and i don't get what this variable is for..
+//uint8_t *pbch_a = malloc(sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //uint32_t pbch_a_prime;
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
-  uint8_t nushift,n_hf,ssb_index;
+  uint8_t nushift;
   uint16_t M;
   uint8_t Lmax=frame_parms->Lmax; 
   //uint16_t crc;
@@ -438,7 +439,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //uint8_t decoderListSize = 8, pathMetricAppr = 0;
   //time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
   //time_stats_t path_metric,sorting,update_LLR;
-  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
+// FT ?? cppcheck fix  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
   pbch_e_rx = &nr_ue_pbch_vars->llr[0];
@@ -504,7 +505,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
           return(-1);
         }
     */
-    if (symbol==1) {
+    if (symbol==2) {
       nr_pbch_quantize(pbch_e_rx,
                        (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
                        144);
@@ -522,7 +523,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
   pbch_e_rx = nr_ue_pbch_vars->llr;
   //demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
-  pbch_a = nr_ue_pbch_vars->pbch_a;
+// FT?? cppcheck fix -  pbch_a = nr_ue_pbch_vars->pbch_a;
 #ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
   short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][20*12]);
@@ -537,8 +538,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
-  const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
+  const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,0,currentPtr);
 
   if(decoderState) return(decoderState);
 
@@ -577,15 +578,21 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int i=0; i<3; i++)
     decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
-  n_hf = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+  frame_parms->half_frame_bit = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
 
-  ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
+  frame_parms->ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
   if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
     for (int i=0; i<3; i++)
-      ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
+      frame_parms->ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
-  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
+
+  uint8_t frame_number_4lsb = 0;
+  for (int i=0; i<4; i++)
+    frame_number_4lsb |= ((nr_ue_pbch_vars->xtra_byte>>i)&1)<<(3-i);
+
+  proc->decoded_frame_rx = frame_number_4lsb;
 
 #ifdef DEBUG_PBCH
   printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);
@@ -601,7 +608,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     
   dl_indication.rx_ind = &rx_ind; //  hang on rx_ind instance
   dl_indication.dci_ind = NULL; 
-  dl_indication.proc=proc;        // needed to signal back the frame number -> FIXME
+  dl_indication.proc=proc;
   dl_indication.module_id=0;
   dl_indication.cc_id=proc->CC_id;
 
@@ -611,10 +618,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   rx_ind.rx_indication_body[0].mib_pdu.ssb_index = i_ssb;                //  confirm with TCL
   rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
   rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
-  rx_ind.number_pdus = 1;
+  rx_ind.number_pdus = 1; //rx_ind.number_pdus++;
 
   if (ue->if_inst && ue->if_inst->dl_indication)
-    ue->if_inst->dl_indication(&dl_indication);
+    ue->if_inst->dl_indication(&dl_indication, NULL);
 
   return 0;
 }

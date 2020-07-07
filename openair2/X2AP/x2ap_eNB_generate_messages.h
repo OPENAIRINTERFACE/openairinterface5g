@@ -66,8 +66,15 @@ int x2ap_eNB_generate_senb_addition_request (x2ap_eNB_instance_t *instance_p, x2
 int x2ap_eNB_generate_senb_addition_request_ack (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
                                                x2ap_senb_addition_req_ack_t *x2ap_addition_req_ack);
 
-int x2ap_eNB_generate_ENDC_x2_setup_request(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p);
+int x2ap_gNB_generate_ENDC_x2_setup_request(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p);
 
-int x2ap_gNB_generate_ENDC_x2_setup_response( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p);
+int x2ap_eNB_generate_ENDC_x2_setup_response( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p);
+
+int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request( x2ap_eNB_instance_t *instance_p, x2ap_ENDC_sgnb_addition_req_t *x2ap_ENDC_sgnb_addition_req, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id);
+
+int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p, x2ap_ENDC_sgnb_addition_req_ACK_t *x2ap_sgnb_addition_req_ACK, int ue_id);
+
+int x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(
+  x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p, int ue_id, int SgNB_ue_id);
 
 #endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */

@@ -33,8 +33,6 @@ typedef struct {
 
 nas_user_t *find_user_from_fd(nas_user_container_t *users, int fd);
 
-# if defined(ENABLE_ITTI)
 void *nas_ue_task(void *args_p);
-# endif
 
 #endif /* NAS_TASK_H_ */

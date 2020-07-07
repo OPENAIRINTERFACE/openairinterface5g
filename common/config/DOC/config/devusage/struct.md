@@ -5,12 +5,29 @@ It is defined in include file [ common/config/config_paramdesc.h ](https://gitla
 |:-----------|:------------------------------------------------------------------|----:|
 | `optname`    | parameter name, as used when looking for it in the config source, 63 bytes max (64 with trailing \0) | I |
 | `helstr`     | pointer to a C string printed when using --help on the command line | I |
+| `paramflags` | bit mask, used to modify how the parameter is processed, or to return to the API caller how the parameter has been set, see list in the next table | IO |
 | `strptr` `strlistptr` `u8ptr` `i8ptr` `u16ptr` `i16ptr` `uptr` `iptr` `u64ptr` `i64ptr` `dblptr` `voidptr` | a pointer to a variable where the parameter value(s) will be returned. This field is an anonymous union, the supported pointer types have been built to avoid type mismatch warnings at compile time. | O |
 | `defstrval` `defstrlistval` `defuintval` `defintval` `defint64val` `defintarrayval` `defdblval` | this field is an anonymous union, it can be used to define the default value for the parameter. It is ignored if `PARAMFLAG_MANDATORY` is set in the `paramflags` field.| I |
 | `type` | Supported parameter types are defined as integer macros. Supported simple types are `TYPE_STRING`, parameter value is returned in `strptr` field,  `TYPE_INT8` `TYPE_UINT8` `TYPE_INT16` `TYPE_UINT16` `TYPE_INT32` `TYPE_UINT32` `TYPE_INT64` `TYPE_UINT64`, parameter value is returned in the corresponding uXptr or iXptr, `TYPE_MASK`, value is returned in `u32ptr`, `TYPE_DOUBLE` value is returned in `dblptr`, `TYPE_IPV4ADDR` value is returned in binary, network bytes order in `u32ptr` field. `TYPE_STRINGLIST`, `TYPE_INTARRAY` and `TYPE_UINTARRAY` are multiple values types. Multiple values are returned in respectively, `strlistptr`, `iptr` and `uptr` fields which then point to arrays. The  `numelt` field gives the number of item in the array. | I |
 | `numelt` | For `TYPE_STRING` where `strptr` points to a preallocated string, this field must contain the size in bytes of the available memory. For all multiple values types, this field contains the number of values in the value field.| I/O |
 | `chkPptr` | possible pointer to the structure containing the info used to check parameter values | I |
 | `processedvalue` | When `chkPptr` is not `ǸULL`, is used to return a value, computed from the original parameter, as read from the configuration source. | O |
+
+## `paramflags` bits definition
+
+
+| C macro bit definition               | usage                                                                                                                | I/O |
+|:-------------------------------------|:---------------------------------------------------------------------------------------------------------------------|----:|
+| `PARAMFLAG_MANDATORY`                | parameter is mandatory, comfiguration module will stop the process if it is not specified. Default value is ignored  | I |
+| `PARAMFLAG_DISABLECMDLINE`           | parameter cannot be specified on the command line                                                                    | I |
+| `PARAMFLAG_DONOTREAD`                | ignore the parameter, usefull when a parameter group is used in different context                                    | I |
+| `PARAMFLAG_NOFREE`                   | The end_configmodule API won't free the memory which has been possibly allocated to store the value of the parameter.| I |
+| `PARAMFLAG_BOOL`                     | Parameter is a boolean, it can be specified without a value to set it to true                                        | I |
+| `PARAMFLAG_CMDLINE_NOPREFIXENABLED`  | parameter can be specified without the prefix on the command line. Must be used with care, carefuly checking unicity, especially for short parameter names | I |
+| `PARAMFLAG_MALLOCINCONFIG`           | Memory for the parameter value has been allocated by the configuration module                                         |O |       
+| `PARAMFLAG_PARAMSET`                 | Parameter value has been explicitely set, as the parameter was specified either on the command line or the config source | O |
+| `PARAMFLAG_PARAMSETDEF`              | Parameter value has been set to it's default                                                                          | O |            
+
 
 # `paramlist_def_t`structure
 It is defined in include file [ common/config/config_paramdesc.h ](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/config/config_paramdesc.h#L160).

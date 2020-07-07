@@ -34,10 +34,6 @@
 #ifndef __PDCP_H__
 #    define __PDCP_H__
 //-----------------------------------------------------------------------------
-#ifndef NON_ACCESS_STRATUM
-  #include "UTIL/MEM/mem_block.h"
-  #include "UTIL/LISTS/list.h"
-#endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
 #include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
@@ -61,6 +57,7 @@ typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_fl
 /* UEs beyond that will be multiplexed on the same tun   */
 #define MAX_NUMBER_NETIF           16
 
+#define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
 #define LINK_ENB_PDCP_TO_IP_DRIVER_BIT  (1<< 13)
 #define LINK_ENB_PDCP_TO_GTPV1U_BIT     (1<< 14)
@@ -87,11 +84,13 @@ extern pthread_mutex_t pdcp_mutex;
 extern pthread_cond_t  pdcp_cond;
 extern int             pdcp_instance_cnt;
 
-#define PROTOCOL_PDCP_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u] "
+#define PROTOCOL_PDCP_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld] "
 
 #define PROTOCOL_PDCP_CTXT_ARGS(CTXT_Pp, pDCP_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
   (pDCP_Pp->is_srb) ? "SRB" : "DRB",\
   pDCP_Pp->rb_id
+//#define ENABLE_PDCP_PAYLOAD_DEBUG 1
+
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
@@ -386,6 +385,17 @@ boolean_t pdcp_remove_UE(
 */
 //void rrc_pdcp_config_release ( const protocol_ctxt_t* const  ctxt_pP, rb_id_t);
 
+/*! \fn void pdcp_mbms_run(const protocol_ctxt_t* const  ctxt_pP)
+* \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
+* \param[in]  ctxt_pP           Running context.
+* \return none
+* \note None
+* @ingroup _pdcp
+*/
+void pdcp_mbms_run            (
+  const protocol_ctxt_t *const  ctxt_pP);
+
+
 /*! \fn void pdcp_run(const protocol_ctxt_t* const  ctxt_pP)
 * \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
 * \param[in]  ctxt_pP           Running context.
@@ -397,6 +407,7 @@ void pdcp_run            (
   const protocol_ctxt_t *const  ctxt_pP);
 uint64_t pdcp_module_init     (uint64_t pdcp_optmask);
 void pdcp_module_cleanup (void);
+void nr_ip_over_LTE_DRB_preconfiguration (void);
 void pdcp_layer_init     (void);
 void pdcp_layer_cleanup  (void);
 #define PDCP2NW_DRIVER_FIFO 21
@@ -410,6 +421,9 @@ void pdcp_set_rlc_data_req_func(send_rlc_data_req_func_t send_rlc_data_req);
 void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind);
 pdcp_data_ind_func_t get_pdcp_data_ind_func(void);
 //-----------------------------------------------------------------------------
+int pdcp_fifo_flush_mbms_sdus                      ( const protocol_ctxt_t *const  ctxt_pP);
+int pdcp_fifo_read_input_mbms_sdus_fromtun       ( const protocol_ctxt_t *const  ctxt_pP);
+
 
 /*
  * Following two types are utilized between NAS driver and PDCP
@@ -504,7 +518,7 @@ pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceC
 
 sdu_size_t             pdcp_output_sdu_bytes_to_write;
 sdu_size_t             pdcp_output_header_bytes_to_write;
-list_t                 pdcp_sdu_list;
+notifiedFIFO_t         pdcp_sdu_list;
 int                    pdcp_sent_a_sdu;
 pdcp_data_req_header_t pdcp_input_header;
 unsigned char          pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];

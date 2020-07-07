@@ -42,35 +42,35 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
   unsigned int subframe_offset;
   //   int i;
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
-  void (*dft)(int16_t *,int16_t *, int);
+  dft_size_idx_t dftsizeidx;
 
   switch (frame_parms->ofdm_symbol_size) {
     case 128:
-      dft = dft128;
-      break;
-
-    case 256:
-      dft = dft256;
-      break;
-
-    case 512:
-      dft = dft512;
-      break;
-
-    case 1024:
-      dft = dft1024;
-      break;
-
-    case 1536:
-      dft = dft1536;
-      break;
-
-    case 2048:
-      dft = dft2048;
-      break;
-
-    default:
-      dft = dft512;
+      dftsizeidx = DFT_128;
+      break;       
+                   
+    case 256:      
+      dftsizeidx = DFT_256;
+      break;       
+                   
+    case 512:      
+      dftsizeidx = DFT_512;
+      break;       
+                   
+    case 1024:     
+      dftsizeidx = DFT_1024;
+      break;       
+                   
+    case 1536:     
+      dftsizeidx = DFT_1536;
+      break;       
+                   
+    case 2048:     
+      dftsizeidx = DFT_2048;
+      break;       
+                   
+    default:       
+      dftsizeidx = DFT_512;
       break;
   }
 
@@ -110,7 +110,7 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
 #if UE_TIMING_TRACE
       start_meas(&ue->rx_dft_stats);
 #endif
-      dft((int16_t *)&common_vars->rxdata[aa][(sample_offset +
+      dft(dftsizeidx,(int16_t *)&common_vars->rxdata[aa][(sample_offset +
                                               nb_prefix_samples0 +
                                               subframe_offset -
                                               SOFFSET) % frame_length_samples],
@@ -131,7 +131,7 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
 #if UE_TIMING_TRACE
       start_meas(&ue->rx_dft_stats);
 #endif
-      dft((int16_t *)&common_vars->rxdata[aa][(sample_offset +
+      dft(dftsizeidx,(int16_t *)&common_vars->rxdata[aa][(sample_offset +
                                               (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
                                               (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
                                               subframe_offset-
@@ -208,43 +208,43 @@ int slot_fep_mbsfn_khz_1dot25(PHY_VARS_UE *ue,
   int ofdm_symbol_size;
   unsigned int subframe_offset;
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
-  void (*dft)(int16_t *,int16_t *, int);
+  dft_size_idx_t dftsizeidx;
   AssertFatal(frame_parms->frame_type == FDD, "Frame is TDD!\n");
 
   switch (frame_parms->ofdm_symbol_size) {
     case 128:
-      dft = dft1536;
+      dftsizeidx = DFT_1536;
       ofdm_symbol_size=1536;
       nb_prefix_samples=384;
       break;
 
     case 256:
       AssertFatal(1==0,"FeMBMS dft3072 not implemented\n");
-      dft = dft3072;
+      dftsizeidx = DFT_3072;
       ofdm_symbol_size=3072;
       nb_prefix_samples=768;
       break;
 
     case 512:
-      dft = dft6144;
+      dftsizeidx = DFT_6144;
       nb_prefix_samples=1536;
       ofdm_symbol_size=6144;
       break;
 
     case 1024:
-      dft = dft12288;
+      dftsizeidx = DFT_12288;
       nb_prefix_samples=3072;
       ofdm_symbol_size=12288;
       break;
 
     case 1536:
-      dft = dft18432;
+      dftsizeidx = DFT_18432;
       nb_prefix_samples=4608;
       ofdm_symbol_size=18432;
       break;
 
     case 2048:
-      dft = dft24576;
+      dftsizeidx = DFT_24576;
       nb_prefix_samples=6144;
       ofdm_symbol_size=24576;
       break;
@@ -265,7 +265,7 @@ int slot_fep_mbsfn_khz_1dot25(PHY_VARS_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->rx_dft_stats);
 #endif
-    dft((int16_t *)&common_vars->rxdata[aa][(sample_offset +
+    dft(dftsizeidx,(int16_t *)&common_vars->rxdata[aa][(sample_offset +
                                             nb_prefix_samples +
                                             subframe_offset -
                                             SOFFSET) % frame_length_samples],

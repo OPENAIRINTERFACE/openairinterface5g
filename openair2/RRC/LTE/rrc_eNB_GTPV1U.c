@@ -27,7 +27,6 @@
  * \email: lionel.gauthier@eurecom.fr
  */
 
-//#if defined(ENABLE_USE_MME)
 # include "rrc_defs.h"
 # include "rrc_extern.h"
 # include "RRC/LTE/MESSAGES/asn1_msg.h"
@@ -35,10 +34,10 @@
 # include "rrc_eNB_UE_context.h"
 # include "msc.h"
 
-//# if defined(ENABLE_ITTI)
-#   include "asn1_conversions.h"
-#   include "intertask_interface.h"
-//#endif
+
+#include "asn1_conversions.h"
+#include "intertask_interface.h"
+
 
 # include "common/ran_context.h"
 
@@ -93,6 +92,7 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   }
 }
 
+
 //------------------------------------------------------------------------------
 boolean_t
 gtpv_data_req(
@@ -112,8 +112,7 @@ gtpv_data_req(
     LOG_I(GTPU,"gtpv_data_req sdu_sizeP == 0");
     return FALSE;
   }
-  LOG_D(GTPU,"gtpv_data_req ue rnti %x sdu_sizeP %d rb id %d", ctxt_pP->rnti, sdu_sizeP, rb_idP);
-#if defined(ENABLE_ITTI)
+  LOG_D(GTPU,"gtpv_data_req ue rnti %x sdu_sizeP %d rb id %ld", ctxt_pP->rnti, sdu_sizeP, rb_idP);
   {
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
@@ -167,8 +166,6 @@ gtpv_data_req(
       return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
     }
   }
-#endif
-
   return TRUE;
 
 }

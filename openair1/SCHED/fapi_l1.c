@@ -137,7 +137,6 @@ void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   // adjust transmit amplitude here based on NFAPI info
 }
 
-
 extern uint32_t localRIV2alloc_LUT6[32];
 extern uint32_t localRIV2alloc_LUT25[512];
 extern uint32_t localRIV2alloc_LUT50_0[1600];
@@ -147,6 +146,52 @@ extern uint32_t localRIV2alloc_LUT100_1[6000];
 extern uint32_t localRIV2alloc_LUT100_2[6000];
 extern uint32_t localRIV2alloc_LUT100_3[6000];
 
+void handle_nfapi_mch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
+                            nfapi_dl_config_request_pdu_t *dl_config_pdu,
+                            uint8_t *sdu){ 
+
+  nfapi_dl_config_mch_pdu_rel8_t *rel8 = &dl_config_pdu->mch_pdu.mch_pdu_rel8;
+
+  LTE_eNB_DLSCH_t *dlsch = eNB->dlsch_MCH;
+  LTE_DL_FRAME_PARMS *frame_parms=&eNB->frame_parms;
+
+    //  dlsch->rnti   = M_RNTI;
+  dlsch->harq_processes[0]->mcs   = rel8->modulation;
+  //  dlsch->harq_processes[0]->Ndi   = ndi;
+  dlsch->harq_processes[0]->rvidx = 0;//rvidx;
+  dlsch->harq_processes[0]->Nl    = 1;
+  dlsch->harq_processes[0]->TBS   = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
+  //  dlsch->harq_ids[subframe]       = 0;
+  dlsch->harq_processes[0]->nb_rb = frame_parms->N_RB_DL;
+
+  switch(frame_parms->N_RB_DL) {
+  case 6:
+    dlsch->harq_processes[0]->rb_alloc[0] = 0x3f;
+    break;
+
+  case 25:
+    dlsch->harq_processes[0]->rb_alloc[0] = 0x1ffffff;
+    break;
+
+  case 50:
+    dlsch->harq_processes[0]->rb_alloc[0] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[1] = 0x3ffff;
+    break;
+
+  case 100:
+    dlsch->harq_processes[0]->rb_alloc[0] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[1] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[2] = 0xffffffff;
+    dlsch->harq_processes[0]->rb_alloc[3] = 0xf;
+    break;
+  }
+
+  dlsch->harq_ids[proc->frame_tx%2][proc->subframe_tx] = 0;
+
+  dlsch->harq_processes[0]->pdu = sdu;
+
+  dlsch->active = 1;
+}
 
 void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                             nfapi_dl_config_request_pdu_t *dl_config_pdu,
@@ -551,7 +596,7 @@ void handle_uci_sr_pdu(PHY_VARS_eNB *eNB,
   uci->frame               = frame;
   uci->subframe            = subframe;
   uci->rnti                = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti;
-  uci->ue_id               = find_dlsch(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
+  uci->ue_id               = find_ulsch(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
   uci->type                = SR;
   uci->pucch_fmt           = pucch_format1;
   uci->num_antenna_ports   = 1;
@@ -577,7 +622,7 @@ void handle_uci_sr_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_
   uci->frame               = frame;
   uci->subframe            = subframe;
   uci->rnti                = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti;
-  uci->ue_id               = find_dlsch(ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
+  uci->ue_id               = find_ulsch(ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
   uci->type                = HARQ_SR;
   uci->num_antenna_ports   = 1;
   uci->num_pucch_resources = 1;
@@ -599,7 +644,7 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
   uci->frame             = frame;
   uci->subframe          = subframe;
   uci->rnti              = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
-  uci->ue_id             = find_dlsch(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
+  uci->ue_id             = find_ulsch(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE);
   uci->type              = HARQ;
   uci->srs_active        = srs_active;
   uci->num_antenna_ports = ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel11.num_ant_ports;
@@ -687,7 +732,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE) {
     AssertFatal(1==0,"NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE not handled yet\n");
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE) {
-    AssertFatal((UE_id = find_uci(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,
+  AssertFatal((UE_id = find_uci(ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti,
                                   proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE UCI for rnti %x\n",ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti);
     handle_uci_sr_pdu(eNB,UE_id,ul_config_pdu,frame,subframe,srs_present);
@@ -700,9 +745,8 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   }
 }
 
-void schedule_response(Sched_Rsp_t *Sched_INFO) {
+void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc) {
   PHY_VARS_eNB *eNB;
-  L1_rxtx_proc_t *proc;
   // copy data from L2 interface into L1 structures
   module_id_t               Mod_id       = Sched_INFO->module_id;
   uint8_t                   CC_id        = Sched_INFO->CC_id;
@@ -722,7 +766,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
   AssertFatal(RC.eNB[Mod_id][CC_id]!=NULL,"RC.eNB[%d][%d] is null\n",Mod_id,CC_id);
   eNB         = RC.eNB[Mod_id][CC_id];
   fp          = &eNB->frame_parms;
-  proc        = &eNB->proc.L1_proc;
   /* TODO: check that following line is correct - in the meantime it is disabled */
   //if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
@@ -807,8 +850,30 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
         break;
 
-      case NFAPI_DL_CONFIG_MCH_PDU_TYPE:
+      case NFAPI_DL_CONFIG_MCH_PDU_TYPE:{
         //      handle_nfapi_mch_dl_pdu(eNB,dl_config_pdu);
+	//AssertFatal(1==0,"OK\n");
+        nfapi_dl_config_mch_pdu_rel8_t *mch_pdu_rel8 = &dl_config_pdu->mch_pdu.mch_pdu_rel8;
+	uint16_t pdu_index = mch_pdu_rel8->pdu_index;
+	uint16_t tx_pdus = TX_req->tx_request_body.number_of_pdus;
+	uint16_t invalid_pdu = pdu_index == -1;
+	uint8_t *sdu = invalid_pdu ? NULL : pdu_index >= tx_pdus ? NULL : TX_req->tx_request_body.tx_pdu_list[pdu_index].segments[0].segment_data;
+        LOG_D(PHY,"%s() [PDU:%d] NFAPI_DL_CONFIG_MCH_PDU_TYPE SFN/SF:%04d%d TX:%d/%d RX:%d/%d pdu_index:%d sdu:%p\n",
+              __FUNCTION__, i,
+              NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),
+              proc->frame_tx, proc->subframe_tx,
+              proc->frame_rx, proc->subframe_rx,
+              pdu_index, sdu);
+	if (sdu) { //sdu != NULL)
+          if (NFAPI_MODE!=NFAPI_MODE_VNF)
+		handle_nfapi_mch_pdu(eNB,NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),proc,dl_config_pdu, sdu);
+        } else {
+          dont_send=1;
+          LOG_E(MAC,"%s() NFAPI_DL_CONFIG_MCH_PDU_TYPE sdu is NULL DL_CFG:SFN/SF:%d:pdu_index:%d TX_REQ:SFN/SF:%d:pdus:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(DL_req->sfn_sf), pdu_index,
+                NFAPI_SFNSF2DEC(TX_req->sfn_sf), tx_pdus);
+        }
+	do_oai=1;
+	}
         break;
 
       case NFAPI_DL_CONFIG_DLSCH_PDU_TYPE: {
@@ -953,11 +1018,11 @@ void schedule_response(Sched_Rsp_t *Sched_INFO) {
 
 /*Dummy functions*/
 
-int memcpy_dl_config_req (nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
+int memcpy_dl_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
   return 0;
 }
 
-int memcpy_ul_config_req (nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
+int memcpy_ul_config_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_ul_config_request_t *req) {
   return 0;
 }
 

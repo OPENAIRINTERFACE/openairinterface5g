@@ -547,10 +547,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                pdsch_vars[eNB_id]->log2_maxh,
                                measurements); // log2_maxh+I0_shift
 
-    if (symbol == 5) {
-      LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-    }
-
+//    if (symbol == 5) {
+//      LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+//    }
+//
     if ((rx_type==rx_IC_single_stream) &&
         (eNB_id_i<ue->n_connected_eNB)) {
       dlsch_channel_compensation(pdsch_vars[eNB_id_i]->rxdataF_ext,
@@ -821,15 +821,14 @@ int rx_pdsch(PHY_VARS_UE *ue,
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
 
-  /*
-  LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
+  LOG_D(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p energy: %d\n",
              frame, subframe,symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol_cw0);
-  */  
+             pllr_symbol_cw0,
+	     signal_energy(pdsch_vars[eNB_id]->rxdataF_comp0[0], 7*2*frame_parms->N_RB_DL*12));
   switch (dlsch0_harq->Qm) {
     case 2 :
       if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {

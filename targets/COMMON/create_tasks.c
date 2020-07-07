@@ -26,11 +26,11 @@
 # include "common/ran_context.h"
 
 #ifdef OPENAIR2
-    #include "sctp_eNB_task.h"
-    #include "x2ap_eNB.h"
-    #include "s1ap_eNB.h"
-    #include "udp_eNB_task.h"
-    #include "gtpv1u_eNB_task.h"
+  #include "sctp_eNB_task.h"
+  #include "x2ap_eNB.h"
+  #include "s1ap_eNB.h"
+  #include "udp_eNB_task.h"
+  #include "gtpv1u_eNB_task.h"
   #if ENABLE_RAL
     #include "lteRALue.h"
     #include "lteRALenb.h"
@@ -40,6 +40,8 @@
 # include "f1ap_cu_task.h"
 # include "f1ap_du_task.h"
 # include "enb_app.h"
+# include "openair2/LAYER2/MAC/mac_proto.h"
+#include <executables/split_headers.h> 
 
 extern RAN_CONTEXT_t RC;
 
@@ -58,13 +60,12 @@ int create_tasks(uint32_t enb_nb) {
   rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
   AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
 
-  if (EPC_MODE_ENABLED) {
+  if (EPC_MODE_ENABLED && ! ( split73==SPLIT73_DU ) ) {
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
   }
 
-
-  if (EPC_MODE_ENABLED && !NODE_IS_DU(type)) {
+  if (EPC_MODE_ENABLED && !NODE_IS_DU(type) && ! ( split73==SPLIT73_DU ) ) {
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for S1AP failed\n");
     if (!(get_softmodem_params()->emulate_rf)){
@@ -89,6 +90,12 @@ int create_tasks(uint32_t enb_nb) {
   if (NODE_IS_DU(type)) {
     rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
+  }
+
+  if (!NODE_IS_CU(type)) {
+    LOG_I(MAC,"Creating MAC eNB Task\n");
+    rc = itti_create_task(TASK_MAC_ENB, mac_enb_task, NULL);
+    AssertFatal(rc >= 0, "Create task for MAC eNB failed\n");
   }
 
   return 0;

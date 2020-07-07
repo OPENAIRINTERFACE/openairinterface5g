@@ -37,7 +37,7 @@
 */
 
 void nr_modulation(uint32_t *in,
-                   uint16_t length,
+                   uint32_t length,
                    uint16_t mod_order,
                    int16_t *out);
 
@@ -92,5 +92,15 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 \param Msc_PUSCH number of allocated data subcarriers
 */
 void nr_dft(int32_t *z,int32_t *d, uint32_t Msc_PUSCH);
+
+int nr_beam_precoding(int32_t **txdataF,
+	              int32_t **txdataF_BF,
+                      NR_DL_FRAME_PARMS *frame_parms,
+	              int32_t ***beam_weights,
+                      int slot,
+                      int symbol,
+                      int aa,
+                      int nb_antenna_ports
+);
 
 #endif

@@ -20,19 +20,18 @@ See the [dedicated page](BASIC_SIM.md).
 
 # RF Simulator
 
-The rf simulator is a oai device replacing the radio heads (for example the USRP device). It allows connecting the oai UE and the oai eNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.
+The rf simulator is a oai device replacing the radio heads (for example the USRP device). It allows connecting the oai UE (LTE or 5G) and respectively the oai eNodeB or gNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.  The rf simulator has some preliminary support for channel modeling.
 
 It is planned to enhance this simulator with the following functionalities:
 
-- Support for multiple UE connections,each UE being a `lte-uesoftmodem` instance.
-- Support for multiple eNodeB for hand-over tests
-- Support for channel modeling
+- Support for multiple UE connections,each UE being a `lte-uesoftmodem` or `nr_uesoftmodem` instance.
+- Support for multiple eNodeB's or gNodeB's for hand-over tests
 
    This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../targets/ARCH/rfsimulator/README.md ) contains the detailed documentation.
 
 # L2 nFAPI Simulator
 
-This simulator connects a eNodeB and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
+This simulator connects a eNodeB  and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
 
 As for the rf simulator, no specific hardware is required. The [L2 nfapi simlator page](L2NFAPI.md) contains the detailed documentation.
 
@@ -57,9 +56,56 @@ oai supports [number of deployment](FEATURE_SET.md) model, the following are tes
 1.  [Monolithic eNodeB](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/HowToConnectCOTSUEwithOAIeNBNew) where the whole signal processing is performed in a single process
 2. if4p5 mode, where frequency domain samples are carried over ethernet, from the RRU which implement part of L1(FFT,IFFT,part of PRACH),  to a RAU
 
+# 5G NR
+
+As of February 2020, all 5G NR development is part of the develop branch (the branch develop-nr is no longer maintained). This also means that all new development will be merged into there once it passes all the CI. 
+
+## NSA setup with COTS UE
+
+This setup requires an EPC, an OAI eNB and gNB, and a COTS Phone. A dedicated page describe the setup can be found [here](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home/gNB-COTS-UE-testing).
+
+### Launch gNB
+
+```bash sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf```
+
+### Launch eNB
+
+```bash sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf```
 
 
 
+## phy-test setup with OAI UE
+
+The OAI UE can also be used in front of a OAI gNB without the support of eNB or EPC. In this case both gNB and eNB need to be run with the --phy-test flag. At the gNB this flag does the following
+ - it reads the RRC configuration from the configuration file
+ - it encodes the RRCConfiguration and the RBconfig message and stores them in the binary files rbconfig.raw and reconfig.raw
+ - the MAC uses a pre-configured allocation of PDSCH and PUSCH with randomly generated payload
+
+At the UE the --phy-test flag will
+ - read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them.
+
+
+### Launch gNB
+
+```bash sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test```
+
+### Launch UE in another window
+
+```bash sudo ./nr-uesoftmodem --phy-test [--rrc_config_path ../../../ci-scripts/rrc-files]```
+
+Some other useful paramters of the UE are
+
+ - --ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
+ - --usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
+ - --clock-source: sets the clock-source (internal or external). 
+ - --time-source: sets the time-source (internal or external). 
+
+
+## noS1 setup with OAI UE
+
+Instead of randomly generated payload, in the phy-test mode we can also inject/receive user-plane traffic over a TUN interface. This is the so-called noS1 mode. 
+
+This setup is described in the [rfsimulator page](../targets/ARCH/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
 
 
 

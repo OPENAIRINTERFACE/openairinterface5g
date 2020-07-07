@@ -178,7 +178,7 @@ int trx_lms_start(openair0_device *device){
     }
 
     LMS_Init(lms_device);
-    LMS_EnableCalibCache(lms_device,false);
+    LMS_EnableCache(lms_device,false);
 
     if (LMS_LoadConfig(lms_device,device->openair0_cfg[0].configFilename) != 0)
     {
@@ -277,6 +277,7 @@ int trx_lms_stop(openair0_device *device) {
     LMS_DestroyStream(lms_device,&rx_stream);
     LMS_DestroyStream(lms_device,&tx_stream);
     LMS_Close(lms_device);
+    return 0;
 }
 
 /*! \brief Set frequencies (TX/RX)
@@ -349,6 +350,10 @@ void trx_lms_end(openair0_device *device) {
 
 }
 
+int trx_lms_write_init(openair0_device *device)
+{
+    return 0;
+}
 extern "C" {
 /*! \brief Initialize Openair LMSSDR target. It returns 0 if OK
 * \param device the hardware to use
@@ -405,7 +410,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
   device->trx_stop_func = trx_lms_stop;
   device->trx_set_freq_func = trx_lms_set_freq;
   device->trx_set_gains_func = trx_lms_set_gains;
-  device->uhd_set_thread_priority = NULL;
+  device->trx_write_init = trx_lms_write_init;
 
   device->openair0_cfg = openair0_cfg;
 

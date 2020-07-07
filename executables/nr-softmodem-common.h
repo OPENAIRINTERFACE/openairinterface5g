@@ -1,7 +1,7 @@
 #ifndef NR_SOFTMODEM_COMMON_H
 #define NR_SOFTMODEM_COMMON_H
 
-#ifndef  _GNU_SOURCE
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 
@@ -57,6 +57,7 @@
 #define CONFIG_HLP_DLSHIFT       "dynamic shift for LLR compuation for TM3/4 (default 0)\n"
 #define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
+#define CONFIG_HLP_DORA          "test gNB  and UE with RA procedures\n"
 #define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
 #define CONFIG_HLP_EXCCLK        "tells hardware to use a clock reference (0:internal(default), 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
@@ -83,11 +84,13 @@
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 #define CONFIG_HLP_DISABLETIMECORR   "disable UE timing correction\n"
+#define CONFIG_HLP_RRC_CFG_PATH   "path for RRC configuration\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
+#define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
@@ -98,6 +101,8 @@
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 #define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 #define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
+#define CONFIG_HLP_NOS1          "Disable s1 interface\n"
+#define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                             */
 /*   optname         helpstr          paramflags          XXXptr                     defXXXval            type           numelt   */
@@ -124,11 +129,10 @@ extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
 
-extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern int rx_input_level_dBm;
-extern uint8_t exit_missed_slots;
 extern uint64_t num_missed_slots; // counter for the number of missed slots
 
 extern int oaisim_flag;
@@ -141,9 +145,11 @@ extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
 
-#if defined(ENABLE_ITTI)
-  extern volatile int start_eNB;
-  extern volatile int start_UE;
-#endif
+extern int emulate_rf;
+extern int numerology;
+extern int usrp_tx_thread;
+
+extern volatile int start_eNB;
+extern volatile int start_UE;
 
 #endif

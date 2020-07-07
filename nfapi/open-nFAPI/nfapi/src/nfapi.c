@@ -405,7 +405,116 @@ uint32_t pusharrays16(int16_t in[], uint32_t max_len, uint32_t len, uint8_t **ou
 		return 0;
 	}
 }
+uint32_t pullarray32(uint8_t **in, uint32_t out[], uint32_t max_len, uint32_t len, uint8_t *end)
+{
+       if(len == 0)
+               return 1;
 
+       if(len > max_len)
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s exceed array size (%d > %d)\n", __FUNCTION__, len, max_len);
+               return 0;
+       }
+
+       if((end - (*in)) >= sizeof(uint32_t) * len)
+       {
+               uint32_t idx;
+               for(idx = 0; idx < len; ++idx)
+               {
+                       if(!pull32(in, &out[idx], end))
+                               return 0;
+               }
+
+               return sizeof(uint32_t) * len;
+       }
+       else
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s no space in buffer\n", __FUNCTION__);
+               return 0;
+       }
+}
+
+uint32_t pullarrays32(uint8_t **in, int32_t out[], uint32_t max_len, uint32_t len, uint8_t *end)
+{
+       if(len == 0)
+               return 1;
+
+       if(len > max_len)
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s exceed array size (%d > %d)\n", __FUNCTION__, len, max_len);
+               return 0;
+       }
+
+       if((end - (*in)) >= sizeof(uint32_t) * len)
+       {
+               uint32_t idx;
+               for(idx = 0; idx < len; ++idx)
+               {
+                       if(!pulls32(in, &out[idx], end))
+                       return 0;
+               }
+
+               return sizeof(uint32_t) * len;
+       }
+       else
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s no space in buffer\n", __FUNCTION__);
+               return 0;
+       }
+}
+uint32_t pusharray32(uint32_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end)
+{
+       if(len == 0)
+               return 1;
+
+       if(len > max_len)
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s exceed array size (%d > %d)\n", __FUNCTION__, len, max_len);
+               return 0;
+       }
+
+       if((end - (*out)) >= sizeof(uint32_t) * len)
+       {
+               uint32_t idx;
+               for(idx = 0; idx < len; ++idx)
+               {
+                       if(!push32(in[idx], out, end))
+                               return 0;
+               }
+               return sizeof(uint32_t) * len;
+       }
+       else
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s no space in buffer\n", __FUNCTION__);
+               return 0;
+       }
+}
+uint32_t pusharrays32(int32_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end)
+{
+       if(len == 0)
+               return 1;
+
+       if(len > max_len)
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s exceed array size (%d > %d)\n", __FUNCTION__, len, max_len);
+               return 0;
+       }
+
+       if((end - (*out)) >= sizeof(uint32_t) * len)
+       {
+               uint32_t idx;
+               for(idx = 0; idx < len; ++idx)
+               {
+                       pushs32(in[idx], out, end);
+               }
+               return sizeof(uint32_t) * len;
+       }
+       else
+       {
+               NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s no space in buffer\n", __FUNCTION__);
+               return 0;
+       }
+}
 uint32_t pullarray8(uint8_t **in, uint8_t out[], uint32_t max_len, uint32_t len, uint8_t *end)
 {
 	if(len == 0)
@@ -417,7 +526,7 @@ uint32_t pullarray8(uint8_t **in, uint8_t out[], uint32_t max_len, uint32_t len,
 		return 0;
 	}
 
-	if((end - out) >= sizeof(uint8_t) * len)
+	if((end - (*in)) >= sizeof(uint8_t) * len)
 	{
 		memcpy(out, (*in), len);
 		(*in)+=len;

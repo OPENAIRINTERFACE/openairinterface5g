@@ -470,7 +470,7 @@ void computeBeta(const t_nrPolar_params *pp,decoder_node_t *node) {
       int ssr4len = node->Nv/2/8;
       register __m128i allones=*((__m128i*)all1);
       for (int i=0;i<sse4len;i++) {
-      ((__m256i*)betav)[i] = _mm_or_si128(_mm_cmpeq_epi16(((__m128i*)betar)[i], ((__m128i*)betal)[i]),allones));
+      ((__m256i*)betav)[i] = _mm_or_si128(_mm_cmpeq_epi16(((__m128i*)betar)[i], ((__m128i*)betal)[i]),allones);
       }
     }
     else if (sse4mod == 4) {

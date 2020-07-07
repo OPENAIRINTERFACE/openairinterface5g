@@ -60,12 +60,12 @@
 //#        include "rlc_am_test.h"
 
 
-#define PROTOCOL_RLC_AM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
+#define PROTOCOL_RLC_AM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld]"
 #define PROTOCOL_RLC_AM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
           rLC_Pp->rb_id
 
-#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %" PRIx16 " %s %02u]"
+#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %" PRIx16 " %s %02ld]"
 #define PROTOCOL_RLC_AM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
         CTXT_Pp->rnti,\
           (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
@@ -255,23 +255,15 @@ rlc_am_get_pdus (
 */
 void     rlc_am_rx (const protocol_ctxt_t* const ctxtP,void * const rlc_pP, struct mac_data_ind);
 
-/*! \fn struct mac_status_resp rlc_am_mac_status_indication (const protocol_ctxt_t* const ctxtP,void * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP)
+/*! \fn struct mac_status_resp rlc_am_mac_status_indication (const protocol_ctxt_t* const ctxtP,void * const rlc_pP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission.
 * \param[in]  ctxt_pP          Running context.
 * \param[in]  rlc_pP           RLC AM protocol instance pointer.
-* \param[in]  tbs_sizeP                 Number of bytes requested by MAC for next transmission.
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \param[in]  enb_flagP        eNB or UE flag indication.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-struct mac_status_resp rlc_am_mac_status_indication (const protocol_ctxt_t* const ctxtP, void * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP);
-
-/*! \fn void rlc_am_set_nb_bytes_requested_by_mac (void * const            rlc_pP,const tb_size_t         tb_sizeP)
-* \brief    Set available TBS for RLC Tx just before am_mac_data_request. Used for UE only.
-* \param[in]  rlc_pP           RLC AM protocol instance pointer.
-* \param[in]  tb_sizeP         Available Tx Transport Block size in bytes.
-*/
-void rlc_am_set_nb_bytes_requested_by_mac (void * const            rlc_pP,const tb_size_t         tb_sizeP);
+struct mac_status_resp rlc_am_mac_status_indication (const protocol_ctxt_t* const ctxtP, void * const rlc_pP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP);
 
 /*! \fn struct mac_data_req rlc_am_mac_data_request (const protocol_ctxt_t* const ctxtP,void * const rlc_pP,const eNB_flag_t   enb_flagP)
 * \brief    Gives PDUs to lower layer MAC.

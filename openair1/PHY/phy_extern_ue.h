@@ -36,7 +36,7 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
 extern int number_of_cards;
 
-extern short conjugate[8],conjugate2[8];
+extern const short conjugate[8],conjugate2[8];
 
 
 extern PHY_VARS_UE ***PHY_vars_UE_g;
@@ -66,13 +66,12 @@ extern uint16_t NB_UE_INST;
 extern unsigned char NB_RN_INST;
 #endif
 
-extern unsigned int ULSCH_max_consecutive_errors;
 extern int flag_LA;
 extern double sinr_bler_map[MCS_COUNT][2][MCS_TABLE_LENGTH_MAX];
 extern double sinr_bler_map_up[MCS_COUNT][2][16];
 extern int table_length[MCS_COUNT];
-extern double sinr_to_cqi[4][16];
-extern int cqi_to_mcs[16];
+extern const double sinr_to_cqi[4][16];
+extern const int cqi_to_mcs[16];
 
 //for MU-MIMO abstraction using MIESM
 //this 2D arrarays contains SINR, MI and RBIR in rows 1, 2, and 3 respectively
@@ -80,23 +79,23 @@ extern double MI_map_4qam[3][162];
 extern double MI_map_16qam[3][197];
 extern double MI_map_64qam[3][227];
 
-extern double beta1_dlsch_MI[6][MCS_COUNT];
-extern double beta2_dlsch_MI[6][MCS_COUNT];
+extern const double beta1_dlsch_MI[6][MCS_COUNT];
+extern const double beta2_dlsch_MI[6][MCS_COUNT];
 
-extern double q_qpsk[8];
-extern double q_qam16[8];
-extern double q_qam64[8];
+extern const double q_qpsk[8];
+extern const double q_qam16[8];
+extern const double q_qam64[8];
 
-extern double p_qpsk[8];
-extern double p_qam16[8];
-extern double p_qam64[8];
+extern const double p_qpsk[8];
+extern const double p_qam16[8];
+extern const double p_qam64[8];
 
-extern double beta1_dlsch[6][MCS_COUNT];
-extern double beta2_dlsch[6][MCS_COUNT];
+extern const double beta1_dlsch[6][MCS_COUNT];
+extern const double beta2_dlsch[6][MCS_COUNT];
 
-extern char NB_functions[7][20];
-extern char NB_timing[2][20];
-extern char ru_if_types[MAX_RU_IF_TYPES][20];
+extern const char NB_functions[7][20];
+extern const char NB_timing[2][20];
+extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
 extern int16_t unscrambling_lut[65536*16];
 extern uint8_t scrambling_lut[65536*16];

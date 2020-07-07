@@ -23,7 +23,6 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "PHY/impl_defs_top.h"
-//#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -35,8 +34,9 @@
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_NR_UE *ue,
-                      module_id_t eNB_id,
-					  uint8_t subframe,
+                      module_id_t gNB_id,
+                      uint8_t frame,
+                      uint8_t subframe,
                       unsigned char clear,
                       short coef)
 {
@@ -60,8 +60,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
     temp = 0;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
-      Im = ((int16_t*)ue->pdcch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
+      Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
+      Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -80,7 +80,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   //max_pos_fil = max_pos;
 
-  if(subframe == 1)
+  if(subframe == 0)
   {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
@@ -105,17 +105,19 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
               //mac_resynch();
               //dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
               ue->UE_mode[0] = PRACH;
+              ue->prach_resources[gNB_id]->sync_frame = frame;
+              ue->prach_resources[gNB_id]->init_msg1 = 0;
           }
           else {
               ue->UE_mode[0] = PUSCH;
           }
       }
 
-      if ( ue->rx_offset < 0 )
-	ue->rx_offset += frame_parms->samples_per_frame;
+      if (ue->rx_offset < 0)
+        ue->rx_offset += frame_parms->samples_per_frame;
 
-      if ( ue->rx_offset >= frame_parms->samples_per_frame )
-          ue->rx_offset -= frame_parms->samples_per_frame;
+      if (ue->rx_offset >= frame_parms->samples_per_frame)
+        ue->rx_offset -= frame_parms->samples_per_frame;
 
 
 

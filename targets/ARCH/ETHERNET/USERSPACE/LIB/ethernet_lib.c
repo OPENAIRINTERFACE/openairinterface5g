@@ -197,6 +197,10 @@ int trx_eth_reset_stats(openair0_device* device)
     return(0);
 }
 
+int trx_eth_write_init(openair0_device *device)
+{
+    return 0;
+}
 
 int ethernet_tune(openair0_device *device,
                   unsigned int option,
@@ -415,9 +419,9 @@ int transport_init(openair0_device *device,
     device->trx_reset_stats_func = trx_eth_reset_stats;
     device->trx_end_func         = trx_eth_end;
     device->trx_stop_func        = trx_eth_stop;
-    device->trx_set_freq_func = trx_eth_set_freq;
-    device->trx_set_gains_func = trx_eth_set_gains;
-    device->uhd_set_thread_priority = NULL;
+    device->trx_set_freq_func    = trx_eth_set_freq;
+    device->trx_set_gains_func   = trx_eth_set_gains;
+    device->trx_write_init       = trx_eth_write_init;
 
     if (eth->flags == ETH_RAW_MODE) {
         device->trx_write_func   = trx_eth_write_raw;

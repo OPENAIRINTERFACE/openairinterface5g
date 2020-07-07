@@ -191,20 +191,19 @@ tbs_size_t mac_rlc_data_req(
     case RLC_MODE_AM:
       rlc_am_mui.rrc_mui_num = 0;
 
-      if (!enb_flagP) rlc_am_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.am,tb_sizeP);
-
+      ((rlc_am_entity_t *) &rlc_union_p->rlc.am)->nb_bytes_requested_by_mac = tb_sizeP;
       data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am,enb_flagP);
       ret_tb_size =mac_rlc_serialize_tb(buffer_pP, data_request.data);
       break;
 
     case RLC_MODE_UM:
-      if (!enb_flagP) rlc_um_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.um,tb_sizeP);
-
+      ((rlc_um_entity_t *) &rlc_union_p->rlc.um)->nb_bytes_requested_by_mac = tb_sizeP;
       data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um,enb_flagP);
       ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
       break;
 
     case RLC_MODE_TM:
+      ((rlc_tm_entity_t *) &rlc_union_p->rlc.tm)->rlc_pdu_size = tb_sizeP;
       data_request = rlc_tm_mac_data_request(&ctxt, &rlc_union_p->rlc.tm);
       ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
       break;
@@ -317,7 +316,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP,
   const uint32_t sourceL2Id,
   const uint32_t destinationL2Id
 ) {
@@ -370,7 +368,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
       break;
 
     case RLC_MODE_AM:
-      status_resp = rlc_am_mac_status_indication(&ctxt, &rlc_union_p->rlc.am, tb_sizeP, tx_status,enb_flagP);
+      status_resp = rlc_am_mac_status_indication(&ctxt, &rlc_union_p->rlc.am, tx_status,enb_flagP);
       mac_rlc_status_resp.bytes_in_buffer                 = status_resp.buffer_occupancy_in_bytes;
       mac_rlc_status_resp.head_sdu_creation_time          = status_resp.head_sdu_creation_time;
       mac_rlc_status_resp.head_sdu_remaining_size_to_send = status_resp.head_sdu_remaining_size_to_send;
@@ -379,7 +377,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
       break;
 
     case RLC_MODE_UM:
-      status_resp = rlc_um_mac_status_indication(&ctxt, &rlc_union_p->rlc.um, tb_sizeP, tx_status, enb_flagP);
+      status_resp = rlc_um_mac_status_indication(&ctxt, &rlc_union_p->rlc.um, tx_status, enb_flagP);
       mac_rlc_status_resp.bytes_in_buffer                 = status_resp.buffer_occupancy_in_bytes;
       mac_rlc_status_resp.pdus_in_buffer                  = status_resp.buffer_occupancy_in_pdus;
       mac_rlc_status_resp.head_sdu_creation_time          = status_resp.head_sdu_creation_time;
@@ -389,7 +387,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
       break;
 
     case RLC_MODE_TM:
-      status_resp = rlc_tm_mac_status_indication(&ctxt, &rlc_union_p->rlc.tm, tb_sizeP, tx_status);
+      status_resp = rlc_tm_mac_status_indication(&ctxt, &rlc_union_p->rlc.tm, tx_status);
       mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
       mac_rlc_status_resp.pdus_in_buffer  = status_resp.buffer_occupancy_in_pdus;
       // return mac_rlc_status_resp;

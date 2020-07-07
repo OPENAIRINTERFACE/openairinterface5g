@@ -64,7 +64,7 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "../../ARCH/COMMON/common_lib.h"
+#include "targets/ARCH/COMMON/common_lib.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -72,7 +72,6 @@
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #include "PHY/phy_extern.h"
-
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -118,9 +117,9 @@ extern int oaisim_flag;
 
 //uint16_t sf_ahead=4;
 extern uint16_t sf_ahead;
-
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
+#include "executables/thread-common.h"
+//extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+//extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 //pthread_t                       main_eNB_thread;
 
@@ -236,10 +235,10 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
     new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
     dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
     // L2-emulator can work only one eNB.
-    //      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    //      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
-    memcpy(&pre_scd_eNB_UE_stats,&RC.mac[0]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    //      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    //      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_eNB_UE_stats,&RC.mac[0]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
     AssertFatal((ret= pthread_mutex_lock(&ru->proc.mutex_pre_scd))==0,"[eNB] error locking proc mutex for eNB pre scd, return %d\n",ret);
     ru->proc.instance_pre_scd++;
 
@@ -262,7 +261,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO);
+  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc);
   AssertFatal((ret= pthread_mutex_unlock(&eNB->UL_INFO_mutex))==0,"error unlocking UL_INFO_mutex, return %d\n",ret);
   /* this conflict resolution may be totally wrong, to be tested */
   /* CONFLICT RESOLUTION: BEGIN */
@@ -513,16 +512,15 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,
       continue;//hacking only works when all RU_tx works on the same subframe #TODO: adding mask stuff
     }
 
-    AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_eNBs))==0,"ERROR pthread_mutex_lock failed on mutex_eNBs L1_thread_tx with ret=%d\n",ret);
-
     if (ru_proc->instance_cnt_eNBs == 0) {
       LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->subframe_rx);
       AssertFatal((ret=pthread_mutex_lock(&eNB->proc.mutex_RU_tx))==0,"mutex_lock returns %d\n",ret);
       eNB->proc.RU_mask_tx = 0;
       AssertFatal((ret=pthread_mutex_unlock(&eNB->proc.mutex_RU_tx))==0,"mutex_unlock returns %d\n",ret);
-      AssertFatal((ret=pthread_mutex_unlock( &ru_proc->mutex_eNBs ))==0,"mutex_unlock return %d\n",ret);
       return(-1);
     }
+
+    AssertFatal((ret = pthread_mutex_lock(&ru_proc->mutex_eNBs))==0,"ERROR pthread_mutex_lock failed on mutex_eNBs L1_thread_tx with ret=%d\n",ret);
 
     ru_proc->instance_cnt_eNBs = 0;
     ru_proc->timestamp_tx = timestamp_tx;
@@ -853,9 +851,7 @@ void init_eNB_proc(int inst) {
 
   for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
     eNB = RC.eNB[inst][CC_id];
-#ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing eNB processes instance:%d CC_id %d \n",inst,CC_id);
-#endif
     proc = &eNB->proc;
     L1_proc                        = &proc->L1_proc;
     L1_proc_tx                     = &proc->L1_proc_tx;
@@ -1249,13 +1245,13 @@ void init_eNB(int single_thread_flag,
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       LOG_I(PHY,"Initializing eNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
-#ifndef OCP_FRAMEWORK
       LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
-#endif
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
       eNB->if_inst->schedule_response   = schedule_response;
       eNB->if_inst->PHY_config_req      = phy_config_request;
+      eNB->if_inst->PHY_config_update_sib2_req      = phy_config_update_sib2_request;
+      eNB->if_inst->PHY_config_update_sib13_req      = phy_config_update_sib13_request;
       memset((void *)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
       memset((void *)&eNB->Sched_INFO,0,sizeof(eNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");

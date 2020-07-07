@@ -29,6 +29,8 @@
 #ifndef MAC_MESSAGES_TYPES_H_
 #define MAC_MESSAGES_TYPES_H_
 
+#include <LTE_DRX-Config.h>
+
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 #define RRC_MAC_IN_SYNC_IND(mSGpTR)             (mSGpTR)->ittiMsg.rrc_mac_in_sync_ind
@@ -47,6 +49,8 @@
 #define RRC_MAC_MCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_req
 #define RRC_MAC_MCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_ind
 #define RRC_MAC_PCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_pcch_data_req
+
+#define RRC_MAC_DRX_CONFIG_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_drx_config_req
 
 // Some constants from "LAYER2/MAC/defs.h"
 #define BCCH_SDU_SIZE                           (512)
@@ -145,4 +149,14 @@ typedef struct RrcMacPcchDataReq_s {
   uint8_t   sdu[PCCH_SDU_SIZE];
   uint8_t   enb_index;
 } RrcMacPcchDataReq;
+
+/* RRC configures DRX context (MAC timers) of a UE */
+typedef struct rrc_mac_drx_config_req_s {
+  /* UE RNTI to configure */
+  rnti_t rnti;
+
+  /* DRX configuration from MacMainConfig to configure UE's local timers */
+  LTE_DRX_Config_t * drx_Configuration;
+} rrc_mac_drx_config_req_t;
+
 #endif /* MAC_MESSAGES_TYPES_H_ */

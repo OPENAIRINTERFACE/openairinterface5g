@@ -42,7 +42,7 @@
 #        include "mem_block.h"
 #        include "rlc_tm_init.h"
 
-#define PROTOCOL_RLC_TM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
+#define PROTOCOL_RLC_TM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02ld]"
 #define PROTOCOL_RLC_TM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
           (rLC_Pp->is_data_plane) ? "DRB TM" : "SRB TM",\
           rLC_Pp->rb_id
@@ -88,11 +88,10 @@ void     rlc_tm_rx (
                   struct mac_data_ind data_indP);
 
 
-/*! \fn struct mac_status_resp rlc_tm_mac_status_indication (const protocol_ctxt_t* const  ctxt_pP, void * const rlcP, const uint16_t tbs_sizeP, struct mac_status_ind tx_statusP)
+/*! \fn struct mac_status_resp rlc_tm_mac_status_indication (const protocol_ctxt_t* const  ctxt_pP, void * const rlcP, struct mac_status_ind tx_statusP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission.
 * \param[in]  ctxtP                     Running context.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
-* \param[in]  tbs_sizeP                 Number of bytes requested by MAC for next transmission.
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
@@ -100,7 +99,6 @@ struct mac_status_resp
 rlc_tm_mac_status_indication (
   const protocol_ctxt_t* const  ctxt_pP,
   void * const                  rlc_pP,
-  const tb_size_t               tb_sizeP,
   struct mac_status_ind         tx_statusP);
 
 

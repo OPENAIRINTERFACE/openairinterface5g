@@ -76,12 +76,11 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t additionalNonMBSFNSubframes, uint32_t frame);
 /**
 \brief Generate configuration structure for DRX_Config
-@param Mod_id Instance of eNB
 @param CC_id Id of component to configure
 @param configuration Pointer Configuration Request structure
 @param UEcap Pointer Configuration UE capablities
 @return DRX_Config structure pointer or NULL => error */
-LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *configuration, LTE_UE_EUTRA_Capability_t *UEcap);
+LTE_DRX_Config_t *do_DrxConfig(int CC_id, RrcConfigurationReq *configuration, LTE_UE_EUTRA_Capability_t *UEcap);
 
 /**
 \brief Generate configuration for SIB1 (eNB).
@@ -92,10 +91,8 @@ LTE_DRX_Config_t *do_DrxConfig(uint8_t Mod_id, int CC_id, RrcConfigurationReq *c
 @param br_flag Do for BL/CE UE configuration
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, BOOLEAN_t brOption
-#if defined(ENABLE_ITTI)
-  ,RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, BOOLEAN_t brOption,
+  RrcConfigurationReq *configuration
                );
 
 /**
@@ -121,10 +118,8 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcCo
 @param MBMS_flag Indicates presence of MBMS system information (when 1)
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB23(uint8_t Mod_id,int CC_id, BOOLEAN_t brOption
-#if defined(ENABLE_ITTI)
-  , RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB23(uint8_t Mod_id,int CC_id, BOOLEAN_t brOption,
+  RrcConfigurationReq *configuration
                 );
 
 /**
@@ -358,6 +353,13 @@ OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
 
 uint8_t
 do_UECapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t               *const buffer,
+  const uint8_t                Transaction_id
+);
+
+uint8_t
+do_NR_UECapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t               *const buffer,
   const uint8_t                Transaction_id

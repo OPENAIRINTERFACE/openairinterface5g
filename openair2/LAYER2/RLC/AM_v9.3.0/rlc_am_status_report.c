@@ -26,9 +26,7 @@
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#if ENABLE_ITTI
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 #include "assertions.h"
 #include "list.h"
 #include "rlc_am.h"

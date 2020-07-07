@@ -57,6 +57,7 @@
 #include "common_lib.h"
 #include "msc.h"
 #include "defs_common.h"
+#include "defs_RU.h"
 #include "impl_defs_top.h"
 #include "PHY/TOOLS/time_meas.h"
 //#include "PHY/CODING/coding_defs.h"
@@ -71,7 +72,6 @@
 #define PBCH_A 24
 #define MAX_NUM_RU_PER_eNB 64
 #define MAX_NUM_RX_PRACH_PREAMBLES 4
-
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -201,41 +201,11 @@ typedef struct {
   int repetition_number[4];
 } LTE_eNB_PRACH;
 
-/// Context data structure for RX/TX portion of subframe processing
-typedef struct {
-  /// Component Carrier index
-  uint8_t CC_id;
-  /// timestamp transmitted to HW
-  openair0_timestamp timestamp_tx;
-  /// subframe to act upon for transmission
-  int subframe_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// frame to act upon for transmission
-  int frame_tx;
-  /// frame to act upon for reception
-  int frame_rx;
-  /// \brief Instance count for RXn-TXnp4 processing thread.
-  /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt;
-  /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread;
-  /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr;
-  /// condition variable for tx processing thread
-  pthread_cond_t cond;
-  /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex;
-  /// scheduling parameters for RXn-TXnp4 thread
-  struct sched_param sched_param_rxtx;
+#include "PHY/TOOLS/time_meas.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/TOOLS/tools_defs.h"
+#include "PHY/LTE_TRANSPORT/transport_eNB.h"
 
-  /// \internal This variable is protected by \ref mutex_RUs.
-  int instance_cnt_RUs;
-  /// condition variable for tx processing thread
-  pthread_cond_t cond_RUs;
-  /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_RUs;
-} L1_rxtx_proc_t;
 
 typedef struct {
   struct PHY_VARS_eNB_s *eNB;
@@ -694,6 +664,57 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
+  uint8_t *FS6bufferZone;
 } PHY_VARS_eNB;
+
+
+struct turboReqId {
+    uint16_t rnti;
+    uint16_t frame;
+    uint8_t  subframe;
+    uint8_t  codeblock;
+    uint16_t spare;
+} __attribute__((packed));
+
+union turboReqUnion {
+    struct turboReqId s;
+    uint64_t p;
+};
+
+typedef struct TurboDecode_s {
+    PHY_VARS_eNB *eNB;
+    decoder_if_t *function;
+    uint8_t decoded_bytes[3+1768] __attribute__((aligned(32)));
+    int UEid;
+    int harq_pid;
+    int frame;
+    int subframe;
+    int Fbits;
+    int Kr;
+    LTE_UL_eNB_HARQ_t *ulsch_harq;
+    int nbSegments;
+    int segment_r;
+    int r_offset;
+    int offset;
+    int maxIterations;
+    int decodeIterations;
+} turboDecode_t;
+
+#define TURBO_SIMD_SOFTBITS   96+12+3+3*6144
+typedef struct turboEncode_s {
+  uint8_t * input;
+  int Kr_bytes;
+  int filler;
+  unsigned int G;
+  int r;
+  int harq_pid;
+  int round;
+  int r_offset;
+  LTE_eNB_DLSCH_t *dlsch;
+  time_stats_t *rm_stats;
+  time_stats_t *te_stats;
+  time_stats_t *i_stats;
+} turboEncode_t;
+
 
 #endif /* __PHY_DEFS_ENB__H__ */

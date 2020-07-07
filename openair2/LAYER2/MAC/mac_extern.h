@@ -34,7 +34,6 @@
 
 //#include "PHY/defs_common.h"
 #include "mac.h"
-
 #include "RRC/LTE/rrc_defs.h"
 
 extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
@@ -51,12 +50,8 @@ extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 extern UE_RRC_INST *UE_rrc_inst;
 extern UE_MAC_INST *UE_mac_inst;
 
-
 extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];	// eNBxUE = 8x8
 extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];	// eNBxUE = 8x8
-
-
-
 
 extern unsigned char NB_INST;
 extern unsigned char NB_eNB_INST;
@@ -65,8 +60,7 @@ extern uint16_t NB_THREAD_INST;
 extern unsigned char NB_RN_INST;
 extern unsigned short NODE_ID[1];
 
-
-extern int cqi_to_mcs[16];
+extern const int cqi_to_mcs[16];
 
 extern uint32_t RRC_CONNECTION_FLAG;
 

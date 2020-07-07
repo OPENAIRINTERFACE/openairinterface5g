@@ -75,6 +75,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         PHY_VARS_NR_UE *ue,
                         module_id_t eNB_id,
+                        uint8_t frame,
                         uint8_t subframe,
                         unsigned char clear,
                         short coef);
@@ -89,5 +90,8 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
                         uint32_t rx_power_fil_dB,
                         uint8_t eNB_id);
+
+int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+
 
 #endif

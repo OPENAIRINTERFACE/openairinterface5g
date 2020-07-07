@@ -103,7 +103,7 @@ int x2ap_eNB_handle_senb_addition_request_reject (instance_t instance,
                                                   uint32_t stream,
                                                   X2AP_X2AP_PDU_t *pdu);
 
-int x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
+int x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
                                  uint32_t assoc_id,
                                  uint32_t stream,
                                  X2AP_X2AP_PDU_t *pdu);
@@ -114,8 +114,26 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
                                  uint32_t stream,
                                  X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
 
-/* Handlers matrix. Only eNB related procedure present here */
+static
+int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
+
+static
+int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
+
+
+/* Handlers matrix. Only eNB related procedure present here. Placement of callback functions according to X2AP_ProcedureCode.h */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
   { x2ap_eNB_handle_handover_cancel, 0, 0 }, /* handoverCancel */
@@ -144,6 +162,8 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* seNBinitiatedSeNBRelease */
   { 0, 0, 0 }, /* seNBCounterCheck */
   { 0, 0, 0 },  /* retrieveUEContext */
+  { x2ap_gNB_handle_ENDC_sGNB_addition_request, x2ap_eNB_handle_ENDC_sGNB_addition_response, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
+  { x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete, 0, 0 }, /*X2AP_ProcedureCode_id_sgNBReconfigurationCompletion*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
@@ -151,9 +171,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { x2ap_gNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0 },
+  { x2ap_eNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0 }, /*X2AP_ProcedureCode_id_endcX2Setup*/
   { 0, 0, 0 },
   { 0, 0, 0 },
   { 0, 0, 0 }
@@ -1324,7 +1342,7 @@ int x2ap_eNB_handle_senb_addition_request_reject (instance_t instance,
 }
 
 int
-x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
+x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
                                  uint32_t assoc_id,
                                  uint32_t stream,
                                  X2AP_X2AP_PDU_t *pdu)
@@ -1332,12 +1350,12 @@ x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
 
   X2AP_ENDCX2SetupRequest_t              *x2_ENDC_SetupRequest;
   X2AP_ENDCX2SetupRequest_IEs_t          *ie;
-  X2AP_ENB_ENDCX2SetupReqIEs_t 			 *ie_ENB_ENDC;
-  ServedEUTRAcellsENDCX2ManagementList__Member                *servedCellMember;
+  X2AP_En_gNB_ENDCX2SetupReqIEs_t 			 *ie_GNB_ENDC;
+  ServedNRcellsENDCX2ManagementList__Member                *servedCellMember;
 
   x2ap_eNB_instance_t                *instance_p;
   x2ap_eNB_data_t                    *x2ap_eNB_data;
-  uint32_t                           eNB_id = 0;
+  uint32_t                           gNB_id = 0;
 
   x2ap_eNB_data = NULL;
   DevAssert (pdu != NULL);
@@ -1372,156 +1390,11 @@ x2ap_gNB_handle_ENDC_x2_setup_request(instance_t instance,
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
   } else {
-	  if (ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_eNB.list.count > 0) {
-		  //Panos: Here the container parameter in X2AP_FIND_PROTOCOLIE_BY_ID should be the x2_ENDC_SetupRequest
-		  //message or the ie to which there are more nested information elements?
-		  for (int i=0; i<ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_eNB.list.count;i++) {
+	  if (ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_en_gNB.list.count > 0) {
 
-			  ie_ENB_ENDC = (X2AP_ENB_ENDCX2SetupReqIEs_t*) ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_eNB.list.array[i];
-			  if (ie_ENB_ENDC == NULL ) {
-				  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
-				  return -1;
-			  }
+		  for (int i=0; i<ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_en_gNB.list.count;i++) {
 
-			  else if (ie_ENB_ENDC->id == X2AP_ProtocolIE_ID_id_GlobalENB_ID) {
-				  if (ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
-					  // Home eNB ID = 28 bits
-					  uint8_t  *eNB_id_buf = ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
-					  if (ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 28) {
-						  //TODO: handle case were size != 28 -> notify ? reject ?
-					  }
-					  eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
-					  X2AP_DEBUG("Home eNB id: %07x\n", eNB_id);
-				  } else {
-					  // Macro eNB = 20 bits
-					  uint8_t *eNB_id_buf = ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf;
-					  if (ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 20) {
-							  //TODO: handle case were size != 20 -> notify ? reject ?
-					  }
-					  eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
-					  X2AP_DEBUG("macro eNB id: %05x\n", eNB_id);
-				  }
-				  X2AP_DEBUG("Adding eNB to the list of associated eNBs\n");
-				  if ((x2ap_eNB_data = x2ap_is_eNB_id_in_list (eNB_id)) == NULL) {
-					  /*
-				       * eNB has not been found in list of associated eNB,
-				       * * * * Add it to the tail of list and initialize data
-				       */
-					  if ((x2ap_eNB_data = x2ap_is_eNB_assoc_id_in_list (assoc_id)) == NULL) {
-						  /*
-						   * ??
-						   */
-						  return -1;
-					  } else {
-						  x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
-						  x2ap_eNB_data->eNB_id = eNB_id;
-					  }
-				  } else {
-					  x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
-
-					  /*
-					   * eNB has been found in list, consider the x2 setup request as a reset connection,
-					   * * * * reseting any previous UE state if sctp association is != than the previous one
-					   */
-					  if (x2ap_eNB_data->assoc_id != assoc_id) {
-						  /*
-						   * ??: Send an overload cause...
-						   */
-						  X2AP_ERROR("Rejecting x2 setup request as eNB id %d is already associated to an active sctp association" "Previous known: %d, new one: %d\n", eNB_id, x2ap_eNB_data->assoc_id, assoc_id);
-
-						  // Panos: Here we should be calling an ENDC specific setup_failure function instead
-						  x2ap_eNB_generate_x2_setup_failure (instance,
-				                                          assoc_id,
-				                                          X2AP_Cause_PR_protocol,
-				                                          X2AP_CauseProtocol_unspecified,
-				                                          -1);
-						  return -1;
-					  }
-					  /*
-					   *  * TODO: call the reset procedure
-					   */
-				  }
-			  }
-			  else if (ie_ENB_ENDC->id == X2AP_ProtocolIE_ID_id_ServedEUTRAcellsENDCX2ManagementList){
-				  if (ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.count > 0) {
-				      x2ap_eNB_data->num_cc = ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.count;
-				      for (int i=0; i<ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.count;i++) {
-				    	  servedCellMember = (ServedEUTRAcellsENDCX2ManagementList__Member *)ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.array[i];
-				    	  x2ap_eNB_data->Nid_cell[i] = servedCellMember->servedEUTRACellInfo.pCI;
-				      }
-				  }
-			  }
-		  }
-	  }
-	  else {
-		  X2AP_ERROR("%s %d: init_eNB list is empty \n",__FILE__,__LINE__);
-		  return -1;
-	  }
-  }
-
-  instance_p = x2ap_eNB_get_instance(instance);
-  DevAssert(instance_p != NULL);
-
-  // Panos: Here we should be calling an ENDC specific setup response function
-  return x2ap_gNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
-  //return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
-}
-
-int
-x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu)
-{
-
-  X2AP_ENDCX2SetupResponse_t              *x2_ENDC_SetupResponse;
-  X2AP_ENDCX2SetupResponse_IEs_t          *ie;
-  X2AP_En_gNB_ENDCX2SetupReqAckIEs_t 			 *ie_GNB_ENDC;
-  ServedNRcellsENDCX2ManagementList__Member                *servedCellMember;
-
-  x2ap_eNB_instance_t                *instance_p;
-  x2ap_eNB_data_t                    *x2ap_eNB_data;
-  uint32_t                           gNB_id = 0;
-
-  x2ap_eNB_data = NULL;
-  DevAssert (pdu != NULL);
-  x2_ENDC_SetupResponse = &pdu->choice.successfulOutcome.value.choice.ENDCX2SetupResponse;
-
-  /*
-   * We received a new valid X2 Setup Request on a stream != 0.
-   * * * * This should not happen -> reject eNB x2 setup request.
-   */
-
-  if (stream != 0) {
-    X2AP_ERROR("Received new x2 setup request on stream != 0\n");
-      /*
-       * Send a x2 setup failure with protocol cause unspecified
-       */
-    // Panos: Here we should be calling an ENDC specific setup_failure function instead
-    return x2ap_eNB_generate_x2_setup_failure (instance,
-                                               assoc_id,
-                                               X2AP_Cause_PR_protocol,
-                                               X2AP_CauseProtocol_unspecified,
-                                               -1);
-  }
-
-  X2AP_DEBUG("Received a new X2 setup request\n");
-
-  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_ENDCX2SetupResponse_IEs_t, ie, x2_ENDC_SetupResponse,
-		  X2AP_ProtocolIE_ID_id_RespondingNodeType_EndcX2Setup, true);
-
-
-
-  if (ie == NULL ) {
-    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
-    return -1;
-  } else {
-	  if (ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_en_gNB.list.count > 0) {
-		  //Panos: Here the container parameter in X2AP_FIND_PROTOCOLIE_BY_ID should be the x2_ENDC_SetupRequest
-		  //message or the ie to which there are more nested information elements?
-		  for (int i=0; i<ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_en_gNB.list.count;i++) {
-
-			  ie_GNB_ENDC = (X2AP_En_gNB_ENDCX2SetupReqAckIEs_t*) ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_en_gNB.list.array[i];
+			  ie_GNB_ENDC = (X2AP_En_gNB_ENDCX2SetupReqIEs_t*) ie->value.choice.InitiatingNodeType_EndcX2Setup.choice.init_eNB.list.array[i];
 			  if (ie_GNB_ENDC == NULL ) {
 				  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
 				  return -1;
@@ -1606,6 +1479,146 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
 	  }
   }
 
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  return x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
+}
+
+int
+x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
+                                 uint32_t assoc_id,
+                                 uint32_t stream,
+                                 X2AP_X2AP_PDU_t *pdu)
+{
+
+  X2AP_ENDCX2SetupResponse_t              *x2_ENDC_SetupResponse;
+  X2AP_ENDCX2SetupResponse_IEs_t          *ie;
+  X2AP_ENB_ENDCX2SetupReqAckIEs_t 			 *ie_ENB_ENDC;
+  ServedEUTRAcellsENDCX2ManagementList__Member                *servedCellMember;
+
+  x2ap_eNB_instance_t                *instance_p;
+  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  uint32_t                           eNB_id = 0;
+
+  x2ap_eNB_data = NULL;
+  DevAssert (pdu != NULL);
+  x2_ENDC_SetupResponse = &pdu->choice.successfulOutcome.value.choice.ENDCX2SetupResponse;
+
+  /*
+   * We received a new valid X2 Setup Request on a stream != 0.
+   * * * * This should not happen -> reject eNB x2 setup request.
+   */
+
+  if (stream != 0) {
+    X2AP_ERROR("Received new x2 setup request on stream != 0\n");
+      /*
+       * Send a x2 setup failure with protocol cause unspecified
+       */
+    // Here we should be calling an ENDC specific setup_failure function instead
+    return x2ap_eNB_generate_x2_setup_failure (instance,
+                                               assoc_id,
+                                               X2AP_Cause_PR_protocol,
+                                               X2AP_CauseProtocol_unspecified,
+                                               -1);
+  }
+
+  X2AP_DEBUG("Received a new X2 setup request\n");
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_ENDCX2SetupResponse_IEs_t, ie, x2_ENDC_SetupResponse,
+		  X2AP_ProtocolIE_ID_id_RespondingNodeType_EndcX2Setup, true);
+
+
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else {
+	  if (ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list.count > 0) {
+		  for (int i=0; i<ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list.count;i++) {
+
+			  ie_ENB_ENDC = (X2AP_ENB_ENDCX2SetupReqAckIEs_t*) ie->value.choice.RespondingNodeType_EndcX2Setup.choice.respond_eNB.list.array[i];
+			  if (ie_ENB_ENDC == NULL ) {
+				  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+				  return -1;
+			  }
+
+			  else if (ie_ENB_ENDC->id == X2AP_ProtocolIE_ID_id_GlobalENB_ID) {
+				  if (ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
+					  // Home eNB ID = 28 bits
+					  uint8_t  *eNB_id_buf = ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
+					  if (ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 28) {
+						  //TODO: handle case were size != 28 -> notify ? reject ?
+					  }
+					  eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
+					  X2AP_DEBUG("Home eNB id: %07x\n", eNB_id);
+				  } else {
+					  // Macro eNB = 20 bits
+					  uint8_t *eNB_id_buf = ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf;
+					  if (ie_ENB_ENDC->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 20) {
+							  //TODO: handle case were size != 20 -> notify ? reject ?
+					  }
+					  eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
+					  X2AP_DEBUG("macro eNB id: %05x\n", eNB_id);
+				  }
+				  X2AP_DEBUG("Adding eNB to the list of associated eNBs\n");
+				  if ((x2ap_eNB_data = x2ap_is_eNB_id_in_list (eNB_id)) == NULL) {
+					  /*
+				       * eNB has not been found in list of associated eNB,
+				       * * * * Add it to the tail of list and initialize data
+				       */
+					  if ((x2ap_eNB_data = x2ap_is_eNB_assoc_id_in_list (assoc_id)) == NULL) {
+						  /*
+						   * ??
+						   */
+						  return -1;
+					  } else {
+						  x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
+						  x2ap_eNB_data->eNB_id = eNB_id;
+					  }
+				  } else {
+					  x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
+
+					  /*
+					   * eNB has been found in list, consider the x2 setup request as a reset connection,
+					   * * * * reseting any previous UE state if sctp association is != than the previous one
+					   */
+					  if (x2ap_eNB_data->assoc_id != assoc_id) {
+						  /*
+						   * ??: Send an overload cause...
+						   */
+						  X2AP_ERROR("Rejecting x2 setup request as eNB id %d is already associated to an active sctp association" "Previous known: %d, new one: %d\n", eNB_id, x2ap_eNB_data->assoc_id, assoc_id);
+
+						  // Here we should be calling an ENDC specific setup_failure function instead
+						  x2ap_eNB_generate_x2_setup_failure (instance,
+				                                          assoc_id,
+				                                          X2AP_Cause_PR_protocol,
+				                                          X2AP_CauseProtocol_unspecified,
+				                                          -1);
+						  return -1;
+					  }
+					  /*
+					   *  * TODO: call the reset procedure
+					   */
+				  }
+			  }
+			  else if (ie_ENB_ENDC->id == X2AP_ProtocolIE_ID_id_ServedEUTRAcellsENDCX2ManagementList){
+				  if (ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.count > 0) {
+				      x2ap_eNB_data->num_cc = ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.count;
+				      for (int i=0; i<ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.count;i++) {
+				    	  servedCellMember = (ServedEUTRAcellsENDCX2ManagementList__Member *)ie_ENB_ENDC->value.choice.ServedEUTRAcellsENDCX2ManagementList.list.array[i];
+				    	  x2ap_eNB_data->Nid_cell[i] = servedCellMember->servedEUTRACellInfo.pCI;
+				      }
+				  }
+			  }
+		  }
+	  }
+	  else {
+		  X2AP_ERROR("%s %d: init_eNB list is empty \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+  }
+
   /* Optionaly set the target eNB name */
 
     /* The association is now ready as source and target eNBs know parameters of each other.
@@ -1621,5 +1634,375 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
 
     return 0;
 }
+
+static
+int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu)
+{
+
+
+  X2AP_SgNBAdditionRequest_t             *x2SgNBAdditionRequest;
+  X2AP_SgNBAdditionRequest_IEs_t         *ie;
+
+  X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t 		*e_RABS_ToBeAdded_SgNBAddReq_ItemIEs;
+  X2AP_E_RABs_ToBeAdded_SgNBAddReq_Item_t         *e_RABS_ToBeAdded_SgNBAddReq_Item;
+
+  x2ap_eNB_instance_t                *instance_p;
+  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  MessageDef                         *msg;
+
+  DevAssert (pdu != NULL);
+  x2SgNBAdditionRequest = &pdu->choice.initiatingMessage.value.choice.SgNBAdditionRequest;
+
+  /*if (stream == 0) {
+    X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
+    // TODO: send a x2 failure response
+    return 0;
+  }*/
+
+  X2AP_DEBUG ("Received a new X2 SgNB Addition request\n");
+
+  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+  DevAssert(x2ap_eNB_data != NULL);
+
+  X2AP_INFO("X2AP Association id: %d \n",assoc_id);
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_ADDITION_REQ);
+
+  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+  /* ue_x2_id = MeNB X2AP Id */
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_x2_id = ie->value.choice.UE_X2AP_ID;
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_assoc_id = assoc_id;
+
+
+  /* X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities, true);
+
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.encryption_algorithms =
+		  BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRencryptionAlgorithms);
+
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).security_capabilities.integrity_algorithms =
+  		  BIT_STRING_to_uint16(&ie->value.choice.NRUESecurityCapabilities.nRintegrityProtectionAlgorithms);
+
+  /* X2AP_ProtocolIE_ID_id_SgNBSecurityKey */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_SgNBSecurityKey, true);
+
+  if ((ie->value.choice.SgNBSecurityKey.buf) &&
+            (ie->value.choice.SgNBSecurityKey.size == 32)) {
+      memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).kgnb, ie->value.choice.SgNBSecurityKey.buf, 32);
+    } else {
+      X2AP_WARN ("Size of eNB key star does not match the expected value\n");
+    }
+
+
+  /* X2AP_ProtocolIE_ID_id_SgNBUEAggregateMaximumBitRate */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_SgNBUEAggregateMaximumBitRate, true);
+
+  //X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_ambr.br_dl =ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateDownlink;
+  //X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_ambr.br_ul = ie->value.choice.UEAggregateMaximumBitRate.uEaggregateMaximumBitRateUplink;
+
+  /* X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList, true);
+
+
+  if (ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.count > 0) {
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.count;
+
+    for (int i=0;i<ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.count;i++) {
+      e_RABS_ToBeAdded_SgNBAddReq_ItemIEs = (X2AP_E_RABs_ToBeAdded_SgNBAddReq_ItemIEs_t *) ie->value.choice.E_RABs_ToBeAdded_SgNBAddReqList.list.array[i];
+      e_RABS_ToBeAdded_SgNBAddReq_Item = &e_RABS_ToBeAdded_SgNBAddReq_ItemIEs->value.choice.E_RABs_ToBeAdded_SgNBAddReq_Item;
+
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].e_rab_id = e_RABS_ToBeAdded_SgNBAddReq_Item->e_RAB_ID ;
+      X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].drb_ID = e_RABS_ToBeAdded_SgNBAddReq_Item->drb_ID;
+      if(e_RABS_ToBeAdded_SgNBAddReq_Item->en_DC_ResourceConfiguration.pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.qci = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.qCI;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability;
+    	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel;
+
+          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer,
+        		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf,
+        		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
+
+          X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.length =
+        		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+
+LOG_I(RRC,"x2u tunnel: index %d target sgw ip %d.%d.%d.%d length %d gtp teid %u\n",
+              	        		    i,
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[0],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[1],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[2],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[3],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.length,
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].gtp_teid);
+
+          OCTET_STRING_TO_INT32(&e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID,
+        		  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].gtp_teid);
+      }
+
+    }
+
+  }
+  else {
+    X2AP_ERROR ("Can't decode the e_RABs_ToBeSetup_List \n");
+  }
+
+  /* X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
+		  X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer, true);
+
+
+  if (ie->value.choice.MeNBtoSgNBContainer.size > 8192 )
+    { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+
+  memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer, ie->value.choice.MeNBtoSgNBContainer.buf, ie->value.choice.MeNBtoSgNBContainer.size);
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = ie->value.choice.MeNBtoSgNBContainer.size;
+
+  itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
+
+  return 0;
+}
+
+
+static
+int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu)
+{
+
+	  X2AP_SgNBAdditionRequestAcknowledge_t             *x2SgNBAdditionRequest_ack;
+	  X2AP_SgNBAdditionRequestAcknowledge_IEs_t         *ie;
+
+	  X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs_t 		*e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs;
+	  X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item_t           *e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item;
+
+	  x2ap_eNB_instance_t                *instance_p;
+	  x2ap_eNB_data_t                    *x2ap_eNB_data;
+	  MessageDef                         *msg;
+	  int                                ue_id;
+          int                                id_source;
+          int                                id_target;
+          int                                rnti;
+
+	  DevAssert (pdu != NULL);
+	  x2SgNBAdditionRequest_ack = &pdu->choice.successfulOutcome.value.choice.SgNBAdditionRequestAcknowledge;
+
+	  /*if (stream == 0) {
+	    X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
+	    // TODO: send a x2 failure response
+	    return 0;
+	  }*/
+
+	  X2AP_DEBUG ("Received a new X2 SgNB Addition request\n");
+
+	  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+	  DevAssert(x2ap_eNB_data != NULL);
+
+	  X2AP_INFO("X2AP Association id: %d \n",assoc_id);
+
+	  instance_p = x2ap_eNB_get_instance(instance);
+	  DevAssert(instance_p != NULL);
+
+	  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
+	  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
+
+	  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
+	  if (ie == NULL ) {
+	    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+	    return -1;
+	  }
+
+	  id_source = ie->value.choice.UE_X2AP_ID;
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).MeNB_ue_x2_id = ie->value.choice.UE_X2AP_ID;
+
+
+	  /* X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID */
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID, true);
+	  if (ie == NULL ) {
+		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+
+	  id_target = ie->value.choice.SgNB_UE_X2AP_ID;
+
+          ue_id = id_source;
+
+          if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
+            X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring sGNB addition response\n",
+                      id_source, id_target);
+            itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
+            return 0;
+          }
+
+          rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
+
+          /* id_target is a new information, store it */
+          x2ap_set_ids(&instance_p->id_manager, ue_id, rnti, id_source, id_target);
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rnti = rnti;
+
+	  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).SgNB_ue_x2_id = ie->value.choice.SgNB_UE_X2AP_ID;
+
+	  /* X2AP_ProtocolIE_ID_id_E_RABs_ToBeAdded_SgNBAddReqList */
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList, true);
+
+	  if (ie == NULL ) {
+		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+
+
+	  if (ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.count > 0) {
+
+		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.count;
+
+	    for (int i=0;i<ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.count;i++) {
+
+	    	e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs = (X2AP_E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs_t *) ie->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAckList.list.array[i];
+	    	e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item = &e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_ItemIEs->value.choice.E_RABs_Admitted_ToBeAdded_SgNBAddReqAck_Item;
+
+	    	X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->e_RAB_ID ;
+	    	if(e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->en_DC_ResourceConfiguration.pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
+
+	          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer,
+	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf,
+	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
+	          X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.length =
+	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+
+	          OCTET_STRING_TO_INT32(&e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.gTP_TEID,
+	        		  X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid);
+	      }
+
+	    }
+
+	  }
+	  else {
+	    X2AP_ERROR ("Can't decode the e_RABs_ToBeSetup_List \n");
+	  }
+
+	  /* X2AP_ProtocolIE_ID_id_SgNBtoMeNBContainer */
+
+	  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequestAcknowledge_IEs_t, ie, x2SgNBAdditionRequest_ack,
+			  X2AP_ProtocolIE_ID_id_SgNBtoMeNBContainer, true);
+
+	  if (ie == NULL ) {
+		  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		  return -1;
+	  }
+
+	  //X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
+
+	    if (ie->value.choice.SgNBtoMeNBContainer.size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
+	      { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+
+	    memcpy(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer, ie->value.choice.SgNBtoMeNBContainer.buf, ie->value.choice.SgNBtoMeNBContainer.size);
+	    X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = ie->value.choice.SgNBtoMeNBContainer.size;
+
+	  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+	  return 0;
+}
+
+static
+int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu) {
+
+	X2AP_SgNBReconfigurationComplete_t               *x2SgNBReconfigurationComplete;
+	X2AP_SgNBReconfigurationComplete_IEs_t           *ie;
+
+	x2ap_eNB_instance_t                *instance_p;
+	x2ap_eNB_data_t                    *x2ap_eNB_data;
+	MessageDef                         *msg;
+
+		  DevAssert (pdu != NULL);
+		  x2SgNBReconfigurationComplete = &pdu->choice.initiatingMessage.value.choice.SgNBReconfigurationComplete;
+
+		  /*if (stream == 0) {
+		    X2AP_ERROR ("Received new x2 SgNB Addition request on stream == 0\n");
+		    // TODO: send a x2 failure response
+		    return 0;
+		  }*/
+
+		  X2AP_DEBUG ("Received X2 SgNB Reconfiguration complete message\n");
+
+		  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+		  DevAssert(x2ap_eNB_data != NULL);
+
+		  X2AP_INFO("X2AP Association id: %d \n",assoc_id);
+
+		  instance_p = x2ap_eNB_get_instance(instance);
+		  DevAssert(instance_p != NULL);
+
+		  //Allocate an ITTI X2AP_sGNB_reconfiguration_complete message
+		  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_RECONF_COMPLETE);
+
+		  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */
+		  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
+				  X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID, true);
+		  if (ie == NULL ) {
+		    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+		    return -1;
+		  }
+
+		  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).MeNB_ue_x2_id = ie->value.choice.UE_X2AP_ID;
+
+
+		  /* X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID */
+		  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
+				  X2AP_ProtocolIE_ID_id_SgNB_UE_X2AP_ID, true);
+		  if (ie == NULL ) {
+			  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+			  return -1;
+		  }
+
+		  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).SgNB_ue_x2_id = ie->value.choice.SgNB_UE_X2AP_ID;
+
+
+		  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBReconfigurationComplete_IEs_t, ie, x2SgNBReconfigurationComplete,
+				  X2AP_ProtocolIE_ID_id_ResponseInformationSgNBReconfComp, true);
+		  if (ie == NULL ) {
+			  X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+			  return -1;
+		  }
+
+		  if(ie->value.choice.ResponseInformationSgNBReconfComp.present == X2AP_ResponseInformationSgNBReconfComp_PR_success_SgNBReconfComp){
+			  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).reconf_response = X2AP_RECONF_RESPONSE_SUCCESS;
+		  }
+		  else {
+			  X2AP_ENDC_SGNB_RECONF_COMPLETE(msg).reconf_response = X2AP_RECONF_RESPONSE_REJECT;
+		  }
+
+		  itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
+
+
+	return 0;
+}
+
 
 

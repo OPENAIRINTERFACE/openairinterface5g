@@ -1,7 +1,26 @@
 /*
-  Author: Laurent THOMAS, Open Cells
-  copyleft: OpenAirInterface Software Alliance and it's licence
+* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The OpenAirInterface Software Alliance licenses this file to You under
+* the OAI Public License, Version 1.1  (the "License"); you may not use this file
+* except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*      http://www.openairinterface.org/?page_id=698
+*
+* Author and copyright: Laurent Thomas, open-cells.com
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*-------------------------------------------------------------------------------
+* For more information about the OpenAirInterface (OAI) Software Alliance:
+*      contact@openairinterface.org
 */
+
 
 #define _GNU_SOURCE
 #include <sched.h>
@@ -67,7 +86,7 @@ void *one_thread(void *arg) {
         delNotifiedFIFO_elt(elt);
       else
         pushNotifiedFIFO(elt->reponseFifo, elt);
-
+      myThread->runningOnKey=-1;
       mutexunlock(tp->incomingFifo.lockF);
     }
   } while (true);
@@ -95,7 +114,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   pool->nbThreads=0;
   pool->restrictRNTI=false;
   curptr=strtok_r(params,",",&saveptr);
-
+  struct one_thread * ptr;
   while ( curptr!=NULL ) {
     int c=toupper(curptr[0]);
 
@@ -109,8 +128,9 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         break;
 
       default:
+	ptr=pool->allthreads;
         pool->allthreads=(struct one_thread *)malloc(sizeof(struct one_thread));
-        pool->allthreads->next=pool->allthreads;
+        pool->allthreads->next=ptr;
         printf("create a thread for core %d\n", atoi(curptr));
         pool->allthreads->coreID=atoi(curptr);
         pool->allthreads->id=pool->nbThreads;

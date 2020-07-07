@@ -72,13 +72,10 @@
 
 #include "types.h"
 #include "nfapi_interface.h"
-//#include "defs.h"
-
-#include "defs_RU.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
-#define RX_NB_TH_DL 2
+#define RX_NB_TH_DL 14
 
 #define LTE_SLOTS_PER_SUBFRAME 2
 
@@ -88,6 +85,7 @@
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
 #define PBCH_PDU_SIZE 3 //bytes
+#define NR_NUMBER_OF_SYMBOLS_PER_SLOT 14
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
@@ -101,9 +99,6 @@
 
 #define NB_RX_ANTENNAS_MAX 64
 
-#ifdef OCP_FRAMEWORK
-#include "enums.h"
-#else
 
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
@@ -124,7 +119,6 @@ typedef enum {
   one=6,
   two=12
 } PHICH_RESOURCE_t;
-#endif
 /// PHICH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: PHICH-Duration, see TS 36.211 (Table 6.9.3-1).
@@ -252,12 +246,10 @@ typedef struct {
 } UL_REFERENCE_SIGNALS_PUSCH_t;
 
 /// Enumeration for parameter Hopping-mode \ref PUSCH_CONFIG_COMMON::hoppingMode.
-#ifndef OCP_FRAMEWORK
 typedef enum {
   interSubFrame=0,
   intraAndInterSubFrame=1
 } PUSCH_HOPPING_t;
-#endif
 
 /// PUSCH-ConfigCommon from 36.331 RRC spec.
 typedef struct {
@@ -436,7 +428,6 @@ typedef struct {
   uint8_t filterCoefficient;
 } UL_POWER_CONTROL_DEDICATED;
 
-#ifndef OCP_FRAMEWORK
 /// Enumeration for parameter \f$\alpha\f$ \ref UL_POWER_CONTROL_CONFIG_COMMON::alpha.
 typedef enum {
   al0=0,
@@ -448,7 +439,6 @@ typedef enum {
   al09=6,
   al1=7
 } PUSCH_alpha_t;
-#endif
 
 /// \note UNUSED
 typedef enum {
@@ -638,6 +628,10 @@ typedef struct LTE_DL_FRAME_PARMS {
   uint16_t first_carrier_offset_khz_1dot25;
   /// Number of samples in a subframe
   uint32_t samples_per_tti;
+  /// Number of samples in a subframe
+  uint32_t samples_per_subframe;
+  /// Number of samples in a slot
+  uint32_t samples_per_slot;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
   /// Number of OFDM symbols in DL portion of S-subframe
@@ -898,39 +892,6 @@ typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
   WORKER_CONF_t    worker_conf;
 } THREAD_STRUCT;
-/*extern THREAD_STRUCT thread_struct;
-
-static inline void set_parallel_conf(char *parallel_conf) {
-  mapping config[]= {
-    FOREACH_PARALLEL(GENERATE_ENUMTXT)
-    {NULL,-1}
-  };
-  thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
-  if (thread_struct.parallel_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
-    thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  }
-}
-
-static inline void set_worker_conf(char *worker_conf) {
-  mapping config[]={
-    FOREACH_WORKER(GENERATE_ENUMTXT)
-    {NULL, -1}
-  };
-  thread_struct.worker_conf = (WORKER_CONF_t)map_str_to_int(config, worker_conf);
-  if (thread_struct.worker_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
-    thread_struct.worker_conf = WORKER_DISABLE ;
-  }
-}
-
-static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
-}
-
-static inline WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
-}*/
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

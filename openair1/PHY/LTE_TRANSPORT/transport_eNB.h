@@ -100,7 +100,7 @@ typedef struct {
   /// start symbold of pdsch
   uint8_t pdsch_start;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t eDL[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
   uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
@@ -261,12 +261,13 @@ typedef struct {
   /// coded RI bits
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  int16_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
+  int16_t eUL[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Pointer to the payload
-  uint8_t *b;
+  uint8_t *decodedBytes;
   /// Pointers to transport block segments
+  //TBD
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
@@ -282,8 +283,12 @@ typedef struct {
   uint8_t rvidx;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+  int16_t pusch_rep_buffer[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  //TBD
   int16_t *d[MAX_NUM_ULSCH_SEGMENTS];
+  uint32_t processedSegments;
+  uint32_t processedBadSegment;
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
   uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
@@ -314,6 +319,10 @@ typedef struct {
   //  int calibration_flag;
   /// delta_TF for power control
   int32_t delta_TF;
+  // PUSCH Repetition Number for the current SF
+  uint32_t repetition_number ;
+  // PUSCH Total number of repetitions
+  uint32_t total_number_of_repetitions;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {

@@ -119,6 +119,32 @@ void multadd_real_vector_complex_scalar(int16_t *x,
 
 }
 
+void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
+                                                     int16_t *alpha,
+                                                     int16_t *y)
+{
+
+  // do 8 multiplications at a time
+  simd_q15_t alpha_r_128,alpha_i_128,yr,yi,*x_128=(simd_q15_t*)x;
+  simd_q15_t y_128;
+  y_128 = _mm_loadu_si128((simd_q15_t*)y);
+
+  alpha_r_128 = set1_int16(alpha[0]);
+  alpha_i_128 = set1_int16(alpha[1]);
+
+
+  yr     = mulhi_s1_int16(alpha_r_128,x_128[0]);
+  yi     = mulhi_s1_int16(alpha_i_128,x_128[0]);
+  y_128   = _mm_adds_epi16(y_128,_mm_unpacklo_epi16(yr,yi));
+  y_128   = _mm_adds_epi16(y_128,_mm_unpackhi_epi16(yr,yi));
+
+  _mm_storeu_si128((simd_q15_t*)y, y_128);
+
+  _mm_empty();
+  _m_empty();
+
+}
+
 /*
 int rotate_cpx_vector(int16_t *x,
                       int16_t *alpha,

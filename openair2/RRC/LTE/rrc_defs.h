@@ -40,6 +40,10 @@
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
+#include "RRC/NR/nr_rrc_types.h"
+#include "NR_UE-MRDC-Capability.h"
+#include "NR_UE-NR-Capability.h"
+
 
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
@@ -92,6 +96,7 @@
 
 #define PC5_DISCOVERY_PAYLOAD_SIZE      29
 
+#define DEBUG_SCG_CONFIG 1
 
 typedef enum {
   UE_STATE_OFF_NETWORK,
@@ -264,7 +269,8 @@ typedef enum UE_STATE_e {
   RRC_SI_RECEIVED,
   RRC_CONNECTED,
   RRC_RECONFIGURED,
-  RRC_HO_EXECUTION
+  RRC_HO_EXECUTION,
+  RRC_NR_NSA,
 } UE_STATE_t;
 
 typedef enum HO_STATE_e {
@@ -380,6 +386,7 @@ typedef enum e_rab_satus_e {
   E_RAB_STATUS_DONE, // from the eNB perspective
   E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
   E_RAB_STATUS_REESTABLISHED, // after HO
+  E_RAB_STATUS_TOMODIFY,      // ENDC NSA
   E_RAB_STATUS_FAILED,
   E_RAB_STATUS_TORELEASE  // to release DRB between eNB and UE
 } e_rab_status_t;
@@ -566,6 +573,10 @@ typedef struct eNB_RRC_UE_s {
 
   LTE_UE_EUTRA_Capability_t         *UE_Capability;
   int                                UE_Capability_size;
+  NR_UE_MRDC_Capability_t           *UE_Capability_MRDC;
+  int                UE_MRDC_Capability_size;
+  NR_UE_NR_Capability_t       *UE_Capability_nr;
+  int                UE_NR_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
   /* KeNB as derived from KASME received from EPC */
@@ -611,6 +622,7 @@ typedef struct eNB_RRC_UE_s {
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
+  uint8_t              nb_of_modify_endc_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
@@ -625,6 +637,10 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+  // LG: For GTPV1 TUNNELS ENDC
+  uint32_t                           gnb_gtp_endc_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             gnb_gtp_endc_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_endc_ebi[S1AP_MAX_E_RAB];
   /* Total number of e_rab already setup in the list */
   uint8_t                            nb_x2u_e_rabs;
   // LG: For GTPV1 TUNNELS(X2U)
@@ -644,6 +660,8 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_rrc_inactivity_timer;
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
+  int                                does_nr;
+  int                                nr_capabilities_requested;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

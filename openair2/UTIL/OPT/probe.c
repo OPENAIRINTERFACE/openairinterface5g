@@ -99,8 +99,8 @@ int opt_enabled=0;
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
 
-static char *in_ip;
-static char *in_path;
+static char in_ip[128]={0};
+static char in_path[128]={0};
 FILE *file_fd = NULL;
 pcap_hdr_t file_header = {
   0xa1b2c3d4,   /* magic number */
@@ -386,17 +386,22 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
 extern RAN_CONTEXT_t RC;
 #include <openair1/PHY/phy_extern_ue.h>
 /* Remote serveraddress (where Wireshark is running) */
-void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
-               int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
-               int oob_event_value) {
+void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+                              int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
+                              int oob_event_value) {
   MAC_Context_Info_t pdu_context;
   int radioType=FDD_RADIO;
+  LOG_D(OPT,"sending packet to wireshark: direction=%s, size: %d, ueid: %d, rnti: %x, frame/sf: %d.%d\n",
+        direction?"DL":"UL", pdu_buffer_size, ueid, rnti, sysFrameNumber,subFrameNumber);
 
-  if (RC.eNB[0][0]!=NULL)
+  if (RC.eNB && RC.eNB[0][0]!=NULL)
     radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
-
-  if (PHY_vars_UE_g[0][0] != NULL)
+  else if (PHY_vars_UE_g && PHY_vars_UE_g[0][0] != NULL)
     radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+  else {
+    LOG_E(OPT,"not a eNB neither a UE!!! \n");
+    return;
+  }
 
   switch (opt_type) {
     case OPT_WIRESHARK :
@@ -442,9 +447,11 @@ int init_opt(void)
   char *in_type=NULL;
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
-  uint16_t in_port;
-  config_set_checkfunctions(opt_params, opt_checkParams, sizeof(opt_params)/sizeof(paramdef_t));
-  config_get(opt_params, sizeof(opt_params)/sizeof(paramdef_t), OPT_CONFIGPREFIX);
+  uint16_t in_port=0;
+  config_set_checkfunctions(opt_params, opt_checkParams,
+                            sizeof(opt_params)/sizeof(paramdef_t));
+  config_get( opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
+
   subframesSinceCaptureStart = 0;
   int tmptype = config_get_processedint( &(opt_params[OPTTYPE_IDX]));
 

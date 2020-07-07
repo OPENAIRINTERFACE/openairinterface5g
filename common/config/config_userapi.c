@@ -45,7 +45,8 @@
 
 configmodule_interface_t *config_get_if(void) {
   if (cfgptr == NULL) {
-    CONFIG_PRINTF_ERROR("[CONFIG] %s %d config module not initialized\n",__FILE__,__LINE__);
+  	if (isLogInitDone())
+       LOG_W(ENB_APP,"[CONFIG] %s %d config module not initialized\n",__FILE__,__LINE__);
   }
 
   return cfgptr;
@@ -81,7 +82,7 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
   }
 
   if (*ptr == NULL) {
-    *ptr = malloc(length);
+    *ptr = malloc(length>40?length:40); // LTS: dummy fix, waiting Francois full fix in 4G branch
 
     if ( *ptr != NULL) {
       memset(*ptr,0,length);
@@ -172,7 +173,7 @@ int config_get_processedint(paramdef_t *cfgoption) {
   return ret;
 }
 void config_printhelp(paramdef_t *params,int numparams, char *prefix) {
-  printf("\n-----Help for section %-26s: %03i entries------\n",(prefix==NULL)?"(root section)":prefix ,numparams);
+  printf("\n-----Help for section %-26s: %03i entries------\n",(prefix==NULL)?"(root section)":prefix,numparams);
 
   for (int i=0 ; i<numparams ; i++) {
     printf("    %s%s: %s",
@@ -204,6 +205,16 @@ int config_execcheck(paramdef_t *params, int numparams, char *prefix) {
   return st;
 }
 
+int config_paramidx_fromname(paramdef_t *params, int numparams, char *name) {
+  for (int i=0; i<numparams ; i++) {
+    if (strcmp(name,params[i].optname) == 0)
+      return i;
+  }
+
+  fprintf(stderr,"[CONFIG]config_paramidx_fromname , %s is not a valid parameter name\n",name);
+  return -1;
+}
+
 int config_get(paramdef_t *params, int numparams, char *prefix) {
   int ret= -1;
 
@@ -213,7 +224,6 @@ int config_get(paramdef_t *params, int numparams, char *prefix) {
   }
 
   configmodule_interface_t *cfgif = config_get_if();
-
   if (cfgif != NULL) {
     ret = config_get_if()->get(params, numparams, prefix);
 
@@ -376,13 +386,12 @@ int config_setdefault_string(paramdef_t *cfgoptions, char *prefix) {
     status=1;
 
     if (cfgoptions->numelt == 0 ) {
-      config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
       config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(cfgoptions->defstrval)+1);
       sprintf(*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
       printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *(cfgoptions->strptr));
     } else {
-      sprintf((char *)*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
-      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)*(cfgoptions->strptr));
+      sprintf((char *)(cfgoptions->strptr), "%s",cfgoptions->defstrval);
+      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)(cfgoptions->strptr));
     }
   }
 
@@ -438,7 +447,7 @@ int config_setdefault_intlist(paramdef_t *cfgoptions, char *prefix) {
     status=1;
 
     for (int j=0; j<cfgoptions->numelt ; j++) {
-      printf_params("[CONFIG] %s[%i] set to default value %i\n",cfgoptions->optname ,j,(int)cfgoptions->iptr[j]);
+      printf_params("[CONFIG] %s[%i] set to default value %i\n",cfgoptions->optname,j,(int)cfgoptions->iptr[j]);
     }
   }
 
@@ -452,7 +461,7 @@ int config_setdefault_double(paramdef_t *cfgoptions, char *prefix) {
   if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
     *(cfgoptions->dblptr)=cfgoptions->defdblval;
     status=1;
-    printf_params("[CONFIG] %s set to default value %lf\n",cfgoptions->optname , *(cfgoptions->dblptr));
+    printf_params("[CONFIG] %s set to default value %lf\n",cfgoptions->optname, *(cfgoptions->dblptr));
   }
 
   return status;
@@ -460,7 +469,7 @@ int config_setdefault_double(paramdef_t *cfgoptions, char *prefix) {
 
 int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr) {
   config_check_valptr(cfgoptions,(char **)&(cfgoptions->uptr), sizeof(int));
-  int rst=inet_pton(AF_INET, ipv4addr ,cfgoptions->uptr );
+  int rst=inet_pton(AF_INET, ipv4addr,cfgoptions->uptr );
 
   if (rst == 1 && *(cfgoptions->uptr) > 0) {
     printf_params("[CONFIG] %s: %s\n",cfgoptions->optname, ipv4addr);

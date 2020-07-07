@@ -1,0 +1,203 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>test-x2-ho-05-tm1</htmlTabRef>
+	<htmlTabName>Test-X2-Handover-05MHz-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>2</repeatCount>
+	<TestCaseRequestedList>
+ 040101 030201 030202
+ 050102
+ 030104 000002 030105 000002
+ 040301 000002
+ 040540 040615 040655
+ 050401 000001
+ 040541 040617 040657
+ 040401 000001
+ 040201 000002 030201 030202
+ 050202
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep for 10 sec</desc>
+		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep for 3 sec</desc>
+		<idle_sleep_time_in_sec>3</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="030104">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB #0 (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 123456</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030105">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB #1 (FDD/Band7/5MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.slave.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 98765</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB #0</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="030202">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB #1</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
+	<testCase id="050102">
+		<class>Initialize_FlexranCtrl</class>
+		<desc>Starting Flexran Controller</desc>
+	</testCase>
+
+	<testCase id="050202">
+		<class>Terminate_FlexranCtrl</class>
+		<desc>Stopping Flexran Controller</desc>
+	</testCase>
+
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
+	<testCase id="040540">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040541">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040542">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040615">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040616">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040617">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040618">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 15M -t 30 -i 1 -fm</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040655">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040656">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/3.8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 3.8M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040657">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/1Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 1M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="040658">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/3.8Mbps/UDP)(30 sec)</desc>
+		<iperf_args>-u -b 3.8M -t 30 -i 1 -fm -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
+	<testCase id="050401">
+		<class>Perform_X2_Handover</class>
+		<desc>Doing a Flexran-Controlled X2 Handover</desc>
+		<x2_ho_options>network</x2_ho_options>
+	</testCase>
+
+	<testCase id="050402">
+		<class>Perform_X2_Handover</class>
+		<desc>Doing a Flexran-Controlled X2 Handover</desc>
+		<x2_ho_options>network</x2_ho_options>
+	</testCase>
+
+</testCaseList>

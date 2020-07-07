@@ -31,6 +31,8 @@
  */
 
 
+#ifndef __ENB_APP_MACRLC_PARAMDEF__H__
+#define __ENB_APP_MACRLC_PARAMDEF__H__
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -54,7 +56,6 @@
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
 #define CONFIG_STRING_MACRLC_SCHED_MODE                    "scheduler_mode"
-#define CONFIG_STRING_MACRLC_PHY_TEST_MODE                 "phy_test_mode"
 #define CONFIG_MACRLC_PUSCH10xSNR                          "puSch10xSnr"
 #define CONFIG_MACRLC_PUCCH10xSNR                          "puCch10xSnr"
 
@@ -81,7 +82,6 @@
 {CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_SCHED_MODE,                        NULL,     0,          strptr:NULL,         defstrval:"default",       TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_PHY_TEST_MODE,                     NULL,     0,          uptr:NULL,           defintval:1,               TYPE_UINT,     0},        \
 {CONFIG_MACRLC_PUSCH10xSNR,  		                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 {CONFIG_MACRLC_PUCCH10xSNR,  		                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 }
@@ -103,7 +103,8 @@
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
 #define MACRLC_SCHED_MODE_IDX                                  17
-#define MACRLC_PHY_TEST_IDX                                    18
-#define MACRLC_PUSCH10xSNR_IDX                                 19
-#define MACRLC_PUCCH10xSNR_IDX                                 20
+#define MACRLC_PUSCH10xSNR_IDX                                 18
+#define MACRLC_PUCCH10xSNR_IDX                                 19 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#endif

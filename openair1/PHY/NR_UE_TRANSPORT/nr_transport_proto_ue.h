@@ -37,6 +37,9 @@
 #include <math.h>
 #include "nfapi_interface.h"
 
+#define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
+#define NR_PUSCH_y 3 // UCI placeholder bit
+
 // Functions below implement 36-211 and 36-212
 
 /** @addtogroup _PHY_TRANSPORT_
@@ -47,7 +50,8 @@
     \brief This function frees memory allocated for a particular DLSCH at UE
     @param dlsch Pointer to DLSCH to be removed
 */
-void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch);
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch,uint8_t N_RB_DL);
+
 
 /** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at UE
@@ -58,31 +62,12 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch);
     @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
 */
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag);
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch);
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
 
-
-NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
-
-void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
-
-int rx_pmch(PHY_VARS_NR_UE *phy_vars_ue,
-            unsigned char eNB_id,
-            uint8_t subframe,
-            unsigned char symbol);
-
-/** \brief Dump OCTAVE/MATLAB files for PMCH debugging
-    @param phy_vars_ue Pointer to UE variables
-    @param eNB_id index of eNB in ue variables
-    @param coded_bits_per_codeword G from 36.211
-    @param subframe Index of subframe
-    @returns 0 on success
-*/
-void dump_mch(PHY_VARS_NR_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int subframe);
-
-
+NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -90,7 +75,7 @@ void dump_mch(PHY_VARS_NR_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qpsk_qpsk(int16_t *stream0_in,
+void nr_qpsk_qpsk(int16_t *stream0_in,
                int16_t *stream1_in,
                int16_t *stream0_out,
                int16_t *rho01,
@@ -126,7 +111,7 @@ int32_t nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qpsk_qam16(int16_t *stream0_in,
+void nr_qpsk_qam16(int16_t *stream0_in,
                 int16_t *stream1_in,
                 short *ch_mag_i,
                 int16_t *stream0_out,
@@ -164,7 +149,7 @@ int32_t nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qpsk_qam64(int16_t *stream0_in,
+void nr_qpsk_qam64(int16_t *stream0_in,
                 int16_t *stream1_in,
                 short *ch_mag_i,
                 int16_t *stream0_out,
@@ -202,7 +187,7 @@ int32_t nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam16_qpsk(short *stream0_in,
+void nr_qam16_qpsk(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag,
                 short *stream0_out,
@@ -240,7 +225,7 @@ int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam16_qam16(short *stream0_in,
+void nr_qam16_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -283,7 +268,7 @@ int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam16_qam64(short *stream0_in,
+void nr_qam16_qam64(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -324,7 +309,7 @@ int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam64_qpsk(short *stream0_in,
+void nr_qam64_qpsk(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag,
                 short *stream0_out,
@@ -363,7 +348,7 @@ int nr_dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void qam64_qam16(short *stream0_in,
+void nr_qam64_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
                  short *ch_mag_i,
@@ -1053,7 +1038,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                      NR_DL_FRAME_PARMS* frame_parms,
-                     uint8_t harq_pid);
+                     uint8_t harq_pid,
+                     unsigned int G);
 
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
   @param[in] in, Pointer to input bits
@@ -1064,7 +1050,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 */
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint16_t size,
+                         uint32_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);
@@ -1078,6 +1064,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
+                               uint8_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id);
@@ -1113,6 +1100,7 @@ void *nr_dlsch_decoding_2thread0(void *arg);
 
 void *nr_dlsch_decoding_2thread1(void *arg);
 
+
 void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t size,
 			   uint8_t q,
@@ -1124,17 +1112,10 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
-
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     uint32_t frame,
-                    uint8_t nr_tti_rx,
-                    uint8_t eNB_id,
-                    MIMO_mode_t mimo_mode,
-                    uint32_t high_speed_flag,
-                    uint8_t is_secondary_ue,
-                    int nb_coreset_active,
-                    uint16_t symbol_mon,
-                    NR_SEARCHSPACE_TYPE_t searchSpaceType);
+                    uint32_t slot);
+
 
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1544,12 +1525,11 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,NR_DL_FRAME
 
 void pdcch_interleaving(NR_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
 
-void pdcch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
-                        uint8_t subframe,
-                        int8_t* llr,
-                        uint32_t length);
-
-
+void nr_pdcch_unscrambling(int16_t *z,
+                           uint16_t scrambling_RNTI,
+                           uint32_t length,
+                           uint16_t pdcch_DMRS_scrambling_id,
+                           int16_t *z2);
 
 void dlsch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
                         int mbsfn_flag,
@@ -1711,46 +1691,14 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
-void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
-			   int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common);
-
 
 uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
-uint8_t nr_dci_decoding_procedure(int s,
-                                  int p,
-                                  PHY_VARS_NR_UE *ue,
-                                  NR_DCI_ALLOC_t *dci_alloc,
-                                  NR_SEARCHSPACE_TYPE_t searchSpacetype,
-                                  int16_t eNB_id,
-                                  uint8_t nr_tti_rx,
-                                  uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-                                  uint16_t n_RB_ULBWP,
-                                  uint16_t n_RB_DLBWP,
-                                  crc_scrambled_t *crc_scrambled,
-                                  format_found_t *format_found,
-                                  uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+				  int frame,
+				  int slot,
+				  fapi_nr_dci_indication_t *dci_ind);
 
-int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
-        uint8_t eNB_id,
-        int frame,
-        uint8_t nr_tti_rx,
-        uint64_t dci_pdu[2],
-        uint16_t rnti,
-        uint8_t dci_length,
-        NR_DCI_format_t dci_format,
-        NR_UE_PDCCH *pdcch_vars,
-        NR_UE_PDSCH *pdsch_vars,
-        NR_UE_DLSCH_t **dlsch,
-        NR_UE_ULSCH_t *ulsch,
-        NR_DL_FRAME_PARMS *frame_parms,
-        PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-        uint8_t beamforming_mode,
-        uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-        uint16_t n_RB_ULBWP,
-        uint16_t n_RB_DLBWP,
-        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
-	NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
@@ -1794,20 +1742,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 			    uint8_t is_crnti,
 			    uint8_t llr8_flag);
 
-int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
-			uint8_t eNB_id,
-			lte_frame_type_t frame_type,
-			uint8_t dci_length,
-			uint16_t rnti,
-			uint64_t dci_pdu[2],
-			fapi_nr_dci_pdu_rel15_t *nr_pdci_info_extracted,
-			uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-			NR_DCI_format_t dci_format,
-			uint8_t nr_tti_rx,
-			uint16_t n_RB_ULBWP,
-			uint16_t n_RB_DLBWP,
-			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
 
 void *dlsch_thread(void *arg);
 /**@}*/
 #endif
+

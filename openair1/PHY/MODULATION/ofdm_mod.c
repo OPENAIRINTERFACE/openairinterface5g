@@ -86,6 +86,8 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                  )
 {
 
+  if(nb_symbols == 0) return;
+
   short temp[4096*4] __attribute__((aligned(32)));
   unsigned short i,j;
   short k;
@@ -93,41 +95,41 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   volatile int *output_ptr=(int*)0;
 
   int *temp_ptr=(int*)0;
-  void (*idft)(int16_t *,int16_t *, int);
+  idft_size_idx_t idftsize;
 
   switch (fftsize) {
   case 128:
-    idft = idft128;
+    idftsize = IDFT_128;
     break;
 
   case 256:
-    idft = idft256;
+    idftsize = IDFT_256;
     break;
 
   case 512:
-    idft = idft512;
+    idftsize = IDFT_512;
     break;
 
   case 1024:
-    idft = idft1024;
+    idftsize = IDFT_1024;
     break;
 
   case 1536:
-    idft = idft1536;
+    idftsize = IDFT_1536;
     break;
 
   case 2048:
-    idft = idft2048;
+    idftsize = IDFT_2048;
     break;
 
   case 3072:
-    idft = idft3072;
+    idftsize = IDFT_3072;
     break;
   case 4096:
-    idft = idft4096;
+    idftsize = IDFT_4096;
     break;
   default:
-    idft = idft512;
+    idftsize = IDFT_512;
     break;
   }
 
@@ -146,12 +148,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
 #ifndef __AVX2__
     // handle 128-bit alignment for 128-bit SIMD (SSE4,NEON,AltiVEC)
-    idft((int16_t *)&input[i*fftsize],
+    idft(idftsize,(int16_t *)&input[i*fftsize],
          (fftsize==128) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
          1);
 #else
     // on AVX2 need 256-bit alignment
-    idft((int16_t *)&input[i*fftsize],
+    idft(idftsize,(int16_t *)&input[i*fftsize],
          (int16_t *)temp,
          1);
 

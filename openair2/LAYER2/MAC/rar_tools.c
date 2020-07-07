@@ -53,7 +53,8 @@ fill_rar(const module_id_t module_idP,
          RA_t *ra,
          const frame_t frameP,
          uint8_t *const dlsch_buffer,
-         const uint16_t N_RB_UL, const uint8_t input_buffer_length)
+         const uint16_t N_RB_UL,
+         const uint8_t input_buffer_length)
 //------------------------------------------------------------------------------
 {
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *) dlsch_buffer;
@@ -93,16 +94,9 @@ fill_rar(const module_id_t module_idP,
   rar[3] =
     (((ra->msg3_mcs & 0x7) << 5)) | ((ra->msg3_TPC & 7) << 2) |
     ((ra->msg3_ULdelay & 1) << 1) | (ra->msg3_cqireq & 1);
-
-  if (opt_enabled) {
-    trace_pdu(DIRECTION_DOWNLINK, dlsch_buffer, input_buffer_length, module_idP,  WS_RA_RNTI, 1,
-              RC.mac[module_idP]->frame, RC.mac[module_idP]->subframe,
-              0, 0);
-    LOG_D(OPT,
-          "[eNB %d][RAPROC] CC_id %d RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
-          module_idP, CC_id, frameP, ra->rnti, rarh->RAPID,
-          input_buffer_length);
-  }
+  trace_pdu(DIRECTION_DOWNLINK, dlsch_buffer, input_buffer_length, module_idP,  WS_RA_RNTI, 1,
+            RC.mac[module_idP]->frame, RC.mac[module_idP]->subframe,
+            0, 0);
 
   return (ra->rnti);
 }
@@ -125,7 +119,6 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   COMMON_channels_t *cc = &eNB->common_channels[CC_id];
   uint8_t *rar = (uint8_t *)(dlsch_buffer + 1);
   uint32_t rballoc = 0;
-  uint32_t reps = 0;
   uint32_t ULdelay = 0;
   uint32_t cqireq = 0;
   uint32_t mpdcch_nb_index = 0;
@@ -151,7 +144,6 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     input_buffer_length = 6;
     N_NB_index = get_numnarrowbandbits(cc->mib->message.dl_Bandwidth);
     /* UL Grant */
-    reps = 0;
     ra->msg3_mcs = 7;
     TPC = 3; // no power increase
     ULdelay = 0;
@@ -161,7 +153,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     uint32_t buffer = 0;
     buffer |= ra->msg34_narrowband << (16 + (4 - N_NB_index));
     buffer |= ((rballoc & 0x0F) << (12 + (4 - N_NB_index)));
-    buffer |= ((reps & 0x03) << (10 + (4 - N_NB_index)));
+    buffer |= ((ra->pusch_repetition_levels & 0x03) << (10 + (4 - N_NB_index)));
     buffer |= ((ra->msg3_mcs & 0x07) << (7 + (4 - N_NB_index)));
     buffer |= ((TPC & 0x07) << (4 + (4 - N_NB_index)));
     buffer |= ((cqireq & 0x01) << (3 + (4 - N_NB_index)));
@@ -196,24 +188,16 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
         ra->preamble_index,
         ra->timing_offset);
 
-  if (opt_enabled) {
-    trace_pdu(DIRECTION_DOWNLINK,
-              dlsch_buffer,
-              input_buffer_length,
-              eNB->Mod_id,
-              WS_RA_RNTI,
-              1,
-              eNB->frame,
-              eNB->subframe,
-              0,
-              0);
-    LOG_D(OPT, "[RAPROC] RAR Frame %d trace pdu for rnti %x and rapid %d size %d\n",
-          frameP,
-          ra->rnti,
-          rarh->RAPID,
-          input_buffer_length);
-  }
+  trace_pdu(DIRECTION_DOWNLINK,
+            dlsch_buffer,
+            input_buffer_length,
+            eNB->Mod_id,
+            WS_RA_RNTI,
+            1,
+            eNB->frame,
+            eNB->subframe,
+            0,
+            0);
 
   return (ra->rnti);
 }
-

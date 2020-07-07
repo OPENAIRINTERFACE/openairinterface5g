@@ -38,7 +38,7 @@ int phy_init_RU(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_CALIBRATION *calibration = &ru->calibration;
   int i,j,p,re;
-  init_dfts();
+  //load_dftslib();
   LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
   if (ru->is_slave == 1) {
@@ -76,7 +76,7 @@ int phy_init_RU(RU_t *ru) {
   }
 
   if (ru->function != NGFI_RRU_IF5) { // we need to do RX/TX RU processing
-    init_dfts();
+    load_dftslib();
     init_7_5KHz();
     LOG_I(PHY,"nb_tx %d\n",ru->nb_tx);
     ru->common.rxdata_7_5kHz = (int32_t **)malloc16(ru->nb_rx*sizeof(int32_t *) );

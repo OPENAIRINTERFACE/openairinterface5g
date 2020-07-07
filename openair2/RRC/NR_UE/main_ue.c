@@ -32,12 +32,10 @@
 
 #include "defs.h"
 #include "rrc_proto.h"
+#include "common/utils/LOG/log.h"
 
-int nr_l3_init_ue(void){
+NR_UE_RRC_INST_t* nr_l3_init_ue(char* rrc_config_path){
     //LOG_I(RRC, "[MAIN] NR UE MAC initialization...\n");
 
-    openair_rrc_top_init_ue_nr(); 
-
-    return 0;
-
+    return openair_rrc_top_init_ue_nr(rrc_config_path); 
 }

@@ -325,12 +325,18 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   // PUSCH I/Q of MF Output
   if (pusch_comp!=NULL) {
     ind=0;
+    int range=80*1000*1000;
 
     for (k=0; k<frame_parms->symbols_per_tti; k++) {
       for (i=0; i<12*frame_parms->N_RB_UL; i++) {
-        I[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i];
-        Q[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1];
-        ind++;
+        if ( pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i] > -range &&
+             pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i] < range  &&
+             pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1] > -range &&
+             pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1] < range ) {
+           I[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i];
+           Q[ind] = pusch_comp[(2*frame_parms->N_RB_UL*12*k)+2*i+1];
+           ind++;
+        }
       }
     }
 
@@ -559,7 +565,10 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   }
 
   chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
-  llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
+  //llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // Cppcheck returns "invalidFunctionArg" error.
+  llr = (float*) malloc(coded_bits_per_codeword*sizeof(float));
+  memset((void *)llr, 0,coded_bits_per_codeword*sizeof(float)); // init to zero
+
   bit = malloc(coded_bits_per_codeword*sizeof(float));
   llr_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float)); // init to zero
   bit_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float));
@@ -572,7 +581,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr;
   pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp[0];
   pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0]; // stream 0
-  //    pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
+  //pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
   pdsch_comp = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp0[0];
   pdsch_mag = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_mag0[0];
 

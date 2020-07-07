@@ -56,22 +56,22 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       // do ifft of channel estimate
       switch(frame_parms->N_RB_DL) {
       case 6:
-	dft128((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	dft(DFT_128,(int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
 	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       case 25:
-	dft512((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	dft(DFT_512,(int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
 	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       case 50:
-	dft1024((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	dft(DFT_1024,(int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
 		(int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 		1);
 	break;
       case 100:
-	dft2048((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	dft(DFT_2048,(int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
 	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
@@ -112,18 +112,12 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB *eNB,
-                                 module_id_t UE_id)
+int lte_est_timing_advance_pusch(LTE_DL_FRAME_PARMS *frame_parms,
+                                 int32_t **ul_ch_estimates_time)
 {
   int temp, i, aa, max_pos=0, max_val=0;
   short Re,Im;
 
-  RU_t *ru;
-  ru = RC.ru[UE_id];
-  LTE_DL_FRAME_PARMS *frame_parms = (eNB==NULL) ? ru->frame_parms : &eNB->frame_parms;
-  LTE_eNB_PUSCH *eNB_pusch_vars = (eNB!=NULL) ? eNB->pusch_vars[UE_id] : (LTE_eNB_PUSCH*)NULL;
-  RU_CALIBRATION *calibration = &ru->calibration;
-  int32_t **ul_ch_estimates_time = (eNB==NULL) ? calibration->drs_ch_estimates_time : eNB_pusch_vars->drs_ch_estimates_time;
   uint8_t cyclic_shift = 0;
   int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
   
@@ -149,7 +143,7 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB *eNB,
     max_pos = max_pos-frame_parms->ofdm_symbol_size;
 
   //#ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: max_pos = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,sync_pos);
+  LOG_D(PHY,"max_pos = %d, sync_pos=%d\n",max_pos,sync_pos);
   //#endif //DEBUG_PHY
 
   return max_pos - sync_pos;

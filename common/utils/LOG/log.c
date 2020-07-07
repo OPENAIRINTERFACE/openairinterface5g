@@ -232,7 +232,7 @@ int write_file_matlab(const char *fname,
 void  log_getconfig(log_t *g_log)
 {
   char *gloglevel = NULL;
-  int consolelog ;
+  int consolelog = 0;
   paramdef_t logparams_defaults[] = LOG_GLOBALPARAMS_DESC;
   paramdef_t logparams_level[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
@@ -324,7 +324,9 @@ void  log_getconfig(log_t *g_log)
 
   config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
   config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
-  config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX);
+
+  if (config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX) > 0)
+    exit(1);
 
   /* set the debug mask according to the debug parameters values */
   for (int i=0; log_maskmap[i].name != NULL ; i++) {
@@ -416,9 +418,12 @@ int logInit (void)
   register_log_component("eRAL","",RAL_ENB);
   register_log_component("mRAL","",RAL_UE);
   register_log_component("ENB_APP","log",ENB_APP);
+  register_log_component("MCE_APP","log",MCE_APP);
+  register_log_component("MME_APP","log",MME_APP);
   register_log_component("FLEXRAN_AGENT","log",FLEXRAN_AGENT);
   register_log_component("PROTO_AGENT","log",PROTO_AGENT);
   register_log_component("TMR","",TMR);
+  register_log_component("EMU","log",EMU);
   register_log_component("USIM","txt",USIM);
   register_log_component("SIM","txt",SIM);
   /* following log component are used for the localization*/
@@ -428,12 +433,18 @@ int logInit (void)
   register_log_component("GTPV1U","",GTPU);
   register_log_component("S1AP","",S1AP);
   register_log_component("F1AP","",F1AP);
+  register_log_component("M2AP","",M2AP);
+  register_log_component("M3AP","",M3AP);
   register_log_component("SCTP","",SCTP);
   register_log_component("X2AP","",X2AP);
   register_log_component("LOADER","log",LOADER);
   register_log_component("ASN","log",ASN);
   register_log_component("NFAPI_VNF","log",NFAPI_VNF);
   register_log_component("NFAPI_PNF","log",NFAPI_PNF);
+  register_log_component("GNB_APP","log",GNB_APP);
+  register_log_component("NR_RRC","log",NR_RRC);
+  register_log_component("NR_MAC","log",NR_MAC);
+  register_log_component("NR_PHY","log",NR_PHY);
 
   for (int i=0 ; log_level_names[i].name != NULL ; i++)
     g_log->level2string[i]           = toupper(log_level_names[i].name[0]); // uppercased first letter of level name

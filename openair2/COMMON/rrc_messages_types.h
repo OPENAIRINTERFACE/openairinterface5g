@@ -41,7 +41,7 @@
 #include "LTE_SL-PeriodComm-r12.h"
 #include "LTE_SL-DiscResourcePool-r12.h"
 #include "NR_RACH-ConfigCommon.h"
-
+#include "NR_ServingCellConfigCommon.h"
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
 #if defined(DISABLE_ITTI_XER_PRINT)
@@ -86,6 +86,8 @@
 #define NAS_DOWNLINK_DATA_IND(mSGpTR)   (mSGpTR)->ittiMsg.nas_dl_data_ind
 
 #define RRC_SUBFRAME_PROCESS(mSGpTR)    (mSGpTR)->ittiMsg.rrc_subframe_process
+
+#define RLC_SDU_INDICATION(mSGpTR)      (mSGpTR)->ittiMsg.rlc_sdu_indication
 
 //-------------------------------------------------------------------------------------------//
 typedef struct RrcStateInd_s {
@@ -194,6 +196,7 @@ typedef struct RrcConfigurationReq_s {
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
   int                     nb_antenna_ports[MAX_NUM_CCs];
   int                     eMBMS_configured;
+  int                     eMBMS_M2_configured;
   int                     eMTC_configured;
   int                     SL_configured;
 
@@ -274,6 +277,7 @@ typedef struct RrcConfigurationReq_s {
   long  *pdsch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
   long  *pusch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
+  long  *pusch_repetitionLevelCEmodeA_r13				   [MAX_NUM_CCs];
   long  *pusch_HoppingOffset_v1310                         [MAX_NUM_CCs];
 
   //SIB18
@@ -398,194 +402,9 @@ typedef struct NRRrcConfigurationReq_s {
   uint16_t                mcc[PLMN_LIST_MAX_SIZE];
   uint16_t                mnc[PLMN_LIST_MAX_SIZE];
   uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
-  int16_t                 nb_cc;
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
-  uint8_t                 tdd_config[MAX_NUM_CCs];
-  uint8_t                 tdd_config_s[MAX_NUM_CCs];
-  lte_prefix_type_t       DL_prefix_type[MAX_NUM_CCs];
-  lte_prefix_type_t       UL_prefix_type[MAX_NUM_CCs];
-  int16_t                 nr_band[MAX_NUM_CCs];
-  uint64_t                downlink_frequency[MAX_NUM_CCs];
-  int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
-  int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
-  int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
-  int                     nb_antenna_ports[MAX_NUM_CCs];
-
-  ///NR
-  //MIB
-  long                    MIB_subCarrierSpacingCommon[MAX_NUM_CCs];
-  uint32_t                MIB_ssb_SubcarrierOffset[MAX_NUM_CCs];
-  long                    MIB_dmrs_TypeA_Position[MAX_NUM_CCs];
-  uint32_t                pdcch_ConfigSIB1[MAX_NUM_CCs];
-
-  //SIB1
-  long                    SIB1_frequencyOffsetSSB[MAX_NUM_CCs];
-  long                    SIB1_ssb_PeriodicityServingCell[MAX_NUM_CCs];
-  long                    SIB1_ss_PBCH_BlockPower[MAX_NUM_CCs];
-  //NR FrequencyInfoDL
-  long                    absoluteFrequencySSB[MAX_NUM_CCs];
-  long                    DL_FreqBandIndicatorNR[MAX_NUM_CCs];
-  long                    DL_absoluteFrequencyPointA[MAX_NUM_CCs];
-
-  //NR DL SCS-SpecificCarrier
-  uint32_t                DL_offsetToCarrier[MAX_NUM_CCs];
-  long                    DL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
-  uint32_t                DL_carrierBandwidth[MAX_NUM_CCs];
-
-  //NR BWP-DownlinkCommon
-  uint32_t                DL_locationAndBandwidth[MAX_NUM_CCs];
-  long                    DL_BWP_SubcarrierSpacing[MAX_NUM_CCs];
-  lte_prefix_type_t       DL_BWP_prefix_type[MAX_NUM_CCs];
-
-  //NR FrequencyInfoUL
-  long                    UL_FreqBandIndicatorNR[MAX_NUM_CCs];
-  long                    UL_absoluteFrequencyPointA[MAX_NUM_CCs];
-  long                    UL_additionalSpectrumEmission[MAX_NUM_CCs];
-  long                    UL_p_Max[MAX_NUM_CCs];
-  long                    UL_frequencyShift7p5khz[MAX_NUM_CCs];
-
-  //NR UL SCS-SpecificCarrier
-  uint32_t                UL_offsetToCarrier[MAX_NUM_CCs];
-  long                    UL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
-  uint32_t                UL_carrierBandwidth[MAX_NUM_CCs];
-
-  // NR BWP-UplinkCommon
-  uint32_t                UL_locationAndBandwidth[MAX_NUM_CCs];
-  long                    UL_BWP_SubcarrierSpacing[MAX_NUM_CCs];
-  lte_prefix_type_t       UL_BWP_prefix_type[MAX_NUM_CCs];
-  long                    UL_timeAlignmentTimerCommon[MAX_NUM_CCs];
-  long                    ServingCellConfigCommon_n_TimingAdvanceOffset[MAX_NUM_CCs];
-  uint64_t                ServingCellConfigCommon_ssb_PositionsInBurst_PR[MAX_NUM_CCs];
-  long                    ServingCellConfigCommon_ssb_periodicityServingCell[MAX_NUM_CCs]; //ServingCellConfigCommon
-  long                    ServingCellConfigCommon_dmrs_TypeA_Position[MAX_NUM_CCs];        //ServingCellConfigCommon
-  long                    NIA_SubcarrierSpacing[MAX_NUM_CCs];      //ServingCellConfigCommon Used only for non-initial access
-  long                    ServingCellConfigCommon_ss_PBCH_BlockPower[MAX_NUM_CCs];         //ServingCellConfigCommon
-
-
-  //NR TDD-UL-DL-ConfigCommon
-  long                    referenceSubcarrierSpacing[MAX_NUM_CCs];
-  long                    dl_UL_TransmissionPeriodicity[MAX_NUM_CCs];
-  long                    nrofDownlinkSlots[MAX_NUM_CCs];
-  long                    nrofDownlinkSymbols[MAX_NUM_CCs];
-  long                    nrofUplinkSlots[MAX_NUM_CCs];
-  long                    nrofUplinkSymbols[MAX_NUM_CCs];
-
-  //NR RACH-ConfigCommon
-  long                    rach_totalNumberOfRA_Preambles[MAX_NUM_CCs];
-  long                    rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[MAX_NUM_CCs];
-  long                    rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[MAX_NUM_CCs];
-  long                    rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[MAX_NUM_CCs];
-  long                    rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[MAX_NUM_CCs];
-  long                    rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[MAX_NUM_CCs];
-  long                    rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[MAX_NUM_CCs];
-  uint32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four[MAX_NUM_CCs];
-  uint32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight[MAX_NUM_CCs];
-  uint32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen[MAX_NUM_CCs];
-  BOOLEAN_t               rach_groupBconfigured[MAX_NUM_CCs];
-  long                    rach_ra_Msg3SizeGroupA[MAX_NUM_CCs];
-  e_NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
-  long                    rach_numberOfRA_PreamblesGroupA[MAX_NUM_CCs];
-  long                    rach_ra_ContentionResolutionTimer[MAX_NUM_CCs];
-  long                    rsrp_ThresholdSSB[MAX_NUM_CCs];
-  long                    rsrp_ThresholdSSB_SUL[MAX_NUM_CCs];
-  long                    prach_RootSequenceIndex_choice[MAX_NUM_CCs];
-  uint32_t                prach_RootSequenceIndex_l839[MAX_NUM_CCs];
-  uint32_t                prach_RootSequenceIndex_l139[MAX_NUM_CCs];
-  long                    prach_msg1_SubcarrierSpacing[MAX_NUM_CCs];
-  long                    restrictedSetConfig[MAX_NUM_CCs];
-  long                    msg3_transformPrecoding[MAX_NUM_CCs];
-  //ssb-perRACH-OccasionAndCB-PreamblesPerSSB not sure
-
-  //NR RACH-ConfigGeneric
-  uint32_t                prach_ConfigurationIndex[MAX_NUM_CCs];
-  long                    prach_msg1_FDM[MAX_NUM_CCs];
-  long                    prach_msg1_FrequencyStart[MAX_NUM_CCs];
-  uint32_t                zeroCorrelationZoneConfig[MAX_NUM_CCs];
-  long                    preambleReceivedTargetPower[MAX_NUM_CCs];
-  long                    preambleTransMax[MAX_NUM_CCs];
-  long                    powerRampingStep[MAX_NUM_CCs];
-  long                    ra_ResponseWindow[MAX_NUM_CCs];
-
-  //NR PUSCH-ConfigCommon
-  BOOLEAN_t               groupHoppingEnabledTransformPrecoding[MAX_NUM_CCs];
-  long                    msg3_DeltaPreamble[MAX_NUM_CCs];
-  long                    p0_NominalWithGrant[MAX_NUM_CCs];
-
-  ///NR PUSCH-TimeDomainResourceAllocation
-  uint32_t                PUSCH_TimeDomainResourceAllocation_k2[MAX_NUM_CCs];
-  long                    PUSCH_TimeDomainResourceAllocation_mappingType[MAX_NUM_CCs];
-  uint32_t                PUSCH_TimeDomainResourceAllocation_startSymbolAndLength[MAX_NUM_CCs];
-
-  //NR PUCCH-ConfigCommon
-  uint32_t                pucch_ResourceCommon[MAX_NUM_CCs];
-  long                    pucch_GroupHopping[MAX_NUM_CCs];
-  uint32_t                hoppingId[MAX_NUM_CCs];
-  long                    p0_nominal[MAX_NUM_CCs];
-
-  //NR PDSCH-ConfigCOmmon
-  //NR PDSCH-TimeDomainResourceAllocation
-  uint32_t                PDSCH_TimeDomainResourceAllocation_k0[MAX_NUM_CCs];
-  long                    PDSCH_TimeDomainResourceAllocation_mappingType[MAX_NUM_CCs];
-  long                    PDSCH_TimeDomainResourceAllocation_startSymbolAndLength[MAX_NUM_CCs];
-
-  //NR RateMatchPattern  is used to configure one rate matching pattern for PDSCH
-  long                    rateMatchPatternId[MAX_NUM_CCs];
-  long                    RateMatchPattern_patternType[MAX_NUM_CCs];
-  long                    symbolsInResourceBlock[MAX_NUM_CCs];
-  long                    periodicityAndPattern[MAX_NUM_CCs];
-  long                    RateMatchPattern_controlResourceSet[MAX_NUM_CCs]; ///ControlResourceSetId
-  long                    RateMatchPattern_subcarrierSpacing[MAX_NUM_CCs];
-  long                    RateMatchPattern_mode[MAX_NUM_CCs];
-
-  //NR PDCCH-ConfigCommon
-  uint32_t                controlResourceSetZero[MAX_NUM_CCs];
-  uint32_t                searchSpaceZero[MAX_NUM_CCs];
-  long                    searchSpaceSIB1[MAX_NUM_CCs];
-  long                    searchSpaceOtherSystemInformation[MAX_NUM_CCs];
-  long                    pagingSearchSpace[MAX_NUM_CCs];
-  long                    ra_SearchSpace[MAX_NUM_CCs];
-  //NR PDCCH-ConfigCommon commonControlResourcesSets
-  long                    PDCCH_common_controlResourceSetId[MAX_NUM_CCs];
-  long                    PDCCH_common_ControlResourceSet_duration[MAX_NUM_CCs];
-  long                    PDCCH_cce_REG_MappingType[MAX_NUM_CCs];
-  long                    PDCCH_reg_BundleSize[MAX_NUM_CCs];
-  long                    PDCCH_interleaverSize[MAX_NUM_CCs];
-  long                    PDCCH_shiftIndex[MAX_NUM_CCs];
-  long                    PDCCH_precoderGranularity[MAX_NUM_CCs]; //Corresponds to L1 parameter 'CORESET-precoder-granuality'
-  long                    PDCCH_TCI_StateId[MAX_NUM_CCs];
-  BOOLEAN_t               tci_PresentInDCI[MAX_NUM_CCs];
-  uint32_t                PDCCH_DMRS_ScramblingID[MAX_NUM_CCs];
-
-  //NR PDCCH-ConfigCommon commonSearchSpaces
-  long                    SearchSpaceId[MAX_NUM_CCs];
-  long                    commonSearchSpaces_controlResourceSetId[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_choice[MAX_NUM_CCs];
-  uint32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_value[MAX_NUM_CCs];
-  uint32_t                SearchSpace_duration[MAX_NUM_CCs];
-  long                    SearchSpace_nrofCandidates_aggregationLevel1[MAX_NUM_CCs];
-  long                    SearchSpace_nrofCandidates_aggregationLevel2[MAX_NUM_CCs];
-  long                    SearchSpace_nrofCandidates_aggregationLevel4[MAX_NUM_CCs];
-  long                    SearchSpace_nrofCandidates_aggregationLevel8[MAX_NUM_CCs];
-  long                    SearchSpace_nrofCandidates_aggregationLevel16[MAX_NUM_CCs];
-  long                    SearchSpace_searchSpaceType[MAX_NUM_CCs];
-  long                    Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[MAX_NUM_CCs];
-  long                    Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[MAX_NUM_CCs];
-  long                    Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[MAX_NUM_CCs];
-  long                    Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[MAX_NUM_CCs];
-  long                    Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[MAX_NUM_CCs];
-  long                    Common_dci_Format2_3_monitoringPeriodicity[MAX_NUM_CCs];
-  long                    Common_dci_Format2_3_nrofPDCCH_Candidates[MAX_NUM_CCs];
-  long                    ue_Specific__dci_Formats[MAX_NUM_CCs];
-
-  //RateMatchPatternLTE-CRS
-  uint32_t                RateMatchPatternLTE_CRS_carrierFreqDL[MAX_NUM_CCs];
-  long                    RateMatchPatternLTE_CRS_carrierBandwidthDL[MAX_NUM_CCs];
-  long                    RateMatchPatternLTE_CRS_nrofCRS_Ports[MAX_NUM_CCs];
-  long                    RateMatchPatternLTE_CRS_v_Shift[MAX_NUM_CCs];
-  long                    RateMatchPatternLTE_CRS_radioframeAllocationPeriod[MAX_NUM_CCs];
-  uint32_t                RateMatchPatternLTE_CRS_radioframeAllocationOffset[MAX_NUM_CCs];
-  long                    RateMatchPatternLTE_CRS_subframeAllocation_choice[MAX_NUM_CCs];
-
+  NR_ServingCellConfigCommon_t *scc;
+  int                          ssb_SubcarrierOffset;
+  int                          pdsch_AntennaPorts;
 } gNB_RrcConfigurationReq;
 
 
@@ -611,5 +430,13 @@ typedef struct rrc_subframe_process_s {
   protocol_ctxt_t ctxt;
   int             CC_id;
 } RrcSubframeProcess;
+
+// eNB: RLC -> RRC messages
+typedef struct rlc_sdu_indication_s {
+  int rnti;
+  int is_successful;
+  int srb_id;
+  int message_id;
+} RlcSduIndication;
 
 #endif /* RRC_MESSAGES_TYPES_H_ */

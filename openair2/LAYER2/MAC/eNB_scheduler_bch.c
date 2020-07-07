@@ -26,7 +26,6 @@
  * \email: navid.nikaein@eurecom.fr
  * \version 1.0
  * @ingroup _mac
-
  */
 
 #include "assertions.h"
@@ -45,9 +44,7 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
@@ -200,7 +197,8 @@ schedule_SIB1_MBMS(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -278,16 +276,10 @@ schedule_SIB1_MBMS(module_id_t module_idP,
     eNB->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
     eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
     eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
-
-    if (opt_enabled == 1) {
-      trace_pdu(DIRECTION_DOWNLINK,
-                &cc->BCCH_BR_pdu[0].payload[0],
-                bcch_sdu_length,
-                0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-      LOG_D(OPT,
-            "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-            module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-    }
+    trace_pdu(DIRECTION_DOWNLINK,
+              &cc->BCCH_BR_pdu[0].payload[0],
+              bcch_sdu_length,
+              0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
 
     if (cc->tdd_Config != NULL) { //TDD
       LOG_D(MAC,
@@ -429,7 +421,8 @@ schedule_SIB1_BR(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 0xFFFF, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -507,16 +500,10 @@ schedule_SIB1_BR(module_id_t module_idP,
     eNB->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
     eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
     eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
-
-    if (opt_enabled == 1) {
-      trace_pdu(DIRECTION_DOWNLINK,
-                &cc->BCCH_BR_pdu[0].payload[0],
-                bcch_sdu_length,
-                0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-      LOG_D(OPT,
-            "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-            module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-    }
+    trace_pdu(DIRECTION_DOWNLINK,
+              &cc->BCCH_BR_pdu[0].payload[0],
+              bcch_sdu_length,
+              0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
 
     if (cc->tdd_Config != NULL) { //TDD
       LOG_D(MAC,
@@ -595,7 +582,7 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
         long si_Narrowband_r13 = schedulingInfoList_BR_r13->list.array[i]->si_Narrowband_r13;
         long si_TBS_r13 = si_TBS_r13tab[schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13];
         // check if the SI is to be scheduled now
-        int period_in_sf;
+        int period_in_sf = 0;
 
         if ((si_Periodicity >= 0) && (si_Periodicity < 25)) {
           // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
@@ -694,18 +681,13 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
             TX_req->segments[0].segment_length                                    = bcch_sdu_length;
             TX_req->segments[0].segment_data                                      = cc->BCCH_BR_pdu[i+1].payload;
             eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
-
-            if (opt_enabled == 1) {
-              trace_pdu(DIRECTION_DOWNLINK,
-                        &cc->BCCH_BR_pdu[i + 1].payload[0],
-                        bcch_sdu_length,
-                        0xffff,
-                        WS_SI_RNTI,
-                        0xffff, eNB->frame, eNB->subframe, 0,
-                        0);
-              LOG_D(OPT, "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-                    module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
-            }
+            trace_pdu(DIRECTION_DOWNLINK,
+                      &cc->BCCH_BR_pdu[i + 1].payload[0],
+                      bcch_sdu_length,
+                      0xffff,
+                      WS_SI_RNTI,
+                      0xffff, eNB->frame, eNB->subframe, 0,
+                      0);
 
             if (cc->tdd_Config != NULL) { //TDD
               LOG_D(MAC, "[eNB] Frame %d : Scheduling BCCH-BR %d->DLSCH (TDD) for CC_id %d SI-BR %d bytes\n",
@@ -899,18 +881,11 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
 
         T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(0xffff),
           T_INT(frameP), T_INT(subframeP), T_INT(0), T_BUFFER(cc->BCCH_MBMS_pdu.payload, bcch_sdu_length));
-
-        if (opt_enabled == 1) {
-          trace_pdu(DIRECTION_DOWNLINK,
-                    &cc->BCCH_MBMS_pdu.payload[0],
-                    bcch_sdu_length,
-                    0xffff,
-                    WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-          LOG_D(OPT,
-                "[eNB %d][BCH-MBMS] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-                module_idP, frameP, CC_id, 0xffff,
-                bcch_sdu_length);
-        }
+        trace_pdu(DIRECTION_DOWNLINK,
+                  &cc->BCCH_MBMS_pdu.payload[0],
+                  bcch_sdu_length,
+                  0xffff,
+                  WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
 
         if (0/*cc->tdd_Config != NULL*/) {  //TDD not for FeMBMS
           LOG_D(MAC,
@@ -1175,18 +1150,11 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
         T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(0xffff),
           T_INT(frameP), T_INT(subframeP), T_INT(0), T_BUFFER(cc->BCCH_pdu.payload, bcch_sdu_length));
-
-        if (opt_enabled == 1) {
-          trace_pdu(DIRECTION_DOWNLINK,
-                    &cc->BCCH_pdu.payload[0],
-                    bcch_sdu_length,
-                    0xffff,
-                    WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
-          LOG_D(OPT,
-                "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
-                module_idP, frameP, CC_id, 0xffff,
-                bcch_sdu_length);
-        }
+        trace_pdu(DIRECTION_DOWNLINK,
+                  &cc->BCCH_pdu.payload[0],
+                  bcch_sdu_length,
+                  0xffff,
+                  WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
 
         if (cc->tdd_Config != NULL) { //TDD
           LOG_D(MAC,

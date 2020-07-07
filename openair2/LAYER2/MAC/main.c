@@ -34,38 +34,27 @@
 #include "mac_proto.h"
 #include "mac_extern.h"
 #include "assertions.h"
-//#include "PHY_INTERFACE/phy_extern.h"
-//#include "PHY/defs_eNB.h"
-//#include "SCHED/sched_eNB.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "common/utils/LOG/log.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
 #include "common/ran_context.h"
+#include "intertask_interface.h"
 
 extern RAN_CONTEXT_t RC;
 
-void init_UE_list(UE_list_t *UE_list)
+void init_UE_info(UE_info_t *UE_info)
 {
   int list_el;
-  UE_list->num_UEs = 0;
-  UE_list->head = -1;
-  UE_list->head_ul = -1;
-  UE_list->avail = 0;
-  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
-    UE_list->next[list_el] = list_el + 1;
-    UE_list->next_ul[list_el] = list_el + 1;
-  }
-  UE_list->next[list_el] = -1;
-  UE_list->next_ul[list_el] = -1;
-  memset(UE_list->DLSCH_pdu, 0, sizeof(UE_list->DLSCH_pdu));
-  memset(UE_list->UE_template, 0, sizeof(UE_list->UE_template));
-  memset(UE_list->eNB_UE_stats, 0, sizeof(UE_list->eNB_UE_stats));
-  memset(UE_list->UE_sched_ctrl, 0, sizeof(UE_list->UE_sched_ctrl));
-  memset(UE_list->active, 0, sizeof(UE_list->active));
-  memset(UE_list->assoc_dl_slice_idx, 0, sizeof(UE_list->assoc_dl_slice_idx));
-  memset(UE_list->assoc_ul_slice_idx, 0, sizeof(UE_list->assoc_ul_slice_idx));
+  UE_info->num_UEs = 0;
+  UE_info->list.head = -1;
+  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB; list_el++)
+    UE_info->list.next[list_el] = -1;
+  memset(UE_info->DLSCH_pdu, 0, sizeof(UE_info->DLSCH_pdu));
+  memset(UE_info->UE_template, 0, sizeof(UE_info->UE_template));
+  memset(UE_info->eNB_UE_stats, 0, sizeof(UE_info->eNB_UE_stats));
+  memset(UE_info->UE_sched_ctrl, 0, sizeof(UE_info->UE_sched_ctrl));
+  memset(UE_info->active, 0, sizeof(UE_info->active));
 }
 
 void init_slice_info(slice_info_t *sli)
@@ -140,13 +129,13 @@ void mac_top_init_eNB(void)
 
     mac[i]->if_inst = IF_Module_init(i);
 
-    init_UE_list(&mac[i]->UE_list);
+    init_UE_info(&mac[i]->UE_info);
     init_slice_info(&mac[i]->slice_info);
   }
 
   RC.mac = mac;
 
-  AssertFatal(rlc_module_init() == 0,
+  AssertFatal(rlc_module_init(1) == 0,
       "Could not initialize RLC layer\n");
 
   // These should be out of here later
@@ -166,12 +155,12 @@ void mac_init_cell_params(int Mod_idP, int CC_idP)
 
     memset(&RC.mac[Mod_idP]->eNB_stats, 0, sizeof(eNB_STATS));
     UE_template =
-	(UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_list.UE_template[CC_idP][0];
+	(UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_info.UE_template[CC_idP][0];
 
     for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 	UE_template[j].rnti = 0;
 	// initiallize the eNB to UE statistics
-	memset(&RC.mac[Mod_idP]->UE_list.eNB_UE_stats[CC_idP][j], 0,
+	memset(&RC.mac[Mod_idP]->UE_info.eNB_UE_stats[CC_idP][j], 0,
 	       sizeof(eNB_UE_STATS));
     }
 
@@ -184,7 +173,7 @@ int rlcmac_init_global_param(void)
 
     LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
 
-    if (rlc_module_init() != 0) {
+    if (rlc_module_init(1) != 0) {
 	return (-1);
     }
 
@@ -222,4 +211,48 @@ int l2_init_eNB(void)
 
 
     return (1);
+}
+
+//-----------------------------------------------------------------------------
+/*
+ * Main loop of MAC itti message handling
+ */
+void *mac_enb_task(void *arg)
+//-----------------------------------------------------------------------------
+{
+  MessageDef *received_msg = NULL;
+  int         result;
+
+  itti_mark_task_ready(TASK_MAC_ENB); // void function 10/2019
+  LOG_I(MAC,"Starting main loop of MAC message task\n");
+
+  while (1) {
+    itti_receive_msg(TASK_MAC_ENB, &received_msg);
+
+    switch (ITTI_MSG_ID(received_msg)) {
+      case RRC_MAC_DRX_CONFIG_REQ:
+        LOG_I(MAC, "MAC Task Received RRC_MAC_DRX_CONFIG_REQ\n");
+        /* Set timers and thresholds values in local MAC context of UE */
+        eNB_Config_Local_DRX(ITTI_MESSAGE_GET_INSTANCE(received_msg), &received_msg->ittiMsg.rrc_mac_drx_config_req);
+        break;
+
+      case TERMINATE_MESSAGE:
+        LOG_W(MAC, " *** Exiting MAC thread\n");
+        itti_exit_task();
+        break;
+
+      default:
+        LOG_E(MAC, "MAC instance received unhandled message: %d:%s\n",
+              ITTI_MSG_ID(received_msg), 
+              ITTI_MSG_NAME(received_msg));
+        break;  
+    } // end switch
+
+    result = itti_free(ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+    
+    received_msg = NULL;
+  } // end while
+
+  return NULL;
 }

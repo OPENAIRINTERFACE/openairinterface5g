@@ -218,6 +218,15 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
  */
 void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
+/*! \brief UE PRACH procedures.
+    @param
+    @param
+    @param
+ */
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, runmode_t mode);
+
+int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe);
+
 #if 0
 /*! \brief Compute ACK/NACK information for PUSCH/PUCCH for UE transmission in subframe n. This function implements table 10.1-1 of 36.213, p. 69.
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -289,10 +298,16 @@ uint16_t nr_get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
 
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
-void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,int16_t timing_advance);
+/*! \brief Compute the timing adjustment at UE side from the old TA offset and the new received TA command
+  @param Mod_id Local UE index on which to act
+  @param CC_id Component Carrier Index
+  @param ta_command TA command received from the network
+  @param mu numerology index (0,1,2..)
+*/
+void nr_process_timing_advance(module_id_t Mod_id,uint8_t CC_id,uint8_t ta_command, uint8_t mu, uint16_t bwp_ul_NB_RB);
 void nr_process_timing_advance_rar(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint16_t timing_advance);
 
-unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
+unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb);
 
 void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
@@ -316,13 +331,14 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t SR);
 
 #endif
+
 /*! \brief This function retrieves the PHY UE mode. It is used as a helper function for the UE MAC.
   @param Mod_id Local UE index on which to act
   @param CC_id Component Carrier Index
-  @param eNB_index ID of eNB
+  @param gNB_index ID of gNB
   @returns UE mode
 */
-UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
 
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables
@@ -370,11 +386,10 @@ void nr_compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsP
 void set_tx_harq_id(NR_UE_ULSCH_t *ulsch, int harq_pid, int slot_tx);
 int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
 
-
+int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 
 /*@}*/
 
 
 #endif
-
 

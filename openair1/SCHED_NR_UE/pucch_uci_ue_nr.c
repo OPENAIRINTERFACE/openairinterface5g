@@ -1,5 +1,4 @@
-/*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+/* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
@@ -38,10 +37,11 @@
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 #ifndef NO_RAT_NR
 
+#include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR_UE/harq_nr.h"
 #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
 
@@ -53,8 +53,8 @@
 
 
 
-uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
-uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 /*
 void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
@@ -186,6 +186,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       pucch_resource_id = MAX_NB_OF_PUCCH_RESOURCES;
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
   int       n_HARQ_ACK;
+  uint16_t crnti=0x1234;
+  int dmrs_scrambling_id=0,data_scrambling_id=0;
 
   /* update current context */
 
@@ -212,11 +214,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
       sr_payload = nr_ue_get_SR(Mod_id,
-                            CC_id,
-                            frame_tx,
-                            gNB_id,
-                            ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
-                            nr_tti_tx); // nr_tti_rx used for meas gap
+				CC_id,
+				frame_tx,
+				gNB_id,
+				0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+				nr_tti_tx); // nr_tti_rx used for meas gap
     }
     else {
       sr_payload = 1;
@@ -227,10 +229,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                             &n_HARQ_ACK, reset_harq); // 1 to reset ACK/NACK status : 0 otherwise
 
   cqi_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.cqi_PMI_ConfigIndex>0) &&
-                                                         (is_cqi_TXOp(ue,proc,gNB_id) == 1));
+                                                         (nr_is_cqi_TXOp(ue,proc,gNB_id) == 1));
 
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
-                                                         (is_ri_TXOp(ue,proc,gNB_id) == 1));
+                                                         (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
   csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
 
@@ -548,7 +550,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 
-  tx_amp = get_tx_amp(pucch_tx_power,
+  tx_amp = nr_get_tx_amp(pucch_tx_power,
                       ue->tx_power_max_dBm,
                       ue->frame_parms.N_RB_UL,
                       nb_of_prbs);
@@ -591,7 +593,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format2_nr:
     {
       nr_generate_pucch2(ue,
-                         ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                         crnti,
+			 dmrs_scrambling_id,
+			 data_scrambling_id,
                          ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated[gNB_id],
@@ -609,7 +613,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format4_nr:
     {
       nr_generate_pucch3_4(ue,
-                           ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           0,//ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
@@ -922,7 +926,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
       /* a valid resource has already be found outside this function */
       resource_set_found = TRUE;
       ready_pucch_resource_id = TRUE;
-      pucch_resource_indicator = pucch_resource_indicator;
+      //pucch_resource_indicator = pucch_resource_indicator;
     }
 
     if (resource_set_found == TRUE) {
@@ -1214,4 +1218,5 @@ void set_csi_nr(int csi_status, uint32_t csi_payload)
     dummy_csi_payload = csi_payload;
   }
 }
+
 

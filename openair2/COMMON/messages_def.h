@@ -36,6 +36,8 @@
 #include "s1ap_messages_def.h"
 #include "f1ap_messages_def.h"
 #include "x2ap_messages_def.h"
+#include "m2ap_messages_def.h"
+#include "m3ap_messages_def.h"
 #include "sctp_messages_def.h"
 #include "udp_messages_def.h"
 #include "gtpv1_u_messages_def.h"

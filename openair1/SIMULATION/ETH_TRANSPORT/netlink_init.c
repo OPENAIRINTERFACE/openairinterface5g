@@ -58,6 +58,8 @@ struct iovec nas_iov_rx = {nl_rx_buf, sizeof(nl_rx_buf)};
 
 int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
+int nas_sock_mbms_fd;
+
 struct msghdr nas_msg_tx;
 struct msghdr nas_msg_rx;
 
@@ -92,6 +94,63 @@ static int tun_alloc(char *dev) {
   return fd;
 }
 
+
+int netlink_init_mbms_tun(char *ifprefix) {
+  int ret;
+  char ifname[64];
+
+    sprintf(ifname, "oaitun_%.3s1",ifprefix); // added "1": for historical reasons
+    nas_sock_mbms_fd = tun_alloc(ifname);
+
+    if (nas_sock_mbms_fd == -1) {
+      printf("[NETLINK] Error opening socket %s (%d:%s)\n",ifname,errno, strerror(errno));
+      exit(1);
+    }
+
+    printf("[NETLINK]Opened socket %s with fd %d\n",ifname,nas_sock_mbms_fd);
+    ret = fcntl(nas_sock_mbms_fd,F_SETFL,O_NONBLOCK);
+
+    if (ret == -1) {
+      printf("[NETLINK] Error fcntl (%d:%s)\n",errno, strerror(errno));
+
+      if (LINK_ENB_PDCP_TO_IP_DRIVER) {
+        exit(1);
+      }
+    }
+
+    memset(&nas_src_addr, 0, sizeof(nas_src_addr));
+    nas_src_addr.nl_family = AF_NETLINK;
+    nas_src_addr.nl_pid = 1;//getpid();  /* self pid */
+    nas_src_addr.nl_groups = 0;  /* not in mcast groups */
+    ret = bind(nas_sock_mbms_fd, (struct sockaddr *)&nas_src_addr, sizeof(nas_src_addr));
+    memset(&nas_dest_addr, 0, sizeof(nas_dest_addr));
+    nas_dest_addr.nl_family = AF_NETLINK;
+    nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
+    nas_dest_addr.nl_groups = 0; /* unicast */
+    // TX PART
+    nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
+    memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
+    /* Fill the netlink message header */
+    nas_nlh_tx->nlmsg_len = NLMSG_SPACE(NL_MAX_PAYLOAD);
+    nas_nlh_tx->nlmsg_pid = 1;//getpid();  /* self pid */
+    nas_nlh_tx->nlmsg_flags = 0;
+    nas_iov_tx.iov_base = (void *)nas_nlh_tx;
+    nas_iov_tx.iov_len = nas_nlh_tx->nlmsg_len;
+    memset(&nas_msg_tx,0,sizeof(nas_msg_tx));
+    nas_msg_tx.msg_name = (void *)&nas_dest_addr;
+    nas_msg_tx.msg_namelen = sizeof(nas_dest_addr);
+    nas_msg_tx.msg_iov = &nas_iov_tx;
+    nas_msg_tx.msg_iovlen = 1;
+    // RX PART
+    memset(&nas_msg_rx,0,sizeof(nas_msg_rx));
+    nas_msg_rx.msg_name = (void *)&nas_src_addr;
+    nas_msg_rx.msg_namelen = sizeof(nas_src_addr);
+    nas_msg_rx.msg_iov = &nas_iov_rx;
+    nas_msg_rx.msg_iovlen = 1;
+
+  return 1;
+}
+
 int netlink_init_tun(char *ifprefix, int num_if) {
   int ret;
   char ifname[64];
@@ -105,7 +164,8 @@ int netlink_init_tun(char *ifprefix, int num_if) {
       exit(1);
     }
 
-    printf("[NETLINK]Opened socket %s with fd %d\n",ifname,nas_sock_fd[i]);
+    printf("[NETLINK]Opened socket %s with fd nas_sock_fd[%d]=%d\n",
+           ifname, i, nas_sock_fd[i]);
     ret = fcntl(nas_sock_fd[i],F_SETFL,O_NONBLOCK);
 
     if (ret == -1) {
@@ -163,7 +223,7 @@ int netlink_init(void) {
     }
   }
 
-  printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd[0]);
+  printf("[NETLINK] Opened socket with fd %d\n",nas_sock_fd[0]);
   ret = fcntl(nas_sock_fd[0],F_SETFL,O_NONBLOCK);
 
   if (ret == -1) {

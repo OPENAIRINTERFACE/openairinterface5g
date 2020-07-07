@@ -42,7 +42,7 @@
 #include "UTIL/LISTS/list.h"
 #endif
 
-//#include "../LTE_TRANSPORT/transport_common.h"
+#include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 // structures below implement 36-211 and 36-212
 
@@ -84,40 +84,26 @@ typedef struct {
 #endif
 
 typedef struct {
+  /// NDAPI struct for UE
+  nfapi_nr_ue_pusch_pdu_t pusch_pdu;
   /// Indicator of first transmission
   uint8_t first_tx;
-  /// Last Ndi received for this process on DCI (used for C-RNTI only)
-  uint8_t DCINdi;
   /// HARQ tx status
   harq_result_t tx_status;
-  /// Flag indicating that this ULSCH has a new packet (start of new round)
-  //  uint8_t Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_scheduling_flag;
   /// Subframe cba scheduling indicator (i.e. Transmission opportunity indicator)
   uint8_t subframe_cba_scheduling_flag;
-  /// First Allocated RB
-  uint16_t first_rb;
-  /// Current Number of RBs
-  uint16_t nb_rb;
-  /// number of layers
-  uint8_t Nl;
   /// Last TPC command
   uint8_t TPC;
-  /// Transport block size
-  uint32_t TBS;
   /// The payload + CRC size in bits, "B" from 36-212
   uint32_t B;
   /// Length of ACK information (bits)
   uint8_t O_ACK;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
-  /// MCS format of this ULSCH
-  uint8_t mcs;
-  /// Redundancy-version of the current sub-frame
-  uint8_t rvidx;
   /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
   unsigned char *a;
   /// Pointer to the payload + CRC 
@@ -127,9 +113,9 @@ typedef struct {
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
-  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  uint8_t *e; 
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
-  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
+  uint8_t *f; 
   /// Number of code segments
   uint32_t C;
   /// Number of bits in code segments
@@ -150,19 +136,11 @@ typedef struct {
   uint32_t G;
   // Number of modulated symbols carrying data
   uint32_t num_of_mod_symbols;
-  // This is "L" in  TS 38.214 V15.4.0 subclause 6.1.2.1
-  uint8_t number_of_symbols;
-  // This is "S" in  TS 38.214 V15.4.0 subclause 6.1.2.1
-  uint8_t start_symbol;
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
-  /// number of DMRS resource elements
-  uint8_t nb_re_dmrs;
-  /// DMRS length
-  uint8_t length_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)
@@ -224,8 +202,6 @@ typedef struct {
   uint8_t power_offset;
   // for cooperative communication
   uint8_t cooperation_flag;
-  /// RNTI attributed to this ULSCH
-  uint16_t rnti;
   /// RNTI type
   uint8_t rnti_type;
   /// Cell ID
@@ -240,6 +216,8 @@ typedef struct {
   int16_t Po_SRS;
   /// num active cba group
   uint8_t num_active_cba_groups;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
   /// num dci found for cba
   //uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
@@ -265,22 +243,26 @@ typedef struct {
   uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
+  /// MCS table for this DLSCH
+  uint8_t mcs_table;
   /// MCS format for this DLSCH
   uint8_t mcs;
   /// Qm (modulation order) for this DLSCH
   uint8_t Qm;
+  /// target code rate R x 1024
+  uint16_t R;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t w[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  int16_t *w[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   //double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// LDPC processing buffers
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_DLSCH_SEGMENTS];
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments
@@ -295,12 +277,20 @@ typedef struct {
   int8_t delta_PUCCH;
   /// Number of soft channel bits
   uint32_t G;
+  /// Start PRB of BWP
+  uint16_t BWPStart;
+  /// Number of PRBs in BWP
+  uint16_t BWPSize;
   /// Current Number of RBs
   uint16_t nb_rb;
   /// Starting RB number
   uint16_t start_rb;
   /// Number of Symbols
   uint16_t nb_symbols;
+  /// DMRS symbol positions
+  uint16_t dlDmrsSymbPos;
+  /// DMRS Configuration Type
+  uint8_t dmrsConfigType;
   /// Starting Symbol number
   uint16_t start_symbol;
   /// Current subband PMI allocation
