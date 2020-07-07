@@ -139,7 +139,7 @@ int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfa
 void UE_config_stub_pnf(void);
 
 // open an SCTP socket with a standalone PNF module
-void ue_init_standalone_socket(const char *addr, int port);
+void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port);
 
 // read from standalone pnf socket call corresponding memcpy functions
 void *ue_standalone_pnf_task(void *context);

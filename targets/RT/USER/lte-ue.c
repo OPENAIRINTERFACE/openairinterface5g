@@ -428,8 +428,9 @@ void init_UE_stub_single_thread(int nb_inst,
 void init_UE_standalone_thread()
 {
   const char *standalone_addr = "127.0.0.1"; // these two lines go into init
-  int standalone_port = 3289;
-  ue_init_standalone_socket(standalone_addr, standalone_port);
+  int standalone_tx_port = 3211;
+  int standalone_rx_port = 3212;
+  ue_init_standalone_socket(standalone_addr, standalone_tx_port, standalone_rx_port);
 
   pthread_t thread;
   if (pthread_create(&thread, NULL, ue_standalone_pnf_task, NULL) != 0) {
@@ -442,7 +443,7 @@ void init_UE_stub(int nb_inst,
                   int uecap_xer_in,
                   char *emul_iface)
 {
-  int         inst;
+  int inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active

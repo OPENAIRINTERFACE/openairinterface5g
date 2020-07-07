@@ -50,8 +50,8 @@ queue_t hi_dci0_req_queue;
 
 int current_sfn_sf;
 
-static int ue_sock_descriptor = -1;
-struct sockaddr_in server_address;
+static int ue_tx_sock_descriptor = -1;
+static int ue_rx_sock_descriptor = -1;
 
 extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
 //extern int timer_subframe;
@@ -1115,42 +1115,81 @@ void UE_config_stub_pnf(void) {
   }
 }
 
-void ue_init_standalone_socket(const char *addr, int port)
+void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
 {
-  int addr_len = sizeof(server_address);
-  memset(&server_address, 0, addr_len);
-  server_address.sin_family = AF_INET;
-  server_address.sin_port = htons(port);
+  {
+    struct sockaddr_in server_address;
+    int addr_len = sizeof(server_address);
+    memset(&server_address, 0, addr_len);
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(tx_port);
 
-  int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
-  if (sd < 0) {
-    LOG_E(MAC, "Socket creation error standalone PNF\n");
-    return;
+    int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
+    if (sd < 0)
+    {
+      LOG_E(MAC, "Socket creation error standalone PNF\n");
+      return;
+    }
+
+    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
+    {
+      LOG_E(MAC, "Invalid standalone PNF Address\n");
+      close(sd);
+      return;
+    }
+
+    // Using connect to use send() instead of sendto()
+    if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0)
+    {
+      LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+      close(sd);
+      return;
+    }
+    LOG_I(MAC, "Succeeded Now\n");
+    assert(ue_tx_sock_descriptor == -1);
+    ue_tx_sock_descriptor = sd;
   }
 
-  if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0) {
-    LOG_E(MAC, "Invalid standalone PNF Address\n");
-    close(sd);
-    return;
-  }
+  {
+    struct sockaddr_in server_address;
+    int addr_len = sizeof(server_address);
+    memset(&server_address, 0, addr_len);
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(rx_port);
 
-  // Using connect to use send() instead of sendto()
-  while (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0) {
-    LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
-    sleep(1);
+    int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
+    if (sd < 0)
+    {
+      LOG_E(MAC, "Socket creation error standalone PNF\n");
+      return;
+    }
+
+    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
+    {
+      LOG_E(MAC, "Invalid standalone PNF Address\n");
+      close(sd);
+      return;
+    }
+
+    if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0)
+    {
+      LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+      close(sd);
+      return;
+    }
+    LOG_I(MAC, "Succeeded Now\n");
+    assert(ue_rx_sock_descriptor == -1);
+    ue_rx_sock_descriptor = sd;
   }
-  LOG_I(MAC, "Succeeded Now\n");
-  assert(ue_sock_descriptor == -1);
-  ue_sock_descriptor = sd;
 }
 
 void *ue_standalone_pnf_task(void *context)
 {
-
+  struct sockaddr_in server_address;
   int addr_len = sizeof(server_address);
   char buffer[1024];
 
-  int sd = ue_sock_descriptor;
+  int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
   while (true)
   {
@@ -1282,27 +1321,27 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     {
     case NFAPI_RACH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "RACH_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "RACH_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "CRC_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "CRC_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "RX_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "RX_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "CQI_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "CQI_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_HARQ_INDICATION:
-      LOG_D(MAC, "HARQ_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "HARQ_IND sent to Proxy, Size: %d\n", encoded_size);
       encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
       break;
     case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
-      LOG_D(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     default:
       LOG_E(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
@@ -1313,7 +1352,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       LOG_E(MAC, "standalone pack failed\n");
       return;
     }
-    if (send(ue_sock_descriptor, buffer, encoded_size, 0) < 0)
+    if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
     {
       LOG_E(MAC, "Send Proxy UE failed\n");
       return;
@@ -1323,8 +1362,8 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
   void send_standalone_dummy()
   {
     static const uint16_t dummy[] = {0, 0};
-    LOG_D(MAC, "Dummy sent to Proxy, Size: %zu\n", sizeof(dummy));
-    if (send(ue_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
+    LOG_E(MAC, "Dummy sent to Proxy, Size: %zu\n", sizeof(dummy));
+    if (send(ue_tx_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
     {
       LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));
       return;
