@@ -1171,7 +1171,7 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
       return;
     }
 
-    if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0)
+    if (bind(sd, (struct sockaddr *)&server_address, addr_len) < 0)
     {
       LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
       close(sd);
@@ -1362,7 +1362,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
   void send_standalone_dummy()
   {
     static const uint16_t dummy[] = {0, 0};
-    LOG_E(MAC, "Dummy sent to Proxy, Size: %zu\n", sizeof(dummy));
+    // LOG_E(MAC, "Dummy sent to Proxy, Size: %zu\n", sizeof(dummy));
     if (send(ue_tx_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
     {
       LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));

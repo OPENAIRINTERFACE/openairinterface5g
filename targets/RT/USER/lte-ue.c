@@ -1049,8 +1049,8 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     uint64_t subframe_start = clock_usec();
-    LOG_I(MAC, "subframe elapsed %" PRIu64 "usec\n",
-          subframe_start - last_subframe_start);
+    // LOG_I(MAC, "subframe elapsed %" PRIu64 "usec\n",
+    //       subframe_start - last_subframe_start);
     last_subframe_start = subframe_start;
 
     last_sfn_sf = sfn_sf;
