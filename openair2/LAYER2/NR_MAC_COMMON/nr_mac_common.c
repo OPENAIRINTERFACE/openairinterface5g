@@ -31,6 +31,7 @@
  */
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include <limits.h>
 
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
@@ -1879,7 +1880,8 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 1;
 }
 
-uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
+                     NR_CellGroupConfig_t *secondaryCellGroup,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
@@ -1887,9 +1889,15 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
                      int bwp_id) {
 
   uint16_t size = 0;
+  uint16_t numRBG = 0;
+  long rbg_size_config;
+  int num_entries = 0;
+  int pusch_antenna_ports = 1; // TODO hardcoded number of antenna ports for pusch
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
   NR_PDSCH_Config_t *pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+  NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
+  NR_SRS_Config_t *srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
 
   switch(format) {
     /*Only sizes for 0_0 and 1_0 are correct at the moment*/
@@ -1897,30 +1905,197 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      size += nr_dci_size(secondaryCellGroup,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id) - size; // Padding to match 1_0 size
+      size += nr_dci_size(scc,secondaryCellGroup,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id) - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
       break;
 
     case NR_UL_DCI_FORMAT_0_1:
-      /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, SRS request 2 --17
-      size += 17;
+      /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, ULSCH indicator 1 --16
+      size += 16;
       // Carrier indicator
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
+        dci_pdu->carrier_indicator.nbits=3;
+        size += dci_pdu->carrier_indicator.nbits;
+      }
       // UL/SUL indicator
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->supplementaryUplink != NULL) {
+        dci_pdu->carrier_indicator.nbits=1;
+        size += dci_pdu->ul_sul_indicator.nbits;
+      }
       // BWP Indicator
+      uint8_t n_ul_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+      if (n_ul_bwp < 2)
+        dci_pdu->bwp_indicator.nbits = n_ul_bwp;
+      else
+        dci_pdu->bwp_indicator.nbits = 2;
+      size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup->rbg_Size != NULL)
+        rbg_size_config = 1;
+      else
+        rbg_size_config = 0;
+      numRBG = getNRBG(NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+                       NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+                       rbg_size_config);
+      if (pusch_Config->resourceAllocation == 0)
+        dci_pdu->frequency_domain_assignment.nbits = numRBG;
+      else if (pusch_Config->resourceAllocation == 1)
+        dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      else
+        dci_pdu->frequency_domain_assignment.nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
+      size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
-      // VRB to PRB mapping
+      if (pusch_Config->pusch_TimeDomainAllocationList==NULL) {
+        if (ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList==NULL)
+          num_entries = 16; // num of entries in default table
+        else
+          num_entries = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count;
+      }
+      else
+        num_entries = pusch_Config->pusch_TimeDomainAllocationList->choice.setup->list.count;
+      dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
+      size += dci_pdu->time_domain_assignment.nbits;
       // Frequency Hopping flag
+      if ((pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)) {
+        dci_pdu->frequency_hopping_flag.nbits = 1;
+        size += 1;
+      }
       // 1st DAI
+      if (secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook==NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
+        dci_pdu->dai[0].nbits = 2;
+      else
+        dci_pdu->dai[0].nbits = 1;
+      size += dci_pdu->dai[0].nbits;
       // 2nd DAI
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) { //TODO not sure about that
+        dci_pdu->dai[1].nbits = 2;
+        size += dci_pdu->dai[1].nbits;
+      }
       // SRS resource indicator
+      if (pusch_Config->txConfig != NULL){
+        int count=0;
+        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
+          for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
+            if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_codebook)
+              count++;
+          }
+          if (count>1)
+            dci_pdu->srs_resource_indicator.nbits = 1;
+        }
+        else {
+          int lmin,Lmax = 0;
+          int lsum = 0;
+          if ( secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig != NULL) {
+            if ( secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers != NULL)
+              Lmax = *secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+            else
+              AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
+          }
+          else
+            AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
+          for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
+            if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_nonCodebook)
+              count++;
+            if (count < Lmax) lmin = count;
+            else lmin = Lmax;
+            for (int k=1;k<=lmin;k++) {
+              lsum += binomial(count,k);
+            }
+          }
+          dci_pdu->srs_resource_indicator.nbits = (int)ceil(log2(lsum));
+        }
+      }
+      size += dci_pdu->srs_resource_indicator.nbits;
       // Precoding info and number of layers
+      long transformPrecoder;
+      if (pusch_Config->transformPrecoder == NULL){
+        // if transform precoder is null, apply the values from msg3
+        if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
+          transformPrecoder = 1;
+        else
+          transformPrecoder = 0;
+      }
+      else
+        transformPrecoder = *pusch_Config->transformPrecoder;
+      if (pusch_Config->txConfig != NULL){
+        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
+          if (pusch_antenna_ports > 1) {
+            if (pusch_antenna_ports == 4) {
+              if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank>1))
+                dci_pdu->precoding_information.nbits = 6-(*pusch_Config->codebookSubset);
+              else {
+                if(*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent)
+                  dci_pdu->precoding_information.nbits = 2;
+                else
+                  dci_pdu->precoding_information.nbits = 5-(*pusch_Config->codebookSubset);
+              }
+            }
+            else {
+              AssertFatal(pusch_antenna_ports==2,"Not valid number of antenna ports");
+              if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank==2))
+                dci_pdu->precoding_information.nbits = 4-(*pusch_Config->codebookSubset);
+              else
+                dci_pdu->precoding_information.nbits = 3-(*pusch_Config->codebookSubset);
+            }
+          }
+        }
+      }
+      size += dci_pdu->precoding_information.nbits;
       // Antenna ports
+      NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = NULL;
+      int xa=0;
+      int xb=0;
+      if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL){
+        NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
+        xa = ul_ant_bits(NR_DMRS_UplinkConfig,transformPrecoder);
+      }
+      if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL){
+        NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+        xb = ul_ant_bits(NR_DMRS_UplinkConfig,transformPrecoder);
+      }
+      if (xa>xb)
+        dci_pdu->antenna_ports.nbits = xa;
+      else
+        dci_pdu->antenna_ports.nbits = xb;
+      size += dci_pdu->antenna_ports.nbits;
+      // SRS request
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
+        dci_pdu->srs_request.nbits = 2;
+      else
+        dci_pdu->srs_request.nbits = 3;
+      size += dci_pdu->srs_request.nbits;
       // CSI request
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig != NULL) {
+        if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize != NULL) {
+          dci_pdu->csi_request.nbits = *secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize;
+          size += dci_pdu->csi_request.nbits;
+        }
+      }
       // CBGTI
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
+        int num = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
+        dci_pdu->cbgti.nbits = 2 + (num<<1);
+        size += dci_pdu->cbgti.nbits;
+      }
       // PTRS - DMRS association
+      if ( (NR_DMRS_UplinkConfig->phaseTrackingRS == NULL && transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) ||
+           transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled || (*pusch_Config->maxRank==1) )
+        dci_pdu->ptrs_dmrs_association.nbits = 0;
+      else
+        dci_pdu->ptrs_dmrs_association.nbits = 2;
+      size += dci_pdu->ptrs_dmrs_association.nbits;
       // beta offset indicator
+      if (pusch_Config->uci_OnPUSCH!=NULL){
+        if (pusch_Config->uci_OnPUSCH->choice.setup->betaOffsets->present == NR_UCI_OnPUSCH__betaOffsets_PR_dynamic) {
+          dci_pdu->beta_offset_indicator.nbits = 2;
+          size += dci_pdu->beta_offset_indicator.nbits;
+        }
+      }
       // DMRS sequence init
+      if (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) {
+         dci_pdu->dmrs_sequence_initialization.nbits = 1;
+         size += dci_pdu->dmrs_sequence_initialization.nbits;
+      }
       break;
 
     case NR_DL_DCI_FORMAT_1_0:
@@ -1946,10 +2121,10 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
         dci_pdu->bwp_indicator.nbits = 2;
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
-      long rbg_size_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
-      uint16_t numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                                NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
-                                rbg_size_config);
+      rbg_size_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
+      numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+                       NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275),
+                       rbg_size_config);
       if (pdsch_config->resourceAllocation == 0)
         dci_pdu->frequency_domain_assignment.nbits = numRBG;
       else if (pdsch_config->resourceAllocation == 1)
@@ -1958,7 +2133,6 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
         dci_pdu->frequency_domain_assignment.nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment (see table 5.1.2.1.1-1 in 38.214
-      int num_entries;
       if (pdsch_config->pdsch_TimeDomainAllocationList==NULL) {
         if (bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList==NULL)
           num_entries = 16; // num of entries in default table
@@ -2066,6 +2240,27 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
   }
 
   return size;
+}
+
+int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrecoder) {
+
+  uint8_t type,maxl;
+  if(NR_DMRS_UplinkConfig->dmrs_Type == NULL)
+    type = 1;
+  else
+    type = 2;
+  if(NR_DMRS_UplinkConfig->maxLength == NULL)
+    maxl = 1;
+  else
+    maxl = 2;
+  if (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled)
+    return( maxl+type+1);
+  else {
+    if (type==1)
+      return (maxl<<1);
+    else
+      AssertFatal(1==0,"DMRS type not valid for this choice");
+  }
 }
 
 int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
@@ -2208,3 +2403,20 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
   AssertFatal(1==0,"Shouldn't get here\n");
   return(-1);
 }
+
+
+int binomial(int n, int k) {
+  int c = 1, i;
+
+  if (k > n-k) 
+    k = n-k;
+
+  for (i = 1; i <= k; i++, n--) {
+    if (c/i > UINT_MAX/n) // return 0 on overflow
+      return 0;
+
+    c = c / i * n + c % i * n / i;
+  }
+  return c;
+}
+

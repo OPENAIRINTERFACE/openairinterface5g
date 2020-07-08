@@ -251,9 +251,8 @@ typedef struct {
   uint8_t     short_messages; //8 bits
   uint8_t     tb_scaling; //2 bits
   uint8_t     pucch_resource_indicator; //3 bits
-  uint8_t     dmrs_sequence_initialization; //1 bit
   uint8_t     system_info_indicator; //1 bit
-
+  uint8_t     ulsch_indicator;
   uint8_t     slot_format_indicator_count;
   uint8_t     *slot_format_indicators;
  
@@ -290,6 +289,7 @@ typedef struct {
   dci_field_t cloded_loop_indicator; //variable
   dci_field_t ul_sul_indicator; //variable
   dci_field_t antenna_ports; //variable
+  dci_field_t dmrs_sequence_initialization;
   dci_field_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
 
 } dci_pdu_rel15_t;

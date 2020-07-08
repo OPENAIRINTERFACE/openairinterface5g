@@ -734,6 +734,19 @@ void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
 
   switch(format) {
+    case NR_UL_DCI_FORMAT_0_1:
+      // format indicator
+      dci_pdu_rel15->format_indicator = 0;
+      // carrier indicator
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL)
+        AssertFatal(1==0,"Cross Carrier Scheduling Config currently not supported\n");
+      // supplementary uplink
+      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->supplementaryUplink != NULL)
+        AssertFatal(1==0,"Supplementary Uplink currently not supported\n");
+      // SRS request
+      dci_pdu_rel15->srs_request.val = 0;
+      dci_pdu_rel15->ulsch_indicator = 1;
+      break;
     case NR_DL_DCI_FORMAT_1_1:
       // format indicator
       dci_pdu_rel15->format_indicator = 1;
@@ -782,16 +795,15 @@ void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
     // CBGTI and CBGFI
     if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL)
       AssertFatal(1==0,"CBG transmission currently not supported\n");
-    // dmrs sequence initialization
-    dci_pdu_rel15->dmrs_sequence_initialization = 0; // FIXME no information on what this bit should be in 38.212
     break;
   default :
-    AssertFatal(1==0,"Prepare dci currently only implemented for 1_1 \n");
+    AssertFatal(1==0,"Prepare dci currently only implemented for 1_1 and 0_1 \n");
   }
 }
 
 
-void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
+void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
+                        NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
@@ -805,7 +817,7 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 
     uint64_t *dci_pdu = (uint64_t *)pdcch_pdu_rel15->dci_pdu.Payload[d];
-    int dci_size = nr_dci_size(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],N_RB,bwp_id);
+    int dci_size = nr_dci_size(scc,secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],rnti_types[d],N_RB,bwp_id);
     pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d] = dci_size;
     AssertFatal(pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
 
@@ -1119,6 +1131,16 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
 	    }
       break;
 
+    case NR_UL_DCI_FORMAT_0_1:
+      switch(rnti_types[d])
+	{
+	case NR_RNTI_C:
+          // Frequency domain resource assignment
+             // add potential MSB for N_UL_HOP
+	  break;
+	    }
+      break;
+
     case NR_DL_DCI_FORMAT_1_1:
       // Indicating a DL DCI format 1bit
       pos=1;
@@ -1224,7 +1246,7 @@ void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
 
       // DMRS sequence init
       pos+=1;
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization&0x1)<<(dci_size-pos);
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->dmrs_sequence_initialization.val&0x1)<<(dci_size-pos);
     }
   }
 }

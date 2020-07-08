@@ -3530,7 +3530,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     dci_pdu_rel15->cbgfi.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->cbgfi.nbits)-1);
     // DMRS sequence init
     pos+=1;
-    dci_pdu_rel15->dmrs_sequence_initialization = (*dci_pdu>>(dci_size-pos))&0x1;
+    dci_pdu_rel15->dmrs_sequence_initialization.val = (*dci_pdu>>(dci_size-pos))&0x1;
     break;
 
   }

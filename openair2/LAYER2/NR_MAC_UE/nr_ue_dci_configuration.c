@@ -223,7 +223,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
         rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
         rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); // NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
         rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-        rel15->dci_length = nr_dci_size(mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
+        rel15->dci_length = nr_dci_size(scc,mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
         for (int i = 0; i < sps; i++)
         if ((monitoringSymbolsWithinSlot >> (sps - 1 - i)) & 1) {
           rel15->coreset.StartSymbolIndex = i;
@@ -243,7 +243,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
       rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
-      rel15->dci_length = nr_dci_size(mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
+      rel15->dci_length = nr_dci_size(scc,mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
       // get UE-specific search space
       for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[0][0][ss_id] != NULL; ss_id++){
         uss = mac->SSpace[0][0][ss_id];
