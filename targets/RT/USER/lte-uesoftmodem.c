@@ -99,7 +99,7 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 #ifdef UESIM_EXPANSION
   uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
 #endif
-uint16_t sf_ahead=2;
+uint16_t sf_ahead=1;
 int tddflag;
 char *emul_iface;
 
