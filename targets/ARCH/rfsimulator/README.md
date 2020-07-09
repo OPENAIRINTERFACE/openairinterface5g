@@ -96,11 +96,19 @@ sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-
 ### Launch UE in another window
 
 ```bash
-sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path ../../../ci-scripts/rrc-files 
+sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path .
 ```
-Note:
+
+Notes:
+
 1. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts
-2. the --rrc_config_path parameter can be omitted (but not necessarily) if the gNB and nrUE run on the same host, in which case the gNB provides the nrUE with the necessary rrc configuration
+2. the --rrc_config_path parameter SHALL specify where the 2 RAW files are located (`rbconfig.raw` and `reconfig.raw`).
+   - If you are running on the same machine and launched the 2 executables (`nr-softmodem` and `nr-uesoftmodem`) from the same directory, nothing has to be done.
+   - If you launched the 2 executables from 2 different folders, just point to the location where you launched the `nr-softmodem`:
+     * `sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path /the/path/where/you/launched/nr-softmodem`
+   - If you are not running on the same machine or launched the 2 executables from 2 different folders, you need to **COPY** the 2 raw files
+     * `scp usera@machineA:/the/path/where/you/launched/nr-softmodem/r*config.raw userb@machineB:/the/path/where/you/will/launch/nr-uesoftmodem/`
+     * Obviously this operation SHALL be done before launching the `nr-uesoftmodem` executable.
 3. to enable the noS1 mode --noS1 and --nokrnmod 1 options should be added to the command line
 
 
