@@ -2560,14 +2560,14 @@ class OaiCiTest():
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
-			result = re.search("DL Carrier Frequency/ARFCN : (?P<carrier_frequency>\d{1,15}/\d{1,4})", str(line))
+			result = re.search("DL Carrier Frequency/ARFCN : \-*(?P<carrier_frequency>\d{1,15}/\d{1,4})", str(line))
 			if result is not None:
 				try:
 					freq = result.group('carrier_frequency')
 					new_freq = re.sub('/[0-9]+','',freq)
 					float_freq = float(new_freq) / 1000000
-					HTMLSethtmlUEFailureMsg(HTMLGethtmlUEFailureMsg() + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz')
-					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + freq + '\033[0m')
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz')
+					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + str(freq) + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "    DL Carrier Frequency not found" + '\033[0m')
 			result = re.search("AllowedMeasBandwidth : (?P<allowed_bandwidth>\d{1,7})", str(line))
