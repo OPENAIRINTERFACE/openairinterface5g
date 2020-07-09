@@ -791,7 +791,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
 
   if (LOG_DUMPFLAG(PRACH)) {
-    int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));  
+    //int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     //    if (en>60) {
       int k = (12*n_ra_prb) - 6*fp->N_RB_UL;
       
