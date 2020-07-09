@@ -1979,8 +1979,10 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
             if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_codebook)
               count++;
           }
-          if (count>1)
+          if (count>1) {
             dci_pdu->srs_resource_indicator.nbits = 1;
+            size += dci_pdu->srs_resource_indicator.nbits;
+          }
         }
         else {
           int lmin,Lmax = 0;
@@ -2003,11 +2005,12 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
             }
           }
           dci_pdu->srs_resource_indicator.nbits = (int)ceil(log2(lsum));
+          size += dci_pdu->srs_resource_indicator.nbits;
         }
       }
-      size += dci_pdu->srs_resource_indicator.nbits;
       // Precoding info and number of layers
       long transformPrecoder;
+      dci_pdu->precoding_information.nbits = 0;
       if (pusch_Config->transformPrecoder == NULL){
         // if transform precoder is null, apply the values from msg3
         if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
