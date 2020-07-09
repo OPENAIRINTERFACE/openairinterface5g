@@ -1071,9 +1071,9 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
       <main_exec_args>-s0 -S1 -n1000 -R106
                       -s0 -S1 -n10 -I -R106
-		              -s0 -S1 -n1000 -R217
+		      -s0 -S1 -n1000 -R217
                       -s0 -S1 -n10 -I -R217
-		              -s0 -S1 -n1000 -R273
+		      -s0 -S1 -n1000 -R273
                       -s0 -S1 -n10 -I -R273</main_exec_args>
       <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
@@ -1091,8 +1091,11 @@
                                  (Test6: 217 PRB 100 PDSCH-PRBs),
                                  (Test7: 217 PRB 80 PDSCH-Offset),
                                  (Test8: 217 PRB 100 PDSCH-PRBs 110 PDSCH-Offset),
-                                 (Test9: 106 PRBs 50 PDSCH-PRBs MCS Index 27)
-                                 (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16)</desc>
+                                 (Test9: 106 PRBs 50 PDSCH-PRBs MCS Index 27),
+                                 (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16),
+                                 (Test11: HARQ test 25% TP (4 rounds),
+                                 (Test12: HARQ test 33% TP (3 rounds),
+                                 (Test13: HARQ test 50% TP (2 rounds)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1108,8 +1111,11 @@
                   -n100 -R217 -a80 -s5
                   -n100 -R217 -a110 -s5 -b100
                   -n100 -e27 -s30 
-                  -n100 -e16 -s10</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10</tags>
+                  -n100 -e16 -s10 
+                  -n100 -s1 -t25
+                  -n100 -s1 -t33
+                  -n100 -s1 -t50</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1217,11 +1223,9 @@
 		      -R 106 -i 1 -P 2 -b 11 -s6 -n1000
 		      -R 106 -i 1 -P 2 -q8 -b 12 -s-3 -n1000
 		      -R 106 -i 1 -P 2 -q8 -b 19 -s-3 -n1000
-		      -R 106 -i 1 -P 2 -q8 -b 19 -s-3 -n1000
 		      -R 106 -i 1 -P 2 -q8 -b 32 -s-3 -n1000
 		      -R 106 -i 1 -P 2 -q16 -b 32 -s-3 -n1000
-		      -R 106 -i 1 -P 2 -q16 -b 64 -s-3 -n1000
-                      </main_exec_args>
+		      -R 106 -i 1 -P 2 -q16 -b 64 -s-3 -n1000</main_exec_args>
       <tags>nr_pucchsim.test1 nr_pucchsim.test2 nr_pucchsim.test3 nr_pucchsim.test4 nr_pucchsim.test5 nr_pucchsim.test6 nr_pucchsim.test7 nr_pucchsim.test8 nr_pucchsim.test9 nr_pucchsim.test10 nr_pucchsim.test11 nr_pucchsim.test12 nr_pucchsim.test13 nr_pucchsim.test14 nr_pucchsim.test15 nr_pucchsim.test16 nr_pucchsim.test17</tags>
       <search_expr_true>PUCCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1292,19 +1296,21 @@
 
     <testCase id="015112">
       <class>execution</class>
-      <desc>nr_prachsim Test cases. (Test1: 106 PRBs),
-                                    (Test2: 217 PRBs),
-                                    (Test3: 273 PRBs)</desc>
+      <desc>nr_prachsim Test cases. (Test1: 106 PRBs - Prach format A2),
+                                    (Test2: 217 PRBs - Prach format A2),
+                                    (Test3: 273 PRBs - Prach format A2),
+				    (Test4: 106 PRBs - Prach format 0)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_prachsim.Rel15</main_exec>
-      <main_exec_args>-a -s -30 -n 100 -p 16 -R 106
-                      -a -s -30 -n 100 -p 16 -R 217
-                      -a -s -30 -n 100 -p 16 -R 273</main_exec_args>
-      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3</tags>
+      <main_exec_args>-a -s -30 -n 100 -p 63 -R 106
+                      -a -s -30 -n 100 -p 63 -R 217
+                      -a -s -30 -n 100 -p 63 -R 273
+		      -a -s -30 -n 100 -p 63 -R 106 -c 4</main_exec_args>
+      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4</tags>
       <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

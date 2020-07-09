@@ -98,6 +98,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                uint8_t thread_id,
                                int gNB_id) {
 
+  LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
+
   uint32_t available_bits;
   uint8_t mod_order, cwd_index, num_of_codewords, l;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
@@ -113,7 +115,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint16_t ul_dmrs_symb_pos;
   uint8_t L_ptrs, K_ptrs; // PTRS parameters
   uint16_t beta_ptrs; // PTRS parameter related to power control
-  uint8_t no_data_in_dmrs = 1;
 
   NR_UE_ULSCH_t *ulsch_ue;
   NR_UL_UE_HARQ_t *harq_process_ul_ue=NULL;
@@ -125,7 +126,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   Nid_cell = 0;
   N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   number_dmrs_symbols = 0;
-
 
   for (cwd_index = 0;cwd_index < num_of_codewords; cwd_index++) {
 
@@ -147,10 +147,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
 
-    if(no_data_in_dmrs)
-      nb_dmrs_re_per_rb = 12;
-    else
-      nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4);
+    nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data;
 
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
 
@@ -321,7 +318,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     
 
     uint8_t k_prime=0;
-    uint8_t is_dmrs, is_ptrs;
+    uint8_t is_dmrs, is_ptrs, is_dmrs_symbol;
     uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+number_of_symbols; l++) {
@@ -336,8 +333,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         is_dmrs = 0;
         is_ptrs = 0;
+        is_dmrs_symbol = 0;
 
         if((ul_dmrs_symb_pos >> l) & 0x01) {
+          is_dmrs_symbol = 1;
           if (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%frame_parms->ofdm_symbol_size))
             is_dmrs = 1;
         }
@@ -388,7 +387,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else if (((ul_dmrs_symb_pos >> l) & 0x01) == 0) {
+        } else if (!is_dmrs_symbol || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];

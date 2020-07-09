@@ -757,11 +757,11 @@ typedef struct {
 #define MAX_NR_OF_SPATIAL_RELATION_INFOS          (8)
 
 typedef enum {
-  pucch_format0_nr  = 0,
-  pucch_format1_nr  = 1,
-  pucch_format2_nr  = 2,
-  pucch_format3_nr  = 3,
-  pucch_format4_nr  = 4,
+  pucch_format0_nr  = 1,
+  pucch_format1_nr  = 2,
+  pucch_format2_nr  = 3,
+  pucch_format3_nr  = 4,
+  pucch_format4_nr  = 5
 } pucch_format_nr_t;
 
 typedef enum {

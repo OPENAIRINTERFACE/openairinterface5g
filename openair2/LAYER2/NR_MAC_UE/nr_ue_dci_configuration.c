@@ -46,6 +46,7 @@
 #endif
 #define LOG_DCI_PARM(a...) LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci)" a)
 
+dci_pdu_rel15_t *def_dci_pdu_rel15;
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
 
@@ -63,7 +64,8 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot) {
 
-  NR_ServingCellConfig_t *scd = mac->scd;
+  def_dci_pdu_rel15 = calloc(1,sizeof(dci_pdu_rel15_t));
+
   NR_BWP_Downlink_t *bwp;
   NR_BWP_DownlinkCommon_t *bwp_Common;
   NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated;
@@ -76,6 +78,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   NR_ControlResourceSet_t *coreset;
 
   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
+  NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
 
   uint8_t bwp_id = 1;
   int ss_id, sps;
@@ -167,7 +170,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     AssertFatal(mac->scc != NULL, "scc is null\n");
 
     scc = mac->scc;
-    rel15->dci_format = NR_DL_DCI_FORMAT_1_0;
+    rel15->dci_format = NR_DL_DCI_FORMAT_1_1;
 
     // CoReSet configuration
     coreset = mac->coreset[0][0];
@@ -219,9 +222,9 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); // NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-      rel15->dci_length = nr_dci_size(rel15->dci_format, NR_RNTI_RA, rel15->BWPSize);
+      rel15->dci_length = nr_dci_size(mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
 
-      for (int i = 0; i < sps; i++){
+      for (int i = 0; i < sps; i++) {
         if ((monitoringSymbolsWithinSlot >> (sps - 1 - i)) & 1) {
           rel15->coreset.StartSymbolIndex = i;
           break;
@@ -240,7 +243,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
       rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
-      rel15->dci_length = nr_dci_size(rel15->dci_format, NR_RNTI_C, rel15->BWPSize);
+      rel15->dci_length = nr_dci_size(mac->scg,def_dci_pdu_rel15,rel15->dci_format,NR_RNTI_C,rel15->BWPSize,bwp_id);
       // get UE-specific search space
       for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[0][0][ss_id] != NULL; ss_id++){
         uss = mac->SSpace[0][0][ss_id];
@@ -264,10 +267,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       rel15->coreset.scrambling_rnti = mac->t_crnti;
     } else {
       rel15->coreset.pdcch_dmrs_scrambling_id = *scc->physCellId;
-      if(mac->ra_state == WAIT_RAR)
-        rel15->coreset.scrambling_rnti = 0;
-      else
-        rel15->coreset.scrambling_rnti = rel15->rnti;
+      rel15->coreset.scrambling_rnti = 0;
     }
 
     if (add_dci){

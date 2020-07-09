@@ -61,7 +61,7 @@
 #include "NR_MIB.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "NR_PhysicalCellGroupConfig.h"
-#include "NR_SpCellConfig.h"
+#include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
 
 
@@ -155,7 +155,7 @@ typedef enum {
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_ServingCellConfig_t          *scd;
+  NR_CellGroupConfig_t            *scg;
   NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
   int                             servCellIndex;
   ////  MAC config
