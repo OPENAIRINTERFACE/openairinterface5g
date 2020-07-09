@@ -370,6 +370,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       }
 
       m_0 = get_ics_pucch(pucch_resource, format);
+      AssertFatal(m_0 >= 0, "Invalid m_0\n");
       if (format == pucch_format3_nr) {
         if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3->choice.setup->additionalDMRS[0] == 1) {
           index_additional_dmrs = I_PUCCH_ADDITIONAL_DMRS;
@@ -699,7 +700,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-  if (mac->DLbwp[0] == NULL) return;
+  if (mac->DLbwp[0] == NULL) return 0;
 
   if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
     two_transport_blocks = TRUE;
@@ -897,7 +898,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
     /* No resource set has been already configured so pucch_configCommon from Sib1 should be used in this case */
 
     if (ue->UE_mode[gNB_id] != PUSCH) {
-      *initial_pucch_id = mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
+      *initial_pucch_id = mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon[0];
       if (*initial_pucch_id >= NB_INITIAL_PUCCH_RESOURCE) {
         LOG_E(PHY,"PUCCH Invalid initial resource index : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         *initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
@@ -1060,7 +1061,7 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
   /* look for the first resource set which supports uci_size number of bits for payload */
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
-      if (uci_size <= mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1 + 1) {
+      if (uci_size <= mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1[0] + 1) {
         NR_TST_PHY_PRINTF("PUCCH found resource set %d \n",  pucch_resource_set_id);
         return (pucch_resource_set_id);
         break;
@@ -1093,35 +1094,36 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
 {
   pucch_format_nr_t selected_pucch_format;
   pucch_format_nr_t selected_pucch_format_second;
-  NR_SetupRelease_PUCCH_FormatConfig_t *identified_format;
+  NR_SetupRelease_PUCCH_FormatConfig_t *identified_format = NULL;
 
-  if (format_pucch != pucch_format0_nr) {
-    switch (format_pucch) {
-      case pucch_format1_nr:
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL)
-        identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1;
-      break;
+  switch (format_pucch) {
+    case pucch_format1_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format1;
+    break;
 
-      case pucch_format2_nr:
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format2 != NULL)
-        identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format2;
-      break;
+    case pucch_format2_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format2 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format2;
+    break;
 
-      case pucch_format3_nr:
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3 != NULL)
-        identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3;
-      break;
+    case pucch_format3_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format3;
+    break;
 
-      case pucch_format4_nr:
-      if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4 != NULL)
-        identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4;
-      break;
-    }
+    case pucch_format4_nr:
+    if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4 != NULL)
+      identified_format = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->format4;
+    break;
 
-    if (identified_format->choice.setup->nrofSlots != 1) {
-      LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-      return (FALSE);
-    }
+    default:
+    break;
+  }
+
+  if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
+    LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+    return (FALSE);
   }
 
   if (nb_symbols_for_tx <= 2) {
@@ -1290,6 +1292,7 @@ uint8_t get_nb_symbols_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_n
     case pucch_format4_nr:
       return pucch_resource->format.choice.format4->nrofSymbols;
   }
+  return 0;
 }
 
 uint16_t get_starting_symb_idx(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type)
@@ -1310,6 +1313,7 @@ uint16_t get_starting_symb_idx(NR_PUCCH_Resource_t *pucch_resource, pucch_format
     case pucch_format4_nr:
       return pucch_resource->format.choice.format4->startingSymbolIndex;
   }
+  return 0;
 }
 
 int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_type)
@@ -1320,7 +1324,11 @@ int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_
 
     case pucch_format1_nr:
       return pucch_resource->format.choice.format1->initialCyclicShift;
+
+    default:
+      return -1;
   }
+  return -1;
 }
 
 NR_PUCCH_Resource_t *select_resource_by_id(int resource_id, NR_PUCCH_Config_t *pucch_config)
