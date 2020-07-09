@@ -1054,19 +1054,18 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     last_subframe_start = subframe_start;
 
     last_sfn_sf = sfn_sf;
-    proc->subframe_rx = NFAPI_SFNSF2SF(sfn_sf);
-    proc->frame_rx = NFAPI_SFNSF2SFN(sfn_sf);
-
     // FDD and TDD tx timing settings.
     // XXX:It is the result of timing adjustment in debug.
-    // It is necessary to investigate why this will work in the future.
-    proc->subframe_tx = (proc->subframe_rx + sf_ahead) % 10;
-    proc->frame_tx = proc->frame_rx + (proc->subframe_rx > (9 - sf_ahead) ? 1 : 0);
+    proc->subframe_tx = NFAPI_SFNSF2SF(sfn_sf);
+    proc->frame_tx = NFAPI_SFNSF2SFN(sfn_sf);
+
+
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
     nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
     nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
+
     if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
       uint64_t start = clock_usec();
       uint64_t deadline = start + 10000;
@@ -1149,31 +1148,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       }
     }
 
-    //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++) {
-    // if (sfn_sf_changed) {
-    // sfn_sf_changed = false;
     for (ue_index = 0; ue_index < ue_num; ue_index++) {
-      ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index;
-      UE = PHY_vars_UE_g[ue_Mod_id][0];
-      //LOG_D(MAC, "UE_phy_stub_standalone_pnf_task, NB_UE_INST:%d, Mod_id:%d \n", NB_UE_INST, Mod_id);
-      //UE = PHY_vars_UE_g[Mod_id][0];
-      lte_subframe_t sf_type = subframe_select(&UE->frame_parms, proc->subframe_rx);
-
-      if ((sf_type == SF_DL) ||
-          (UE->frame_parms.frame_type == FDD) ||
-          (sf_type == SF_S)) {
-        if (UE->frame_parms.frame_type == TDD) {
-          LOG_D(PHY, "TDD%d,%s: calling UE_RX\n",
-                UE->frame_parms.tdd_config,
-                (sf_type == SF_DL ? "SF_DL" : (sf_type == SF_UL ? "SF_UL" : (sf_type == SF_S ? "SF_S" : "UNKNOWN_SF_TYPE"))));
-        } else {
-          LOG_D(PHY, "%s,%s: calling UE_RX\n",
-                (UE->frame_parms.frame_type == FDD ? "FDD" : (UE->frame_parms.frame_type == TDD ? "TDD" : "UNKNOWN_DUPLEX_MODE")),
-                (sf_type == SF_DL ? "SF_DL" : (sf_type == SF_UL ? "SF_UL" : (sf_type == SF_S ? "SF_S" : "UNKNOWN_SF_TYPE"))));
-        }
-
-        phy_procedures_UE_SL_RX(UE, proc);
-      }
 
 #if UE_TIMING_TRACE
       start_meas(&UE->generic_stat);
@@ -1181,8 +1156,8 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
       if (UE->mac_enabled == 1) {
         ret = ue_scheduler(ue_Mod_id,
-                           proc->frame_rx,
-                           proc->subframe_rx,
+                           proc->subframe_tx < 4 ? (proc->frame_tx + 1023) % 1024 : proc->frame_tx, // subtracting 4 from subframe_tx
+                           proc->subframe_tx < 4 ? proc->subframe_tx + 6 : proc->subframe_tx - 4,
                            proc->frame_tx,
                            proc->subframe_tx,
                            subframe_select(&UE->frame_parms, proc->subframe_tx),
