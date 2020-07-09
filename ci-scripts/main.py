@@ -3110,11 +3110,15 @@ def GetParametersFromXML(action):
 		RAN.SeteNB_serverId(test.findtext('eNB_serverId'))
 		if (RAN.GeteNB_serverId() is None):
 			RAN.SeteNB_serverId('0')
-		CiTestObj.air_interface = test.findtext('air_interface')
-		if (CiTestObj.air_interface is None):
-			CiTestObj.air_interface = 'lte'
-		else:
-			CiTestObj.air_interface = CiTestObj.air_interface.lower()
+			
+		#local variable air_interface
+		air_interface = test.findtext('air_interface')		
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+			CiTestObj.air_interface = 'lte-softmodem'
+		elif (air_interface.lower() in ['nr','lte']):
+			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
+		else :
+			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
 		RAN.Setair_interface(CiTestObj.air_interface)
 
 	if action == 'Terminate_eNB':
@@ -3124,11 +3128,15 @@ def GetParametersFromXML(action):
 		RAN.SeteNB_serverId(test.findtext('eNB_serverId'))
 		if (RAN.GeteNB_serverId() is None):
 			RAN.SeteNB_serverId('0')
-		CiTestObj.air_interface = test.findtext('air_interface')
-		if (CiTestObj.air_interface is None):
-			CiTestObj.air_interface = 'lte'
-		else:
-			CiTestObj.air_interface = CiTestObj.air_interface.lower()
+			
+		#local variable air_interface
+		air_interface = test.findtext('air_interface')		
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+			CiTestObj.air_interface = 'lte-softmodem'
+		elif (air_interface.lower() in ['nr','lte']):
+			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
+		else :
+			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
 		RAN.Setair_interface(CiTestObj.air_interface)
 
 	if action == 'Attach_UE':
@@ -3158,11 +3166,16 @@ def GetParametersFromXML(action):
 		CiTestObj.UE_instance = test.findtext('UE_instance')
 		if (CiTestObj.UE_instance is None):
 			CiTestObj.UE_instance = '0'
-		CiTestObj.air_interface = test.findtext('air_interface')
-		if (CiTestObj.air_interface is None):
-			CiTestObj.air_interface = 'lte'
-		else:
-			CiTestObj.air_interface = CiTestObj.air_interface.lower()
+			
+		#local variable air_interface
+		air_interface = test.findtext('air_interface')		
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+			CiTestObj.air_interface = 'lte-softmodem'
+		elif (air_interface.lower() in ['nr','lte']):
+			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
+		else :
+			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
+		RAN.Setair_interface(CiTestObj.air_interface)
 
 	if action == 'Terminate_OAI_UE':
 		RAN.SeteNB_instance(test.findtext('UE_instance'))
