@@ -261,7 +261,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc);
+  eNB->if_inst->UL_indication(&eNB->UL_INFO, proc); // Andrew calling eNB maclayer check the UL_INFO structure
   AssertFatal((ret= pthread_mutex_unlock(&eNB->UL_INFO_mutex))==0,"error unlocking UL_INFO_mutex, return %d\n",ret);
   /* this conflict resolution may be totally wrong, to be tested */
   /* CONFLICT RESOLUTION: BEGIN */

@@ -1039,7 +1039,6 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   int num_lone = 0;
   int last_sfn_sf = -1;
 
-  uint64_t last_subframe_start = clock_usec();
   while (!oai_exit) {
     bool sent_any = false;
     int sfn_sf = current_sfn_sf;
@@ -1048,24 +1047,19 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       continue;
     }
 
-    uint64_t subframe_start = clock_usec();
-    // LOG_I(MAC, "subframe elapsed %" PRIu64 "usec\n",
-    //       subframe_start - last_subframe_start);
-    last_subframe_start = subframe_start;
-
     last_sfn_sf = sfn_sf;
     // FDD and TDD tx timing settings.
     // XXX:It is the result of timing adjustment in debug.
     proc->subframe_tx = NFAPI_SFNSF2SF(sfn_sf);
     proc->frame_tx = NFAPI_SFNSF2SFN(sfn_sf);
 
-
+    LOG_E(MAC, "received from proxy frame %d subframe %d\n", proc->frame_tx,
+          proc->subframe_tx);
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
     nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
     nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
-
     if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
       uint64_t start = clock_usec();
       uint64_t deadline = start + 10000;
@@ -1136,7 +1130,6 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
         }
       }
     }
-
     if (hi_dci0_req) {
       nfapi_hi_dci0_request_body_t *hi_dci0_body = &hi_dci0_req->hi_dci0_request_body;
       for (int i = 0; i < hi_dci0_body->number_of_dci + hi_dci0_body->number_of_hi; i++) {
@@ -1149,15 +1142,19 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     for (ue_index = 0; ue_index < ue_num; ue_index++) {
+      ue_Mod_id = ue_thread_id + NB_THREAD_INST * ue_index;
+      UE = PHY_vars_UE_g[ue_Mod_id][0];
 
 #if UE_TIMING_TRACE
       start_meas(&UE->generic_stat);
 #endif
-
+      int rx_frame = proc->subframe_tx < 4 ? (proc->frame_tx + 1023) % 1024 : proc->frame_tx; // subtracting 4 from subframe_tx
+      int rx_subframe = proc->subframe_tx < 4 ? proc->subframe_tx + 6 : proc->subframe_tx - 4;
+      LOG_E(MAC, "rx_frame %d rx_subframe %d\n", rx_frame, rx_subframe);
       if (UE->mac_enabled == 1) {
         ret = ue_scheduler(ue_Mod_id,
-                           proc->subframe_tx < 4 ? (proc->frame_tx + 1023) % 1024 : proc->frame_tx, // subtracting 4 from subframe_tx
-                           proc->subframe_tx < 4 ? proc->subframe_tx + 6 : proc->subframe_tx - 4,
+                           rx_frame,
+                           rx_subframe,
                            proc->frame_tx,
                            proc->subframe_tx,
                            subframe_select(&UE->frame_parms, proc->subframe_tx),

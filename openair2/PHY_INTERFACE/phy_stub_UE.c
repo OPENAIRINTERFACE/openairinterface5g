@@ -74,8 +74,6 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   nfapi_rx_indication_pdu_t *pdu;
   int timing_advance_update;
 
-  LOG_I(MAC, "Entered fill_rx_indication_UE_MAC\n");
-
   pthread_mutex_lock(&fill_ul_mutex.rx_mutex);
 
   UL_INFO->rx_ind.header.message_id = NFAPI_RX_ULSCH_INDICATION;
@@ -1186,7 +1184,7 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
 void *ue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
-  int addr_len = sizeof(server_address);
+  socklen_t addr_len = sizeof(server_address);
   char buffer[1024];
 
   int sd = ue_rx_sock_descriptor;
@@ -1313,7 +1311,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     return out;
 }
 
-  void send_standalone_msg(UL_IND_t * UL, nfapi_message_id_e msg_type)
+  void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
   {
     int encoded_size = -1;
     char buffer[1024];
@@ -1321,7 +1319,8 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     {
     case NFAPI_RACH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "RACH_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+            NFAPI_SFNSF2SFN(UL->rach_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rach_ind.sfn_sf));
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
