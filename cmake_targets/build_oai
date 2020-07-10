@@ -96,7 +96,9 @@ Options
    enable cmake debugging messages
 --eNB
   Makes the LTE softmodem
---gNB
+--eNBocp
+  Makes the OCP LTE softmodem
+-gNB
   Makes the NR softmodem
 --nrUE
   Makes the NR UE softmodem
@@ -237,7 +239,11 @@ function main() {
             eNB=1
             echo_info "Will compile eNB"
             shift;;
-       --gNB)
+       --eNBocp)
+            eNBocp=1
+            echo_info "Will compile OCP eNB"
+            shift;;
+      --gNB)
             gNB=1
             NR="True"
             echo_info "Will compile gNB"
@@ -406,7 +412,7 @@ function main() {
             shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
-            echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
+            echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
             shift;;
     --ninja)
         CMAKE_CMD="$CMAKE_CMD -GNinja"
@@ -443,7 +449,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$gNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -574,7 +580,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
     # softmodem compilation
 
@@ -605,6 +611,9 @@ function main() {
     execlist=""
     if [ "$eNB" = "1" ] ; then
       execlist="$execlist lte-softmodem"
+    fi
+    if [ "$eNBocp" = "1" ] ; then
+      execlist="$execlist ocp-enb"
     fi
     if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
@@ -897,7 +906,7 @@ function main() {
               $build_dir rfsimulator \
               librfsimulator.so $dbin/librfsimulator.so.$REL
 
-          echo_info "Compiling basicsimulator"
+          echo_info "Compiling tcp_bridge_oai"
           compilations \
               $build_dir tcp_bridge_oai \
               libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL

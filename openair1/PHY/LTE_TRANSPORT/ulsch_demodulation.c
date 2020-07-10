@@ -1047,7 +1047,11 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
                              l%(frame_parms->symbols_per_tti/2),
                              l/(frame_parms->symbols_per_tti/2),
                              frame_parms);
-    lte_ul_channel_estimation(eNB,proc,
+    lte_ul_channel_estimation(&eNB->frame_parms,proc,
+		              eNB->ulsch[UE_id],
+		              eNB->pusch_vars[UE_id]->drs_ch_estimates,
+			      eNB->pusch_vars[UE_id]->drs_ch_estimates_time,
+			      eNB->pusch_vars[UE_id]->rxdataF_ext,
                               UE_id,
                               l%(frame_parms->symbols_per_tti/2),
                               l/(frame_parms->symbols_per_tti/2));
