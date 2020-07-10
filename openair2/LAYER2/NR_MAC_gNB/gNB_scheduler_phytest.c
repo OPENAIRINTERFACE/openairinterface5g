@@ -825,6 +825,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
   pusch_pdu->start_symbol_index = StartSymbolIndex;
   pusch_pdu->nr_of_symbols = NrOfSymbols;
+
   mapping_type = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
   if (ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2 != NULL)
    K2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2;
@@ -848,8 +849,19 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->mcs_table = 0; //0: notqam256 [TS38.214, table 5.1.3.1-1] - corresponds to nr_target_code_rate_table1 in PHY
   pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
   pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
-  pusch_pdu->transform_precoding = 0;
-  pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
+  if (pusch_Config->transformPrecoder == NULL) {
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
+      pusch_pdu->transform_precoding = 1;
+    else
+      pusch_pdu->transform_precoding = 0;
+  }
+  else
+    pusch_pdu->transform_precoding = *pusch_Config->transformPrecoder;
+  if (pusch_Config->dataScramblingIdentityPUSCH != NULL)
+    pusch_pdu->data_scrambling_id = *pusch_Config->dataScramblingIdentityPUSCH;
+  else
+    pusch_pdu->data_scrambling_id = *scc->physCellId;
+
   pusch_pdu->nrOfLayers = 1;
 
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
@@ -862,51 +874,98 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
     AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
 
   pusch_pdu->vrb_to_prb_mapping = 0;
+
   if (pusch_Config->frequencyHopping==NULL)
     pusch_pdu->frequency_hopping = 0;
   else
     pusch_pdu->frequency_hopping = 1;
+
   //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
-  pusch_pdu->uplink_frequency_shift_7p5khz = 0;
+  //pusch_pdu->uplink_frequency_shift_7p5khz = 0;
 
 
   // --------------------
   // ------- DMRS -------
   // --------------------
-  uint16_t l_prime_mask            = get_l_prime(pusch_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
-  pusch_pdu->ul_dmrs_symb_pos      = l_prime_mask << pusch_pdu->start_symbol_index;
-  pusch_pdu->dmrs_config_type      = 0;      // dmrs-type 1 (the one with a single DMRS symbol in the beginning)
-  pusch_pdu->ul_dmrs_scrambling_id = 0;      // If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id
-  pusch_pdu->scid                  = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
-                                             // Should match what is sent in DCI 0_1, otherwise set to 0
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
+  if (mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA)
+    NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
+  else
+    NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+  if (NR_DMRS_UplinkConfig->dmrs_Type == NULL)
+    pusch_pdu->dmrs_config_type = 0;
+  else
+    pusch_pdu->dmrs_config_type = 1;
+  pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
+  if (pusch_pdu->transform_precoding) { // transform precoding disabled
+    long *scramblingid;
+    if (pusch_pdu->scid == 0)
+      scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
+    else
+      scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
+    if (scramblingid == NULL)
+      pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
+    else
+      pusch_pdu->ul_dmrs_scrambling_id = *scramblingid;
+  }
+  else {
+    pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
+    if (NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      pusch_pdu->pusch_identity = *NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
+    else
+      pusch_pdu->pusch_identity = *scc->physCellId;
+  }
+  pusch_dmrs_AdditionalPosition_t additional_pos;
+  if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL){printf("%d\n",2);
+    additional_pos = 2;}
+  else {
+    if (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3)
+      additional_pos = 3;
+    else
+      additional_pos = *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition;
+  }
+  pusch_maxLength_t pusch_maxLength;
+  if (NR_DMRS_UplinkConfig->maxLength == NULL)
+    pusch_maxLength = 1;
+  else
+    pusch_maxLength = 2;
+  uint16_t l_prime_mask = get_l_prime(pusch_pdu->nr_of_symbols, mapping_type, additional_pos, pusch_maxLength);
+  pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_pdu->start_symbol_index;
+
   pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
-  //pusch_pdu->dmrs_ports; // DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports
-                           // Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011,
-                           // and for each bit 0: DMRS port not used 1: DMRS port used
+  pusch_pdu->dmrs_ports = 1;
   // --------------------------------------------------------------------------------------------------------------------------------------------
 
   // --------------------
   // ------- PTRS -------
   // --------------------
-  uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
-  uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
-  uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-  uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
-  uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
-  pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
-  pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
-  pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
-  pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+  if (NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
+    // TODO to be fixed from RRC config
+    uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
+    uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
+    uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
+    uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
+    uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
+    pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
+    pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+    pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
+    pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-  if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
-    pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+    pusch_pdu->pdu_bit_map &= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+  }
+  else{
+//    if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
+      pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+  }
+
   // --------------------------------------------------------------------------------------------------------------------------------------------
 
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   //Optional Data only included if indicated in pduBitmap
+  // TODO from harq function as in pdsch
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
-  pusch_pdu->pusch_data.new_data_indicator = 0;
+  pusch_pdu->pusch_data.new_data_indicator = 1;
 
   uint8_t num_dmrs_symb = 0;
 
