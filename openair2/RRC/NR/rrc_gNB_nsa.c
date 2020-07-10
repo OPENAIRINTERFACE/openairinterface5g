@@ -42,10 +42,12 @@
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
-  OCTET_STRING_t *ueCapabilityRAT_Container_nr = NULL;
-  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC = NULL;
-  int list_size;
+
+  OCTET_STRING_t *ueCapabilityRAT_Container_nr=NULL;
+  OCTET_STRING_t *ueCapabilityRAT_Container_MRDC=NULL;
   asn_dec_rval_t dec_rval;
+  int list_size=0;
+
   AssertFatal(UE_CapabilityRAT_ContainerList!=NULL,"UE_CapabilityRAT_ContainerList is null\n");
   AssertFatal((list_size=UE_CapabilityRAT_ContainerList->list.count) >= 2, "UE_CapabilityRAT_ContainerList->list.size %d < 2\n",UE_CapabilityRAT_ContainerList->list.count);
 
@@ -115,6 +117,10 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *)ue_context_p->ue_context.rb_config);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
+
+/* generate prototypes for the tree management functions (RB_INSERT used in rrc_add_nsa_user) */
+RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries,
+             rrc_gNB_compare_ue_rnti_id);
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)

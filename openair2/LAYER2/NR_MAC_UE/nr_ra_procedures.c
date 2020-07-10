@@ -334,6 +334,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 // - retrieve TBS
 // - add mac_rrc_nr_data_req_ue, etc ...
 // - add the backoff condition here if we have it from a previous RA reponse which failed (i.e. backoff indicator)
+
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        module_id_t mod_id,
                        int CC_id,

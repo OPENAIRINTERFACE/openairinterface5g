@@ -155,7 +155,7 @@ void nr_pdcch_scrambling(uint32_t *in,
 
 
 uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_ul_dci_request_pdus_t    *ul_dci_pdu,
+			    nfapi_nr_ul_dci_request_pdus_t *ul_dci_pdu,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
@@ -229,10 +229,11 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
     /// DCI payload processing
     // CRC attachment + Scrambling + Channel coding + Rate matching
     uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
+
     uint16_t n_RNTI = pdcch_pdu_rel15->dci_pdu.RNTI[d];
     uint16_t Nid    = pdcch_pdu_rel15->dci_pdu.ScramblingId[d];
     uint16_t scrambling_RNTI = pdcch_pdu_rel15->dci_pdu.ScramblingRNTI[d];
-    
+
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
 						   pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d], 
 						   pdcch_pdu_rel15->dci_pdu.AggregationLevel[d],

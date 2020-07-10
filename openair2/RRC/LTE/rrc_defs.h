@@ -271,6 +271,7 @@ typedef enum UE_STATE_e {
   RRC_RECONFIGURED,
   RRC_HO_EXECUTION,
   RRC_NR_NSA,
+  RRC_NR_NSA_RECONFIGURED
 } UE_STATE_t;
 
 typedef enum HO_STATE_e {
