@@ -274,7 +274,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint16_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)
     frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
+  //uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
   uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
