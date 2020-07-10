@@ -364,8 +364,8 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   if (ind < Foffset) { // case where we have some bits before the filler and the rest after
     memcpy((void*)e,(void*)(w+ind),Foffset-ind);
 
-    if (E + F <= Ncb) { // E+F doesn't contain all coded bits
-      memcpy((void*)(e+Foffset-ind),(void*)(w+Foffset+F-ind),E-Foffset+ind);
+    if (E + F <= Ncb-ind) { // E+F doesn't contain all coded bits
+      memcpy((void*)(e+Foffset-ind),(void*)(w+Foffset+F),E-Foffset+ind);
       k=E;
     }
     else {
@@ -375,11 +375,12 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   }
   else {
     if (E + F <= Ncb-ind) { //E+F doesn't contain all coded bits
-      memcpy((void*)(e+Foffset-ind),(void*)(w+Foffset+F-ind),E-Foffset+ind);
+      memcpy((void*)(e),(void*)(w+ind),E);
       k=E;
     }
     else {
-
+      memcpy((void*)(e),(void*)(w+ind),Ncb-ind);
+      k=Ncb-ind;
     }
   }
 

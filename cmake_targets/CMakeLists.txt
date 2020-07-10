@@ -2900,6 +2900,7 @@ target_link_libraries(ldpctest
 add_executable(nr_dlschsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2912,6 +2913,7 @@ target_link_libraries(nr_dlschsim
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2965,6 +2967,7 @@ target_link_libraries(nr_prachsim
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3083,7 +3086,7 @@ if (${T_TRACER})
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_UE NR_L2_UE MAC_NR_COMMON MAC_NR MAC_UE_NR
-        CN_UTILS GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU_COMMON SIMU SIMU_ETH OPENAIR0_LIB
+        CN_UTILS GTPV1U NR_GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU_COMMON SIMU SIMU_ETH OPENAIR0_LIB
         ldpc_orig ldpc_optim ldpc_optim8seg ldpc PROTO_AGENT dfts)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)

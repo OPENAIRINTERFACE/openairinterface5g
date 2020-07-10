@@ -1211,6 +1211,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
       }
 	
       if (!decodeSucess) {
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
+          T_INT(rdata->harq_pid));
 	fill_crc_indication(eNB,i,rdata->frame,rdata->subframe,1); // indicate NAK to MAC
 	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
@@ -1239,6 +1241,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
 	ulsch_harq->status = SCH_IDLE;
 	ulsch->harq_mask &= ~(1 << rdata->harq_pid);
+        T (T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
+           T_INT(rdata->harq_pid));
       }  // ulsch not in error
 	
       if (ulsch_harq->O_ACK>0)

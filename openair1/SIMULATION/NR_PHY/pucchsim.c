@@ -59,6 +59,8 @@ uint16_t NB_UE_INST = 1;
 // needed for some functions
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
 int main(int argc, char **argv)
 {
   char c;
@@ -477,7 +479,7 @@ int main(int argc, char **argv)
     for (trial=0; trial<n_trials; trial++) {
       bzero(txdataF[aa],frame_parms->ofdm_symbol_size*sizeof(int));
       if(format==0){
-        nr_generate_pucch0(UE,txdataF,frame_parms,UE->pucch_config_dedicated,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
+        nr_generate_pucch0(UE,txdataF,frame_parms,PUCCH_GroupHopping,hopping_id,amp,nr_tti_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
       }
       else if (format == 1){
         nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);	

@@ -1560,7 +1560,7 @@ typedef struct
   uint16_t sfn;
   uint16_t slot;
   uint16_t num_ucis;
-  nfapi_nr_uci_t uci_list[NFAPI_MAX_NUM_UCI_INDICATION];
+  nfapi_nr_uci_t *uci_list;
 
 } nfapi_nr_uci_indication_t;
 

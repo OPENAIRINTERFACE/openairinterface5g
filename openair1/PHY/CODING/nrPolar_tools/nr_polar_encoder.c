@@ -408,7 +408,7 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
 }
 
 void polar_encoder_fast(uint64_t *A,
-                        uint32_t *out,
+                        void *out,
                         int32_t crcmask,
                         uint8_t ones_flag,
                         t_nrPolar_params *polarParams) {
@@ -676,5 +676,5 @@ void polar_encoder_fast(uint64_t *A,
     }
   }
   memset((void*)out,0,polarParams->encoderLength>>3);
-  polar_rate_matching(polarParams,(void *)D,(void *)out);
+  polar_rate_matching(polarParams,(void *)D, out);
 }

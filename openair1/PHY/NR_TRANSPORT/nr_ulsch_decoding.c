@@ -357,6 +357,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
   // harq_process->trials[nfapi_ulsch_pdu_rel15->round]++;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
 
   A   = (harq_process->TBS)<<3;
@@ -527,7 +529,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #ifdef DEBUG_ULSCH_DECODING
     if (r==0) {
       write_output("decoder_llr.m","decllr",ulsch_llr,G,1,0);
-      write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
+      write_output("decoder_in.m","dec",&harq_process->d[0][0],E,1,0);
     }
 
     printf("decoder input(segment %u) :", r);
@@ -608,7 +610,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   #endif
         ret = ulsch->max_ldpc_iterations + 1;
       }
-
       nb_total_decod++;
 
       if (no_iteration_ldpc > ulsch->max_ldpc_iterations){
@@ -722,6 +723,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
 
   ulsch->last_iteration_cnt = ret;
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
   return(ret);
 }

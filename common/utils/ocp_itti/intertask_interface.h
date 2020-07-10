@@ -415,7 +415,7 @@ static const message_info_t messages_info[] = {
 #undef MESSAGE_DEF
 };
 
-typedef struct __attribute__ ((__packed__)) MessageDef_s {
+typedef struct MessageDef_s {
   MessageHeader ittiMsgHeader; /**< Message header */
   msg_t         ittiMsg;
 } MessageDef;
