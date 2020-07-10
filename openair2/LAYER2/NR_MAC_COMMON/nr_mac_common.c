@@ -1740,7 +1740,7 @@ uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
   if (bwp_size < 37)  return (rbg_size_config ? 4 : 2);
   if (bwp_size < 73)  return (rbg_size_config ? 8 : 4);
   if (bwp_size < 145) return (rbg_size_config ? 16 : 8);
-  if (bwp_size < 276) return 16;
+  else return 16;
 }
 
 uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {

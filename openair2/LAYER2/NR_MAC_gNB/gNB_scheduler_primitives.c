@@ -812,7 +812,6 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
                         int bwp_id) {
 
   uint8_t fsize=0, pos=0;
-  uint8_t nbits=0;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
 

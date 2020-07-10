@@ -424,6 +424,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 		               bwp);
   if (ret < 0) {
    LOG_I(MAC,"CCE list not empty, couldn't schedule PDSCH\n");
+   free(dci_pdu_rel15);
    return (0);
   }
 
@@ -464,6 +465,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 	pdsch_pdu_rel15->mcsIndex[0],
 	TBS);
 
+  free(dci_pdu_rel15);
   return TBS; //Return TBS in bytes
 }
 
