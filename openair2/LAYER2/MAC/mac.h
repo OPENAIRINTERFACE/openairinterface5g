@@ -933,6 +933,8 @@ typedef struct {
 
   /// Current DL harq round per harq_pid on each CC
   uint8_t round[NFAPI_CC_MAX][10];
+  uint32_t ret_cnt[NFAPI_CC_MAX];
+  uint32_t first_cnt[NFAPI_CC_MAX];
   /// Current Active TBs per harq_pid on each CC
   uint8_t tbcnt[NFAPI_CC_MAX][10];
   /// Current UL harq round per harq_pid on each CC
@@ -960,16 +962,16 @@ typedef struct {
   int32_t phr_received;
   uint8_t periodic_ri_received[NFAPI_CC_MAX];
   uint8_t aperiodic_ri_received[NFAPI_CC_MAX];
-  uint8_t pucch1_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch1_snr[NFAPI_CC_MAX];
-  uint8_t pucch2_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch2_snr[NFAPI_CC_MAX];
-  uint8_t pucch3_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch3_snr[NFAPI_CC_MAX];
+  int16_t pucch1_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch1_snr[NFAPI_CC_MAX];
+  int16_t pucch2_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch2_snr[NFAPI_CC_MAX];
+  int16_t pucch3_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch3_snr[NFAPI_CC_MAX];
   double  pusch_cqi_f[NFAPI_CC_MAX];
-  uint8_t pusch_cqi[NFAPI_CC_MAX];
-  uint8_t pusch_snr[NFAPI_CC_MAX];
-  uint8_t pusch_snr_avg[NFAPI_CC_MAX];
+  int16_t pusch_cqi[NFAPI_CC_MAX];
+  int16_t pusch_snr[NFAPI_CC_MAX];
+  int16_t pusch_snr_avg[NFAPI_CC_MAX];
   uint64_t pusch_rx_num[NFAPI_CC_MAX];
   uint64_t pusch_rx_num_old[NFAPI_CC_MAX];
   uint64_t pusch_rx_error_num[NFAPI_CC_MAX];

@@ -1001,7 +1001,17 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
       rnti = dlsch_ue_select[CC_id].list[i].rnti;
       ue_sched_ctl = &UE_info->UE_sched_ctrl[UE_id];
       harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP,subframeP);
-      Round    = ue_sched_ctl->round[CC_id][harq_pid];
+
+      unsigned char round1, round2;
+      round1 = ue_sched_ctl->round[CC_id][harq_pid][TB1];
+      round2 = ue_sched_ctl->round[CC_id][harq_pid][TB2];
+      if ((round1 != 8) || (round2 != 8)){
+        Round = cmin(round1,round2);
+        ue_sched_ctl->ret_cnt[CC_id]++;
+      } else{
+        Round = 8;
+        ue_sched_ctl->first_cnt[CC_id]++;
+      }
 
       //if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_RECONFIGURED || round > 0) {
       if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_RECONFIGURED || Round != 8) {  // FIXME
