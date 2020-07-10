@@ -49,6 +49,7 @@ queue_t ul_config_req_queue;
 queue_t hi_dci0_req_queue;
 
 int current_sfn_sf;
+sem_t sfn_semaphore;
 
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
@@ -1203,6 +1204,12 @@ void *ue_standalone_pnf_task(void *context)
       uint16_t sfn_sf = 0;
       memcpy((void *)&sfn_sf, buffer, sizeof(sfn_sf));
       current_sfn_sf = sfn_sf;
+
+      if (sem_post(&sfn_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
     }
     else
     {

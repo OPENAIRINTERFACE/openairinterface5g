@@ -1043,7 +1043,11 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     bool sent_any = false;
     int sfn_sf = current_sfn_sf;
     if (sfn_sf == last_sfn_sf) {
-      usleep(100);
+      if (sem_wait(&sfn_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_wait() error\n");
+        abort();
+      }
       continue;
     }
 
