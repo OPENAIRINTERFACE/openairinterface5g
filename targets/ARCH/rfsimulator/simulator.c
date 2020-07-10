@@ -438,7 +438,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout) {
         b->lastReceivedTS=b->th.timestamp;
         AssertFatal(b->lastWroteTS == 0 || ( abs((double)b->lastWroteTS-b->lastReceivedTS) < (double)CirSize),
                     "Tx/Rx shift too large Tx:%lu, Rx:%lu\n", b->lastWroteTS, b->lastReceivedTS);
-        b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
+        b->transferPtr=(char *)&b->circularBuf[(b->lastReceivedTS*b->th.nbAnt)%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
 
