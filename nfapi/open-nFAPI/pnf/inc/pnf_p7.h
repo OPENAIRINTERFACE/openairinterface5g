@@ -38,6 +38,20 @@ typedef struct {
 	uint16_t tx_late;
 } pnf_p7_stats_t;
 
+
+typedef struct { // TODO: replace with the stats
+	uint16_t dl_tti_ontime;
+	uint16_t dl_tti_late;
+	uint16_t ul_tti_ontime;
+	uint16_t ul_tti_late;
+	uint16_t ul_dci_ontime;
+	uint16_t ul_dci_late;
+	uint16_t tx_data_ontime;
+	uint16_t tx_data_late;
+} pnf_p7_nr_stats_t;
+
+
+
 typedef struct {
 	uint8_t* buffer;
 	uint16_t length;
@@ -99,7 +113,7 @@ typedef struct {
 	uint16_t slot;
 	uint16_t sfn_slot;
 	uint32_t slot_start_time_hr;
-	int32_t sfn_slot_shift;
+	int32_t slot_shift;
 
 	uint8_t timing_info_period_counter;
 	uint8_t timing_info_aperiodic_send; // 0:false 1:true
@@ -113,6 +127,7 @@ typedef struct {
 
 	uint32_t tick;
 	pnf_p7_stats_t stats;
+	pnf_p7_nr_stats_t nr_stats;
 
 } pnf_p7_t;
 

@@ -555,12 +555,14 @@ typedef struct
 
 typedef struct 
 {
-	uint16_t sfn_slot;
+	//uint16_t sfn_slot
+	int16_t sfn;
+	int16_t slot;
 	//TODO: Change P7 structs to NR
-	nfapi_nr_dl_tti_request_t dl_config_req;//nfapi_dl_config_request_t* dl_config_req; 
-	nfapi_nr_ul_tti_request_t ul_config_req;//nfapi_ul_config_request_t* ul_config_req;
-	nfapi_nr_ul_dci_request_t hi_dci0_req;//nfapi_hi_dci0_request_t* hi_dci0_req;
-	nfapi_nr_tx_data_request_t* tx_req;//nfapi_tx_request_t* tx_req;
+	nfapi_nr_dl_tti_request_t* dl_tti_req;//nfapi_dl_config_request_t* dl_config_req; 
+	nfapi_nr_ul_tti_request_t* ul_tti_req;//nfapi_ul_config_request_t* ul_config_req;
+	nfapi_nr_ul_dci_request_t* ul_dci_req;//nfapi_hi_dci0_request_t* hi_dci0_req;
+	nfapi_nr_tx_data_request_t* tx_data_req;//nfapi_tx_request_t* tx_req;
 
 	//TODO: check these two later
 	nfapi_lbt_dl_config_request_t* lbt_dl_config_req;
@@ -640,6 +642,7 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the dl config request message structure
 	 * \return not currently used
 	 */
+	int (*dl_tti_req_fn)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_dl_tti_request_t* req);
 	int (*dl_config_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_dl_config_request_t* req);
 	
 	/*! A callback for the UL_CONFIG.request
@@ -647,6 +650,7 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the ul config request message structure
 	 * \return not currently used	
 	 */
+	int (*ul_tti_req_fn)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_ul_tti_request_t* req);
 	int (*ul_config_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_ul_config_request_t* req);
 	
 	/*! A callback for the HI_DCI0.request
@@ -654,8 +658,9 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the hi dci0 request message structure
 	 * \return not currently used
 	 */
+	int (*ul_dci_req_fn)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_ul_dci_request_t* req);
 	int (*hi_dci0_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_hi_dci0_request_t* req);
-	
+
 	/*! A callback for the TX_REQ.request
 	 * \param config A poiner to the PNF P7 config
 	 * \param req A pointer to the tx request message structure
@@ -665,6 +670,7 @@ typedef struct nfapi_pnf_p7_config
 	 * will 'keep' the pointers until they are transmitted the callee should set the pointers in the req to 0
 	 * and then use the p7 codec config free function to release the pdu's when appropriate. 
 	 */
+	int (*tx_data_req_fn)(nfapi_pnf_p7_config_t* config, nfapi_nr_tx_data_request_t* req);
 	int (*tx_req)(nfapi_pnf_p7_config_t* config, nfapi_tx_request_t* req);
 	
 	/*! A callback for the LBT_DL_CONFIG.request

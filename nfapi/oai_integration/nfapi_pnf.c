@@ -1679,7 +1679,7 @@ void oai_slot_ind(uint16_t sfn, uint16_t slot) {
     if ((sfn % 100 == 0) && slot==0) { // DOUBT: Why 100?
       struct timespec ts;
       clock_gettime(CLOCK_MONOTONIC, &ts);
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u slot:%u) SFN/SLOT(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, slot, NFAPI_SFNSLOT2DEC(sfn_slot_tx));
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u slot:%u) SFN/SLOT(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, slot, NFAPI_SFNSLOT2DEC(sfn, slot));
     }
     
     //TODO: send p7_config instead of p7_config_g
@@ -1687,7 +1687,7 @@ void oai_slot_ind(uint16_t sfn, uint16_t slot) {
 
     // if (subframe_ret) {
     if (slot_ret) { 
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u slot:%u) SFN/SLOT(TX):%u - PROBLEM with pnf_p7_slot_ind()\n", __FUNCTION__, sfn, slot, sfn_slot_tx, NFAPI_SFNSLOT2DEC(sfn_slot_tx));
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u slot:%u) SFN/SLOT(TX):%u - PROBLEM with pnf_p7_slot_ind()\n", __FUNCTION__, sfn, slot, sfn_slot_tx, NFAPI_SFNSLOT2DEC(sfn, slot));
       // printing anything causes error: probably because there isn't enough time to accomodate a print statement
     } else {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");
