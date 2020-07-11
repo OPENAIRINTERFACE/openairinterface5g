@@ -1150,7 +1150,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 #endif
       int rx_frame = proc->subframe_tx < 4 ? (proc->frame_tx + 1023) % 1024 : proc->frame_tx; // subtracting 4 from subframe_tx
       int rx_subframe = proc->subframe_tx < 4 ? proc->subframe_tx + 6 : proc->subframe_tx - 4;
-      LOG_E(MAC, "rx_frame %d rx_subframe %d\n", rx_frame, rx_subframe);
+      LOG_D(MAC, "rx_frame %d rx_subframe %d\n", rx_frame, rx_subframe);
       if (UE->mac_enabled == 1) {
         ret = ue_scheduler(ue_Mod_id,
                            rx_frame,
@@ -1185,10 +1185,10 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
                 // The one working strangely...
                 //if (is_prach_subframe(&UE->frame_parms,proc->frame_tx, proc->subframe_tx && Mod_id == (module_id_t) init_ra_UE) ) {
                 PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, proc->frame_tx, 0, proc->subframe_tx);
-                LOG_I(MAC, "Celtics prach_resources %p\n", prach_resources);
+                LOG_D(MAC, "Celtics prach_resources %p\n", prach_resources);
                 if (prach_resources != NULL) {
                   UE_mac_inst[ue_Mod_id].ra_frame = proc->frame_rx;
-                  LOG_I(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, proc->frame_tx, proc->subframe_tx);
+                  LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, proc->frame_tx, proc->subframe_tx);
                   fill_rach_indication_UE_MAC(ue_Mod_id, proc->frame_tx, proc->subframe_tx, UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
                   sent_any = true;
                   Msg1_transmitted(ue_Mod_id, 0, proc->frame_tx, 0);

@@ -289,7 +289,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
   uint8_t Size = 0;
   UE_MODE_t UE_mode;
 
-  LOG_E(MAC, "got inside ue_get_rach\n");
+  LOG_D(MAC, "got inside ue_get_rach\n");
 
   // Modification for phy_stub_ue operation
   if(NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) { // phy_stub_ue mode
@@ -322,7 +322,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
     }
 
     if (UE_mac_inst[module_idP].RA_active == 0) {
-      LOG_I(MAC, "RA not active\n");
+      LOG_D(MAC, "RA not active\n");
       // check if RRC is ready to initiate the RA procedure
       Size = mac_rrc_data_req_ue(module_idP,
                                  CC_id,
@@ -335,10 +335,10 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                                  0);
       Size16 = (uint16_t) Size;
       //  LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",module_idP,frameP,Size);
-      LOG_I(RRC,
+      LOG_D(RRC,
             "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
             frameP, module_idP, eNB_indexP, module_idP);
-      LOG_I(MAC,
+      LOG_D(MAC,
             "[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",
             module_idP, frameP, Size);
 

@@ -233,7 +233,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
       .preamble_rel13.rach_resource_type = 0;
   UL_INFO->rach_ind.rach_indication_body.preamble_list[0].instance_length = 0;
 
-  LOG_I(PHY,
+  LOG_D(PHY,
         "UE Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, "
         "rach_resource_type %d\n",
         UL_INFO->rach_ind.rach_indication_body.preamble_list[0]
