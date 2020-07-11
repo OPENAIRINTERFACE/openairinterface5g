@@ -155,7 +155,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
       fread(&rand,sizeof(rand),1,h);
       fclose(h);
       randominit(rand);
-      tableNor(0);
+      tableNor(rand);
       init_done=true;
     }
 
