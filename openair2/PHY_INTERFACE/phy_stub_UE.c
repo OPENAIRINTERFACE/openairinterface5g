@@ -166,7 +166,8 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
 
-  LOG_I(MAC, "Entered fill_crc_indication_UE_MAC\n");
+  LOG_I(MAC, "Entered fill_crc_indication_UE_MAC Frame %d Subframe %d\n",
+        frame, subframe);
 
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
@@ -698,8 +699,8 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t *req,
         req->ul_config_request_body.rach_prach_frequency_resources,
         req->ul_config_request_body.srs_present);
 
-  int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
-  int sf = NFAPI_SFNSF2SF(req->sfn_sf);
+  int sfn = timer_frame;
+  int sf = timer_subframe;
 
   LOG_D(MAC,
         "ul_config_req_UE_MAC() TOTAL NUMBER OF UL_CONFIG PDUs: %d, SFN/SF: "
@@ -1324,11 +1325,13 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "CRC_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "CRC_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+            NFAPI_SFNSF2SFN(UL->crc_ind.sfn_sf), NFAPI_SFNSF2SF(UL->crc_ind.sfn_sf));
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "RX_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+            NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf));
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);

@@ -1029,6 +1029,9 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
 
   proc->subframe_rx = proc->sub_frame_start;
+  proc->subframe_tx = -1;
+  proc->frame_rx = -1;
+  proc->frame_tx = -1;
   // Initializations for nfapi-L2-emulator mode
   sync_var = 0;
 
@@ -1048,13 +1051,8 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     last_sfn_sf = sfn_sf;
-    // FDD and TDD tx timing settings.
-    // XXX:It is the result of timing adjustment in debug.
-    proc->subframe_tx = NFAPI_SFNSF2SF(sfn_sf);
-    proc->frame_tx = NFAPI_SFNSF2SFN(sfn_sf);
-
-    LOG_E(MAC, "received from proxy frame %d subframe %d\n", proc->frame_tx,
-          proc->subframe_tx);
+    LOG_E(MAC, "received from proxy frame %d subframe %d\n", NFAPI_SFNSF2SFN(sfn_sf),
+          NFAPI_SFNSF2SF(sfn_sf));
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
@@ -1148,22 +1146,22 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 #if UE_TIMING_TRACE
       start_meas(&UE->generic_stat);
 #endif
-      int rx_frame = proc->subframe_tx < 4 ? (proc->frame_tx + 1023) % 1024 : proc->frame_tx; // subtracting 4 from subframe_tx
-      int rx_subframe = proc->subframe_tx < 4 ? proc->subframe_tx + 6 : proc->subframe_tx - 4;
+      int rx_frame = NFAPI_SFNSF2SF(sfn_sf) < 4 ? (NFAPI_SFNSF2SFN(sfn_sf) + 1023) % 1024 : NFAPI_SFNSF2SFN(sfn_sf); // subtracting 4 from subframe_tx
+      int rx_subframe = NFAPI_SFNSF2SF(sfn_sf) < 4 ? NFAPI_SFNSF2SF(sfn_sf) + 6 : NFAPI_SFNSF2SF(sfn_sf) - 4;
       LOG_D(MAC, "rx_frame %d rx_subframe %d\n", rx_frame, rx_subframe);
       if (UE->mac_enabled == 1) {
         ret = ue_scheduler(ue_Mod_id,
                            rx_frame,
                            rx_subframe,
-                           proc->frame_tx,
-                           proc->subframe_tx,
-                           subframe_select(&UE->frame_parms, proc->subframe_tx),
+                           NFAPI_SFNSF2SFN(sfn_sf),
+                           NFAPI_SFNSF2SF(sfn_sf),
+                           subframe_select(&UE->frame_parms, NFAPI_SFNSF2SF(sfn_sf)),
                            0,
                            0 /*FIXME CC_id*/);
 
         if (ret != CONNECTION_OK) {
           LOG_E(PHY, "[UE %" PRIu8 "] Frame %" PRIu32 ", subframe %u %s\n",
-                UE->Mod_id, proc->frame_rx, proc->subframe_tx, get_connectionloss_errstr(ret));
+                UE->Mod_id, rx_frame, NFAPI_SFNSF2SF(sfn_sf), get_connectionloss_errstr(ret));
         }
       }
 
@@ -1172,29 +1170,29 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 #endif
 
       // Prepare the future Tx data
-      if ((subframe_select(&UE->frame_parms, proc->subframe_tx) == SF_UL) ||
+      if ((subframe_select(&UE->frame_parms, NFAPI_SFNSF2SF(sfn_sf)) == SF_UL) ||
           (UE->frame_parms.frame_type == FDD))
         if (UE->mode != loop_through_memory) {
           // We make the start of RA between consecutive UEs differ by 20 frames
-          //if ((UE_mac_inst[Mod_id].UE_mode[0] == PRACH  && Mod_id == 0) || (UE_mac_inst[Mod_id].UE_mode[0] == PRACH && Mod_id>0 && proc->frame_rx >= UE_mac_inst[Mod_id-1].ra_frame + 20) ) {
+          //if ((UE_mac_inst[Mod_id].UE_mode[0] == PRACH  && Mod_id == 0) || (UE_mac_inst[Mod_id].UE_mode[0] == PRACH && Mod_id>0 && rx_frame >= UE_mac_inst[Mod_id-1].ra_frame + 20) ) {
           if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH && ue_Mod_id == next_Mod_id) {
             next_ra_frame++;
             if (next_ra_frame > 500) {
               // check if we have PRACH opportunity
-              if (is_prach_subframe(&UE->frame_parms, proc->frame_tx, proc->subframe_tx) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
+              if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
                 // The one working strangely...
-                //if (is_prach_subframe(&UE->frame_parms,proc->frame_tx, proc->subframe_tx && Mod_id == (module_id_t) init_ra_UE) ) {
-                PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, proc->frame_tx, 0, proc->subframe_tx);
+                //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
+                PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
                 LOG_D(MAC, "Celtics prach_resources %p\n", prach_resources);
                 if (prach_resources != NULL) {
-                  UE_mac_inst[ue_Mod_id].ra_frame = proc->frame_rx;
-                  LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, proc->frame_tx, proc->subframe_tx);
-                  fill_rach_indication_UE_MAC(ue_Mod_id, proc->frame_tx, proc->subframe_tx, UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
+                  UE_mac_inst[ue_Mod_id].ra_frame = rx_frame;
+                  LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
+                  fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
                   sent_any = true;
-                  Msg1_transmitted(ue_Mod_id, 0, proc->frame_tx, 0);
+                  Msg1_transmitted(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0);
                   UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
                   next_Mod_id = ue_Mod_id + 1;
-                  //next_ra_frame = (proc->frame_rx + 20)%1000;
+                  //next_ra_frame = (rx_frame + 20)%1000;
                   next_ra_frame = 0;
                 }
 
@@ -1206,8 +1204,8 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
           // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
           // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
           // Generate UL_indications which correspond to UL traffic.
-          if (ul_config_req != NULL) {                                                    //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
-            ul_config_req_UE_MAC(ul_config_req, timer_frame, timer_subframe, ue_Mod_id);  // Andrew - send over socket to proxy here
+          if (ul_config_req != NULL) {   // check to see if you get every 2 ms   //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
+            ul_config_req_UE_MAC(ul_config_req, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), ue_Mod_id);  // Andrew - send over socket to proxy here
           }                                                                               // Andrew - else send a dummy over the socket
         }
 
