@@ -14,6 +14,7 @@
 #include "nfapi_interface.h"
 #include "nfapi_pnf_interface.h"
 #include <pthread.h>
+#include <semaphore.h>
 #include "nfapi/oai_integration/vendor_ext.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
@@ -155,5 +156,7 @@ extern nfapi_ul_config_request_t* ul_config_req;
 extern nfapi_hi_dci0_request_t* hi_dci0_req;
 
 extern int current_sfn_sf;
+
+extern sem_t sfn_semaphore;
 
 #endif /* PHY_STUB_UE_H_ */
