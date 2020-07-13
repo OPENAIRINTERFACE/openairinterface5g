@@ -112,10 +112,10 @@ class OaiCiTest():
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		result = re.search('--nrUE', self.Build_OAI_UE_args)
 		if result is not None:
-			RAN.Setair_interface('nr')
+			RAN.air_interface='nr'
 			ue_prefix = 'NR '
 		else:
-			RAN.Setair_interface('lte')
+			RAN.air_interface='lte'
 			ue_prefix = ''
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
@@ -155,7 +155,7 @@ class OaiCiTest():
 						mismatch = True
 				if not mismatch:
 					SSH.close()
-					HTML.CreateHtmlTestRow(RAN.GetBuild_eNB_args(), 'OK', CONST.ALL_PROCESSES_OK)
+					HTML.CreateHtmlTestRow(RAN.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 					return
 
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
@@ -181,7 +181,7 @@ class OaiCiTest():
 		SSH.command('ls ran_build/build', '\$', 3)
 		SSH.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
-		result = re.search(RAN.Getair_interface() + '-uesoftmodem', SSH.getBefore())
+		result = re.search(RAN.air_interface + '-uesoftmodem', SSH.getBefore())
 		if result is None:
 			buildStatus = False
 		SSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
@@ -215,12 +215,12 @@ class OaiCiTest():
 		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
-			RAN.SetflexranCtrlInstalled(True)
+			RAN.flexranCtrlInstalled=True
 			logging.debug('Flexran Controller is installed')
 		SSH.close()
 
 	def InitializeFlexranCtrl(self):
-		if RAN.GetflexranCtrlInstalled() == False:
+		if RAN.flexranCtrlInstalled == False:
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
 			HELP.GenericHelp(CONST.Version)
@@ -235,7 +235,7 @@ class OaiCiTest():
 		result = re.search('rt_controller -c ', SSH.getBefore())
 		if result is not None:
 			logging.debug('\u001B[1m Initialize FlexRan Controller Completed\u001B[0m')
-			RAN.SetflexranCtrlStarted(True)
+			RAN.flexranCtrlStarted=True
 		SSH.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 	
@@ -306,7 +306,7 @@ class OaiCiTest():
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		if RAN.Getair_interface() == 'lte':
+		if RAN.air_interface == 'lte':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			if result is None:
 				check_eNB = True
@@ -335,13 +335,13 @@ class OaiCiTest():
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		# in case of NR-UE, we may have rrc_config_path (Temporary?)
 		modifiedUeOptions = str(self.Initialize_OAI_UE_args)
-		if RAN.Getair_interface() == 'nr':
+		if RAN.air_interface == 'nr':
 			result = re.search('--rrc_config_path ', modifiedUeOptions)
 			if result is not None:
 				modifiedUeOptions = modifiedUeOptions.replace('rrc_config_path ', 'rrc_config_path ' + self.UESourceCodePath + '/')
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets/ran_build/build', '\$', 5)
-		if RAN.Getair_interface() == 'lte':
+		if RAN.air_interface == 'lte':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			# We may have to regenerate the .u* files
 			if result is None:
@@ -353,7 +353,7 @@ class OaiCiTest():
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
-		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.Getair_interface() +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.air_interface +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
@@ -384,7 +384,7 @@ class OaiCiTest():
 					doLoop = False
 					continue
 				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
-				if RAN.Getair_interface() == 'nr':
+				if RAN.air_interface == 'nr':
 					result = re.search('Starting sync detection', SSH.getBefore())
 				else:
 					result = re.search('got sync', SSH.getBefore())
@@ -409,7 +409,7 @@ class OaiCiTest():
 			# That is the case for LTE
 			# In NR case, it's a positive message that will show if synchronization occurs
 			doLoop = True
-			if RAN.Getair_interface() == 'nr':
+			if RAN.air_interface == 'nr':
 				loopCounter = 10
 			else:
 				# We are now checking if sync w/ eNB DOES NOT OCCUR
@@ -418,7 +418,7 @@ class OaiCiTest():
 			while (doLoop):
 				loopCounter = loopCounter - 1
 				if (loopCounter == 0):
-					if RAN.Getair_interface() == 'nr':
+					if RAN.air_interface == 'nr':
 						# Here we do have great chances that UE did NOT cell-sync w/ gNB
 						doLoop = False
 						fullSyncStatus = False
@@ -437,7 +437,7 @@ class OaiCiTest():
 						fullSyncStatus = True
 						continue
 				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Frequency"', '\$', 4)
-				if RAN.Getair_interface() == 'nr':
+				if RAN.air_interface == 'nr':
 					# Positive messaging -->
 					result = re.search('Measured Carrier Frequency', SSH.getBefore())
 					if result is not None:
@@ -466,12 +466,12 @@ class OaiCiTest():
 
 		if fullSyncStatus and gotSyncStatus:
 			doInterfaceCheck = False
-			if RAN.Getair_interface() == 'lte':
+			if RAN.air_interface == 'lte':
 				result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 				if result is None:
 					doInterfaceCheck = True
 			# For the moment, only in explicit noS1 without kernel module (ie w/ tunnel interface)
-			if RAN.Getair_interface() == 'nr':
+			if RAN.air_interface == 'nr':
 				result = re.search('--noS1 --nokrnmod 1', str(self.Initialize_OAI_UE_args))
 				if result is not None:
 					doInterfaceCheck = True
@@ -487,7 +487,7 @@ class OaiCiTest():
 					logging.debug(SSH.getBefore())
 					logging.error('\u001B[1m oaitun_ue1 interface is either NOT mounted or NOT configured\u001B[0m')
 					tunnelInterfaceStatus = False
-				if RAN.GeteNBmbmsEnable(0):
+				if RAN.eNBmbmsEnables[0]:
 					SSH.command('ifconfig oaitun_uem1', '\$', 4)
 					result = re.search('inet addr', SSH.getBefore())
 					if result is not None:
@@ -511,8 +511,8 @@ class OaiCiTest():
 				self.UEDevicesStatus = []
 				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 		else:
-			if RAN.Getair_interface() == 'lte':
-				if RAN.GeteNBmbmsEnable(0):
+			if RAN.air_interface == 'lte':
+				if RAN.eNBmbmsEnables[0]:
 					HTML.SethtmlUEFailureMsg('oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured')
 				else:
 					HTML.SethtmlUEFailureMsg('oaitun_ue1 interface is either NOT mounted or NOT configured')
@@ -887,7 +887,7 @@ class OaiCiTest():
 						self.UEDevicesStatus[cnt] = CONST.UE_STATUS_ATTACHED
 					cnt += 1
 				HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
-				result = re.search('T_stdout', str(RAN.GetInitialize_eNB_args()))
+				result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
 				if result is not None:
 					logging.debug('Waiting 5 seconds to fill up record file')
 					time.sleep(5)
@@ -933,7 +933,7 @@ class OaiCiTest():
 		for job in multi_jobs:
 			job.join()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		result = re.search('T_stdout', str(RAN.GetInitialize_eNB_args()))
+		result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
 		if result is not None:
 			logging.debug('Waiting 5 seconds to fill up record file')
 			time.sleep(5)
@@ -1199,7 +1199,7 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
+		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
 			SSH.command('cd /opt/flexran_rtc', '\$', 5)
 			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
@@ -1409,7 +1409,7 @@ class OaiCiTest():
 			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
-			if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '':
+			if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
 				HELP.GenericHelp(CONST.Version)
 				sys.exit('Insufficient Parameter')
 		else:
@@ -1418,8 +1418,8 @@ class OaiCiTest():
 				sys.exit('Insufficient Parameter')
 		try:
 			if ping_from_eNB is not None:
-				SSH.open(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword())
-				SSH.command('cd ' + RAN.GeteNBSourceCodePath() + '/cmake_targets/', '\$', 5)
+				SSH.open(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword)
+				SSH.command('cd ' + RAN.eNBSourceCodePath + '/cmake_targets/', '\$', 5)
 			else:
 				SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 				SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets/', '\$', 5)
@@ -1483,7 +1483,7 @@ class OaiCiTest():
 
 			# copying on the EPC server for logCollection
 			if ping_from_eNB is not None:
-				copyin_res = SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/ping_' + self.testCase_id + '.log', '.')
+				copyin_res = SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/ping_' + self.testCase_id + '.log', '.')
 			else:
 				copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/ping_' + self.testCase_id + '.log', '.')
 			if (copyin_res == 0):
@@ -1492,7 +1492,7 @@ class OaiCiTest():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def Ping(self):
-		result = re.search('noS1', str(RAN.GetInitialize_eNB_args()))
+		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
 			self.PingNoS1()
 			return
@@ -2123,7 +2123,7 @@ class OaiCiTest():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def IperfNoS1(self):
-		if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
+		if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
@@ -2135,9 +2135,9 @@ class OaiCiTest():
 			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
-			iServerIPAddr = RAN.GeteNBIPAddress()
-			iServerUser = RAN.GeteNBUserName()
-			iServerPasswd = RAN.GeteNBPassword()
+			iServerIPAddr = RAN.eNBIPAddress
+			iServerUser = RAN.eNBUserName
+			iServerPasswd = RAN.eNBPassword
 			iClientIPAddr = self.UEIPAddress
 			iClientUser = self.UEUserName
 			iClientPasswd = self.UEPassword
@@ -2145,9 +2145,9 @@ class OaiCiTest():
 			iServerIPAddr = self.UEIPAddress
 			iServerUser = self.UEUserName
 			iServerPasswd = self.UEPassword
-			iClientIPAddr = RAN.GeteNBIPAddress()
-			iClientUser = RAN.GeteNBUserName()
-			iClientPasswd = RAN.GeteNBPassword()
+			iClientIPAddr = RAN.eNBIPAddress
+			iClientUser = RAN.eNBUserName
+			iClientPasswd = RAN.eNBPassword
 		if self.iperf_options != 'sink':
 			# Starting the iperf server
 			SSH.open(iServerIPAddr, iServerUser, iServerPasswd)
@@ -2232,7 +2232,7 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB()
 
 	def Iperf(self):
-		result = re.search('noS1', str(RAN.GetInitialize_eNB_args()))
+		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
 			self.IperfNoS1()
 			return
@@ -2313,7 +2313,7 @@ class OaiCiTest():
 		status_queue = SimpleQueue()
 		# in noS1 config, no need to check status from EPC
 		# in gNB also currently no need to check
-		result = re.search('noS1|band78', str(RAN.GetInitialize_eNB_args()))
+		result = re.search('noS1|band78', str(RAN.Initialize_eNB_args))
 		if result is None:
 			p = Process(target = EPC.CheckHSSProcess, args = (status_queue,))
 			p.daemon = True
@@ -2352,14 +2352,14 @@ class OaiCiTest():
 				if (status < 0):
 					result = status
 			if result == CONST.ENB_PROCESS_FAILED:
-				fileCheck = re.search('enb_', str(RAN.GeteNBLogFile(0)))
+				fileCheck = re.search('enb_', str(RAN.eNBLogFiles[0]))
 				if fileCheck is not None:
-					SSH.copyin(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath() + '/cmake_targets/' + RAN.GeteNBLogFile(0), '.')
-					logStatus = RAN.AnalyzeLogFile_eNB(RAN.GeteNBLogFile[0])
+					SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/' + RAN.eNBLogFiles[0], '.')
+					logStatus = RAN.AnalyzeLogFile_eNB(RAN.eNBLogFiles[0])
 					if logStatus < 0:
 						result = logStatus
-					RAN.SeteNBLogFile('', 0)
-				if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
+					RAN.eNBLogFiles[0]=''
+				if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 					self.TerminateFlexranCtrl()
 			return result
 
@@ -2394,8 +2394,8 @@ class OaiCiTest():
 	def CheckOAIUEProcess(self, status_queue):
 		try:
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('stdbuf -o0 ps -aux | grep --color=never ' + RAN.Getair_interface() + '-uesoftmodem | grep -v grep', '\$', 5)
-			result = re.search(RAN.Getair_interface() + '-uesoftmodem', SSH.getBefore())
+			SSH.command('stdbuf -o0 ps -aux | grep --color=never ' + RAN.air_interface + '-uesoftmodem | grep -v grep', '\$', 5)
+			result = re.search(RAN.air_interface + '-uesoftmodem', SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m OAI UE Process Not Found! \u001B[0m')
 				status_queue.put(CONST.OAI_UE_PROCESS_FAILED)
@@ -2494,7 +2494,7 @@ class OaiCiTest():
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
 				no_cell_sync_found = True
-			if RAN.GeteNBmbmsEnable(0):
+			if RAN.eNBmbmsEnables[0]:
 				result = re.search('TRIED TO PUSH MBMS DATA', str(line))
 				if result is not None:
 					mbms_messages += 1
@@ -2620,7 +2620,7 @@ class OaiCiTest():
 			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
-		if RAN.GeteNBmbmsEnable(0):
+		if RAN.eNBmbmsEnables[0]:
 			if mbms_messages > 0:
 				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -2660,7 +2660,7 @@ class OaiCiTest():
 
 
 	def TerminateFlexranCtrl(self):
-		if RAN.GetflexranCtrlInstalled() == False or RAN.GetflexranCtrlStarted() == False:
+		if RAN.flexranCtrlInstalled == False or RAN.flexranCtrlStarted == False:
 			return
 		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
 			HELP.GenericHelp(CONST.Version)
@@ -2671,7 +2671,7 @@ class OaiCiTest():
 		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
 		time.sleep(1)
 		SSH.close()
-		RAN.SetflexranCtrlStarted(False)
+		RAN.flexranCtrlStarted=False
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateUE_common(self, device_id, idx):
@@ -2752,7 +2752,7 @@ class OaiCiTest():
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
 				HTML.SethtmlUEFailureMsg('<b>' + ueAction + ' Failed</b>\n' + HTML.GethtmlUEFailureMsg())
 				HTML.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
-				if RAN.Getair_interface() == 'lte':
+				if RAN.air_interface == 'lte':
 					# In case of sniffing on commercial eNBs we have random results
 					# Not an error then
 					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
@@ -2785,22 +2785,22 @@ class OaiCiTest():
 			HTML.Setdesc('Automatic Termination of OAI-UE')
 			self.ShowTestID()
 			self.TerminateOAIUE()
-		if (RAN.GetInitialize_eNB_args() != ''):
+		if (RAN.Initialize_eNB_args != ''):
 			self.testCase_id = 'AUTO-KILL-eNB'
 			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of eNB'
 			HTML.Setdesc('Automatic Termination of eNB')
 			self.ShowTestID()
-			RAN.SeteNB_instance('0')
+			RAN.eNB_instance='0'
 			RAN.TerminateeNB()
-		if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
+		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.SettestCase_id(self.testCase_id)
 			self.desc = 'Automatic Termination of FlexRan CTL'
 			HTML.Setdesc('Automatic Termination of FlexRan CTL')
 			self.ShowTestID()
 			self.TerminateFlexranCtrl()
-		RAN.SetprematureExit(True)
+		RAN.prematureExit=True
 
 	def IdleSleep(self):
 		time.sleep(self.idle_sleep_time)
@@ -2856,7 +2856,7 @@ class OaiCiTest():
 		logging.debug(msg)
 		fullMessage += msg + '\n'
 		if self.x2_ho_options == 'network':
-			if RAN.GetflexranCtrlInstalled() and RAN.GetflexranCtrlStarted():
+			if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 				self.x2ENBBsIds = []
 				self.x2ENBConnectedUEs = []
 				self.x2ENBBsIds.append([])
@@ -2917,11 +2917,11 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', CONST.ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self):
-		if (RAN.GeteNBIPAddress() != '' and RAN.GeteNBUserName() != '' and RAN.GeteNBPassword() != ''):
-			IPAddress = RAN.GeteNBIPAddress()
-			UserName = RAN.GeteNBUserName()
-			Password = RAN.GeteNBPassword()
-			SourceCodePath = RAN.GeteNBSourceCodePath()
+		if (RAN.eNBIPAddress != '' and RAN.eNBUserName != '' and RAN.eNBPassword != ''):
+			IPAddress = RAN.eNBIPAddress
+			UserName = RAN.eNBUserName
+			Password = RAN.eNBPassword
+			SourceCodePath = RAN.eNBSourceCodePath
 		elif (self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != ''):
 			IPAddress = self.UEIPAddress
 			UserName = self.UEUserName
@@ -2963,7 +2963,7 @@ class OaiCiTest():
 		SSH.close()
 
 	def RetrieveSystemVersion(self, machine):
-		if RAN.GeteNBIPAddress() == 'none' or self.UEIPAddress == 'none':
+		if RAN.eNBIPAddress == 'none' or self.UEIPAddress == 'none':
 			HTML.SetOsVersion('Ubuntu 16.04.5 LTS', 0)
 			HTML.SetKernelVersion('4.15.0-45-generic', 0)
 			HTML.SetUhdVersion('3.13.0.1-0', 0)
@@ -2973,10 +2973,10 @@ class OaiCiTest():
 			HTML.SetCpuMHz('2399.996 MHz', 0)
 			return 0
 		if machine == 'eNB':
-			if RAN.GeteNBIPAddress() != '' and RAN.GeteNBUserName() != '' and RAN.GeteNBPassword() != '':
-				IPAddress = RAN.GeteNBIPAddress()
-				UserName = RAN.GeteNBUserName()
-				Password = RAN.GeteNBPassword()
+			if RAN.eNBIPAddress != '' and RAN.eNBUserName != '' and RAN.eNBPassword != '':
+				IPAddress = RAN.eNBIPAddress
+				UserName = RAN.eNBUserName
+				Password = RAN.eNBPassword
 				idx = 0
 			else:
 				return -1
@@ -3070,47 +3070,47 @@ def CheckClassValidity(action,id):
 
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
-		RAN.SetBuild_eNB_args(test.findtext('Build_eNB_args'))
+		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
 		if (forced_workspace_cleanup is None):
-			RAN.SetBuild_eNB_forced_workspace_cleanup(False)
+			RAN.Build_eNB_forced_workspace_cleanup=False
 		else:
 			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
-				RAN.SetBuild_eNB_forced_workspace_cleanup(True)
+				RAN.Build_eNB_forced_workspace_cleanup=True
 			else:
-				RAN.SetBuild_eNB_forced_workspace_cleanup(False)
-		RAN.SeteNB_instance(test.findtext('eNB_instance'))
-		if (RAN.GeteNB_instance() is None):
-			RAN.SeteNB_instance('0')
-		RAN.SeteNB_serverId(test.findtext('eNB_serverId'))
-		if (RAN.GeteNB_serverId() is None):
-			RAN.SeteNB_serverId('0')
+				RAN.Build_eNB_forced_workspace_cleanup=False
+		RAN.eNB_instance=test.findtext('eNB_instance')
+		if (RAN.eNB_instance is None):
+			RAN.eNB_instance='0'
+		RAN.eNB_serverId=test.findtext('eNB_serverId')
+		if (RAN.eNB_serverId is None):
+			RAN.eNB_serverId='0'
 		xmlBgBuildField = test.findtext('backgroundBuild')
 		if (xmlBgBuildField is None):
-			RAN.SetbackgroundBuild(False)
+			RAN.backgroundBuild=False
 		else:
 			if re.match('true', xmlBgBuildField, re.IGNORECASE):
-				RAN.SetbackgroundBuild(True)
+				RAN.backgroundBuild=True
 			else:
-				RAN.SetbackgroundBuild(False)
+				RAN.backgroundBuild=False
 
 	if action == 'WaitEndBuild_eNB':
-		RAN.SetBuild_eNB_args(test.findtext('Build_eNB_args'))
-		RAN.SeteNB_instance(test.findtext('eNB_instance'))
-		if (RAN.GeteNB_instance() is None):
-			RAN.SeteNB_instance('0')
-		RAN.SeteNB_serverId(test.findtext('eNB_serverId'))
-		if (RAN.GeteNB_serverId() is None):
-			RAN.SeteNB_serverId('0')
+		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		RAN.eNB_instance=test.findtext('eNB_instance')
+		if (RAN.eNB_instance is None):
+			RAN.eNB_instance='0'
+		RAN.eNB_serverId=test.findtext('eNB_serverId')
+		if (RAN.eNB_serverId is None):
+			RAN.eNB_serverId='0'
 
 	if action == 'Initialize_eNB':
-		RAN.SetInitialize_eNB_args(test.findtext('Initialize_eNB_args'))
-		RAN.SeteNB_instance(test.findtext('eNB_instance'))
-		if (RAN.GeteNB_instance() is None):
-			RAN.SeteNB_instance('0')
-		RAN.SeteNB_serverId(test.findtext('eNB_serverId'))
-		if (RAN.GeteNB_serverId() is None):
-			RAN.SeteNB_serverId('0')
+		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
+		RAN.eNB_instance=test.findtext('eNB_instance')
+		if (RAN.eNB_instance is None):
+			RAN.eNB_instance='0'
+		RAN.eNB_serverId=test.findtext('eNB_serverId')
+		if (RAN.eNB_serverId is None):
+			RAN.eNB_serverId='0'
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
@@ -3120,15 +3120,15 @@ def GetParametersFromXML(action):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
 			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
-		RAN.Setair_interface(CiTestObj.air_interface)
+		RAN.air_interface(CiTestObj.air_interface)
 
 	if action == 'Terminate_eNB':
-		RAN.SeteNB_instance(test.findtext('eNB_instance'))
-		if (RAN.GeteNB_instance() is None):
-			RAN.SeteNB_instance('0')
-		RAN.SeteNB_serverId(test.findtext('eNB_serverId'))
-		if (RAN.GeteNB_serverId() is None):
-			RAN.SeteNB_serverId('0')
+		RAN.eNB_instance=test.findtext('eNB_instance')
+		if (RAN.eNB_instance is None):
+			RAN.eNB_instance='0'
+		RAN.eNB_serverId=test.findtext('eNB_serverId')
+		if (RAN.eNB_serverId is None):
+			RAN.eNB_serverId='0'
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
@@ -3138,7 +3138,7 @@ def GetParametersFromXML(action):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
 			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
-		RAN.Setair_interface(CiTestObj.air_interface)
+		RAN.air_interface=CiTestObj.air_interface
 
 	if action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
@@ -3176,10 +3176,10 @@ def GetParametersFromXML(action):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
 			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
-		RAN.Setair_interface(CiTestObj.air_interface)
+		RAN.air_interface=CiTestObj.air_interface
 
 	if action == 'Terminate_OAI_UE':
-		RAN.SeteNB_instance(test.findtext('UE_instance'))
+		RAN.eNB_instance=test.findtext('UE_instance')
 		if (CiTestObj.UE_instance is None):
 			CiTestObj.UE_instance = '0'
 
@@ -3268,8 +3268,8 @@ RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 
 EPC.SetHtmlObj(HTML)
-RAN.SetHtmlObj(HTML)
-RAN.SetEpcObj(EPC)
+RAN.HtmlObj=HTML
+RAN.EpcObj=EPC
 
 import cls_physim           #class PhySim for physical simulators build and test
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
@@ -3293,7 +3293,7 @@ while len(argvs) > 1:
 		else:
 			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranRepository = matchReg.group(1)
-		RAN.SetranRepository(matchReg.group(1))
+		RAN.ranRepository=matchReg.group(1)
 		HTML.SetranRepository(matchReg.group(1))
 		ldpc.ranRepository=matchReg.group(1)
 	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
@@ -3305,7 +3305,7 @@ while len(argvs) > 1:
 		ldpc.ranAllowMerge=matchReg.group(1)
 		if ((doMerge == 'true') or (doMerge == 'True')):
 			CiTestObj.ranAllowMerge = True
-			RAN.SetranAllowMerge(True)
+			RAN.ranAllowMerge=True
 			HTML.SetranAllowMerge(True)
 	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
@@ -3313,7 +3313,7 @@ while len(argvs) > 1:
 		else:
 			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranBranch = matchReg.group(1)
-		RAN.SetranBranch(matchReg.group(1))
+		RAN.ranBranch=matchReg.group(1)
 		HTML.SetranBranch(matchReg.group(1))
 		ldpc.ranBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
@@ -3322,7 +3322,7 @@ while len(argvs) > 1:
 		else:
 			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranCommitID = matchReg.group(1)
-		RAN.SetranCommitID(matchReg.group(1))
+		RAN.ranCommitID=matchReg.group(1)
 		HTML.SetranCommitID(matchReg.group(1))
 		ldpc.ranCommitID=matchReg.group(1)
 	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
@@ -3331,53 +3331,53 @@ while len(argvs) > 1:
 		else:
 			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranTargetBranch = matchReg.group(1)
-		RAN.SetranTargetBranch(matchReg.group(1))
+		RAN.ranTargetBranch=matchReg.group(1)
 		HTML.SetranTargetBranch(matchReg.group(1))
 		ldpc.ranTargetBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNBIPAddress(matchReg.group(1))
+			RAN.eNBIPAddress=matchReg.group(1)
 			ldpc.eNBIpAddr=matchReg.group(1)
 		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB1IPAddress(matchReg.group(1))
+			RAN.eNB1IPAddress=matchReg.group(1)
 		elif re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB2IPAddress(matchReg.group(1))
+			RAN.eNB2IPAddress=matchReg.group(1)
 	elif re.match('^\-\-eNBUserName=(.+)$|^\-\-eNB[1-2]UserName=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNBUserName(matchReg.group(1))
+			RAN.eNBUserName=matchReg.group(1)
 			ldpc.eNBUserName=matchReg.group(1)
 		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB1UserName(matchReg.group(1))
+			RAN.eNB1UserName=matchReg.group(1)
 		elif re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB2UserName(matchReg.group(1))
+			RAN.eNB2UserName=matchReg.group(1)
 	elif re.match('^\-\-eNBPassword=(.+)$|^\-\-eNB[1-2]Password=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNBPassword(matchReg.group(1))
+			RAN.eNBPassword=matchReg.group(1)
 			ldpc.eNBPassWord=matchReg.group(1)
 		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB1Password(matchReg.group(1))
+			RAN.eNB1Password=matchReg.group(1)
 		elif re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB2Password(matchReg.group(1))
+			RAN.eNB2Password=matchReg.group(1)
 	elif re.match('^\-\-eNBSourceCodePath=(.+)$|^\-\-eNB[1-2]SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNBSourceCodePath(matchReg.group(1))
+			RAN.eNBSourceCodePath=matchReg.group(1)
 			ldpc.eNBSourceCodePath=matchReg.group(1)
 		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB1SourceCodePath(matchReg.group(1))
+			RAN.eNB1SourceCodePath=matchReg.group(1)
 		elif re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			RAN.SeteNB2SourceCodePath(matchReg.group(1))
+			RAN.eNB2SourceCodePath=matchReg.group(1)
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		EPC.SetIPAddress(matchReg.group(1))
@@ -3444,12 +3444,12 @@ while len(argvs) > 1:
 		sys.exit('Invalid Parameter: ' + myArgv)
 
 if re.match('^TerminateeNB$', mode, re.IGNORECASE):
-	if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '':
+	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
-	RAN.SeteNB_serverId('0')
-	RAN.SeteNB_instance('0')
-	RAN.SeteNBSourceCodePath('/tmp/')
+	RAN.eNB_serverId='0'
+	RAN.eNB_instance='0'
+	RAN.eNBSourceCodePath='/tmp/'
 	RAN.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
@@ -3479,12 +3479,12 @@ elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateSPGW()
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
-	if (RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
+	if (RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectBuild()
 elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
-	if RAN.GeteNBIPAddress() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '':
+	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	RAN.LogCollecteNB()
@@ -3559,14 +3559,14 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if RAN.GeteNBIPAddress() == '' or RAN.GetranRepository() == '' or RAN.GetranBranch() == '' or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '' or EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
+		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or EPC.GetType() == '':
 				HELP.EPCSrvHelp(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath(), EPC.GetType())
-			if RAN.GetranRepository() == '':
-				HELP.GitSrvHelp(RAN.GetranRepository(), RAN.GetranBranch(), RAN.GetranCommitID(), RAN.GetranAllowMerge(), RAN.GetranTargetBranch())
-			if RAN.GeteNBIPAddress() == ''  or RAN.GeteNBUserName() == '' or RAN.GeteNBPassword() == '' or RAN.GeteNBSourceCodePath() == '':
-				HELP.eNBSrvHelp(RAN.GeteNBIPAddress(), RAN.GeteNBUserName(), RAN.GeteNBPassword(), RAN.GeteNBSourceCodePath())
+			if RAN.ranRepository == '':
+				HELP.GitSrvHelp(RAN.ranRepository, RAN.ranBranch, RAN.ranCommitID, RAN.ranAllowMerge, RAN.ranTargetBranch)
+			if RAN.eNBIPAddress == ''  or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '':
+				HELP.eNBSrvHelp(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath)
 			sys.exit('Insufficient Parameter')
 
 		if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
@@ -3644,18 +3644,18 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	HTML.CreateHtmlTabHeader()
 
 	CiTestObj.FailReportCnt = 0
-	RAN.SetprematureExit(True)
+	RAN.prematureExit=True
 	HTML.SetstartTime(int(round(time.time() * 1000)))
-	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and RAN.GetprematureExit():
-		RAN.SetprematureExit(False)
+	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and RAN.prematureExit:
+		RAN.prematureExit=False
 		# At every iteratin of the retry loop, a separator will be added
 		# pass CiTestObj.FailReportCnt as parameter of HTML.CreateHtmlRetrySeparator
 		HTML.CreateHtmlRetrySeparator(CiTestObj.FailReportCnt)
 		for test_case_id in todo_tests:
-			if RAN.GetprematureExit():
+			if RAN.prematureExit:
 				break
 			for test in all_tests:
-				if RAN.GetprematureExit():
+				if RAN.prematureExit:
 					break
 				id = test.get('id')
 				if test_case_id != id:
@@ -3681,7 +3681,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Initialize_eNB':
 					check_eNB = False
 					check_OAI_UE = False
-					RAN.SetpStatus(CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE))
+					RAN.pStatus=CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE)
 
 					RAN.InitializeeNB()
 				elif action == 'Terminate_eNB':
@@ -3750,7 +3750,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				else:
 					sys.exit('Invalid action')
 		CiTestObj.FailReportCnt += 1
-	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.GetprematureExit():
+	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
 		logging.debug('Testsuite failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')

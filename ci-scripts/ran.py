@@ -92,7 +92,7 @@ class RANManagement():
 		self.epcObj = None
 
 
-
+"""
 #-----------------------------------------------------------
 # Setters and Getters on Public members
 #-----------------------------------------------------------
@@ -227,6 +227,8 @@ class RANManagement():
 		self.prematureExit = premex
 	def GetprematureExit(self):
 		return self.prematureExit
+
+"""
 
 #-----------------------------------------------------------
 # RAN management functions
