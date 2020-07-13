@@ -56,6 +56,8 @@ extern RAN_CONTEXT_t RC;
 #include "PHY/INIT/phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair1/SCHED_NR/fapi_nr_l1.h"
+#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 
 #define NUM_P5_PHY 2
 
@@ -83,7 +85,7 @@ extern void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_d
 
 
 nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_num_pdus]
-
+nfapi_nr_tx_data_request_t *tx_data_request[1023][20][10]; //[frame][slot][max_num_pdus]
 uint8_t tx_pdus[32][8][4096];
 
 nfapi_ue_release_request_body_t release_rntis;
@@ -926,6 +928,116 @@ int pnf_phy_hi_dci0_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfa
   return 0;
 }
 
+
+int pnf_phy_dl_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_dl_tti_request_t *req) {
+  if (RC.ru == 0) {
+    return -1;
+  }
+
+  if (RC.gNB == 0) {
+    return -2;
+  }
+
+  if (RC.gNB[0] == 0) {
+    return -3;
+  }
+
+  if (sync_var != 0) {
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() Main system not up - is this a dummy subframe?\n", __FUNCTION__);
+    return -4;
+  }
+
+  // int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
+  // int sf = NFAPI_SFNSF2SF(req->sfn_sf);
+
+  int sfn = req->SFN;
+  int slot =  req->Slot;
+
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  if (proc==NULL)
+     proc = &gNB->proc.L1_proc;
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_request_body.dl_tti_pdu_list;
+
+  // TODO: NR_gNB_PDCCH not defined yet (check later)
+#if 0
+  LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[sf&1];
+  pdcch_vars->num_pdcch_symbols = req->dl_config_request_body.number_pdcch_ofdm_symbols;
+  pdcch_vars->num_dci = 0;
+#endif
+
+  if (req->dl_tti_request_body.nPDUs)
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
+                __FUNCTION__, proc->frame_tx, proc->subframe_tx, proc->frame_rx, proc->subframe_rx, // TODO: change subframes to slot
+                req->SFN,
+                req->Slot,
+                req->dl_tti_request_body.nGroup,
+                req->dl_tti_request_body.nPDUs,
+                req->dl_tti_request_body.nUe,
+                req->dl_tti_request_body.PduIdx);
+
+
+  for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
+    // TODO: enable after adding gNB PDCCH:
+    // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
+
+    if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
+      //handle_nfapi_dci_dl_pdu(eNB,NFAPI_SFNSF2SFN(req->sfn_sf),NFAPI_SFNSF2SF(req->sfn_sf),proc,&dl_config_pdu_list[i]);
+      handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i].pdcch_pdu);
+
+      // pdcch_vars->num_dci++; // Is actually number of DCI PDUs
+      // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
+    } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
+      // nfapi_dl_config_bch_pdu *bch_pdu = &dl_config_pdu_list[i].bch_pdu;
+      nfapi_nr_dl_tti_ssb_pdu *ssb_pdu = &dl_tti_pdu_list[i].ssb_pdu;
+      // uint16_t pdu_index = bch_pdu->bch_pdu_rel8.pdu_index;
+      uint16_t pdu_index = ssb_pdu->ssb_pdu_rel15.SsbBlockIndex;
+      
+      if (tx_data_request[sfn][slot][pdu_index] != NULL) {
+        //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PDU:%d BCH: pdu_index:%u pdu_length:%d sdu_length:%d BCH_SDU:%x,%x,%x\n", __FUNCTION__, i, pdu_index, bch_pdu->bch_pdu_rel8.length, tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_length, sdu[0], sdu[1], sdu[2]);
+        // handle_nfapi_bch_pdu(eNB, proc, &dl_config_pdu_list[i], tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_data);
+        handle_nr_nfapi_ssb_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i]);
+        gNB->pbch_configured=1;\
+      } else {
+        // NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() BCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), pdu_index);
+      }
+    } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE) {
+      nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu = &dl_tti_pdu_list[i].pdsch_pdu;
+      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15_pdu = &pdsch_pdu->pdsch_pdu_rel15;
+      nfapi_nr_tx_data_request_t *tx_data = tx_data_request[sfn][slot][rel15_pdu->pduIndex];
+
+      if (tx_data != NULL) {
+        int UE_id = find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
+        AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+        AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+        //LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
+        NR_gNB_DLSCH_t *dlsch0 = gNB->dlsch[UE_id][0];
+        //LTE_eNB_DLSCH_t *dlsch1 = eNB->dlsch[UE_id][1];
+        int harq_pid = dlsch0->harq_ids[sfn%2][slot];
+
+        if(harq_pid >= dlsch0->Mdlharq) {
+          LOG_E(PHY,"pnf_phy_dl_config_req illegal harq_pid %d\n", harq_pid);
+          return(-1);
+        }
+        uint8_t *dlsch_sdu = (uint8_t *)tx_data->pdu_list[rel15_pdu->pduIndex].TLVs[0].value.direct;
+        //uint8_t *dlsch_sdu = tx_data[UE_id][harq_pid];
+       // memcpy(dlsch_sdu, tx_data->pdu_list[0], tx_data->pdu_list[0].PDU_length);//TODO: Check if required
+        //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
+        handle_nr_nfapi_pdsch_pdu(gNB, sfn, slot, &dl_tti_pdu_list[0].pdsch_pdu, dlsch_sdu);
+      } else {
+        // NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() DLSCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), rel8_pdu->pdu_index);
+      }
+    } else {
+      NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() UNKNOWN:%d\n", __FUNCTION__, dl_tti_pdu_list[i].PDUType);
+    }
+  }
+
+  if(req->vendor_extension)
+    free(req->vendor_extension);
+
+  return 0;
+}
+
+
 int pnf_phy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req) {
   if (RC.ru == 0) {
     return -1;
@@ -1239,6 +1351,10 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
     p7_config->timing_info_mode_aperiodic = 1;
   }
 
+  // NR
+  p7_config->dl_tti_req_fn = &pnf_phy_dl_tti_req;
+
+  // LTE
   p7_config->dl_config_req = &pnf_phy_dl_config_req;
   p7_config->ul_config_req = &pnf_phy_ul_config_req;
   p7_config->hi_dci0_req = &pnf_phy_hi_dci0_req;

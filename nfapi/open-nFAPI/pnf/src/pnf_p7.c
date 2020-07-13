@@ -937,7 +937,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				slot_buffer->lbt_dl_config_req = 0;
 			}
 		} // sfn_sf match
-// DONE till here
+
 
 		if ( slot_buffer->dl_tti_req == 0 &&
 			 slot_buffer->tx_data_req == 0 && 
@@ -982,7 +982,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
         //printf("pnf_p7->tick:%d\n", pnf_p7->tick);
 	if(pnf_p7->tick == 1000) // why?
 	{
-
+		// TODO: change stats to nr_stats
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF P7:%d] (ONTIME/LATE) DL:(%d/%d) UL:(%d/%d) HI:(%d/%d) TX:(%d/%d)\n", pnf_p7->_public.phy_id,
 					pnf_p7->stats.dl_conf_ontime, pnf_p7->stats.dl_conf_late, 
 					pnf_p7->stats.ul_conf_ontime, pnf_p7->stats.ul_conf_late, 
