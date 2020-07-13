@@ -2,13 +2,12 @@
 
 We want to make contributing to this project as easy and transparent as possible.
 
-Please refer to the steps described on our website: [How to contribute to OAI](https://www.openairinterface.org/?page_id=112)
-
 1. Sign and return a Contributor License Agreement to OAI team.
-2. Create an account on [Eurecom GitLab Server](https://gitlab.eurecom.fr).
-3. Provide the identifiant of this account to the OAI team (mailto:contact@openairinterface.org) so you have developer rights on this repository.
+2. We recommend that you provide us with a professional or student email address 
+2. Register on [Eurecom GitLab Server](https://gitlab.eurecom.fr/users/sign_in)
+3. Provide the OAI team with the **username** of this account to (mailto:contact@openairinterface.org) ; we will give you the developer rights on this repository.
 4. The policies are described in these wiki pages: [OAI Policies](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/oai-policies-home)
-   -  PLEASE DO NOT FORK the OAI repository on your own Eurecom GitLab account. It just eats up space on our servers.
+   - PLEASE DO NOT FORK the OAI repository on your own Eurecom GitLab account. It just eats up space on our servers.
    - You can fork onto another hosting system. But we will NOT accept a merge request from a forked repository.
       * This decision was made for the license reasons.
       * The Continuous Integration will reject your merge request.
