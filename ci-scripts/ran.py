@@ -440,7 +440,7 @@ class RANManagement():
 			logging.info('\u001B[1m Building OAI ' + self.air_interface + ' Pass\u001B[0m')
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)		
-		else
+		else:
 			logging.error('\u001B[1m Building OAI ' + self.air_interface + ' Failed\u001B[0m')
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)

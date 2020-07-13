@@ -25,14 +25,43 @@
 	<htmlTabName>Build</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
- 010101
+ 010101 010102
+ 000101 000102
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010101">
 		<class>Build_eNB</class>
-		<desc>Build eNB OCP (USRP)</desc>
-		<Build_eNB_args>-w USRP -c --eNBocp</Build_eNB_args>
+		<desc>Build eNB</desc>
+		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<backgroundBuild>True</backgroundBuild>
+	</testCase>
+
+	<testCase id="000101">
+		<class>WaitEndBuild_eNB</class>
+		<desc>Wait for end of Build eNB</desc>
+		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="010102">
+		<class>Build_eNB</class>
+		<desc>Build gNB</desc>
+		<Build_eNB_args>-w USRP -c --gNB --ninja</Build_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+		<backgroundBuild>True</backgroundBuild>
+	</testCase>
+
+	<testCase id="000102">
+		<class>WaitEndBuild_eNB</class>
+		<desc>Wait for end of Build gNB</desc>
+		<Build_eNB_args>-w USRP -c --gNB --ninja</Build_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
 </testCaseList>
