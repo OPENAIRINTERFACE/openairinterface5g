@@ -35,7 +35,7 @@
 
 #include "PHY/sse_intrin.h"
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
+//#include "PHY/phy_extern.h"
 
 //#define PRACH_DEBUG 1
 //#define PRACH_WRITE_OUTPUT_DEBUG 1

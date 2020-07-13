@@ -21,8 +21,6 @@
 
 #include "phy_init.h"
 #include "SCHED/sched_common.h"
-#include "PHY/phy_extern.h"
-#include "SIMULATION/TOOLS/sim.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
@@ -31,6 +29,8 @@
 #include "assertions.h"
 #include <math.h>
 #include "openair1/PHY/defs_RU.h"
+
+extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
 int nr_phy_init_RU(RU_t *ru) {
 
@@ -43,8 +43,8 @@ int nr_phy_init_RU(RU_t *ru) {
 
   nfapi_nr_config_request_scf_t *cfg;
   ru->nb_log_antennas=0;
-  for (int n=0;n<RC.nb_nr_L1_inst;n++) {
-    cfg = &RC.gNB[n]->gNB_config;
+  for (int n=0;n<ru->num_gNB;n++) {
+    cfg = &ru->gNB_list[n]->gNB_config;
     if (cfg->carrier_config.num_tx_ant.value > ru->nb_log_antennas) ru->nb_log_antennas = cfg->carrier_config.num_tx_ant.value;   
   }
   AssertFatal(ru->nb_log_antennas > 0 && ru->nb_log_antennas < 13, "ru->nb_log_antennas %d ! \n",ru->nb_log_antennas);
@@ -111,10 +111,10 @@ int nr_phy_init_RU(RU_t *ru) {
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
     }
     
-    AssertFatal(RC.nb_nr_L1_inst <= NUMBER_OF_eNB_MAX,"gNB instances %d > %d\n",
-		RC.nb_nr_L1_inst,NUMBER_OF_gNB_MAX);
+    AssertFatal(ru->num_gNB <= NUMBER_OF_gNB_MAX,"gNB instances %d > %d\n",
+		ru->num_gNB,NUMBER_OF_gNB_MAX);
 
-    LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
+    LOG_E(PHY,"[INIT] %s() ru->num_gNB:%d \n", __FUNCTION__, ru->num_gNB);
     
     int beam_count = 0;
     if (ru->nb_log_antennas>1) {
@@ -125,7 +125,7 @@ int nr_phy_init_RU(RU_t *ru) {
       AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
     
       int l_ind = 0;
-      for (i=0; i<RC.nb_nr_L1_inst; i++) {
+      for (i=0; i<ru->num_gNB; i++) {
         for (p=0;p<ru->nb_log_antennas;p++) {
           if ((fp->L_ssb >> p) & 0x01)  {
 	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
@@ -184,7 +184,7 @@ void nr_phy_free_RU(RU_t *ru)
       free_and_zero(ru->prach_rxsigF[i]);
     }
 
-    for (i = 0; i < RC.nb_nr_L1_inst; i++) {
+    for (i = 0; i < ru->num_gNB; i++) {
       for (p = 0; p < 15; p++) {
 	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
 	  free_and_zero(ru->beam_weights[i][p]);

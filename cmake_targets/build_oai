@@ -237,10 +237,12 @@ function main() {
             shift;;
        --eNB)
             eNB=1
+            RU=0
             echo_info "Will compile eNB"
             shift;;
        --gNB)
             gNB=1
+            RU=0
             NR="True"
             echo_info "Will compile gNB"
             shift;;
@@ -252,10 +254,12 @@ function main() {
             echo_info "FlexRAN support is always compiled into the eNB"
             shift;;
        --UE)
+            RU=0
             UE=1
             echo_info "Will compile UE"
             shift;;
        --nrUE)
+            RU=0
             nrUE=1
             NR="True"
             echo_info "Will compile NR UE"
@@ -604,6 +608,7 @@ function main() {
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
+    echo "set ( RU $RU )"                                                 >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
@@ -642,20 +647,22 @@ function main() {
         $build_dir $config_libconfig_shlib \
         lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
 
-      compilations \
-        $build_dir coding \
-        libcoding.so $dbin/libcoding.so
+      if [ "$RU" = "0" ] ; then
 
-      compilations \
-        $build_dir nasmesh \
-        CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+        compilations \
+          $build_dir coding \
+          libcoding.so $dbin/libcoding.so
 
-      compilations \
-        $build_dir rb_tool \
-        rb_tool $dbin/rb_tool
-      cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+        compilations \
+          $build_dir nasmesh \
+          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+
+        compilations \
+          $build_dir rb_tool \
+          rb_tool $dbin/rb_tool
+        cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+      fi
     fi
-
   fi
 
   if [ "$UE" = 1 ] ; then

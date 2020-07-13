@@ -35,9 +35,9 @@
 #include "dci.h"
 #include "mdci.h"
 //#include "uci.h"
-#ifndef STANDALONE_COMPILE
-  #include "UTIL/LISTS/list.h"
-#endif
+//#ifndef STANDALONE_COMPILE
+//  #include "UTIL/LISTS/list.h"
+//#endif
 
 #define MOD_TABLE_QPSK_OFFSET 1
 #define MOD_TABLE_16QAM_OFFSET 5

@@ -32,23 +32,25 @@
 #define M_PI 3.14159265358979323846
 #endif
 #define OAIDFTS_MAIN
-#ifndef MR_MAIN
-#include "PHY/defs_common.h"
-#include "PHY/impl_defs_top.h"
-#else
+//#ifndef MR_MAIN
+//#include "PHY/defs_common.h"
+//#include "PHY/impl_defs_top.h"
+//#else
 #include "time_meas.h"
 #include "LOG/log.h"
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
 
-int oai_exit=0;
-#endif
+//int oai_exit=0;
+//#endif
 
 #define ONE_OVER_SQRT3_Q15 18919
 
 #include "../sse_intrin.h"
 
 #include "assertions.h"
+
+#include "tools_defs.h"
 
 #define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
 #define print_shorts256(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7],(x)[8],(x)[9],(x)[10],(x)[11],(x)[12],(x)[13],(x)[14],(x)[15])

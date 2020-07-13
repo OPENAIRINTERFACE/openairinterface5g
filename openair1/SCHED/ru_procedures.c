@@ -43,7 +43,6 @@
 
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"

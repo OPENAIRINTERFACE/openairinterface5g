@@ -44,7 +44,6 @@
  
 #include "PHY/defs_common.h"
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"

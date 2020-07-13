@@ -41,7 +41,6 @@
 #include "PHY/types.h"
 
 #include "PHY/defs_RU.h"
-#include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
 
@@ -60,7 +59,7 @@
 #include "system.h"
 
 #include <executables/split_headers.h>
-#include <targets/RT/USER/lte-softmodem.h>
+#include <executables/softmodem-common.h>
 #include <executables/thread-common.h>
 
 static int DEFBANDS[] = {7};
@@ -77,7 +76,10 @@ uint16_t sf_ahead = 4;
 RU_t ru_m;
 
 
-void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync);
+extern void init_RU0(RU_t *ru,int ru_id,char *rf_config_file, int send_dmrssync);
+extern void init_RU_proc(RU_t *ru);
+extern void kill_RU_proc(RU_t *ru);
+extern void set_function_spec_param(RU_t *ru);
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
 
@@ -96,7 +98,9 @@ void exit_function(const char *file, const char *function, const int line, const
     ru_m.ifdevice.trx_end_func(&ru_m.ifdevice);
     ru_m.ifdevice.trx_end_func = NULL;
   }
-  
+ 
+  pthread_mutex_destroy(ru_m.ru_mutex);
+  pthread_cond_destroy(ru_m.ru_cond); 
   sleep(1); //allow lte-softmodem threads to exit first
   exit(1);
 }
@@ -169,6 +173,13 @@ int main ( int argc, char **argv )
   config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
 
   int j=0;
+  uint64_t ru_mask=1;
+  pthread_mutex_t ru_mutex; pthread_mutex_init(&ru_mutex,NULL);
+  pthread_cond_t ru_cond; pthread_cond_init(&ru_cond,NULL);
+
+  ru->ru_mask= &ru_mask;
+  ru->ru_mutex = &ru_mutex;
+  ru->ru_cond = &ru_cond;
 
   ru->if_timing = synch_to_ext_device;
   ru->num_eNB = 0;

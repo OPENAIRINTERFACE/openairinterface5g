@@ -31,7 +31,6 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
@@ -46,7 +45,6 @@
 
 #include <time.h>
 
-#include "intertask_interface.h"
 
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);

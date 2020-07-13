@@ -42,7 +42,7 @@
 #include "UTIL/LISTS/list.h"
 #endif
 
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 //#include "../LTE_TRANSPORT/transport_common.h"
 

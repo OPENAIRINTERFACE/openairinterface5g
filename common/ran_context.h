@@ -39,7 +39,7 @@
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
 
-#include "ENB_APP/enb_config.h"
+//#include "ENB_APP/enb_config.h"
 #include "flexran_agent_defs.h"
 
 #include "gtpv1u.h"

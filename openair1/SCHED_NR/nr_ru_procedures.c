@@ -31,15 +31,12 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
 #include "sched_nr.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

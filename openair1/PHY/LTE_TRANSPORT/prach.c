@@ -31,7 +31,7 @@
  */
 #include "PHY/sse_intrin.h"
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
+//#include "PHY/phy_extern.h"
 //#include "prach.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 

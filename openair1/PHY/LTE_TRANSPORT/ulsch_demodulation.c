@@ -31,12 +31,12 @@
 */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
+//#include "PHY/phy_extern.h"
 #include "transport_eNB.h"
 #include "PHY/sse_intrin.h"
 #include "transport_common_proto.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
-#include "PHY/MODULATION/modulation_eNB.h"
+//#include "PHY/MODULATION/modulation_eNB.h"
 
 #include "T.h"
 
@@ -45,8 +45,11 @@
 //extern int **ulchmag_eren;
 //eren
 
-static short jitter[8]  __attribute__ ((aligned(16))) = {1,0,0,1,0,1,1,0};
-static short jitterc[8] __attribute__ ((aligned(16))) = {0,1,1,0,1,0,0,1};
+static const short jitter[8]  __attribute__ ((aligned(16))) = {1,0,0,1,0,1,1,0};
+static const short jitterc[8] __attribute__ ((aligned(16))) = {0,1,1,0,1,0,0,1};
+static const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+static const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
+
 
 void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH) {
 #if defined(__x86_64__) || defined(__i386__)

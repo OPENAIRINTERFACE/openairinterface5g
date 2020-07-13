@@ -31,11 +31,11 @@
 */
 
 #include <time.h>
-#include "PHY/defs_eNB.h"
+#include <stdio.h>
+#include "PHY/defs_RU.h"
 #include "PHY/TOOLS/alaw_lut.h"
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-#include <intertask_interface.h>
 #include "common/utils/LOG/vcd_signal_dumper.h"
 //#define DEBUG_DL_MOBIPASS
 //#define DEBUG_UL_MOBIPASS
