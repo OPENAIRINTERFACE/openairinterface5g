@@ -1331,7 +1331,8 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "CRC_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_E(MAC, "CRC_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+            NFAPI_SFNSF2SFN(UL->crc_ind.sfn_sf), NFAPI_SFNSF2SF(UL->crc_ind.sfn_sf));
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);

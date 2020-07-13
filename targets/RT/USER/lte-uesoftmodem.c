@@ -735,13 +735,11 @@ int main( int argc, char **argv ) {
     init_queue(&ul_config_req_queue);
 
     config_sync_var=0;
-    
     if (sem_init(&sfn_semaphore, 0, 0) != 0)
     {
       LOG_E(MAC, "sem_init() error\n");
       abort();
     }
-    
     init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
     init_UE_standalone_thread();
   } else {
