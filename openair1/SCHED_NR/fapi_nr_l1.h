@@ -53,3 +53,8 @@ void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
 
 
 void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int UE_id, uint8_t harq_pid, uint8_t crc_flag);
+//added
+
+void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu);

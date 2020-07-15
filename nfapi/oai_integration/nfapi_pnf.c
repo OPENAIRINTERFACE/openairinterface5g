@@ -900,6 +900,43 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
   free(header);
 }
 
+
+int pnf_phy_ul_dci_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
+  // if (req-> hi_dci0_request_body.number_of_dci == 0 && req->hi_dci0_request_body.number_of_hi == 0)
+  //   LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
+
+  //phy_info* phy = (phy_info*)(pnf_p7->user_data);
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  if (proc ==NULL) 
+    proc = &gNB->proc.L1_proc;
+
+  for (int i=0; i<req->numPdus; i++) {
+    //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
+    if (req->ul_dci_pdu_list[i].PDUType == NFAPI_NR_UL_DCI_FORMAT_0_0 || req->ul_dci_pdu_list[i].PDUType == NFAPI_NR_UL_DCI_FORMAT_0_1 ) {
+      //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
+      //nfapi_hi_dci0_request_pdu_t *hi_dci0_req_pdu = &req->hi_dci0_request_body.hi_dci0_pdu_list[i];
+      nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i];
+      //handle_nfapi_hi_dci0_dci_pdu(eNB,NFAPI_SFNSF2SFN(req->sfn_sf),NFAPI_SFNSF2SF(req->sfn_sf),proc,hi_dci0_req_pdu);
+      
+      handle_nfapi_nr_ul_dci_pdu(gNB, req->SFN, req->Slot, &ul_dci_req_pdu);
+      
+      // eNB->pdcch_vars[NFAPI_SFNSF2SF(req->sfn_sf)&1].num_dci++;
+      // TODO: find pdcch_vars for gNB
+    } 
+    // else if (req->hi_dci0_request_body.hi_dci0_pdu_list[i].pdu_type == NFAPI_HI_DCI0_HI_PDU_TYPE) {
+    //   LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_HI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
+    //   nfapi_hi_dci0_request_pdu_t *hi_dci0_req_pdu = &req->hi_dci0_request_body.hi_dci0_pdu_list[i];
+    //   handle_nfapi_hi_dci0_hi_pdu(eNB, NFAPI_SFNSF2SFN(req->sfn_sf),NFAPI_SFNSF2SF(req->sfn_sf), proc, hi_dci0_req_pdu);
+    // } 
+    else {
+      LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), i, req->ul_dci_pdu_list[i].PDUType);
+    }
+  }
+
+  return 0;
+}
+
+
 int pnf_phy_hi_dci0_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_hi_dci0_request_t *req) {
   if (req->hi_dci0_request_body.number_of_dci == 0 && req->hi_dci0_request_body.number_of_hi == 0)
     LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
@@ -1411,6 +1448,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   // NR
   p7_config->dl_tti_req_fn = &pnf_phy_dl_tti_req;
   p7_config->ul_tti_req_fn = &pnf_phy_ul_tti_req;
+  // p7_config->ul_dci_req_fn = &pnf_phy_ul_dci_req;
 
   // LTE
   p7_config->dl_config_req = &pnf_phy_dl_config_req;
