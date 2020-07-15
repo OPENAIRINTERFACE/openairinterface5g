@@ -91,8 +91,8 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
   prachConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
 
   if (prach_sequence_length == 0) {
+    AssertFatal(prach_format < 4, "Illegal PRACH format %d for sequence length 839\n", prach_format);
     switch (prach_format) {
-      AssertFatal(prach_format < 4, "Illegal PRACH format %d for sequence length 839\n", prach_format);
 
       // long preamble formats
       case 0:

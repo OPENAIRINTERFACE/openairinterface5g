@@ -71,8 +71,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "PHY/INIT/phy_init.h"
 #include "system.h"
 #include <openair2/RRC/NR_UE/rrc_proto.h>
-#include "NR_MAC_UE/mac_defs.h"
-#include "NR_MAC_UE/mac_proto.h"
+#include <openair2/LAYER2/NR_MAC_UE/mac_defs.h>
+#include <openair2/LAYER2/NR_MAC_UE/mac_proto.h>
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
@@ -173,6 +173,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 int transmission_mode=1;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 /* flag set by eNB conf file to specify if the radio head is local or remote (default option is local) */
 //uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
@@ -249,7 +250,7 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 
-void reset_stats(FL_OBJECT *button, long arg) {
+void reset_stats(long arg) {
   //int i,j,k;
   /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 

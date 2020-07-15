@@ -5353,6 +5353,607 @@ void idft8192(int16_t *x,int16_t *y,unsigned char scale)
 
 #endif
 
+int16_t tw16384[3*2*4096];
+
+#ifndef __AVX2__
+void dft16384(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd_q15_t xtmp[4096],ytmp[4096],*tw16384_128p=(simd_q15_t *)tw16384,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<4096; i+=4,j++) {
+    transpose16_ooff(x128+i,xtmp+j,1024);
+  }
+
+
+  dft4096((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  dft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+1024),1);
+  dft4096((int16_t*)(xtmp+2048),(int16_t*)(ytmp+2048),1);
+  dft4096((int16_t*)(xtmp+3072),(int16_t*)(ytmp+3072),1);
+
+  for (i=0; i<1024; i++) {
+    bfly4(ytmpp,ytmpp+1024,ytmpp+2048,ytmpp+3072,
+          y128p,y128p+1024,y128p+2048,y128p+3072,
+          tw16384_128p,tw16384_128p+1024,tw16384_128p+2048);
+    tw16384_128p++;
+    y128p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<256; i++) {
+      y128[0]  = shiftright_int16(y128[0],1);
+      y128[1]  = shiftright_int16(y128[1],1);
+      y128[2]  = shiftright_int16(y128[2],1);
+      y128[3]  = shiftright_int16(y128[3],1);
+      y128[4]  = shiftright_int16(y128[4],1);
+      y128[5]  = shiftright_int16(y128[5],1);
+      y128[6]  = shiftright_int16(y128[6],1);
+      y128[7]  = shiftright_int16(y128[7],1);
+      y128[8]  = shiftright_int16(y128[8],1);
+      y128[9]  = shiftright_int16(y128[9],1);
+      y128[10] = shiftright_int16(y128[10],1);
+      y128[11] = shiftright_int16(y128[11],1);
+      y128[12] = shiftright_int16(y128[12],1);
+      y128[13] = shiftright_int16(y128[13],1);
+      y128[14] = shiftright_int16(y128[14],1);
+      y128[15] = shiftright_int16(y128[15],1);
+
+      y128+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+ 
+
+void idft16384(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd_q15_t xtmp[4096],ytmp[4096],*tw16384_128p=(simd_q15_t *)tw16384,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<4096; i+=4,j++) {
+    transpose16_ooff(x128+i,xtmp+j,1024);
+  }
+
+
+  idft4096((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+1024),1);
+  idft4096((int16_t*)(xtmp+2048),(int16_t*)(ytmp+2048),1);
+  idft4096((int16_t*)(xtmp+3072),(int16_t*)(ytmp+3072),1);
+
+  for (i=0; i<1024; i++) {
+    ibfly4(ytmpp,ytmpp+1024,ytmpp+2048,ytmpp+3072,
+           y128p,y128p+1024,y128p+2048,y128p+3072,
+           tw16384_128p,tw16384_128p+1024,tw16384_128p+2048);
+    tw16384_128p++;
+    y128p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<256; i++) {
+      y128[0]  = shiftright_int16(y128[0],scale);
+      y128[1]  = shiftright_int16(y128[1],scale);
+      y128[2]  = shiftright_int16(y128[2],scale);
+      y128[3]  = shiftright_int16(y128[3],scale);
+      y128[4]  = shiftright_int16(y128[4],scale);
+      y128[5]  = shiftright_int16(y128[5],scale);
+      y128[6]  = shiftright_int16(y128[6],scale);
+      y128[7]  = shiftright_int16(y128[7],scale);
+      y128[8]  = shiftright_int16(y128[8],scale);
+      y128[9]  = shiftright_int16(y128[9],scale);
+      y128[10] = shiftright_int16(y128[10],scale);
+      y128[11] = shiftright_int16(y128[11],scale);
+      y128[12] = shiftright_int16(y128[12],scale);
+      y128[13] = shiftright_int16(y128[13],scale);
+      y128[14] = shiftright_int16(y128[14],scale);
+      y128[15] = shiftright_int16(y128[15],scale);
+
+      y128+=16;
+    }
+ 
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+#else //__AVX2__
+void dft16384(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd256_q15_t xtmp[2048],ytmp[2048],*tw16384_256p=(simd256_q15_t *)tw16384,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<2048; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,512);
+  }
+
+
+  dft4096((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  dft4096((int16_t*)(xtmp+512),(int16_t*)(ytmp+512),1);
+  dft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+1024),1);
+  dft4096((int16_t*)(xtmp+1536),(int16_t*)(ytmp+1536),1);
+
+  for (i=0; i<512; i++) {
+    bfly4_256(ytmpp,ytmpp+512,ytmpp+1024,ytmpp+1536,
+	      y256p,y256p+512,y256p+1024,y256p+1536,
+	      tw16384_256p,tw16384_256p+512,tw16384_256p+1024);
+    tw16384_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<128; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft16384(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd256_q15_t xtmp[2048],ytmp[2048],*tw16384_256p=(simd256_q15_t *)tw16384,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<2048; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,512);
+  }
+
+
+  idft4096((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft4096((int16_t*)(xtmp+512),(int16_t*)(ytmp+512),1);
+  idft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+1024),1);
+  idft4096((int16_t*)(xtmp+1536),(int16_t*)(ytmp+1536),1);
+
+  for (i=0; i<512; i++) {
+    ibfly4_256(ytmpp,ytmpp+512,ytmpp+1024,ytmpp+1536,
+	       y256p,y256p+512,y256p+1024,y256p+1536,
+	       tw16384_256p,tw16384_256p+512,tw16384_256p+1024);
+    tw16384_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<128; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+#endif //__AVX2__
+
+int16_t tw32768[2*16384] __attribute__((aligned(32)));
+
+#ifndef __AVX2__
+void dft32768(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simdshort_q15_t xtmp[16384],*xtmpp,*x64 = (simdshort_q15_t *)x;
+  simd_q15_t ytmp[8192],*tw32768_128p=(simd_q15_t *)tw32768,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16(ONE_OVER_SQRT2_Q15);
+
+  xtmpp = xtmp;
+
+  for (i=0; i<256; i++) {
+    transpose4_ooff(x64  ,xtmpp,8192);
+    transpose4_ooff(x64+2,xtmpp+1,8192);
+    transpose4_ooff(x64+4,xtmpp+2,8192);
+    transpose4_ooff(x64+6,xtmpp+3,8192);
+    transpose4_ooff(x64+8,xtmpp+4,8192);
+    transpose4_ooff(x64+10,xtmpp+5,8192);
+    transpose4_ooff(x64+12,xtmpp+6,8192);
+    transpose4_ooff(x64+14,xtmpp+7,8192);
+    transpose4_ooff(x64+16,xtmpp+8,8192);
+    transpose4_ooff(x64+18,xtmpp+9,8192);
+    transpose4_ooff(x64+20,xtmpp+10,8192);
+    transpose4_ooff(x64+22,xtmpp+11,8192);
+    transpose4_ooff(x64+24,xtmpp+12,8192);
+    transpose4_ooff(x64+26,xtmpp+13,8192);
+    transpose4_ooff(x64+28,xtmpp+14,8192);
+    transpose4_ooff(x64+30,xtmpp+15,8192);
+    transpose4_ooff(x64+32,xtmpp+16,8192);
+    transpose4_ooff(x64+34,xtmpp+17,8192);
+    transpose4_ooff(x64+36,xtmpp+18,8192);
+    transpose4_ooff(x64+38,xtmpp+19,8192);
+    transpose4_ooff(x64+40,xtmpp+20,8192);
+    transpose4_ooff(x64+42,xtmpp+21,8192);
+    transpose4_ooff(x64+44,xtmpp+22,8192);
+    transpose4_ooff(x64+46,xtmpp+23,8192);
+    transpose4_ooff(x64+48,xtmpp+24,8192);
+    transpose4_ooff(x64+50,xtmpp+25,8192);
+    transpose4_ooff(x64+52,xtmpp+26,8192);
+    transpose4_ooff(x64+54,xtmpp+27,8192);
+    transpose4_ooff(x64+56,xtmpp+28,8192);
+    transpose4_ooff(x64+58,xtmpp+29,8192);
+    transpose4_ooff(x64+60,xtmpp+30,8192);
+    transpose4_ooff(x64+62,xtmpp+31,8192);
+    x64+=64;
+    xtmpp+=32;
+  }
+
+  dft16384((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  dft16384((int16_t*)(xtmp+8192),(int16_t*)(ytmp+4096),1);
+
+
+  for (i=0; i<4096; i++) {
+    bfly2(ytmpp,ytmpp+4096,
+          y128p,y128p+4096,
+          tw32768_128p);
+    tw32768_128p++;
+    y128p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y128p = y128;
+
+    for (i=0; i<512; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT2_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT2_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT2_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT2_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT2_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT2_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT2_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT2_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT2_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT2_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT2_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT2_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT2_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT2_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT2_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT2_Q15_128);
+      y128p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft32768(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simdshort_q15_t xtmp[16384],*xtmpp,*x64 = (simdshort_q15_t *)x;
+  simd_q15_t ytmp[8192],*tw32768_128p=(simd_q15_t *)tw32768,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16(ONE_OVER_SQRT2_Q15);
+  
+  xtmpp = xtmp;
+
+  for (i=0; i<256; i++) {
+    transpose4_ooff(x64  ,xtmpp,8192);
+    transpose4_ooff(x64+2,xtmpp+1,8192);
+    transpose4_ooff(x64+4,xtmpp+2,8192);
+    transpose4_ooff(x64+6,xtmpp+3,8192);
+    transpose4_ooff(x64+8,xtmpp+4,8192);
+    transpose4_ooff(x64+10,xtmpp+5,8192);
+    transpose4_ooff(x64+12,xtmpp+6,8192);
+    transpose4_ooff(x64+14,xtmpp+7,8192);
+    transpose4_ooff(x64+16,xtmpp+8,8192);
+    transpose4_ooff(x64+18,xtmpp+9,8192);
+    transpose4_ooff(x64+20,xtmpp+10,8192);
+    transpose4_ooff(x64+22,xtmpp+11,8192);
+    transpose4_ooff(x64+24,xtmpp+12,8192);
+    transpose4_ooff(x64+26,xtmpp+13,8192);
+    transpose4_ooff(x64+28,xtmpp+14,8192);
+    transpose4_ooff(x64+30,xtmpp+15,8192);
+    transpose4_ooff(x64+32,xtmpp+16,8192);
+    transpose4_ooff(x64+34,xtmpp+17,8192);
+    transpose4_ooff(x64+36,xtmpp+18,8192);
+    transpose4_ooff(x64+38,xtmpp+19,8192);
+    transpose4_ooff(x64+40,xtmpp+20,8192);
+    transpose4_ooff(x64+42,xtmpp+21,8192);
+    transpose4_ooff(x64+44,xtmpp+22,8192);
+    transpose4_ooff(x64+46,xtmpp+23,8192);
+    transpose4_ooff(x64+48,xtmpp+24,8192);
+    transpose4_ooff(x64+50,xtmpp+25,8192);
+    transpose4_ooff(x64+52,xtmpp+26,8192);
+    transpose4_ooff(x64+54,xtmpp+27,8192);
+    transpose4_ooff(x64+56,xtmpp+28,8192);
+    transpose4_ooff(x64+58,xtmpp+29,8192);
+    transpose4_ooff(x64+60,xtmpp+30,8192);
+    transpose4_ooff(x64+62,xtmpp+31,8192);
+    x64+=64;
+    xtmpp+=32;
+  }
+
+  idft16384((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  idft16384((int16_t*)(xtmp+8192),(int16_t*)(ytmp+4096),1);
+
+
+  for (i=0; i<4096; i++) {
+    ibfly2(ytmpp,ytmpp+4096,
+           y128p,y128p+4096,
+           tw32768_128p);
+    tw32768_128p++;
+    y128p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y128p = y128;
+
+    for (i=0; i<512; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT2_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT2_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT2_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT2_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT2_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT2_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT2_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT2_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT2_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT2_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT2_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT2_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT2_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT2_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT2_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT2_Q15_128);
+      y128p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+#else // __AVX2__
+void dft32768(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd256_q15_t xtmp[4096],*xtmpp,*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[4096],*tw32768_256p=(simd256_q15_t *)tw32768,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+  
+  xtmpp = xtmp;
+
+  for (i=0; i<256; i++) {
+    transpose4_ooff_simd256(x256  ,xtmpp,2048);
+    transpose4_ooff_simd256(x256+2,xtmpp+1,2048);
+    transpose4_ooff_simd256(x256+4,xtmpp+2,2048);
+    transpose4_ooff_simd256(x256+6,xtmpp+3,2048);
+    transpose4_ooff_simd256(x256+8,xtmpp+4,2048);
+    transpose4_ooff_simd256(x256+10,xtmpp+5,2048);
+    transpose4_ooff_simd256(x256+12,xtmpp+6,2048);
+    transpose4_ooff_simd256(x256+14,xtmpp+7,2048);
+    transpose4_ooff_simd256(x256+16,xtmpp+8,2048);
+    transpose4_ooff_simd256(x256+18,xtmpp+9,2048);
+    transpose4_ooff_simd256(x256+20,xtmpp+10,2048);
+    transpose4_ooff_simd256(x256+22,xtmpp+11,2048);
+    transpose4_ooff_simd256(x256+24,xtmpp+12,2048);
+    transpose4_ooff_simd256(x256+26,xtmpp+13,2048);
+    transpose4_ooff_simd256(x256+28,xtmpp+14,2048);
+    transpose4_ooff_simd256(x256+30,xtmpp+15,2048);
+    transpose4_ooff_simd256(x256+32,xtmpp+16,2048);
+    transpose4_ooff_simd256(x256+34,xtmpp+17,2048);
+    transpose4_ooff_simd256(x256+36,xtmpp+18,2048);
+    transpose4_ooff_simd256(x256+38,xtmpp+19,2048);
+    transpose4_ooff_simd256(x256+40,xtmpp+20,2048);
+    transpose4_ooff_simd256(x256+42,xtmpp+21,2048);
+    transpose4_ooff_simd256(x256+44,xtmpp+22,2048);
+    transpose4_ooff_simd256(x256+46,xtmpp+23,2048);
+    transpose4_ooff_simd256(x256+48,xtmpp+24,2048);
+    transpose4_ooff_simd256(x256+50,xtmpp+25,2048);
+    transpose4_ooff_simd256(x256+52,xtmpp+26,2048);
+    transpose4_ooff_simd256(x256+54,xtmpp+27,2048);
+    transpose4_ooff_simd256(x256+56,xtmpp+28,2048);
+    transpose4_ooff_simd256(x256+58,xtmpp+29,2048);
+    transpose4_ooff_simd256(x256+60,xtmpp+30,2048);
+    transpose4_ooff_simd256(x256+62,xtmpp+31,2048);
+    x256+=64;
+    xtmpp+=32;
+  }
+
+  dft16384((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  dft16384((int16_t*)(xtmp+2048),(int16_t*)(ytmp+2048),1);
+
+
+  for (i=0; i<2048; i++) {
+    bfly2_256(ytmpp,ytmpp+2048,
+	      y256p,y256p+2048,
+	      tw32768_256p);
+    tw32768_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y256p = y256;
+
+    for (i=0; i<64; i++) {
+      y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
+      y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
+      y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);
+      y256p[3]  = mulhi_int16_simd256(y256p[3],ONE_OVER_SQRT2_Q15_128);
+      y256p[4]  = mulhi_int16_simd256(y256p[4],ONE_OVER_SQRT2_Q15_128);
+      y256p[5]  = mulhi_int16_simd256(y256p[5],ONE_OVER_SQRT2_Q15_128);
+      y256p[6]  = mulhi_int16_simd256(y256p[6],ONE_OVER_SQRT2_Q15_128);
+      y256p[7]  = mulhi_int16_simd256(y256p[7],ONE_OVER_SQRT2_Q15_128);
+      y256p[8]  = mulhi_int16_simd256(y256p[8],ONE_OVER_SQRT2_Q15_128);
+      y256p[9]  = mulhi_int16_simd256(y256p[9],ONE_OVER_SQRT2_Q15_128);
+      y256p[10] = mulhi_int16_simd256(y256p[10],ONE_OVER_SQRT2_Q15_128);
+      y256p[11] = mulhi_int16_simd256(y256p[11],ONE_OVER_SQRT2_Q15_128);
+      y256p[12] = mulhi_int16_simd256(y256p[12],ONE_OVER_SQRT2_Q15_128);
+      y256p[13] = mulhi_int16_simd256(y256p[13],ONE_OVER_SQRT2_Q15_128);
+      y256p[14] = mulhi_int16_simd256(y256p[14],ONE_OVER_SQRT2_Q15_128);
+      y256p[15] = mulhi_int16_simd256(y256p[15],ONE_OVER_SQRT2_Q15_128);
+      y256p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft32768(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd256_q15_t xtmp[4096],*xtmpp,*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[4096],*tw32768_256p=(simd256_q15_t *)tw32768,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+  
+  xtmpp = xtmp;
+
+  for (i=0; i<64; i++) {
+    transpose4_ooff_simd256(x256  ,xtmpp,2048);
+    transpose4_ooff_simd256(x256+2,xtmpp+1,2048);
+    transpose4_ooff_simd256(x256+4,xtmpp+2,2048);
+    transpose4_ooff_simd256(x256+6,xtmpp+3,2048);
+    transpose4_ooff_simd256(x256+8,xtmpp+4,2048);
+    transpose4_ooff_simd256(x256+10,xtmpp+5,2048);
+    transpose4_ooff_simd256(x256+12,xtmpp+6,2048);
+    transpose4_ooff_simd256(x256+14,xtmpp+7,2048);
+    transpose4_ooff_simd256(x256+16,xtmpp+8,2048);
+    transpose4_ooff_simd256(x256+18,xtmpp+9,2048);
+    transpose4_ooff_simd256(x256+20,xtmpp+10,2048);
+    transpose4_ooff_simd256(x256+22,xtmpp+11,2048);
+    transpose4_ooff_simd256(x256+24,xtmpp+12,2048);
+    transpose4_ooff_simd256(x256+26,xtmpp+13,2048);
+    transpose4_ooff_simd256(x256+28,xtmpp+14,2048);
+    transpose4_ooff_simd256(x256+30,xtmpp+15,2048);
+    transpose4_ooff_simd256(x256+32,xtmpp+16,2048);
+    transpose4_ooff_simd256(x256+34,xtmpp+17,2048);
+    transpose4_ooff_simd256(x256+36,xtmpp+18,2048);
+    transpose4_ooff_simd256(x256+38,xtmpp+19,2048);
+    transpose4_ooff_simd256(x256+40,xtmpp+20,2048);
+    transpose4_ooff_simd256(x256+42,xtmpp+21,2048);
+    transpose4_ooff_simd256(x256+44,xtmpp+22,2048);
+    transpose4_ooff_simd256(x256+46,xtmpp+23,2048);
+    transpose4_ooff_simd256(x256+48,xtmpp+24,2048);
+    transpose4_ooff_simd256(x256+50,xtmpp+25,2048);
+    transpose4_ooff_simd256(x256+52,xtmpp+26,2048);
+    transpose4_ooff_simd256(x256+54,xtmpp+27,2048);
+    transpose4_ooff_simd256(x256+56,xtmpp+28,2048);
+    transpose4_ooff_simd256(x256+58,xtmpp+29,2048);
+    transpose4_ooff_simd256(x256+60,xtmpp+30,2048);
+    transpose4_ooff_simd256(x256+62,xtmpp+31,2048);
+    x256+=64;
+    xtmpp+=32;
+  }
+
+  idft16384((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  idft16384((int16_t*)(xtmp+2048),(int16_t*)(ytmp+2048),1);
+
+
+  for (i=0; i<2048; i++) {
+    ibfly2_256(ytmpp,ytmpp+2048,
+	       y256p,y256p+2048,
+	       tw32768_256p);
+    tw32768_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y256p = y256;
+
+    for (i=0; i<256; i++) {
+      y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
+      y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
+      y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);
+      y256p[3]  = mulhi_int16_simd256(y256p[3],ONE_OVER_SQRT2_Q15_128);
+      y256p[4]  = mulhi_int16_simd256(y256p[4],ONE_OVER_SQRT2_Q15_128);
+      y256p[5]  = mulhi_int16_simd256(y256p[5],ONE_OVER_SQRT2_Q15_128);
+      y256p[6]  = mulhi_int16_simd256(y256p[6],ONE_OVER_SQRT2_Q15_128);
+      y256p[7]  = mulhi_int16_simd256(y256p[7],ONE_OVER_SQRT2_Q15_128);
+      y256p[8]  = mulhi_int16_simd256(y256p[8],ONE_OVER_SQRT2_Q15_128);
+      y256p[9]  = mulhi_int16_simd256(y256p[9],ONE_OVER_SQRT2_Q15_128);
+      y256p[10] = mulhi_int16_simd256(y256p[10],ONE_OVER_SQRT2_Q15_128);
+      y256p[11] = mulhi_int16_simd256(y256p[11],ONE_OVER_SQRT2_Q15_128);
+      y256p[12] = mulhi_int16_simd256(y256p[12],ONE_OVER_SQRT2_Q15_128);
+      y256p[13] = mulhi_int16_simd256(y256p[13],ONE_OVER_SQRT2_Q15_128);
+      y256p[14] = mulhi_int16_simd256(y256p[14],ONE_OVER_SQRT2_Q15_128);
+      y256p[15] = mulhi_int16_simd256(y256p[15],ONE_OVER_SQRT2_Q15_128);
+      y256p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+
+#endif
+
+
 int16_t twa1536[1024],twb1536[1024];
 
 // 512 x 3
@@ -6176,12 +6777,99 @@ int16_t twb49152[32768] __attribute__((aligned(32)));
 // 16384 x 3
 void dft49152(int16_t *input, int16_t *output,uint8_t scale) {
 
-  AssertFatal(1==0,"Need to do this ..\n");
+  int i,i2,j;
+  uint32_t tmp[3][16384] __attribute__((aligned(32)));
+  uint32_t tmpo[3][16384] __attribute__((aligned(32)));
+  simd_q15_t *y128p=(simd_q15_t*)output;
+  simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
+
+  for (i=0,j=0; i<16384; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  dft16384((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  dft16384((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  dft16384((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+
+  for (i=0,i2=0; i<32768; i+=8,i2+=4)  {
+    bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
+          (simd_q15_t*)(output+i),(simd_q15_t*)(output+32768+i),(simd_q15_t*)(output+65536+i),
+          (simd_q15_t*)(twa49152+i),(simd_q15_t*)(twb49152+i));
+  }
+  if (scale==1) {
+    for (i=0; i<768; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+      y128p+=16;
+    }
+  }
+  _mm_empty();
+  _m_empty();
+
 }
 
 void idft49152(int16_t *input, int16_t *output,uint8_t scale) {
 
-  AssertFatal(1==0,"Need to do this ..\n");
+   int i,i2,j;
+  uint32_t tmp[3][16384] __attribute__((aligned(32)));
+  uint32_t tmpo[3][16384] __attribute__((aligned(32)));
+  simd_q15_t *y128p=(simd_q15_t*)output;
+  simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
+
+  for (i=0,j=0; i<16384; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  idft16384((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  idft16384((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  idft16384((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+
+  for (i=0,i2=0; i<32768; i+=8,i2+=4)  {
+    ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
+	   (simd_q15_t*)(output+i),(simd_q15_t*)(output+32768+i),(simd_q15_t*)(output+65536+i),
+	   (simd_q15_t*)(twa49152+i),(simd_q15_t*)(twb49152+i));
+  }
+  if (scale==1) {
+    for (i=0; i<768; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+      y128p+=16;
+    }
+  }
+  _mm_empty();
+  _m_empty();
 }
 
 int16_t twa73728[49152] __attribute__((aligned(32)));
@@ -6198,17 +6886,104 @@ void idft73728(int16_t *input, int16_t *output,uint8_t scale) {
 }
 
 
-int16_t twa98304[49152] __attribute__((aligned(32)));
-int16_t twb98304[49152] __attribute__((aligned(32)));
+int16_t twa98304[65536] __attribute__((aligned(32)));
+int16_t twb98304[65536] __attribute__((aligned(32)));
 // 32768 x 3
 void dft98304(int16_t *input, int16_t *output,uint8_t scale) {
 
-  AssertFatal(1==0,"Need to do this ..\n");
+  int i,i2,j;
+  uint32_t tmp[3][32768] __attribute__((aligned(32)));
+  uint32_t tmpo[3][32768] __attribute__((aligned(32)));
+  simd_q15_t *y128p=(simd_q15_t*)output;
+  simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
+
+  for (i=0,j=0; i<32768; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  dft32768((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  dft32768((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  dft32768((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+
+  for (i=0,i2=0; i<65536; i+=8,i2+=4)  {
+    bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
+          (simd_q15_t*)(output+i),(simd_q15_t*)(output+65536+i),(simd_q15_t*)(output+131072+i),
+          (simd_q15_t*)(twa98304+i),(simd_q15_t*)(twb98304+i));
+  }
+  if (scale==1) {
+    for (i=0; i<1536; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+      y128p+=16;
+    }
+  }
+  _mm_empty();
+  _m_empty();
+
 }
 
 void idft98304(int16_t *input, int16_t *output,uint8_t scale) {
 
-  AssertFatal(1==0,"Need to do this ..\n");
+  int i,i2,j;
+  uint32_t tmp[3][32768] __attribute__((aligned(32)));
+  uint32_t tmpo[3][32768] __attribute__((aligned(32)));
+  simd_q15_t *y128p=(simd_q15_t*)output;
+  simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
+
+  for (i=0,j=0; i<32768; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  idft32768((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  idft32768((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  idft32768((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+
+  for (i=0,i2=0; i<65536; i+=8,i2+=4)  {
+    ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
+	   (simd_q15_t*)(output+i),(simd_q15_t*)(output+65536+i),(simd_q15_t*)(output+131072+i),
+	   (simd_q15_t*)(twa98304+i),(simd_q15_t*)(twb98304+i));
+  }
+  if (scale==1) {
+    for (i=0; i<1536; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+      y128p+=16;
+    }
+  }
+  _mm_empty();
+  _m_empty();
 }
 
  
@@ -8823,6 +9598,8 @@ int dfts_autoinit(void)
   init_rad2(2048,tw2048);
   init_rad4(4096,tw4096);
   init_rad2(8192,tw8192);
+  init_rad4(16384,tw16384);
+  init_rad2(32768,tw32768);
   
   init_rad3(1536,twa1536,twb1536);
   init_rad3(3072,twa3072,twb3072);
@@ -8830,6 +9607,10 @@ int dfts_autoinit(void)
   init_rad3(12288,twa12288,twb12288);
   init_rad3(18432,twa18432,twb18432);
   init_rad3(24576,twa24576,twb24576);
+  init_rad3(36864,twa36864,twb36864);
+  init_rad3(49152,twa49152,twb49152);
+  init_rad3(98304,twa98304,twb98304);
+
 
   init_rad2_rep(24,tw24);
   init_rad3_rep(36,twa36,twb36);
@@ -8869,6 +9650,7 @@ int dfts_autoinit(void)
 
 
 
+#ifndef MR_MAIN
 
 void dft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
 	AssertFatal((sizeidx>=0 && sizeidx<(int)DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
@@ -8879,6 +9661,7 @@ void idft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
 	AssertFatal((sizeidx>=0 && sizeidx<(int)IDFT_SIZE_IDXTABLESIZE),"Invalid idft size index %i\n",sizeidx);
 	idft_ftab[sizeidx](sigF,sig,scale_flag);
 };
+#endif
 
 /*---------------------------------------------------------------------------------------*/
 
@@ -9049,9 +9832,9 @@ int main(int argc, char**argv)
 
   time_stats_t ts;
 #ifdef __AVX2__
-  simd256_q15_t x[4096],x2[4096],y[4096],tw0,tw1,tw2,tw3;
+  simd256_q15_t x[16384],x2[16384],y[16384],tw0,tw1,tw2,tw3;
 #else
-  simd_q15_t x[8192],y[8192],tw0,tw1,tw2,tw3;
+  simd_q15_t x[32768],y[32768],tw0,tw1,tw2,tw3;
 #endif
   int i;
   simd_q15_t *x128=(simd_q15_t*)x,*y128=(simd_q15_t*)y;
@@ -9613,9 +10396,33 @@ int main(int argc, char**argv)
     stop_meas(&ts);
   }
 
-  printf("\n\n1536-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  printf("\n\n8192-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   LOG_M("y8192.m","y8192",y,8192,1,1);
   LOG_M("x8192.m","x8192",x,8192,1,1);
+
+  memset((void*)x,0,16384*sizeof(int32_t));
+  for (i=2;i<9602;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(16384-4800);i<32768;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    dft16384((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n16384-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  LOG_M("y16384.m","y16384",y,16384,1,1);
+  LOG_M("x16384.m","x16384",x,16384,1,1);
 
   memset((void*)x,0,1536*sizeof(int32_t));
   for (i=2;i<1202;i++) {
@@ -9765,6 +10572,56 @@ int main(int argc, char**argv)
   LOG_M("y24576.m","y24576",y,24576,1,1);
   LOG_M("x24576.m","x24576",x,24576,1,1);
 
+
+  memset((void*)x,0,2*18432*sizeof(int32_t));
+  for (i=2;i<(2*14402);i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(36864-14400);i<(36864*2);i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    dft36864((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n36864-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  LOG_M("y36864.m","y36864",y,36864,1,1);
+  LOG_M("x36864.m","x36864",x,36864,1,1);
+
+
+  memset((void*)x,0,49152*sizeof(int32_t));
+  for (i=2;i<28402;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  } 
+  for (i=2*(49152-14400);i<98304;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft49152((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n49152-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  LOG_M("y49152.m","y49152",y,49152,1,1);
+  LOG_M("x49152.m","x49152",x,49152,1,1);
+  /*
   int dftsizes[33]={24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,768,864,900,960,972,1080,1152,1200};
   void (*dft)(int16_t *x,int16_t *y,uint8_t scale)[33] = {dft24,dft36,dft48,dft60,dft72,dft96,dft108,dft120,dft144,dft180,dft192,dft216,dft240,dft288,dft300,dft324,dft360,dft384,dft432,dft480,dft540,dft576,dft600,dft648,dft720,dft768,dft864,dft900,dft960,dft972,dft1080,dft1152,dft1200};
   for (int n=0;n<33;n++) {
@@ -9797,7 +10654,7 @@ int main(int argc, char**argv)
     LOG_M(ystr,ystr2,y,dftsizes[n]*4,1,1);
     LOG_M(xstr,xstr2,x,dftsizes[n]*4,1,1);
   }
-
+  */
 
   return(0);
 }

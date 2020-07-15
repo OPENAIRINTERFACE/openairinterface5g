@@ -335,18 +335,19 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nodata_dmrs = 1;
   uint8_t nb_re_dmrs;
-  if (nodata_dmrs)
-    nb_re_dmrs = 12;
+
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
   else
-    nb_re_dmrs = rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1 ? 6:4;
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+
   uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
 
@@ -464,6 +465,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
   }
 
+    F = dlsch->harq_processes[harq_pid]->F;
+
+    Kr = dlsch->harq_processes[harq_pid]->K;
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     if (F>0) {
@@ -535,7 +539,7 @@ int nr_dlsch_encoding(unsigned char *a,
     r_offset += E;
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return 0;
 }

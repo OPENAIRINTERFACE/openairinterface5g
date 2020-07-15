@@ -179,14 +179,86 @@ typedef struct {
   uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;
 
+
+// SP ZP CSI-RS Resource Set Activation/Deactivation MAC CE
+typedef struct sp_zp_csirs {
+  bool is_scheduled;     //ZP CSI-RS ACT/Deact MAC CE is scheduled
+  bool act_deact;        //Activation/Deactivation indication
+  uint8_t serv_cell_id;  //Identity of Serving cell for which MAC CE applies
+  uint8_t bwpid;         //Downlink BWP id
+  uint8_t rsc_id;        //SP ZP CSI-RS resource set
+} sp_zp_csirs_t;
+
+//SP CSI-RS / CSI-IM Resource Set Activation/Deactivation MAC CE
+#define MAX_CSI_RESOURCE_SET 64
+typedef struct csi_rs_im {
+  bool is_scheduled;
+  bool act_deact;
+  uint8_t serv_cellid;
+  uint8_t bwp_id;
+  bool im;
+  uint8_t csi_im_rsc_id;
+  uint8_t nzp_csi_rsc_id;
+  uint8_t nb_tci_resource_set_id;
+  uint8_t tci_state_id [ MAX_CSI_RESOURCE_SET ];
+} csi_rs_im_t;
+
+typedef struct pdcchStateInd {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t coresetId;
+  uint8_t tciStateId;
+} pdcchStateInd_t;
+
+typedef struct SPCSIReportingpucch {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  bool s0tos3_actDeact[4];
+} SPCSIReportingpucch_t;
+
+#define MAX_APERIODIC_TRIGGER_STATES 128 //38.331                               
+typedef struct aperiodicCSI_triggerStateSelection {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  uint8_t highestTriggerStateSelected;
+  bool triggerStateSelection[MAX_APERIODIC_TRIGGER_STATES];
+} aperiodicCSI_triggerStateSelection_t;
+
+#define MAX_TCI_STATES 128 //38.331                                             
+typedef struct pdschTciStatesActDeact {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  uint8_t highestTciStateActivated;
+  bool tciStateActDeact[MAX_TCI_STATES];
+} pdschTciStatesActDeact_t;
+
+typedef struct UE_info {
+  sp_zp_csirs_t sp_zp_csi_rs;
+  csi_rs_im_t csi_im;
+  pdcchStateInd_t pdcch_state_ind;
+  SPCSIReportingpucch_t SP_CSI_reporting_pucch;
+  aperiodicCSI_triggerStateSelection_t aperi_CSI_trigger;
+  pdschTciStatesActDeact_t pdsch_TCI_States_ActDeact;
+} NR_UE_mac_ce_ctrl_t;
+
+
 typedef struct NR_sched_pucch {
   int frame;
   int ul_slot;
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-  struct NR_sched_pucch *next_sched_pucch;
 } NR_sched_pucch;
+
+typedef struct NR_UE_harq {
+  uint8_t is_waiting;
+  uint8_t ndi;
+  uint8_t round;
+  uint16_t feedback_slot;
+} NR_UE_harq_t;
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
@@ -195,7 +267,16 @@ typedef struct {
   NR_sched_pucch *sched_pucch;
   uint16_t ta_timer;
   int16_t ta_update;
+  uint8_t current_harq_pid;
+  NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  int dummy;
+  NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
+
+typedef struct NR_preamble_ue {
+  uint8_t num_preambles;
+  uint8_t *preamble_list;
+} NR_preamble_ue;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
@@ -209,11 +290,14 @@ typedef struct {
   int avail;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_GNB];
+  boolean_t fiveG_connected[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
+  rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
+  NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
 
-/*! \brief top level gNB MAC structure */
+/*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t                    eth_params_n;
@@ -254,7 +338,7 @@ typedef struct gNB_MAC_INST_s {
   /// UL handle
   uint32_t ul_handle;
 
-    // MAC function execution peformance profiler
+  // MAC function execution peformance profiler
   /// processing time of eNB scheduler
   time_stats_t eNB_scheduler;
   /// processing time of eNB scheduler for SI
@@ -278,65 +362,5 @@ typedef struct gNB_MAC_INST_s {
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
 } gNB_MAC_INST;
-
-typedef struct {
-  uint8_t format_indicator; //1 bit
-  uint16_t frequency_domain_assignment; //up to 16 bits
-  uint8_t time_domain_assignment; // 4 bits
-  uint8_t frequency_hopping_flag; //1 bit
-
-  uint8_t ra_preamble_index; //6 bits
-  uint8_t ss_pbch_index; //6 bits
-  uint8_t prach_mask_index; //4 bits
-
-  uint8_t vrb_to_prb_mapping; //0 or 1 bit
-  uint8_t mcs; //5 bits
-  uint8_t ndi; //1 bit
-  uint8_t rv; //2 bits
-  uint8_t harq_pid; //4 bits
-  uint8_t dai; //0, 2 or 4 bits
-  uint8_t dai1; //1 or 2 bits
-  uint8_t dai2; //0 or 2 bits
-  uint8_t tpc; //2 bits
-  uint8_t pucch_resource_indicator; //3 bits
-  uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
-
-  uint8_t short_messages_indicator; //2 bits
-  uint8_t short_messages; //8 bits
-  uint8_t tb_scaling; //2 bits
-
-  uint8_t carrier_indicator; //0 or 3 bits
-  uint8_t bwp_indicator; //0, 1 or 2 bits
-  uint8_t prb_bundling_size_indicator; //0 or 1 bits
-  uint8_t rate_matching_indicator; //0, 1 or 2 bits
-  uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
-  uint8_t transmission_configuration_indication; //0 or 3 bits
-  uint8_t srs_request; //2 bits
-  uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
-  uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
-  uint8_t dmrs_sequence_initialization; //0 or 1 bit
-
-  uint8_t srs_resource_indicator;
-  uint8_t precoding_information;
-  uint8_t csi_request;
-  uint8_t ptrs_dmrs_association;
-  uint8_t beta_offset_indicator; //0 or 2 bits
-
-  uint8_t slot_format_indicator_count;
-  uint8_t *slot_format_indicators;
-
-  uint8_t pre_emption_indication_count;
-  uint16_t *pre_emption_indications; //14 bit
-
-  uint8_t block_number_count;
-  uint8_t *block_numbers;
-
-  uint8_t ul_sul_indicator; //0 or 1 bit
-  uint8_t antenna_ports;
-
-  uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
-  uint16_t padding;
-
-} dci_pdu_rel15_t;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

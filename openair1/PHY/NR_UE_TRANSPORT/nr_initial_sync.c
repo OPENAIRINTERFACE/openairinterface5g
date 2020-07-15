@@ -38,6 +38,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 //#include "SCHED/defs.h"
 //#include "SCHED/extern.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "common_lib.h"
 #include <math.h>
@@ -213,6 +214,9 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
   int rx_power=0; //aarx,
+  
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_IN);
+
 
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", fp->N_RB_DL);
 
@@ -477,6 +481,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, runmode_t mode,
   }
 
   //  exit_fun("debug exit");
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
   return ret;
 }
 

@@ -149,8 +149,12 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // while calling new_channel_desc_scm() with path losses = 0
     static bool init_done=false;
     if (!init_done) {
-      randominit(0);
-      tableNor(0);
+	    uint64_t rand;
+	    FILE *h=fopen("/dev/random","r");
+            fread(&rand,sizeof(rand),1,h);
+	    fclose(h);
+      randominit(rand);
+      tableNor(rand);
       init_done=true;
     }
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,

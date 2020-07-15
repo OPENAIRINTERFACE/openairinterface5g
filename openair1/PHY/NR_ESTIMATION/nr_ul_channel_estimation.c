@@ -28,7 +28,7 @@
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
 //#define DEBUG_CH
-
+//#define DEBUG_PUSCH
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
@@ -116,7 +116,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   //------------------generate DMRS------------------//
 
-  if (pusch_pdu->transform_precoding) // if transform precoding is disabled
+  if (pusch_pdu->transform_precoding==1) // if transform precoding is disabled
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   else
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, 0, pusch_pdu->dmrs_config_type);
@@ -132,8 +132,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PUSCH
+    printf("symbol_offset %d, nushift %d\n",symbol_offset,nushift);
     printf("ch est pilot addr %p RB_DL %d\n",&pilot[0], gNB->frame_parms.N_RB_UL);
-    printf("k %d, first_carrier %d\n",k,gNB->frame_parms.first_carrier_offset);
+    printf("bwp_start_subcarrier %d, k %d, first_carrier %d\n",bwp_start_subcarrier,k,gNB->frame_parms.first_carrier_offset);
     printf("rxF addr %p p %d\n", rxF,p);
     printf("ul_ch addr %p nushift %d\n",ul_ch,nushift);
 #endif
@@ -148,7 +149,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_PUSCH
       printf("ch 0 %d\n",((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
       printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
-      printf("data 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[2],rxF[3],&rxF[2],ch[0],ch[1],pil[0],pil[1]);
+      printf("data 0 : rxF - > (%d,%d)\n",rxF[2],rxF[3]);
 #endif
 
       multadd_real_vector_complex_scalar(fl,
@@ -166,6 +167,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 #ifdef DEBUG_PUSCH
       printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("data 1 : rxF - > (%d,%d)\n",rxF[2],rxF[3]);
 #endif
       multadd_real_vector_complex_scalar(fml,
                                          ch,
@@ -181,6 +183,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 #ifdef DEBUG_PUSCH
       printf("pilot 2 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("data 2 : rxF - > (%d,%d)\n",rxF[2],rxF[3]);
 #endif
       multadd_real_vector_complex_scalar(fmm,
                                          ch,
@@ -201,7 +204,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
   #ifdef DEBUG_PUSCH
-        printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+        printf("pilot %u : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("data %u : rxF - > (%d,%d)\n",pilot_cnt,rxF[2],rxF[3]);
   #endif
         multadd_real_vector_complex_scalar(fml,
                                            ch,
@@ -217,6 +221,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   #ifdef DEBUG_PUSCH
         printf("pilot %u : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("data %u : rxF - > (%d,%d)\n",pilot_cnt+1,rxF[2],rxF[3]);
   #endif
         multadd_real_vector_complex_scalar(fmm,
                                            ch,
@@ -238,6 +243,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 #ifdef DEBUG_PUSCH
       printf("pilot %u : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("data %u : rxF - > (%d,%d)\n",pilot_cnt,rxF[2],rxF[3]);
 #endif
       multadd_real_vector_complex_scalar(fm,
                                          ch,
@@ -256,6 +262,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_PUSCH
       printf("ch 0 %d\n",((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
       printf("pilot %u: rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+      printf("data %u : rxF - > (%d,%d)\n",pilot_cnt+1,rxF[2],rxF[3]);
 #endif
       multadd_real_vector_complex_scalar(fmr,
                                          ch,
@@ -271,6 +278,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 #ifdef DEBUG_PUSCH
       printf("pilot %u: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+2,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("data %u : rxF - > (%d,%d)\n",pilot_cnt+2,rxF[2],rxF[3]);
 #endif
       multadd_real_vector_complex_scalar(fr,
                                          ch,

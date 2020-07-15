@@ -548,7 +548,7 @@ class RANManagement():
 		mySSH.command('cd cmake_targets', '\$', 5)
 		if self.air_interface == 'nr':
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
-			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
+			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
@@ -781,7 +781,7 @@ class RANManagement():
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
 		mySSH.close()
 
@@ -811,6 +811,7 @@ class RANManagement():
 		uplinkSegmentsAborted = 0
 		ulschReceiveOK = 0
 		gnbRxTxWakeUpFailure = 0
+		gnbTxWriteThreadEnabled = False
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -924,6 +925,9 @@ class RANManagement():
 			result = re.search('could not wakeup gNB rxtx process', str(line))
 			if result is not None:
 				gnbRxTxWakeUpFailure += 1
+			result = re.search('tx write thread ready', str(line))
+			if result is not None:
+				gnbTxWriteThreadEnabled = True
 			result = re.search('ULSCH in error in round|ULSCH 0 in error', str(line))
 			if result is not None:
 				ulschFailure += 1
@@ -962,6 +966,10 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg + '\n'
 			if gnbRxTxWakeUpFailure > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(gnbRxTxWakeUpFailure) + ' "could not wakeup gNB rxtx process" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if gnbTxWriteThreadEnabled:
+				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:

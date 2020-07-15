@@ -40,6 +40,10 @@
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
+#include "RRC/NR/nr_rrc_types.h"
+#include "NR_UE-MRDC-Capability.h"
+#include "NR_UE-NR-Capability.h"
+
 
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
@@ -267,6 +271,7 @@ typedef enum UE_STATE_e {
   RRC_RECONFIGURED,
   RRC_HO_EXECUTION,
   RRC_NR_NSA,
+  RRC_NR_NSA_RECONFIGURED
 } UE_STATE_t;
 
 typedef enum HO_STATE_e {
@@ -569,6 +574,10 @@ typedef struct eNB_RRC_UE_s {
 
   LTE_UE_EUTRA_Capability_t         *UE_Capability;
   int                                UE_Capability_size;
+  NR_UE_MRDC_Capability_t           *UE_Capability_MRDC;
+  int                UE_MRDC_Capability_size;
+  NR_UE_NR_Capability_t       *UE_Capability_nr;
+  int                UE_NR_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
   /* KeNB as derived from KASME received from EPC */
@@ -614,7 +623,7 @@ typedef struct eNB_RRC_UE_s {
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
-  uint8_t							 nb_of_modify_endc_e_rabs;
+  uint8_t              nb_of_modify_endc_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];

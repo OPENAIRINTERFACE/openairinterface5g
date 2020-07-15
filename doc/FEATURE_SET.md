@@ -352,7 +352,8 @@ The following features are valid for the gNB and the 5G-NR UE.
 - Initial sync and MIB detection
 - MAC -> PHY configuration of PHY via UE FAPI P5 interface
 - Basic MAC to control PHY via UE FAPI P7 interface
-- Random ccess procedure
+- Random access procedure
+
 
 **RLC**
 
