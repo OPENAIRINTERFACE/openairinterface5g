@@ -975,7 +975,6 @@ int pnf_phy_dl_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfap
                 req->dl_tti_request_body.nUe,
                 req->dl_tti_request_body.PduIdx);
 
-
   for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
     // TODO: enable after adding gNB PDCCH:
     // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
@@ -983,7 +982,7 @@ int pnf_phy_dl_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfap
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
       //handle_nfapi_dci_dl_pdu(eNB,NFAPI_SFNSF2SFN(req->sfn_sf),NFAPI_SFNSF2SF(req->sfn_sf),proc,&dl_config_pdu_list[i]);
       handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i].pdcch_pdu);
-
+      dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // pdcch_vars->num_dci++; // Is actually number of DCI PDUs
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
@@ -1151,6 +1150,64 @@ int pnf_phy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
             req->tx_request_body.tx_pdu_list[i].num_segments
            );
       tx_request_pdu[sfn][sf][i] = &req->tx_request_body.tx_pdu_list[i];
+    }
+  }
+
+  return 0;
+}
+
+
+
+int pnf_phy_ul_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_tti_request_t *req) {
+  // if (0)LOG_D(PHY,"[PNF] UL_CONFIG_REQ %s() sfn_sf:%d pdu:%d rach_prach_frequency_resources:%d srs_present:%u\n",
+  //               __FUNCTION__,
+  //               NFAPI_SFNSF2DEC(req->sfn_sf),
+  //               req->ul_config_request_body.number_of_pdus,
+  //               req->ul_config_request_body.rach_prach_frequency_resources,
+  //               req->ul_config_request_body.srs_present
+  //              );
+
+  if (RC.ru == 0) {
+    return -1;
+  }
+
+  if (RC.gNB == 0) {
+    return -2;
+  }
+
+  if (RC.gNB[0] == 0) {
+    return -3;
+  }
+
+  if (sync_var != 0) {
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() Main system not up - is this a dummy slot?\n", __FUNCTION__);
+    return -4;
+  }
+
+  uint16_t curr_sfn = req->SFN;
+  uint16_t curr_slot = req->Slot;
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+
+  if (proc==NULL)
+     proc = &gNB->proc.L1_proc;
+
+  nfapi_nr_ul_tti_request_number_of_pdus_t *ul_tti_pdu_list = req->pdus_list;
+
+  for (int i=0; i< req->n_pdus; i++) {
+    //LOG_D(PHY, "%s() sfn/sf:%d PDU[%d] size:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, ul_config_pdu_list[i].pdu_size);
+    if (
+      ul_tti_pdu_list[i].pdu_type == NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE ||
+      ul_tti_pdu_list[i].pdu_type == NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE ||
+      ul_tti_pdu_list[i].pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE ||
+      ul_tti_pdu_list[i].pdu_type == NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE
+    ) {
+      //LOG_D(PHY, "%s() handle_nfapi_ul_pdu() for PDU:%d\n", __FUNCTION__, i);
+      // handle_nfapi_ul_pdu(eNB,proc,&ul_config_pdu_list[i],curr_sfn,curr_sf,req->ul_config_request_body.srs_present);
+      
+      // TODO: dont have an NR function for this, also srs_present flag not there
+      
+    } else {
+      NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() PDU:%i UNKNOWN type :%d\n", __FUNCTION__, i, ul_tti_pdu_list[i].pdu_type);
     }
   }
 
@@ -1353,6 +1410,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
 
   // NR
   p7_config->dl_tti_req_fn = &pnf_phy_dl_tti_req;
+  p7_config->ul_tti_req_fn = &pnf_phy_ul_tti_req;
 
   // LTE
   p7_config->dl_config_req = &pnf_phy_dl_config_req;
