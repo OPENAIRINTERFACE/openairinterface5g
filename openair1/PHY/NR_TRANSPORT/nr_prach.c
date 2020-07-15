@@ -752,8 +752,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     // check energy in nth time shift, for 
 
     preamble_shift2 = ((preamble_shift==0) ? 0 : ((preamble_shift<<log2_ifft_size)/N_ZC));
-    
-    
+
     for (i=0; i<NCS2; i++) {
       lev = (int32_t)prach_ifft[(preamble_shift2+i)];
       levdB = dB_fixed_times10(lev);
@@ -792,7 +791,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
 
   if (LOG_DUMPFLAG(PRACH)) {
-    int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));  
+    //int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     //    if (en>60) {
       int k = (12*n_ra_prb) - 6*fp->N_RB_UL;
       

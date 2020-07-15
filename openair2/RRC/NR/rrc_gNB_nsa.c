@@ -40,6 +40,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
+#include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 
 extern boolean_t nr_rrc_pdcp_config_asn1_req(
     const protocol_ctxt_t *const  ctxt_pP,
@@ -140,6 +141,10 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, LTE_UE_CapabilityRAT_Container
   xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *)ue_context_p->ue_context.rb_config);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
+
+/* generate prototypes for the tree management functions (RB_INSERT used in rrc_add_nsa_user) */
+RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries,
+             rrc_gNB_compare_ue_rnti_id);
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)

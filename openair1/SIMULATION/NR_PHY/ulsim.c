@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   int i;
   double SNR, snr0 = -2.0, snr1 = 2.0;
   double sigma, sigma_dB;
-  double snr_step = 1;
+  double snr_step = .2;
   uint8_t snr1set = 0;
   int slot = 8, frame = 0;
   FILE *output_fd = NULL;
@@ -127,7 +127,6 @@ int main(int argc, char **argv)
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
-  int frame_length_complex_samples,frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   //uint64_t SSB_positions=0x01;
@@ -151,7 +150,7 @@ int main(int argc, char **argv)
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
 
-  int ibwp_size=24;
+  int ibwps=24;
   int ibwp_rboffset=41;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
@@ -387,6 +386,8 @@ int main(int argc, char **argv)
 
   get_softmodem_params()->phy_test = 1;
   get_softmodem_params()->do_ra = 0;
+  get_softmodem_params()->usim_test = 1;
+
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
@@ -466,8 +467,6 @@ int main(int argc, char **argv)
 
   //nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  frame_length_complex_samples = frame_parms->samples_per_subframe;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
@@ -575,6 +574,7 @@ int main(int argc, char **argv)
 
   printf("\n");
 
+  for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
       varArray_t *table_rx=initVarArray(1000,sizeof(double));
@@ -618,7 +618,7 @@ int main(int argc, char **argv)
       
       int abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
       int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
-      int ibwp_size  = ibwp_size;
+      int ibwp_size  = ibwps;
       int ibwp_start = ibwp_rboffset;
       if (msg3_flag == 1) {
 	if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
@@ -709,54 +709,71 @@ int main(int argc, char **argv)
 
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
       TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
+      pusch_pdu->pusch_data.tb_size = TBS>>3;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
 
+      nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
+      int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);// - (int)(800*factor);
+      int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
+
+      for (int i=0;i<(TBS>>3);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
+      double scale = 1;
 
       if (input_fd == NULL) {
-        pusch_pdu->pusch_data.tb_size = TBS>>3;
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
-        // set FAPI parameters for UE, put them in the scheduled response and call
-        nr_ue_scheduled_response(&scheduled_response);
 
-
-        /////////////////////////phy_procedures_nr_ue_TX///////////////////////
-        ///////////
-
-        phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
-
-        if (n_trials==1)
-          LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_length_complex_samples,1,1);
-
-        ///////////
-        ////////////////////////////////////////////////////
-        tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
-
-        txlev = signal_energy_amp_shift(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-                                        frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
-
-        txlev_float = (double)txlev/(double)AMP; // output of signal_energy is fixed point representation
-
-        n_errors = 0;
-        n_false_positive = 0;
-
-        //AWGN
-        sigma_dB = 10*log10(txlev_float)-SNR;
-        sigma    = pow(10,sigma_dB/10);
-        }	
+        if (SNR==snr0) { 
+	  // set FAPI parameters for UE, put them in the scheduled response and call
+	  nr_ue_scheduled_response(&scheduled_response);
+	  
+	  
+	  /////////////////////////phy_procedures_nr_ue_TX///////////////////////
+	  ///////////
+	  
+	  phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, 0);
+	  
+	  
+	  if (n_trials==1) {
+	    LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
+	    LOG_M("txsig0F.m","txs0F", UE->common_vars.txdataF[0],frame_parms->ofdm_symbol_size*14,1,1);
+	  }
+	  ///////////
+	  ////////////////////////////////////////////////////
+	  tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
+	  
+	  txlev = signal_energy(&UE->common_vars.txdata[0][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+				frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+	  
+	  txlev_float = (double)txlev/scale; // output of signal_energy is fixed point representation
+	  
+	  
+	  //AWGN
+	}
+      }	
       else n_trials = 1;
 
+
+      sigma_dB = 10*log10(txlev_float)-SNR;
+      sigma    = pow(10,sigma_dB/10);
+      printf("txlev_float %f, sigma_dB %f\n",10*log10(txlev_float),sigma_dB);
+
+      n_errors = 0;
+      n_false_positive = 0;
+
+      errors_scrambling  = 0;
+      errors_decoding    = 0;
+
+      int error_flag;
       for (trial = 0; trial < n_trials; trial++) {
 	
-	errors_scrambling  = 0;
-	errors_decoding    = 0;
-	
+	error_flag = 0;
 	  //----------------------------------------------------------
 	  //------------------------ add noise -----------------------
 	  //----------------------------------------------------------
 	if (input_fd == NULL ) {
-	  for (i=0; i<frame_length_complex_samples; i++) {
+	  for (i=0; i<slot_length; i++) {
 	    for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	      ((short*) gNB->common_vars.rxdata[ap])[(2*i) + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)])   + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0)); // convert to fixed point
-	      ((short*) gNB->common_vars.rxdata[ap])[2*i+1 + (delay*2)]   = (((int16_t *)UE->common_vars.txdata[ap])[(i<<1)+1]) + (int16_t)(sqrt(sigma/2)*gaussdouble(0.0,1.0));
+	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/sqrt(scale)   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/sqrt(scale) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
 	    }
 	  }
 	}
@@ -770,8 +787,6 @@ int main(int argc, char **argv)
 	  if (N_RB_DL <217) ta_offset=800;
 	  else if (N_RB_DL < 106) ta_offset = 400;
 
-	  int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);// - (int)(800*factor);
-	  int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 	  fread((void*)&gNB->common_vars.rxdata[0][slot_offset],
 		sizeof(int16_t),
 		slot_length<<1,
@@ -781,7 +796,6 @@ int main(int argc, char **argv)
 					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
 					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
 	  fclose(input_fd);
-	  LOG_M("rxsig0.m","rx0",gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
 	}
 	////////////////////////////////////////////////////////////
 	
@@ -795,6 +809,8 @@ int main(int argc, char **argv)
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
 	if (n_trials==1) {
+	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][0],frame_parms->samples_per_subframe*10,1,1);
+
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0]+start_symbol*frame_parms->ofdm_symbol_size,nb_symb_sch*frame_parms->ofdm_symbol_size,1,1);
 
 	}
@@ -813,9 +829,11 @@ int main(int argc, char **argv)
         ////////////////////////////////////////////////////////////
 
 	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
-	    gNB->ulsch[0][0]->max_ldpc_iterations+1)
+	    gNB->ulsch[0][0]->max_ldpc_iterations+1) {
+	  error_flag = 1; 
 	  n_errors++;
-
+	}
+	
         //----------------------------------------------------------
         //----------------- count and print errors -----------------
         //----------------------------------------------------------
@@ -847,22 +865,30 @@ int main(int argc, char **argv)
             errors_decoding++;
           }
         }
-
-        if (errors_decoding > 0) {
+	if (n_trials == 1) {
+	  for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
+	    for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
+	      if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
+	      printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
+		     i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
+		     i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
+		     ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
+	    }
+	}
+        if (errors_decoding > 0 && error_flag == 0) {
           n_false_positive++;
 	  if (n_trials==1)
 	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
         } 
-
       } // trial loop
 
       printf("*****************************************\n");
-      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %u/%d\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, n_trials);
+      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %u/%u\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, available_bits*n_trials);
       printf("\n");
       printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
       printf("*****************************************\n");
       printf("\n");
-
+ 
       if (print_perf==1) {
         printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
         printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
@@ -888,7 +914,6 @@ int main(int argc, char **argv)
       }
       
   } // SNR loop
-
   printf("\n");
 
   free(test_input_bit);

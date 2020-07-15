@@ -139,7 +139,7 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   float roundStats[50];
   float effRate;
-  float psnr;
+  //float psnr;
   float eff_tp_check = 0.7;
   uint8_t snrRun;
   uint32_t TBS;
@@ -696,7 +696,7 @@ int main(int argc, char **argv)
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   NR_UE_list_t *UE_list = &RC.nrmac[0]->UE_list;
-  NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
+  //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
   snrRun = 0;
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
@@ -924,7 +924,7 @@ int main(int argc, char **argv)
            (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
-    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f\%, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
     printf("\n");
 
     if (n_trials == 1) {

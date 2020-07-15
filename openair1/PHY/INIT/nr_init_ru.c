@@ -40,9 +40,6 @@ int nr_phy_init_RU(RU_t *ru) {
   int p;
   int re;
 
-  // For memory allocation of ru->prach_rxsigF
-  int mu = fp->numerology_index;
-
   LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
   nfapi_nr_config_request_scf_t *cfg;

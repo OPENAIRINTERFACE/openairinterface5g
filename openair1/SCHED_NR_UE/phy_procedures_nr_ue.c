@@ -2249,13 +2249,13 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   } // UE_mode==PUSCH
 */
 
-    if (get_softmodem_params()->do_ra==1) {
+   if (get_softmodem_params()->usim_test==0) {
       LOG_D(PHY, "Sending PUCCH\n");
       pucch_procedures_ue_nr(ue,
                              gNB_id,
                              proc,
                              TRUE);
-    }
+   }
 
     LOG_D(PHY, "Sending data \n");
     nr_ue_pusch_common_procedures(ue,
@@ -2765,10 +2765,8 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 	 pdcch_vars->nb_search_space);
 #endif
 
-  fapi_nr_dci_indication_t dci_ind;
-  nr_downlink_indication_t dl_indication;
-  memset((void*)&dci_ind,0,sizeof(dci_ind));
-  memset((void*)&dl_indication,0,sizeof(dl_indication));
+  fapi_nr_dci_indication_t dci_ind={0};
+  nr_downlink_indication_t dl_indication={0};
   dci_cnt = nr_dci_decoding_procedure(ue,
 				      proc->frame_rx,
 				      nr_tti_rx,
@@ -3284,15 +3282,14 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        int *dlsch_errors,
        runmode_t mode) {
 
-  int harq_pid;
+  int harq_pid = dlsch0->current_harq_pid;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int ret=0, ret1=0;
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  uint8_t dmrs_type = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[0].value; // TODO: HARDCODED pdsch index
+  uint8_t dmrs_type = dlsch0->harq_processes[harq_pid]->dmrsConfigType;
   uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4; // TODO: should changed my mac
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
@@ -3316,7 +3313,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
 
-  harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
   start_symbol = dlsch0->harq_processes[harq_pid]->start_symbol;
@@ -3376,13 +3372,13 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     }
 
 
-      // start ldpc decode for CW 0
-      dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
-						     nb_symb_sch,
-						     nb_re_dmrs,
-						     length_dmrs,
-						     dlsch0->harq_processes[harq_pid]->Qm,
-						     dlsch0->harq_processes[harq_pid]->Nl);
+    // start ldpc decode for CW 0
+    dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
+                                                   nb_symb_sch,
+                                                   nb_re_dmrs,
+                                                   length_dmrs,
+                                                   dlsch0->harq_processes[harq_pid]->Qm,
+                                                   dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_unscrambling_stats);
 #endif

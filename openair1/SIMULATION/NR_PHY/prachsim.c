@@ -339,6 +339,8 @@ int main(int argc, char **argv){
 
   
   if (config_index<67)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
+  uint16_t N_ZC;
+  N_ZC = prach_sequence_length == 0 ? 839 : 139;
 
   printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
 
@@ -485,8 +487,8 @@ int main(int argc, char **argv){
   prach_config->num_prach_fd_occasions_list[fd_occasion].k1.value                        = msg1_frequencystart;
   prach_config->restricted_set_config.value                                              = restrictedSetConfig;
   prach_config->prach_sequence_length.value                                              = prach_sequence_length;
-  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value        = num_root_sequences;
   prach_pdu->num_cs                                                                      = get_NCS(NCS_config, format0, restrictedSetConfig);
+  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value        = 1+(64/(N_ZC/prach_pdu->num_cs));
   prach_pdu->prach_format                                                                = prach_format;
 
   memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
@@ -525,7 +527,7 @@ int main(int argc, char **argv){
   ue_prach_config->prach_sub_c_spacing                                                = mu;
   ue_prach_config->prach_sequence_length                                              = prach_sequence_length;
   ue_prach_config->restricted_set_config                                              = restrictedSetConfig;
-  ue_prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences        = num_root_sequences;
+  ue_prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences        = prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value ;
   ue_prach_config->num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index = rootSequenceIndex;
   ue_prach_config->num_prach_fd_occasions_list[fd_occasion].k1                        = msg1_frequencystart;
 
@@ -601,13 +603,10 @@ int main(int argc, char **argv){
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  samp_count=0;
-  for (int s=0; s<slot; s++) samp_count+=frame_parms->get_samples_per_slot(s,frame_parms);
-  
-  prach_start = samp_count - UE->N_TA_offset;
+  prach_start = subframe*frame_parms->samples_per_subframe-UE->N_TA_offset;
 
   #ifdef NR_PRACH_DEBUG
-  LOG_M("txsig0.m", "txs0", &txdata[0][prach_start], frame_parms->samples_per_subframe, 1, 1);
+  LOG_M("txsig0.m", "txs0", &txdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
     LOG_M("txsig0_frame.m","txs0", txdata[0],frame_parms->samples_per_frame,1,1);
   #endif
 
@@ -651,8 +650,8 @@ int main(int argc, char **argv){
 
   rx_prach_start = subframe*frame_parms->samples_per_subframe;
   if (n_frames==1) printf("slot %d, rx_prach_start %d\n",slot,rx_prach_start);
-  uint16_t preamble_rx, preamble_energy, N_ZC;
-  N_ZC = prach_sequence_length == 0 ? 839 : 139;
+  uint16_t preamble_rx, preamble_energy;
+
 
   for (SNR=snr0; SNR<snr1; SNR+=.1) {
     for (ue_speed=ue_speed0; ue_speed<ue_speed1; ue_speed+=10) {
@@ -703,7 +702,7 @@ int main(int argc, char **argv){
         rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, frame, slot);
 
         gNB->prach_vars.rxsigF = ru->prach_rxsigF;
-
+	if (n_frames == 1) printf("ncs %d,num_seq %d\n",prach_pdu->num_cs,  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value);
         rx_nr_prach(gNB, prach_pdu, frame, subframe, &preamble_rx, &preamble_energy, &preamble_delay);
 
 	//        printf(" preamble_energy %d preamble_rx %d preamble_tx %d \n", preamble_energy, preamble_rx, preamble_tx);
@@ -720,8 +719,8 @@ int main(int argc, char **argv){
           #ifdef NR_PRACH_DEBUG
 	  LOG_M("prach0.m","prach0", &txdata[0][prach_start], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
-            LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][rx_prach_start], frame_parms->samples_per_subframe, 1, 1);
-            LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][rx_prach_start], frame_parms->samples_per_subframe, 1, 1);
+            LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
+            LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("rxsigF0.m","rxsF0", gNB->prach_vars.rxsigF[0], N_ZC, 1, 1);
             LOG_M("prach_preamble.m","prachp", &gNB->X_u[0], N_ZC, 1, 1);
             LOG_M("ue_prach_preamble.m","prachp", &UE->X_u[0], N_ZC, 1, 1);

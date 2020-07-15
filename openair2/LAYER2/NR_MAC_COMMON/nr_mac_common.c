@@ -52,6 +52,9 @@ const char *prachfmt03[]={"0","1","2","3"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
+  LOG_D(MAC,"get_NCS: indx %d,format0 %d, restriced_set_config %d\n",
+	index,format0,restricted_set_config);
+
   if (format0 < 3) {
     switch(restricted_set_config){
       case 0:
@@ -1736,7 +1739,7 @@ uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
   if (bwp_size < 37)  return (rbg_size_config ? 4 : 2);
   if (bwp_size < 73)  return (rbg_size_config ? 8 : 4);
   if (bwp_size < 145) return (rbg_size_config ? 16 : 8);
-  if (bwp_size < 276) return 16;
+  else return 16;
 }
 
 uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {

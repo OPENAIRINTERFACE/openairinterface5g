@@ -324,6 +324,7 @@ int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
       AssertFatal(1,"Invalid crc_type \n");
     }
 
+
     if (crc == oldcrc)
       return(1);
     else

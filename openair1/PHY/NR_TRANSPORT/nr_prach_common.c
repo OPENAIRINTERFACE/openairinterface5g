@@ -139,7 +139,7 @@ void compute_nr_prach_seq(uint8_t short_sequence,
     }
 
     u = prach_root_sequence_map[index];
-
+    LOG_D(PHY,"prach index %d => u=%d\n",index,u);
     inv_u = nr_ZC_inv[u]; // multiplicative inverse of u
 
 
