@@ -325,6 +325,77 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
 }
 
+/** \brief This function is relavant for the UE procedures for control. It loads the search spaces, the BWPs and the CORESETs into the MAC instance and
+    \brief performs assert checks on the relevant RRC configuration.
+    @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
+    @returns void
+    */
+void config_control_ue(NR_UE_MAC_INST_t *mac){
+
+  uint8_t bwp_id = 1, coreset_id = 1, ss_id;
+  NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
+  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Common;
+  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Dedicated;
+  NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
+  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+  struct NR_PDCCH_Config__controlResourceSetToAddModList *controlResourceSetToAddModList = pdcch_Config->choice.setup->controlResourceSetToAddModList;
+  struct NR_PDCCH_Config__searchSpacesToAddModList *searchSpacesToAddModList = pdcch_Config->choice.setup->searchSpacesToAddModList;
+  struct NR_UplinkConfig__uplinkBWP_ToAddModList *uplinkBWP_ToAddModList = scd->uplinkConfig->uplinkBWP_ToAddModList;
+  NR_SearchSpace_t *NR_SearchSpace;
+
+  // check pdcch_Config, pdcch_ConfigCommon and DL BWP
+  AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
+  AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
+  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
+  AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
+  AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
+  AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
+  AssertFatal(pdcch_ConfigCommon != NULL, "pdcch_ConfigCommon is null\n");
+  AssertFatal(pdcch_ConfigCommon->choice.setup->ra_SearchSpace != NULL, "ra_SearchSpace must be available in DL BWP\n");
+  AssertFatal(controlResourceSetToAddModList != NULL, "controlResourceSetToAddModList is null\n");
+  AssertFatal(controlResourceSetToAddModList->list.count == 1, "controlResourceSetToAddModList->list.count=%d\n", controlResourceSetToAddModList->list.count);
+  mac->coreset[bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
+  AssertFatal(controlResourceSetToAddModList->list.array[0] != NULL, "coreset[0][0] is null\n");
+
+  // Check dedicated UL BWP and pass to MAC
+  AssertFatal(uplinkBWP_ToAddModList != NULL, "uplinkBWP_ToAddModList is null\n");
+  AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
+  mac->ULbwp[0] = uplinkBWP_ToAddModList->list.array[0];
+  AssertFatal(mac->ULbwp[0]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
+
+  // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
+  // note: the network configures at most 10 Search Spaces per BWP per cell (including UE-specific and common Search Spaces).
+  AssertFatal(searchSpacesToAddModList != NULL, "searchSpacesToAddModList is null\n");
+  AssertFatal(searchSpacesToAddModList->list.count > 0, "list of UE specifically configured Search Spaces is empty\n");
+  AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS_PER_CORESET, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
+  for (ss_id = 0; ss_id < searchSpacesToAddModList->list.count; ss_id++) {
+    NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
+    AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
+    AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
+    AssertFatal(*ss->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
+    AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
+    mac->SSpace[0][0][ss_id] = ss;
+  }
+
+  // Check available CSSs in the commonSearchSpaceList (list of additional common search spaces)
+  // note: commonSearchSpaceList SIZE(1..4)
+  AssertFatal(commonSearchSpaceList != NULL, "commonSearchSpaceList is null\n");
+  AssertFatal(commonSearchSpaceList->list.count > 0, "PDCCH CSS list has 0 elements\n");
+  for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
+    NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
+    AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
+    AssertFatal(*css->controlResourceSetId == mac->coreset[bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(css->searchSpaceId != NULL, "css->searchSpaceId is null\n");
+    AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
+    AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
+    AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
+    mac->SSpace[0][0][ss_id] = css;
+    ss_id++;
+  }
+}
+
 int nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
     int                             cc_idP,
@@ -337,16 +408,16 @@ int nr_rrc_mac_config_req_ue(
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-    //    NR_ServingCellConfig_t *serving_cell_config = spcell_configP->spCellConfigDedicated;
     //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
-
 
     if(mibP != NULL){
       mac->mib = mibP;    //  update by every reception
     }
 
     if(cell_group_config != NULL ){
+      mac->scg = cell_group_config;
       mac->servCellIndex = *cell_group_config->spCellConfig->servCellIndex;
+      config_control_ue(mac);
       if (cell_group_config->spCellConfig->reconfigurationWithSync) {
         mac->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
 	mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
@@ -354,7 +425,6 @@ int nr_rrc_mac_config_req_ue(
 	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
 	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
       }
-      mac->scg = cell_group_config;
 
       /*      
       if(mac_cell_group_configP != NULL){
@@ -419,8 +489,8 @@ int nr_rrc_mac_config_req_ue(
 	}
       }
       */
-    }   
-    
+    }
+
     return 0;
 
 }
