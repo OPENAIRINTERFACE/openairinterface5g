@@ -306,7 +306,7 @@ void nr_fill_prach_ru(RU_t *ru,
                       int Slot,
                       nfapi_nr_prach_pdu_t *prach_pdu);
 
-int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type);
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, find_type_t type);
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void);

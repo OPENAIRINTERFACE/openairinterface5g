@@ -86,7 +86,71 @@ uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config)
   }
 }
 
+//38.211 Table 6.3.3.2-1
+int16_t table_6_3_3_2_1[16][5] = {
+//Length_RA, delta_f_RA_PRACH, delta_f_PUSCH, N_RA_RB, kbar
+{ 839,        1.25,             15,            6,      7},
+{ 839,        1.25,             30,            3,      1},
+{ 839,        1.25,             60,            2,    133},
+{ 839,           5,             15,           24,     12},
+{ 839,           5,             30,           12,     10},
+{ 839,           5,             60,            6,      7},
+{ 139,          15,             15,           12,      2},
+{ 139,          15,             30,            6,      2},
+{ 139,          15,             60,            3,      2},
+{ 139,          30,             15,           24,      2},
+{ 139,          30,             30,           12,      2},
+{ 139,          30,             60,            6,      2},
+{ 139,          60,             60,           12,      2},
+{ 139,          60,            120,            6,      2},
+{ 139,         120,             60,           24,      2},
+{ 139,         120,            120,           12,      2}
+};
 
+/* Function to get number of RBs required for prach occasion based on
+ * 38.211 Table 6.3.3.2-1 */
+int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
+	
+	int8_t index = 0;
+	switch(delta_f_RA_PRACH) {
+			case 0 : index = 6;
+		          if (delta_f_PUSCH == 0)
+			          index += 0;
+		          else if(delta_f_PUSCH == 1)
+			          index += 1;
+		          else
+			          index += 2;
+							break;
+
+		case 1 : index = 9;
+		         if (delta_f_PUSCH == 0)
+			         index += 0;
+		         else if(delta_f_PUSCH == 1)
+		           index += 1;
+		         else
+			          index += 2;
+	           break;
+
+		case 2 : index = 11;
+		         if (delta_f_PUSCH == 2)
+			         index += 0;
+		         else
+			         index += 1;
+		         break;		
+		
+		case 3: index = 13;
+		          if (delta_f_PUSCH == 2)
+			          index += 0;
+		          else
+			          index += 1;
+		          break;
+
+		default : index = 10;/*30khz prach scs and 30khz pusch scs*/
+				
+	}
+  
+	return table_6_3_3_2_1[index][3];
+}	
 // Table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
 // the column 5, (SFN_nbr is a bitmap where we set bit to '1' in the position of the subframe where the RACH can be sent.
 // E.g. in row 4, and column 5 we have set value 512 ('1000000000') which means RACH can be sent at subframe 9.
@@ -955,6 +1019,107 @@ void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
   }
 }
 
+int get_nr_prach_occasion_info_from_index(uint8_t index,
+                                 uint32_t pointa,
+                                 uint8_t mu,
+                                 uint8_t unpaired,
+                                 uint16_t *format,
+                                 uint8_t *start_symbol,
+                                 uint8_t *N_t_slot,
+                                 uint8_t *N_dur,
+                                 uint8_t *N_RA_slot,
+                                 uint16_t *N_RA_sfn,
+                                 uint8_t *max_association_period) {
+
+  int x;
+  int64_t s_map;
+  uint8_t format2 = 0xff;
+  if (pointa > 2016666) { //FR2
+    x = table_6_3_3_2_4_prachConfig_Index[index][2];
+    s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
+		for(int i = 0; i < 64 ;i++) {
+      if ( (s_map >> i) & 0x01) {
+        (*N_RA_sfn)++;
+			}
+    }
+    *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
+    *max_association_period = 160/(x * 10); 
+    if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+      *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];//multiple prach occasions in diff slot
+      *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
+      *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
+      if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
+        format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
+        
+		  *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
+      LOG_D(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
+            index,
+            pointa,
+            mu,
+            unpaired,
+            *start_symbol,
+            *N_t_slot,
+            *N_dur,
+						*N_RA_sfn);
+    }
+        return 1;
+ }
+  else {
+
+    if (unpaired) {
+      x = table_6_3_3_2_3_prachConfig_Index[index][2];
+      s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
+		  for(int i = 0; i < 64 ;i++) {
+        if ( (s_map >> i) & 0x01) {
+          (*N_RA_sfn)++;
+				}
+      }
+      *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
+      *max_association_period = 160/(x * 10); 
+      if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+        *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
+        *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
+        *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
+        if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
+          format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
+        *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
+        LOG_D(MAC,"Getting Total PRACH info from index %d (col %lu ) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
+              index, table_6_3_3_2_3_prachConfig_Index[index][6],
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur,
+							*N_RA_sfn);
+      }
+		  return 1;
+	  }
+    else { // FDD
+      x = table_6_3_3_2_2_prachConfig_Index[index][2];
+      s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+      *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6];
+      if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+        *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
+        *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
+        *N_dur = table_6_3_3_2_2_prachConfig_Index[index][8];
+        if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
+          format2 = (uint8_t) table_6_3_3_2_2_prachConfig_Index[index][1];
+        *format = ((uint8_t) table_6_3_3_2_2_prachConfig_Index[index][0]) | (format2<<8);
+        LOG_D(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n",
+              index,
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur);
+      }
+      return 1;
+    }
+  }
+}
+
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
                                  int slot,
@@ -964,7 +1129,9 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint16_t *format,
                                  uint8_t *start_symbol,
                                  uint8_t *N_t_slot,
-                                 uint8_t *N_dur) {
+                                 uint8_t *N_dur,
+                                 uint16_t *RA_sfn_index,
+                                 uint8_t *N_RA_slot) {
 
   int x,y;
   int64_t s_map;
@@ -980,9 +1147,17 @@ int get_nr_prach_info_from_index(uint8_t index,
     if ( (frame%x)==y || (frame%x)==y2 ) {
       slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
+        if ((s_map >> slot_60khz) & 0x01 ) {
+		      for(int i = 0; i < slot_60khz ;i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+				    }
+          }
+        }
       if ( ((s_map>>slot_60khz)&0x01) ) {
+         *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
         if (mu == 3) {
-          if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 0) )
+          if ( (*N_RA_slot == 1) && (slot%2 == 0) )
             return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
         }
         if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
@@ -1018,11 +1193,19 @@ int get_nr_prach_info_from_index(uint8_t index,
       if ( (frame%x)==y ) {
         subframe = slot >> mu;
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
-        if ( (s_map>>subframe)&0x01 ) {
-          if (mu == 1) {
-            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
-              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+        if ((s_map >> subframe) & 0x01 ) {
+		      for(int i = 0; i < subframe ;i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+				    }
           }
+        }
+        if ( (s_map>>subframe)&0x01 ) {
+         *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
+          if (mu == 1) {
+            if ( (*N_RA_slot <= 1) && (slot%2 == 0) )
+              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
+          } 
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
             *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
@@ -1030,7 +1213,7 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %ld) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
               slot,
               index, table_6_3_3_2_3_prachConfig_Index[index][6],
               pointa,
