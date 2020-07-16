@@ -141,6 +141,8 @@ typedef struct {
   int msg4_mcs;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
+  // SSB id
+  uint8_t ssb_id;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -177,6 +179,10 @@ typedef struct {
   uint8_t vrb_map_UL[100];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
+	///Number of active SSBs
+	uint8_t num_active_ssb;
+	//Total available prach occasions
+	uint32_t total_prach_occasions;
 } NR_COMMON_channels_t;
 
 
@@ -295,7 +301,22 @@ typedef struct {
   rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
   NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+	uint8_t UE_ssb_index[MAX_MOBILES_PER_GNB];
 } NR_UE_list_t;
+
+typedef struct {
+  rnti_t rnti;
+  rnti_t tc_rnti;
+  boolean_t active;  
+} NR_SSB_UE_list_t;
+
+#define MAX_NUM_OF_SSB 64
+
+typedef struct {
+	uint8_t ssb_index;
+  int num_UEs;
+  NR_SSB_UE_list_t SSB_UE_list[MAX_MOBILES_PER_GNB];
+} NR_SSB_list_t;		
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -335,6 +356,7 @@ typedef struct gNB_MAC_INST_s {
 
   NR_UE_list_t UE_list;
 
+  NR_SSB_list_t SSB_list[MAX_NUM_OF_SSB];
   /// UL handle
   uint32_t ul_handle;
 

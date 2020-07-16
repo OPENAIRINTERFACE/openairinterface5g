@@ -46,18 +46,17 @@ void init_prach_list(PHY_VARS_gNB *gNB) {
   for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) gNB->prach_vars.list[i].frame=-1;
 }
 
-int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, int numRA, find_type_t type) {
+int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame, int slot, find_type_t type) {
 
   uint16_t i;
   int16_t first_free_index=-1;
 
   AssertFatal(gNB!=NULL,"gNB is null\n");
   for (i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) {
-    LOG_D(PHY,"searching for PRACH in %d.%d with numRA %d: prach_index %d=> %d.%d numRA %d\n", frame,slot,numRA,i,
-	  gNB->prach_vars.list[i].frame,gNB->prach_vars.list[i].slot,gNB->prach_vars.list[i].pdu.num_ra);
+    LOG_D(PHY,"searching for PRACH in %d.%d prach_index %d=> %d.%d\n", frame,slot,i,
+	  gNB->prach_vars.list[i].frame,gNB->prach_vars.list[i].slot);
     if ((gNB->prach_vars.list[i].frame == frame) &&
-        (gNB->prach_vars.list[i].slot  == slot) &&
-	(gNB->prach_vars.list[i].pdu.num_ra == numRA))       return i;
+        (gNB->prach_vars.list[i].slot  == slot)) return i;
     else if ((gNB->prach_vars.list[i].frame == -1) && (first_free_index==-1)) first_free_index=i;
   }
   if (type == SEARCH_EXIST) return -1;
@@ -70,7 +69,7 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 		   int Slot,
 		   nfapi_nr_prach_pdu_t *prach_pdu) {
 
-  int prach_id = find_nr_prach(gNB,SFN,Slot,prach_pdu->num_ra,SEARCH_EXIST_OR_FREE);
+  int prach_id = find_nr_prach(gNB,SFN,Slot,SEARCH_EXIST_OR_FREE);
   AssertFatal( (prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX),
               "illegal or no prach_id found!!! numRA %d prach_id %d\n",prach_pdu->num_ra,prach_id);
 
@@ -571,13 +570,11 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   fp = &gNB->frame_parms;
 
   nb_rx = gNB->gNB_config.carrier_config.num_rx_ant.value;
-  
-  rootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].prach_root_sequence_index.value;
-  numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[0].num_root_sequences.value;
+  rootSequenceIndex   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].prach_root_sequence_index.value;
+  numrootSequenceIndex   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].num_root_sequences.value;
   NCS          = prach_pdu->num_cs;//cfg->num_prach_fd_occasions_list[0].prach_zero_corr_conf.value;
   int prach_sequence_length = cfg->prach_sequence_length.value;
-
-  int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[0].k1.value;
+  int msg1_frequencystart   = cfg->num_prach_fd_occasions_list[prach_pdu->num_ra].k1.value;
   //  int num_unused_root_sequences = cfg->num_prach_fd_occasions_list[0].num_unused_root_sequences.value;
   // cfg->num_prach_fd_occasions_list[0].unused_root_sequences_list
 

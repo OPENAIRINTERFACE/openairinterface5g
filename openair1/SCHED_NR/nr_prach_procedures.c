@@ -52,11 +52,9 @@ extern uint8_t nfapi_mode;
 extern int oai_nfapi_nr_rach_ind(nfapi_rach_indication_t *rach_ind);
 
 
-void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
-			    nfapi_nr_prach_pdu_t *prach_pdu) {
+void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 
   uint16_t max_preamble[4]={0},max_preamble_energy[4]={0},max_preamble_delay[4]={0};
-  uint16_t i;
 
 
   gNB->UL_INFO.rach_ind.number_of_pdus=0;
@@ -70,13 +68,19 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
 
 
 
-  for (i=0;i<gNB->num_RU;i++) {
+  for (int i=0;i<gNB->num_RU;i++) {
     ru=gNB->RU_list[i];
     for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
       gNB->prach_vars.rxsigF[aa] = gNB->RU_list[i]->prach_rxsigF[ru_aa];
     }
   }
+  nfapi_nr_prach_pdu_t *prach_pdu;
 
+	for(int i = 0; i < NUMBER_OF_NR_PRACH_MAX; i++) {
+    int prach_id=find_nr_prach(gNB,frame,slot,SEARCH_EXIST);
+    if (prach_id>=0) {
+		prach_pdu = &gNB->prach_vars.list[prach_id].pdu;
+		
   rx_nr_prach(gNB,
 	      prach_pdu,
 	      frame,
@@ -86,6 +90,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
 	      &max_preamble_delay[0]
 	      );
 
+  gNB->prach_vars.list[prach_id].frame=-1;
   LOG_D(PHY,"[RAPROC] Frame %d, slot %d : Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d)\n",
         frame,slot,
         max_preamble[0],
@@ -109,30 +114,30 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,
       T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
     
     
-    gNB->UL_INFO.rach_ind.number_of_pdus  = 1;
-    gNB->UL_INFO.rach_ind.pdu_list        = &gNB->prach_pdu_indication_list[0];
-    gNB->UL_INFO.rach_ind.sfn                                    = frame;
+    gNB->UL_INFO.rach_ind.number_of_pdus  += 1;
+    gNB->UL_INFO.rach_ind.sfn             = frame;
     gNB->UL_INFO.rach_ind.slot            = slot;
+    gNB->UL_INFO.rach_ind.pdu_list        = &gNB->prach_pdu_indication_list[i];
     
-    gNB->prach_pdu_indication_list[0].phy_cell_id  = gNB->gNB_config.cell_config.phy_cell_id.value;
-    gNB->prach_pdu_indication_list[0].symbol_index = prach_pdu->prach_start_symbol;  // FIXME to be changed for multi-ssb (this is only the start symbol of first occasion)
-    gNB->prach_pdu_indication_list[0].slot_index   = slot;
-    gNB->prach_pdu_indication_list[0].freq_index   = prach_pdu->num_ra;
-    gNB->prach_pdu_indication_list[0].avg_rssi     = (max_preamble_energy[0]<631) ? (128+(max_preamble_energy[0]/5)) : 254;
-    gNB->prach_pdu_indication_list[0].avg_snr      = 0xff; // invalid for now
+    gNB->prach_pdu_indication_list[i].phy_cell_id  = gNB->gNB_config.cell_config.phy_cell_id.value;
+    gNB->prach_pdu_indication_list[i].symbol_index = prach_pdu->prach_start_symbol;  // FIXME to be changed for multi-ssb (this is only the start symbol of first occasion)
+    gNB->prach_pdu_indication_list[i].slot_index   = slot;
+    gNB->prach_pdu_indication_list[i].freq_index   = prach_pdu->num_ra;
+    gNB->prach_pdu_indication_list[i].avg_rssi     = (max_preamble_energy[0]<631) ? (128+(max_preamble_energy[0]/5)) : 254;
+    gNB->prach_pdu_indication_list[i].avg_snr      = 0xff; // invalid for now
 
 
-    gNB->prach_pdu_indication_list[0].num_preamble                        = 1;
-    gNB->prach_pdu_indication_list[0].preamble_list                       = gNB->preamble_list;
-    gNB->prach_pdu_indication_list[0].preamble_list[0].preamble_index     = max_preamble[0];
-    gNB->prach_pdu_indication_list[0].preamble_list[0].timing_advance     = max_preamble_delay[0];
-    gNB->prach_pdu_indication_list[0].preamble_list[0].preamble_pwr       = 0xffffffff;
+    gNB->prach_pdu_indication_list[i].num_preamble                        = 1;
+    gNB->prach_pdu_indication_list[i].preamble_list                       = gNB->preamble_list;
+    gNB->prach_pdu_indication_list[i].preamble_list[0].preamble_index     = max_preamble[0];
+    gNB->prach_pdu_indication_list[i].preamble_list[0].timing_advance     = max_preamble_delay[0];
+    gNB->prach_pdu_indication_list[i].preamble_list[0].preamble_pwr       = 0xffffffff;
   }    
   gNB->measurements.prach_I0 = ((gNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10); 
   if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",gNB->measurements.prach_I0/10,gNB->measurements.prach_I0%10);
   if (gNB->prach_energy_counter < 100) gNB->prach_energy_counter++;
-  
-
+ } 
+ }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
 }
 

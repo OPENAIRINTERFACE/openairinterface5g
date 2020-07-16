@@ -487,12 +487,14 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   fd_occasion = 0;
   nfapi_nr_prach_config_t *prach_config = &gNB_config->prach_config;
   short_sequence = prach_config->prach_sequence_length.value;
+//  for(fd_occasion = 0; fd_occasion <= prach_config->num_prach_fd_occasions.value ; fd_occasion) { // TODO Need to handle for msg1-fdm > 1
   num_sequences = prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value;
   rootSequenceIndex = prach_config->num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index.value;
 
   compute_nr_prach_seq(short_sequence, num_sequences, rootSequenceIndex, RC.gNB[Mod_id]->X_u);
-
+//  }
   RC.gNB[Mod_id]->configured     = 1;
+	find_SSB_and_RO_available(Mod_id);
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
 

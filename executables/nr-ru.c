@@ -1582,6 +1582,8 @@ void *ru_thread( void *param ) {
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 
       // Do PRACH RU processing
+
+    for(i = 0;i < NUMBER_OF_NR_RU_PRACH_MAX; i++) {
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       if (prach_id>=0) {
 	rx_nr_prach_ru(ru,
@@ -1591,6 +1593,7 @@ void *ru_thread( void *param ) {
 		       proc->frame_rx,proc->tti_rx);
 	free_nr_ru_prach_entry(ru,prach_id);
       }
+    }
     }
 
     // At this point, all information for subframe has been received on FH interface

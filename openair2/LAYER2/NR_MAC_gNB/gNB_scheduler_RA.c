@@ -47,22 +47,163 @@ const uint8_t nr_slots_per_frame_mac[5] = {10, 20, 40, 80, 160};
 
 uint8_t DELTA[4]= {2,3,4,6};
 
-void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
+#define MAX_NUMBER_OF_SSB 64		
+float ssb_per_rach_occasion[8] = {0.125,0.25,0.5,1,2,4,8};
 
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+int16_t ssb_index_from_prach(module_id_t module_idP,
+                             frame_t frameP,
+													   sub_frame_t slotP,
+                             uint16_t preamble_index,
+                             uint8_t freq_index,
+                             uint8_t symbol) {
+
+
+	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
+  nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint8_t mu,N_dur,N_t_slot,start_symbol;
-  uint16_t format;
+	uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
+  uint64_t total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
+  float  num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
+  uint16_t start_symbol_index = 0;
+  uint8_t mu,N_dur,N_t_slot,start_symbol,N_RA_slot;
+  uint16_t format,RA_sfn_index;
+  uint16_t prach_occasion_id;
+	uint8_t num_active_ssb = cc->num_active_ssb;
 
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
     mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
   else
     mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
+  get_nr_prach_info_from_index(config_index,
+                                    (int)frameP,
+                                    (int)slotP,
+                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                    mu,
+                                    cc->frame_type,
+                                    &format,
+                                    &start_symbol,
+                                    &N_t_slot,
+                                    &N_dur,
+                                    &RA_sfn_index,
+                                    &N_RA_slot);
+  uint8_t index ,slot_index = 0;
+	for (slot_index = 0;slot_index < N_RA_slot; slot_index++) {
+    if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
+       if((mu == 1) || (mu == 3))
+         slot_index = 1;  //For scs = 30khz and 120khz
+    }
+    for (index=0; index<N_t_slot; index++) {
+      start_symbol = (start_symbol + index * N_dur + 14 * slot_index) % 14;
+		  if(symbol == start_symbol) {
+			  start_symbol_index = index;
+		    break;
+		  }	
+	  }
+	}
+
+ index = 0;
+//  prach_occasion_id = subframe_index * N_t_slot * N_RA_slot * fdm + N_RA_slot_index * N_t_slot * fdm + freq_index + fdm * start_symbol_index; 
+ prach_occasion_id = (RA_sfn_index + slot_index) * N_t_slot * fdm + start_symbol_index * fdm + freq_index; 
+//one RO is shared by one or more SSB
+ if(num_ssb_per_RO <= 1 )
+   index = (int) (prach_occasion_id / (int)(1/num_ssb_per_RO)) % num_active_ssb;
+//one SSB have more than one continuous RO
+ else if ( num_ssb_per_RO > 1) {
+	 index = (prach_occasion_id * (int)num_ssb_per_RO)% num_active_ssb ;
+   for(int j = 0;j < num_ssb_per_RO;j++) {
+     if(preamble_index <  (((j+1) * total_RApreambles) / num_ssb_per_RO))
+      index = index + j;
+	  }		
+	}
+
+  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f index = %d \n", frameP, slotP, prach_occasion_id, num_ssb_per_RO, index);
+  return index;
+}
+//Compute Total active SSBs and RO available
+void find_SSB_and_RO_available(module_id_t module_idP) {
+
+	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
+
+  uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint8_t mu,N_dur,N_t_slot,start_symbol,N_RA_slot;
+  uint16_t format,RA_sfn_index,unused_RA_occasion,repetition = 0;
+	uint8_t num_active_ssb = 0;
+  uint8_t max_association_period;
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+    mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+  else
+    mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+
+  // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
+  get_nr_prach_occasion_info_from_index(config_index,
+                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                    mu,
+                                    cc->frame_type,
+                                    &format,
+                                    &start_symbol,
+                                    &N_t_slot,
+                                    &N_dur,
+                                    &N_RA_slot,
+	                                 &RA_sfn_index,
+                                   &max_association_period);
+
+  float num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
+	uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
+  uint64_t L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
+	uint32_t total_RA_occasions = RA_sfn_index * N_t_slot * N_RA_slot * fdm;
+
+	for(int i = 0;i < 64;i++) {
+    if ((L_ssb >> (63-i)) & 0x01) { // only if the bit of L_ssb at current ssb index is 1
+    gNB->SSB_list[num_active_ssb].ssb_index = i; 
+		  num_active_ssb++;
+    }
+	}	
+
+	for(int i = 0; (1 << i) < max_association_period;i++) {
+    if(total_RA_occasions >= (int) (num_active_ssb/num_ssb_per_RO)) {
+		 repetition = (uint16_t)((total_RA_occasions * num_ssb_per_RO )/num_active_ssb);
+		 break;
+		} 
+		else 
+		 total_RA_occasions = total_RA_occasions * i;
+	}
+
+ unused_RA_occasion = total_RA_occasions - (int)((num_active_ssb * repetition)/num_ssb_per_RO);
+ cc->total_prach_occasions = total_RA_occasions - unused_RA_occasion;
+ cc->num_active_ssb = num_active_ssb;
+
+  LOG_D(MAC, "Total available RO %d, num of active SSB %d: unused RO = %d \n", cc->total_prach_occasions, cc->num_active_ssb, unused_RA_occasion);
+}		
+		
+void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
+
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  NR_COMMON_channels_t *cc = gNB->common_channels;
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
+  nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
+
+  uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint8_t mu,N_dur,N_t_slot,start_symbol,N_RA_slot;
+  uint16_t RA_sfn_index;
+  uint16_t format;
+  int slot_index;
+  uint16_t prach_occasion_id = -1;
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+    mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+  else
+    mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+
+  uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
   if ( get_nr_prach_info_from_index(config_index,
                                     (int)frameP,
@@ -73,15 +214,39 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
                                     &format,
                                     &start_symbol,
                                     &N_t_slot,
-                                    &N_dur) ) {
+                                    &N_dur,
+                                    &RA_sfn_index,
+                                    &N_RA_slot) ) {
+  uint16_t format0 = format&0xff;      // first column of format from table
+  uint16_t format1 = (format>>8)&0xff; // second column of format from table
 
-    int fdm = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;
-    uint16_t format0 = format&0xff;      // first column of format from table
-    uint16_t format1 = (format>>8)&0xff; // second column of format from table
+    if (N_RA_slot > 1) { //more than 1 PRACH slot in a subframe
+      if (slotP%2 == 1){
+        N_RA_slot = 1; //Even PRACH slot
+	slot_index = 1;
+      }	
+      else {
+	slot_index = 0;
+        N_RA_slot = 0; //Odd PRACH slot
+			}	
+    }else if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
+       N_RA_slot = 0;
+       slot_index = 0;
+       if((mu == 1) || (mu == 3))
+         N_RA_slot = 1;  //For scs = 30khz and 120khz
+    }
+
+//    start_symbol = start_symbol + N_t_slot * N_dur + 14 * N_RA_slot;
+    for (int index=0; index<N_t_slot; index++) {
+    start_symbol = (start_symbol + index * N_dur + 14 * N_RA_slot) % 14;
 
     UL_tti_req->SFN = frameP;
     UL_tti_req->Slot = slotP;
-    for (int n=0; n<(1<<fdm); n++) { // one structure per frequency domain occasion
+    for (int n=0; n < fdm; n++) { // one structure per frequency domain occasion
+
+      prach_occasion_id = (RA_sfn_index + slot_index) * N_t_slot * fdm + index * fdm + n;
+			if(prach_occasion_id < cc->total_prach_occasions){  
+
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
       nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
@@ -96,6 +261,11 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
                                   format0,
                                   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
+
+      LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n", frameP, slotP,
+			                                                                                                          prach_occasion_id, prach_pdu->num_ra,
+																																								                                        prach_pdu->prach_start_symbol,
+																																																												   slot_index, RA_sfn_index);
       // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
       // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
       if (format1!=0xff) {
@@ -157,8 +327,10 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
         default:
           AssertFatal(1==0,"Invalid PRACH format");
         }
-      }
+      }		
+     }
     }
+   }
   }
 }
 
@@ -167,7 +339,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
                       NR_ServingCellConfigCommon_t *scc,
                       uint16_t monitoring_slot_period,
-                      uint16_t monitoring_offset){
+                      uint16_t monitoring_offset,uint8_t index,uint8_t num_active_ssb){
 
   // preferentially we schedule the msg2 in the mixed slot or in the last dl slot
   // if they are allowed by search space configuration
@@ -186,7 +358,12 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // computing start of next period
   uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame_mac[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+	//scheduling msg2 based on identified active SSB from RO
+	for(int i = 0;i < last_dl_slot_period;i++) {
+	  if (index == ( (start_next_period + i ) % num_active_ssb ))
+	    *msg2_slot = start_next_period + i;
+	}
+//  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
 
   switch(response_window){
@@ -250,9 +427,17 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   // ra_rnti from 5.1.3 in 38.321
   uint16_t ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
 
+  uint8_t index = ssb_index_from_prach(module_idP,
+                                           frameP,
+													                 slotP,
+                                           preamble_index,
+                                           freq_index,
+                                           symbol);
+
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &nr_mac->UE_list;
+  NR_SSB_list_t *SSB_list = &nr_mac->SSB_list[index];
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
@@ -305,7 +490,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                                               &monitoring_slot_period,
                                               &monitoring_offset);
 
-    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset);
+    nr_schedule_msg2(frameP, slotP, &msg2_frame, &msg2_slot, scc, monitoring_slot_period, monitoring_offset,index,cc->num_active_ssb);
 
     ra->Msg2_frame = msg2_frame;
     ra->Msg2_slot = msg2_slot;
@@ -325,6 +510,10 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     UE_list->tc_rnti[UE_id] = ra->rnti;
+    UE_list->UE_ssb_index[UE_id] = SSB_list->ssb_index;
+    SSB_list->SSB_UE_list[UE_id].tc_rnti = ra->rnti;
+    SSB_list->SSB_UE_list[UE_id].active = true;
+    SSB_list->num_UEs += 1;
 
     LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x\n",
       module_idP,

@@ -308,4 +308,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t sdu_lenP,
                const uint16_t timing_advance, const uint8_t ul_cqi);
 
+int16_t ssb_index_from_prach(module_id_t module_idP,
+                             frame_t frameP,
+													   sub_frame_t slotP,
+                             uint16_t preamble_index,
+                             uint8_t freq_index,
+                             uint8_t symbol);
+
+void find_SSB_and_RO_available(module_id_t module_idP);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
