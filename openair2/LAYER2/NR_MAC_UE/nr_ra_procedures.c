@@ -62,9 +62,8 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
-extern int64_t table_6_3_3_2_2_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-extern const uint16_t nr_slots_per_frame[5];
+extern const uint8_t nr_slots_per_frame[5];
 
 //extern uint8_t  nfapi_mode;
 
@@ -616,28 +615,28 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
   mac->RA_window_cnt = mac->RA_offset*nr_slots_per_frame[mu]; // taking into account the 2 frames gap introduced by OAI gNB
 
   switch (ra_ResponseWindow) {
-    case 0:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
       mac->RA_window_cnt += 1;
       break;
-    case 1:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl2:
       mac->RA_window_cnt += 2;
       break;
-    case 2:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl4:
       mac->RA_window_cnt += 4;
       break;
-    case 3:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl8:
       mac->RA_window_cnt += 8;
       break;
-    case 4:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl10:
       mac->RA_window_cnt += 10;
       break;
-    case 5:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl20:
       mac->RA_window_cnt += 20;
       break;
-    case 6:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl40:
       mac->RA_window_cnt += 40;
       break;
-    case 7:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl80:
       mac->RA_window_cnt += 80;
       break;
   }
