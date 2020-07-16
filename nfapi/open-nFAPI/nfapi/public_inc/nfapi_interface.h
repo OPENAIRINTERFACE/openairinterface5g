@@ -2566,7 +2566,7 @@ typedef struct {
 } nfapi_harq_indication_tdd_rel13_t;
 #define NFAPI_HARQ_INDICATION_TDD_REL13_TAG 0x204F
 
-typedef struct { 
+typedef struct {
 	nfapi_tl_t tl;
 	uint8_t harq_tb1;
 	uint8_t harq_tb2;

@@ -1040,54 +1040,65 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
   int num_pairs = 0;
   int num_lone = 0;
-  int last_sfn_sf = -1;
 
   while (!oai_exit) {
     bool sent_any = false;
-    int sfn_sf = current_sfn_sf;
-    if (sfn_sf == last_sfn_sf) {
-      if (sem_wait(&sfn_semaphore) != 0)
-      {
-        LOG_E(MAC, "sem_wait() error\n");
-        abort();
-      }
-      continue;
+    if (sem_wait(&sfn_semaphore) != 0) {
+      LOG_E(MAC, "sem_wait() error\n");
+      abort();
     }
-
-    last_sfn_sf = sfn_sf;
-    LOG_E(MAC, "received from proxy frame %d subframe %d\n", NFAPI_SFNSF2SFN(sfn_sf),
-          NFAPI_SFNSF2SF(sfn_sf));
+    int sfn_sf = current_sfn_sf;
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
     nfapi_ul_config_request_t *ul_config_req = get_queue(&ul_config_req_queue);
     nfapi_hi_dci0_request_t *hi_dci0_req = get_queue(&hi_dci0_req_queue);
-    if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
-      uint64_t start = clock_usec();
-      uint64_t deadline = start + 10000;
 
-      for (;;) {
-        if (dl_config_req == NULL) {
-          dl_config_req = get_queue(&dl_config_req_queue);
-        }
-        if (tx_request_pdu_list == NULL) {
-          tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
-        }
-        if (dl_config_req && tx_request_pdu_list) {
-          uint64_t elapsed = clock_usec() - start;
-          if (elapsed > 1000) {
-            LOG_E(MAC, "Time difference between dl_config_req & tx_pdu is: %" PRIu64 "usec (%d %d)\n",
-                  elapsed, num_lone, num_pairs);
-          }
-          break;
-        }
-        if (clock_usec() > deadline) {
-          LOG_E(MAC, "In behemoth dl_config_req: %p tx_req_pdu_list: %p (%d %d)\n", dl_config_req,
-                tx_request_pdu_list, num_lone, num_pairs);
-          break;
-        }
-      }
+    LOG_I(MAC, "received from proxy frame %d subframe %d\n",
+          NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
+    if (dl_config_req != NULL) {
+      LOG_I(MAC, "dl_config_req pdus: %u\n",
+      dl_config_req->dl_config_request_body.number_pdu);
     }
+    if (tx_request_pdu_list != NULL) {
+      LOG_I(MAC, "tx_req segments: %u\n",
+      tx_request_pdu_list->num_segments);
+    }
+    if (ul_config_req != NULL) {
+      LOG_I(MAC, "ul_config_req pdus: %u\n",
+      ul_config_req->ul_config_request_body.number_of_pdus);
+    }
+    if (hi_dci0_req != NULL) {
+      LOG_I(MAC, "hi_dci0_req pdus: %u\n",
+      hi_dci0_req->hi_dci0_request_body.number_of_dci);
+    }
+    // if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
+    //   uint64_t start = clock_usec();
+    //   uint64_t deadline = start + 10000;
+
+    //   for (;;) {
+    //     if (dl_config_req == NULL) {
+    //       dl_config_req = get_queue(&dl_config_req_queue);
+    //     }
+    //     if (tx_request_pdu_list == NULL) {
+    //       tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
+    //     }
+    //     if (dl_config_req && tx_request_pdu_list) {
+    //       uint64_t elapsed = clock_usec() - start;
+    //       if (elapsed > 1000) {
+    //         LOG_E(MAC, "Time difference between dl_config_req & tx_pdu is: %" PRIu64 "usec (%d %d)\n",
+    //               elapsed, num_lone, num_pairs);
+    //       }
+    //       break;
+    //     }
+    //     if (clock_usec() > deadline) {
+    //       LOG_E(MAC, "In behemoth dl_config_req: %p tx_req_pdu_list: %p (%d %d)\n", dl_config_req,
+    //             tx_request_pdu_list, num_lone, num_pairs);
+    //       break;
+    //     }
+    //   }
+    // }
+
 
     if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
       num_lone++;

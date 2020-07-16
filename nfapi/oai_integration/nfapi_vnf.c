@@ -504,7 +504,8 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
 
 int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
+  LOG_D(MAC, "%s() NFAPI Frame: %d Subframe: %d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
+       NFAPI_SFNSF2SF(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
   LOG_E(MAC, "%s entered\n", __func__);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){

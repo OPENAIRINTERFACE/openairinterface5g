@@ -700,8 +700,13 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t *req,
         req->ul_config_request_body.rach_prach_frequency_resources,
         req->ul_config_request_body.srs_present);
 
-  int sfn = timer_frame;
-  int sf = timer_subframe;
+  // int sfn = timer_frame; // Needs the ul_config_req sfn_sf
+  // int sf = timer_subframe;
+  LOG_D(MAC, "ul_config_req Frame: %d Subframe: %d Proxy Frame: %u Subframe: %u\n",
+        NFAPI_SFNSF2SFN(req->sfn_sf), NFAPI_SFNSF2SF(req->sfn_sf),
+        timer_frame, timer_subframe);
+  int sfn = NFAPI_SFNSF2SFN(req->sfn_sf); // Needs the ul_config_req sfn_sf
+  int sf = NFAPI_SFNSF2SF(req->sfn_sf);
 
   LOG_D(MAC,
         "ul_config_req_UE_MAC() TOTAL NUMBER OF UL_CONFIG PDUs: %d, SFN/SF: "
@@ -1345,8 +1350,9 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       LOG_E(MAC, "CQI_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     case NFAPI_HARQ_INDICATION:
-      LOG_E(MAC, "HARQ_IND sent to Proxy, Size: %d\n", encoded_size);
       encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
+      LOG_E(MAC, "HARQ_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+            NFAPI_SFNSF2SFN(UL->harq_ind.sfn_sf), NFAPI_SFNSF2SF(UL->harq_ind.sfn_sf));
       break;
     case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
