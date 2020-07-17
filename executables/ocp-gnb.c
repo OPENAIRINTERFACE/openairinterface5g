@@ -470,7 +470,6 @@ void OCPconfig_RU(RU_t *ru) {
   return;
 }
 
-
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
@@ -811,10 +810,8 @@ static void *ru_thread( void *param ) {
   AssertFatal(ru->rfdevice.trx_start_func(&ru->rfdevice) == 0,"Could not start the RF device\n");
   tpool_t *threadPool=(tpool_t *)malloc(sizeof(tpool_t));
   initTpool("-1,-1,-1", threadPool, true);
-
   int64_t slot=-1;
-  int64_t nextTSshouldBe=0;
-  openair0_timestamp HWtimeStamp=0; //for multi RU
+  int64_t nextHWTSshouldBe=0, nextRxTSlogical=0;
   // weird globals, used in NR_IF_Module.c
   sf_ahead = (uint16_t) ceil((float)6/(0x01<<fp->numerology_index));
   sl_ahead = sf_ahead*fp->slots_per_subframe;
@@ -827,6 +824,7 @@ static void *ru_thread( void *param ) {
     int rxBuffOffset=fp->get_samples_slot_timestamp(nextSlot,fp,0);
     AssertFatal(rxBuffOffset + samples_per_slot <= fp->samples_per_frame, "Will read outside allocated buffer\n");
     int samples=fp->get_samples_per_slot(nextSlot,fp);
+    openair0_timestamp HWtimeStamp=0; //for multi RU
     int rxs=rx_rf(rxBuffOffset,
                   samples,
                   ru->nb_rx,
@@ -835,13 +833,24 @@ static void *ru_thread( void *param ) {
                   &HWtimeStamp);
     LOG_D(PHY,"Reading %d samples for slot %d\n",samples_per_slot,nextSlot);
 
-    if ( HWtimeStamp !=  nextTSshouldBe)
-      LOG_E(HW,"reading a stream must be continuous, %ld, %ld\n", HWtimeStamp, nextTSshouldBe);
+    if ( HWtimeStamp !=  nextHWTSshouldBe)
+      LOG_E(HW,"reading a stream must be continuous, %ld, %ld\n", HWtimeStamp, nextHWTSshouldBe);
 
-    nextTSshouldBe=HWtimeStamp+rxs;
-    proc->tti_rx=nextSlot;
-    proc->timestamp_rx=(slot+1)*fp->samples_per_subframe;
-    proc->frame_rx  = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+    nextHWTSshouldBe=HWtimeStamp+rxs;
+    proc->timestamp_rx=nextRxTSlogical;
+    nextRxTSlogical+=samples_per_slot;
+    int64_t HW_to_logical_RxTSoffset=(int64_t)HWtimeStamp-(int64_t)proc->timestamp_rx;
+    printf("%lu, %lu\n",HWtimeStamp, (slot+1)*fp->samples_per_subframe);
+    proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+    uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
+    float offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
+    proc->tti_rx = (idx_sf * fp->slots_per_subframe +
+                    lroundf(offsetInSubframe / fp->samples_per_slot0))%
+                   fp->slots_per_frame;
+    LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
+          ru->idx, 0,
+          (unsigned long long int)proc->timestamp_rx,
+          (int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
     int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,proc->frame_rx,proc->tti_rx);
 
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
@@ -880,7 +889,8 @@ static void *ru_thread( void *param ) {
     }
 
     // do outgoing fronthaul (south) if needed
-    tx_rf(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx);
+    tx_rf(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx+HW_to_logical_RxTSoffset);
+    slot++;
   }
 
   printf( "Exiting ru_thread \n");
