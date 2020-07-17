@@ -131,7 +131,6 @@ extern double cpuf;
 short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,16384,16384,-16384,-16384,16384,16384,16384,-16384,-16384,16384,-16384,-16384,7327,7327,7327,21981,21981,7327,21981,21981,7327,-7327,7327,-21981,21981,-7327,21981,-21981,-7327,7327,-7327,21981,-21981,7327,-21981,21981,-7327,-7327,-7327,-21981,-21981,-7327,-21981,-21981,10726,10726,10726,3576,3576,10726,3576,3576,10726,17876,10726,25027,3576,17876,3576,25027,17876,10726,17876,3576,25027,10726,25027,3576,17876,17876,17876,25027,25027,17876,25027,25027,10726,-10726,10726,-3576,3576,-10726,3576,-3576,10726,-17876,10726,-25027,3576,-17876,3576,-25027,17876,-10726,17876,-3576,25027,-10726,25027,-3576,17876,-17876,17876,-25027,25027,-17876,25027,-25027,-10726,10726,-10726,3576,-3576,10726,-3576,3576,-10726,17876,-10726,25027,-3576,17876,-3576,25027,-17876,10726,-17876,3576,-25027,10726,-25027,3576,-17876,17876,-17876,25027,-25027,17876,-25027,25027,-10726,-10726,-10726,-3576,-3576,-10726,-3576,-3576,-10726,-17876,-10726,-25027,-3576,-17876,-3576,-25027,-17876,-10726,-17876,-3576,-25027,-10726,-25027,-3576,-17876,-17876,-17876,-25027,-25027,-17876,-25027,-25027,8886,8886,8886,12439,12439,8886,12439,12439,8886,5332,8886,1778,12439,5332,12439,1778,5332,8886,5332,12439,1778,8886,1778,12439,5332,5332,5332,1778,1778,5332,1778,1778,8886,19547,8886,15993,12439,19547,12439,15993,8886,23101,8886,26655,12439,23101,12439,26655,5332,19547,5332,15993,1778,19547,1778,15993,5332,23101,5332,26655,1778,23101,1778,26655,19547,8886,19547,12439,15993,8886,15993,12439,19547,5332,19547,1778,15993,5332,15993,1778,23101,8886,23101,12439,26655,8886,26655,12439,23101,5332,23101,1778,26655,5332,26655,1778,19547,19547,19547,15993,15993,19547,15993,15993,19547,23101,19547,26655,15993,23101,15993,26655,23101,19547,23101,15993,26655,19547,26655,15993,23101,23101,23101,26655,26655,23101,26655,26655,8886,-8886,8886,-12439,12439,-8886,12439,-12439,8886,-5332,8886,-1778,12439,-5332,12439,-1778,5332,-8886,5332,-12439,1778,-8886,1778,-12439,5332,-5332,5332,-1778,1778,-5332,1778,-1778,8886,-19547,8886,-15993,12439,-19547,12439,-15993,8886,-23101,8886,-26655,12439,-23101,12439,-26655,5332,-19547,5332,-15993,1778,-19547,1778,-15993,5332,-23101,5332,-26655,1778,-23101,1778,-26655,19547,-8886,19547,-12439,15993,-8886,15993,-12439,19547,-5332,19547,-1778,15993,-5332,15993,-1778,23101,-8886,23101,-12439,26655,-8886,26655,-12439,23101,-5332,23101,-1778,26655,-5332,26655,-1778,19547,-19547,19547,-15993,15993,-19547,15993,-15993,19547,-23101,19547,-26655,15993,-23101,15993,-26655,23101,-19547,23101,-15993,26655,-19547,26655,-15993,23101,-23101,23101,-26655,26655,-23101,26655,-26655,-8886,8886,-8886,12439,-12439,8886,-12439,12439,-8886,5332,-8886,1778,-12439,5332,-12439,1778,-5332,8886,-5332,12439,-1778,8886,-1778,12439,-5332,5332,-5332,1778,-1778,5332,-1778,1778,-8886,19547,-8886,15993,-12439,19547,-12439,15993,-8886,23101,-8886,26655,-12439,23101,-12439,26655,-5332,19547,-5332,15993,-1778,19547,-1778,15993,-5332,23101,-5332,26655,-1778,23101,-1778,26655,-19547,8886,-19547,12439,-15993,8886,-15993,12439,-19547,5332,-19547,1778,-15993,5332,-15993,1778,-23101,8886,-23101,12439,-26655,8886,-26655,12439,-23101,5332,-23101,1778,-26655,5332,-26655,1778,-19547,19547,-19547,15993,-15993,19547,-15993,15993,-19547,23101,-19547,26655,-15993,23101,-15993,26655,-23101,19547,-23101,15993,-26655,19547,-26655,15993,-23101,23101,-23101,26655,-26655,23101,-26655,26655,-8886,-8886,-8886,-12439,-12439,-8886,-12439,-12439,-8886,-5332,-8886,-1778,-12439,-5332,-12439,-1778,-5332,-8886,-5332,-12439,-1778,-8886,-1778,-12439,-5332,-5332,-5332,-1778,-1778,-5332,-1778,-1778,-8886,-19547,-8886,-15993,-12439,-19547,-12439,-15993,-8886,-23101,-8886,-26655,-12439,-23101,-12439,-26655,-5332,-19547,-5332,-15993,-1778,-19547,-1778,-15993,-5332,-23101,-5332,-26655,-1778,-23101,-1778,-26655,-19547,-8886,-19547,-12439,-15993,-8886,-15993,-12439,-19547,-5332,-19547,-1778,-15993,-5332,-15993,-1778,-23101,-8886,-23101,-12439,-26655,-8886,-26655,-12439,-23101,-5332,-23101,-1778,-26655,-5332,-26655,-1778,-19547,-19547,-19547,-15993,-15993,-19547,-15993,-15993,-19547,-23101,-19547,-26655,-15993,-23101,-15993,-26655,-23101,-19547,-23101,-15993,-26655,-19547,-26655,-15993,-23101,-23101,-23101,-26655,-26655,-23101,-26655,-26655};
 
 static inline int rxtx(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
-  sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   start_meas(&softmodem_stats_rxtx_sf);
 
@@ -179,14 +178,15 @@ static inline int rxtx(PHY_VARS_gNB *gNB, gNB_L1_rxtx_proc_t *proc) {
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // Do PRACH RU processing
     int prach_id=find_nr_prach(gNB,proc->frame_rx,proc->slot_rx,0,SEARCH_EXIST);
+
     if (prach_id>=0) {
       L1_nr_prach_procedures(gNB,proc->frame_rx,proc->slot_rx,&gNB->prach_vars.list[prach_id].pdu);
       gNB->prach_vars.list[prach_id].frame=-1;
     }
-    
+
     phy_procedures_gNB_uespec_RX(gNB, proc->frame_rx, proc->slot_rx);
   }
-  
+
   if (oai_exit) return(-1);
 
   // *****************************************
@@ -208,7 +208,6 @@ void gNB_top(gNB_L1_proc_t *proc, struct RU_t_s *ru) {
   gNB_L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *ru_proc=&ru->proc;
-  sl_ahead = sf_ahead*fp->slots_per_subframe;
   proc->timestamp_rx  = ru_proc->timestamp_rx;
   L1_proc->frame_rx = proc->frame_rx = proc->frame_prach = ru_proc->frame_rx =
                                          (ru_proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
@@ -471,120 +470,7 @@ void OCPconfig_RU(RU_t *ru) {
   return;
 }
 
-int rx_rf(RU_proc_t *proc, NR_DL_FRAME_PARMS *fp,int nb_rx, int32_t **rxdata, int lastReadSz,
-          openair0_device *rfdevice,  openair0_timestamp ts_offset) {
-  void *rxp[nb_rx];
-  int nextSlot=(proc->tti_rx+1)%fp->slots_per_frame;
-  uint32_t samples_per_slot = fp->get_samples_per_slot(nextSlot,fp);
-  int rxBufOffet=fp->get_samples_slot_timestamp(nextSlot,fp,0);
-  int controlrxBufOffet=(proc->timestamp_rx+lastReadSz)%fp->samples_per_frame;
-  AssertFatal(rxBufOffet == controlrxBufOffet &&
-              rxBufOffet+ samples_per_slot <= fp->samples_per_frame,
-              "inconsistent IQ samples read");
 
-  for (int i=0; i<nb_rx; i++)
-    rxp[i] = (void *)&rxdata[i][rxBufOffet];
-
-  openair0_timestamp old_ts = proc->timestamp_rx;
-  LOG_D(PHY,"Reading %d samples for slot %d (%p)\n",samples_per_slot,nextSlot,rxp[0]);
-  unsigned int rxs = rfdevice->trx_read_func(rfdevice,
-                     &proc->timestamp_rx,
-                     rxp,
-                     samples_per_slot,
-                     nb_rx);
-
-  if (rxs != samples_per_slot)
-    LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
-
-  // In case we need offset, between RU or any other need
-  // The sync system can put a offset to use betwwen RF boards
-  proc->timestamp_rx+=ts_offset;
-
-  if (lastReadSz && proc->timestamp_rx - old_ts != lastReadSz)
-    LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",
-          proc->timestamp_rx - old_ts - samples_per_slot,ts_offset);
-
-  return rxs;
-}
-
-void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
-  RU_proc_t *proc = &ru->proc;
-  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
-  int i,txsymb;
-  int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
-  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
-  int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
-  int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
-  int siglen=fp->get_samples_per_slot(slot,fp);
-  int flags=1;
-
-  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
-  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT || IS_SOFTMODEM_RFSIM) {
-    if(slot_type == NR_MIXED_SLOT) {
-      txsymb = 0;
-
-      for(int symbol_count =0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
-        if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0)
-          txsymb++;
-      }
-
-      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
-
-      if(slot%(fp->slots_per_subframe/2))
-        siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-      else
-        siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-
-      //+ ru->end_of_burst_delay;
-      flags=3; // end of burst
-    }
-
-    if (cfg->cell_config.frame_duplex_type.value == TDD &&
-        slot_type == NR_DOWNLINK_SLOT &&
-        prevslot_type == NR_UPLINK_SLOT) {
-      flags = 2; // start of burst
-    }
-
-    if (cfg->cell_config.frame_duplex_type.value == TDD &&
-        slot_type == NR_DOWNLINK_SLOT &&
-        nextslot_type == NR_UPLINK_SLOT) {
-      flags = 3; // end of burst
-    }
-
-    if (fp->freq_range==nr_FR2) {
-      // the beam index is written in bits 8-10 of the flags
-      // bit 11 enables the gpio programming
-      int beam=0;
-
-      if (slot==0) beam = 11; //3 for boresight & 8 to enable
-
-      /*
-        if (slot==0 || slot==40) beam=0&8;
-        if (slot==10 || slot==50) beam=1&8;
-        if (slot==20 || slot==60) beam=2&8;
-        if (slot==30 || slot==70) beam=3&8;
-      */
-      flags |= beam<<8;
-    }
-
-    void *txp[ru->nb_tx];
-
-    for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)-sf_extension];
-
-    // prepare tx buffer pointers
-    unsigned int txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-                       timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
-                       txp,
-                       siglen+sf_extension,
-                       ru->nb_tx,
-                       flags);
-    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d\n",ru->idx,
-          (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
-    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
-  }
-}
 // this is for RU with local RF unit
 void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
@@ -817,7 +703,102 @@ int setup_RU_buffers(RU_t *ru) {
 
   return(0);
 }
+int rx_rf(int rxBufOffet, int nbSamples, int nb_rx, int32_t **rxdata, openair0_device *rfdevice,  openair0_timestamp *HWtimeStamp) {
+  void *rxp[nb_rx];
 
+  for (int i=0; i<nb_rx; i++)
+    rxp[i] = (void *)&rxdata[i][rxBufOffet];
+
+  unsigned int rxs = rfdevice->trx_read_func(rfdevice,
+                     HWtimeStamp,
+                     rxp,
+                     nbSamples,
+                     nb_rx);
+
+  if (rxs != nbSamples )
+    LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",nbSamples,rxs);
+
+  return rxs;
+}
+
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
+  RU_proc_t *proc = &ru->proc;
+  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
+  nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
+  int i,txsymb;
+  int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
+  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
+  int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
+  int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
+  int siglen=fp->get_samples_per_slot(slot,fp);
+  int flags=1;
+
+  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
+  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT || IS_SOFTMODEM_RFSIM) {
+    if(slot_type == NR_MIXED_SLOT) {
+      txsymb = 0;
+
+      for(int symbol_count =0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==0)
+          txsymb++;
+      }
+
+      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+
+      if(slot%(fp->slots_per_subframe/2))
+        siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      else
+        siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+
+      //+ ru->end_of_burst_delay;
+      flags=3; // end of burst
+    }
+
+    if (cfg->cell_config.frame_duplex_type.value == TDD &&
+        slot_type == NR_DOWNLINK_SLOT &&
+        prevslot_type == NR_UPLINK_SLOT) {
+      flags = 2; // start of burst
+    }
+
+    if (cfg->cell_config.frame_duplex_type.value == TDD &&
+        slot_type == NR_DOWNLINK_SLOT &&
+        nextslot_type == NR_UPLINK_SLOT) {
+      flags = 3; // end of burst
+    }
+
+    if (fp->freq_range==nr_FR2) {
+      // the beam index is written in bits 8-10 of the flags
+      // bit 11 enables the gpio programming
+      int beam=0;
+
+      if (slot==0) beam = 11; //3 for boresight & 8 to enable
+
+      /*
+        if (slot==0 || slot==40) beam=0&8;
+        if (slot==10 || slot==50) beam=1&8;
+        if (slot==20 || slot==60) beam=2&8;
+        if (slot==30 || slot==70) beam=3&8;
+      */
+      flags |= beam<<8;
+    }
+
+    void *txp[ru->nb_tx];
+
+    for (i=0; i<ru->nb_tx; i++)
+      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)-sf_extension];
+
+    // prepare tx buffer pointers
+    unsigned int txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
+                       timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                       txp,
+                       siglen+sf_extension,
+                       ru->nb_tx,
+                       flags);
+    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d\n",ru->idx,
+          (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot);
+    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %u/%d)\n", txs, siglen);
+  }
+}
 
 static void *ru_thread( void *param ) {
   RU_t               *ru      = (RU_t *)param;
@@ -828,26 +809,39 @@ static void *ru_thread( void *param ) {
   nr_dump_frame_parms(fp);
   AssertFatal(openair0_device_load(&ru->rfdevice,&ru->openair0_cfg)==0,"Cannot connect to local radio\n");
   AssertFatal(ru->rfdevice.trx_start_func(&ru->rfdevice) == 0,"Could not start the RF device\n");
-  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
-  int lastReadSz=0;
+  tpool_t *threadPool=(tpool_t *)malloc(sizeof(tpool_t));
+  initTpool("-1,-1,-1", threadPool, true);
+
+  int64_t slot=-1;
+  int64_t nextTSshouldBe=0;
+  openair0_timestamp HWtimeStamp=0; //for multi RU
+  // weird globals, used in NR_IF_Module.c
   sf_ahead = (uint16_t) ceil((float)6/(0x01<<fp->numerology_index));
-  proc->tti_rx=-1; // we increment before each read
-  openair0_timestamp ts_offset=0; //for multi RU
+  sl_ahead = sf_ahead*fp->slots_per_subframe;
+
+  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
 
   while (!oai_exit) {
-    // synchronization on input FH interface, acquire signals/data and block
-    lastReadSz=rx_rf(proc, fp, ru->nb_rx,ru->common.rxdata,lastReadSz, &ru->rfdevice, ts_offset);
-    // do RX front-end processing (frequency-shift, dft) if needed
-    proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-    uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
-    float offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
-    proc->tti_rx = (idx_sf * fp->slots_per_subframe +
-                    lroundf(offsetInSubframe / fp->samples_per_slot0))%
-                   fp->slots_per_frame;
-    LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
-          ru->idx, 0,
-          (unsigned long long int)proc->timestamp_rx,
-          (int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
+    int nextSlot=(slot+1)%fp->slots_per_frame;
+    uint32_t samples_per_slot = fp->get_samples_per_slot(nextSlot,fp);
+    int rxBuffOffset=fp->get_samples_slot_timestamp(nextSlot,fp,0);
+    AssertFatal(rxBuffOffset + samples_per_slot <= fp->samples_per_frame, "Will read outside allocated buffer\n");
+    int samples=fp->get_samples_per_slot(nextSlot,fp);
+    int rxs=rx_rf(rxBuffOffset,
+                  samples,
+                  ru->nb_rx,
+                  ru->common.rxdata,
+                  &ru->rfdevice,
+                  &HWtimeStamp);
+    LOG_D(PHY,"Reading %d samples for slot %d\n",samples_per_slot,nextSlot);
+
+    if ( HWtimeStamp !=  nextTSshouldBe)
+      LOG_E(HW,"reading a stream must be continuous, %ld, %ld\n", HWtimeStamp, nextTSshouldBe);
+
+    nextTSshouldBe=HWtimeStamp+rxs;
+    proc->tti_rx=nextSlot;
+    proc->timestamp_rx=(slot+1)*fp->samples_per_subframe;
+    proc->frame_rx  = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
     int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,proc->frame_rx,proc->tti_rx);
 
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
@@ -894,6 +888,7 @@ static void *ru_thread( void *param ) {
   static int ru_thread_status = 0;
   return &ru_thread_status;
 }
+
 void launch_NR_RU(RU_t *ru, char *rf_config_file) {
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
         RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());

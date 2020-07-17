@@ -3282,15 +3282,14 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
        int *dlsch_errors,
        runmode_t mode) {
 
-  int harq_pid;
+  int harq_pid = dlsch0->current_harq_pid;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   int ret=0, ret1=0;
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  nfapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  uint8_t dmrs_type = cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[0].value; // TODO: HARDCODED pdsch index
+  uint8_t dmrs_type = dlsch0->harq_processes[harq_pid]->dmrsConfigType;
   uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4; // TODO: should changed my mac
   uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
   uint16_t nb_symb_sch = 9;
@@ -3314,7 +3313,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
 
-  harq_pid = dlsch0->current_harq_pid;
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
   start_symbol = dlsch0->harq_processes[harq_pid]->start_symbol;
@@ -3374,13 +3372,13 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     }
 
 
-      // start ldpc decode for CW 0
-      dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
-						     nb_symb_sch,
-						     nb_re_dmrs,
-						     length_dmrs,
-						     dlsch0->harq_processes[harq_pid]->Qm,
-						     dlsch0->harq_processes[harq_pid]->Nl);
+    // start ldpc decode for CW 0
+    dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
+                                                   nb_symb_sch,
+                                                   nb_re_dmrs,
+                                                   length_dmrs,
+                                                   dlsch0->harq_processes[harq_pid]->Qm,
+                                                   dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_unscrambling_stats);
 #endif

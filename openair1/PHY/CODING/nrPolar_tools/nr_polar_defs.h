@@ -146,7 +146,7 @@ void polar_encoder_dci(uint32_t *in,
                        uint16_t n_RNTI);
 
 void polar_encoder_fast(uint64_t *A,
-                        void  *out,
+                        void *out,
                         int32_t crcmask,
                         uint8_t ones_flag,
                         t_nrPolar_params *polarParams);

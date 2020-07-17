@@ -1123,6 +1123,7 @@ int restart_L1L2(module_id_t enb_id) {
 }
 
 int main ( int argc, char **argv ) {
+  //mtrace();
   int i;
   int CC_id = 0;
   int node_type = ngran_eNB;

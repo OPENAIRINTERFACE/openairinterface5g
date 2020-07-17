@@ -360,7 +360,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int TBS_bytes = 848, header_length_total, num_sdus, offset, preambleTransMax, mac_ce_len;
+  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, preambleTransMax, mac_ce_len;
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 

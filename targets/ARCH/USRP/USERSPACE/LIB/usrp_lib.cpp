@@ -420,6 +420,7 @@ static int trx_usrp_write(openair0_device *device,
     s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
     s->tx_count++;
 
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHING_GPIO,1);
     // bit 3 enables gpio (for backward compatibility)
     if (flags_msb&8) {
       // push GPIO bits 7-9 from flags_msb
@@ -428,6 +429,7 @@ static int trx_usrp_write(openair0_device *device,
       s->usrp->set_gpio_attr("FP0", "OUT", gpio789, 0x380);
       s->usrp->clear_command_time();
     }
+VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHING_GPIO,0);
 
     if (cc>1) {
       std::vector<void *> buff_ptrs;
@@ -974,7 +976,6 @@ extern "C" {
     double usrp_master_clock;
   
     if (device_adds[0].get("type") == "b200") {
-      printf("Found USRP b200\n");
       device->type = USRP_B200_DEV;
       usrp_master_clock = 30.72e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);

@@ -676,5 +676,5 @@ void polar_encoder_fast(uint64_t *A,
     }
   }
   memset((void*)out,0,polarParams->encoderLength>>3);
-  polar_rate_matching(polarParams,(void *)D,out);
+  polar_rate_matching(polarParams,(void *)D, out);
 }

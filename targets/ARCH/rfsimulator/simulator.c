@@ -150,10 +150,10 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     static bool init_done=false;
 
     if (!init_done) {
-      uint64_t rand;
-      FILE *h=fopen("/dev/random","r");
-      fread(&rand,sizeof(rand),1,h);
-      fclose(h);
+	    uint64_t rand;
+	    FILE *h=fopen("/dev/random","r");
+            fread(&rand,sizeof(rand),1,h);
+	    fclose(h);
       randominit(rand);
       tableNor(rand);
       init_done=true;
@@ -515,7 +515,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
           LOG_E(HW,"UEsock: %d Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, t->lastWroteTS, b->lastReceivedTS);
 
         pthread_mutex_unlock(&Sockmutex);
-        b->transferPtr=(char *)&b->circularBuf[b->lastReceivedTS%CirSize];
+        b->transferPtr=(char *)&b->circularBuf[(b->lastReceivedTS*b->th.nbAnt)%CirSize];
         b->remainToTransfer=sampleToByte(b->th.size, b->th.nbAnt);
       }
 
