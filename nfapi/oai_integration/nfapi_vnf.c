@@ -198,6 +198,7 @@ void install_schedule_handlers(IF_Module_t *if_inst);
 extern int single_thread_flag;
 extern void init_eNB_afterRU(void);
 extern uint16_t sf_ahead;
+extern uint16_t slot_ahead;
 
 void oai_create_enb(void) {
   int bodge_counter=0;
@@ -362,6 +363,66 @@ int pnf_config_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_config_
   return 0;
 }
 
+int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
+  gNB_L1_proc_t *proc=&gNB->proc;
+  gNB_L1_rxtx_proc_t *L1_proc= (slot&1)? &proc->L1_proc : &proc->L1_proc_tx;
+
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  //printf("%s(eNB:%p, sfn:%d, sf:%d)\n", __FUNCTION__, eNB, sfn, sf);
+  //int i;
+  struct timespec wait;
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  // wake up TX for subframe n+sf_ahead
+  // lock the TX mutex and make sure the thread is ready
+  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
+    exit_fun( "error locking mutex_rxtx" );
+    return(-1);
+  }
+
+  {
+    static uint16_t old_slot = 0;
+    static uint16_t old_sfn = 0;
+    proc->slot_rx = old_slot;
+    proc->frame_rx = old_sfn;
+    // Try to be 1 frame back
+    old_slot = slot;
+    old_sfn = sfn;
+
+    if (old_slot == 0 && old_sfn % 100 == 0) LOG_W( PHY,"[gNB] sfn/slot:%d%d old_sfn/slot:%d%d proc[rx:%d%d]\n", sfn, slot, old_sfn, old_slot, proc->frame_rx, proc->slot_rx);
+  }
+
+  ++L1_proc->instance_cnt;
+  //LOG_D( PHY,"[VNF-subframe_ind] sfn/sf:%d:%d proc[frame_rx:%d subframe_rx:%d] L1_proc->instance_cnt_rxtx:%d \n", sfn, sf, proc->frame_rx, proc->subframe_rx, L1_proc->instance_cnt_rxtx);
+  // We have just received and processed the common part of a subframe, say n.
+  // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired
+  // transmitted timestamp of the next TX slot (first).
+  // The last (TS_rx mod samples_per_frame) was n*samples_per_tti,
+  // we want to generate subframe (n+N), so TS_tx = TX_rx+N*samples_per_tti,
+  // and proc->subframe_tx = proc->subframe_rx+sf_ahead
+  L1_proc->timestamp_tx = proc->timestamp_rx + (slot_ahead *fp->samples_per_tti);
+  L1_proc->frame_rx     = proc->frame_rx;
+  L1_proc->slot_rx      = proc->slot_rx;
+  L1_proc->frame_tx     = (L1_proc->slot_rx > (9-slot_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->slot_tx      = (L1_proc->slot_rx + slot_ahead)%20;
+
+  //LOG_D(PHY, "sfn/sf:%d%d proc[rx:%d%d] L1_proc[instance_cnt_rxtx:%d rx:%d%d] About to wake rxtx thread\n\n", sfn, sf, proc->frame_rx, proc->subframe_rx, L1_proc->instance_cnt_rxtx, L1_proc->frame_rx, L1_proc->subframe_rx);
+
+  // the thread can now be woken up
+  if (pthread_cond_signal(&L1_proc->cond) != 0) {
+    LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB RXn-TXnp4 thread\n");
+    exit_fun( "ERROR pthread_cond_signal" );
+    return(-1);
+  }
+
+  //LOG_D(PHY,"%s() About to attempt pthread_mutex_unlock\n", __FUNCTION__);
+  pthread_mutex_unlock( &L1_proc->mutex );
+  //LOG_D(PHY,"%s() UNLOCKED pthread_mutex_unlock\n", __FUNCTION__);
+  return(0);
+}
+
 int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
   L1_proc_t *proc=&eNB->proc;
   L1_rxtx_proc_t *L1_proc= (sf&1)? &proc->L1_proc : &proc->L1_proc_tx;
@@ -437,6 +498,29 @@ int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
   }
 
   return(0);
+}
+
+
+int phy_slot_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn, uint16_t slot) {
+  static uint8_t first_time = 1;
+
+  if (first_time) {
+    printf("[VNF] slot indication %d\n", NFAPI_SFNSLOT2DEC(sfn, slot));
+    first_time = 0;
+  }
+
+  if (RC.gNB && RC.gNB[0]->configured) {
+    // uint16_t sfn = NFAPI_SFNSF2SFN(sfn_sf);
+    // uint16_t sf = NFAPI_SFNSF2SF(sfn_sf);
+    //LOG_D(PHY,"[VNF] subframe indication sfn_sf:%d sfn:%d sf:%d\n", sfn_sf, sfn, sf);
+    wake_gNB_rxtx(RC.gNB[0], sfn, slot); // DONE: find NR equivalent
+  } else {
+    printf("[VNF] %s() RC.gNB:%p\n", __FUNCTION__, RC.gNB);
+
+    if (RC.gNB) printf("RC.gNB[0]->configured:%d\n", RC.gNB[0]->configured);
+  }
+
+  return 0;
 }
 
 int phy_subframe_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn_sf) {
@@ -960,6 +1044,8 @@ void *vnf_p7_thread_start(void *ptr) {
   p7_vnf->config->port = p7_vnf->local_port;
   p7_vnf->config->sync_indication = &phy_sync_indication;
   p7_vnf->config->subframe_indication = &phy_subframe_indication;
+  p7_vnf->config->slot_indication = &phy_slot_indication;
+
   p7_vnf->config->harq_indication = &phy_harq_indication;
   p7_vnf->config->crc_indication = &phy_crc_indication;
   p7_vnf->config->rx_indication = &phy_rx_indication;

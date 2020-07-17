@@ -694,6 +694,7 @@ typedef struct nfapi_vnf_p7_config
 	 */
 	
 	int (*subframe_indication)(struct nfapi_vnf_p7_config* config, uint16_t phy_id, uint16_t sfn_sf);
+	int (*slot_indication)(struct nfapi_vnf_p7_config* config, uint16_t phy_id, uint16_t sfn, uint16_t slot);
 
 	/*! A callback for the HARQ.indication
      *  \param config A pointer to the vnf p7 configuration

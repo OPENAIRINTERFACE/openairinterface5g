@@ -58,6 +58,7 @@ extern RAN_CONTEXT_t RC;
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair1/SCHED_NR/fapi_nr_l1.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "openair1/PHY/defs_gNB.h"
 
 #define NUM_P5_PHY 2
 
@@ -901,7 +902,7 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
 }
 
 
-int pnf_phy_ul_dci_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
+int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
   // if (req-> hi_dci0_request_body.number_of_dci == 0 && req->hi_dci0_request_body.number_of_hi == 0)
   //   LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
 
@@ -966,7 +967,7 @@ int pnf_phy_hi_dci0_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfa
 }
 
 
-int pnf_phy_dl_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_dl_tti_request_t *req) {
+int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_dl_tti_request_t *req) {
   if (RC.ru == 0) {
     return -1;
   }
@@ -1004,7 +1005,7 @@ int pnf_phy_dl_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfap
 
   if (req->dl_tti_request_body.nPDUs)
     NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
-                __FUNCTION__, proc->frame_tx, proc->subframe_tx, proc->frame_rx, proc->subframe_rx, // TODO: change subframes to slot
+                __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
                 req->SFN,
                 req->Slot,
                 req->dl_tti_request_body.nGroup,
@@ -1168,6 +1169,35 @@ int pnf_phy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, n
   return 0;
 }
 
+
+
+int pnf_phy_tx_data_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_tx_data_request_t *req) {
+  uint16_t sfn = req->SFN;
+  uint16_t slot = req->Slot;
+
+  if (req->Number_of_PDUs == 0)
+    LOG_D(PHY,"%s() SFN/SLOT:%d%d PDUs:%d\n", __FUNCTION__, sfn, slot, req->Number_of_PDUs);
+
+  if (req->pdu_list[0].TLVs->tag ==  NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST) {
+    for (int i=0; i<req->Number_of_PDUs; i++) {
+      // LOG_D(PHY,"%s() SFN/SF:%d%d number_of_pdus:%d [PDU:%d] pdu_length:%d pdu_index:%d num_segments:%d\n",
+      //       __FUNCTION__,
+      //       sfn, sf,
+      //       req->tx_request_body.number_of_pdus,
+      //       i,
+      //       req->tx_request_body.tx_pdu_list[i].pdu_length,
+      //       req->tx_request_body.tx_pdu_list[i].pdu_index,
+      //       req->tx_request_body.tx_pdu_list[i].num_segments
+      //      );
+      // tx_request_pdu[sfn][sf][i] = &req->tx_request_body.tx_pdu_list[i];
+      tx_data_request[sfn][slot][i] = &req->pdu_list[i];
+    }
+  }
+
+  return 0;
+}
+
+
 int pnf_phy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   uint16_t sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   uint16_t sf = NFAPI_SFNSF2SF(req->sfn_sf);
@@ -1195,7 +1225,7 @@ int pnf_phy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
 
 
 
-int pnf_phy_ul_tti_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_tti_request_t *req) {
+int pnf_phy_ul_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_tti_request_t *req) {
   // if (0)LOG_D(PHY,"[PNF] UL_CONFIG_REQ %s() sfn_sf:%d pdu:%d rach_prach_frequency_resources:%d srs_present:%u\n",
   //               __FUNCTION__,
   //               NFAPI_SFNSF2DEC(req->sfn_sf),
@@ -1446,9 +1476,10 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfap
   }
 
   // NR
-  p7_config->dl_tti_req_fn = &pnf_phy_dl_tti_req;
-  p7_config->ul_tti_req_fn = &pnf_phy_ul_tti_req;
-  // p7_config->ul_dci_req_fn = &pnf_phy_ul_dci_req;
+  p7_config->dl_tti_req_fn  = &pnf_phy_dl_tti_req;
+  p7_config->ul_tti_req_fn  = &pnf_phy_ul_tti_req;
+  p7_config->ul_dci_req_fn  = &pnf_phy_ul_dci_req;
+  p7_config->tx_data_req_fn = &pnf_phy_tx_data_req;
 
   // LTE
   p7_config->dl_config_req = &pnf_phy_dl_config_req;

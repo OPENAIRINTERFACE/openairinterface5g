@@ -29,6 +29,9 @@ extern "C" {
 #include "nfapi_nr_interface_scf.h"
 
 #include <sys/types.h>
+#include "openair1/PHY/defs_gNB.h"
+
+
 
 
 /*! This enum is used to describe the states of the pnf 
@@ -642,7 +645,7 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the dl config request message structure
 	 * \return not currently used
 	 */
-	int (*dl_tti_req_fn)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_dl_tti_request_t* req);
+	int (*dl_tti_req_fn)(gNB_L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_dl_tti_request_t* req);
 	int (*dl_config_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_dl_config_request_t* req);
 	
 	/*! A callback for the UL_CONFIG.request
@@ -650,7 +653,7 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the ul config request message structure
 	 * \return not currently used	
 	 */
-	int (*ul_tti_req_fn)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_ul_tti_request_t* req);
+	int (*ul_tti_req_fn)(gNB_L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_ul_tti_request_t* req);
 	int (*ul_config_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_ul_config_request_t* req);
 	
 	/*! A callback for the HI_DCI0.request
@@ -658,7 +661,7 @@ typedef struct nfapi_pnf_p7_config
 	 * \param req A pointer to the hi dci0 request message structure
 	 * \return not currently used
 	 */
-	int (*ul_dci_req_fn)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_ul_dci_request_t* req);
+	int (*ul_dci_req_fn)(gNB_L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_nr_ul_dci_request_t* req);
 	int (*hi_dci0_req)(L1_rxtx_proc_t *proc,nfapi_pnf_p7_config_t* config, nfapi_hi_dci0_request_t* req);
 
 	/*! A callback for the TX_REQ.request
