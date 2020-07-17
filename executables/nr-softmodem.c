@@ -75,7 +75,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "system.h"
 #include <openair2/GNB_APP/gnb_app.h>
-
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
 #include "stats.h"
 #include "nr-softmodem.h"
@@ -156,7 +156,6 @@ char channels[128] = "0";
 
 int rx_input_level_dBm;
 
-uint32_t do_forms=0;
 int otg_enabled;
 
 //int number_of_cards = 1;
@@ -454,7 +453,11 @@ static void get_options(void) {
 
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
 
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+  get_common_options(SOFTMODEM_GNB_BIT );
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
+
 
 
 
@@ -817,7 +820,6 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
-  get_common_options(SOFTMODEM_GNB_BIT );
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -959,14 +961,14 @@ if(!IS_SOFTMODEM_NOS1)
   printf("RC.nb_RU:%d\n", RC.nb_RU);
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
-
-  if (do_forms==1) {
+  if(IS_SOFTMODEM_DOFORMS) {
+  	
     scopeParms_t p;
     p.argc=&argc;
     p.argv=argv;
     p.gNB=RC.gNB[0];
     p.ru=RC.ru[0];
-    gNBinitScope(&p);
+    load_softscope("gnb",&p);
   }
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {

@@ -416,7 +416,7 @@ static void *scope_thread_gNB(void *arg) {
   return NULL;
 }
 
-void gNBinitScope(scopeParms_t *p) {
+void gnbscope_autoinit(scopeParms_t *p) {
   static scopeParms_t parms;
   memcpy(&parms,p,sizeof(parms));
   pthread_t forms_thread;
@@ -763,7 +763,7 @@ static void *nrUEscopeThread(void *arg) {
   pthread_exit((void *)arg);
 }
 
-void nrUEinitScope(PHY_VARS_NR_UE *ue) {
+void nruescope_autoinit(PHY_VARS_NR_UE *ue) {
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }

@@ -2730,7 +2730,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE_NR}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2772,7 +2772,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${XFORMS_SOURCE_NR}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${UTIL_SRC}
   ${CONFIG_SOURCES}

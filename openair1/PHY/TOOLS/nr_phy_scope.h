@@ -40,8 +40,6 @@ typedef struct {
   PHY_VARS_gNB *gNB;
 } scopeParms_t;
 
-void gNBinitScope(scopeParms_t *p);
-void nrUEinitScope(PHY_VARS_NR_UE *ue);
 
 extern RAN_CONTEXT_t RC;
 #endif
