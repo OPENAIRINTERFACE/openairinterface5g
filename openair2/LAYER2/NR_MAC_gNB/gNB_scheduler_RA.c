@@ -52,8 +52,8 @@ float ssb_per_rach_occasion[8] = {0.125,0.25,0.5,1,2,4,8};
 
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,
-													   sub_frame_t slotP,
-                             uint16_t preamble_index,
+														 sub_frame_t slotP,
+														 uint16_t preamble_index,
                              uint8_t freq_index,
                              uint8_t symbol) {
 
@@ -120,7 +120,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 	  }		
 	}
 
-  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f index = %d \n", frameP, slotP, prach_occasion_id, num_ssb_per_RO, index);
+  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u\n", frameP, slotP, prach_occasion_id, num_ssb_per_RO, num_active_ssb, index, fdm, start_symbol_index, freq_index);
   return index;
 }
 //Compute Total active SSBs and RO available
@@ -180,7 +180,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
  cc->total_prach_occasions = total_RA_occasions - unused_RA_occasion;
  cc->num_active_ssb = num_active_ssb;
 
-  LOG_D(MAC, "Total available RO %d, num of active SSB %d: unused RO = %d \n", cc->total_prach_occasions, cc->num_active_ssb, unused_RA_occasion);
+  LOG_D(MAC, "Total available RO %d, num of active SSB %d: unused RO = %d max_association_period %u\n", cc->total_prach_occasions, cc->num_active_ssb, unused_RA_occasion, max_association_period);
 }		
 		
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
@@ -365,7 +365,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 	}
 //  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-
+ 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
       slot_window = 1;
@@ -429,8 +429,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint8_t index = ssb_index_from_prach(module_idP,
                                            frameP,
-													                 slotP,
-                                           preamble_index,
+																					 slotP,
+																					 preamble_index,
                                            freq_index,
                                            symbol);
 
@@ -515,13 +515,14 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     SSB_list->SSB_UE_list[UE_id].active = true;
     SSB_list->num_UEs += 1;
 
-    LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x\n",
+    LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB index %u\n",
       module_idP,
       CC_id,
       frameP,
       ra->Msg2_frame,
       ra->Msg2_slot,
-      ra->RA_rnti);
+      ra->RA_rnti,
+			SSB_list->ssb_index);
 
     return;
   }
