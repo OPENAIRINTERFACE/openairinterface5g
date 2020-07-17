@@ -1057,20 +1057,23 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     LOG_I(MAC, "received from proxy frame %d subframe %d\n",
           NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
     if (dl_config_req != NULL) {
-      LOG_I(MAC, "dl_config_req pdus: %u\n",
-      dl_config_req->dl_config_request_body.number_pdu);
+      LOG_I(MAC, "dl_config_req pdus: %u Frame: %d Subframe: %d\n",
+      dl_config_req->dl_config_request_body.number_pdu,
+      NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf));
     }
     if (tx_request_pdu_list != NULL) {
       LOG_I(MAC, "tx_req segments: %u\n",
       tx_request_pdu_list->num_segments);
     }
     if (ul_config_req != NULL) {
-      LOG_I(MAC, "ul_config_req pdus: %u\n",
-      ul_config_req->ul_config_request_body.number_of_pdus);
+      LOG_I(MAC, "ul_config_req pdus: %u Frame: %d Subframe: %d\n",
+      ul_config_req->ul_config_request_body.number_of_pdus,
+      NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf));
     }
     if (hi_dci0_req != NULL) {
-      LOG_I(MAC, "hi_dci0_req pdus: %u\n",
-      hi_dci0_req->hi_dci0_request_body.number_of_dci);
+      LOG_I(MAC, "hi_dci0_req pdus: %u Frame: %d Subframe: %d\n",
+      hi_dci0_req->hi_dci0_request_body.number_of_dci,
+      NFAPI_SFNSF2SFN(hi_dci0_req->sfn_sf), NFAPI_SFNSF2SF(hi_dci0_req->sfn_sf));
     }
     // if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
     //   uint64_t start = clock_usec();
