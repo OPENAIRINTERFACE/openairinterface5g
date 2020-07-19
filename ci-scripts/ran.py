@@ -92,143 +92,143 @@ class RANManagement():
 		self.epcObj = None
 
 
-"""
+
 #-----------------------------------------------------------
 # Setters and Getters on Public members
 #-----------------------------------------------------------
 
-	def SetHtmlObj(self, obj):
-		self.htmlObj = obj
-	def SetEpcObj(self, obj):
-		self.epcObj = obj
+#	def SetHtmlObj(self, obj):
+#		self.htmlObj = obj
+#	def SetEpcObj(self, obj):
+#		self.epcObj = obj
+#
+#	def SetflexranCtrlInstalled(self,fxrctin):
+#		self.flexranCtrlInstalled = fxrctin
+#	def GetflexranCtrlInstalled(self):
+#		return self.flexranCtrlInstalled
+#	def SetflexranCtrlStarted(self,fxrctst):
+#		self.flexranCtrlStarted = fxrctst
+#	def GetflexranCtrlStarted(self):
+#		return self.flexranCtrlStarted
+#	def SetpStatus(self, pSt):
+#		self.pStatus = pSt
+#	def SetranRepository(self, repository):
+#		self.ranRepository = repository
+#	def GetranRepository(self):
+#		return self.ranRepository
+#	def SetranBranch(self, branch):
+#		self.ranBranch = branch
+#	def GetranBranch(self):
+#		return self.ranBranch
+#	def SetranCommitID(self, commitid):
+#		self.ranCommitID = commitid
+#	def GetranCommitID(self):
+#		return self.ranCommitID
+#	def SeteNB_serverId(self, enbsrvid):
+#		self.eNB_serverId = enbsrvid
+#	def GeteNB_serverId(self):
+#		return self.eNB_serverId
+#	def SeteNBIPAddress(self, enbip):
+#		self.eNBIPAddress = enbip
+#	def GeteNBIPAddress(self):
+#		return self.eNBIPAddress
+#	def SeteNBUserName(self, enbusr):
+#		self.eNBUserName = enbusr
+#	def GeteNBUserName(self):
+#		return self.eNBUserName
+#	def SeteNBPassword(self, enbpw):
+#		self.eNBPassword = enbpw
+#	def GeteNBPassword(self):
+#		return self.eNBPassword
+#	def SeteNBSourceCodePath(self, enbcodepath):
+#		self.eNBSourceCodePath = enbcodepath
+#	def GeteNBSourceCodePath(self):
+#		return self.eNBSourceCodePath
+#	def SetranAllowMerge(self, merge):
+#		self.ranAllowMerge = merge
+#	def GetranAllowMerge(self):
+#		return self.ranAllowMerge
+#	def SetranTargetBranch(self, tbranch):
+#		self.ranTargetBranch = tbranch
+#	def GetranTargetBranch(self):
+#		return self.ranTargetBranch
+#	def SetBuild_eNB_args(self, enbbuildarg):
+#		self.Build_eNB_args = enbbuildarg
+#	def GetBuild_eNB_args(self):
+#		return self.Build_eNB_args
+#	def SetInitialize_eNB_args(self, initenbarg):
+#		self.Initialize_eNB_args = initenbarg
+#	def GetInitialize_eNB_args(self):
+#		return self.Initialize_eNB_args
+#	def SetbackgroundBuild(self, bkbuild):
+#		self.backgroundBuild = bkbuild
+#	def GetbackgroundBuild(self):
+#		return self.backgroundBuild
+#	def SetbackgroundBuildTestId(self, bkbuildid):
+#		self.backgroundBuildTestId = bkbuildid
+#	def GetbackgroundBuildTestId(self):
+#		return self.backgroundBuildTestId
+#	def SetBuild_eNB_forced_workspace_cleanup(self, fcdwspclean):
+#		self.Build_eNB_forced_workspace_cleanup = fcdwspclean
+#	def GetBuild_eNB_forced_workspace_cleanup(self):
+#		return self.Build_eNB_forced_workspace_cleanup
+#	def Setair_interface(self, airif):
+#		self.air_interface = airif
+#	def Getair_interface(self):
+#		return self.air_interface
+#	def SeteNB_instance(self, enbinst):
+#		self.eNB_instance = enbinst
+#	def GeteNB_instance(self):
+#		return self.eNB_instance
+#
+#	def SeteNBLogFile(self, enblog, idx):
+#		self.eNBLogFiles[idx] = enblog
+#	def GeteNBLogFile(self, idx):
+#		return self.eNBLogFiles[idx]
+#
+#	def GeteNBmbmsEnable(self, idx):
+#		return self.eNBmbmsEnables[idx]
+#
+#	def SeteNB1IPAddress(self,enb1ip):
+#		self.eNB1IPAddress = enb1ip
+#	def GeteNB1IPAddress(self):
+#		return self.eNB1IPAddress
+#	def SeteNB1UserName(self, enb1usr):
+#		self.eNB1UserName = enb1usr
+#	def GeteNB1UserName(self):
+#		return self.eNB1UserName
+#	def SeteNB1Password(self, enb1pw):
+#		self.eNB1Password = enb1pw
+#	def GeteNB1Password(self):
+#		return self.eNB1Password
+#	def SeteNB1SourceCodePath(self, enb1codepath):
+#		self.eNB1SourceCodePath = enb1codepath
+#	def GeteNB1SourceCodePath(self):
+#		return self.eNB1SourceCodePath
+#
+#	def SeteNB2IPAddress(self, enb2ip):
+#		self.eNB2IPAddress = enb2ip
+#	def GeteNB2IPAddress(self):
+#		return self.eNB2IPAddress
+#	def SeteNB2UserName(self, enb2usr):
+#		self.eNB2UserName = enb2usr
+#	def GeteNB2UserName(self):
+#		return self.eNB2UserName
+#	def SeteNB2Password(self, enb2pw):
+#		self.eNB2Password = enb2pw
+#	def GeteNB2Password(self):
+#		return self.eNB2Password
+#	def SeteNB2SourceCodePath(self, enb2codepath):
+#		self.eNB2SourceCodePath = enb2codepath
+#	def GeteNB2SourceCodePath(self):
+#		return self.eNB2SourceCodePath
+#
+#	def SetprematureExit(self, premex):
+#		self.prematureExit = premex
+#	def GetprematureExit(self):
+#		return self.prematureExit
 
-	def SetflexranCtrlInstalled(self,fxrctin):
-		self.flexranCtrlInstalled = fxrctin
-	def GetflexranCtrlInstalled(self):
-		return self.flexranCtrlInstalled
-	def SetflexranCtrlStarted(self,fxrctst):
-		self.flexranCtrlStarted = fxrctst
-	def GetflexranCtrlStarted(self):
-		return self.flexranCtrlStarted
-	def SetpStatus(self, pSt):
-		self.pStatus = pSt
-	def SetranRepository(self, repository):
-		self.ranRepository = repository
-	def GetranRepository(self):
-		return self.ranRepository
-	def SetranBranch(self, branch):
-		self.ranBranch = branch
-	def GetranBranch(self):
-		return self.ranBranch
-	def SetranCommitID(self, commitid):
-		self.ranCommitID = commitid
-	def GetranCommitID(self):
-		return self.ranCommitID
-	def SeteNB_serverId(self, enbsrvid):
-		self.eNB_serverId = enbsrvid
-	def GeteNB_serverId(self):
-		return self.eNB_serverId
-	def SeteNBIPAddress(self, enbip):
-		self.eNBIPAddress = enbip
-	def GeteNBIPAddress(self):
-		return self.eNBIPAddress
-	def SeteNBUserName(self, enbusr):
-		self.eNBUserName = enbusr
-	def GeteNBUserName(self):
-		return self.eNBUserName
-	def SeteNBPassword(self, enbpw):
-		self.eNBPassword = enbpw
-	def GeteNBPassword(self):
-		return self.eNBPassword
-	def SeteNBSourceCodePath(self, enbcodepath):
-		self.eNBSourceCodePath = enbcodepath
-	def GeteNBSourceCodePath(self):
-		return self.eNBSourceCodePath
-	def SetranAllowMerge(self, merge):
-		self.ranAllowMerge = merge
-	def GetranAllowMerge(self):
-		return self.ranAllowMerge
-	def SetranTargetBranch(self, tbranch):
-		self.ranTargetBranch = tbranch
-	def GetranTargetBranch(self):
-		return self.ranTargetBranch
-	def SetBuild_eNB_args(self, enbbuildarg):
-		self.Build_eNB_args = enbbuildarg
-	def GetBuild_eNB_args(self):
-		return self.Build_eNB_args
-	def SetInitialize_eNB_args(self, initenbarg):
-		self.Initialize_eNB_args = initenbarg
-	def GetInitialize_eNB_args(self):
-		return self.Initialize_eNB_args
-	def SetbackgroundBuild(self, bkbuild):
-		self.backgroundBuild = bkbuild
-	def GetbackgroundBuild(self):
-		return self.backgroundBuild
-	def SetbackgroundBuildTestId(self, bkbuildid):
-		self.backgroundBuildTestId = bkbuildid
-	def GetbackgroundBuildTestId(self):
-		return self.backgroundBuildTestId
-	def SetBuild_eNB_forced_workspace_cleanup(self, fcdwspclean):
-		self.Build_eNB_forced_workspace_cleanup = fcdwspclean
-	def GetBuild_eNB_forced_workspace_cleanup(self):
-		return self.Build_eNB_forced_workspace_cleanup
-	def Setair_interface(self, airif):
-		self.air_interface = airif
-	def Getair_interface(self):
-		return self.air_interface
-	def SeteNB_instance(self, enbinst):
-		self.eNB_instance = enbinst
-	def GeteNB_instance(self):
-		return self.eNB_instance
 
-	def SeteNBLogFile(self, enblog, idx):
-		self.eNBLogFiles[idx] = enblog
-	def GeteNBLogFile(self, idx):
-		return self.eNBLogFiles[idx]
-
-	def GeteNBmbmsEnable(self, idx):
-		return self.eNBmbmsEnables[idx]
-
-	def SeteNB1IPAddress(self,enb1ip):
-		self.eNB1IPAddress = enb1ip
-	def GeteNB1IPAddress(self):
-		return self.eNB1IPAddress
-	def SeteNB1UserName(self, enb1usr):
-		self.eNB1UserName = enb1usr
-	def GeteNB1UserName(self):
-		return self.eNB1UserName
-	def SeteNB1Password(self, enb1pw):
-		self.eNB1Password = enb1pw
-	def GeteNB1Password(self):
-		return self.eNB1Password
-	def SeteNB1SourceCodePath(self, enb1codepath):
-		self.eNB1SourceCodePath = enb1codepath
-	def GeteNB1SourceCodePath(self):
-		return self.eNB1SourceCodePath
-
-	def SeteNB2IPAddress(self, enb2ip):
-		self.eNB2IPAddress = enb2ip
-	def GeteNB2IPAddress(self):
-		return self.eNB2IPAddress
-	def SeteNB2UserName(self, enb2usr):
-		self.eNB2UserName = enb2usr
-	def GeteNB2UserName(self):
-		return self.eNB2UserName
-	def SeteNB2Password(self, enb2pw):
-		self.eNB2Password = enb2pw
-	def GeteNB2Password(self):
-		return self.eNB2Password
-	def SeteNB2SourceCodePath(self, enb2codepath):
-		self.eNB2SourceCodePath = enb2codepath
-	def GeteNB2SourceCodePath(self):
-		return self.eNB2SourceCodePath
-
-	def SetprematureExit(self, premex):
-		self.prematureExit = premex
-	def GetprematureExit(self):
-		return self.prematureExit
-
-"""
 
 #-----------------------------------------------------------
 # RAN management functions

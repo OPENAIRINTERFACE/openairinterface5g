@@ -209,9 +209,9 @@ class OaiCiTest():
 			sys.exit(1)
 	
 	def CheckFlexranCtrlInstallation(self):
-		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			return
-		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
 		if result is not None:
@@ -222,15 +222,15 @@ class OaiCiTest():
 	def InitializeFlexranCtrl(self):
 		if RAN.flexranCtrlInstalled == False:
 			return
-		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('cd /opt/flexran_rtc', '\$', 5)
-		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S rm -f log/*.log', '\$', 5)
-		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
-		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
-		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
+		SSH.command('echo ' + EPC.Password + ' | sudo -S rm -f log/*.log', '\$', 5)
+		SSH.command('echo ' + EPC.Password + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
+		SSH.command('echo ' + EPC.Password + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
+		SSH.command('echo ' + EPC.Password + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
 		SSH.command('ps -aux | grep --color=never rt_controller', '\$', 5)
 		result = re.search('rt_controller -c ', SSH.getBefore())
 		if result is not None:
@@ -513,12 +513,12 @@ class OaiCiTest():
 		else:
 			if RAN.air_interface == 'lte':
 				if RAN.eNBmbmsEnables[0]:
-					HTML.SethtmlUEFailureMsg('oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured')
+					HTML.htmlUEFailureMsg='oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
 				else:
-					HTML.SethtmlUEFailureMsg('oaitun_ue1 interface is either NOT mounted or NOT configured')
+					HTML.htmlUEFailureMsg='oaitun_ue1 interface is either NOT mounted or NOT configured'
 				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			else:
-				HTML.SethtmlUEFailureMsg('nr-uesoftmodem did NOT synced')
+				HTML.htmlUEFailureMsg='nr-uesoftmodem did NOT synced'
 				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
@@ -671,7 +671,7 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB()
 
 	def PingCatM(self):
-		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
@@ -684,10 +684,10 @@ class OaiCiTest():
 		try:
 			statusQueue = SimpleQueue()
 			lock = Lock()
-			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-			SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 			SSH.command('cd scripts', '\$', 5)
-			if re.match('OAI', EPC.GetType(), re.IGNORECASE):
+			if re.match('OAI', EPC.Type, re.IGNORECASE):
 				logging.debug('Using the OAI EPC HSS: not implemented yet')
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 				HTML.CreateHtmlTabFooter(False)
@@ -1200,7 +1200,7 @@ class OaiCiTest():
 		for job in multi_jobs:
 			job.join()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
-			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('cd /opt/flexran_rtc', '\$', 5)
 			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
 			SSH.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
@@ -1312,13 +1312,13 @@ class OaiCiTest():
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 			# But for OAI-Rel14-CUPS, we launch from python executor
 			launchFromEpc = True
-			if re.match('OAI-Rel14-CUPS', EPC.GetType(), re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 				launchFromEpc = False
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
 
 			if launchFromEpc:
-				SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-				SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 				SSH.command('cd scripts', '\$', 5)
 				ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
 			else:
@@ -1327,9 +1327,9 @@ class OaiCiTest():
 				logging.debug(cmd)
 				ret = subprocess.run(cmd, shell=True)
 				ping_status = ret.returncode
-				SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
-				SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-				SSH.command('cat ' + EPC.GetSourceCodePath() + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 			# TIMEOUT CASE
 			if ping_status < 0:
 				message = 'Ping with UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT!'
@@ -1487,7 +1487,7 @@ class OaiCiTest():
 			else:
 				copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/ping_' + self.testCase_id + '.log', '.')
 			if (copyin_res == 0):
-				SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'ping_' + self.testCase_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'ping_' + self.testCase_id + '.log', EPC.SourceCodePath + '/scripts')
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -1496,7 +1496,7 @@ class OaiCiTest():
 		if result is not None:
 			self.PingNoS1()
 			return
-		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
@@ -1840,7 +1840,7 @@ class OaiCiTest():
 		# Launch iperf server on EPC side (true for ltebox and old open-air-cn0
 		# But for OAI-Rel14-CUPS, we launch from python executor and we are using its IP address as iperf client address
 		launchFromEpc = True
-		if re.match('OAI-Rel14-CUPS', EPC.GetType(), re.IGNORECASE):
+		if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 			launchFromEpc = False
 			cmd = 'hostname -I'
 			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
@@ -1848,13 +1848,13 @@ class OaiCiTest():
 				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
 		port = 5001 + idx
 		if launchFromEpc:
-			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-			SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 			if udpIperf:
-				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.GetUserName(), 5)
+				SSH.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
 			else:
-				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.GetUserName(), 5)
+				SSH.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
 			SSH.close()
 		else:
 			if self.ueIperfVersion == self.dummyIperfVersion:
@@ -1877,7 +1877,7 @@ class OaiCiTest():
 			SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
 		else:
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
+			SSH.command('cd ' + EPC.SourceCodePath+ '/scripts', '\$', 5)
 		iperf_time = self.Iperf_ComputeTime()
 		time.sleep(0.5)
 
@@ -1911,27 +1911,27 @@ class OaiCiTest():
 
 		# Kill iperf server on EPC side
 		if launchFromEpc:
-			SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-			SSH.command('killall --signal SIGKILL iperf', EPC.GetUserName(), 5)
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password
+			SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
 			SSH.close()
 		else:
 			cmd = 'killall --signal SIGKILL iperf'
 			logging.debug(cmd)
 			subprocess.run(cmd, shell=True)
 			time.sleep(1)
-			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 		# in case of failure, retrieve server log
 		if (clientStatus == -1) or (clientStatus == -2):
 			if launchFromEpc:
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-				SSH.copyin(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath() + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		# in case of OAI-UE 
 		if (device_id == 'OAI-UE'):
 			SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
-			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
@@ -1945,8 +1945,8 @@ class OaiCiTest():
 			if (device_id != 'OAI-UE'):
 				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 				# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
-				SSH.command('if [ ! -d ' + EPC.GetSourceCodePath() + '/scripts ]; then mkdir -p ' + EPC.GetSourceCodePath() + '/scripts ; fi', '\$', 5)
-				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
+				SSH.command('if [ ! -d ' + EPC.SourceCodePath + '/scripts ]; then mkdir -p ' + EPC.SourceCodePath + '/scripts ; fi', '\$', 5)
+				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 				# Checking if iperf / iperf3 are installed
 				if self.ADBCentralized:
 					SSH.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
@@ -2005,7 +2005,7 @@ class OaiCiTest():
 					SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -u -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
 			else:
 				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
+				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 				if self.ADBCentralized:
 					if (useIperf3):
 						SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
@@ -2027,11 +2027,11 @@ class OaiCiTest():
 			# Launch the IPERF client on the EPC side for DL (true for ltebox and old open-air-cn
 			# But for OAI-Rel14-CUPS, we launch from python executor
 			launchFromEpc = True
-			if re.match('OAI-Rel14-CUPS', EPC.GetType(), re.IGNORECASE):
+			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 				launchFromEpc = False
 			if launchFromEpc:
-				SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-				SSH.command('cd ' + EPC.GetSourceCodePath() + '/scripts', '\$', 5)
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
 			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
@@ -2066,9 +2066,9 @@ class OaiCiTest():
 					logging.debug(cmd)
 					ret = subprocess.run(cmd, shell=True)
 					iperf_status = ret.returncode
-					SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
-					SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-					SSH.command('cat ' + EPC.GetSourceCodePath() + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
+					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				if iperf_status < 0:
 					if launchFromEpc:
 						SSH.close()
@@ -2105,7 +2105,7 @@ class OaiCiTest():
 				if (device_id == 'OAI-UE'):
 					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				else:
-					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.GetSourceCodePath() + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				# fromdos has to be called on the python executor not on ADB server
 				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log'
 				subprocess.run(cmd, shell=True)
@@ -2115,10 +2115,10 @@ class OaiCiTest():
 			if (device_id == 'OAI-UE'):
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					if not launchFromEpc:
-						SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+						SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 				else:
 					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-					SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.GetSourceCodePath() + '/scripts')
+					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -2202,10 +2202,10 @@ class OaiCiTest():
 		if (clientStatus == -1):
 			copyin_res = SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
 			if (copyin_res == 0):
-				SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_server_' + self.testCase_id + '_OAI-UE.log', EPC.GetSourceCodePath() + '/scripts')
+				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', EPC.SourceCodePath + '/scripts')
 		copyin_res = SSH.copyin(iClientIPAddr, iClientUser, iClientPasswd, '/tmp/tmp_iperf_' + self.testCase_id + '.log', 'iperf_' + self.testCase_id + '_OAI-UE.log')
 		if (copyin_res == 0):
-			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), 'iperf_' + self.testCase_id + '_OAI-UE.log', EPC.GetSourceCodePath() + '/scripts')
+			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_OAI-UE.log', EPC.SourceCodePath + '/scripts')
 		iperf_noperf = False
 		if status_queue.empty():
 			iperf_status = False
@@ -2236,7 +2236,7 @@ class OaiCiTest():
 		if result is not None:
 			self.IperfNoS1()
 			return
-		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
@@ -2432,7 +2432,7 @@ class OaiCiTest():
 		nrFoundDCI = 0
 		nrCRCOK = 0
 		mbms_messages = 0
-		HTML.SethtmlUEFailureMsg('')
+		HTML.htmlUEFailureMsg=''
 		global_status = CONST.ALL_PROCESSES_OK
 		for line in ue_log_file.readlines():
 			result = re.search('nr_synchro_time', str(line))
@@ -2502,22 +2502,22 @@ class OaiCiTest():
 			if result is not None and (not mib_found):
 				try:
 					mibMsg = "MIB Information: " + result.group(1) + ', ' + result.group(2)
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    nidcell = " + result.group('nidcell')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg)
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    n_rb_dl = " + result.group('n_rb_dl')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    phich_duration = " + result.group('phich_duration')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg)
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    phich_resource = " + result.group('phich_resource')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mibMsg = "    tx_ant = " + result.group('tx_ant')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					mib_found = True
 				except Exception as e:
@@ -2526,7 +2526,7 @@ class OaiCiTest():
 			if result is not None and (not frequency_found):
 				try:
 					mibMsg = "Measured Carrier Frequency = " + result.group('measured_carrier_frequency') + ' Hz'
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					frequency_found = True
 				except Exception as e:
@@ -2535,7 +2535,7 @@ class OaiCiTest():
 			if result is not None and (not plmn_found):
 				try:
 					mibMsg = 'PLMN MCC = ' + result.group('mcc') + ' MNC = ' + result.group('mnc')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 					plmn_found = True
 				except Exception as e:
@@ -2544,7 +2544,7 @@ class OaiCiTest():
 			if result is not None:
 				try:
 					mibMsg = "The operator is: " + result.group('operator')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "Operator name not found" + '\033[0m')
@@ -2552,7 +2552,7 @@ class OaiCiTest():
 			if result is not None:
 				try:
 					mibMsg = "SIB5 InterFreqCarrierFreq element " + result.group(1) + '/' + result.group(2)
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + mibMsg + ' -> ')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + ' -> '
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
@@ -2570,7 +2570,7 @@ class OaiCiTest():
 			if result is not None:
 				try:
 					prb = result.group('allowed_bandwidth')
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + ' -- PRB: ' + prb + '\n')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + ' -- PRB: ' + prb + '\n'
 					logging.debug('\033[94m' + "    AllowedMeasBandwidth: " + prb + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
@@ -2578,48 +2578,48 @@ class OaiCiTest():
 		if rrcConnectionRecfgComplete > 0:
 			statMsg = 'UE connected to eNB (' + str(rrcConnectionRecfgComplete) + ' RRCConnectionReconfigurationComplete message(s) generated)'
 			logging.debug('\033[94m' + statMsg + '\033[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if nrUEFlag:
 			if nrDecodeMib > 0:
 				statMsg = 'UE showed ' + str(nrDecodeMib) + ' MIB decode message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nrFoundDCI > 0:
 				statMsg = 'UE showed ' + str(nrFoundDCI) + ' DCI found message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nrCRCOK > 0:
 				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if not frequency_found:
 				statMsg = 'NR-UE could NOT synch!'
 				logging.error('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if pdcpDataReqFailedCount > 0:
 			statMsg = 'UE showed ' + str(pdcpDataReqFailedCount) + ' "PDCP data request failed" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if badDciCount > 0:
 			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1(A)" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if f1aRetransmissionCount > 0:
 			statMsg = 'UE showed ' + str(f1aRetransmissionCount) + ' "Format1A Retransmission but TBS are different" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if fatalErrorCount > 0:
 			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "FATAL ERROR:" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if macBsrTimerExpiredCount > 0:
 			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if RAN.eNBmbmsEnables[0]:
 			if mbms_messages > 0:
 				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
@@ -2628,7 +2628,7 @@ class OaiCiTest():
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
 				global_status = OAI_UE_PROCESS_NO_MBMS_MSGS
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + statMsg + '\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			if not nrUEFlag:
@@ -2638,7 +2638,7 @@ class OaiCiTest():
 					global_status = CONST.OAI_UE_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE showed an assertion!\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + 'UE showed an assertion!\n'
 			if not nrUEFlag:
 				if not mib_found or not frequency_found:
 					global_status = CONST.OAI_UE_PROCESS_ASSERTION
@@ -2647,14 +2647,14 @@ class OaiCiTest():
 					global_status = CONST.OAI_UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
-			HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE faced real time issues!\n')
+			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + 'UE faced real time issues!\n'
 		if nrUEFlag:
 			if not frequency_found:
 				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		else:
 			if no_cell_sync_found and not mib_found:
 				logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
-				HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'UE could not synchronize!\n')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + 'UE could not synchronize!\n'
 				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		return global_status
 
@@ -2662,13 +2662,13 @@ class OaiCiTest():
 	def TerminateFlexranCtrl(self):
 		if RAN.flexranCtrlInstalled == False or RAN.flexranCtrlStarted == False:
 			return
-		if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		SSH.command('echo ' + EPC.Password + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
 		time.sleep(1)
-		SSH.command('echo ' + EPC.GetPassword() + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
+		SSH.command('echo ' + EPC.Password + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
 		time.sleep(1)
 		SSH.close()
 		RAN.flexranCtrlStarted=False
@@ -2737,7 +2737,7 @@ class OaiCiTest():
 			copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
 			if (copyin_res == -1):
 				logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
-				HTML.SethtmlUEFailureMsg('Could not copy UE logfile to analyze it!')
+				HTML.htmlUEFailureMsg='Could not copy UE logfile to analyze it!'
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OAI_UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
 				self.UELogFile = ''
 				return
@@ -2750,7 +2750,7 @@ class OaiCiTest():
 				ueAction = 'Connection'
 			if (logStatus < 0):
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
-				HTML.SethtmlUEFailureMsg('<b>' + ueAction + ' Failed</b>\n' + HTML.GethtmlUEFailureMsg())
+				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Failed</b>\n' + HTML.htmlUEFailureMsg
 				HTML.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
 				if RAN.air_interface == 'lte':
 					# In case of sniffing on commercial eNBs we have random results
@@ -2764,7 +2764,7 @@ class OaiCiTest():
 						self.AutoTerminateUEandeNB()
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
-				HTML.SethtmlUEFailureMsg('<b>' + ueAction + ' Completed</b>\n' + HTML.GethtmlUEFailureMsg())
+				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Completed</b>\n' + HTML.htmlUEFailureMsg
 				HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
@@ -2773,31 +2773,31 @@ class OaiCiTest():
 	def AutoTerminateUEandeNB(self):
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
-			HTML.SettestCase_id(self.testCase_id)
+			HTML.testCase_id=self.testCase_id
 			self.desc = 'Automatic Termination of UE'
-			HTML.Setdesc('Automatic Termination of UE')
+			HTML.desc='Automatic Termination of UE'
 			self.ShowTestID()
 			self.TerminateUE()
 		if (self.Initialize_OAI_UE_args != ''):
 			self.testCase_id = 'AUTO-KILL-OAI-UE'
-			HTML.SettestCase_id(self.testCase_id)
+			HTML.testCase_id=self.testCase_id
 			self.desc = 'Automatic Termination of OAI-UE'
-			HTML.Setdesc('Automatic Termination of OAI-UE')
+			HTML.desc='Automatic Termination of OAI-UE'
 			self.ShowTestID()
 			self.TerminateOAIUE()
 		if (RAN.Initialize_eNB_args != ''):
 			self.testCase_id = 'AUTO-KILL-eNB'
-			HTML.SettestCase_id(self.testCase_id)
+			HTML.testCase_id=self.testCase_id
 			self.desc = 'Automatic Termination of eNB'
-			HTML.Setdesc('Automatic Termination of eNB')
+			HTML.desc='Automatic Termination of eNB'
 			self.ShowTestID()
 			RAN.eNB_instance='0'
 			RAN.TerminateeNB()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
-			HTML.SettestCase_id(self.testCase_id)
+			HTML.testCase_id=self.testCase_id
 			self.desc = 'Automatic Termination of FlexRan CTL'
-			HTML.Setdesc('Automatic Termination of FlexRan CTL')
+			HTML.desc='Automatic Termination of FlexRan CTL'
 			self.ShowTestID()
 			self.TerminateFlexranCtrl()
 		RAN.prematureExit=True
@@ -2807,7 +2807,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def X2_Status(self, idx, fileName):
-		cmd = "curl --silent http://" + EPC.GetIPAddress() + ":9999/stats | jq '.' > " + fileName
+		cmd = "curl --silent http://" + EPC.IPAddress + ":9999/stats | jq '.' > " + fileName
 		message = cmd + '\n'
 		logging.debug(cmd)
 		subprocess.run(cmd, shell=True)
@@ -2871,7 +2871,7 @@ class OaiCiTest():
 				eNB_cnt = self.x2NbENBs
 				cnt = 0
 				while cnt < eNB_cnt:
-					cmd = "curl -XPOST http://" + EPC.GetIPAddress() + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
+					cmd = "curl -XPOST http://" + EPC.IPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
 					logging.debug(cmd)
 					fullMessage += cmd + '\n'
 					subprocess.run(cmd, shell=True)
@@ -2885,7 +2885,7 @@ class OaiCiTest():
 				while cnt < eNB_cnt:
 					ueIdx = 0
 					while ueIdx < len(self.x2ENBConnectedUEs[0][cnt]):
-						cmd = "curl -XPOST http://" + EPC.GetIPAddress() + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
+						cmd = "curl -XPOST http://" + EPC.IPAddress() + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
 						logging.debug(cmd)
 						fullMessage += cmd + '\n'
 						subprocess.run(cmd, shell=True)
@@ -2936,8 +2936,8 @@ class OaiCiTest():
 		SSH.command('zip build.log.zip build_log_*/*', '\$', 60)
 		SSH.close()
 	def LogCollectPing(self):
-		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-		SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
 		SSH.command('rm -f ping.log.zip', '\$', 5)
 		SSH.command('zip ping.log.zip ping*.log', '\$', 60)
@@ -2945,8 +2945,8 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectIperf(self):
-		SSH.open(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword())
-		SSH.command('cd ' + EPC.GetSourceCodePath(), '\$', 5)
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
 		SSH.command('rm -f iperf.log.zip', '\$', 5)
 		SSH.command('zip iperf.log.zip iperf*.log', '\$', 60)
@@ -2964,13 +2964,13 @@ class OaiCiTest():
 
 	def RetrieveSystemVersion(self, machine):
 		if RAN.eNBIPAddress == 'none' or self.UEIPAddress == 'none':
-			HTML.SetOsVersion('Ubuntu 16.04.5 LTS', 0)
-			HTML.SetKernelVersion('4.15.0-45-generic', 0)
-			HTML.SetUhdVersion('3.13.0.1-0', 0)
-			HTML.SetUsrpBoard('B210', 0)
-			HTML.SetCpuNb('4', 0)
-			HTML.SetCpuModel('Intel(R) Core(TM) i5-6200U', 0)
-			HTML.SetCpuMHz('2399.996 MHz', 0)
+			HTML.OsVersion[0]='Ubuntu 16.04.5 LTS'
+			HTML.KernelVersion[0]='4.15.0-45-generic'
+			HTML.UhdVersion[0]='3.13.0.1-0'
+			HTML.UsrpBoard[0]='B210'
+			HTML.CpuNb[0]='4'
+			HTML.CpuModel[0]='Intel(R) Core(TM) i5-6200U'
+			HTML.CpuMHz[0]='2399.996 MHz'
 			return 0
 		if machine == 'eNB':
 			if RAN.eNBIPAddress != '' and RAN.eNBUserName != '' and RAN.eNBPassword != '':
@@ -2995,7 +2995,7 @@ class OaiCiTest():
 		if result is not None:
 			OsVersion = result.group('os_type')
 			logging.debug('OS is: ' + OsVersion)
-			HTML.SetOsVersion(OsVersion, idx)
+			HTML.OsVersion[idx]=OsVersion
 		else:
 			SSH.command('hostnamectl', '\$', 5)
 			result = re.search('Operating System: (?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
@@ -3007,26 +3007,26 @@ class OaiCiTest():
 					if result is not None:
 						OsVersion = OsVersion.replace('7 ', result.group('os_version'))
 				logging.debug('OS is: ' + OsVersion)
-				HTML.SetOsVersion(OsVersion, idx)
+				HTML.OsVersion[idx]=OsVersion
 		SSH.command('uname -r', '\$', 5)
 		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', SSH.getBefore())
 		if result is not None:
 			KernelVersion = result.group('kernel_version')
 			logging.debug('Kernel Version is: ' + KernelVersion)
-			HTML.SetKernelVersion(KernelVersion, idx)
+			HTML.KernelVersion[idx]=KernelVersion
 		SSH.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
 		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
 			UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + UhdVersion)
-			HTML.SetUhdVersion(UhdVersion, idx)
+			HTML.UhdVersion[idx]=UhdVersion
 		else:
 			SSH.command('uhd_config_info --version', '\$', 5)
 			result = re.search('UHD (?P<uhd_version>[a-zA-Z0-9\.\-]+)', SSH.getBefore())
 			if result is not None:
 				UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + UhdVersion)
-				HTML.SetUhdVersion(UhdVersion, idx)
+				HTML.UhdVersion[idx]=UhdVersion
 		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 60)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
 		count = 0
@@ -3038,19 +3038,19 @@ class OaiCiTest():
 			count += 1
 		if count > 0:
 			logging.debug('USRP Board(s) : ' + UsrpBoard)
-			HTML.SetUsrpBoard(UsrpBoard, idx)
+			HTML.UsrpBoard[idx]=UsrpBoard
 		SSH.command('lscpu', '\$', 5)
 		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
 			CpuNb = result.group('nb_cpus')
 			logging.debug('nb_cpus: ' + CpuNb)
-			HTML.SetCpuNb(CpuNb, idx)
+			HTML.CpuNb[idx]=CpuNb
 			CpuModel = result.group('model')
 			logging.debug('model: ' + CpuModel)
-			HTML.SetCpuModel(CpuModel, idx)
+			HTML.CpuModel[idx]=CpuModel
 			CpuMHz = result.group('cpu_mhz') + ' MHz'
 			logging.debug('cpu_mhz: ' + CpuMHz)
-			HTML.SetCpuMHz(CpuMHz, idx)
+			HTML.CpuMHz[idx]=CpuMHz
 		SSH.close()
 
 #-----------------------------------------------------------
@@ -3267,7 +3267,7 @@ EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 
-EPC.SetHtmlObj(HTML)
+EPC.HtmlObj=HTML
 RAN.HtmlObj=HTML
 RAN.EpcObj=EPC
 
@@ -3294,7 +3294,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranRepository = matchReg.group(1)
 		RAN.ranRepository=matchReg.group(1)
-		HTML.SetranRepository(matchReg.group(1))
+		HTML.ranRepository=matchReg.group(1)
 		ldpc.ranRepository=matchReg.group(1)
 	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
@@ -3306,7 +3306,7 @@ while len(argvs) > 1:
 		if ((doMerge == 'true') or (doMerge == 'True')):
 			CiTestObj.ranAllowMerge = True
 			RAN.ranAllowMerge=True
-			HTML.SetranAllowMerge(True)
+			HTML.ranAllowMerge=True
 	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
 			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
@@ -3314,7 +3314,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranBranch = matchReg.group(1)
 		RAN.ranBranch=matchReg.group(1)
-		HTML.SetranBranch(matchReg.group(1))
+		HTML.ranBranch=matchReg.group(1)
 		ldpc.ranBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
@@ -3323,7 +3323,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranCommitID = matchReg.group(1)
 		RAN.ranCommitID=matchReg.group(1)
-		HTML.SetranCommitID(matchReg.group(1))
+		HTML.ranCommitID=matchReg.group(1)
 		ldpc.ranCommitID=matchReg.group(1)
 	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
@@ -3332,7 +3332,7 @@ while len(argvs) > 1:
 			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
 		CiTestObj.ranTargetBranch = matchReg.group(1)
 		RAN.ranTargetBranch=matchReg.group(1)
-		HTML.SetranTargetBranch(matchReg.group(1))
+		HTML.ranTargetBranch=matchReg.group(1)
 		ldpc.ranTargetBranch=matchReg.group(1)
 	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
 		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
@@ -3380,25 +3380,25 @@ while len(argvs) > 1:
 			RAN.eNB2SourceCodePath=matchReg.group(1)
 	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		EPC.SetIPAddress(matchReg.group(1))
+		EPC.IPAddress=matchReg.group(1)
 	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
-		EPC.SetUserName(matchReg.group(1))
+		EPC.UserName=matchReg.group(1)
 	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
-		EPC.SetPassword(matchReg.group(1))
+		EPC.Password=matchReg.group(1)
 	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		EPC.SetSourceCodePath(matchReg.group(1))
+		EPC.SourceCodePath=matchReg.group(1)
 	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
 		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE):
-			EPC.SetType(matchReg.group(1))
+			EPC.Type=matchReg.group(1)
 		else:
 			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS or OAI-Rel14-Docker)')
 	elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
-		EPC.SetContainerPrefix(matchReg.group(1))
+		EPC.ContainerPrefix=matchReg.group(1)
 	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.ADBIPAddress = matchReg.group(1)
@@ -3420,8 +3420,8 @@ while len(argvs) > 1:
 	elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.testXMLfiles.append(matchReg.group(1))
-		HTML.SettestXMLfiles(matchReg.group(1))
-		HTML.SetnbTestXMLfiles(HTML.GetnbTestXMLfiles()+1)
+		HTML.testXMLfiles=matchReg.group(1)
+		HTML.nbTestXMLfiles=HTML.nbTestXMLfiles+1
 	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		CiTestObj.UEIPAddress = matchReg.group(1)
@@ -3464,17 +3464,17 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	signal.signal(signal.SIGUSR1, receive_signal)
 	CiTestObj.TerminateOAIUE()
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateHSS()
 elif re.match('^TerminateMME$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateMME()
 elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath== '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.TerminateSPGW()
@@ -3489,27 +3489,27 @@ elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	RAN.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectHSS()
 elif re.match('^LogCollectMME$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectMME()
 elif re.match('^LogCollectSPGW$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetType() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	EPC.LogCollectSPGW()
 elif re.match('^LogCollectPing$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectPing()
 elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
-	if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '':
+	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectIperf()
@@ -3533,21 +3533,21 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 			except:
 				print("Error while parsing file: " + xml_test_file)
 			xmlRoot = xmlTree.getroot()
-			HTML.SethtmlTabRefs(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
-			HTML.SethtmlTabNames(xmlRoot.findtext('htmlTabName',default='test-tab-' + str(count)))
-			HTML.SethtmlTabIcons(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
+			HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
+			HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='test-tab-' + str(count)))
+			HTML.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
 			foundCount += 1
 		count += 1
-	if foundCount != HTML.GetnbTestXMLfiles():
-		HTML.SetnbTestXMLfiles(foundCount)
+	if foundCount != HTML.nbTestXMLfiles:
+		HTML.nbTestXMLfiles=foundCount
 	
 	if (CiTestObj.ADBIPAddress != 'none'):
 		terminate_ue_flag = False
 		CiTestObj.GetAllUEDevices(terminate_ue_flag)
 		CiTestObj.GetAllCatMDevices(terminate_ue_flag)
 		HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
-		HTML.SethtmlNb_Smartphones(len(CiTestObj.UEDevices))
-		HTML.SethtmlNb_CATM_Modules(len(CiTestObj.CatMDevices))
+		HTML.htmlNb_Smartphones=len(CiTestObj.UEDevices)
+		HTML.htmlNb_CATM_Modules=len(CiTestObj.CatMDevices)
 	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
@@ -3561,17 +3561,17 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
-			if EPC.GetIPAddress() == '' or EPC.GetUserName() == '' or EPC.GetPassword() == '' or EPC.GetSourceCodePath() == '' or EPC.GetType() == '':
-				HELP.EPCSrvHelp(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), EPC.GetSourceCodePath(), EPC.GetType())
+			if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or EPC.Type == '':
+				HELP.EPCSrvHelp(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath, EPC.Type)
 			if RAN.ranRepository == '':
 				HELP.GitSrvHelp(RAN.ranRepository, RAN.ranBranch, RAN.ranCommitID, RAN.ranAllowMerge, RAN.ranTargetBranch)
 			if RAN.eNBIPAddress == ''  or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '':
 				HELP.eNBSrvHelp(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath)
 			sys.exit('Insufficient Parameter')
 
-		if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
-			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), cwd + "/tcp_iperf_stats.awk", "/tmp")
-			SSH.copyout(EPC.GetIPAddress(), EPC.GetUserName(), EPC.GetPassword(), cwd + "/active_net_interfaces.awk", "/tmp")
+		if (EPC.IPAddress!= '') and (EPC.IPAddress != 'none'):
+			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, cwd + "/tcp_iperf_stats.awk", "/tmp")
+			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
 		if CiTestObj.UEIPAddress == '' or CiTestObj.ranRepository == '' or CiTestObj.ranBranch == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
@@ -3579,7 +3579,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
-	if (HTML.GetnbTestXMLfiles() != 1):
+	if (HTML.nbTestXMLfiles != 1):
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
 		xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[0]
@@ -3589,9 +3589,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	exclusion_tests=xmlRoot.findtext('TestCaseExclusionList',default='')
 	requested_tests=xmlRoot.findtext('TestCaseRequestedList',default='')
-	if (HTML.GetnbTestXMLfiles() == 1):
-		HTML.SethtmlTabRefs(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
-		HTML.SethtmlTabNames(xmlRoot.findtext('htmlTabName',default='Test-0'))
+	if (HTML.nbTestXMLfiles == 1):
+		HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
+		HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 		repeatCount = xmlRoot.findtext('repeatCount',default='1')
 		CiTestObj.repeatCounts.append(int(repeatCount))
 	all_tests=xmlRoot.findall('testCase')
@@ -3619,7 +3619,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
-	if (EPC.GetIPAddress() != '') and (EPC.GetIPAddress() != 'none'):
+	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation()
 		EPC.SetMmeIPAddress()
 
@@ -3645,7 +3645,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	CiTestObj.FailReportCnt = 0
 	RAN.prematureExit=True
-	HTML.SetstartTime(int(round(time.time() * 1000)))
+	HTML.startTime=int(round(time.time() * 1000))
 	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and RAN.prematureExit:
 		RAN.prematureExit=False
 		# At every iteratin of the retry loop, a separator will be added
@@ -3661,10 +3661,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				if test_case_id != id:
 					continue
 				CiTestObj.testCase_id = id
-				HTML.SettestCase_id(CiTestObj.testCase_id)
-				EPC.SetTestCase_id(CiTestObj.testCase_id)
+				HTML.testCase_id=CiTestObj.testCase_id
+				EPC.testCase_id=CiTestObj.testCase_id
 				CiTestObj.desc = test.findtext('desc')
-				HTML.Setdesc(CiTestObj.desc)
+				HTML.desc=CiTestObj.desc
 				action = test.findtext('class')
 				if (CheckClassValidity(action, id) == False):
 					continue
