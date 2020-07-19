@@ -423,7 +423,7 @@ int phy_subframe_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id,
   if (RC.eNB && RC.eNB[0][0]->configured) {
     uint16_t sfn = NFAPI_SFNSF2SFN(sfn_sf);
     uint16_t sf = NFAPI_SFNSF2SF(sfn_sf);
-    LOG_D(PHY,"[VNF] subframe indication sfn_sf:%d sfn:%d sf:%d\n", sfn_sf, sfn, sf);
+    //LOG_D(PHY,"[VNF] subframe indication sfn_sf:%d sfn:%d sf:%d\n", sfn_sf, sfn, sf);
     wake_eNB_rxtx(RC.eNB[0][0], sfn, sf);
   } else {
     printf("[VNF] %s() RC.eNB:%p\n", __FUNCTION__, RC.eNB);
@@ -439,9 +439,6 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   printf("[VNF] RACH_IND eNB:%p sfn_sf:%d number_of_preambles:%d\n", eNB, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
-
-  LOG_E(MAC, "%s entered\n", __func__);
-
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = -1;
     for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
@@ -504,9 +501,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
 
 int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  LOG_D(MAC, "%s() NFAPI Frame: %d Subframe: %d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
-       NFAPI_SFNSF2SF(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
-  LOG_E(MAC, "%s entered\n", __func__);
+  LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = -1;
@@ -544,10 +539,6 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
 int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
-
-LOG_E(MAC, "%s entered sfn: %u sf: %u\n", __func__, NFAPI_SFNSF2SFN(ind->sfn_sf),
-        NFAPI_SFNSF2SF(ind->sfn_sf));
-
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = -1;
     for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
@@ -612,8 +603,6 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
     LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_pdus:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rx_indication_body.number_of_pdus);
   }
 
-  LOG_E(MAC, "%s entered sfn: %u sf: %u\n", __func__, NFAPI_SFNSF2SFN(ind->sfn_sf),
-        NFAPI_SFNSF2SF(ind->sfn_sf));
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = -1;
@@ -751,7 +740,6 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   //mac_cqi_ind(p7_vnf->mac, ind);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_cqis:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
-  LOG_E(MAC, "%s entered\n", __func__);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = -1;

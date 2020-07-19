@@ -106,14 +106,15 @@ extern "C" {
 #define LOG_ORANGE "\033[93m"   /*!< \brief VT100 sequence for orange foreground */
 #define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
 #define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
+#define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
 #else
-#define LOG_RED    ""
-#define LOG_GREEN  ""
-#define LOG_ORANGE ""
-#define LOG_BLUE   ""
-#define LOG_CYBL   ""
-#define LOG_RESET  ""
-#endif
+#  define LOG_RED    ""
+#  define LOG_GREEN  ""
+#  define LOG_ORANGE ""
+#  define LOG_BLUE   ""
+#  define LOG_CYBL   ""
+#  define LOG_RESET  ""
+#endif // LOG_WITH_COLORS
 /* @}*/
 
 

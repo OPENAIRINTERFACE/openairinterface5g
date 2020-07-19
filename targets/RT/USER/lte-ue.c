@@ -419,10 +419,11 @@ void init_UE_stub_single_thread(int nb_inst,
 
   init_UE_single_thread_stub(nb_inst);
   printf("UE threads created \n");
-  //LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
 
-  //if(NFAPI_MODE!=NFAPI_UE_STUB_PNF || NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) // dont need this
-    //multicast_link_start(ue_stub_rx_handler,0,emul_iface);
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+    LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
+    multicast_link_start(ue_stub_rx_handler,0,emul_iface);
+  }
 }
 
 void init_UE_standalone_thread()
@@ -443,7 +444,7 @@ void init_UE_stub(int nb_inst,
                   int uecap_xer_in,
                   char *emul_iface)
 {
-  int inst;
+  int         inst;
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
   l2_init_ue(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
              0,// cba_group_active
@@ -1064,33 +1065,6 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       hi_dci0_req->hi_dci0_request_body.number_of_dci,
       NFAPI_SFNSF2SFN(hi_dci0_req->sfn_sf), NFAPI_SFNSF2SF(hi_dci0_req->sfn_sf));
     }
-    // if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
-    //   uint64_t start = clock_usec();
-    //   uint64_t deadline = start + 10000;
-
-    //   for (;;) {
-    //     if (dl_config_req == NULL) {
-    //       dl_config_req = get_queue(&dl_config_req_queue);
-    //     }
-    //     if (tx_request_pdu_list == NULL) {
-    //       tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
-    //     }
-    //     if (dl_config_req && tx_request_pdu_list) {
-    //       uint64_t elapsed = clock_usec() - start;
-    //       if (elapsed > 1000) {
-    //         LOG_E(MAC, "Time difference between dl_config_req & tx_pdu is: %" PRIu64 "usec (%d %d)\n",
-    //               elapsed, num_lone, num_pairs);
-    //       }
-    //       break;
-    //     }
-    //     if (clock_usec() > deadline) {
-    //       LOG_E(MAC, "In behemoth dl_config_req: %p tx_req_pdu_list: %p (%d %d)\n", dl_config_req,
-    //             tx_request_pdu_list, num_lone, num_pairs);
-    //       break;
-    //     }
-    //   }
-    // }
-
 
     if ((dl_config_req != NULL) != (tx_request_pdu_list != NULL)) {
       num_lone++;
@@ -1831,6 +1805,11 @@ static void *UE_phy_stub_thread_rxn_txnp4(void *arg)
 
       phy_procedures_UE_SL_RX(UE,proc);
       oai_subframe_ind(timer_frame, timer_subframe);
+
+      if(dl_config_req!= NULL) {
+        AssertFatal(0, "dl_config_req_UE_MAC() not handled\n");
+        //dl_config_req_UE_MAC(dl_config_req, Mod_id);
+      }
 
       //if(UE_mac_inst[Mod_id].hi_dci0_req!= NULL){
       if (hi_dci0_req!=NULL && hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list!=NULL) {

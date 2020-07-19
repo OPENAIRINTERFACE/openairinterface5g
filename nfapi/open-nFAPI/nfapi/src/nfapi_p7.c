@@ -1553,11 +1553,11 @@ static uint8_t pack_tx_request_body_value(void* tlv, uint8_t **ppWritePackedMsg,
                         
                         if (pdu->segments[j].segment_length == 3)
                         {
-                        //   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
-                        //   pdu->segments[j].segment_data[0], 
-                        //   pdu->segments[j].segment_data[1], 
-                        //   pdu->segments[j].segment_data[2]
-                        //   );
+                          NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
+                          pdu->segments[j].segment_data[0], 
+                          pdu->segments[j].segment_data[1], 
+                          pdu->segments[j].segment_data[2]
+                          );
                         }
                         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() segment_data:%p segment_length:%u pusharray8()=%d\n", __FUNCTION__, pdu->segments[j].segment_data, pdu->segments[j].segment_length, push_ret);
 
@@ -4502,11 +4502,11 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 							return 0;
                                                   if (pdu->segments[0].segment_length == 3)
                                                   {
-                                                //   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
-                                                //       pdu->segments[0].segment_data[0], 
-                                                //       pdu->segments[0].segment_data[1], 
-                                                //       pdu->segments[0].segment_data[2]
-                                                //       );
+                                                  NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
+                                                      pdu->segments[0].segment_data[0], 
+                                                      pdu->segments[0].segment_data[1], 
+                                                      pdu->segments[0].segment_data[2]
+                                                      );
                                                   }
 					  }
 					  else

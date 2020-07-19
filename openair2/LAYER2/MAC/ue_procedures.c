@@ -2468,11 +2468,11 @@ ue_scheduler(const module_id_t module_idP,
       if (msg_p != NULL) {
         switch (ITTI_MSG_ID(msg_p)) {
           case RRC_MAC_CCCH_DATA_REQ:
-            // LOG_I(MAC,
-            //       "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-            //       ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
-            //       RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
-            //       RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
+            LOG_I(MAC,
+                  "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
+                  ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
+                  RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
+                  RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
             // TODO process CCCH data req.
             break;
 
@@ -3144,7 +3144,7 @@ SLDCH_t *ue_get_sldch(module_id_t Mod_id,int CC_id,frame_t frame_tx,sub_frame_t 
                           0);
 
   if (sldch->payload_length >0 ) {
-    // LOG_I(MAC,"Got %d bytes from RRC for SLDCH @ %p\n",sldch->payload_length,sldch);
+    LOG_I(MAC,"Got %d bytes from RRC for SLDCH @ %p\n",sldch->payload_length,sldch);
     return (sldch);
   } else
     return((SLDCH_t *)NULL);

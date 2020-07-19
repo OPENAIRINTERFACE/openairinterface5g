@@ -242,9 +242,9 @@ multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP)
   if ((num = sendto (group_list[groupP].socket, dataP, sizeP, 0,
                      (struct sockaddr *) &group_list[groupP].sock_remote_addr,
                      sizeof (group_list[groupP].sock_remote_addr))) < 0) {
-    // LOG_E(PHY, "[MULTICAST] sendto has failed (%d:%s)\n   (%s:%d)\n",
-    //       errno, strerror(errno),
-    //       __FILE__, __LINE__);
+    LOG_E(PHY, "[MULTICAST] sendto has failed (%d:%s)\n   (%s:%d)\n",
+          errno, strerror(errno),
+          __FILE__, __LINE__);
   }
 
   return num;

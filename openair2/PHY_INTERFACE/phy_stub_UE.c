@@ -124,8 +124,6 @@ void fill_sr_indication_UE_MAC(int Mod_id,
                                nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
 
-  LOG_I(MAC, "Entered fill_sr_indication_UE_MAC\n");
-
   nfapi_sr_indication_t *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t *sr_ind_body = &sr_ind->sr_indication_body;
   nfapi_sr_indication_pdu_t *pdu = &sr_ind_body->sr_pdu_list[sr_ind_body->number_of_srs];
@@ -166,9 +164,6 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 uint16_t rnti,
                                 nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
-
-  LOG_I(MAC, "Entered fill_crc_indication_UE_MAC Frame %d Subframe %d\n",
-        frame, subframe);
 
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
@@ -235,7 +230,7 @@ void fill_rach_indication_UE_MAC(int Mod_id,
       .preamble_rel13.rach_resource_type = 0;
   UL_INFO->rach_ind.rach_indication_body.preamble_list[0].instance_length = 0;
 
-  LOG_D(PHY,
+  LOG_I(PHY,
         "UE Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, "
         "rach_resource_type %d\n",
         UL_INFO->rach_ind.rach_indication_body.preamble_list[0]
@@ -249,8 +244,6 @@ void fill_rach_indication_UE_MAC(int Mod_id,
 
   // This function is currently defined only in the nfapi-RU-RAU-split so we
   // should call it when we merge with that branch.
-  // TODO Andrew - send proxy specific socket instead of oai_nfapi_rach_ind Send the whole UL_INFO struct
-  // as soon as numberof preambles
   if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
     send_standalone_msg(UL_INFO, UL_INFO->rach_ind.header.message_id);
   } else {
@@ -274,8 +267,6 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   nfapi_cqi_indication_raw_pdu_t *raw_pdu =
       &UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list
            [UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
-
-  LOG_I(MAC, "Entered fill_ulsch_cqi_indication_UE_MAC\n");
 
   UL_INFO->cqi_ind.sfn_sf = frame << 4 | subframe;
   // because of nfapi_vnf.c:733, set message id to 0, not
@@ -315,8 +306,6 @@ void fill_ulsch_harq_indication_UE_MAC(
     uint16_t rnti,
     nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
-
-  LOG_I(MAC, "Entered fill_ulsch_harq_indication_UE_MAC\n");
 
   nfapi_harq_indication_pdu_t *pdu =
       &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list
@@ -366,8 +355,6 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   nfapi_harq_indication_pdu_t *pdu =
       &body->harq_pdu_list[UL_INFO->harq_ind.harq_indication_body
                                .number_of_harqs];
-
-  LOG_I(MAC, "Entered fill_uci_harq_indication_UE_MAC\n");
 
   UL_INFO->harq_ind.vendor_extension = ul_config_req->vendor_extension;
 
@@ -481,7 +468,8 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   UE_mac_inst[Mod_id].RA_prach_resources.Msg3,
                                   buflen,
                                   rnti,
-                                  index, ul_config_req);
+                                  index,
+                                  ul_config_req);
         Msg3_transmitted(Mod_id, 0, frame, 0);
         //  Modification
         UE_mac_inst[Mod_id].UE_mode[0] = PUSCH;
@@ -491,8 +479,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         // UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -520,8 +507,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
       if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -538,8 +524,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -553,8 +538,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     }
     if (ulsch_harq_information != NULL)
       fill_ulsch_harq_indication_UE_MAC(
-          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
-          ul_config_req);
+          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti, ul_config_req);
 
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE) {
     uint8_t ulsch_buffer[5477] __attribute__((aligned(32)));
@@ -564,8 +548,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
       if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -582,8 +565,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -605,8 +587,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
       if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -623,8 +604,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         UE_mac_inst[Mod_id].first_ULSCH_Tx = 0;
       } else {
         ue_get_sdu(Mod_id, 0, frame, subframe, 0, ulsch_buffer, buflen, &access_mode);
-        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti,
-                                  ul_config_req);
+        fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
                                   subframe,
@@ -638,15 +618,13 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     }
 
     if (ulsch_harq_information != NULL)
-      fill_ulsch_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
-                                      ul_config_req);
+      fill_ulsch_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti, ul_config_req);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
     uint16_t rnti = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
 
     nfapi_ul_config_harq_information *ulsch_harq_information = &ul_config_pdu->uci_harq_pdu.harq_information;
     if (ulsch_harq_information != NULL)
-      fill_uci_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
-                                      ul_config_req);
+      fill_uci_harq_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti, ul_config_req);
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE) {
     AssertFatal(1 == 0, "NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE not handled yet\n");
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE) {
@@ -660,8 +638,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
         ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti;
 
     if (ue_get_SR(Mod_id, 0, frame, 0, rnti, subframe))
-      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti,
-                                ul_config_req);
+      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti, ul_config_req);
 
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE) {
     // AssertFatal((UE_id =
@@ -675,15 +652,13 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     // We fill the sr_indication only if ue_get_sr() would normally instruct PHY
     // to send a SR.
     if (ue_get_SR(Mod_id, 0, frame, 0, rnti, subframe))
-      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti,
-                                ul_config_req);
+      fill_sr_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti, ul_config_req);
 
     nfapi_ul_config_harq_information *ulsch_harq_information =
         &ul_config_pdu->uci_sr_harq_pdu.harq_information;
     if (ulsch_harq_information != NULL)
       fill_uci_harq_indication_UE_MAC(
-          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti,
-          ul_config_req);
+          Mod_id, frame, subframe, UL_INFO, ulsch_harq_information, rnti, ul_config_req);
   }
 }
 
@@ -789,11 +764,11 @@ void dl_config_req_UE_MAC_dci(int sfn,
 
   const int pdu_index = dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
   if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
-    // LOG_E(MAC,
-    //       "%s(): Problem with receiving data: "
-    //       "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
-    //       __func__,
-    //       sfn, sf, dci->pdu_size, dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+    LOG_E(MAC,
+          "%s(): Problem with receiving data: "
+          "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
+          __func__,
+          sfn, sf, dci->pdu_size, dlsch->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
     return;
   }
 
@@ -910,11 +885,11 @@ void dl_config_req_UE_MAC_mch(int sfn,
     } else {
 	 const int pdu_index = mch->mch_pdu.mch_pdu_rel8.pdu_index;
   	if (pdu_index < 0 || pdu_index >= tx_req_num_elems) {
-      // LOG_E(MAC,
-      //     "%s(): Problem with receiving data: "
-      //     "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
-      //     __func__,
-      //     sfn, sf, mch->pdu_size, mch->mch_pdu.mch_pdu_rel8.pdu_index);
+    	LOG_E(MAC,
+          "%s(): Problem with receiving data: "
+          "sfn/sf:%d.%d PDU size:%d, TX_PDU index: %d\n",
+          __func__,
+          sfn, sf, mch->pdu_size, mch->mch_pdu.mch_pdu_rel8.pdu_index);
     	return;
   	}
         ue_send_mch_sdu(ue_id, 0, sfn,
@@ -945,8 +920,9 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_dl_config_request_t *req)
-{
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t *pnf_p7,
+                         nfapi_dl_config_request_t *req) {
 
   nfapi_dl_config_request_t *p = malloc(sizeof(nfapi_dl_config_request_t));
 
@@ -1031,8 +1007,9 @@ int memcpy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
   return 0;
 }
 
-int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req)
-{
+int memcpy_hi_dci0_req (L1_rxtx_proc_t *proc, 
+			nfapi_pnf_p7_config_t* pnf_p7, 
+			nfapi_hi_dci0_request_t* req) {
   nfapi_hi_dci0_request_t *p = (nfapi_hi_dci0_request_t *)malloc(sizeof(nfapi_hi_dci0_request_t));
 	//if(req!=0){
 
