@@ -44,6 +44,7 @@
 #include <linux/prctl.h>
 #include "common/config/config_userapi.h"
 #include <time.h>
+#include <sys/time.h>
 // main log variables
 
 log_mem_cnt_t log_mem_d[2];

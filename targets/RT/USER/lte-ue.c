@@ -971,17 +971,6 @@ void ue_stub_rx_handler(unsigned int num_bytes,
   }
 }
 
-static uint64_t clock_usec(void);
-
-static uint64_t clock_usec()
-{
-  struct timespec t;
-  if (clock_gettime(CLOCK_MONOTONIC, &t) == -1) {
-    abort();
-  }
-  return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
-}
-
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.
