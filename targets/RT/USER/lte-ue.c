@@ -420,7 +420,7 @@ void init_UE_stub_single_thread(int nb_inst,
   init_UE_single_thread_stub(nb_inst);
   printf("UE threads created \n");
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     LOG_I(PHY,"Starting multicast link on %s\n",emul_iface);
     multicast_link_start(ue_stub_rx_handler,0,emul_iface);
   }
