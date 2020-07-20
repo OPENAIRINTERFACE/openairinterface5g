@@ -3236,6 +3236,10 @@ def GetParametersFromXML(action):
 
 	if action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
+		
+	if action == 'COTS_UE_Airplane':
+		COTS_UE=CotsUe('oppo', self.UEIPAddress, self.UEUserName,UEPassword)
+		COTS_UE.runargs = test.findtext('cots_ue_airplane_args')
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -3273,6 +3277,9 @@ RAN.EpcObj=EPC
 
 import cls_physim           #class PhySim for physical simulators build and test
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
+
+import cls_cots_ue			#class CotsUe 
+
 
 argvs = sys.argv
 argc = len(argvs)
