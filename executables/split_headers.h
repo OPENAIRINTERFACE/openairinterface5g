@@ -279,7 +279,7 @@ int init_rf(RU_t *ru);
 void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
-void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, int fembms_flag);
 bool dlsch_procedures(PHY_VARS_eNB *eNB,
                       L1_rxtx_proc_t *proc,
                       int harq_pid,
