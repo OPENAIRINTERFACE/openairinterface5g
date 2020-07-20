@@ -31,7 +31,7 @@
 
 	<testCase id="010101">
 		<class>COTS_UE_Airplane</class>
-		<desc>toggle on</desc>
+		<desc>Toggle COTS Airplane mode ON</desc>
 		<cots_ue_airplane_args>ON</cots_ue_airplane_args>
 	</testCase>
 

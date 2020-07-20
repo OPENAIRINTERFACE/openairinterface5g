@@ -31,7 +31,8 @@
 import logging
 #to create a SSH object locally in the methods
 import sshconnection
-
+#time.sleep
+import time
 
 class CotsUe:
 	def __init__(self,model,UEIPAddr,UEUserName,UEPassWord):
@@ -47,9 +48,8 @@ class CotsUe:
 #-----------------$
 
 	def Check_Airplane(self):
-		mySSH = sshconnection.SSHConnection()    
+		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.UEIPAddr, self.UEUserName, self.UEPassWord)
-
 		mySSH.command('cd /home/oaici/remi/android-sdk-linux/platform-tools', '\$', 5)
 		status=mySSH.cde_check_value('sudo ./adb shell settings get global airplane_mode_on ', ['0','1'],5)
 		mySSH.close()
@@ -57,7 +57,11 @@ class CotsUe:
 
 
 	def Set_Airplane(self,target_state_str):
-		print("toggling state to : "+target_state_str)
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.UEIPAddr, self.UEUserName, self.UEPassWord)
+		mySSH.command('cd /home/oaici/remi/android-sdk-linux/platform-tools', '\$', 5)
+		mySSH.command('sudo ./adb start-server','$',5)
+		logging.info("Toggling COTS UE Airplane mode to : "+target_state_str)
 		current_state = self.Check_Airplane()
 		if target_state_str.lower()=="on": 
 			target_state=1
@@ -65,11 +69,8 @@ class CotsUe:
 			target_state=0
 		if current_state != target_state:
 			#toggle state
-			mySSH = sshconnection.SSHConnection()
-			mySSH.open(self.UEIPAddr, self.UEUserName, self.UEPassWord)
 			retry = 0 
 			while (current_state!=target_state) and (retry < self.__SetAirplaneRetry):
-				mySSH.command('cd /home/oaici/remi/android-sdk-linux/platform-tools', '\$', 5)
 				mySSH.command('sudo ./adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS', '\$', 5)
 				mySSH.command('sudo ./adb shell input keyevent 20', '\$', 5)
 				mySSH.command('sudo ./adb shell input tap 968 324', '\$', 5)
@@ -79,10 +80,10 @@ class CotsUe:
 			if current_state != target_state:
 				print("ATTENTION : Could not toggle to : "+target_state_str)
 				print("Current state is : "+ str(current_state))
-			mySSH.close()
 		else:
 			print("Airplane mode is already "+ target_state_str)
-
+		mySSH.command('sudo ./adb kill-server','$',5)
+		mySSH.close()
 
 
 

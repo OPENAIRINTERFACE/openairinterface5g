@@ -50,6 +50,7 @@ logging.basicConfig(
 	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
 )
 
+import cls_cots_ue
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -3063,7 +3064,7 @@ class OaiCiTest():
 		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 
 def CheckClassValidity(action,id):
-	if action!='Build_PhySim' and action!='Run_PhySim' and  action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
+	if action!='COTS_UE_Airplane' and action!='Build_PhySim' and action!='Run_PhySim' and  action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW' and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep' and action != 'Perform_X2_Handover':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -3238,7 +3239,6 @@ def GetParametersFromXML(action):
 		ldpc.runargs = test.findtext('physim_run_args')
 		
 	if action == 'COTS_UE_Airplane':
-		COTS_UE=CotsUe('oppo', self.UEIPAddress, self.UEUserName,UEPassword)
 		COTS_UE.runargs = test.findtext('cots_ue_airplane_args')
 
 #check if given test is in list
@@ -3278,7 +3278,6 @@ RAN.EpcObj=EPC
 import cls_physim           #class PhySim for physical simulators build and test
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
 
-import cls_cots_ue			#class CotsUe 
 
 
 argvs = sys.argv
@@ -3449,6 +3448,12 @@ while len(argvs) > 1:
 	else:
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Invalid Parameter: ' + myArgv)
+
+
+COTS_UE=cls_cots_ue.CotsUe('oppo', CiTestObj.UEIPAddress, CiTestObj.UEUserName,CiTestObj.UEPassword)
+
+
+
 
 if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
@@ -3754,6 +3759,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if ldpc.exitStatus==1:sys.exit()
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
+				elif action == 'COTS_UE_Airplane':
+					COTS_UE.Set_Airplane(COTS_UE.runargs)
 				else:
 					sys.exit('Invalid action')
 		CiTestObj.FailReportCnt += 1
