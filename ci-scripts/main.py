@@ -1911,7 +1911,7 @@ class OaiCiTest():
 
 		# Kill iperf server on EPC side
 		if launchFromEpc:
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
 			SSH.close()
 		else:
@@ -3524,7 +3524,7 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	count = 0
 	foundCount = 0
-	while (count < HTML.GetnbTestXMLfiles()):
+	while (count < HTML.nbTestXMLfiles):
 		#xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[count]
 		xml_test_file = sys.path[0] + "/" + CiTestObj.testXMLfiles[count]
 		if (os.path.isfile(xml_test_file)):
