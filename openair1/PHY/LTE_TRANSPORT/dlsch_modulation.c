@@ -21,7 +21,7 @@
 
 /*! \file PHY/LTE_TRANSPORT/dlsch_modulation.c
  * \brief Top-level routines for generating the PDSCH physical channel from 36-211, V8.6 2009-03, V14.1 2017 (FeMBMS)
- * \author R. Knopp, F. Kaltenberger
+ * \author R. Knopp, F. Kaltenberger, J. Morgade
  * \date 2011
  * \version 0.1
  * \company Eurecom
