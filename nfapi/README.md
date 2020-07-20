@@ -45,6 +45,8 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 ### Testing
 * Test by running VNF on a terminal and PNF in rfsim parallely
 * If all works fine, move to UE testing.
+* Check if the `FAPI` core functionality is not broken by running gNB in monolithic mode
+* Syncwith the latest stable commit in `develop` branch
 
 * Testing with a UE
     * Run VNF
