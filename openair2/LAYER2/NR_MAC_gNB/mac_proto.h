@@ -153,9 +153,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
-void nr_schedule_uss_ulsch_phytest(int Mod_idP,
-                                   frame_t       frameP,
-                                   sub_frame_t   slotP);
+void nr_schedule_ulsch(int Mod_idP,
+                       int UE_id,
+                       frame_t       frameP,
+                       sub_frame_t   slotP);
 
 void nr_update_pucch_scheduling(int Mod_idP,
                                 int UE_id,
@@ -287,6 +288,11 @@ void nr_generate_Msg2(module_id_t module_idP,
 
 void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
 
+void schedule_fapi_ul_pdu(int Mod_idP,
+                          frame_t frameP,
+                          sub_frame_t slotP,
+                          int num_slots_per_tdd,
+                          int time_domain_assignment);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -296,6 +302,8 @@ void nr_process_mac_pdu(
     uint16_t mac_pdu_len);
 
 int binomial(int n, int k);
+
+bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.

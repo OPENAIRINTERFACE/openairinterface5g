@@ -1468,6 +1468,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
            0,
            sizeof(NR_UE_sched_ctrl_t));
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(sizeof(NR_sched_pusch));
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
