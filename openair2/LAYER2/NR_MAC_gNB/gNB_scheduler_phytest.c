@@ -918,8 +918,8 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
       pusch_pdu->pusch_identity = *scc->physCellId;
   }
   pusch_dmrs_AdditionalPosition_t additional_pos;
-  if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL){printf("%d\n",2);
-    additional_pos = 2;}
+  if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL)
+    additional_pos = 2;
   else {
     if (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3)
       additional_pos = 3;
