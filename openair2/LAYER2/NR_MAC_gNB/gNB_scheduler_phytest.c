@@ -497,7 +497,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
       dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
-      //dci_pdu_rel15->dai[0].val = ???; //TODO
+      dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator
       if (n_ubwp < 4)
         dci_pdu_rel15->bwp_indicator.val = bwp_id;
@@ -878,7 +878,10 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     if (pusch_Config->resourceAllocation==NR_PUSCH_Config__resourceAllocation_resourceAllocationType1) {
       pusch_pdu->resource_alloc = 1; //type 1
       pusch_pdu->rb_start = 0;
-      pusch_pdu->rb_size = 50;
+      if (get_softmodem_params()->phy_test==1)
+        pusch_pdu->rb_size = 50;
+      else
+        pusch_pdu->rb_size = 5;
     }
     else
       AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
