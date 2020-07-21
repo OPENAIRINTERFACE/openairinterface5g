@@ -214,7 +214,7 @@ void *eNB_app_task(void *args_p) {
   long                            x2_enb_register_retry_timer_id;
   uint32_t                        m2_register_enb_pending = 0;
   uint32_t                        m2_registered_enb = 0;
-  long                            m2_enb_register_retry_timer_id;
+  //long                            m2_enb_register_retry_timer_id;
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
   int                             result;
@@ -236,16 +236,11 @@ void *eNB_app_task(void *args_p) {
   /* Try to register each eNB with MCE each other */
   if (is_m2ap_eNB_enabled() /*&& !NODE_IS_DU(RC.rrc[0]->node_type)*/) {
     //eNB_app_register_MBMS_STA(RC.rrc[0]->node_type, enb_id_start, enb_id_end);
-    //m2_register_enb_pending = eNB_app_register_m2 (enb_id_start, enb_id_end);
+    m2_register_enb_pending = eNB_app_register_m2 (enb_id_start, enb_id_end);
 
-    if (timer_setup (5, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
-                               NULL, &m2_enb_register_retry_timer_id) < 0) {
-                //LOG_E(ENB_APP, " Can not start eNB register retry timer, use \"sleep\" instead!\n");
-                //sleep(ENB_REGISTER_RETRY_DELAY);
-                /* Restart the registration process */
-                //registered_enb = 0;
-                //register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);
-    }
+    //if (timer_setup (5, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
+    //                           NULL, &m2_enb_register_retry_timer_id) < 0) {
+    //}
 
   }
 
@@ -377,11 +372,11 @@ void *eNB_app_task(void *args_p) {
       }
         } /* if (EPC_MODE_ENABLED) */
 
-      if(TIMER_HAS_EXPIRED (msg_p).timer_id == m2_enb_register_retry_timer_id) {
-
-               LOG_I(ENB_APP, " Received %s: timer_id %ld M2 register\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
-               m2_register_enb_pending = eNB_app_register_m2 (enb_id_start, enb_id_end);
-	}
+//      if(TIMER_HAS_EXPIRED (msg_p).timer_id == m2_enb_register_retry_timer_id) {
+//
+//               LOG_I(ENB_APP, " Received %s: timer_id %ld M2 register\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
+//               m2_register_enb_pending = eNB_app_register_m2 (enb_id_start, enb_id_end);
+//	}
 
       break;
 
