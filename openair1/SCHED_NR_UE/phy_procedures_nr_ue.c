@@ -55,6 +55,8 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 #include "executables/softmodem-common.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
@@ -4044,6 +4046,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
 
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
@@ -4084,7 +4088,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
       
       }
-      nr_ue_pbch_procedures(eNB_id,ue,proc,0);
+      
+	//if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+      		nr_ue_rsrp_measurements(ue,nr_tti_rx,0);
+	//}
+	
+	nr_ue_pbch_procedures(eNB_id,ue,proc,0);
+
 
       if (ue->no_timing_correction==0) {
         LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);

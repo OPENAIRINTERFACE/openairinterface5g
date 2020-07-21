@@ -37,6 +37,8 @@
 #include "PHY/defs_nr_UE.h"
 #include <openair1/SCHED/sched_common.h>
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 #ifndef NO_RAT_NR
 
@@ -44,9 +46,9 @@
 #include "SCHED_NR_UE/harq_nr.h"
 #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
 
-#define DEFINE_VARIABLES_PUCCH_UE_NR_H
+//#define DEFINE_VARIABLES_PUCCH_UE_NR_H
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
-#undef DEFINE_VARIABLES_PUCCH_UE_NR_H
+//#undef DEFINE_VARIABLES_PUCCH_UE_NR_H
 
 #endif
 
@@ -54,6 +56,44 @@
 
 uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+
+long
+binary_search_float_nr(
+  float elements[],
+  long numElem,
+  float value
+)
+//-----------------------------------------------------------------------------
+{
+  long first, last, middle;
+  first = 0;
+  last = numElem-1;
+  middle = (first+last)/2;
+
+  if(value < elements[0]) {
+    return first;
+  }
+
+  if(value >= elements[last]) {
+    return last;
+  }
+
+  while (last - first > 1) {
+    if (elements[middle] > value) {
+      last = middle;
+    } else {
+      first = middle;
+    }
+
+    middle = (first+last)/2;
+  }
+
+  if (first < 0 || first >= numElem) {
+    LOG_E(RRC,"\n Error in binary search float!");
+  }
+
+  return first;
+}
 /*
 void nr_generate_pucch0(int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
@@ -1242,7 +1282,7 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
 *
 *********************************************************************/
 
-int      dummy_csi_status = 0;
+int      dummy_csi_status = 1;
 uint32_t dummy_csi_payload = 0;
 
 /* FFS TODO_NR code that should be developed */
@@ -1251,12 +1291,18 @@ int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
 {
   VOID_PARAMETER ue;
   VOID_PARAMETER gNB_id;
+  float rsrp_db[7];
+  int nElem = 98;
+  int rsrp_offset = 17;
+  
+  rsrp_db[0] = get_nr_RSRP(0,0,0);
+
 
   if (dummy_csi_status == 0) {
     *csi_payload = 0;
   }
   else {
-    *csi_payload = dummy_csi_payload;
+    *csi_payload = binary_search_float_nr(RSRP_meas_mapping_nr,nElem, rsrp_db[0]) + rsrp_offset;
   }
 
   return (dummy_csi_status);
