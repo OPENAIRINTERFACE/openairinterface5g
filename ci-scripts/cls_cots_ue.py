@@ -78,8 +78,8 @@ class CotsUe:
 				current_state = self.Check_Airplane()
 				retry+=1
 			if current_state != target_state:
-				print("ATTENTION : Could not toggle to : "+target_state_str)
-				print("Current state is : "+ str(current_state))
+				logging.error("ATTENTION : Could not toggle to : "+target_state_str)
+				logging.error("Current state is : "+ str(current_state))
 		else:
 			print("Airplane mode is already "+ target_state_str)
 		mySSH.command('sudo ./adb kill-server','$',5)

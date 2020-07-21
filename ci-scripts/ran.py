@@ -431,7 +431,8 @@ class RANManagement():
 				os.remove('./tmp_build' + testcaseId + '.zip')
 				mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 				mySSH.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
-				mySSH.command('unzip -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
+				#-qq quiet / -u update orcreate files
+				mySSH.command('unzip -u -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.command('rm -f tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.close()
 		else:

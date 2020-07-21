@@ -25,11 +25,11 @@
 	<htmlTabName>Airplane</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
- 010101
+ 010000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="010101">
+	<testCase id="010000">
 		<class>COTS_UE_Airplane</class>
 		<desc>Toggle COTS Airplane mode ON</desc>
 		<cots_ue_airplane_args>ON</cots_ue_airplane_args>
