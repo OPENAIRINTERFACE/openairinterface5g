@@ -26,7 +26,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 ### Task-A [packing]
 * Modify `nfapi_p7_message_pack()` in `nfapi_p7.c`
 * In the switch case, change the labels as well as the pack functions:
-    * `pack_dl_config_request` becomes `pack_dl_tti_request`
+    * `pack_dl_config_request` becomes `pack_dl_tti_request` [x]
     * `pack_ul_config_request` becomes `pack_ul_tti_request`
     * `pack_hi_dci0_request` becomes `pack_ul_dci_request`
     * `pack_tx_request` becomes `pack_tx_data_request`
@@ -41,6 +41,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 * Also check the function `vnf_p7_pack_and_send_p7_msg()` in `vnf_p7.c` for upgrade.
 * Write the `dl_tti` equivalent for `oai_nfapi_dl_config_req` in `nfapi_vnf.c` and other such functions.
 * Check if `nr_schedule_response()` needs to be upgraded
+* Resolve the hard-coded areas in source code.
 
 ### Testing
 * Test by running VNF on a terminal and PNF in rfsim parallely

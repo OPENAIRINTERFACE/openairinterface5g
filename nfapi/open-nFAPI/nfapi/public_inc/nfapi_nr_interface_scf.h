@@ -24,6 +24,8 @@
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
+#define DUMMY_TAG 0x55555
+
 // Extension to the generic structures for single tlv values
 
 
