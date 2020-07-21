@@ -153,7 +153,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
-void nr_schedule_ulsch(int Mod_idP,
+void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
                        frame_t       frameP,
                        sub_frame_t   slotP);

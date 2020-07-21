@@ -162,7 +162,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 
   if (gNB->pdcch_pdu || gNB->ul_dci_pdu) {
-    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+    LOG_I(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
 	  gNB->ul_dci_pdu==NULL?0:gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci,
 	  gNB->pdcch_pdu==NULL?0:gNB->pdcch_pdu->pdcch_pdu_rel15.numDlDci);
@@ -437,6 +437,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           (ulsch_harq->frame == frame_rx) &&
           (ulsch_harq->slot == slot_rx) &&
           (ulsch_harq->handled == 0)){
+
+          LOG_I(PHY, "PUSCH generation started in frame %d slot %d\n",
+                frame_rx,slot_rx);
 
 #ifdef DEBUG_RXDATA
           NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;

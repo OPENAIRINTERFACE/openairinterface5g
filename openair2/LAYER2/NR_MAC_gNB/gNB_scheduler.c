@@ -288,7 +288,7 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
-void nr_schedule_ulsch(int Mod_idP,
+void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
                        frame_t frameP,
                        sub_frame_t slotP) {
@@ -296,7 +296,6 @@ void nr_schedule_ulsch(int Mod_idP,
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   NR_sched_pusch *pusch = UE_list->UE_sched_ctrl[UE_id].sched_pusch;
-
   if ((pusch->active == true) && (frameP == pusch->frame) && (slotP == pusch->slot)) {
     UL_tti_req->SFN = pusch->frame;
     UL_tti_req->Slot = pusch->slot;
@@ -304,7 +303,8 @@ void nr_schedule_ulsch(int Mod_idP,
     UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
     UL_tti_req->pdus_list[UL_tti_req->n_pdus].pusch_pdu = pusch->pusch_pdu;
     UL_tti_req->n_pdus+=1;
-    pusch->active = false;
+    memset((void *) UE_list->UE_sched_ctrl[UE_id].sched_pusch,
+           0, sizeof(NR_sched_pusch));
   }
 }
 
@@ -398,9 +398,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_ulmix_slots++;
 
   if (slot_txP== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
-    memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch,
-           0,
-           sizeof(NR_sched_pusch));
     for (int k=0; k<nr_ulmix_slots; k++) {
       memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
@@ -504,12 +501,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     }
   }
 
-
   // This schedules the DCI for Uplink and subsequently PUSCH
   if (UE_list->fiveG_connected[UE_id]) {
     int tda = 1; // time domain assignment hardcoded for now
     schedule_fapi_ul_pdu(module_idP, frame_txP, slot_txP, num_slots_per_tdd, tda);
-    nr_schedule_ulsch(module_idP, UE_id, frame_rxP, slot_rxP);
+    nr_schedule_pusch(module_idP, UE_id, frame_rxP, slot_rxP);
   }
 
   if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
