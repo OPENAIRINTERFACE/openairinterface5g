@@ -67,7 +67,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 	uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   
 	uint8_t total_RApreambles = 64;
-	if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles == NULL)
+	if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
     total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
   
 	float  num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
