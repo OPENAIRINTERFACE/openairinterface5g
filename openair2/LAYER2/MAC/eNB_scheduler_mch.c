@@ -921,7 +921,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	      	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = 0xFF; 
 	          msi_pmch_stop=0;
 	      }
-	      LOG_I(MAC,"frameP %d, subframeP %d LCID %ld rlc_status.bytes_in_buffer %d stop_sf_LSB %d stop_sf_MSB %d msi_pmch_stop %d sf_AllocEnd_r9 %ld, msi_length %d\n",frameP,subframeP,((MSI_ELEMENT *) msi_ptr)->lcid,rlc_status.bytes_in_buffer,((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB,((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB, msi_pmch_stop,cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9, msi_length);
+	      LOG_I(MAC,"frameP %d, subframeP %d LCID %d rlc_status.bytes_in_buffer %d stop_sf_LSB %d stop_sf_MSB %d msi_pmch_stop %d sf_AllocEnd_r9 %ld, msi_length %d\n",frameP,subframeP,((MSI_ELEMENT *) msi_ptr)->lcid,rlc_status.bytes_in_buffer,((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB,((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB, msi_pmch_stop,cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9, msi_length);
 	   }
 
 	    memcpy((char*)buffer_pointer,

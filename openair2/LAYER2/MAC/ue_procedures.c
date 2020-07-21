@@ -74,7 +74,7 @@ extern module_id_t next_Mod_id;
 
 int mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
 static int mbms_mch_i=0;
-static int num_msi_per_CSA[28];
+//static int num_msi_per_CSA[28];
 
 
 /*
@@ -995,14 +995,14 @@ int ue_query_p_mch_info(module_id_t module_idP, uint32_t frameP, uint32_t subfra
 //static int common_num_sf_alloc=0;
 //static int x=0;
 int ue_query_mch_fembms(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_t subframe, uint8_t eNB_index,uint8_t *sync_area, uint8_t *mcch_active) {
-  int i = 0, j = 0,/* ii = 0,*/ msi_pos = -1, mcch_mcs = -1, mtch_mcs = -1, l=0,ii=0;
+  int i = 0, j = 0,/* ii = 0,*/ msi_pos = -1, mcch_mcs = -1, mtch_mcs = -1, l=0/*,ii=0*/;
   int mcch_flag = 0, mtch_flag = 0, msi_flag = 0;
   int alloc_offset=0;
   uint32_t period;
   //uint16_t num_non_mbsfn_SubframeConfig=0;
   long mch_scheduling_period = -1;
   uint8_t mch_lcid = 0;
-  int first_pos=0;
+  //int first_pos=0;
 
   if(UE_mac_inst[module_idP].non_mbsfn_SubframeConfig == NULL ) 
 	return -1;
