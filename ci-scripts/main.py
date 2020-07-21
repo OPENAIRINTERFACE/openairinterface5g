@@ -3083,7 +3083,7 @@ class OaiCiTest():
 
 
 
-def CheckClassValidity(action,id):
+def CheckClassValidity(xml_class_list,action,id):
 #	if action !='COTS_UE_Airplane' and action!='Build_PhySim' and action!='Run_PhySim' and  action != 'Build_eNB' and action != 'WaitEndBuild_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and 
 #   action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and 
 #   action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and 
@@ -3096,6 +3096,20 @@ def CheckClassValidity(action,id):
 	else:
 		resp=True
 	return resp
+
+
+#assigning parameters to object instance attributes (even if the attributes do not exist !!)
+def AssignParams(params_dict):
+	#--
+	mode=params_dict['mode']
+	#--
+	for key,value in params_dict.items():
+		setattr(CITestObj, key, value)
+		setattr(RAN, key, value)
+		setattr(HTML, key, value)
+		setattr(ldpc, key, value)
+
+
 
 def GetParametersFromXML(action):
 	if action == 'Build_eNB':
@@ -3326,9 +3340,23 @@ cwd = os.getcwd()
 while len(argvs) > 1:
 	myArgv = argvs.pop(1)	# 0th is this file's name
 
+	#--help
 	if re.match('^\-\-help$', myArgv, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit(0)
+
+	#--apply=<filename> as parameters file, to replace inline parameters
+	elif re.match('^\-\-apply=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-apply=(.+)$', myArgv, re.IGNORECASE)
+		py_params_file = matchReg.group(1)
+		with open(py_params_file,'r') as file:
+    	# The FullLoader parameter handles the conversion from YAML
+    	# scalar values to Python dictionary format
+		   	py_params = yaml.load(file,Loader=yaml.FullLoader)
+			py_param_file_present = True #to be removed once validated
+			#AssignParams(py_params) #to be uncommented once validated
+
+	#consider inline parameters
 	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
 		mode = matchReg.group(1)
@@ -3488,6 +3516,13 @@ while len(argvs) > 1:
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Invalid Parameter: ' + myArgv)
 
+
+#-----------------------------------------------------------
+# TEMPORARY params management
+#-----------------------------------------------------------
+#temporary solution for testing:
+if py_param_file_present == True:
+	AssignParams(py_params) 
 
 #-----------------------------------------------------------
 # COTS UE instanciation
@@ -3723,7 +3758,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				CiTestObj.desc = test.findtext('desc')
 				HTML.desc=CiTestObj.desc
 				action = test.findtext('class')
-				if (CheckClassValidity(action, id) == False):
+				if (CheckClassValidity(xml_class_list, action, id) == False):
 					continue
 				CiTestObj.ShowTestID()
 				GetParametersFromXML(action)
