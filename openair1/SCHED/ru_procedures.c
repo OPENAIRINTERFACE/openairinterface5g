@@ -41,6 +41,17 @@
  * \warning
  */
 
+/*! \function feptx0
+ * \brief Implementation of ofdm encoding for FeMBMS profile in one eNB
+ * \author J. Morgade
+ * \date 2020
+ * \version 0.1
+ * \email: javier.morgade@ieee.org
+ * \note
+ * \warning
+ */
+
+
 
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
@@ -76,7 +87,7 @@ void feptx0(RU_t *ru,
   int slot_sizeF = (fp->ofdm_symbol_size) * ((fp->Ncp==1) ? 6 : 7);
   int subframe = ru->proc.tti_tx;
 
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(slot&1) , 1 );
 
   slot_offset = slot*(fp->samples_per_tti>>1); //slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
 
@@ -91,7 +102,17 @@ void feptx0(RU_t *ru,
                    fp->nb_prefix_samples,
                    CYCLIC_PREFIX);
     } else {
-      if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
+      if(is_fembms_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
+        if((slot&1)==0){//just use one slot chance
+               PHY_ofdm_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
+                       (int*)&ru->common.txdata[aa][slot_offset],
+                       fp->ofdm_symbol_size_khz_1dot25,
+                       1,
+                       fp->ofdm_symbol_size_khz_1dot25>>2,
+                       CYCLIC_PREFIX);
+               LOG_D(HW,"Generating PMCH FeMBMS TX subframe %d %d\n",subframe,fp->ofdm_symbol_size_khz_1dot25);
+      	}
+      } else if(is_pmch_subframe(ru->proc.frame_tx,subframe,fp)){
         if ((slot&1) == 0) {//just use one slot chance
           normal_prefix_mod(&ru->common.txdataF_BF[aa][(slot&1)*slot_sizeF],
                             (int*)&ru->common.txdata[aa][slot_offset],
