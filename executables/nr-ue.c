@@ -758,7 +758,7 @@ void *UE_thread(void *arg) {
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
 
-    AssertFatal( writeBlockSize ==
+    /* AssertFatal( writeBlockSize ==
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
                      UE->frame_parms.get_samples_slot_timestamp(slot_nr,
@@ -767,7 +767,7 @@ void *UE_thread(void *arg) {
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
-                     1),"");
+                     1),""); */
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
@@ -829,6 +829,18 @@ void *UE_thread(void *arg) {
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
+
+     AssertFatal( writeBlockSize ==
+                 UE->rfdevice.trx_write_func(&UE->rfdevice,
+                     timestamp+
+                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
+                     &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp -
+                     openair0_cfg[0].tx_sample_advance,
+                     txp,
+                     writeBlockSize,
+                     UE->frame_parms.nb_antennas_tx,
+                     1),"");
+
   } // while !oai_exit
 
   return NULL;
