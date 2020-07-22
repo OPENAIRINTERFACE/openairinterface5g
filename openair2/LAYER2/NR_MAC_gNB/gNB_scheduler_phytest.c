@@ -474,6 +474,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int *dci_formats, int *rnti_types,
+                  int time_domain_assignment,
                   int n_ubwp, int bwp_id) {
 
   switch(dci_formats[(pdcch_pdu_rel15->numDlDci)-1]) {
@@ -482,7 +483,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                                                                                          pusch_pdu->rb_start,
 	                                                                                 NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
 
-      dci_pdu_rel15->time_domain_assignment.val = 2; // row index used here instead of SLIV;
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
       dci_pdu_rel15->mcs = 9;
 
@@ -511,7 +512,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       else
         AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
       // time domain assignment
-      dci_pdu_rel15->time_domain_assignment.val = 2;
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       // mcs
       dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
       // tpc command for pusch
@@ -798,6 +799,9 @@ void schedule_fapi_ul_pdu(int Mod_idP,
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
   NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
 
+  AssertFatal(time_domain_assignment<ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count,
+              "time_domain_assignment %d>=%d\n",time_domain_assignment,ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count);
+
   int K2;
   if (ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2 != NULL)
    K2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2;
@@ -833,11 +837,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     //Resource Allocation in time domain
     int startSymbolAndLength=0;
-    int time_domain_assignment=1;
     int StartSymbolIndex,NrOfSymbols,mapping_type;
 
-    AssertFatal(time_domain_assignment<ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count,
-                "time_domain_assignment %d>=%d\n",time_domain_assignment,ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count);
     startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
     pusch_pdu->start_symbol_index = StartSymbolIndex;
@@ -1065,7 +1066,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     }
     else {
       dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,n_ubwp,bwp_id);
+      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,n_ubwp,bwp_id);
       fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
     }
   }
