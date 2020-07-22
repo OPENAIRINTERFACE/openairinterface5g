@@ -694,6 +694,26 @@ uint8_t unpack_tl(uint8_t **ppReadPackedMsg, nfapi_tl_t *tl, uint8_t *end)
 			pull16(ppReadPackedMsg, &tl->length, end));
 }
 
+#include <stdlib.h>
+#include <unistd.h>
+#include <execinfo.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#define MSG( X ) r = write(fd, X, sizeof(X) - 1)
+void show_backtrace()
+{
+	printf("Bruins\n");
+	fflush(stdout);
+    void *buffer[100];
+       __attribute__((unused)) int r;
+    int nptrs = backtrace(buffer, sizeof(buffer) / sizeof(buffer[0]));
+    int fd = 1;
+    MSG("---stack trace---\n");
+    backtrace_symbols_fd(buffer, nptrs, fd);
+    MSG("---end stack trace---\n");
+}
+
 int unpack_tlv_list(unpack_tlv_t unpack_fns[], uint16_t size, uint8_t **ppReadPackedMsg, uint8_t* end, nfapi_p4_p5_codec_config_t* config, nfapi_tl_t** ve)
 {
 	nfapi_tl_t generic_tl;
@@ -729,7 +749,8 @@ int unpack_tlv_list(unpack_tlv_t unpack_fns[], uint16_t size, uint8_t **ppReadPa
 				// check if the length was right;
 				if(tl->length != (*ppReadPackedMsg - pStartOfValue))
 				{
-					NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning tlv tag 0x%x length %d not equal to unpack %d\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning Michael Angry Now tlv tag 0x%x length %d not equal to unpack %d\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
+					show_backtrace();
 				}
 			}
 		}
@@ -830,7 +851,8 @@ int unpack_p7_tlv_list(unpack_p7_tlv_t unpack_fns[], uint16_t size, uint8_t **pp
 				// check if the length was right;
 				if(tl->length != (*ppReadPackedMsg - pStartOfValue))
 				{
-					NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning tlv tag 0x%x length %d not equal to unpack %d\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning Andrew Angry tlv tag 0x%x length %d not equal to unpack %d\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
+					show_backtrace();
 				}
 			}
 		}
