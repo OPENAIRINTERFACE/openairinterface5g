@@ -994,11 +994,14 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag) {
   pthread_mutex_unlock(&lock_ue_freelist);
 }
 
+extern int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+extern int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+extern void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
+extern void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
+
 void release_UE_in_freeList(module_id_t mod_id) {
   int i, j, CC_id, pdu_number;
   protocol_ctxt_t                           ctxt;
-  LTE_eNB_ULSCH_t                          *ulsch = NULL;
-  LTE_eNB_DLSCH_t                          *dlsch = NULL;
   nfapi_ul_config_request_body_t           *ul_req_tmp = NULL;
   PHY_VARS_eNB                             *eNB_PHY = NULL;
   struct rrc_eNB_ue_context_s              *ue_context_pP = NULL;
@@ -1032,6 +1035,25 @@ void release_UE_in_freeList(module_id_t mod_id) {
       for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
         eNB_PHY = RC.eNB[mod_id][CC_id];
 
+	int id;
+
+	// clean ULSCH entries for rnti
+	id = find_ulsch(rnti,eNB_PHY,SEARCH_EXIST);
+        if (id>0) clean_eNb_ulsch(eNB_PHY->ulsch[id]);
+
+	// clean DLSCH entries for rnti
+	id = find_dlsch(rnti,eNB_PHY,SEARCH_EXIST);
+        if (id>0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
+
+	// clean UCI entries for rnti
+        for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+          if(eNB_PHY->uci_vars[i].rnti == rnti) {
+            LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
+            memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
+          }
+        }
+		
+	/*
         for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
           ulsch = eNB_PHY->ulsch[i];
 
@@ -1064,6 +1086,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
             memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
           }
         }
+	*/
 
         if (flexran_agent_get_rrc_xface(mod_id)) {
           flexran_agent_get_rrc_xface(mod_id)->flexran_agent_notify_ue_state_change(
