@@ -1147,7 +1147,7 @@ int get_nr_prach_info_from_index(uint8_t index,
       slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
       s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
         if ((s_map >> slot_60khz) & 0x01 ) {
-		      for(int i = 0; i < slot_60khz ;i++) {
+		      for(int i = 0; i <= slot_60khz ;i++) {
             if ( (s_map >> i) & 0x01) {
               (*RA_sfn_index)++;
 				    }
@@ -1195,7 +1195,7 @@ int get_nr_prach_info_from_index(uint8_t index,
         subframe = slot >> mu;
         s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
         if ((s_map >> subframe) & 0x01 ) {
-		      for(int i = 0; i < subframe ;i++) {
+		      for(int i = 0; i <= subframe ;i++) {
             if ( (s_map >> i) & 0x01) {
               (*RA_sfn_index)++;
 				    }
