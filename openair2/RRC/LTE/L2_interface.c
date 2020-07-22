@@ -28,6 +28,15 @@
  * \email: raymond.knopp@eurecom.fr
  */
 
+/*! \file l2_interface.c
+ * \brief layer 2 interface, added support for FeMBMS RRC sublayer 
+ * \author J. Morgade
+ * \date 2020
+ * \version 1.0
+ * \email: javier.morgade@ieee.org
+ */
+
+
 #include "platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
@@ -65,6 +74,9 @@ mac_rrc_data_req(
   uint8_t Sdu_size                = 0;
   uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
 
+  uint8_t sfn_fembms              = (uint8_t)((frameP>>4)&0xff);
+  sfn_fembms = sfn_fembms<<2;
+
   if (LOG_DEBUGFLAG(DEBUG_RRC)) {
     LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
   }
@@ -72,12 +84,14 @@ mac_rrc_data_req(
   eNB_RRC_INST *rrc;
   rrc_eNB_carrier_data_t *carrier;
   LTE_BCCH_BCH_Message_t *mib;
+  LTE_BCCH_BCH_Message_MBMS_t *mib_fembms;
   rrc     = RC.rrc[Mod_idP];
   carrier = &rrc->carrier[0];
   mib     = &carrier->mib;
+  mib_fembms     = &carrier->mib_fembms;
 
   if((Srb_id & RAB_OFFSET) == BCCH_SI_MBMS){
-    if (frameP%4 == 0) {
+    if (frameP%8 == 0) {
       memcpy(&buffer_pP[0],
              RC.rrc[Mod_idP]->carrier[CC_id].SIB1_MBMS,
              RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS);
@@ -159,6 +173,22 @@ mac_rrc_data_req(
     return(3);
   }
 
+  if( (Srb_id & RAB_OFFSET ) == MIBCH_MBMS) {
+    mib_fembms->message.systemFrameNumber_r14.buf = &sfn_fembms;
+    enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_BCH_Message_MBMS,
+                                     NULL,
+                                     (void *)mib_fembms,
+                                     carrier->MIB_FeMBMS,
+                                     24);
+    LOG_I(RRC,"Encoded MIB MBMS for frame %d (%p), bits %lu %x,%x,%x %x bits_unused %d\n",sfn_fembms>>2,carrier->MIB_FeMBMS,enc_rval.encoded,carrier->MIB_FeMBMS[0],carrier->MIB_FeMBMS[1],carrier->MIB_FeMBMS[2],mib_fembms->message.systemFrameNumber_r14.buf[0],mib_fembms->message.systemFrameNumber_r14.bits_unused);
+    buffer_pP[0]=carrier->MIB_FeMBMS[0];
+    buffer_pP[1]=carrier->MIB_FeMBMS[1];
+    buffer_pP[2]=carrier->MIB_FeMBMS[2];
+    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+                 enc_rval.failed_type->name, enc_rval.encoded);
+    return(3);
+  }
+
   if( (Srb_id & RAB_OFFSET ) == CCCH) {
     struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[Mod_idP],rnti);
 
@@ -203,6 +233,8 @@ mac_rrc_data_req(
            RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
            RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 
+      LOG_W(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
+
     if (LOG_DEBUGFLAG(DEBUG_RRC)) {
       LOG_W(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
 
@@ -215,6 +247,29 @@ mac_rrc_data_req(
 
     return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
   }
+
+  if((Srb_id & RAB_OFFSET) == MCCH_COUNTING) {
+    if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS_COUNTING[mbsfn_sync_area].Active==0) {
+      return 0;  // this parameter is set in function init_mcch in rrc_eNB.c
+    }
+
+    memcpy(&buffer_pP[0],
+           RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE_COUNTING[mbsfn_sync_area],
+           RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE_COUNTING[mbsfn_sync_area]);
+
+    if (LOG_DEBUGFLAG(DEBUG_RRC)) {
+      LOG_W(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE_COUNTING \n",Mod_idP,frameP);
+
+      for (int i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE_COUNTING[mbsfn_sync_area]; i++) {
+        LOG_T(RRC,"%x.",buffer_pP[i]);
+      }
+
+      LOG_T(RRC,"\n");
+    } /* LOG_DEBUGFLAG(DEBUG_RRC) */
+
+    return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE_COUNTING[mbsfn_sync_area]);
+  }
+
 
   if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR) {
     memcpy(&buffer_pP[0],

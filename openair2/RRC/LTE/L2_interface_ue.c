@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file l2_interface.c
+/*! \file l2_interface_ue.c
  * \brief layer 2 interface, used to support different RRC sublayer
  * \author Raymond Knopp and Navid Nikaein
  * \date 2010-2014
@@ -27,6 +27,16 @@
  * \company Eurecom
  * \email: raymond.knopp@eurecom.fr
  */
+
+
+/*! \file l2_interface_ue.c
+ * \brief layer 2 interface, added support for FeMBMS RRC sublayer
+ * \author J. Morgade
+ * \date 2020
+ * \version 1.0
+ * \email: javier.morgade@ieee.org
+ */
+
 
 #include "platform_types.h"
 #include "rrc_defs.h"
@@ -217,7 +227,10 @@ mac_rrc_data_ind_ue(
   }
 
   if ((srb_idP & RAB_OFFSET) == MCCH) {
-    LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
+    //LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
+          //module_idP,frameP, mbsfn_sync_areaP, srb_idP & RAB_OFFSET,eNB_indexP);
+
+    LOG_W(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
           module_idP,frameP, mbsfn_sync_areaP, srb_idP & RAB_OFFSET,eNB_indexP);
     {
       MessageDef *message_p;
