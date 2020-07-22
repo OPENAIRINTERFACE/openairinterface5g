@@ -497,7 +497,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
       dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
-      //dci_pdu_rel15->dai[0].val = ???; //TODO
+      dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator
       if (n_ubwp < 4)
         dci_pdu_rel15->bwp_indicator.val = bwp_id;
