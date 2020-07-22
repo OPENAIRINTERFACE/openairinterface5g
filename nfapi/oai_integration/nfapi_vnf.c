@@ -440,17 +440,17 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
   printf("[VNF] RACH_IND eNB:%p sfn_sf:%d number_of_preambles:%d\n", eNB, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.rach_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_rach_indication : num of rach reach max \n");
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+    // for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
+    //   if((UL_RCC_INFO.rach_ind[i].header.message_id == 0) && (index == -1)){
+    //     index = i;
+    //     break;
+    //   }
+    // }
+    // if(index == -1){
+    //   LOG_E(MAC,"phy_rach_indication : num of rach reach max \n");
+    //   return 0;
+    // }
     UL_RCC_INFO.rach_ind[index] = *ind;
 
     if (ind->rach_indication_body.number_of_preambles > 0)
@@ -504,17 +504,17 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.harq_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_harq_indication : num of harq reach max \n");
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+    // for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
+    //   if((UL_RCC_INFO.harq_ind[i].header.message_id == 0) && (index == -1)){
+    //     index = i;
+    //     break;
+    //   }
+    // }
+    // if(index == -1){
+    //   LOG_E(MAC,"phy_harq_indication : num of harq reach max \n");
+    //   return 0;
+    // }
     UL_RCC_INFO.harq_ind[index] = *ind;
 
     if (ind->harq_indication_body.number_of_harqs > 0)
@@ -540,20 +540,20 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.crc_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-      }
-      if(UL_RCC_INFO.rx_ind[i].sfn_sf == ind->sfn_sf){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_crc_indication : num of crc reach max \n");
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+    // for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
+    //   if((UL_RCC_INFO.crc_ind[i].header.message_id == 0) && (index == -1)){
+    //     index = i;
+    //   }
+    //   if(UL_RCC_INFO.rx_ind[i].sfn_sf == ind->sfn_sf){
+    //     index = i;
+    //     break;
+    //   }
+    // }
+    // if(index == -1){
+    //   LOG_E(MAC,"phy_crc_indication : num of crc reach max \n");
+    //   return 0;
+    // }
     UL_RCC_INFO.crc_ind[index] = *ind;
 
     if (ind->crc_indication_body.number_of_crcs > 0)
@@ -605,20 +605,20 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.rx_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-      }
-      if(UL_RCC_INFO.crc_ind[i].sfn_sf == ind->sfn_sf){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_rx_indication : num of rx reach max \n");
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+    // for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
+    //   if((UL_RCC_INFO.rx_ind[i].header.message_id == 0) && (index == -1)){
+    //     index = i;
+    //   }
+    //   if(UL_RCC_INFO.crc_ind[i].sfn_sf == ind->sfn_sf){
+    //     index = i;
+    //     break;
+    //   }
+    // }
+    // if(index == -1){
+    //   LOG_E(MAC,"phy_rx_indication : num of rx reach max \n");
+    //   return 0;
+    // }
     UL_RCC_INFO.rx_ind[index] = *ind;
 
     if (ind->rx_indication_body.number_of_pdus > 0)
@@ -691,17 +691,17 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d srs:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->sr_indication_body.number_of_srs);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.sr_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_sr_indication : num of sr reach max \n");
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+    // for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
+    //   if((UL_RCC_INFO.sr_ind[i].header.message_id == 0) && (index == -1)){
+    //     index = i;
+    //     break;
+    //   }
+    // }
+    // if(index == -1){
+    //   LOG_E(MAC,"phy_sr_indication : num of sr reach max \n");
+    //   return 0;
+    // }
     UL_RCC_INFO.sr_ind[index] = *ind;
     LOG_D(MAC,"%s() UL_INFO[%d].sr_ind.sr_indication_body.number_of_srs:%d\n", __FUNCTION__, index, eNB->UL_INFO.sr_ind.sr_indication_body.number_of_srs);
     if (ind->sr_indication_body.number_of_srs > 0)
@@ -742,17 +742,17 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_cqis:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
-    int8_t index = -1;
-    for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
-      if((UL_RCC_INFO.cqi_ind[i].header.message_id == 0) && (index == -1)){
-        index = i;
-        break;
-      }
-    }
-    if(index == -1){
-      LOG_E(MAC,"phy_cqi_indication : num of cqi reach max \n");
-      return 0;
-    }
+    int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
+    // for(uint8_t i= 0;i< NUM_NFPAI_SUBFRAME;i++){
+    //   if((UL_RCC_INFO.cqi_ind[i].header.message_id == 0) && (index == -1)){
+    //     index = i;
+    //     break;
+    //   }
+    // }
+    // if(index == -1){
+    //   LOG_E(MAC,"phy_cqi_indication : num of cqi reach max \n");
+    //   return 0;
+    // }
     UL_RCC_INFO.cqi_ind[index] = *ind;
     if (ind->cqi_indication_body.number_of_cqis > 0){
       UL_RCC_INFO.cqi_ind[index].cqi_indication_body.cqi_pdu_list = malloc(sizeof(nfapi_cqi_indication_pdu_t)*ind->cqi_indication_body.number_of_cqis );
