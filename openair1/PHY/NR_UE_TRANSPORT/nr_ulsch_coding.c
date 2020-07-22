@@ -57,7 +57,7 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
 
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
 
@@ -114,7 +114,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
 
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment

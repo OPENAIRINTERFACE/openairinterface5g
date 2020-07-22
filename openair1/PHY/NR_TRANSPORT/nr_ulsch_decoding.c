@@ -67,7 +67,7 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr,uint8_t N_RB_UL)
   if (ulsch) {
     if (N_RB_UL != 273) {
       a_segments = a_segments*N_RB_UL;
-      a_segments = a_segments/273;
+      a_segments = a_segments/273 +1;
     }  
 
 
@@ -119,11 +119,10 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
 
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }
 
   uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
-
   ulsch = (NR_gNB_ULSCH_t *)malloc16(sizeof(NR_gNB_ULSCH_t));
 
   if (ulsch) {
@@ -438,7 +437,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }
 
   if (harq_process->C > a_segments) {
