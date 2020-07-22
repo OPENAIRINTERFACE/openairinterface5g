@@ -72,7 +72,7 @@ int nr_rrc_mac_config_req_ue(
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     //NR_ServingCellConfigCommon_t    *sccP,
-    NR_SpCellConfig_t               *spCell_ConfigP);
+    NR_CellGroupConfig_t            *cell_group_config);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
@@ -101,7 +101,7 @@ uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
 
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
 int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index,fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
@@ -161,7 +161,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                          uint8_t dci_length,
                          uint16_t rnti,
                          uint64_t *dci_pdu,
-                         nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
+                         dci_pdu_rel15_t *nr_pdci_info_extracted);
 
 
 uint8_t
