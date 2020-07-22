@@ -365,13 +365,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
-  if (harq_process->round == 0) {
-
-    // This is a new packet, so compute quantities regarding segmentation
-    if (A > 3824)
-      harq_process->B = A+24;
-    else
-      harq_process->B = A+16;
 
     if (R<1024)
       Coderate = (float) R /(float) 1024;
@@ -407,6 +400,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       kc = 27;
     }
   }
+
+  if (harq_process->round == 0) {
+    // This is a new packet, so compute quantities regarding segmentation
+    if (A > 3824)
+      harq_process->B = A+24;
+    else
+      harq_process->B = A+16;
 
   // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
   nr_segmentation(NULL,
@@ -478,7 +478,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     stop_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
 
-#ifdef DEBUG_ULSCH_DECODING
     LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
           harq_pid,r, G,
           Kr*3,
@@ -488,7 +487,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
           n_layers,
           pusch_pdu->pusch_data.rv_index,
           harq_process->round);
-#endif
     //////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -663,8 +661,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
       harq_process->handled  = 0;
-      ulsch->harq_mask &= ~(1 << harq_pid);
     }
+    ulsch->harq_mask &= ~(1 << harq_pid);
 
     //   LOG_D(PHY,"[gNB %d] ULSCH: Setting NACK for nr_tti_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
     //         phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->status,harq_process->round,ulsch->Mlimit,harq_process->TBS);
@@ -674,15 +672,15 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   } else {
 
-#ifdef gNB_DEBUG_TRACE
+//#ifdef gNB_DEBUG_TRACE
     LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
           phy_vars_gNB->Mod_id,nr_tti_rx,harq_process->TBS);
-#endif
+//#endif
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
     // harq_process->handled  = 0;
-    ulsch->harq_mask  &= ~(1 << harq_pid);
+    ulsch->harq_mask  |= (1 << harq_pid);
     // harq_process->harq_ack.ack = 1;
     // harq_process->harq_ack.harq_id = harq_pid;
     // harq_process->harq_ack.send_harq_status = 1;

@@ -269,6 +269,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   int TBS;
   int bwp_id=1;
   int UE_id = 0;
+  uint8_t rv_round_map[4] = {0, 2, 3, 1};
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
 
@@ -314,7 +315,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = (get_softmodem_params()->phy_test==1) ? 0 : UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round;
+  pdsch_pdu_rel15->rvIndex[0] = (get_softmodem_params()->phy_test==1) ? 0 : rv_round_map[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
