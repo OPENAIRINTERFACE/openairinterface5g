@@ -1960,8 +1960,6 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
         dci_pdu->frequency_hopping_flag.nbits = 1;
         size += 1;
       }
-      else
-        dci_pdu->frequency_hopping_flag.nbits = 0;
       // 1st DAI
       if (secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook==NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
         dci_pdu->dai[0].nbits = 2;
@@ -2012,7 +2010,6 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
       }
       // Precoding info and number of layers
       long transformPrecoder;
-      dci_pdu->precoding_information.nbits = 0;
       if (pusch_Config->transformPrecoder == NULL){
         // if transform precoder is null, apply the values from msg3
         if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
