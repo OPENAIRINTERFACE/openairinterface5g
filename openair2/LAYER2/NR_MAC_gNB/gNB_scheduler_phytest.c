@@ -1052,9 +1052,10 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
    return;
   }
   else {
-    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-    config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,n_ubwp,bwp_id);
-    fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+      dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
+      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,n_ubwp,bwp_id);
+      fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+      free(dci_pdu_rel15);
   }
 }
 
