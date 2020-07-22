@@ -474,6 +474,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int *dci_formats, int *rnti_types,
+                  int time_domain_assignment,
                   int n_ubwp, int bwp_id) {
 
   switch(dci_formats[(pdcch_pdu_rel15->numDlDci)-1]) {
@@ -482,7 +483,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                                                                                          pusch_pdu->rb_start,
 	                                                                                 NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
 
-      dci_pdu_rel15->time_domain_assignment.val = 2; // row index used here instead of SLIV;
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
       dci_pdu_rel15->mcs = 9;
 
@@ -511,7 +512,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       else
         AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
       // time domain assignment
-      dci_pdu_rel15->time_domain_assignment.val = 2;
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       // mcs
       dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
       // tpc command for pusch
