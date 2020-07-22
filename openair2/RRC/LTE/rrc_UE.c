@@ -4270,7 +4270,7 @@ int decode_MCCH_Message( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB
   asn_dec_rval_t                dec_rval;
 
   if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].MCCHStatus[mbsfn_sync_area] == 1) {
-    LOG_W(RRC,"[UE %d] Frame %d: MCCH MESSAGE for MBSFN sync area %d has been already received!\n",
+    LOG_D(RRC,"[UE %d] Frame %d: MCCH MESSAGE for MBSFN sync area %d has been already received!\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
           mbsfn_sync_area);
@@ -4524,7 +4524,7 @@ void *rrc_ue_task( void *args_p ) {
         break;
 
       case RRC_MAC_MCCH_DATA_IND:
-        LOG_W(RRC, "[UE %d] Received %s: frameP %d, eNB %d, mbsfn SA %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
+        LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d, mbsfn SA %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
               RRC_MAC_MCCH_DATA_IND (msg_p).frame, RRC_MAC_MCCH_DATA_IND (msg_p).enb_index, RRC_MAC_MCCH_DATA_IND (msg_p).mbsfn_sync_area);
         //PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, M_RNTI, RRC_MAC_MCCH_DATA_IND (msg_p).frame, 0);
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, M_RNTI, RRC_MAC_MCCH_DATA_IND (msg_p).frame, 0,RRC_MAC_MCCH_DATA_IND (msg_p).enb_index);

@@ -2707,7 +2707,6 @@ int ue_pdcch_procedures(uint8_t eNB_id,
       if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
         LOG_D(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1%s, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
       }
-        LOG_W(PHY,"[UE  %d] subframe %d: Found rnti %x, format 1%s, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
 
       if (generate_ue_dlsch_params_from_dci(frame_rx,
                                             subframe_rx,
@@ -2726,7 +2725,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,
                                             ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id],
                                             0)==0) {
         ue->dlsch_SI_received[eNB_id]++;
-        LOG_W(PHY,"[UE  %d] Frame %d, subframe %d : Generate UE DLSCH SI_RNTI format 1%s\n",ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].format==format1A?"A":"C");
+        LOG_D(PHY,"[UE  %d] Frame %d, subframe %d : Generate UE DLSCH SI_RNTI format 1%s\n",ue->Mod_id,frame_rx,subframe_rx,dci_alloc_rx[i].format==format1A?"A":"C");
         //dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
       }
     } else if ((dci_alloc_rx[i].rnti == P_RNTI) &&

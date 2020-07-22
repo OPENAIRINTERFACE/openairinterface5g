@@ -227,11 +227,9 @@ mac_rrc_data_ind_ue(
   }
 
   if ((srb_idP & RAB_OFFSET) == MCCH) {
-    //LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
-          //module_idP,frameP, mbsfn_sync_areaP, srb_idP & RAB_OFFSET,eNB_indexP);
-
-    LOG_W(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
+    LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %ld from eNB %d\n",
           module_idP,frameP, mbsfn_sync_areaP, srb_idP & RAB_OFFSET,eNB_indexP);
+
     {
       MessageDef *message_p;
       int msg_sdu_size = sizeof(RRC_MAC_MCCH_DATA_IND (message_p).sdu);
