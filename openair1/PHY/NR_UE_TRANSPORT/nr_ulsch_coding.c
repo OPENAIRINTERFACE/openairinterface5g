@@ -225,8 +225,9 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   unsigned int crc;
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
-  uint32_t A, Z, F;
-  uint32_t *pz; 
+  uint32_t A, F;
+  static uint32_t Z = 0;
+  uint32_t *pz = &Z; 
   uint8_t mod_order; 
   uint16_t Kr,r;
   uint32_t r_offset;
@@ -409,6 +410,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////////////////////////////////////////////////////////////
 
   }
+  F = harq_process->F;
+  Kr = harq_process->K;
 
   for (r=0; r<harq_process->C; r++) { // looping over C segments
 
