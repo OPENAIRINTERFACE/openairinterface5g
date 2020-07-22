@@ -30,7 +30,7 @@
 
 /*! \file l2_interface.c
  * \brief layer 2 interface, added support for FeMBMS RRC sublayer 
- * \author J. Morgade
+ * \author Javier Morgade
  * \date 2020
  * \version 1.0
  * \email: javier.morgade@ieee.org
