@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>test-toggle-airplane-mode</htmlTabRef>
-	<htmlTabName>Airplane</htmlTabName>
+	<htmlTabRef>test-airplane-mode</htmlTabRef>
+	<htmlTabName>AirplaneToggle</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  010000

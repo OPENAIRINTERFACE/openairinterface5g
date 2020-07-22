@@ -3320,9 +3320,9 @@ EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
 HTML = html.HTMLManagement()
 
-EPC.HtmlObj=HTML
-RAN.HtmlObj=HTML
-RAN.EpcObj=EPC
+EPC.htmlObj=HTML
+RAN.htmlObj=HTML
+RAN.epcObj=EPC
 
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
@@ -3336,7 +3336,7 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 argvs = sys.argv
 argc = len(argvs)
 cwd = os.getcwd()
-
+py_param_file_present = False
 while len(argvs) > 1:
 	myArgv = argvs.pop(1)	# 0th is this file's name
 
@@ -3352,7 +3352,7 @@ while len(argvs) > 1:
 		with open(py_params_file,'r') as file:
     	# The FullLoader parameter handles the conversion from YAML
     	# scalar values to Python dictionary format
-		   	py_params = yaml.load(file,Loader=yaml.FullLoader)
+			py_params = yaml.load(file,Loader=yaml.FullLoader)
 			py_param_file_present = True #to be removed once validated
 			#AssignParams(py_params) #to be uncommented once validated
 

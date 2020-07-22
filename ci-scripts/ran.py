@@ -274,7 +274,7 @@ class RANManagement():
 		if self.Build_eNB_forced_workspace_cleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
 		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.GettestCase_id()
+			self.testCase_id = self.htmlObj.testCase_id
 		else:
 			self.testCase_id = '000000'
 		# on RedHat/CentOS .git extension is mandatory
@@ -388,7 +388,7 @@ class RANManagement():
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
 		if self.htmlObj is not None:
-			self.htmlObj.SettestCase_id(testcaseId)
+			self.htmlObj.testCase_id=testcaseId
 
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
@@ -397,6 +397,7 @@ class RANManagement():
 		mySSH.command('ls ran_build/build', '\$', 3)
 
 		#check if we have the build corresponding to the air interface keywords (nr-softmode, lte-softmodem, ocp-enb)
+		logging.info('CHECK Build with IP='+lIpAddr+' SourcePath='+lSourcePath)
 		result = re.search(self.air_interface, mySSH.getBefore())
 		if result is None:
 			buildStatus = False #if not, build failed
@@ -471,7 +472,7 @@ class RANManagement():
 			sys.exit('Insufficient Parameter')
 
 		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.GettestCase_id()
+			self.testCase_id = self.htmlObj.testCase_id
 		else:
 			self.testCase_id = '000000'
 		mySSH = SSH.SSHConnection()
@@ -762,7 +763,7 @@ class RANManagement():
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
 					if self.htmlObj is not None:
-						self.htmlObj.SetHmleNBFailureMsg('Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!')
+						self.htmlObj.HmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
@@ -1065,5 +1066,5 @@ class RANManagement():
 			htmleNBFailureMsg += rlcMsg + '\n'
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
-			self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
+			self.htmlObj.HmleNBFailureMsg=htmleNBFailureMsg
 		return global_status
