@@ -1305,7 +1305,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
-
+   dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);

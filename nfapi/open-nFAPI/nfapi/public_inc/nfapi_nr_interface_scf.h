@@ -24,7 +24,10 @@
 #define NFAPI_MAX_NUM_GROUPS 8
 #define NFAPI_MAX_NUM_CB 8
 
-#define DUMMY_TAG 0x55555
+#define NFAPI_NR_DL_TTI_CSI_RS_REL_IISC 0x5551
+#define NFAPI_NR_DL_TTI_PDCCH_REL_IISC 0x5552
+#define NFAPI_NR_DL_TTI_PDSCH_REL_IISC 0x5553
+#define NFAPI_NR_DL_TTI_SSB_REL_IISC 0x5554
 
 // Extension to the generic structures for single tlv values
 

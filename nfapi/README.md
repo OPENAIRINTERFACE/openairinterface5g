@@ -33,6 +33,10 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 
 ### Task-B [unpacking]
 * Modify `nfapi_p7_message_unpack()` in `nfapi_p7.c`
+    * `unpack_dl_tti_request`
+    * `unpack_ul_tti_request`
+    * `unpack_ul_dci_request`
+    * `unpack_tx_data_request`
 * Similarly change all the `unpack` functions within the switch-case block.
 * Modify the behaviour of `check_unpack_length()` for the new `TAGS`
 

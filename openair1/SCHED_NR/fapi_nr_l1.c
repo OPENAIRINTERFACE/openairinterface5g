@@ -33,7 +33,9 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
+int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req);
 
 extern uint8_t nfapi_mode;
 
@@ -202,5 +204,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 			      &UL_dci_req->ul_dci_pdu_list[i]);
   }
 
+  if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
+    oai_nfapi_nr_dl_config_req(Sched_INFO->DL_req);   
+  }
 
 }
