@@ -326,7 +326,8 @@ int nr_dlsch_encoding(unsigned char *a,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
   uint8_t nb_symb_sch = rel15->NrOfSymbols;
-  uint32_t A, Z, Kb, F=0;
+  uint32_t A, Kb, F=0;
+  static uint32_t Z = 0;
   uint32_t *Zc = &Z;
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t Kr=0,r;
