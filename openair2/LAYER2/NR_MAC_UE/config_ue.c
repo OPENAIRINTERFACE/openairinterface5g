@@ -357,6 +357,7 @@ int nr_rrc_mac_config_req_ue(
       }
       mac->scg = cell_group_config;
 
+      // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac->scc);
 
       /*      
