@@ -36,6 +36,43 @@
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
 
+#define MAX_NB_PRACH_ASSOC_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD (16) // Maximum number of association periods in max association pattern period (160ms)
+#define MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PERIOD (16) // Maximum association period is 16
+#define MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD (16) // Max association pattern period is 160ms and minimum PRACH configuration period is 10ms
+#define MAX_NB_FRAMES_IN_PRACH_CONF_PERIOD (16) // Max PRACH configuration period is 160ms and frame is 10ms
+#define MAX_NB_SLOTS_IN_FRAME (160) // Max number of slots in a frame (@ SCS 240kHz = 160)
+#define MAX_NB_PRACH_OCCASIONS_IN_TIME (7) // Max number of PRACH occasions in time per slot
+#define MAX_NB_PRACH_OCCASIONS_IN_FREQ (8) // Max number of PRACH occasions in frequency per slot
+#define MAX_NB_FRAMES_IN_ASSOCIATION_PATTERN_PERIOD (16) // Maximum number of frames in the maximum association pattern period
+#define MAX_NB_ASSOCIATION_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD (16) // Max nb of association periods in an association pattern period of 160ms
+#define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
+#define MAX_NB_SSBS (64)
+#define MAX_RO_PER_SSB_RATIO (8)
+#define MAX_SSB_PER_RO_RATIO (16)
+
+// Maximum number of SSBs that can be mapped in an association pattern
+// Here we chose an arbitrary maximum number - maximum number of slots in an association pattern * maximum number of ROs in a slot
+#define MAX_NB_SSBS_IN_ASSOCIATION_PATTERN (MAX_NB_PRACH_OCCASIONS_IN_TIME*MAX_NB_PRACH_OCCASIONS_IN_FREQ*MAX_NB_SLOTS_IN_FRAME*MAX_NB_FRAMES_IN_ASSOCIATION_PATTERN_PERIOD)
+
+// PRACH occasion details
+typedef struct prach_occasion_info {
+  uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
+  uint8_t fdm; // 1, 2, 4 or 8 (possible values of msg1-FDM)
+  uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
+  uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
+  uint8_t mapped_ssb_idx[MAX_SSB_PER_RO_RATIO]; // List of mapped SSBs
+  uint8_t nb_mapped_ssbs;
+  uint16_t format; // RO preamble format
+} prach_occasion_info_t;
+
+// PRACH occasions details in a slot
+// A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
+typedef struct prach_occasion_slot {
+  prach_occasion_info_t prach_occasion[MAX_NB_PRACH_OCCASIONS_IN_TIME][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot - 0Xff when no more valid PRACH occasion in that slot
+  uint8_t nb_of_prach_occasions_in_time;
+  uint8_t nb_of_prach_occasions_in_freq;
+} prach_occasion_slot_t;
+
 typedef enum {
   NR_DL_DCI_FORMAT_1_0 = 0,
   NR_DL_DCI_FORMAT_1_1,
@@ -87,6 +124,9 @@ uint16_t nr_dci_size(NR_CellGroupConfig_t *secondaryCellGroup,
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
                                                uint16_t *offset);
+
+void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc);
+int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx, int frame, int slot, prach_occasion_slot_t *prach_occasion_slot_p);
 
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,

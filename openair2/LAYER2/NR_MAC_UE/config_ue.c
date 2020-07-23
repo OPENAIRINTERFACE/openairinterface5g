@@ -357,6 +357,8 @@ int nr_rrc_mac_config_req_ue(
       }
       mac->scg = cell_group_config;
 
+      build_ssb_to_ro_map(mac->scc);
+
       /*      
       if(mac_cell_group_configP != NULL){
 	if(mac_cell_group_configP->drx_Config != NULL ){
