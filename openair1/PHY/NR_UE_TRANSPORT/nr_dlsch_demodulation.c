@@ -2388,7 +2388,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-    k = frame_parms->first_carrier_offset + 12*start_rb; 
+    k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
 
     if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];

@@ -3162,8 +3162,6 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 #endif
       break;
 
-    mac->rnti_type = rnti_type;
-
     case NR_RNTI_C:
 	
       // indicating a DL DCI format 1bit

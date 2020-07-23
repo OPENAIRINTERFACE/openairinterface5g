@@ -147,7 +147,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
-    // UL indication to schedule reception DCI reception
+    // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
     // UL indication after reception of DCI or DL PDU
