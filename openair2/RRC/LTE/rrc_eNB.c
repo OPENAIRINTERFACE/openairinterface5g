@@ -1039,11 +1039,11 @@ void release_UE_in_freeList(module_id_t mod_id) {
 
 	// clean ULSCH entries for rnti
 	id = find_ulsch(rnti,eNB_PHY,SEARCH_EXIST);
-        if (id>0) clean_eNb_ulsch(eNB_PHY->ulsch[id]);
+        if (id>=0) clean_eNb_ulsch(eNB_PHY->ulsch[id]);
 
 	// clean DLSCH entries for rnti
 	id = find_dlsch(rnti,eNB_PHY,SEARCH_EXIST);
-        if (id>0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
+        if (id>=0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
 
 	// clean UCI entries for rnti
         for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
