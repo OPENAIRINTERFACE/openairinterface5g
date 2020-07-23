@@ -452,6 +452,49 @@ static uint8_t pack_embms_mbsfn_config_value(void* tlv, uint8_t **ppWritePackedM
 //              pull8(ppReadPackedMsg, &value->fourframes_flag, end) &&
 //                      pullarrays32(ppReadPackedMsg, value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, end));
 //}
+
+#if 0
+static uint8_t pack_array_tlv_uint8_t_iisc(uint8_t element_count, void *msg, uint8_t **ppWritePackedMsg, uint8_t *end)
+{   
+
+	nfapi_uint8_tlv_t* list_of_tlvs = (nfapi_uint8_tlv_t*)msg;
+
+	int ret = push8(element_count, ppWritePackedMsg, end); // pushing the element count
+	if(!ret) return ret;
+
+	for(int i=0; i<element_count; i++)
+	{
+		ret = pack_uint8_tlv_value(x[i], ppWritePackedMsg, end);
+		if(!ret) return ret;
+	}
+	return ret;
+}
+
+static uint8_t unpack_array_tlv_uint8_t_iisc(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
+{   
+	uint8_t element_count = pull8(ppReadPackedMsg, &tlv, end); //pulling the element count
+
+	nfapi_uint8_tlv_t* value;
+	
+	int ret = 0;
+
+	for(int i=0; i<element_count; i++)
+	{
+		value = (nfapi_uint8_tlv_t*)(tlv);
+		ret = unpack_uint8_tlv_value(value->value, ppReadPackedMsg, end);
+		if(!ret) return ret;
+	}
+
+	return ret;
+}
+#endif
+// static uint8_t unpack_uint8_tlv_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
+// {
+// 	nfapi_uint8_tlv_t* value = (nfapi_uint8_tlv_t*)tlv;
+// 	return pull8(ppReadPackedMsg, &value->value, end);
+// }
+
+
 static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t* config)
 {
 	printf("\nRUNNING pack_param_response\n");
@@ -615,7 +658,7 @@ static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_SRS_CONFIG_BANDWIDTH_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.bandwidth_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG, &(pNfapiMsg->srs_config.max_up_pts), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_SRS_CONFIG_SRS_SUBFRAME_CONFIGURATION_TAG, &(pNfapiMsg->srs_config.srs_subframe_configuration), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
-			pack_tlv(NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG, &(pNfapiMsg->srs_config.srs_acknack_srs_simultaneous_transmission), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
+			pack_tlv(NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSset_tdd_config_nrMISSION_TAG, &(pNfapiMsg->srs_config.srs_acknack_srs_simultaneous_transmission), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 
 			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG, &(pNfapiMsg->uplink_reference_signal_config.uplink_rs_hopping), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG, &(pNfapiMsg->uplink_reference_signal_config.group_assignment), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
@@ -663,6 +706,7 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 	printf("\n\nEntering pack_config_request\n");
 	nfapi_nr_config_request_scf_t *pNfapiMsg = (nfapi_nr_config_request_scf_t*)msg;
 
+
 	return (push8(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
 			push8(pNfapiMsg->num_tlv, ppWritePackedMsg, end) &&
 		    pack_tlv(NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG, &(pNfapiMsg->carrier_config.dl_bandwidth), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
@@ -704,7 +748,8 @@ static uint8_t pack_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 			pack_tlv(NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG, &(pNfapiMsg->ssb_table.ssb_subcarrier_offset), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 
 			pack_tlv(NFAPI_NR_CONFIG_TDD_PERIOD_TAG, &(pNfapiMsg->tdd_table.tdd_period), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
-			
+		   	pack_tlv(NFAPI_NR_CONFIG_SLOT_CONFIG_TAG, &(pNfapiMsg->tdd_table.max_tdd_periodicity_list[0].max_num_of_symbol_per_slot_list[0].slot_config), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
+
 			pack_tlv(NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG, &(pNfapiMsg->nfapi_config.dl_ue_per_sf), ppWritePackedMsg, end, &pack_uint8_tlv_value) &&
 			pack_tlv(NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG, &(pNfapiMsg->nfapi_config.max_transmit_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
 			pack_tlv(NFAPI_NR_NFAPI_NRARFCN_TAG, &(pNfapiMsg->nfapi_config.nrarfcn), ppWritePackedMsg, end, &pack_uint32_tlv_value) &&
@@ -1609,6 +1654,10 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 {
 	nfapi_nr_config_request_scf_t *pNfapiMsg = (nfapi_nr_config_request_scf_t*)msg;
 
+	pNfapiMsg->tdd_table.max_tdd_periodicity_list = (nfapi_nr_max_tdd_periodicity_t*) malloc(20*sizeof(nfapi_nr_max_tdd_periodicity_t));
+	pNfapiMsg->tdd_table.max_tdd_periodicity_list[0].max_num_of_symbol_per_slot_list = (nfapi_nr_max_num_of_symbol_per_slot_t*) malloc(14*sizeof(nfapi_nr_max_num_of_symbol_per_slot_t));
+
+
 	unpack_tlv_t unpack_fns[] =
 	{
 		{ NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG,  &(pNfapiMsg->carrier_config.dl_bandwidth),  &unpack_uint16_tlv_value},
@@ -1644,8 +1693,8 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 		{ NFAPI_NR_CONFIG_SSB_PERIOD_TAG,  &(pNfapiMsg->ssb_table.ssb_period),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG,  &(pNfapiMsg->ssb_table.ssb_subcarrier_offset),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_CONFIG_TDD_PERIOD_TAG,  &(pNfapiMsg->tdd_table.tdd_period),  &unpack_uint8_tlv_value},
-		
-		{ NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG,  &(pNfapiMsg->nfapi_config.dl_ue_per_sf),  &unpack_uint8_tlv_value},
+		{ NFAPI_NR_CONFIG_SLOT_CONFIG_TAG,  &(pNfapiMsg->tdd_table.max_tdd_periodicity_list[0].max_num_of_symbol_per_slot_list[0].slot_config),  &unpack_uint8_tlv_value},
+	    { NFAPI_NR_NFAPI_DOWNLINK_UES_PER_SUBFRAME_TAG,  &(pNfapiMsg->nfapi_config.dl_ue_per_sf),  &unpack_uint8_tlv_value},
 		{ NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG,  &(pNfapiMsg->nfapi_config.max_transmit_power),  &unpack_uint16_tlv_value},
 		{ NFAPI_NR_NFAPI_NRARFCN_TAG,  &(pNfapiMsg->nfapi_config.nrarfcn),  &unpack_uint32_tlv_value},
 		{ NFAPI_NR_NFAPI_P7_PNF_ADDRESS_IPV4_TAG,  &(pNfapiMsg->nfapi_config.p7_pnf_address_ipv4),  &unpack_ipv4_address_value},

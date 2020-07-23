@@ -33,7 +33,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 
 ### Task-B [unpacking]
 * Modify `nfapi_p7_message_unpack()` in `nfapi_p7.c`
-    * `unpack_dl_tti_request`
+    * `unpack_dl_tti_request` [x]
     * `unpack_ul_tti_request`
     * `unpack_ul_dci_request`
     * `unpack_tx_data_request`
@@ -45,13 +45,14 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 * Also check the function `vnf_p7_pack_and_send_p7_msg()` in `vnf_p7.c` for upgrade.
 * Write the `dl_tti` equivalent for `oai_nfapi_dl_config_req` in `nfapi_vnf.c` and other such functions.
 * Check if `nr_schedule_response()` needs to be upgraded
-* Resolve the hard-coded areas in source code.
+* Resolve the hard-coded areas in source code. [`HIGH-PRIORITY`] [x]
+* Check whether the code can support latency of 0.5 ms for oai_slot_indication
 
 ### Testing
 * Test by running VNF on a terminal and PNF in rfsim parallely
 * If all works fine, move to UE testing.
 * Check if the `FAPI` core functionality is not broken by running gNB in monolithic mode
-* Syncwith the latest stable commit in `develop` branch
+* Sync with the latest stable commit in `develop` branch [`HIGH-PRIORITY`]
 
 * Testing with a UE
     * Run VNF
