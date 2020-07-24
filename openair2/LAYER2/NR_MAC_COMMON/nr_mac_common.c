@@ -1063,7 +1063,7 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
   // ==============================
   // WIP-IDCC: For now assume no rejected PRACH occasions because of conflict with SSB or TDD_UL_DL_ConfigurationCommon schedule
   // WIP-IDCC: Only FR2 is implemented
-  // WIP-IDCC: RACH preambles are not mapped yet (assumptions: ssb_per_rach is <= 1, totalNumberOfRA = CB-preamblesPerSSB = 64)
+  // WIP-IDCC: RACH preambles are not mapped yet (assumptions: ssb_per_rach is <= 1, totalNumberOfRA = CB-preamblesPerSSB - see NR_MAC_UE/nr_ra_procedures.c->nr_get_prach_resources)
 
   // Identify the proper PRACH Configuration Index table according to the operating frequency
   if (pointa > 2016666) { //FR2
