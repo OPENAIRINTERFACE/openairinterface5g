@@ -359,6 +359,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
+  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
 
   A   = (harq_process->TBS)<<3;
   ret = ulsch->max_ldpc_iterations + 1;
@@ -570,7 +571,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
       AssertFatal(kc!=255,"");
       j+=(harq_process->F>>3);
-      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++) {
       for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++) {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
@@ -661,8 +661,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
       harq_process->handled  = 0;
+      ulsch->harq_mask &= ~(1 << harq_pid);
     }
-    ulsch->harq_mask &= ~(1 << harq_pid);
 
     //   LOG_D(PHY,"[gNB %d] ULSCH: Setting NACK for nr_tti_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
     //         phy_vars_gNB->Mod_id,nr_tti_rx,harq_pid,harq_process->status,harq_process->round,ulsch->Mlimit,harq_process->TBS);
@@ -680,7 +680,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
     // harq_process->handled  = 0;
-    ulsch->harq_mask  |= (1 << harq_pid);
+    ulsch->harq_mask &= ~(1 << harq_pid);
     // harq_process->harq_ack.ack = 1;
     // harq_process->harq_ack.harq_id = harq_pid;
     // harq_process->harq_ack.send_harq_status = 1;

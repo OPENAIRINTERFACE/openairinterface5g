@@ -267,6 +267,19 @@ typedef struct NR_UE_harq {
   uint16_t feedback_slot;
 } NR_UE_harq_t;
 
+typedef enum {
+  INACTIVE = 0,
+  ACTIVE_NOT_SCHED,
+  ACTIVE_SCHED
+} NR_UL_harq_states_t;
+
+typedef struct NR_UE_ul_harq {
+  uint8_t ndi;
+  uint8_t round;
+  uint16_t last_tx_slot;
+  NR_UL_harq_states_t state;
+} NR_UE_ul_harq_t;
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
@@ -277,6 +290,7 @@ typedef struct {
   int16_t ta_update;
   uint8_t current_harq_pid;
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;

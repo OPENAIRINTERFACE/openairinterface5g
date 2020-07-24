@@ -259,6 +259,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
+  harq_process->round = nr_rv_round_map_ue[harq_process->pusch_pdu.pusch_data.rv_index];
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  

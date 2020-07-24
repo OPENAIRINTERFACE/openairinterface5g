@@ -277,6 +277,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   __m128i *pl = (__m128i*)&l;
   
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
+  
+  harq_process->round = nr_rv_round_map_ue[harq_process->rvidx];
 
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
 

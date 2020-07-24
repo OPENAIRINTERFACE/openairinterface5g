@@ -86,6 +86,8 @@ fifo_dump_emos_UE emos_dump_UE;
 
 char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
+const uint8_t nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+
 extern double cpuf;
 
 /*
