@@ -534,6 +534,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   rnti,
                                   index,
                                   ul_config_req);
+        fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
       }
     }
     if (ulsch_harq_information != NULL)
@@ -575,6 +576,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   rnti,
                                   index,
                                   ul_config_req);
+        fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
       }
     }
   } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE) {
@@ -614,6 +616,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   rnti,
                                   index,
                                   ul_config_req);
+        fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
       }
     }
 
@@ -912,7 +915,6 @@ void hi_dci0_req_UE_MAC(int sfn,
     return;
   for (int ue_id = 0; ue_id < num_ue; ue_id++) {
     if (dci->rnti == UE_mac_inst[ue_id].crnti) {
-      fill_ulsch_cqi_indication_UE_MAC(ue_id, sfn, sf, UL_INFO, dci->rnti);
       return;
     }
   }
@@ -1319,8 +1321,9 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       break;
     case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
-            NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf));
+      LOG_E(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u vdorext: %p\n",
+            encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
+            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.vendor_extension);
       break;
     case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);

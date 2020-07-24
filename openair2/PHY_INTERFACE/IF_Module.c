@@ -26,12 +26,15 @@ void handle_rach(UL_IND_t *UL_info) {
 
   if (NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    LOG_I(MAC, "handle_rach j: %d  UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles: %d\n",
-          j, UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles);
     if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 0)
     {
-      LOG_E(MAC, "UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:Frame: %d Subframe: %d\n",
-       UL_info->frame, UL_info->subframe, NFAPI_SFNSF2SFN(UL_RCC_INFO.rach_ind[j].sfn_sf), NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf));
+      if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 1)
+      {
+        LOG_I(MAC, "handle_rach j: %d  UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles: %d\n",
+          j, UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles);
+        LOG_I(MAC, "UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:Frame: %d Subframe: %d\n",
+          UL_info->frame, UL_info->subframe, NFAPI_SFNSF2SFN(UL_RCC_INFO.rach_ind[j].sfn_sf), NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf));
+      }
       AssertFatal(UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles == 1, "More than 1 preamble not supported\n"); // dump frame/sf and all things in UL_RCC_INFO
       initiate_ra_proc(UL_info->module_id,
                        UL_info->CC_id,
@@ -700,12 +703,14 @@ void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
   Sched_Rsp_t  *sched_info = &Sched_INFO[module_id][CC_id];
   IF_Module_t  *ifi        = if_inst[module_id];
   eNB_MAC_INST *mac        = RC.mac[module_id];
-  LOG_E(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
-        UL_info->frame,UL_info->subframe,
-        module_id,CC_id,
-        UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs,
-        UL_info->cqi_ind.cqi_indication_body.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
-
+  if (UL_info->subframe == 3)
+  {
+    LOG_I(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
+          UL_info->frame,UL_info->subframe,
+          module_id,CC_id,
+          UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs,
+          UL_info->cqi_ind.cqi_indication_body.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
+  }
   if(UL_info->frame==1023&&UL_info->subframe==6) { // dl scheduling (0,0)
     frame_cnt= (frame_cnt + 1)%7; // to prevent frame_cnt get too big
     LOG_D(MAC,"current (%d,%d) frame count dl is %d\n",UL_info->frame,UL_info->subframe,frame_cnt);

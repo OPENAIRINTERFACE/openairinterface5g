@@ -6203,7 +6203,12 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 
 		case NFAPI_RX_ULSCH_INDICATION:
 			if (check_unpack_length(NFAPI_RX_ULSCH_INDICATION, unpackedBufLen))
+			{
+				nfapi_rx_indication_t *pNfapiMsg = (nfapi_rx_indication_t*)pMessageHeader;
 				result = unpack_rx_indication(&pReadPackedMessage,  end, pMessageHeader, config);
+				NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s Celtics RX_IND Frame: %d Subframe %d\n", __FUNCTION__,
+				pNfapiMsg->sfn_sf >> 4, pNfapiMsg->sfn_sf & 15);
+			}
 			else
 				return -1;
 			break;
