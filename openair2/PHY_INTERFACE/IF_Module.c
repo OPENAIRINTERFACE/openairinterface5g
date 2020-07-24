@@ -23,7 +23,7 @@ uint16_t frame_cnt=0;
 void handle_rach(UL_IND_t *UL_info) {
   int i;
   int j = UL_info->subframe;
-
+  AssertFatal(j < sizeof(UL_RCC_INFO.rach_ind) / sizeof(UL_RCC_INFO.rach_ind[0]), "j index out of range of index of rach_ind\n");
   if (NFAPI_MODE == NFAPI_MODE_VNF)
   {
     if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 0)

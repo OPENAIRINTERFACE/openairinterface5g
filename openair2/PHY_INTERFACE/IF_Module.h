@@ -88,7 +88,7 @@ typedef struct {
 } UL_IND_t;
 
 // Downlink subframe P7
-#define NUM_NFPAI_SUBFRAME 5
+#define NUM_NFPAI_SUBFRAME 10
 typedef struct {
   /// harq indication list
   nfapi_harq_indication_t harq_ind[NUM_NFPAI_SUBFRAME];
