@@ -3100,11 +3100,9 @@ def CheckClassValidity(xml_class_list,action,id):
 
 #assigning parameters to object instance attributes (even if the attributes do not exist !!)
 def AssignParams(params_dict):
-	#--
-	mode=params_dict['mode']
-	#--
+
 	for key,value in params_dict.items():
-		setattr(CITestObj, key, value)
+		setattr(CiTestObj, key, value)
 		setattr(RAN, key, value)
 		setattr(HTML, key, value)
 		setattr(ldpc, key, value)
@@ -3330,191 +3328,193 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 
 
 #-----------------------------------------------------------
-# Parameter Check
+# Parsing Command Line Arguments
 #-----------------------------------------------------------
 
-argvs = sys.argv
-argc = len(argvs)
-cwd = os.getcwd()
-py_param_file_present = False
-while len(argvs) > 1:
-	myArgv = argvs.pop(1)	# 0th is this file's name
+import args_parse
+py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,ldpc,HELP)
 
-	#--help
-	if re.match('^\-\-help$', myArgv, re.IGNORECASE):
-		HELP.GenericHelp(CONST.Version)
-		sys.exit(0)
-
-	#--apply=<filename> as parameters file, to replace inline parameters
-	elif re.match('^\-\-apply=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-apply=(.+)$', myArgv, re.IGNORECASE)
-		py_params_file = matchReg.group(1)
-		with open(py_params_file,'r') as file:
-    	# The FullLoader parameter handles the conversion from YAML
-    	# scalar values to Python dictionary format
-			py_params = yaml.load(file,Loader=yaml.FullLoader)
-			py_param_file_present = True #to be removed once validated
-			#AssignParams(py_params) #to be uncommented once validated
-
-	#consider inline parameters
-	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
-		mode = matchReg.group(1)
-	elif re.match('^\-\-eNBRepository=(.+)$|^\-\-ranRepository(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
-		else:
-			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.ranRepository = matchReg.group(1)
-		RAN.ranRepository=matchReg.group(1)
-		HTML.ranRepository=matchReg.group(1)
-		ldpc.ranRepository=matchReg.group(1)
-	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
-		else:
-			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
-		doMerge = matchReg.group(1)
-		ldpc.ranAllowMerge=matchReg.group(1)
-		if ((doMerge == 'true') or (doMerge == 'True')):
-			CiTestObj.ranAllowMerge = True
-			RAN.ranAllowMerge=True
-			HTML.ranAllowMerge=True
-	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
-		else:
-			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.ranBranch = matchReg.group(1)
-		RAN.ranBranch=matchReg.group(1)
-		HTML.ranBranch=matchReg.group(1)
-		ldpc.ranBranch=matchReg.group(1)
-	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
-		else:
-			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
-		CiTestObj.ranCommitID = matchReg.group(1)
-		RAN.ranCommitID=matchReg.group(1)
-		HTML.ranCommitID=matchReg.group(1)
-		ldpc.ranCommitID=matchReg.group(1)
-	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
-		else:
-			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
-		CiTestObj.ranTargetBranch = matchReg.group(1)
-		RAN.ranTargetBranch=matchReg.group(1)
-		HTML.ranTargetBranch=matchReg.group(1)
-		ldpc.ranTargetBranch=matchReg.group(1)
-	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNBIPAddress=matchReg.group(1)
-			ldpc.eNBIpAddr=matchReg.group(1)
-		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB1IPAddress=matchReg.group(1)
-		elif re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB2IPAddress=matchReg.group(1)
-	elif re.match('^\-\-eNBUserName=(.+)$|^\-\-eNB[1-2]UserName=(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNBUserName=matchReg.group(1)
-			ldpc.eNBUserName=matchReg.group(1)
-		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB1UserName=matchReg.group(1)
-		elif re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB2UserName=matchReg.group(1)
-	elif re.match('^\-\-eNBPassword=(.+)$|^\-\-eNB[1-2]Password=(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNBPassword=matchReg.group(1)
-			ldpc.eNBPassWord=matchReg.group(1)
-		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB1Password=matchReg.group(1)
-		elif re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB2Password=matchReg.group(1)
-	elif re.match('^\-\-eNBSourceCodePath=(.+)$|^\-\-eNB[1-2]SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNBSourceCodePath=matchReg.group(1)
-			ldpc.eNBSourceCodePath=matchReg.group(1)
-		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB1SourceCodePath=matchReg.group(1)
-		elif re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-			matchReg = re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-			RAN.eNB2SourceCodePath=matchReg.group(1)
-	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		EPC.IPAddress=matchReg.group(1)
-	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
-		EPC.UserName=matchReg.group(1)
-	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
-		EPC.Password=matchReg.group(1)
-	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		EPC.SourceCodePath=matchReg.group(1)
-	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
-		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE):
-			EPC.Type=matchReg.group(1)
-		else:
-			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS or OAI-Rel14-Docker)')
-	elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
-		EPC.ContainerPrefix=matchReg.group(1)
-	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.ADBIPAddress = matchReg.group(1)
-	elif re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.ADBUserName = matchReg.group(1)
-	elif re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE)
-		if re.match('centralized', matchReg.group(1), re.IGNORECASE) or re.match('distributed', matchReg.group(1), re.IGNORECASE):
-			if re.match('distributed', matchReg.group(1), re.IGNORECASE):
-				CiTestObj.ADBCentralized = False
-			else:
-				CiTestObj.ADBCentralized = True
-		else:
-			sys.exit('Invalid ADB Type: ' + matchReg.group(1) + ' -- (should be centralized or distributed)')
-	elif re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.ADBPassword = matchReg.group(1)
-	elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.testXMLfiles.append(matchReg.group(1))
-		HTML.testXMLfiles=matchReg.group(1)
-		HTML.nbTestXMLfiles=HTML.nbTestXMLfiles+1
-	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.UEIPAddress = matchReg.group(1)
-	elif re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.UEUserName = matchReg.group(1)
-	elif re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.UEPassword = matchReg.group(1)
-	elif re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-		CiTestObj.UESourceCodePath = matchReg.group(1)
-	elif re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
-		finalStatus = matchReg.group(1)
-		if ((finalStatus == 'true') or (finalStatus == 'True')):
-			CiTestObj.finalStatus = True
-	else:
-		HELP.GenericHelp(CONST.Version)
-		sys.exit('Invalid Parameter: ' + myArgv)
+#argvs = sys.argv
+#py_param_file_present = False
+#
+#while len(argvs) > 1:
+#	myArgv = argvs.pop(1)	# 0th is this file's name
+#
+#	#--help
+#	if re.match('^\-\-help$', myArgv, re.IGNORECASE):
+#		HELP.GenericHelp(CONST.Version)
+#		sys.exit(0)
+#
+#	#--apply=<filename> as parameters file, to replace inline parameters
+#	elif re.match('^\-\-Apply=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-Apply=(.+)$', myArgv, re.IGNORECASE)
+#		py_params_file = matchReg.group(1)
+#		with open(py_params_file,'r') as file:
+#    	# The FullLoader parameter handles the conversion from YAML
+#    	# scalar values to Python dictionary format
+#			py_params = yaml.load(file,Loader=yaml.FullLoader)
+#			py_param_file_present = True #to be removed once validated
+#			#AssignParams(py_params) #to be uncommented once validated
+#
+#	#consider inline parameters
+#	elif re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
+#		mode = matchReg.group(1)
+#	elif re.match('^\-\-eNBRepository=(.+)$|^\-\-ranRepository(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
+#		else:
+#			matchReg = re.match('^\-\-ranRepository=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ranRepository = matchReg.group(1)
+#		RAN.ranRepository=matchReg.group(1)
+#		HTML.ranRepository=matchReg.group(1)
+#		ldpc.ranRepository=matchReg.group(1)
+#	elif re.match('^\-\-eNB_AllowMerge=(.+)$|^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+#		else:
+#			matchReg = re.match('^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
+#		doMerge = matchReg.group(1)
+#		ldpc.ranAllowMerge=matchReg.group(1)
+#		if ((doMerge == 'true') or (doMerge == 'True')):
+#			CiTestObj.ranAllowMerge = True
+#			RAN.ranAllowMerge=True
+#			HTML.ranAllowMerge=True
+#	elif re.match('^\-\-eNBBranch=(.+)$|^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
+#		else:
+#			matchReg = re.match('^\-\-ranBranch=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ranBranch = matchReg.group(1)
+#		RAN.ranBranch=matchReg.group(1)
+#		HTML.ranBranch=matchReg.group(1)
+#		ldpc.ranBranch=matchReg.group(1)
+#	elif re.match('^\-\-eNBCommitID=(.*)$|^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
+#		else:
+#			matchReg = re.match('^\-\-ranCommitID=(.*)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ranCommitID = matchReg.group(1)
+#		RAN.ranCommitID=matchReg.group(1)
+#		HTML.ranCommitID=matchReg.group(1)
+#		ldpc.ranCommitID=matchReg.group(1)
+#	elif re.match('^\-\-eNBTargetBranch=(.*)$|^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+#		else:
+#			matchReg = re.match('^\-\-ranTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ranTargetBranch = matchReg.group(1)
+#		RAN.ranTargetBranch=matchReg.group(1)
+#		HTML.ranTargetBranch=matchReg.group(1)
+#		ldpc.ranTargetBranch=matchReg.group(1)
+#	elif re.match('^\-\-eNBIPAddress=(.+)$|^\-\-eNB[1-2]IPAddress=(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBIPAddress=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNBIPAddress=matchReg.group(1)
+#			ldpc.eNBIpAddr=matchReg.group(1)
+#		elif re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB1IPAddress=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB1IPAddress=matchReg.group(1)
+#		elif re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB2IPAddress=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB2IPAddress=matchReg.group(1)
+#	elif re.match('^\-\-eNBUserName=(.+)$|^\-\-eNB[1-2]UserName=(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNBUserName=matchReg.group(1)
+#			ldpc.eNBUserName=matchReg.group(1)
+#		elif re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB1UserName=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB1UserName=matchReg.group(1)
+#		elif re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB2UserName=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB2UserName=matchReg.group(1)
+#	elif re.match('^\-\-eNBPassword=(.+)$|^\-\-eNB[1-2]Password=(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBPassword=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNBPassword=matchReg.group(1)
+#			ldpc.eNBPassWord=matchReg.group(1)
+#		elif re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB1Password=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB1Password=matchReg.group(1)
+#		elif re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB2Password=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB2Password=matchReg.group(1)
+#	elif re.match('^\-\-eNBSourceCodePath=(.+)$|^\-\-eNB[1-2]SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+#		if re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNBSourceCodePath=matchReg.group(1)
+#			ldpc.eNBSourceCodePath=matchReg.group(1)
+#		elif re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB1SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB1SourceCodePath=matchReg.group(1)
+#		elif re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+#			matchReg = re.match('^\-\-eNB2SourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+#			RAN.eNB2SourceCodePath=matchReg.group(1)
+#	elif re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-EPCIPAddress=(.+)$', myArgv, re.IGNORECASE)
+#		EPC.IPAddress=matchReg.group(1)
+#	elif re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-EPCUserName=(.+)$', myArgv, re.IGNORECASE)
+#		EPC.UserName=matchReg.group(1)
+#	elif re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-EPCPassword=(.+)$', myArgv, re.IGNORECASE)
+#		EPC.Password=matchReg.group(1)
+#	elif re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-EPCSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+#		EPC.SourceCodePath=matchReg.group(1)
+#	elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
+#		if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE):
+#			EPC.Type=matchReg.group(1)
+#		else:
+#			sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS or OAI-Rel14-Docker)')
+#	elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
+#		EPC.ContainerPrefix=matchReg.group(1)
+#	elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ADBIPAddress = matchReg.group(1)
+#	elif re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ADBUserName = matchReg.group(1)
+#	elif re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE)
+#		if re.match('centralized', matchReg.group(1), re.IGNORECASE) or re.match('distributed', matchReg.group(1), re.IGNORECASE):
+#			if re.match('distributed', matchReg.group(1), re.IGNORECASE):
+#				CiTestObj.ADBCentralized = False
+#			else:
+#				CiTestObj.ADBCentralized = True
+#		else:
+#			sys.exit('Invalid ADB Type: ' + matchReg.group(1) + ' -- (should be centralized or distributed)')
+#	elif re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.ADBPassword = matchReg.group(1)
+#	elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.testXMLfiles.append(matchReg.group(1))
+#		HTML.testXMLfiles=matchReg.group(1)
+#		HTML.nbTestXMLfiles=HTML.nbTestXMLfiles+1
+#	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.UEIPAddress = matchReg.group(1)
+#	elif re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.UEUserName = matchReg.group(1)
+#	elif re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.UEPassword = matchReg.group(1)
+#	elif re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+#		CiTestObj.UESourceCodePath = matchReg.group(1)
+#	elif re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
+#		matchReg = re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
+#		finalStatus = matchReg.group(1)
+#		if ((finalStatus == 'true') or (finalStatus == 'True')):
+#			CiTestObj.finalStatus = True
+#	else:
+#		HELP.GenericHelp(CONST.Version)
+#		sys.exit('Invalid Parameter: ' + myArgv)
 
 
 #-----------------------------------------------------------
@@ -3522,7 +3522,15 @@ while len(argvs) > 1:
 #-----------------------------------------------------------
 #temporary solution for testing:
 if py_param_file_present == True:
-	AssignParams(py_params) 
+	AssignParams(py_params)
+
+#for debug
+print(RAN.__dict__) 
+print(CiTestObj.__dict__) 
+print(HTML.__dict__) 
+print(ldpc.__dict__) 
+#for debug
+
 
 #-----------------------------------------------------------
 # COTS UE instanciation
@@ -3534,6 +3542,7 @@ COTS_UE=cls_cots_ue.CotsUe('oppo', CiTestObj.UEIPAddress, CiTestObj.UEUserName,C
 #-----------------------------------------------------------
 # XML class (action) analysis
 #-----------------------------------------------------------
+cwd = os.getcwd()
 
 if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
@@ -3851,6 +3860,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	else:
 		logging.info('Testsuite passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(True)
+elif re.match('^LoadParams$', mode, re.IGNORECASE):
+	pass
 else:
 	HELP.GenericHelp(CONST.Version)
 	sys.exit('Invalid mode')
