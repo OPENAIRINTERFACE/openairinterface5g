@@ -840,7 +840,6 @@ static void *ru_thread( void *param ) {
     proc->timestamp_rx=nextRxTSlogical;
     nextRxTSlogical+=samples_per_slot;
     int64_t HW_to_logical_RxTSoffset=(int64_t)HWtimeStamp-(int64_t)proc->timestamp_rx;
-    printf("%lu, %lu\n",HWtimeStamp, (slot+1)*fp->samples_per_subframe);
     proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
     uint32_t idx_sf = proc->timestamp_rx / fp->samples_per_subframe;
     float offsetInSubframe=proc->timestamp_rx % fp->samples_per_subframe;
@@ -852,7 +851,7 @@ static void *ru_thread( void *param ) {
           (unsigned long long int)proc->timestamp_rx,
           (int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
     int slot_type = nr_slot_select(&ru->gNB_list[0]->gNB_config,proc->frame_rx,proc->tti_rx);
-
+    
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
       nr_fep_full(ru,proc->tti_rx);
 
@@ -862,13 +861,14 @@ static void *ru_thread( void *param ) {
 
       LOG_D(PHY, "rxdataF energy: %d\n", signal_energy(ru->common.rxdataF[0], fp->symbols_per_slot*fp->ofdm_symbol_size));
     }
-
+    
     gNB_top(&RC.gNB[0][0].proc, ru);
     gNB_L1_rxtx_proc_t *L1_proc = &RC.gNB[0][0].proc.L1_proc;
-
+    
     if (rxtx(&RC.gNB[0][0],L1_proc) < 0)
       LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",RC.gNB[0][0].Mod_id,RC.gNB[0][0].CC_id);
 
+    
     // do TX front-end processing if needed (precoding and/or IDFTs)
     //ru->feptx_prec(ru,proc->frame_tx,proc->tti_tx);
     nr_feptx_prec(ru,proc->frame_tx,proc->tti_tx);
@@ -887,7 +887,7 @@ static void *ru_thread( void *param ) {
             proc->frame_tx,proc->tti_tx,proc->timestamp_tx,dB_fixed(signal_energy((int32_t *)txdata,fp->get_samples_per_slot(
                   proc->tti_tx,fp))),dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
-
+    
     // do outgoing fronthaul (south) if needed
     tx_rf(ru,proc->frame_tx,proc->tti_tx,proc->timestamp_tx+HW_to_logical_RxTSoffset);
     slot++;
