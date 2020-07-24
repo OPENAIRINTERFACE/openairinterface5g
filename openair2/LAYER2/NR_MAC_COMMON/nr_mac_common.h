@@ -51,7 +51,7 @@ typedef struct prach_occasion_info {
   uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
   uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
   uint8_t mapped_ssb_idx[MAX_SSB_PER_RO]; // List of mapped SSBs
-  uint8_t nb_mapped_ssbs;
+  uint8_t nb_mapped_ssb;
   uint16_t format; // RO preamble format
 } prach_occasion_info_t;
 
@@ -59,8 +59,8 @@ typedef struct prach_occasion_info {
 // A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
 typedef struct prach_occasion_slot {
   prach_occasion_info_t prach_occasion[MAX_TDM][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot
-  uint8_t nb_of_prach_occasions_in_time;
-  uint8_t nb_of_prach_occasions_in_freq;
+  uint8_t nb_of_prach_occasion_in_time;
+  uint8_t nb_of_prach_occasion_in_freq;
 } prach_occasion_slot_t;
 
 // ========================================
