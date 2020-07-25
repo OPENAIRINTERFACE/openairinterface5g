@@ -959,6 +959,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
   mac->RA_offset = 2; // to compensate the rx frame offset at the gNB
+  mac->generate_nr_prach = 0; // Reset flag for PRACH generation
 
   if (is_nr_UL_slot(scc, slotP)) {
 
@@ -1080,8 +1081,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
           }
         }
       }
-    } else {
-      mac->generate_nr_prach = 0;
+    } else if (mac->ra_state == RA_SUCCEEDED){
+      mac->generate_nr_prach = 2;
     }
     mac->scheduled_response.ul_config = ul_config;
   }

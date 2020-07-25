@@ -448,7 +448,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         nr_get_RA_window(mac);
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach)
+        if (mac->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, prach_resources, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
@@ -493,8 +493,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
 
-        mac->ra_state = WAIT_CONTENTION_RESOLUTION;
         mac->RA_window_cnt = -1;
+        mac->ra_state = RA_SUCCEEDED;
         LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
@@ -571,7 +571,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // mac->RA_tx_subframe = nr_tti_tx;
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach)
+        if (mac->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
 
       } else {
@@ -585,7 +585,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           mac->RA_window_cnt);
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach)
+        if (mac->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
 
       }

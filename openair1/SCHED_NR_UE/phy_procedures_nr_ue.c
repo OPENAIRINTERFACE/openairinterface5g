@@ -2269,7 +2269,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   /* RACH */
   if (get_softmodem_params()->do_ra==1) {
-    if ((ue->UE_mode[gNB_id] == PRACH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
+    if ((ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
   }
@@ -4609,6 +4609,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     if (ue->prach_cnt == 3)
       ue->prach_cnt = 0;
+  } else if (nr_prach == 2) {
+    nr_ra_succeeded(mod_id, ue->CC_id, gNB_id);
   }
 
   // if we're calibrating the PRACH kill the pointer to its resources so that the RA protocol doesn't continue
