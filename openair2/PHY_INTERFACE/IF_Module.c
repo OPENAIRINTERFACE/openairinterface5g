@@ -30,9 +30,9 @@ void handle_rach(UL_IND_t *UL_info) {
     {
       if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 1)
       {
-        LOG_I(MAC, "handle_rach j: %d  UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles: %d\n",
+        LOG_D(MAC, "handle_rach j: %d  UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles: %d\n",
           j, UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles);
-        LOG_I(MAC, "UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:Frame: %d Subframe: %d\n",
+        LOG_D(MAC, "UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:Frame: %d Subframe: %d\n",
           UL_info->frame, UL_info->subframe, NFAPI_SFNSF2SFN(UL_RCC_INFO.rach_ind[j].sfn_sf), NFAPI_SFNSF2SF(UL_RCC_INFO.rach_ind[j].sfn_sf));
       }
       AssertFatal(UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles == 1, "More than 1 preamble not supported\n"); // dump frame/sf and all things in UL_RCC_INFO
@@ -705,7 +705,7 @@ void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
   eNB_MAC_INST *mac        = RC.mac[module_id];
   if (UL_info->subframe == 3)
   {
-    LOG_I(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
+    LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
           UL_info->frame,UL_info->subframe,
           module_id,CC_id,
           UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs,

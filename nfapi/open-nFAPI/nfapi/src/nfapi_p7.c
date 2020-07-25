@@ -4500,6 +4500,7 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 					  {
 						  if(!pullarray8(ppReadPackedMsg, pdu->segments[0].segment_data, pdu->segments[0].segment_length, pdu->segments[0].segment_length, end))
 							return 0;
+#if 0
                                                   if (pdu->segments[0].segment_length == 3)
                                                   {
                                                   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() BCH? segment_data:%x %x %x\n", __FUNCTION__, 
@@ -4508,6 +4509,7 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
                                                       pdu->segments[0].segment_data[2]
                                                       );
                                                   }
+#endif
 					  }
 					  else
 					  {
@@ -6206,8 +6208,6 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			{
 				nfapi_rx_indication_t *pNfapiMsg = (nfapi_rx_indication_t*)pMessageHeader;
 				result = unpack_rx_indication(&pReadPackedMessage,  end, pMessageHeader, config);
-				NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s Celtics RX_IND Frame: %d Subframe %d\n", __FUNCTION__,
-				pNfapiMsg->sfn_sf >> 4, pNfapiMsg->sfn_sf & 15);
 			}
 			else
 				return -1;
