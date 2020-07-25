@@ -76,14 +76,13 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   int f_alloc, mask, StartSymbolIndex, NrOfSymbols;
   uint16_t TBS_bytes;
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
-  ul_config->number_pdus++;
-  nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus - 1].pusch_config_pdu;
+  nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
   int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[Msg3_t_alloc]->startSymbolAndLength;
 
   #ifdef DEBUG_MSG3
-  printf("[DEBUG_MSG3] Configuring Msg3 PDU of %d UL pdus \n", ul_config->number_pdus);
+  printf("[DEBUG_MSG3] Configuring 1 Msg3 PDU of %d UL pdus \n", ul_config->number_pdus);
   #endif
 
   // active BWP start

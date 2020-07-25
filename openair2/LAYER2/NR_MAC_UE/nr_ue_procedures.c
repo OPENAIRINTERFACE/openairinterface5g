@@ -728,9 +728,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.cc_id     = cc_id;
       dcireq.frame     = rx_frame;
       dcireq.slot      = rx_slot;
+      dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-      // we should have received a DL DCI here, so configure DL accordingly
       scheduled_response.dl_config  = &dcireq.dl_config_req;
       scheduled_response.ul_config  = NULL;
       scheduled_response.tx_request = NULL;
@@ -939,12 +939,13 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         nr_scheduled_response_t scheduled_response;
         scheduled_response.ul_config = &mac->ul_config_request;
         scheduled_response.dl_config = NULL;
-        scheduled_response.ul_config->number_pdus++; //TBR fix
-        fapi_nr_ul_config_request_pdu_t *ul_config_list = &scheduled_response.ul_config->ul_config_list[scheduled_response.ul_config->number_pdus - 1];
+        scheduled_response.ul_config->number_pdus++;
+        uint8_t pdu_index = scheduled_response.ul_config->number_pdus - 1;
+        fapi_nr_ul_config_request_pdu_t *ul_config_list = &scheduled_response.ul_config->ul_config_list[pdu_index];
         fapi_nr_tx_request_t tx_req;
         fapi_nr_tx_request_body_t tx_req_body;
 
-        uint16_t TBS_bytes = scheduled_response.ul_config->ul_config_list[scheduled_response.ul_config->number_pdus - 1].pusch_config_pdu.pusch_data.tb_size;
+        uint16_t TBS_bytes = scheduled_response.ul_config->ul_config_list[pdu_index].pusch_config_pdu.pusch_data.tb_size;
 
         //if (IS_SOFTMODEM_NOS1){
         //  // Getting IP traffic to be transmitted
@@ -962,7 +963,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
           //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
           //and block this traffic from being forwarded to the upper layers at the gNB
-          printf("[DEBUG_MSG3] Random data to be tranmsitted (TBS_bytes %d, pdu_index %d ul_config (%p) list (%p): \n", TBS_bytes, scheduled_response.ul_config->number_pdus - 1, scheduled_response.ul_config, ul_config_list);
+          printf("[DEBUG_MSG3] Random data to be tranmsitted (TBS_bytes %d, pdu_index %d ul_config (%p) list (%p): \n", TBS_bytes, pdu_index, scheduled_response.ul_config, ul_config_list);
           //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
           //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
           //have a valid LCID (nr_process_mac_pdu function)
@@ -984,7 +985,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         tx_req.sfn = ul_info->frame_tx;
         tx_req.number_of_pdus = 1;
         tx_req_body.pdu_length = TBS_bytes;
-        tx_req_body.pdu_index = 0;
+        tx_req_body.pdu_index = pdu_index;
         tx_req_body.pdu = ulsch_input_buffer;
         ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
         scheduled_response.tx_request = &tx_req;
@@ -1195,6 +1196,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       mac->generate_nr_prach = 2;
     }
     mac->scheduled_response.ul_config = ul_config;
+    if (mac->ul_config_request.number_pdus > 0)
+      mac->if_module->scheduled_response(&mac->scheduled_response);
   }
 }
 

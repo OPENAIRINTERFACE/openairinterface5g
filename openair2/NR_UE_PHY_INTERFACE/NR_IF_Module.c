@@ -107,17 +107,13 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  // clean previous FAPI messages
-  mac->tx_request.number_of_pdus = 0;
-  mac->ul_config_request.number_pdus = 0;
-  mac->dl_config_request.number_pdus = 0;
-  // clean previous FAPI messages
-
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra){
+  // clean previous FAPI messages
+  mac->tx_request.number_of_pdus = 0;
+
+  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
-  }
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -132,8 +128,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
     break;
   }
 
-  mac->if_module->scheduled_response(&mac->scheduled_response);
-
   return 0;
 }
 
@@ -146,13 +140,13 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
+  LOG_D(PHY,"DEBUG dl_config %d DL pdus\n",dl_config->number_pdus);
+
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
     // UL indication after reception of DCI or DL PDU
-    dl_config->number_pdus = 0;
-    ul_config->number_pdus = 0;
     //hook up pointers
     mac->scheduled_response.dl_config = dl_config;
     mac->scheduled_response.ul_config = ul_config;
@@ -269,12 +263,10 @@ int nr_ue_if_module_kill(uint32_t module_id) {
 
 int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   
-  fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
+  fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-
-  dl_config->sfn=UE_mac->dl_config_request.sfn;
-  dl_config->slot=UE_mac->dl_config_request.slot;
-  dl_config->number_pdus=0;
+  dl_config->sfn = UE_mac->dl_config_request.sfn;
+  dl_config->slot = UE_mac->dl_config_request.slot;
 
   LOG_D(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
 
