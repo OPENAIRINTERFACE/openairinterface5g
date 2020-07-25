@@ -860,7 +860,7 @@ int unpack_p7_tlv_list(unpack_p7_tlv_t unpack_fns[], uint16_t size, uint8_t **pp
 		if(tagMatch == 0)
 		{
 
-			if(generic_tl.tag >= NFAPI_VENDOR_EXTENSION_MIN_TAG_VALUE &&
+			if(generic_tl.tag >= NFAPI_VENDOR_EXTENSION_MIN_TAG_VALUE && 
 			   generic_tl.tag <= NFAPI_VENDOR_EXTENSION_MAX_TAG_VALUE)
 			{
 				int result = unpack_p7_vendor_extension_tlv(&generic_tl, ppReadPackedMsg, end, config, ve);
