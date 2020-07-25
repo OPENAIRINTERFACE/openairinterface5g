@@ -895,7 +895,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       scheduled_response.slot       = rx_slot;
 
       scheduled_response.ul_config->slot = ul_info->slot_tx;
-      scheduled_response.ul_config->number_pdus = 1;
       scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
       scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
       scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
@@ -929,9 +928,120 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       // Note: Contention resolution is currently not active
       if (mac->RA_contention_resolution_timer_active == 1)
         ue_contention_resolution(mod_id, gNB_index, cc_id, ul_info->frame_tx);
+
+    } else if (get_softmodem_params()->do_ra){
+
+      NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
+
+      if (ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
+
+        uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
+        nr_scheduled_response_t scheduled_response;
+        scheduled_response.ul_config = &mac->ul_config_request;
+        scheduled_response.dl_config = NULL;
+        scheduled_response.ul_config->number_pdus++; //TBR fix
+        fapi_nr_ul_config_request_pdu_t *ul_config_list = &scheduled_response.ul_config->ul_config_list[scheduled_response.ul_config->number_pdus - 1];
+        fapi_nr_tx_request_t tx_req;
+        fapi_nr_tx_request_body_t tx_req_body;
+
+        uint16_t TBS_bytes = scheduled_response.ul_config->ul_config_list[scheduled_response.ul_config->number_pdus - 1].pusch_config_pdu.pusch_data.tb_size;
+
+        //if (IS_SOFTMODEM_NOS1){
+        //  // Getting IP traffic to be transmitted
+        //  data_existing = nr_ue_get_sdu(mod_id,
+        //                                cc_id,
+        //                                frame_tx,
+        //                                slot_tx,
+        //                                0,
+        //                                ulsch_input_buffer,
+        //                                TBS_bytes,
+        //                                &access_mode);
+        //}
+
+        //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+        //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+          //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+          //and block this traffic from being forwarded to the upper layers at the gNB
+          printf("[DEBUG_MSG3] Random data to be tranmsitted (TBS_bytes %d, pdu_index %d ul_config (%p) list (%p): \n", TBS_bytes, scheduled_response.ul_config->number_pdus - 1, scheduled_response.ul_config, ul_config_list);
+          //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+          //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+          //have a valid LCID (nr_process_mac_pdu function)
+          ulsch_input_buffer[0] = 0x31;
+          for (int i = 1; i < TBS_bytes; i++) {
+            ulsch_input_buffer[i] = (unsigned char) rand();
+            //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+          }
+        //}
+
+        LOG_D(MAC, "[UE %d] Frame %d, Subframe %d Adding Msg3 UL Config Request for rnti: %x\n",
+          ul_info->module_id,
+          ul_info->frame_tx,
+          ul_info->slot_tx,
+          mac->t_crnti);
+
+        // Config UL TX PDU
+        tx_req.slot = ul_info->slot_tx;
+        tx_req.sfn = ul_info->frame_tx;
+        tx_req.number_of_pdus = 1;
+        tx_req_body.pdu_length = TBS_bytes;
+        tx_req_body.pdu_index = 0;
+        tx_req_body.pdu = ulsch_input_buffer;
+        ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+        scheduled_response.tx_request = &tx_req;
+        scheduled_response.tx_request->tx_request_body = &tx_req_body;
+        scheduled_response.module_id  = ul_info->module_id;
+        scheduled_response.CC_id      = ul_info->cc_id;
+        scheduled_response.frame      = ul_info->frame_rx;
+        scheduled_response.slot       = ul_info->slot_rx;
+
+        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
+          mac->if_module->scheduled_response(&scheduled_response);
+        }
+      }
     }
   }
   return UE_CONNECTION_OK;
+}
+
+// Scheduling the Msg3 transmission according to according to TS 38.213
+// Note: Msg3 tx in the uplink symbols of mixed slot
+void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
+                          frame_t current_frame,
+                          sub_frame_t current_slot,
+                          uint8_t Msg3_tda_id){
+
+  int delta;
+  NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+  int mu = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+  struct NR_PUSCH_TimeDomainResourceAllocationList *pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  // k2 as per 3GPP TS 38.214 version 15.9.0 Release 15 ch 6.1.2.1.1
+  // PUSCH time domain resource allocation is higher layer configured from uschTimeDomainAllocationList in either pusch-ConfigCommon
+  uint8_t k2 = *pusch_TimeDomainAllocationList->list.array[Msg3_tda_id]->k2;
+
+  switch (mu) {
+    case 0:
+      delta = 2;
+      break;
+    case 1:
+      delta = 3;
+      break;
+    case 2:
+      delta = 4;
+      break;
+    case 3:
+      delta = 6;
+      break;
+  }
+
+  mac->msg3_slot = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
+  if (current_slot + k2 + delta > nr_slots_per_frame[mu])
+    mac->msg3_frame = (current_frame + 1) % 1024;
+  else
+    mac->msg3_frame = current_frame;
+
+  #ifdef DEBUG_MSG3
+  LOG_D(MAC, "[DEBUG_MSG3] current_slot %d k2 %d delta %d temp_slot %d mac->msg3_frame %d mac->msg3_slot %d \n", current_slot, k2, delta, current_slot + k2 + delta, mac->msg3_frame, mac->msg3_slot);
+  #endif
 }
 
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x

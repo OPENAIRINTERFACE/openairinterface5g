@@ -2974,7 +2974,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
   module_id_t module_id = dl_info->module_id;
-  int cc_id = dl_info->cc_id, frame_rx = dl_info->proc->frame_rx, nr_tti_rx = dl_info->proc->nr_tti_rx, ta_command, k2, delta;
+  int cc_id = dl_info->cc_id, frame_rx = dl_info->proc->frame_rx, nr_tti_rx = dl_info->proc->nr_tti_rx, ta_command, delta;
   uint8_t gNB_index = dl_info->gNB_index; // *rar;
   //fapi_nr_dci_indication_t *dci_ind = dl_info->dci_ind;
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
@@ -3015,6 +3015,7 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
       ta_command = nr_ue_process_rar(ue->Mod_id,
                                      cc_id,
                                      frame_rx,
+                                     nr_tti_rx,
                                      dlsch0->harq_processes[0]->b,
                                      &ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][gNB_index]->pdcch_config[0].rnti,
                                      prach_resources->ra_PreambleIndex,
@@ -3031,13 +3032,6 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
         nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
 
         if (ue->mode != debug_prach) {
-          ue->ulsch_Msg3_active[gNB_index] = 1;
-          // TS 38.213 ch 8.3 Msg3 PUSCH
-          // PUSCH time domain resource allocation A for normal CP
-          // TS 38.214 ch 6.1.2.1.1
-          k2 = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][0];
-          sliv_S = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][1];
-          sliv_L = table_6_1_2_1_1_2_time_dom_res_alloc_A[0][2];
 
           switch (mu_pusch) {
             case 0:
@@ -3054,28 +3048,10 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
             break;
           }
 
-          ue->Msg3_startSymbol[gNB_index] = sliv_S;
-          ue->Msg3_Length[gNB_index] = sliv_L;
-          ue->ulsch_Msg3_subframe[gNB_index] = (nr_tti_rx + k2 + delta) % slots_per_frame;
-          if (nr_tti_rx + k2 + delta > slots_per_frame){
-            ue->ulsch_Msg3_frame[gNB_index] = (frame_rx + 1) % 1024;
-          } else {
-            ue->ulsch_Msg3_frame[gNB_index] = frame_rx;
-          }
+          #ifdef DEBUG_RA
+          LOG_D(PHY,"[UE %d][RAPROC] Msg3 nr_tti_rx %d delta %d\n", ue->Mod_id, nr_tti_rx, delta);
+          #endif
 
-          LOG_D(PHY,"[UE %d][RAPROC] Got Msg3_alloc Frame %d subframe %d: Msg3_frame %d, Msg3_subframe %d\n",
-                ue->Mod_id,
-                frame_rx,
-                nr_tti_rx,
-                ue->ulsch_Msg3_frame[gNB_index],
-                ue->ulsch_Msg3_subframe[gNB_index]);
-          // harq_pid = subframe2harq_pid(&ue->frame_parms,
-          //                              ue->ulsch_Msg3_frame[gNB_index],
-          //                              ue->ulsch_Msg3_subframe[gNB_index]);
-          // ue->ulsch[gNB_index]->harq_processes[harq_pid]->round = 0;
-          // ue->Msg3_timer[gNB_index] = 10;
-          // ue->ulsch[gNB_index].power_offset = 6;
-          // ue->ulsch_no_allocation_counter[gNB_index] = 0;
           ue->UE_mode[gNB_index] = RA_RESPONSE;
         }
       } else {

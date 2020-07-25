@@ -197,6 +197,17 @@ and fills the PRACH PDU per each FD occasion.
 */
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
+/* \brief This function schedules the Msg3 transmission
+@param
+@param
+@param
+@returns void
+*/
+void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
+                          frame_t current_frame,
+                          sub_frame_t current_slot,
+                          uint8_t Msg3_tda_id);
+
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
 @param CC_id Index to a component carrier
@@ -212,6 +223,7 @@ random-access procedure
 uint16_t nr_ue_process_rar(module_id_t mod_id,
                            int CC_id,
                            frame_t frameP,
+                           sub_frame_t slotP,
                            uint8_t * dlsch_buffer,
                            rnti_t * t_crnti,
                            uint8_t preamble_index,
