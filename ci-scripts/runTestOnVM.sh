@@ -2052,7 +2052,7 @@ function run_test_on_vm {
         fi
 
         ####################
-        ## FeMSMS CASE noS1 ##
+        ## FeMBMS CASE noS1 ##
         ####################
         CONF_FILE=lte-fdd-fembms-basic-sim.conf
         CN_CONFIG="noS1"
