@@ -39,20 +39,36 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
     * `unpack_tx_data_request`
 * Similarly change all the `unpack` functions within the switch-case block.
 * Modify the behaviour of `check_unpack_length()` for the new `TAGS`
+    * this is where the unpack functions are called
+        * `dl_tti_request` [x]
+        * `ul_tti_request`
+        * `ul_dci_request`
+        * `tx_data_request`
 
 ### Task-C
-* Write the `dl_tti` alternative for `nfapi_vnf_p7_dl_config_req()` in `vnf_p7_interface.c` and other such functions.
-* Also check the function `vnf_p7_pack_and_send_p7_msg()` in `vnf_p7.c` for upgrade.
-* Write the `dl_tti` equivalent for `oai_nfapi_dl_config_req` in `nfapi_vnf.c` and other such functions.
-* Check if `nr_schedule_response()` needs to be upgraded
+* Write the `ul_tti` alternative for `nfapi_vnf_p7_ul_config_req()` in `vnf_p7_interface.c` and other such functions.
+    * `dl_tti` is present as `nr_dl_config` [x]
+    * `ul_tti`
+    * `ul_dci`
+    * `tx_data`
 * Resolve the hard-coded areas in source code. [`HIGH-PRIORITY`] [x]
-* Check whether the code can support latency of 0.5 ms for oai_slot_indication
+* Write the `ul_tti` equivalent for `oai_nfapi_dl_config_req` in `nfapi_vnf.c` and other such functions.
+    * `dl_tti` is present as `nr_dl_config` [x]
+    * `ul_tti`
+    * `ul_dci`
+    * `tx_data`
+* Check if `nr_schedule_response()` needs to be upgraded [x]
+    * only a couple of `NFAPI_MODE!=VNF_MODE` checks *can be added* before calling the functions to handle PDUs
+    * we need to add `NFAPI_MODE!=MONOLITHIC` checks before `oai_nfapi_dl_config_req` and other such fns [x]
+* Sync with the latest stable commit in `develop` branch [`LOW-PRIORITY`]
+    * check deviations
+
 
 ### Testing
 * Test by running VNF on a terminal and PNF in rfsim parallely
 * If all works fine, move to UE testing.
 * Check if the `FAPI` core functionality is not broken by running gNB in monolithic mode
-* Sync with the latest stable commit in `develop` branch [`HIGH-PRIORITY`]
+* Check whether the code can support latency of 0.5 ms for oai_slot_indication
 
 * Testing with a UE
     * Run VNF

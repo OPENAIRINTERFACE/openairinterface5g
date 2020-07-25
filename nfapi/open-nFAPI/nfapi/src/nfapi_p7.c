@@ -6858,14 +6858,21 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 
 	// look for the specific message
 	switch (pMessageHeader->message_id)
-	{
+	{   
+		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
+			if (check_unpack_length(NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST, unpackedBufLen))
+				result = unpack_dl_tti_request(&pReadPackedMessage,  end, pMessageHeader, config);
+			else
+				return -1;
+			break;
+#if 0
 		case NFAPI_DL_CONFIG_REQUEST:
 			if (check_unpack_length(NFAPI_DL_CONFIG_REQUEST, unpackedBufLen))
 				result = unpack_dl_config_request(&pReadPackedMessage,  end, pMessageHeader, config);
 			else
 				return -1;
 			break;
-
+#endif
 		case NFAPI_UL_CONFIG_REQUEST:
 			if (check_unpack_length(NFAPI_UL_CONFIG_REQUEST, unpackedBufLen))
 				result = unpack_ul_config_request(&pReadPackedMessage, end, pMessageHeader, config);

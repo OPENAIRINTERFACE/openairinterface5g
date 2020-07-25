@@ -168,7 +168,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     switch (dl_tti_pdu->PDUType) {
       case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
 	gNB->pbch_configured=1;
-
+        // if (NFAPI_MODE!=NFAPI_MODE_VNF) ?
         handle_nr_nfapi_ssb_pdu(gNB,frame,slot,
                                 dl_tti_pdu);
 
@@ -176,6 +176,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
       case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
 	AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
+        // if (NFAPI_MODE!=NFAPI_MODE_VNF) ?
         handle_nfapi_nr_pdcch_pdu(gNB,
 				  frame, slot,
 				  &dl_tti_pdu->pdcch_pdu);
@@ -191,13 +192,16 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 	AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
 		    pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
         uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
+        // if (NFAPI_MODE!=NFAPI_MODE_VNF) ?
         handle_nr_nfapi_pdsch_pdu(gNB,frame,slot,&dl_tti_pdu->pdsch_pdu, sdu);
       }
     }
   }
 
-  if (UL_tti_req!=NULL) memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
+  if (UL_tti_req!=NULL) 
+    memcpy(&gNB->UL_tti_req,UL_tti_req,sizeof(nfapi_nr_ul_tti_request_t));
   
+  // if (NFAPI_MODE!=NFAPI_MODE_VNF) //should we enclose the for in this?
   for (int i=0;i<number_ul_dci_pdu;i++) {
     handle_nfapi_nr_ul_dci_pdu(gNB,
 			      frame, slot,

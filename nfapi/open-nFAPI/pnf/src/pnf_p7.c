@@ -875,7 +875,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				// If we ever need to "send" a dummy ul_config this won't work!!!
 				// send_dummy_subframe(pnf_p7, sfn_sf_tx);
 
-				send_dummy_slot(pnf_p7, sfn_tx, slot_tx);
+				// send_dummy_slot(pnf_p7, sfn_tx, slot_tx);
 		}
 
 
