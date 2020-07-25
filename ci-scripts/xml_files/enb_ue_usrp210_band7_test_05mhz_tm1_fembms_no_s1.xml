@@ -27,7 +27,7 @@
 	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
  030201 090109
- 030104 000001 090104 000002 040606 000001 090109 030201
+ 030104 000001 090104 000002 040605 000001 090109 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -71,7 +71,7 @@
 		<desc>Terminate OAI UE</desc>
 	</testCase>
 
-	<testCase id="040606">
+	<testCase id="040605">
 		<class>Iperf</class>
 		<desc>iperf (5MHz - DL/1.5Mbps/UDP/MBMS-sink)(20 sec)</desc>
 		<iperf_args>-c 10.0.2.2 -u -b 1.5M -t 20 -i 1 -fm -B 10.0.2.1</iperf_args>
