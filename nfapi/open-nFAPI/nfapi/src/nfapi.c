@@ -701,7 +701,7 @@ uint8_t unpack_tl(uint8_t **ppReadPackedMsg, nfapi_tl_t *tl, uint8_t *end)
 #include <sys/stat.h>
 #include <fcntl.h>
 #define MSG( X ) r = write(fd, X, sizeof(X) - 1)
-void show_backtrace()
+static void show_backtrace()
 {
 	printf("Bruins\n");
 	fflush(stdout);
