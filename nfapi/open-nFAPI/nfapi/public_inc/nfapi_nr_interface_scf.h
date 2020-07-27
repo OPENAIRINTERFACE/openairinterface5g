@@ -1322,6 +1322,7 @@ typedef struct
 } nfapi_nr_ul_tti_request_number_of_groups_t;
 
 typedef struct {
+  nfapi_p7_message_header_t header;
   uint16_t SFN; //0->1023   
   uint16_t Slot;//0->319
   uint8_t n_pdus;//Number of PDUs that are included in this message. All PDUs in the message are numbered in order. Value 0 -> 255

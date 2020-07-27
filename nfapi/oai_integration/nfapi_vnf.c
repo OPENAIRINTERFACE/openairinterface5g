@@ -1354,6 +1354,26 @@ int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   return retval;
 }
 
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req) {
+  nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
+
+  ul_tti_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ul_tti_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST;
+  
+  int retval = nfapi_vnf_p7_ul_tti_req(p7_config, ul_tti_req);
+
+  if (retval!=0) {
+    LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
+  } else {
+    // Reset number of PDUs so that it is not resent
+    ul_tti_req->n_pdus = 0;
+    ul_tti_req->n_group = 0;
+    ul_tti_req->n_ulcch = 0;
+    ul_tti_req->n_ulsch = 0;
+  }
+  return retval;
+}
+
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   ul_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!

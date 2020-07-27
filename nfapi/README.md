@@ -26,37 +26,42 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 ### Task-A [packing]
 * Modify `nfapi_p7_message_pack()` in `nfapi_p7.c`
 * In the switch case, change the labels as well as the pack functions:
-    * `pack_dl_config_request` becomes `pack_dl_tti_request` [x]
-    * `pack_ul_config_request` becomes `pack_ul_tti_request`
+    * `pack_dl_config_request` becomes `pack_dl_tti_request`    [x]
+    * `pack_ul_config_request` becomes `pack_ul_tti_request`    [x]
     * `pack_hi_dci0_request` becomes `pack_ul_dci_request`
     * `pack_tx_request` becomes `pack_tx_data_request`
 
 ### Task-B [unpacking]
 * Modify `nfapi_p7_message_unpack()` in `nfapi_p7.c`
-    * `unpack_dl_tti_request` [x]
-    * `unpack_ul_tti_request`
+    * `unpack_dl_tti_request`   [x]
+    * `unpack_ul_tti_request`   [x]
     * `unpack_ul_dci_request`
     * `unpack_tx_data_request`
+
 * Similarly change all the `unpack` functions within the switch-case block.
+
 * Modify the behaviour of `check_unpack_length()` for the new `TAGS`
     * this is where the unpack functions are called
-        * `dl_tti_request` [x]
-        * `ul_tti_request`
+        * `dl_tti_request`  [x]
+        * `ul_tti_request`  [x]
         * `ul_dci_request`
         * `tx_data_request`
 
 ### Task-C
 * Write the `ul_tti` alternative for `nfapi_vnf_p7_ul_config_req()` in `vnf_p7_interface.c` and other such functions.
     * `dl_tti` is present as `nr_dl_config` [x]
-    * `ul_tti`
+    * `ul_tti` [x]
     * `ul_dci`
     * `tx_data`
+
 * Resolve the hard-coded areas in source code. [`HIGH-PRIORITY`] [x]
+
 * Write the `ul_tti` equivalent for `oai_nfapi_dl_config_req` in `nfapi_vnf.c` and other such functions.
     * `dl_tti` is present as `nr_dl_config` [x]
-    * `ul_tti`
+    * `ul_tti` is present as `oai_nfapi_ul_tti_req()` [x]
     * `ul_dci`
     * `tx_data`
+
 * Check if `nr_schedule_response()` needs to be upgraded [x]
     * only a couple of `NFAPI_MODE!=VNF_MODE` checks *can be added* before calling the functions to handle PDUs
     * we need to add `NFAPI_MODE!=MONOLITHIC` checks before `oai_nfapi_dl_config_req` and other such fns [x]
