@@ -2252,20 +2252,18 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 */
 
    if (get_softmodem_params()->usim_test==0) {
-      LOG_D(PHY, "Sending PUCCH\n");
+      LOG_I(PHY, "Generating PUCCH\n");
       pucch_procedures_ue_nr(ue,
                              gNB_id,
                              proc,
-                             TRUE);
+                             FALSE);
    }
 
-    LOG_D(PHY, "Sending data \n");
+    LOG_I(PHY, "Sending Uplink data \n");
     nr_ue_pusch_common_procedures(ue,
-                                  harq_pid,
                                   slot_tx,
-                                  thread_id,
-                                  gNB_id,
-                                  &ue->frame_parms);
+                                  &ue->frame_parms,1);
+                                  //ue->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->pusch_pdu.nrOfLayers);
   }
   //LOG_M("txdata.m","txs",ue->common_vars.txdata[0],1228800,1,1);
 
@@ -3373,6 +3371,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
     }
 
+    // exit dlsch procedures as there are no active dlsch
+    if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE)
+      return;
 
     // start ldpc decode for CW 0
     dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,

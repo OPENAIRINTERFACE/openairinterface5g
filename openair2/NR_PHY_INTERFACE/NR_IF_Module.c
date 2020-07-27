@@ -88,7 +88,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
       case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
 
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        if (get_softmodem_params()->phy_test == 0) {
+        //if (get_softmodem_params()->phy_test == 0) {
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
           // handle harq
           int harq_idx_s = 0;
@@ -120,7 +120,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
               }
             }
           }
-        }
+        //}
         break;
       }
 

@@ -476,17 +476,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
-                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t thread_id,
-                                      uint8_t gNB_id,
-                                      NR_DL_FRAME_PARMS *frame_parms) {
+                                      NR_DL_FRAME_PARMS *frame_parms,
+                                      uint8_t Nl) {
 
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
   int timing_advance;
-  uint8_t Nl = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->pusch_pdu.nrOfLayers; // cw 0
 
   /////////////////////////IFFT///////////////////////
   ///////////
