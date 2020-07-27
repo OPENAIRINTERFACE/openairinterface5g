@@ -1002,6 +1002,9 @@ static uint8_t pack_dl_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
         }
 }
 
+
+
+
 static uint8_t pack_ul_config_request_ulsch_rel8_value(void *tlv, uint8_t **ppWritePackedMsg, uint8_t * end)
 {
 	nfapi_ul_config_ulsch_pdu_rel8_t* ulsch_pdu_rel8 = (nfapi_ul_config_ulsch_pdu_rel8_t*)tlv;
@@ -1056,6 +1059,137 @@ static uint8_t pack_ul_config_request_ulsch_rel13_value(void *tlv, uint8_t **ppW
 			push8(ulsch_pdu_rel13->empty_symbols_due_to_re_tunning, ppWritePackedMsg, end));
 }
 
+//Pack fns for ul_tti PDUS
+
+
+static uint8_t pack_ul_tti_request_prach_pdu(nfapi_nr_prach_pdu_t* prach_pdu, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+	return(
+		push16(prach_pdu->phys_cell_id, ppWritePackedMsg, end) &&
+		push8(prach_pdu->num_prach_ocas, ppWritePackedMsg, end) &&
+		push8(prach_pdu->prach_format, ppWritePackedMsg, end) &&
+		push8(prach_pdu->num_ra, ppWritePackedMsg, end) &&
+		push8(prach_pdu->prach_start_symbol, ppWritePackedMsg, end) &&
+		push16(prach_pdu->num_cs, ppWritePackedMsg, end)
+		// TODO: ignoring beamforming tlv for now
+	);
+	
+}
+
+static uint8_t pack_ul_tti_request_pucch_pdu(nfapi_nr_pucch_pdu_t* pucch_pdu, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+	return(
+		push16(pucch_pdu->rnti, ppWritePackedMsg, end) &&
+		push32(pucch_pdu->handle, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->bwp_size, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->bwp_start, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->subcarrier_spacing, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->cyclic_prefix, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->format_type, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->multi_slot_tx_indicator, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->prb_start, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->prb_size, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->start_symbol_index, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->nr_of_symbols, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->freq_hop_flag, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->second_hop_prb, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->group_hop_flag, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->sequence_hop_flag, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->hopping_id, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->initial_cyclic_shift, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->data_scrambling_id, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->time_domain_occ_idx, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->pre_dft_occ_idx, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->pre_dft_occ_len, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->add_dmrs_flag, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->dmrs_scrambling_id, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->dmrs_cyclic_shift, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->sr_flag, ppWritePackedMsg, end) &&
+		push8(pucch_pdu->bit_len_harq, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->bit_len_csi_part1, ppWritePackedMsg, end) &&
+		push16(pucch_pdu->bit_len_csi_part2, ppWritePackedMsg, end) 
+		// TODO: ignoring beamforming tlv for now
+	);
+	
+}
+
+//pack_ul_tti_request_pusch_pdu
+static uint8_t pack_ul_tti_request_pusch_pdu(nfapi_nr_pusch_pdu_t* pusch_pdu, uint8_t **ppWritePackedMsg, uint8_t *end)
+{ 
+	//Optional data indicated by pdubitmap
+ // nfapi_nr_pusch_data_t pusch_data;
+  //nfapi_nr_pusch_uci_t  pusch_uci;
+  //nfapi_nr_pusch_ptrs_t pusch_ptrs;
+  //nfapi_nr_dfts_ofdm_t dfts_ofdm;
+	return(
+		push16(pusch_pdu->pdu_bit_map, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->rnti, ppWritePackedMsg, end) &&
+		push32(pusch_pdu->handle, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->bwp_size, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->bwp_start, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->subcarrier_spacing, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->cyclic_prefix, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->target_code_rate, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->qam_mod_order, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->mcs_index, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->mcs_table, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->transform_precoding, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->data_scrambling_id, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->nrOfLayers, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->ul_dmrs_symb_pos, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->dmrs_config_type, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->ul_dmrs_scrambling_id, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->scid, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->num_dmrs_cdm_grps_no_data, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->dmrs_ports, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->resource_alloc, ppWritePackedMsg, end) &&
+		pusharray8(pusch_pdu->resource_alloc,36,36,ppWritePackedMsg, end) &&
+		push16(pusch_pdu->dmrs_ports, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->rb_start, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->rb_size, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->vrb_to_prb_mapping, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->frequency_hopping, ppWritePackedMsg, end) &&
+		push16(pusch_pdu->tx_direct_current_location, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->uplink_frequency_shift_7p5khz, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->start_symbol_index, ppWritePackedMsg, end) &&
+		push8(pusch_pdu->nr_of_symbols, ppWritePackedMsg, end) 
+        //Pack Optional Data only included if indicated in pduBitmap
+		// TODO: ignoring beamforming tlv for now
+	);
+	
+}
+
+static uint8_t pack_ul_tti_request_srs_pdu(nfapi_nr_srs_pdu_t* srs_pdu, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+	return(
+		push16(srs_pdu->rnti, ppWritePackedMsg, end) &&
+		push32(srs_pdu->handle, ppWritePackedMsg, end) &&
+		push16(srs_pdu->bwp_size, ppWritePackedMsg, end) &&
+		push16(srs_pdu->bwp_start, ppWritePackedMsg, end) &&
+		push8(srs_pdu->subcarrier_spacing, ppWritePackedMsg, end) &&
+		push8(srs_pdu->cyclic_prefix, ppWritePackedMsg, end) &&
+		push8(srs_pdu->num_ant_ports, ppWritePackedMsg, end) &&
+		push8(srs_pdu->num_symbols, ppWritePackedMsg, end) &&
+		push8(srs_pdu->num_repetitions, ppWritePackedMsg, end) &&
+		push8(srs_pdu->time_start_position, ppWritePackedMsg, end) &&
+		push8(srs_pdu->config_index, ppWritePackedMsg, end) &&
+		push16(srs_pdu->sequence_id, ppWritePackedMsg, end) &&
+		push8(srs_pdu->bandwidth_index, ppWritePackedMsg, end) &&
+		push8(srs_pdu->comb_size, ppWritePackedMsg, end) &&
+		push8(srs_pdu->comb_offset, ppWritePackedMsg, end) &&
+		push8(srs_pdu->cyclic_shift, ppWritePackedMsg, end) &&
+		push8(srs_pdu->frequency_position, ppWritePackedMsg, end) &&
+		push8(srs_pdu->frequency_shift, ppWritePackedMsg, end) &&
+		push8(srs_pdu->frequency_hopping, ppWritePackedMsg, end) &&
+		push8(srs_pdu->group_or_sequence_hopping, ppWritePackedMsg, end) &&
+		push8(srs_pdu->resource_type, ppWritePackedMsg, end) &&
+		push16(srs_pdu->t_srs, ppWritePackedMsg, end) &&
+		push16(srs_pdu->t_offset, ppWritePackedMsg, end) 
+
+		// TODO: ignoring beamforming tlv for now
+	);
+	
+}
 static uint8_t pack_ul_config_request_ulsch_pdu(nfapi_ul_config_ulsch_pdu* ulsch_pdu, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	return ( pack_tlv(NFAPI_UL_CONFIG_REQUEST_ULSCH_PDU_REL8_TAG, &ulsch_pdu->ulsch_pdu_rel8, ppWritePackedMsg, end, &pack_ul_config_request_ulsch_rel8_value) &&
@@ -1408,6 +1542,59 @@ static uint8_t pack_ul_config_request_nrach_pdu_rel13_value(void *tlv, uint8_t *
 	
 }
 
+
+
+static uint8_t pack_ul_tti_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+	nfapi_nr_ul_tti_request_number_of_pdus_t* value = (nfapi_nr_ul_tti_request_number_of_pdus_t*)tlv;
+
+	if(!(push8(value->pdu_size, ppWritePackedMsg, end) &&
+	 	 push8(value->pdu_type, ppWritePackedMsg, end) ))
+		  return 0;
+
+
+	// first natch the pdu type, then call the respective function
+	switch(value->pdu_type)
+	{
+		case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
+		{
+			if(!pack_ul_tti_request_prach_pdu(&value->prach_pdu, ppWritePackedMsg, end))
+				return 0;
+		}
+		break;
+
+		case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
+		{
+			if(!pack_ul_tti_request_pucch_pdu(&value->pucch_pdu, ppWritePackedMsg, end))
+				return 0;
+		}
+		break;
+		case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+		{
+			if(!pack_ul_tti_request_pusch_pdu(&value->pusch_pdu, ppWritePackedMsg, end))
+				return 0;
+		}
+		break;
+		case NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE:
+		{
+			if(!pack_ul_tti_request_srs_pdu(&value->srs_pdu, ppWritePackedMsg, end))
+				return 0;
+		}
+		break;
+
+		default:
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "FIXME : Invalid UL_TTI pdu type %d \n", value->pdu_type );
+		}
+		break;
+
+
+	}
+
+	return 1;
+}
+
+
 static uint8_t pack_ul_config_request_body_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	nfapi_ul_config_request_body_t* value = (nfapi_ul_config_request_body_t*)tlv;
@@ -1581,6 +1768,38 @@ static uint8_t pack_ul_config_request_body_value(void* tlv, uint8_t **ppWritePac
 	}
 	return 1;
 }
+
+
+static uint8_t pack_ul_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
+{
+	nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t*)msg;
+
+	if (!(push16(pNfapiMsg->SFN , ppWritePackedMsg, end) &&
+		push16(pNfapiMsg->Slot , ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->n_pdus , ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->rach_present, ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->n_ulsch, ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->n_ulcch, ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->n_group, ppWritePackedMsg, end) ))
+			return 0;
+		
+	for(int i=0; i<pNfapiMsg->n_pdus; i++)
+	{
+		if(!pack_tlv(NFAPI_NR_UL_TTI_PDU_LIST_REL_IISC, &pNfapiMsg->pdus_list, ppWritePackedMsg, end, &pack_ul_tti_pdu_list_value))
+			return 0;
+
+	}
+#if 0
+	for(int i=0; i<pNfapiMsg->n_group; i++)
+	{
+		if(!pack_tlv(NFAPI_NR_UL_TTI_GROUP_LIST_REL_IISC, &pNfapiMsg->groups_list, ppWritePackedMsg, end, &pack_ul_tti_groups_list_value))
+			return 0;
+
+	}
+#endif
+	return 1;
+}
+
 
 static uint8_t pack_ul_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
@@ -2977,16 +3196,20 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
 			result = pack_dl_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
+
+		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
+			result = pack_ul_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
+			break;
 #if 0
 		case NFAPI_DL_CONFIG_REQUEST:
                   //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() NFAPI_DL_CONFIG_REQUEST\n", __FUNCTION__);
 			result = pack_dl_config_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
-#endif
+
 		case NFAPI_UL_CONFIG_REQUEST:
 			result = pack_ul_config_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
-
+#endif
 		case NFAPI_HI_DCI0_REQUEST:
 			result = pack_hi_dci0_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
@@ -4189,6 +4412,28 @@ static uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 			 unpack_p7_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
 }
 
+
+static uint8_t unpack_ul_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
+{
+	#if 0
+	nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t*)msg;
+    //TODO: Check if we need to add a seperate tag for ul_tti_request_body
+	unpack_p7_tlv_t unpack_fns[] =
+	{
+		{ NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST, &pNfapiMsg->ul_tti_request_body, &unpack_dl_config_request_body_value},
+	};
+
+	return ( pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) &&
+		    pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
+			pull8(ppReadPackedMsg, &pNfapiMsg->n_pdus, end) &&
+			pull8(ppReadPackedMsg, &pNfapiMsg->n_group, end) &&
+			pull8(ppReadPackedMsg, &pNfapiMsg->rach_present, end) &&
+			pull8(ppReadPackedMsg, &pNfapiMsg->n_ulcch, end) &&
+			pull8(ppReadPackedMsg, &pNfapiMsg->n_ulsch, end) &&
+			unpack_p7_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
+#endif
+	return 1;
+}
 
 static uint8_t unpack_dl_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
 {
@@ -6865,6 +7110,13 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			else
 				return -1;
 			break;
+
+		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
+			if (check_unpack_length(NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST, unpackedBufLen))
+				result = unpack_ul_tti_request(&pReadPackedMessage,  end, pMessageHeader, config);
+			else
+				return -1;
+			break;
 #if 0
 		case NFAPI_DL_CONFIG_REQUEST:
 			if (check_unpack_length(NFAPI_DL_CONFIG_REQUEST, unpackedBufLen))
@@ -6872,14 +7124,14 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			else
 				return -1;
 			break;
-#endif
+
 		case NFAPI_UL_CONFIG_REQUEST:
 			if (check_unpack_length(NFAPI_UL_CONFIG_REQUEST, unpackedBufLen))
 				result = unpack_ul_config_request(&pReadPackedMessage, end, pMessageHeader, config);
 			else
 				return -1;
 			break;
-
+#endif
 		case NFAPI_HI_DCI0_REQUEST:
 			if (check_unpack_length(NFAPI_HI_DCI0_REQUEST, unpackedBufLen))
 				result = unpack_hi_dci0_request(&pReadPackedMessage,  end, pMessageHeader, config);
