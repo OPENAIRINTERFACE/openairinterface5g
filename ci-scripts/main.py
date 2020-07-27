@@ -2643,7 +2643,7 @@ class OaiCiTest():
 			else:
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
 				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
-				global_status = OAI_UE_PROCESS_NO_MBMS_MSGS
+				global_status = CONST.OAI_UE_PROCESS_NO_MBMS_MSGS
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
