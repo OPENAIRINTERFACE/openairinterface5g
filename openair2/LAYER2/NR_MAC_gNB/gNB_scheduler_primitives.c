@@ -818,7 +818,7 @@ void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
     pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d] = dci_size;
     AssertFatal(pdcch_pdu_rel15->dci_pdu.PayloadSizeBits[d]<=64, "DCI sizes above 64 bits not yet supported");
 
-    if(dci_formats[d]==NR_DL_DCI_FORMAT_1_1)
+    if(dci_formats[d]==NR_DL_DCI_FORMAT_1_1 || dci_formats[d]==NR_UL_DCI_FORMAT_0_1)
       prepare_dci(secondaryCellGroup,&dci_pdu_rel15[d],dci_formats[d],bwp_id);
     
     /// Payload generation

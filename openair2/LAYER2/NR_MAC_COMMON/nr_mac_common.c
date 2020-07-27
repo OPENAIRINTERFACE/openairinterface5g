@@ -2010,7 +2010,6 @@ uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
       }
       // Precoding info and number of layers
       long transformPrecoder;
-      dci_pdu->precoding_information.nbits = 0;
       if (pusch_Config->transformPrecoder == NULL){
         // if transform precoder is null, apply the values from msg3
         if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)

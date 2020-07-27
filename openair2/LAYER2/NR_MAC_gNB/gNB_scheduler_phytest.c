@@ -474,6 +474,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int *dci_formats, int *rnti_types,
+                  int time_domain_assignment,
                   int n_ubwp, int bwp_id) {
 
   switch(dci_formats[(pdcch_pdu_rel15->numDlDci)-1]) {
@@ -482,7 +483,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                                                                                          pusch_pdu->rb_start,
 	                                                                                 NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
 
-      dci_pdu_rel15->time_domain_assignment.val = 2; // row index used here instead of SLIV;
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
       dci_pdu_rel15->mcs = 9;
 
@@ -497,7 +498,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
       dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
       dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
-      //dci_pdu_rel15->dai[0].val = ???; //TODO
+      dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator
       if (n_ubwp < 4)
         dci_pdu_rel15->bwp_indicator.val = bwp_id;
@@ -511,7 +512,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       else
         AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
       // time domain assignment
-      dci_pdu_rel15->time_domain_assignment.val = 2;
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
       // mcs
       dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
       // tpc command for pusch
@@ -918,8 +919,8 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
       pusch_pdu->pusch_identity = *scc->physCellId;
   }
   pusch_dmrs_AdditionalPosition_t additional_pos;
-  if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL){printf("%d\n",2);
-    additional_pos = 2;}
+  if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL)
+    additional_pos = 2;
   else {
     if (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3)
       additional_pos = 3;
@@ -1052,9 +1053,10 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
    return;
   }
   else {
-    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-    config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,n_ubwp,bwp_id);
-    fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+      dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
+      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,n_ubwp,bwp_id);
+      fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+      free(dci_pdu_rel15);
   }
 }
 
