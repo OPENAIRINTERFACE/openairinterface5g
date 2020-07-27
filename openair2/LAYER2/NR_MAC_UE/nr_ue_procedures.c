@@ -773,8 +773,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     uint16_t rnti               = 0x1234;
     uint32_t rb_size            = 50;
     uint32_t rb_start           = 0;
-    uint8_t  nr_of_symbols      = 12;
-    uint8_t  start_symbol_index = 2;
+    uint8_t  nr_of_symbols      = 11;
+    uint8_t  start_symbol_index = 0;
     uint8_t  nrOfLayers         = 1;
     uint8_t  mcs_index          = 9;
     uint8_t  mcs_table          = 0;
@@ -3532,7 +3532,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     dci_pdu_rel15->cbgfi.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->cbgfi.nbits)-1);
     // DMRS sequence init
     pos+=1;
-    dci_pdu_rel15->dmrs_sequence_initialization = (*dci_pdu>>(dci_size-pos))&0x1;
+    dci_pdu_rel15->dmrs_sequence_initialization.val = (*dci_pdu>>(dci_size-pos))&0x1;
     break;
 
   }
