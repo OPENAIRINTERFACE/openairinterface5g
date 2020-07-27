@@ -1556,7 +1556,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
               printf("No eMBMS configuration, skipping it\n");
               // eMTC configuration
-              char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char brparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
               config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
               RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
@@ -1565,7 +1565,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               else                            printf("No eMTC configuration, skipping it\n");
 
               // Sidelink configuration
-              char SLparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char SLparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
               config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
               // Sidelink Resource pool information

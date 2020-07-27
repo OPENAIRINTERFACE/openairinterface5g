@@ -157,6 +157,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
+
   // intialize transport
   init_nr_ue_transport(ue, abstraction_flag);
 }
@@ -366,6 +367,7 @@ static void UE_synch(void *arg) {
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
+
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_tti_tx);
   uint8_t gNB_id = 0;
@@ -436,6 +438,23 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
       pdcp_run(&ctxt);
     }
   }
+
+  // no UL for now
+  /*
+  if (UE->mac_enabled==1) {
+    //  trigger L2 to run ue_scheduler thru IF module
+    //  [TODO] mapping right after NR initial sync
+    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
+      UE->ul_indication.module_id = 0;
+      UE->ul_indication.gNB_index = 0;
+      UE->ul_indication.cc_id = 0;
+      UE->ul_indication.frame = proc->frame_rx;
+      UE->ul_indication.slot = proc->nr_tti_rx;
+      UE->if_inst->ul_indication(&UE->ul_indication);
+    }
+  }
+  */
+
 }
 
 /*!
@@ -557,6 +576,12 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
+
+  if (IS_SOFTMODEM_RFSIM) {
+    LOG_D(PHY,"SET rx_offset %d \n",UE->rx_offset);
+    //UE->rx_offset_diff=0;
+    return 0;
+  }
 
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&

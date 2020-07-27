@@ -129,9 +129,9 @@ int s1ap_eNB_encode_initiating(S1AP_S1AP_PDU_t *pdu,
       return -1;
   }
 
-  //if (asn1_xer_print) {
+  if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_S1AP_S1AP_PDU, (void *)pdu);
-  //}
+  }
 
   memset(&res, 0, sizeof(res));
   res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_S1AP_S1AP_PDU, pdu);

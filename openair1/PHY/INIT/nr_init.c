@@ -176,6 +176,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
+  LOG_D(PHY,"Initializing PUSCH DMRS Gold sequence with (%x,%x)\n",Nid_pusch[0],Nid_pusch[1]);
   nr_gold_pusch(gNB, &Nid_pusch[0]);
 
   /// Transport init necessary for NR synchro
@@ -502,6 +503,12 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
+
+  for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
+    gNB->pucch[i] = new_gNB_pucch();
+    AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
+  }
 
   for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
 

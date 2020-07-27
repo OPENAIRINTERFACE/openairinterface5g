@@ -611,6 +611,18 @@ store_dlsch_buffer(module_id_t Mod_id,
 #endif
     }
 
+    /* hack: in schedule_ue_spec, 3 bytes are "reserved" (this should be
+     * done better). An RLC AM entity may ask for only 2 bytes for
+     * ACKing and get a TBS of 32 bits and due to these 3 reserved bytes we may
+     * end up with only 1 byte left for RLC, which is not enough. This hack
+     * prevents the problem. To be done better at some point. If the function
+     * schedule_ue_spec is (has been) reworked, this hack can be removed.
+     * Dig for "TBS - ta_len - header_length_total - sdu_length_total - 3"
+     * in schedule_ue_spec.
+     */
+    if (UE_template->dl_buffer_total > 0 && UE_template->dl_buffer_total <= 2)
+      UE_template->dl_buffer_total += 3;
+
     if (UE_template->dl_buffer_total > 0)
       LOG_D(MAC,
             "[eNB %d] Frame %d Subframe %d : RLC status for UE %d : total DL buffer size %d and total number of pdu %d \n",

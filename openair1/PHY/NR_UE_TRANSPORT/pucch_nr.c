@@ -54,7 +54,8 @@
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                        long pucch_GroupHopping,
+                        long hoppingId,
                         int16_t amp,
                         int nr_tti_tx,
                         uint8_t m0,
@@ -111,7 +112,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   for (int l=0; l<nrofSymbols; l++) {
     // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
     // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
-    nr_group_sequence_hopping(ue->pucch_config_common_nr->pucch_GroupHopping,ue->pucch_config_common_nr->hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+    nr_group_sequence_hopping(pucch_GroupHopping,hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
     alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
 #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
@@ -962,7 +963,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   uint64_t b[16]; // limit to 1024-bit encoded length
   // M_bit is the number of bits of block b (payload after encoding)
   uint16_t M_bit;
-  nr_uci_encoding(payload,nr_bit,pucch_format2_nr,0,nrofSymbols,nrofPRB,1,0,0,&b,&M_bit);
+  nr_uci_encoding(payload,nr_bit,pucch_format2_nr,0,nrofSymbols,nrofPRB,1,0,0,(void*)b,&M_bit);
   /*
    * Implementing TS 38.211
    * Subclauses 6.3.2.5.1 Scrambling (PUCCH format 2)
@@ -1128,7 +1129,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   printf("\t [nr_generate_pucch3_4] start function at slot(nr_tti_tx)=%d with payload=%lu and nr_bit=%d\n", nr_tti_tx, payload, nr_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
-  uint64_t b;
+  uint64_t b[16];
   // M_bit is the number of bits of block b (payload after encoding)
   uint16_t M_bit;
   // parameter PUCCH-F4-preDFT-OCC-length set of {2,4} -> to use table -1 or -2
@@ -1153,7 +1154,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   //nrofPRB = 2; // only for test purposes
   if (fmt == pucch_format4_nr) nrofPRB = 1;
 
-  nr_uci_encoding(payload,nr_bit,fmt,is_pi_over_2_bpsk_enabled,nrofSymbols,nrofPRB,n_SF_PUCCH_s,intraSlotFrequencyHopping,add_dmrs,&b,&M_bit);
+  nr_uci_encoding(payload,nr_bit,fmt,is_pi_over_2_bpsk_enabled,nrofSymbols,nrofPRB,n_SF_PUCCH_s,intraSlotFrequencyHopping,add_dmrs,(void*)b,&M_bit);
   /*
    * Implementing TS 38.211
    * Subclauses 6.3.2.6.1 Scrambling (PUCCH formats 3 and 4)

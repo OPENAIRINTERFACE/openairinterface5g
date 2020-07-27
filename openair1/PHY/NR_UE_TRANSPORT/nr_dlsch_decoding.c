@@ -32,6 +32,7 @@
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/harq_nr.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
@@ -133,6 +134,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     memset(dlsch,0,sizeof(NR_UE_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
+    dlsch->number_harq_processes_for_pdsch = Mdlharq;
     dlsch->Nsoft = Nsoft;
     dlsch->Mlimit = 4;
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
@@ -143,6 +145,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(NR_DL_UE_HARQ_t));
+        init_downlink_harq_status(dlsch->harq_processes[i]);
         dlsch->harq_processes[i]->first_tx=1;
         dlsch->harq_processes[i]->b = (uint8_t*)malloc16(dlsch_bytes);
 
@@ -264,7 +267,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
   AssertFatal(dmrs_Type == 1 || dmrs_Type == 2,"Illegal dmrs_type %d\n",dmrs_Type);
-  uint8_t nb_re_dmrs = 12;//(dmrs_Type==1)?6:4;
+  uint8_t nb_re_dmrs = (dmrs_Type==1)?6:4; // should be changed based on MAC parameters
   uint16_t dmrs_length = get_num_dmrs(harq_process->dlDmrsSymbPos);
   AssertFatal(dmrs_length == 1 || dmrs_length == 2,"Illegal dmrs_length %d\n",dmrs_length);
 

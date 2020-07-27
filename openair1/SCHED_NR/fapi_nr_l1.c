@@ -113,8 +113,6 @@ void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
 
   nr_fill_ul_dci(gNB,frame,slot);
 
-
-
 }
 
 void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
@@ -157,6 +155,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   int pdcch_received=0;
   gNB->num_pdsch_rnti=0;
+  for (int i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
+    gNB->dlsch[i][0]->rnti=0;
+    gNB->dlsch[i][0]->harq_mask=0;
+  }
   gNB->pdcch_pdu = NULL;
   gNB->pbch_configured=0;
 
@@ -210,7 +212,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         break;
       case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
         LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUCCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
-        //  handle_nfapi_nr_pucch_pdu(gNB,frame,slot,UL_tti_req->pdus_list[i].pucch_pdu);
+        nr_fill_pucch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pucch_pdu);
         break;
       case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
         LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PRACH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
