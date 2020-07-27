@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "nr_phy_scope.h"
 #include "executables/nr-softmodem-common.h"
+#include "executables/softmodem-common.h"
 #include <forms.h>
 
 #define TPUT_WINDOW_LENGTH 100
@@ -416,7 +417,7 @@ static void *scope_thread_gNB(void *arg) {
   return NULL;
 }
 
-void gnbscope_autoinit(scopeParms_t *p) {
+void gNBinitScope(scopeParms_t *p) {
   static scopeParms_t parms;
   memcpy(&parms,p,sizeof(parms));
   pthread_t forms_thread;
@@ -763,11 +764,20 @@ static void *nrUEscopeThread(void *arg) {
   pthread_exit((void *)arg);
 }
 
-void nruescope_autoinit(PHY_VARS_NR_UE *ue) {
+void nrUEinitScope(PHY_VARS_NR_UE *ue) {
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
 
+
+void nrscope_autoinit(void *dataptr) {
+  AssertFatal( (IS_SOFTMODEM_GNB_BIT||IS_SOFTMODEM_5GUE_BIT),"Scope cannot find NRUE or GNB context");
+  
+  if (IS_SOFTMODEM_GNB_BIT)
+  	 gNBinitScope(dataptr);
+  else
+     nrUEinitScope(dataptr);
+}
 // Kept to put back the functionality soon
 #if 0
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
@@ -794,6 +804,8 @@ static void reset_stats_gNB(FL_OBJECT *button,
     }
   }
 }
+
+
 
 static FD_stats_form *create_form_stats_form(int ID) {
   FL_OBJECT *obj;

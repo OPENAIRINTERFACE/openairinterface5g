@@ -152,9 +152,6 @@ char ref[128] = "internal";
 char channels[128] = "0";
 
 
-static char *parallel_config = NULL;
-static char *worker_config = NULL;
-
 int rx_input_level_dBm;
 
 //static int online_log_messages=0;
@@ -764,7 +761,7 @@ int main( int argc, char **argv ) {
   mlockall(MCL_CURRENT | MCL_FUTURE);
  
   if(IS_SOFTMODEM_DOFORMS) { 
-    load_softscope("gnb",PHY_vars_UE_g[0][0]);
+    load_softscope("nr",PHY_vars_UE_g[0][0]);
   }     
   number_of_cards = 1;
 

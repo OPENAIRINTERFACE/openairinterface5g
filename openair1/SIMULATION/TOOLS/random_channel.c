@@ -45,8 +45,10 @@ static mapping channelmod_names[] = {
 };
 
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static telnetshell_cmddef_t channelmod_cmdarray[] = {
-  {"show","",channelmod_show_cmd},
+  {"show","<predef,current>",channelmod_show_cmd},
+  {"modify","<channelid> <param> <value>",channelmod_modify_cmd},  
   {"","",NULL},
 };
 
@@ -56,7 +58,8 @@ static telnetshell_vardef_t channelmod_vardef[] = {
 
 static double snr_dB=25;
 static double sinr_dB=0;
-
+static unsigned int max_chan;
+static channel_desc_t**  defined_channels;
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
                        uint8_t nb_rx,
@@ -281,10 +284,22 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      int32_t channel_offset,
                                      double path_loss_dB) {
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
+  for(int i=0; i<max_chan;i++) {
+  	  if (defined_channels[i] == NULL) {
+  	  	  defined_channels[i]=chan_desc;
+  	  	  chan_desc->chan_idx=i;
+  	      break;
+  	  }
+  	  else {
+  	  	 AssertFatal(i<(max_chan-1),
+              "No more channel descriptors available, increase channelmod.max_chan parameter above %u\n",max_chan);
+  	  }
+  }
   uint16_t i,j;
   double sum_amps;
   double aoa,ricean_factor,Td,maxDoppler;
   int channel_length,nb_taps;
+  chan_desc->modelid                   = channel_model;
   chan_desc->nb_tx                      = nb_tx;
   chan_desc->nb_rx                      = nb_rx;
   chan_desc->sampling_rate              = sampling_rate;
@@ -1295,6 +1310,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
 void free_channel_desc_scm(channel_desc_t *ch) {
   // Must be made cleanly, a lot of leaks...
+  defined_channels[ch->chan_idx]=NULL;
   free(ch);
 }
 
@@ -1408,11 +1424,11 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
             desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
 
             for (l=0; l<desc->nb_taps; l++) {
-              if ((k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
+              if ((k - (desc->delays[l]*desc->sampling_rate) - desc->channel_offset) == 0)
                 s = 1.0;
               else
-                s = sin(M_PI*(k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET))/
-                    (M_PI*(k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET));
+                s = sin(M_PI*(k - (desc->delays[l]*desc->sampling_rate) - desc->channel_offset))/
+                    (M_PI*(k - (desc->delays[l]*desc->sampling_rate) - desc->channel_offset));
 
               desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
               desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
@@ -1491,13 +1507,99 @@ double N_RB2channel_bandwidth(uint16_t N_RB) {
 
   return(channel_bandwidth);
 }
+static void display_channelmodel_help( telnet_printfunc_t prnt) {
+
+}
+
+
+static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_t prnt) {
+	prnt("nb_tx: %i    nb_rx: %i    taps: %i bandwidth: %lf    sampling: %lf\n",cd->nb_tx, cd->nb_rx, cd->nb_taps, cd->channel_bandwidth, cd->sampling_rate);
+	prnt("channel length: %i    Max path delay: %lf   ricean fact.: %lf    angle of arrival: %lf (randomized:%s)\n",
+		 cd->channel_length, cd->Td, cd->ricean_factor, cd->aoa, (cd->random_aoa?"Yes":"No"));
+	prnt("max Doppler: %lf    path loss: %lf   rchannel offset: %i    forget factor; %lf\n",
+		 cd->max_Doppler, cd->path_loss_dB, cd->channel_offset, cd->forgetting_factor);	
+	prnt("Initial phase: %lf   nb_path: %i \n",
+		 cd->ip, cd->nb_paths);		
+	for (int i=0; i<cd->nb_taps ; i++) {
+		prnt("taps: %i   lin. ampli. : %lf    delay: %lf \n",i,cd->amps[i], cd->delays[i]);
+	}
+}
+
 
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
-  for(int i=0; channelmod_names[i].name != NULL ; i++) {
-    prnt("  %i %s\n", i, map_int_to_str(channelmod_names,i ));
-  }
+  char *subcmd=NULL; 
+  int s = sscanf(buff,"%ms\n",&subcmd);
 
-  return 0;
+  if (s>0) {
+    if ( strcmp(subcmd,"predef") == 0) {
+      for (int i=0; channelmod_names[i].name != NULL ; i++) {
+        prnt("  %i %s\n", i, map_int_to_str(channelmod_names,i ));
+    } 
+    } else if ( strcmp(subcmd,"current") == 0) {
+      for (int i=0; i < max_chan ; i++) {
+      	if (defined_channels[i] != NULL) {
+      	  prnt("model %i %s: \n----------------\n", i, map_int_to_str(channelmod_names,defined_channels[i]->modelid));
+          display_channelmodel(defined_channels[i],debug,prnt); 
+        }
+      }
+    } else {
+    	display_channelmodel_help(prnt);
+    }
+  free(subcmd);
+  }
+  return CMDSTATUS_FOUND;
+}
+
+
+
+static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
+  char *param=NULL, *value=NULL; 
+  int cd_id= -1;
+  int s = sscanf(buff,"%i %ms %ms \n",&cd_id,&param, &value);
+  if (cd_id<0 || cd_id >= max_chan) {
+  	  prnt("ERROR, %i: Channel model id outof range (0-%i)\n",cd_id,max_chan-1);
+  	  return CMDSTATUS_FOUND;
+  }
+  if (defined_channels[cd_id]==NULL) {
+  	  prnt("ERROR, %i: Channel model has not been set\n",cd_id);
+  	  return CMDSTATUS_FOUND;
+  }  
+  
+  if (s==3) {
+    if ( strcmp(param,"riceanf") == 0) {
+        double dbl = atof(value);
+        if (dbl <0 || dbl > 1)
+        	prnt("ricean factor range: 0 to 1, %lf is outof range\n",dbl);
+        else
+        	defined_channels[cd_id]->ricean_factor=dbl;
+    } else if ( strcmp(param,"aoa") == 0) {
+        double dbl = atof(value);
+        if (dbl <0 || dbl >6.28)
+        	prnt("angle of arrival range: 0 to 2*Pi,  %lf is outof range\n",dbl);
+        else
+        	defined_channels[cd_id]->aoa=dbl;    
+    } else if ( strcmp(param,"ploss") == 0) {
+        double dbl = atof(value);
+        defined_channels[cd_id]->path_loss_dB=dbl;     
+    } else if ( strcmp(param,"offset") == 0) {
+        int i = atoi(value);
+        defined_channels[cd_id]->channel_offset=i;     
+    } else if ( strcmp(param,"forgetf") == 0) {
+        double dbl = atof(value);
+        if (dbl <0 || dbl > 1)
+        	prnt("forgetting factor range: 0 to 1 (disable variation), %lf is outof range\n",dbl);
+        else
+        	defined_channels[cd_id]->forgetting_factor=dbl;     
+    } else {
+ 
+    }
+  display_channelmodel(defined_channels[cd_id],debug,prnt);
+  free(param);
+  free(value);
+  
+  }
+  
+  return CMDSTATUS_FOUND;
 }
 
 int modelid_fromname(char *modelname) {
@@ -1519,6 +1621,9 @@ void init_channelmod(void) {
   paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
   int ret = config_get( channelmod_params,sizeof(channelmod_params)/sizeof(paramdef_t),CHANNELMOD_SECTION);
   AssertFatal(ret >= 0, "configuration couldn't be performed");
+    defined_channels=calloc(max_chan,sizeof( channel_desc_t*));
+  AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
+  
   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
 

@@ -92,6 +92,10 @@ typedef struct {
   time_stats_t interp_time;
   time_stats_t interp_freq;
   time_stats_t convolution;
+  /// index in the channel descriptors array
+  unsigned int chan_idx;
+  /// id of the channel modeling algorithm
+  int modelid;
 } channel_desc_t;
 
 typedef struct {
@@ -214,8 +218,9 @@ typedef enum {
 #define CONFIG_HLP_SNR     "Set average SNR in dB (for --siml1 option)\n"
 #define CHANNELMOD_SECTION "channelmod"
 #define CHANNELMOD_PARAMS_DESC {  \
-    {"s"      , CONFIG_HLP_SNR, PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB , defdblval:25, TYPE_DOUBLE, 0},\
-    {"sinr_dB", NULL          , 0                                , dblptr:&sinr_dB, defdblval:0 , TYPE_DOUBLE, 0},\
+    {"s"      , CONFIG_HLP_SNR,         PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB,    defdblval:25, TYPE_DOUBLE, 0},\
+    {"sinr_dB", NULL,                   0                                , dblptr:&sinr_dB,   defdblval:0 , TYPE_DOUBLE, 0},\
+    {"max_chan, CONFIG_HLP_MAX_CHAN",   0,                                 uptr:&max_chan,    defintval:10,  TYPE_UINT,   0},\
   }
 
 #include "platform_constants.h"

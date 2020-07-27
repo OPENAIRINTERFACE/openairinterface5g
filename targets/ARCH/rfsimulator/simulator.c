@@ -78,9 +78,11 @@ extern RAN_CONTEXT_t RC;
 #define RFSIMULATOR_PARAMS_DESC {\
     {"serveraddr",             "<ip address to connect to>\n",          0,         strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
     {"serverport",             "<port to connect to>\n",                0,         u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
-    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0},\
+    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0 },\
     {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
-    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 }\
+    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
+    {"ploss",                  "<channel path loss in dB>\n",           0,         dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"forgetfact",             "<channel forget factor ((0 to 1)>\n",   0,         dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 }\
   };
 
 pthread_mutex_t Sockmutex;
@@ -114,6 +116,8 @@ typedef struct {
   double sample_rate;
   double tx_bw;
   int channelmod;
+  double chan_pathloss;
+  double chan_forgetfact;
 } rfsimulator_state_t;
 
 
@@ -161,9 +165,9 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
-                                            0.0, // forgetting_factor
+                                            bridge->chan_forgetfact, // forgetting_factor
                                             0, // maybe used for TA
-                                            0); // path_loss in dB
+                                            bridge->chan_pathloss); // path_loss in dB
     random_channel(ptr->channel_model,false);
   }
 }

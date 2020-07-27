@@ -968,7 +968,7 @@ if(!IS_SOFTMODEM_NOS1)
     p.argv=argv;
     p.gNB=RC.gNB[0];
     p.ru=RC.ru[0];
-    load_softscope("gnb",&p);
+    load_softscope("nr",&p);
   }
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {
