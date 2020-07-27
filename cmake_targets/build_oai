@@ -575,6 +575,7 @@ function main() {
 
     cmake_file=$DIR/$build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
+    echo "(project (OpenAirInterface)"                                    >> $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )"       >> $cmake_file
     echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file

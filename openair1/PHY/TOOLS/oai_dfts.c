@@ -4038,7 +4038,7 @@ void dft2048(int16_t *x,int16_t *y,unsigned char scale) {
   if (scale>0) {
     y256p = y256;
 
-    for (i=0; i<16; i++) {
+    for (int i=0; i<16; i++) {
       y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
       y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
       y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);

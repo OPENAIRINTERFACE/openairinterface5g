@@ -578,3 +578,7 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
   spconfig->reconfigurationWithSync = CALLOC(1,sizeof(struct NR_ReconfigurationWithSync));
 }
 
+
+int do_DLInformationTransfer_NR () {
+}
+
