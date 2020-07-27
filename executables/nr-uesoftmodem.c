@@ -76,12 +76,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
-//#include "stats.h"
-// current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
-#include "PHY/TOOLS/nr_phy_scope.h"
-// at eNB 0, an UL scope for every UE
-//FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+/* Callbacks, globals and object handlers */
 
+#include "PHY/TOOLS/nr_phy_scope.h"
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"

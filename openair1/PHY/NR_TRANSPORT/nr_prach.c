@@ -540,7 +540,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint16_t           rootSequenceIndex;  
   int                numrootSequenceIndex;
   uint8_t            restricted_set;      
-  uint8_t            n_ra_prb;
+  uint8_t            n_ra_prb=0xFF;
   int16_t            *prachF=NULL;
   int                nb_rx;
 
