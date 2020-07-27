@@ -285,7 +285,7 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   struct served_gummei_s*      gummeiInfo;
   struct mme_code_s*           mmeCode;
   int8_t                       cnt = 0;
-  unsigned                     enb_s1ap_id[20];
+  unsigned                     enb_s1ap_id[NUMBER_OF_UE_MAX];
   DevAssert(sctp_new_association_resp != NULL);
   instance_p = s1ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
@@ -305,6 +305,7 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     {
       if( ue_p->mme_ref == s1ap_mme_data_p )
       {
+        if(cnt < NUMBER_OF_UE_MAX){
         enb_s1ap_id[cnt] = ue_p->eNB_ue_s1ap_id;
         cnt++;
         
@@ -323,6 +324,9 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
         else
         {
           S1AP_ERROR("Invalid message_p : eNB_ue_s1ap_id=%u\n", ue_p->eNB_ue_s1ap_id);
+        }
+        }else{
+          S1AP_ERROR("s1ap_eNB_handle_sctp_association_resp: cnt %d > max\n", cnt);
         }
       }
     }
@@ -419,18 +423,18 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
 //  }
   else
   {
-  /* Update parameters */
-  s1ap_mme_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
-  s1ap_mme_data_p->in_streams  = sctp_new_association_resp->in_streams;
-  s1ap_mme_data_p->out_streams = sctp_new_association_resp->out_streams;
-  /* Prepare new S1 Setup Request */
-  s1ap_mme_data_p->s1_setupreq_cnt = 0;
-  s1ap_mme_data_p->sctp_req_cnt = 0;
-  if (s1ap_eNB_generate_s1_setup_request(instance_p, s1ap_mme_data_p) == -1) {
-    S1AP_ERROR("s1ap eNB generate s1 setup request failed\n");
-    return;
+    /* Update parameters */
+    s1ap_mme_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
+    s1ap_mme_data_p->in_streams  = sctp_new_association_resp->in_streams;
+    s1ap_mme_data_p->out_streams = sctp_new_association_resp->out_streams;
+    /* Prepare new S1 Setup Request */
+    s1ap_mme_data_p->s1_setupreq_cnt = 0;
+    s1ap_mme_data_p->sctp_req_cnt = 0;
+    if (s1ap_eNB_generate_s1_setup_request(instance_p, s1ap_mme_data_p) == -1) {
+      S1AP_ERROR("s1ap eNB generate s1 setup request failed\n");
+      return;
+    }
   }
-}
 
 static
 void s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
