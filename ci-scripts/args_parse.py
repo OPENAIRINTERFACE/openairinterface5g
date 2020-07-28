@@ -203,7 +203,7 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,HELP):
         elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
             CiTestObj.testXMLfiles.append(matchReg.group(1))
-            HTML.testXMLfiles=matchReg.group(1)
+            HTML.testXMLfiles.append(matchReg.group(1))
             HTML.nbTestXMLfiles=HTML.nbTestXMLfiles+1
         elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
