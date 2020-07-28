@@ -66,38 +66,6 @@ class EPCManagement():
 		self.MmeIPAddress = ''
 		self.containerPrefix = 'prod'
 
-#-----------------------------------------------------------
-# Setter and Getters on Public Members
-#-----------------------------------------------------------
-
-#	def SetIPAddress(self, ipaddress):
-#		self.IPAddress = ipaddress
-#	def GetIPAddress(self):
-#		return self.IPAddress
-#	def SetUserName(self, username):
-#		self.UserName = username
-#	def GetUserName(self):
-#		return self.UserName
-#	def SetPassword(self, password):
-#		self.Password = password
-#	def GetPassword(self):
-#		return self.Password
-#	def SetSourceCodePath(self, sourcecodepath):
-#		self.SourceCodePath = sourcecodepath
-#	def GetSourceCodePath(self):
-#		return self.SourceCodePath
-#	def SetType(self, kind):
-#		self.Type = kind
-#	def GetType(self):
-#		return self.Type
-#	def SetHtmlObj(self, obj):
-#		self.htmlObj = obj
-#	def SetTestCase_id(self, idx):
-#		self.testCase_id = idx
-#	def GetMmeIPAddress(self):
-#		return self.MmeIPAddress
-#	def SetContainerPrefix(self, prefix):
-#		self.containerPrefix = prefix
 
 #-----------------------------------------------------------
 # EPC management functions
