@@ -82,7 +82,8 @@ extern RAN_CONTEXT_t RC;
     {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
     {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
     {"ploss",                  "<channel path loss in dB>\n",           0,         dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {"forgetfact",             "<channel forget factor ((0 to 1)>\n",   0,         dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 }\
+    {"forgetfact",             "<channel forget factor ((0 to 1)>\n",   0,         dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"offset",                 "<channel offset in samps>\n",           0,         iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
   };
 
 pthread_mutex_t Sockmutex;
@@ -118,6 +119,7 @@ typedef struct {
   int channelmod;
   double chan_pathloss;
   double chan_forgetfact;
+  int    chan_offset;
 } rfsimulator_state_t;
 
 
@@ -166,7 +168,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->sample_rate,
                                             bridge->tx_bw,
                                             bridge->chan_forgetfact, // forgetting_factor
-                                            0, // maybe used for TA
+                                            bridge->chan_offset, // maybe used for TA
                                             bridge->chan_pathloss); // path_loss in dB
     random_channel(ptr->channel_model,false);
   }

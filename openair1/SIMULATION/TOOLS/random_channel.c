@@ -46,7 +46,9 @@ static mapping channelmod_names[] = {
 
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt);
 static telnetshell_cmddef_t channelmod_cmdarray[] = {
+  {"help","",channelmod_print_help},
   {"show","<predef,current>",channelmod_show_cmd},
   {"modify","<channelid> <param> <value>",channelmod_modify_cmd},  
   {"","",NULL},
@@ -286,7 +288,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
   for(int i=0; i<max_chan;i++) {
   	  if (defined_channels[i] == NULL) {
-  	  	  defined_channels[i]=chan_desc;
+  	  	  defined_channels[i]=chan_desc;                             
   	  	  chan_desc->chan_idx=i;
   	      break;
   	  }
@@ -438,7 +440,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       }
 
       break;
-
+                               
     case EPA:
       chan_desc->nb_taps        = 7;
       chan_desc->Td             = .410;
@@ -1504,11 +1506,18 @@ double N_RB2channel_bandwidth(uint16_t N_RB) {
       LOG_E(PHY,"Unknown N_PRB\n");
       return(-1);
   }
-
   return(channel_bandwidth);
-}
-static void display_channelmodel_help( telnet_printfunc_t prnt) {
+}   
 
+     
+static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt ) {
+	prnt("channelmod commands can be used to display or modify channel models parameters\n");
+	prnt("channelmod show predef: display predefined model algorithms available in oai\n");
+	prnt("channelmod show current: display the currently used models in the running executable\n");
+	prnt("channelmod modify <model index> <param name> <param value>: set the specified parameters in a current model to the given value\n");
+	prnt("                  <model index> specifies the model, the show current model command can be used to list the current models indexes\n");
+	prnt("                  <param name> can be one of \"riceanf\", \"aoa\", \"randaoa\", \"ploss\", \"offset\", \"forgetf\"\n");
+    return CMDSTATUS_FOUND;
 }
 
 
@@ -1522,10 +1531,10 @@ static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_
 		 cd->ip, cd->nb_paths);		
 	for (int i=0; i<cd->nb_taps ; i++) {
 		prnt("taps: %i   lin. ampli. : %lf    delay: %lf \n",i,cd->amps[i], cd->delays[i]);
-	}
+	}                         
 }
-
-
+   
+  
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   char *subcmd=NULL; 
   int s = sscanf(buff,"%ms\n",&subcmd);
@@ -1543,14 +1552,14 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
         }
       }
     } else {
-    	display_channelmodel_help(prnt);
+    	channelmod_print_help(buff, debug, prnt);
     }
   free(subcmd);
   }
   return CMDSTATUS_FOUND;
 }
 
-
+      
 
 static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   char *param=NULL, *value=NULL; 
@@ -1569,15 +1578,21 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
     if ( strcmp(param,"riceanf") == 0) {
         double dbl = atof(value);
         if (dbl <0 || dbl > 1)
-        	prnt("ricean factor range: 0 to 1, %lf is outof range\n",dbl);
+        	prnt("ERROR: ricean factor range: 0 to 1, %lf is outof range\n",dbl);
         else
         	defined_channels[cd_id]->ricean_factor=dbl;
     } else if ( strcmp(param,"aoa") == 0) {
         double dbl = atof(value);
         if (dbl <0 || dbl >6.28)
-        	prnt("angle of arrival range: 0 to 2*Pi,  %lf is outof range\n",dbl);
+        	prnt("ERROR: angle of arrival range: 0 to 2*Pi,  %lf is outof range\n",dbl);
         else
         	defined_channels[cd_id]->aoa=dbl;    
+    } else if ( strcmp(param,"randaoa") == 0) {
+        int i = atoi(value);
+        if (i!=0 && i!=1)
+        	prnt("ERROR: randaoa is a boolean, must be 0 or 1\n");
+        else
+        	defined_channels[cd_id]->random_aoa=i;
     } else if ( strcmp(param,"ploss") == 0) {
         double dbl = atof(value);
         defined_channels[cd_id]->path_loss_dB=dbl;     
@@ -1587,21 +1602,21 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
     } else if ( strcmp(param,"forgetf") == 0) {
         double dbl = atof(value);
         if (dbl <0 || dbl > 1)
-        	prnt("forgetting factor range: 0 to 1 (disable variation), %lf is outof range\n",dbl);
+        	prnt("ERROR: forgetting factor range: 0 to 1 (disable variation), %lf is outof range\n",dbl);
         else
         	defined_channels[cd_id]->forgetting_factor=dbl;     
     } else {
- 
+         prnt("ERROR: %s, unknown channel parameter\n",param);
+         return CMDSTATUS_FOUND;  
     }
-  display_channelmodel(defined_channels[cd_id],debug,prnt);
-  free(param);
+  display_channelmodel(defined_channels[cd_id],debug,prnt);  
+  free(param);   
   free(value);
-  
+  random_channel(defined_channels[cd_id],false);                 
   }
-  
-  return CMDSTATUS_FOUND;
+  return CMDSTATUS_FOUND;           
 }
-
+   
 int modelid_fromname(char *modelname) {
   int modelid=map_str_to_int(channelmod_names,modelname);
   AssertFatal(modelid>0,
