@@ -44,6 +44,7 @@
 #include <common/utils/assertions.h>
 #include <common/utils/LOG/log.h>
 #include <common/utils/load_module_shlib.h>
+#include <common/utils/telnetsrv/telnetsrv.h>
 #include <common/config/config_userapi.h>
 #include "common_lib.h"
 #include <openair1/PHY/defs_eNB.h>
@@ -86,6 +87,17 @@ extern RAN_CONTEXT_t RC;
     {"offset",                 "<channel offset in samps>\n",           0,         iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
   };
 
+
+
+static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+static telnetshell_cmddef_t rfsimu_cmdarray[] = {
+  {"setmodel","<model name>",rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},  
+  {"","",NULL},
+};
+
+static telnetshell_vardef_t rfsimu_vardef[] = {
+  {"",0,NULL}
+};  
 pthread_mutex_t Sockmutex;
 
 typedef struct complex16 sample_t; // 2*16 bits complex number
@@ -120,6 +132,8 @@ typedef struct {
   double chan_pathloss;
   double chan_forgetfact;
   int    chan_offset;
+  void *telnetcmd_qid;
+  poll_telnetcmdq_func_t poll_telnetcmdq;
 } rfsimulator_state_t;
 
 
@@ -157,7 +171,8 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     if (!init_done) {
 	    uint64_t rand;
 	    FILE *h=fopen("/dev/random","r");
-            fread(&rand,sizeof(rand),1,h);
+        int st=fread(&rand,sizeof(rand),1,h);
+        AssertFatal(st != -1, "Error reading random int %s\n",strerror(errno));
 	    fclose(h);
       randominit(rand);
       tableNor(rand);
@@ -294,6 +309,28 @@ void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
     rfsimulator->typeStamp = ENB_MAGICDL_FDD;
   else
     rfsimulator->typeStamp = UE_MAGICDL_FDD;
+}
+
+static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
+  char *modelname=NULL; 
+  int s = sscanf(buff,"%ms\n",&modelname);
+  int channelmod=modelid_fromname(modelname);
+  for (int i=0; i<FD_SETSIZE; i++) {
+/*    if(rfsimulator->buf[i].conn_sock > 0) {
+       channel_desc_t *cm = rfsimulator->buf[i].channel_model;
+
+       rfsimulator->buf[i].channel_model=new_channel_desc_scm(cm->nb_tx,cm->nb_rx,
+                                            channelmod,
+                                            cm->sampling_rate,
+                                            cm->channel_bandwidth,
+                                            cm->forgetting_factor, // forgetting_factor
+                                            cm->channel_offset, // maybe used for TA
+                                            cm-> path_loss_dB); // path_loss in dB
+	   free_channel_desc_scm(cm);
+       random_channel(ptr->channel_model,false);	   
+	}	*/
+  }
+  return CMDSTATUS_FOUND;
 }
 
 int server_start(openair0_device *device) {
@@ -646,7 +683,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       // it seems legacy behavior is: never in UL, each frame in DL
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
-
+      t->poll_telnetcmdq(t->telnetcmd_qid);
       for (int a=0; a<nbAnt; a++) {
         if ( ptr->channel_model != NULL ) // apply a channel model
           rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
@@ -740,5 +777,18 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->tx_bw=openair0_cfg->tx_bw;
   //randominit(0);
   set_taus_seed(0);
+   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
+  add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
+ 
+  if (addcmd != NULL) {
+    rfsimulator->poll_telnetcmdq =  (poll_telnetcmdq_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_POLLCMDQ_FNAME);  
+    addcmd("rfsimu",rfsimu_vardef,rfsimu_cmdarray);
+    for(int i=0; rfsimu_cmdarray[i].cmdfunc != NULL; i++) {
+      if (	rfsimu_cmdarray[i].qptr != NULL) {
+        rfsimulator->telnetcmd_qid = rfsimu_cmdarray[i].qptr;
+        break;
+      }
+    }    
+  } 
   return 0;
 }

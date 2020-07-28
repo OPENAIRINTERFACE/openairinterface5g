@@ -684,6 +684,16 @@ void run_telnetsrv(void) {
   return;
 }
 
+void poll_telnetcmdq(void *qid) {
+	notifiedFIFO_elt_t *msg = pollNotifiedFIFO((notifiedFIFO_t *)qid);
+	
+	if (msg != NULL) {
+	  telnetsrv_qmsg_t *msgdata=NotifiedFifoData(msg);
+	  msgdata->cmdfunc(msgdata->cmdbuff,msgdata->debug,msgdata->prnt);
+	  free(msgdata->cmdbuff);
+	  delNotifiedFIFO_elt(msg);
+	}
+}
 /*------------------------------------------------------------------------------------------------*/
 /* load the commands delivered with the telnet server
  *

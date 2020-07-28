@@ -142,8 +142,9 @@ VT escape sequence definition, for smarter display....
 
 /*---------------------------------------------------------------------------------------------*/
 #define TELNET_ADDCMD_FNAME "add_telnetcmd"
-#define TELNET_ADDQUEUEDCMD_FNAME "add_telnetqueuedcmd"
+#define TELNET_POLLCMDQ_FNAME "poll_telnetcmdq"
 typedef int(*add_telnetcmd_func_t)(char *, telnetshell_vardef_t *, telnetshell_cmddef_t *);
+typedef void(*poll_telnetcmdq_func_t)(void *qid);
 #ifdef TELNETSERVERCODE
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);
