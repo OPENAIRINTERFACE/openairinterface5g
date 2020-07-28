@@ -41,7 +41,7 @@ import yaml
 #-----------------------------------------------------------
 
 
-def ArgsParse(argvs,CiTestObj,RAN,HTML,ldpc,HELP):
+def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,HELP):
 
 
     py_param_file_present = False

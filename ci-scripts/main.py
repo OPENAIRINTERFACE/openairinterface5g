@@ -3332,7 +3332,7 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 #-----------------------------------------------------------
 
 import args_parse
-py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,ldpc,HELP)
+py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,HELP)
 
 #argvs = sys.argv
 #py_param_file_present = False
