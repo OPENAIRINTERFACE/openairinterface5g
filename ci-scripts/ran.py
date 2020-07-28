@@ -710,12 +710,12 @@ class RANManagement():
 		result = re.search('(-softmodem|ocp)', mySSH.getBefore())
 		if result is not None:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
-			mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT -r .*-softmodem .ocp-enb || true', '\$', 5)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT -r .*-softmodem ocp-enb || true', '\$', 5)
 			time.sleep(10)
 			mySSH.command('stdbuf -o0  ps -aux | grep --color=never -e softmodem -e ocp-enb | grep -v grep', '\$', 5)
 			result = re.search('(-softmodem|ocp)', mySSH.getBefore())
 			if result is not None:
-				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem .ocp-enb || true', '\$', 5)
+				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.close()
