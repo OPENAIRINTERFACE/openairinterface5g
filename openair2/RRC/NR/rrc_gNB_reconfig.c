@@ -917,7 +917,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  srs_res0->resourceMapping.repetitionFactor=NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
  srs_res0->freqDomainPosition=0;
  srs_res0->freqDomainShift=0;
- srs_res0->freqHopping.c_SRS = 61;
+ srs_res0->freqHopping.c_SRS = 0;
  srs_res0->freqHopping.b_SRS=0;
  srs_res0->freqHopping.b_hop=0;
  srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
