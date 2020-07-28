@@ -7,6 +7,7 @@ import "time_common.proto";
 import "config_messages.proto";
 import "controller_commands.proto";
 import "config_common.proto";
+import "control_delegation.proto";
 
 message flexran_message {
        optional flexran_direction msg_dir = 100;
@@ -32,6 +33,7 @@ message flexran_message {
 	      flex_ul_mac_config ul_mac_config_msg = 19;
               flex_disconnect disconnect_msg = 20;
               flex_ho_command ho_command_msg = 21;
+              flex_control_delegation_request control_del_req_msg = 22;
 	}
 }
 
@@ -228,6 +230,12 @@ message flex_control_delegation {
 	optional flex_control_delegation_type delegation_type = 2;	// The delegated object type, decides about further processing
 	optional bytes payload = 3;	  	// Byte array of shared lib containing the delegated functions
 	optional string name = 4;		// The delegated functions names ordered based on bitmap flags
+}
+
+message flex_control_delegation_request {
+  optional flex_header header = 1;
+  optional flex_control_delegation_type delegation_type = 2;
+  optional string name = 4;
 }
 
 //

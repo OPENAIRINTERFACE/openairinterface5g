@@ -464,12 +464,12 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
       LOG_I(FLEXRAN_AGENT, "wrote shared object %s\n", target);
     } else {
       if (errno == EEXIST) {
-        LOG_I(FLEXRAN_AGENT, "file %s already exists, remove it first\n", target);
+        LOG_W(FLEXRAN_AGENT, "file %s already exists, remove it first\n", target);
       } else {
         LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
               target, strerror(errno));
-        return 0;
       }
+      return 0;
     }
   } else {
     LOG_W(FLEXRAN_AGENT, "remove file %s\n", target);
