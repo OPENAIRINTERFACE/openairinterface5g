@@ -3160,7 +3160,7 @@ def GetParametersFromXML(action):
 		elif (air_interface.lower() in ['nr','lte']):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
-			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
+			CiTestObj.air_interface = 'ocp-enb'
 		RAN.air_interface(CiTestObj.air_interface)
 
 	if action == 'Terminate_eNB':
@@ -3178,7 +3178,7 @@ def GetParametersFromXML(action):
 		elif (air_interface.lower() in ['nr','lte']):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
-			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
+			CiTestObj.air_interface = 'ocp-enb'
 		RAN.air_interface=CiTestObj.air_interface
 
 	if action == 'Attach_UE':
@@ -3216,7 +3216,7 @@ def GetParametersFromXML(action):
 		elif (air_interface.lower() in ['nr','lte']):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
-			CiTestObj.air_interface = air_interface.lower() +'ocp-enb'
+			CiTestObj.air_interface = 'ocp-enb'
 		RAN.air_interface=CiTestObj.air_interface
 
 	if action == 'Terminate_OAI_UE':
