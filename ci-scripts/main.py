@@ -1,4 +1,4 @@
-
+#/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -1598,7 +1598,7 @@ class OaiCiTest():
 		return result
 
 	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
-		SSH.command('awk -f /tmp/tcp_iperf_stats.awk /tmp/CI-eNB/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+		SSH.command('awk -f /tmp/tcp_iperf_stats.awk ' + EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', SSH.getBefore())
 		if result is not None:
 			avgbitrate = result.group('average')
@@ -3161,7 +3161,7 @@ def GetParametersFromXML(action):
 			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
 		else :
 			CiTestObj.air_interface = 'ocp-enb'
-		RAN.air_interface(CiTestObj.air_interface)
+		RAN.air_interface=CiTestObj.air_interface
 
 	if action == 'Terminate_eNB':
 		RAN.eNB_instance=test.findtext('eNB_instance')
@@ -3304,7 +3304,12 @@ def receive_signal(signum, frame):
 
 #loading xml action list from yaml
 import yaml
-with open('xml_class_list.yml','r') as file:
+xml_class_list_file=''
+if (os.path.isfile('xml_class_list.yml')):
+	xml_class_list_file='xml_class_list.yml'
+if (os.path.isfile('ci-scripts/xml_class_list.yml')):
+	xml_class_list_file='ci-scripts/xml_class_list.yml'
+with open(xml_class_list_file,'r') as file:
     # The FullLoader parameter handles the conversion from YAML
     # scalar values to Python the dictionary format
     xml_class_list = yaml.load(file,Loader=yaml.FullLoader)
