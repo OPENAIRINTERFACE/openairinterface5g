@@ -3525,10 +3525,10 @@ if py_param_file_present == True:
 	AssignParams(py_params)
 
 #for debug
-print(RAN.__dict__) 
-print(CiTestObj.__dict__) 
-print(HTML.__dict__) 
-print(ldpc.__dict__) 
+#print(RAN.__dict__) 
+#print(CiTestObj.__dict__) 
+#print(HTML.__dict__) 
+#print(ldpc.__dict__) 
 #for debug
 
 
