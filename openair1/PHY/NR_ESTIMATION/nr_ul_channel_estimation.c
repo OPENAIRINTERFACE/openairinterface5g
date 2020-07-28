@@ -34,6 +34,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                int ul_id,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu) {
 
@@ -43,8 +44,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   unsigned int pilot_cnt,re_cnt;
   int16_t ch[2],ch_r[2],ch_l[2],*pil,*rxF,*ul_ch;
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
-  int ch_offset,symbol_offset, UE_id = 0;
-  int32_t **ul_ch_estimates_time =  gNB->pusch_vars[UE_id]->ul_ch_estimates_time;
+  int ch_offset,symbol_offset ;
+  int32_t **ul_ch_estimates_time =  gNB->pusch_vars[ul_id]->ul_ch_estimates_time;
   __m128i *ul_ch_128;
 
 #ifdef DEBUG_CH
@@ -55,7 +56,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //uint16_t Nid_cell = (eNB_offset == 0) ? gNB->frame_parms.Nid_cell : gNB->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift;
-  int **ul_ch_estimates  = gNB->pusch_vars[UE_id]->ul_ch_estimates;
+  int **ul_ch_estimates  = gNB->pusch_vars[ul_id]->ul_ch_estimates;
   int **rxdataF = gNB->common_vars.rxdataF;
 
   nushift = (p>>1)&1;
