@@ -573,10 +573,7 @@ schedule_ue_spec(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_IN);
   start_meas(&eNB->schedule_dlsch_preprocessor);
-  dlsch_scheduler_pre_processor(module_idP,
-                                CC_id,
-                                frameP,
-                                subframeP);
+  eNB->pre_processor_dl.dl(module_idP, CC_id, frameP, subframeP);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_OUT);
@@ -588,6 +585,7 @@ schedule_ue_spec(module_id_t module_idP,
     UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_TEMPLATE *ue_template = &UE_info->UE_template[CC_id][UE_id];
     eNB_UE_STATS *eNB_UE_stats = &UE_info->eNB_UE_stats[CC_id][UE_id];
+    eNB_UE_stats->TBS = 0;
     const rnti_t rnti = ue_template->rnti;
 
     // If TDD
@@ -679,15 +677,15 @@ schedule_ue_spec(module_id_t module_idP,
       const uint32_t rbc = allocate_prbs_sub(
           nb_rb, N_RB_DL, N_RBG, ue_sched_ctrl->rballoc_sub_UE[CC_id]);
 
-      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id]) {
-        LOG_D(MAC,
-              "[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
+      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id])
+        LOG_W(MAC,
+              "[eNB %d] %d.%d CC_id %d : should not schedule UE %d, its "
+              "retransmission takes more resources than we have\n",
               module_idP,
               frameP,
+              subframeP,
               CC_id,
               UE_id);
-        continue;
-      }
 
       /* CDRX */
       ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
@@ -799,6 +797,7 @@ schedule_ue_spec(module_id_t module_idP,
       eNB_UE_stats->rbs_used_retx = nb_rb;
       eNB_UE_stats->total_rbs_used_retx += nb_rb;
       eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->dlsch_mcs1;
+      eNB_UE_stats->TBS = TBS;
     } else {
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
@@ -842,13 +841,18 @@ schedule_ue_spec(module_id_t module_idP,
         if (ue_sched_ctrl->dl_lc_bytes[i] == 0) // no data in this LC!
           continue;
 
-        LOG_D(MAC, "[eNB %d] SFN/SF %d.%d, LC%d->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+        const uint32_t data =
+            min(ue_sched_ctrl->dl_lc_bytes[i],
+                TBS - ta_len - header_length_total - sdu_length_total - 3);
+        LOG_D(MAC,
+              "[eNB %d] SFN/SF %d.%d, LC%d->DLSCH CC_id %d, Requesting %d "
+              "bytes from RLC (RRC message)\n",
               module_idP,
               frameP,
               subframeP,
               lcid,
               CC_id,
-              TBS - ta_len - header_length_total - sdu_length_total - 3);
+              data);
 
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                                  rnti,
@@ -857,7 +861,7 @@ schedule_ue_spec(module_id_t module_idP,
                                                  ENB_FLAG_YES,
                                                  MBMS_FLAG_NO,
                                                  lcid,
-                                                 TBS - ta_len - header_length_total - sdu_length_total - 3,
+                                                 data,
                                                  (char *)&dlsch_buffer[sdu_length_total],
                                                  0,
                                                  0
