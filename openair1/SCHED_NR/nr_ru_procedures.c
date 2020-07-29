@@ -520,7 +520,7 @@ void nr_fep0(RU_t *ru, int first_half) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     0,
+                     ru->N_TA_offset,
                      0);
     }
   }
@@ -642,6 +642,8 @@ void nr_fep_full(RU_t *ru, int slot) {
   // if ((fp->frame_type == TDD) && 
      // (subframe_select(fp,proc->tti_rx) != NR_UPLINK_SLOT)) return;
 
+  LOG_D(PHY,"In fep_full for slot = %d\n", proc->tti_rx);
+
   start_meas(&ru->ofdm_demod_stats);
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
@@ -655,7 +657,7 @@ void nr_fep_full(RU_t *ru, int slot) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     0,
+                     ru->N_TA_offset,
                      0);
     }
   }

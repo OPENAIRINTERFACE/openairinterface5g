@@ -43,6 +43,13 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   uint8_t                         *inde_list
 );
 
+int
+rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+);
+
 /*! \fn rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(module_id_t enb_mod_idP, const rrc_eNB_ue_context_t* const ue_context_pP)
  *\brief Send GTPV1U_ENB_DELETE_TUNNEL_REQ message to GTPV1U to destroy all UE-related tunnels.
  *\param module_id Instance ID of eNB.

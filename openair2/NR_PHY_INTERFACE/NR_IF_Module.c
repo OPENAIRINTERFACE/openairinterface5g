@@ -38,6 +38,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
+#include "executables/softmodem-common.h"
 
 #define MAX_IF_MODULES 100
 
@@ -62,90 +63,74 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
     if (UL_info->rach_ind.pdu_list[0].num_preamble>0)
     AssertFatal(UL_info->rach_ind.pdu_list[0].num_preamble==1,
 		"More than 1 preamble not supported\n");
-
-    /*nr_initiate_ra_proc(UL_info->module_id,
+    
+    nr_initiate_ra_proc(UL_info->module_id,
                         UL_info->CC_id,
                         UL_info->rach_ind.sfn,
                         UL_info->rach_ind.slot,
                         UL_info->rach_ind.pdu_list[0].preamble_list[0].preamble_index,
                         UL_info->rach_ind.pdu_list[0].freq_index,
                         UL_info->rach_ind.pdu_list[0].symbol_index,
-                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);*/
+                        UL_info->rach_ind.pdu_list[0].preamble_list[0].timing_advance);
 
   }
 }
 
 
-void handle_nr_sr(NR_UL_IND_t *UL_info) {
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
+  // TODO
+  int max_harq_rounds = 4; // TODO define macro
+  int num_ucis = UL_info->uci_ind.num_ucis;
+  nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
 
+  for (int i = 0; i < num_ucis; i++) {
+    switch (uci_list[i].pdu_type) {
+      case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
 
- /* if (nfapi_mode == 1)  // PNF
-  {
-    if (UL_info->sr_ind.sr_indication_body.number_of_srs>0)
-    {
-      //      oai_nfapi_sr_indication(&UL_info->sr_ind);
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+        if (get_softmodem_params()->phy_test == 0) {
+          nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+          // handle harq
+          int harq_idx_s = 0;
+          // iterate over received harq bits
+          for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
+            // search for the right harq process
+            for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+              if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+                if (uci_pdu->harq->harq_list[harq_bit].harq_value == 0)
+                  sched_ctrl->harq_processes[harq_idx].round++;
+                if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) ||
+                   (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                  sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                  sched_ctrl->harq_processes[harq_idx].round = 0;
+                }
+                sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+                harq_idx_s = harq_idx + 1;
+                break;
+              }
+              // if gNB fails to receive a ACK/NACK
+              else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                      (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+                sched_ctrl->harq_processes[harq_idx].round++;
+                if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+                  sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                  sched_ctrl->harq_processes[harq_idx].round = 0;
+                }
+                sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+              }
+            }
+          }
+        }
+        break;
+      }
+
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: break;
     }
   }
-  else
-  {
 
-    
-    for (int i=0;i<UL_info->sr_ind.sr_indication_body.number_of_srs;i++)
-      SR_indication(UL_info->module_id,
-          UL_info->CC_id,
-          UL_info->frame,
-          UL_info->slot,
-          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].rx_ue_information.rnti,
-          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].ul_cqi_information.ul_cqi);
-
-
-
-  }
-
-  UL_info->sr_ind.sr_indication_body.number_of_srs=0;*/
+  UL_info->uci_ind.num_ucis = 0;
 }
 
-void handle_nr_cqi(NR_UL_IND_t *UL_info) {
-
-    /*
-    for (int i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
-      cqi_indication(UL_info->module_id,
-          UL_info->CC_id,
-          UL_info->frame,
-          UL_info->slot,
-          UL_info->cqi_ind.cqi_pdu_list[i].rx_ue_information.rnti,
-          &UL_info->cqi_ind.cqi_pdu_list[i].cqi_indication_rel9,
-          UL_info->cqi_ind.cqi_raw_pdu_list[i].pdu,
-          &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
-    
-    UL_info->cqi_ind.number_of_cqis=0;*/
-
-}
-
-void handle_nr_harq(NR_UL_IND_t *UL_info) {
- /*  if (nfapi_mode == 1 && UL_info->harq_ind.harq_indication_body.number_of_harqs>0) { // PNF
-    //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
-       int retval = oai_nfapi_harq_indication(&UL_info->harq_ind);
-
-    if (retval!=0) {
-      LOG_E(PHY, "Failed to encode NFAPI HARQ_IND retval:%d\n", retval);
-    }
-    
-    UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
-  }
-  else
-  {
-    
-    for (int i=0;i<UL_info->harq_ind.harq_indication_body.number_of_harqs;i++)
-      harq_indication(UL_info->module_id,
-          UL_info->CC_id,
-          NFAPI_SFNSF2SFN(UL_info->harq_ind.sfn_sf),
-          NFAPI_SFNSF2SF(UL_info->harq_ind.sfn_sf),
-          &UL_info->harq_ind.harq_indication_body.harq_pdu_list[i]);
-    
-    UL_info->harq_ind.harq_indication_body.number_of_harqs=0;
-  }*/
-}
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
   if(nfapi_mode == 1) {
@@ -224,9 +209,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d crcs:%d]\n",
+
+  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
-        module_id,CC_id,
+        module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
   if (nfapi_mode != 1) {
@@ -244,9 +230,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_sr(UL_info);
-  handle_nr_cqi(UL_info);
-  handle_nr_harq(UL_info);
+  handle_nr_uci(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);

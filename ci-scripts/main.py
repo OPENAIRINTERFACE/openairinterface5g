@@ -349,12 +349,6 @@ class OaiCiTest():
 			logging.debug('Found a N3xx device --> resetting it')
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
-		# in case of NR-UE, we may have rrc_config_path (Temporary?)
-		modifiedUeOptions = str(self.Initialize_OAI_UE_args)
-		if RAN.air_interface == 'nr':
-			result = re.search('--rrc_config_path ', modifiedUeOptions)
-			if result is not None:
-				modifiedUeOptions = modifiedUeOptions.replace('rrc_config_path ', 'rrc_config_path ' + self.UESourceCodePath + '/')
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets/ran_build/build', '\$', 5)
 		if RAN.air_interface == 'lte':
@@ -369,7 +363,17 @@ class OaiCiTest():
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
-		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.air_interface +'-uesoftmodem ' + modifiedUeOptions + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		else:
+			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
+			SSH.command('if [ -e reconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
+			# Copy the RAW files from gNB running directory (maybe on another machine)
+			copyin_res = SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/rbconfig.raw', '.')
+			if (copyin_res == 0):
+				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './rbconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
+			copyin_res = SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/reconfig.raw', '.')
+			if (copyin_res == 0):
+				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './reconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
+		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.air_interface +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
@@ -2572,14 +2576,14 @@ class OaiCiTest():
 					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
-			result = re.search("DL Carrier Frequency/ARFCN : (?P<carrier_frequency>\d{1,15}/\d{1,4})", str(line))
+			result = re.search("DL Carrier Frequency/ARFCN : \-*(?P<carrier_frequency>\d{1,15}/\d{1,4})", str(line))
 			if result is not None:
 				try:
 					freq = result.group('carrier_frequency')
 					new_freq = re.sub('/[0-9]+','',freq)
 					float_freq = float(new_freq) / 1000000
-					HTMLSethtmlUEFailureMsg(HTMLGethtmlUEFailureMsg() + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz')
-					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + freq + '\033[0m')
+					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz')
+					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + str(freq) + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "    DL Carrier Frequency not found" + '\033[0m')
 			result = re.search("AllowedMeasBandwidth : (?P<allowed_bandwidth>\d{1,7})", str(line))

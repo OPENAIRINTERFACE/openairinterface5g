@@ -37,7 +37,7 @@
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "PHY/phy_vars.h"
@@ -61,6 +61,8 @@ uint16_t NB_UE_INST = 1;
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint64_t get_softmodem_optmask(void) {return 0;}
+
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,

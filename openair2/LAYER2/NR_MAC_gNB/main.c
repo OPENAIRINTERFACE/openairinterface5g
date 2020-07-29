@@ -30,8 +30,8 @@
 
  */
 
-#include "mac_proto.h"
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "NR_MAC_gNB/mac_proto.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
@@ -113,6 +113,11 @@ void mac_top_init_gNB(void)
        UE_list->next[list_el] = list_el + 1;
       UE_list->next_ul[list_el] = list_el + 1;
       UE_list->active[list_el] = FALSE;
+      for (int list_harq = 0; list_harq < NR_MAX_NB_HARQ_PROCESSES; list_harq++) {
+        UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
+        UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;
+        UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].is_waiting = 0;
+      }
     }
 
     UE_list->next[list_el] = -1;

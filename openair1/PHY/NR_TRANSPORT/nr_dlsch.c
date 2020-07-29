@@ -34,6 +34,8 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
@@ -47,7 +49,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 
   uint8_t reset, b_idx;
   uint32_t x1, x2, s=0;
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_CODEWORD_SCRAMBLING, 1);
   reset = 1;
   x2 = (n_RNTI<<15) + (q<<14) + Nid;
 
@@ -62,7 +64,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
     *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_CODEWORD_SCRAMBLING, 0);
 }
 
 void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
@@ -126,22 +128,29 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
 			  time_stats_t *dlsch_interleaving_stats,
 			  time_stats_t *dlsch_segmentation_stats) {
 
-  int harq_pid = 0;
+  int harq_pid = dlsch->harq_ids[frame%2][slot];
   NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch->txdataF;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-
   uint8_t dmrs_Type = rel15->dmrsConfigType;
-  int nb_re_dmrs = (dmrs_Type== NFAPI_NR_DMRS_TYPE1) ? 6:4;
-  uint16_t n_dmrs = ((rel15->rbSize+rel15->rbStart)*nb_re_dmrs)<<1;
-  int16_t mod_dmrs[n_dmrs<<1];
-
-  uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
+  int nb_re_dmrs;
+  uint16_t n_dmrs;
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
+    n_dmrs = ((rel15->rbSize+rel15->rbStart)*6)<<1;
+  }
+  else {
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+    n_dmrs = ((rel15->rbSize+rel15->rbStart)*4)<<1;
+  }
+  uint16_t nb_re;
+  nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
   uint8_t Qm = rel15->qamModOrder[0];
   uint32_t encoded_length = nb_re*Qm;
+  int16_t mod_dmrs[n_dmrs<<1];
 
   /// CRC, coding, interleaving and rate matching
   AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -193,11 +202,13 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
  
   /// Modulation
   start_meas(dlsch_modulation_stats);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 1);
   for (int q=0; q<rel15->NrOfCodewords; q++)
     nr_modulation(scrambled_output[q],
                          encoded_length,
                          Qm,
                          mod_symbs[q]);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 0);
   stop_meas(dlsch_modulation_stats);
 #ifdef DEBUG_DLSCH
   printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_re);
@@ -297,15 +308,16 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
         }
 
         else {
-
-          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
+          if( (l != dmrs_symbol) || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,rel15->numDmrsCdmGrpsNoData,dmrs_Type)) {
+            ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)] = (amp * tx_layers[ap][m<<1]) >> 15;
+            ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
-	  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-m, l, k, ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
-		 ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)]);
+	    printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+                   m, l, k, ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
+		   ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)]);
 #endif
-          m++;
+            m++;
+          }
         }
         if (++k >= frame_parms->ofdm_symbol_size)
           k -= frame_parms->ofdm_symbol_size;

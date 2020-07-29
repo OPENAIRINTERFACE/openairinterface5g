@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/prach_common.c
- * \brief Common routines for UE/eNB PRACH physical channel V8.6 2009-03
- * \author R. Knopp
- * \date 2011
- * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr
+/*! \file PHY/NR_TRANSPORT/nr_prach.c
+ * \brief Routines for UE PRACH physical channel
+ * \author R. Knopp, G. Casati
+ * \date 2019
+ * \version 0.2
+ * \company Eurecom, Fraunhofer IIS
+ * \email: knopp@eurecom.fr, guido.casati@iis.fraunhofer.de
  * \note
  * \warning
  */
@@ -35,16 +35,14 @@
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
 #include "T.h"
-#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto_common.h>
 
-
-
+//#define NR_PRACH_DEBUG 1
 
 extern uint16_t NCS_unrestricted_delta_f_RA_125[16];
 extern uint16_t NCS_restricted_TypeA_delta_f_RA_125[15];
@@ -60,77 +58,77 @@ extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_4_prachConfig_Index [256][10];
 extern uint16_t nr_du[838];
 extern int16_t nr_ru[2*839];
+extern const char *prachfmt[9];
+extern const char *prachfmt03[4];
 
+// Note:
+// - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt
+// WIP todo:
+// - take prach start symbol into account
+// - idft for short sequence assumes we are transmitting starting in symbol 0 of a PRACH slot
+// - Assumes that PRACH SCS is same as PUSCH SCS @ 30 kHz, take values for formats 0-2 and adjust for others below
+// - Preamble index different from 0 is not detected by gNB
+int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
-
-
-
-
-
-
-int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
-{
-
-  //lte_frame_type_t frame_type         = ue->frame_parms.frame_type;
-  //uint8_t tdd_config         = ue->frame_parms.tdd_config;
   NR_DL_FRAME_PARMS *fp=&ue->frame_parms;
-  uint16_t rootSequenceIndex = fp->prach_config_common.rootSequenceIndex;
-  uint8_t prach_ConfigIndex  = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  uint8_t Ncs_config         = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  uint8_t restricted_set     = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  uint8_t preamble_index     = ue->prach_resources[eNB_id]->ra_PreambleIndex;
-  //uint8_t tdd_mapindex       = ue->prach_resources[eNB_id]->ra_TDD_map_index;
-  int16_t *prachF           = ue->prach_vars[eNB_id]->prachF;
+  fapi_nr_config_request_t *nrUE_config = &ue->nrUE_config;
+  NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_id];
+  fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
+
+  uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
+  uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
+  uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
-  int16_t *prach            = prach_tmp;
-  int16_t *prach2;
-  int16_t amp               = ue->prach_vars[eNB_id]->amp;
-  int16_t Ncp;
-  uint16_t NCS=0;
-  uint16_t *prach_root_sequence_map;
-  uint16_t preamble_offset,preamble_shift;
-  uint16_t preamble_index0,n_shift_ra,n_shift_ra_bar;
-  uint16_t d_start=-1,numshift;
 
-  uint16_t prach_fmt = get_nr_prach_fmt(prach_ConfigIndex,fp->frame_type,fp->freq_range);
-  //uint8_t Nsp=2;
-  //uint8_t f_ra,t1_ra;
-  uint16_t N_ZC = (prach_fmt<4)?839:139;
-  uint8_t not_found;
-  int16_t *Xu;
-  uint16_t u;
-  int32_t Xu_re,Xu_im;
-  uint16_t offset,offset2;
-  int prach_start;
-  int i, prach_len=0;
-  uint16_t first_nonzero_root_idx=0;
+  int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
+  int32_t Xu_re, Xu_im, samp_count;
+  int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
+  //int restricted_Type;
 
-#if defined(OAI_USRP)
-  prach_start =  (ue->rx_offset+subframe*fp->samples_per_subframe-ue->hw_timing_advance-ue->N_TA_offset);
-#ifdef NR_PRACH_DEBUG
-    LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
-        prach_start,
-        ue->rx_offset,
-        ue->hw_timing_advance,
-        ue->N_TA_offset);
-#endif
+  prach                   = prach_tmp;
+  prachF                  = ue->prach_vars[gNB_id]->prachF;
+  amp                     = ue->prach_vars[gNB_id]->amp;
+  Mod_id                  = ue->Mod_id;
+  prach_sequence_length   = nrUE_config->prach_config.prach_sequence_length;
+  N_ZC                    = (prach_sequence_length == 0) ? 839:139;
+  mu                      = nrUE_config->prach_config.prach_sub_c_spacing;
+  restricted_set          = prach_pdu->restricted_set;
+  rootSequenceIndex       = prach_pdu->root_seq_id;
+  n_ra_prb                = prach_pdu->freq_msg1;
+  NCS                     = prach_pdu->num_cs;
+  prach_fmt_id            = prach_pdu->prach_format;
+  preamble_index          = prach_resources->ra_PreambleIndex;
+  fd_occasion             = 0;
+  prach_len               = 0;
+  dftlen                  = 0;
+  first_nonzero_root_idx  = 0;
+  kbar                    = 1;
+  K                       = 24;
+  k                       = 12*n_ra_prb - 6*fp->N_RB_UL;
+  //prachStartSymbol     = prach_config_pdu->prach_start_symbol
+  //restricted_Type         = 0;
+
+  compute_nr_prach_seq(nrUE_config->prach_config.prach_sequence_length,
+                       nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].num_root_sequences,
+                       nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index,
+                       ue->X_u);
+
+  if (mu == 0)
+    samp_count = fp->samples_per_subframe;
+  else
+    samp_count = (slot%(fp->slots_per_subframe/2)) ? fp->samples_per_slotN0 : fp->samples_per_slot0;
+
+  #if defined (OAI_USRP)
+    prach_start = (ue->rx_offset + slot*samp_count - ue->hw_timing_advance - ue->N_TA_offset);
+  #else //normal case (simulation)
+    prach_start = slot*samp_count - ue->N_TA_offset;
+  #endif
 
   if (prach_start<0)
-    prach_start+=(fp->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+    prach_start += (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
-  if (prach_start>=(fp->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-    prach_start-=(fp->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-
-#else //normal case (simulation)
-  prach_start = subframe*fp->samples_per_subframe-ue->N_TA_offset;
-  LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
-    prach_start,
-    ue->rx_offset,
-    ue->hw_timing_advance,
-    ue->N_TA_offset);
-
-#endif
-
+  if (prach_start >= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME))
+    prach_start -= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
   // First compute physical root sequence
   /************************************************************************
@@ -140,41 +138,19 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   * NOTE: Restricted set type B is not implemented
   *************************************************************************/
 
-  int restricted_Type = 0; //this is hardcoded ('0' for restricted_TypeA; and '1' for restricted_TypeB). FIXME
-  if (prach_fmt<3){
-    if (restricted_set == 0) {
-      NCS = NCS_unrestricted_delta_f_RA_125[Ncs_config];
-    } else {
-      if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_125[Ncs_config]; // for TypeA, this is hardcoded. FIXME
-      if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_125[Ncs_config]; // for TypeB, this is hardcoded. FIXME
-    }
-  }
-  if (prach_fmt==3){
-    if (restricted_set == 0) {
-      NCS = NCS_unrestricted_delta_f_RA_5[Ncs_config];
-    } else {
-      if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_5[Ncs_config]; // for TypeA, this is hardcoded. FIXME
-      if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_5[Ncs_config]; // for TypeB, this is hardcoded. FIXME
-    }
-  }
-  if (prach_fmt>3){
-    NCS = NCS_unrestricted_delta_f_RA_15[Ncs_config];
-  }
-
-  prach_root_sequence_map = (prach_fmt<4) ? prach_root_sequence_map_0_3 : prach_root_sequence_map_abc;
-
-  // This is the relative offset (for unrestricted case) in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
-  preamble_offset = ((NCS==0)? preamble_index : (preamble_index/(N_ZC/NCS)));
+  prach_root_sequence_map = (prach_sequence_length == 0) ? prach_root_sequence_map_0_3 : prach_root_sequence_map_abc;
 
   if (restricted_set == 0) {
+    // This is the relative offset (for unrestricted case) in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
+    preamble_offset = ((NCS==0)? preamble_index : (preamble_index/(N_ZC/NCS)));
     // This is the \nu corresponding to the preamble index
     preamble_shift  = (NCS==0)? 0 : (preamble_index % (N_ZC/NCS));
     preamble_shift *= NCS;
   } else { // This is the high-speed case
 
-#ifdef NR_PRACH_DEBUG
-    LOG_I(PHY,"[UE %d] High-speed mode, NCS_config %d\n",ue->Mod_id,Ncs_config);
-#endif
+    #ifdef NR_PRACH_DEBUG
+      LOG_I(PHY, "PRACH [UE %d] High-speed mode, NCS %d\n", Mod_id, NCS);
+    #endif
 
     not_found = 1;
     preamble_index0 = preamble_index;
@@ -185,8 +161,9 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
     while (not_found == 1) {
       // current root depending on rootSequenceIndex and preamble_offset
       int index = (rootSequenceIndex + preamble_offset) % N_ZC;
+      uint16_t n_group_ra = 0;
 
-      if (prach_fmt<4) {
+      if (prach_fmt_id<4) {
         // prach_root_sequence_map points to prach_root_sequence_map0_3
         DevAssert( index < sizeof(prach_root_sequence_map_0_3) / sizeof(prach_root_sequence_map_0_3[0]) );
       } else {
@@ -195,8 +172,6 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
       }
 
       u = prach_root_sequence_map[index];
-
-      uint16_t n_group_ra = 0;
 
       if ( (nr_du[u]<(N_ZC/3)) && (nr_du[u]>=NCS) ) {
         n_shift_ra     = nr_du[u]/NCS;
@@ -231,42 +206,48 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   }
 
   // now generate PRACH signal
-#ifdef NR_PRACH_DEBUG
-
-  if (NCS>0)
-    LOG_D(PHY,"Generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %x, prach_ConfigIndex %d, NCS %d (NCS_config %d, N_ZC/NCS %d): Preamble_offset %d, Preamble_shift %d\n",
-          rootSequenceIndex,preamble_index,prach_fmt,prach_ConfigIndex,NCS,Ncs_config,N_ZC/NCS,
-          preamble_offset,preamble_shift);
-
-#endif
+  #ifdef NR_PRACH_DEBUG
+    if (NCS>0)
+      LOG_I(PHY, "PRACH [UE %d] generate PRACH for RootSeqIndex %d, Preamble Index %d, PRACH Format %s, NCS %d (N_ZC %d): Preamble_offset %d, Preamble_shift %d\n", Mod_id,
+    rootSequenceIndex,
+    preamble_index,
+    prach_sequence_length == 0 ? prachfmt03[prach_fmt_id]  : prachfmt[prach_fmt_id],
+        NCS,
+        N_ZC,
+        preamble_offset,
+        preamble_shift);
+  #endif
 
   //  nsymb = (frame_parms->Ncp==0) ? 14:12;
-  //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
-  int kbar = 1;
-  int K    = 24;
-  if (prach_fmt == 3) { 
-    K=4;
-    kbar=10;
+  //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*slot*nsymb;
+
+  if (prach_sequence_length == 0 && prach_fmt_id == 3) {
+    K = 4;
+    kbar = 10;
+  } else if (prach_sequence_length == 1) {
+    K = 1;
+    kbar = 2;
   }
-  else if (prach_fmt > 3) {
-    // Note: Assumes that PRACH SCS is same as PUSCH SCS
-    K=1;
-    kbar=2;
-  }
-  int n_ra_prb            = fp->prach_config_common.prach_ConfigInfo.msg1_frequencystart;
-  int k                   = (12*n_ra_prb) - 6*fp->N_RB_UL;
 
-  k = (12*n_ra_prb) - 6*fp->N_RB_UL;
+  if (k<0)
+    k += fp->ofdm_symbol_size;
 
-  if (k<0) k+=fp->ofdm_symbol_size;
+  k *= K;
+  k += kbar;
+  k *= 2;
 
-  k*=K;
-  k+=kbar;
-
-  LOG_D(PHY,"placing prach in position %d\n",k);
-  k*=2;
+  LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, msg1 frequency start %d, preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
+    slot,
+    k,
+    n_ra_prb,
+    preamble_offset,
+    first_nonzero_root_idx);
 
   Xu = (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx];
+
+  #if defined (PRACH_WRITE_OUTPUT_DEBUG)
+    LOG_M("X_u.m", "X_u", (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx], N_ZC, 1, 1);
+  #endif
 
   /********************************************************
    *
@@ -282,10 +263,86 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
    *
    *********************************************************/
 
-  AssertFatal(prach_fmt>3,"prach_fmt<=3: Fix this for other formats\n");
-  int dftlen=2048;
-  if (fp->N_RB_UL >= 137) dftlen=4096;
-  if (fp->threequarter_fs==1) dftlen=(3*dftlen)/4;
+  if (fp->N_RB_UL <= 100)
+    AssertFatal(1 == 0, "N_RB_UL %d not support for NR PRACH yet\n", fp->N_RB_UL);
+  else if (fp->N_RB_UL < 137) {
+    if (fp->threequarter_fs == 0) {
+      //40 MHz @ 61.44 Ms/s
+      //50 MHz @ 61.44 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+            dftlen = 49152;
+        if (prach_fmt_id == 3)
+            dftlen = 12288;
+      } // 839 sequence
+      else {
+        switch (mu){
+          case 1:
+            dftlen = 2048;
+            break;
+          default:
+            AssertFatal(1 == 0, "Shouldn't get here\n");
+            break;
+        }
+      }
+    } else { // threequarter sampling
+      //  40 MHz @ 46.08 Ms/s
+      if (prach_sequence_length == 0) {
+        AssertFatal(fp->N_RB_UL <= 107, "cannot do 108..136 PRBs with 3/4 sampling\n");
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 36864;
+        if (prach_fmt_id == 3)
+          dftlen = 9216;
+      } else {
+        switch (mu){
+          case 1:
+            dftlen = 1536;
+          break;
+          default:
+            AssertFatal(1 == 0, "Shouldn't get here\n");
+            break;
+        }
+      } // short format
+    } // 3/4 sampling
+  } // <=50 MHz BW
+  else if (fp->N_RB_UL <= 273) {
+    if (fp->threequarter_fs == 0) {
+    //80,90,100 MHz @ 122.88 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 98304;
+        if (prach_fmt_id == 3)
+          dftlen = 24576;
+      }
+    } else { // threequarter sampling
+      switch (mu){
+        case 1:
+          dftlen = 4096;
+          break;
+        default:
+          AssertFatal(1 == 0, "Shouldn't get here\n");
+          break;
+      }
+    }
+  } else {
+    AssertFatal(fp->N_RB_UL <= 217, "cannot do more than 217 PRBs with 3/4 sampling\n");
+    //  80 MHz @ 92.16 Ms/s
+    if (prach_sequence_length == 0) {
+      if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+        dftlen = 73728;
+      if (prach_fmt_id == 3)
+        dftlen = 18432;
+    } else {
+      switch (mu){
+        case 1:
+          dftlen = 3072;
+          break;
+        default:
+          AssertFatal(1 == 0, "Shouldn't get here\n");
+          break;
+      }
+    }
+  }
 
   for (offset=0,offset2=0; offset<N_ZC; offset++,offset2+=preamble_shift) {
 
@@ -296,536 +353,502 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
     Xu_im = (((int32_t)Xu[1+(offset<<1)]*amp)>>15);
     prachF[k++]= ((Xu_re*nr_ru[offset2<<1]) - (Xu_im*nr_ru[1+(offset2<<1)]))>>15;
     prachF[k++]= ((Xu_im*nr_ru[offset2<<1]) + (Xu_re*nr_ru[1+(offset2<<1)]))>>15;
+
     if (k==dftlen) k=0;
   }
 
-  switch (fp->N_RB_UL) {
-  case 6:
-    memset((void*)prachF,0,4*1536);
-    break;
+  #if defined (PRACH_WRITE_OUTPUT_DEBUG)
+    LOG_M("prachF.m", "prachF", &prachF[1804], 1024, 1, 1);
+    LOG_M("Xu.m", "Xu", Xu, N_ZC, 1, 1);
+  #endif
 
-  case 15:
-    memset((void*)prachF,0,4*3072);
-    break;
+  if (prach_sequence_length == 0) {
 
-  case 25:
-    memset((void*)prachF,0,4*6144);
-    break;
+    AssertFatal(prach_fmt_id < 4, "Illegal PRACH format %d for sequence length 839\n", prach_fmt_id);
 
-  case 50:
-    memset((void*)prachF,0,4*12288);
-    break;
+    switch (prach_fmt_id) {
+    case 0:
+      Ncp = 3168;
+      break;
+    case 1:
+      Ncp = 21024;
+      break;
+    case 2:
+      Ncp = 4688;
+      break;
+    case 3:
+      Ncp = 3168;
+      break;
+    }
 
-  case 75:
-    memset((void*)prachF,0,4*18432);
-    break;
+  } else {
 
-  case 100:
-    if (fp->threequarter_fs == 0)
-      memset((void*)prachF,0,4*24576);
-    else
-      memset((void*)prachF,0,4*18432);
-    break;
+    //LOG_D(PHY, "PRACH [UE %d] in slot %d, format %d, msg1 frequency start %d startSymbol %d \n", Mod_id, slot, prachfmt[prach_fmt_id], n_ra_prb, prachStartSymbol);
 
-  case 106:
-    memset((void*)prachF,0,4*24576);
+    switch (prach_fmt_id) {
+    case 0: //A1
+      Ncp = 288/(1<<mu);
+      break;
+    case 1: //A2
+      Ncp = 576/(1<<mu);
+      break;
+    case 2: //A3
+      Ncp = 864/(1<<mu);
+      break;
+    case 3: //B1
+      Ncp = 216/(1<<mu);
     break;
-}
-
-  int mu = 1; // numerology is hardcoded. FIXME!!!
-  switch (prach_fmt) {
-  case 0:
-    Ncp = 3168;
-    break;
-
-  case 1:
-    Ncp = 2*21024;
-    break;
-
-  case 2:
-    Ncp = 4688;
-    break;
-
-  case 3:
-    Ncp = 3168;
-    break;
-
-  case 0xa1:
-    Ncp = 288/(1<<mu);
-    break;
-
-  case 0xa2:
-    Ncp = 576/(1<<mu);
-    break;
-
-  case 0xa3:
-    Ncp = 864/(1<<mu);
-    break;
-
-  case 0xb1:
-    Ncp = 216/(1<<mu);
-    break;
-
-  case 0xb2:
-    Ncp = 360/(1<<mu);
-    break;
-
-  case 0xb3:
-    Ncp = 504/(1<<mu);
-    break;
-
-  case 0xb4:
-    Ncp = 936/(1<<mu);
-    break;
-
-  case 0xc0:
-    Ncp = 1240/(1<<mu);
-    break;
-
-  case 0xc2:
-    Ncp = 2048/(1<<mu);
-    break;
-
-  default:
-    Ncp = 3168;
-    break;
+    case 4: //B2
+      Ncp = 360/(1<<mu);
+      break;
+    case 5: //B3
+      Ncp = 504/(1<<mu);
+      break;
+    case 6: //B4
+      Ncp = 936/(1<<mu);
+      break;
+    case 7: //C0
+      Ncp = 1240/(1<<mu);
+      break;
+    case 8: //C2
+      Ncp = 2048/(1<<mu);
+      break;
+    default:
+      AssertFatal(1==0,"Unknown PRACH format ID %d\n", prach_fmt_id);
+      break;
+    }
   }
 
+  LOG_D(PHY, "PRACH [UE %d] Ncp %d, dftlen %d \n", Mod_id, Ncp, dftlen);
 
   if (fp->N_RB_UL <= 100)
     AssertFatal(1==0,"N_RB_UL %d not supported for NR PRACH yet\n",fp->N_RB_UL);
   else if (fp->N_RB_UL < 137) { // 46.08 or 61.44 Ms/s
-    if (fp->threequarter_fs==0) { //61.44 Ms/s  
+    if (fp->threequarter_fs == 0) { // full sampling @ 61.44 Ms/s
       Ncp<<=1;
       // This is after cyclic prefix (Ncp<<1 samples for 30.72 Ms/s, Ncp<<2 samples for 61.44 Ms/s
       prach2 = prach+(Ncp<<1);
-      if (prach_fmt == 0) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-	idft(IDFT_49152,prachF,prach2,1);
-	// here we have |empty | Prach49152|
-	memmove(prach,prach+(49152<<1),(Ncp<<3));
-	// here we have |Prefix | Prach49152|
-	prach_len = 49152+Ncp;
-	dftlen=49152;
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
+          idft(IDFT_49152,prachF,prach2,1);
+          // here we have |empty | Prach49152|
+          memmove(prach,prach+(49152<<1),(Ncp<<2));
+          // here we have |Prefix | Prach49152|
+          prach_len = 49152+Ncp;
+        } else if (prach_fmt_id == 1) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
+          idft(IDFT_49152,prachF,prach2,1);
+          memmove(prach2+(49152<<1),prach2,(49152<<2));
+          // here we have |empty | Prach49152 | Prach49152|
+          memmove(prach,prach+(49152<<2),(Ncp<<2));
+          // here we have |Prefix | Prach49152 | Prach49152|
+          prach_len = (49152*2)+Ncp;
+        } else if (prach_fmt_id == 2) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
+          idft(IDFT_49152,prachF,prach2,1);
+          memmove(prach2+(49152<<1),prach2,(49152<<2));
+          // here we have |empty | Prach49152 | Prach49152| empty49152 | empty49152
+          memmove(prach2+(49152<<2),prach2,(49152<<3));
+          // here we have |empty | Prach49152 | Prach49152| Prach49152 | Prach49152
+          memmove(prach,prach+(49152<<3),(Ncp<<2));
+          // here we have |Prefix | Prach49152 | Prach49152| Prach49152 | Prach49152
+          prach_len = (49152*4)+Ncp;
+        } else if (prach_fmt_id == 3) { // //6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          memmove(prach2+(12288<<1),prach2,(12288<<2));
+          // here we have |empty | Prach12288 | Prach12288| empty12288 | empty12288
+          memmove(prach2+(12288<<2),prach2,(12288<<3));
+          // here we have |empty | Prach12288 | Prach12288| Prach12288 | Prach12288
+          memmove(prach,prach+(12288<<3),(Ncp<<2));
+          // here we have |Prefix | Prach12288 | Prach12288| Prach12288 | Prach12288
+          prach_len = (12288*4)+Ncp;
+        }
+      } else { // short PRACH sequence
+        if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
+          Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_2048,prachF,prach2,1);
+          // here we have |empty | Prach2048 |
+          if (prach_fmt_id != 7) {
+            memmove(prach2+(2048<<1),prach2,(2048<<2));
+            prach_len = (2048*2)+Ncp;
+          }
+          else prach_len = (2048*1)+Ncp;
+          memmove(prach,prach+(2048<<1),(Ncp<<2));
+          // here we have |Prefix | Prach2048 | Prach2048 (if ! 0xc0)  |
+        } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 6x2048
+          Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_2048,prachF,prach2,1);
+          // here we have |empty | Prach2048 |
+          memmove(prach2+(2048<<1),prach2,(2048<<2));
+          // here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 |
+          memmove(prach2+(2048<<2),prach2,(2048<<3));
+          // here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 |
+          memmove(prach,prach+(2048<<1),(Ncp<<2));
+          // here we have |Prefix | Prach2048 |
+          prach_len = (2048*4)+Ncp;
+        } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x2048
+          Ncp+=32;
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_2048,prachF,prach2,1);
+          // here we have |empty | Prach2048 |
+          memmove(prach2+(2048<<1),prach2,(2048<<2));
+          // here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
+          memmove(prach2+(2048<<2),prach2,(2048<<3));
+          // here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | empty2048 | empty2048
+          memmove(prach2+(2048<<3),prach2,(2048<<3));
+          // here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048
+          memmove(prach,prach+(2048<<1),(Ncp<<2));
+          // here we have |Prefix | Prach2048 |
+          prach_len = (2048*6)+Ncp;
+        } else if (prach_fmt_id == 6) { // 12x2048
+          Ncp+=32; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_2048,prachF,prach2,1);
+          // here we have |empty | Prach2048 |
+          memmove(prach2+(2048<<1),prach2,(2048<<2));
+          // here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
+          memmove(prach2+(2048<<2),prach2,(2048<<3));
+          // here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | empty2048 | empty2048
+          memmove(prach2+(2048<<3),prach2,(2048<<3));
+          // here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048
+          memmove(prach2+(2048<<1)*6,prach2,(2048<<2)*6);
+          // here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048|
+          memmove(prach,prach+(2048<<1),(Ncp<<2));
+          // here we have |Prefix | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048|
+          prach_len = (2048*12)+Ncp;
+        }
       }
-      else if (prach_fmt == 1) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-	idft(IDFT_49152,prachF,prach2,1);
-	memmove(prach2+(49152<<1),prach2,(49152<<2));
-	// here we have |empty | Prach49152 | Prach49152|
-	memmove(prach,prach+(49152<<2),(Ncp<<3));
-	// here we have |Prefix | Prach49152 | Prach49152|
-	prach_len = (49152*2)+Ncp;
-	dftlen=49152;
-      }
-      else if (prach_fmt == 2) { //24576 samples @ 30.72 Ms/s, 49152 samples @ 61.44 Ms/s
-	idft(IDFT_49152,prachF,prach2,1);
-	memmove(prach2+(49152<<1),prach2,(49152<<2));
-	// here we have |empty | Prach49152 | Prach49152| empty49152 | empty49152
-	memmove(prach2+(49152<<2),prach2,(49152<<3));
-	// here we have |empty | Prach49152 | Prach49152| Prach49152 | Prach49152
-	memmove(prach,prach+(49152<<3),(Ncp<<3));
-	// here we have |Prefix | Prach49152 | Prach49152| Prach49152 | Prach49152
-	prach_len = (49152*4)+Ncp;
-	dftlen=49152;
-      }
-      else if (prach_fmt == 3) { // //6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
-	idft(IDFT_12288,prachF,prach2,1);
-	memmove(prach2+(12288<<1),prach2,(12288<<2));
-	// here we have |empty | Prach12288 | Prach12288| empty12288 | empty12288
-	memmove(prach2+(12288<<2),prach2,(12288<<3));
-	// here we have |empty | Prach12288 | Prach12288| Prach12288 | Prach12288
-	memmove(prach,prach+(12288<<3),(Ncp<<3));
-	// here we have |Prefix | Prach12288 | Prach12288| Prach12288 | Prach12288
-	prach_len = (12288*4)+Ncp;
-	dftlen=12288;
-      }
-      else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	prach2 = prach+(Ncp<<1);
-	idft(IDFT_2048,prachF,prach2,1);
-	dftlen=2048;
-	// here we have |empty | Prach2048 |
-	if (prach_fmt != 0xc0) {
-	  memmove(prach2+(2048<<1),prach2,(2048<<2));
-	  prach_len = (2048*2)+Ncp;
-	}
-	else prach_len = (2048*1)+Ncp;
-	memmove(prach,prach+(2048<<1),(Ncp<<2));
-	// here we have |Prefix | Prach2048 | Prach2048 (if ! 0xc0)  | 
-      }
-      else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 6x2048
-	idft(IDFT_2048,prachF,prach2,1);
-	dftlen=2048;
-	// here we have |empty | Prach2048 |
-	memmove(prach2+(2048<<1),prach2,(2048<<2));
-	// here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | 
-	memmove(prach2+(2048<<2),prach2,(2048<<3));
-	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | 
-	memmove(prach,prach+(2048<<1),(Ncp<<2));
-	// here we have |Prefix | Prach2048 |
-	prach_len = (2048*4)+Ncp; 
-      }
-      else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x2048
-	prach2 = prach+(Ncp<<1);
-	idft(IDFT_2048,prachF,prach2,1);
-	dftlen=2048;
-	// here we have |empty | Prach2048 |
-	memmove(prach2+(2048<<1),prach2,(2048<<2));
-	// here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
-	memmove(prach2+(2048<<2),prach2,(2048<<3));
-	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | empty2048 | empty2048
-	memmove(prach2+((2048<<1)*3),prach2,(2048<<3));
-	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048
-	memmove(prach,prach+(2048<<1),(Ncp<<2));
-	// here we have |Prefix | Prach2048 |
-	prach_len = (2048*6)+Ncp; 
-      }
-      else if (prach_fmt == 0xb4) { // 12x2048
-	idft(IDFT_2048,prachF,prach2,1);
-	dftlen=2048;
-	// here we have |empty | Prach2048 |
-	memmove(prach2+(2048<<1),prach2,(2048<<2));
-	// here we have |empty | Prach2048 | Prach2048| empty2048 | empty2048 | empty2048 | empty2048
-	memmove(prach2+(2048<<2),prach2,(2048<<3));
-	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | empty2048 | empty2048
-	memmove(prach2+(2048<<3),prach2,(2048<<3));
-	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048
-	memmove(prach2+(2048<<1)*6,prach2,(2048<<2)*6);
-	// here we have |empty | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048|
-	memmove(prach,prach+(2048<<1),(Ncp<<2));
-	// here we have |Prefix | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048 | Prach2048| Prach2048 | Prach2048 | Prach2048 | Prach2048|
-	prach_len = (2048*12)+Ncp;
-      }
-      
-    }
-    else {     // 46.08 Ms/s
+    } else {  // threequarter sampling @ 46.08 Ms/s
       Ncp = (Ncp*3)/2;
       prach2 = prach+(Ncp<<1);
-      if (prach_fmt == 0) {
-	idft(IDFT_36864,prachF,prach2,1);
-	dftlen=36864;
-	// here we have |empty | Prach73728|
-	memmove(prach,prach+(36864<<1),(Ncp<<2));
-	// here we have |Prefix | Prach73728|
-	prach_len = (36864*1)+Ncp;
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) {
+          idft(IDFT_36864,prachF,prach2,1);
+          // here we have |empty | Prach73728|
+          memmove(prach,prach+(36864<<1),(Ncp<<2));
+          // here we have |Prefix | Prach73728|
+          prach_len = (36864*1)+Ncp;
+        } else if (prach_fmt_id == 1) {
+          idft(IDFT_36864,prachF,prach2,1);
+          memmove(prach2+(36864<<1),prach2,(36864<<2));
+          // here we have |empty | Prach73728 | Prach73728|
+          memmove(prach,prach+(36864<<2),(Ncp<<2));
+          // here we have |Prefix | Prach73728 | Prach73728|
+          prach_len = (36864*2)+Ncp;
+        } else if (prach_fmt_id == 2) {
+          idft(IDFT_36864,prachF,prach2,1);
+          memmove(prach2+(36864<<1),prach2,(36864<<2));
+          // here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
+          memmove(prach2+(36864<<2),prach2,(36864<<3));
+          // here we have |empty | Prach73728 | Prach73728| Prach73728 | Prach73728
+          memmove(prach,prach+(36864<<3),(Ncp<<2));
+          // here we have |Prefix | Prach73728 | Prach73728| Prach73728 | Prach73728
+          prach_len = (36864*4)+Ncp;
+        } else if (prach_fmt_id == 3) {
+          idft(IDFT_9216,prachF,prach2,1);
+          memmove(prach2+(9216<<1),prach2,(9216<<2));
+          // here we have |empty | Prach9216 | Prach9216| empty9216 | empty9216
+          memmove(prach2+(9216<<2),prach2,(9216<<3));
+          // here we have |empty | Prach9216 | Prach9216| Prach9216 | Prach9216
+          memmove(prach,prach+(9216<<3),(Ncp<<2));
+          // here we have |Prefix | Prach9216 | Prach9216| Prach9216 | Prach9216
+          prach_len = (9216*4)+Ncp;
+        }
+      } else { // short sequence
+        if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
+          Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_1536,prachF,prach2,1);
+          // here we have |empty | Prach1536 |
+          if (prach_fmt_id != 7) {
+            memmove(prach2+(1536<<1),prach2,(1536<<2));
+            prach_len = (1536*2)+Ncp;
+          }	else prach_len = (1536*1)+Ncp;
+
+          memmove(prach,prach+(1536<<1),(Ncp<<2));
+          // here we have |Prefix | Prach1536 | Prach1536 (if ! 0xc0) |
+
+        } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 6x1536
+
+          Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_1536,prachF,prach2,1);
+          // here we have |empty | Prach1536 |
+          memmove(prach2+(1536<<1),prach2,(1536<<2));
+          // here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 |
+          memmove(prach2+(1536<<2),prach2,(1536<<3));
+          // here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 |
+          memmove(prach,prach+(1536<<1),(Ncp<<2));
+          // here we have |Prefix | Prach1536 |
+          prach_len = (1536*4)+Ncp;
+        } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x1536
+          Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_1536,prachF,prach2,1);
+          // here we have |empty | Prach1536 |
+          memmove(prach2+(1536<<1),prach2,(1536<<2));
+          // here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
+          memmove(prach2+(1536<<2),prach2,(1536<<3));
+          // here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | empty1536 | empty1536
+          memmove(prach2+(1536<<3),prach2,(1536<<3));
+          // here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536
+          memmove(prach,prach+(1536<<1),(Ncp<<2));
+          // here we have |Prefix | Prach1536 |
+          prach_len = (1536*6)+Ncp;
+        } else if (prach_fmt_id == 6) { // 12x1536
+          Ncp+=24; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_1536,prachF,prach2,1);
+          // here we have |empty | Prach1536 |
+          memmove(prach2+(1536<<1),prach2,(1536<<2));
+          // here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
+          memmove(prach2+(1536<<2),prach2,(1536<<3));
+          // here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | empty1536 | empty1536
+          memmove(prach2+(1536<<3),prach2,(1536<<3));
+          // here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536
+          memmove(prach2+(1536<<1)*6,prach2,(1536<<2)*6);
+          // here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536|
+          memmove(prach,prach+(1536<<1),(Ncp<<2));
+          // here we have |Prefix | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536|
+          prach_len = (1536*12)+Ncp;
+        }
       }
-      else if (prach_fmt == 1) {
-	idft(IDFT_36864,prachF,prach2,1);
-	dftlen=36864;
-	memmove(prach2+(36864<<1),prach2,(36864<<2));
-	// here we have |empty | Prach73728 | Prach73728|
-	memmove(prach,prach+(36864<<2),(Ncp<<2));
-	// here we have |Prefix | Prach73728 | Prach73728|
-	prach_len = (36864*2)+Ncp;
-      }
-      if (prach_fmt == 2) {
-	idft(IDFT_36864,prachF,prach2,1);
-	dftlen=36864;
-	memmove(prach2+(36864<<1),prach2,(36864<<2));
-	// here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
-	memmove(prach2+(36864<<2),prach2,(36864<<3));
-	// here we have |empty | Prach73728 | Prach73728| Prach73728 | Prach73728
-	memmove(prach,prach+(36864<<3),(Ncp<<2));
-	// here we have |Prefix | Prach73728 | Prach73728| Prach73728 | Prach73728
-	prach_len = (36864*4)+Ncp;
-      }
-      else if (prach_fmt == 3) {
-	idft(IDFT_9216,prachF,prach2,1);
-	dftlen=36864;
-	memmove(prach2+(9216<<1),prach2,(9216<<2));
-	// here we have |empty | Prach9216 | Prach9216| empty9216 | empty9216
-	memmove(prach2+(9216<<2),prach2,(9216<<3));
-	// here we have |empty | Prach9216 | Prach9216| Prach9216 | Prach9216
-	memmove(prach,prach+(9216<<3),(Ncp<<2));
-	// here we have |Prefix | Prach9216 | Prach9216| Prach9216 | Prach9216
-	prach_len = (9216*4)+Ncp;
-      }
-      else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	idft(IDFT_1536,prachF,prach2,1);
-	dftlen=1536;
-	// here we have |empty | Prach1536 |
-	if (prach_fmt != 0xc0)
-	  memmove(prach2+(1536<<1),prach2,(1536<<2));
-	memmove(prach,prach+(1536<<1),(Ncp<<2));
-	// here we have |Prefix | Prach1536 | Prach1536 (if ! 0xc0)  | 
-	prach_len = (1536*2)+Ncp;
-      }
-      else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 6x1536
-	idft(IDFT_1536,prachF,prach2,1);
-	dftlen=1536;
-	// here we have |empty | Prach1536 |
-	memmove(prach2+(1536<<1),prach2,(1536<<2));
-	// here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 |
-	memmove(prach2+(1536<<2),prach2,(1536<<3));
-	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 |
-	memmove(prach,prach+(1536<<1),(Ncp<<2));
-	// here we have |Prefix | Prach1536 |
-	prach_len = (1536*4)+Ncp; 
-      }
-      else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x1536
-	idft(IDFT_1536,prachF,prach2,1);
-	dftlen=1536;
-	// here we have |empty | Prach1536 |
-	memmove(prach2+(1536<<1),prach2,(1536<<2));
-	// here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
-	memmove(prach2+(1536<<2),prach2,(1536<<3));
-	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | empty1536 | empty1536
-	memmove(prach2+((1536<<1)*3),prach2,(1536<<3));
-	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536
-	memmove(prach,prach+(1536<<1),(Ncp<<2));
-	// here we have |Prefix | Prach1536 | 
-	prach_len = (1536*6)+Ncp; 
-      }
-      else if (prach_fmt == 0xb4) { // 12x1536
-	idft(IDFT_1536,prachF,prach2,1);
-	dftlen=1536;
-	// here we have |empty | Prach1536 |
-	memmove(prach2+(1536<<1),prach2,(1536<<2));
-	// here we have |empty | Prach1536 | Prach1536| empty1536 | empty1536 | empty1536 | empty1536
-	memmove(prach2+(1536<<2),prach2,(1536<<3));
-	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | empty1536 | empty1536
-	memmove(prach2+(1536<<3),prach2,(1536<<3));
-	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536
-	memmove(prach2+(1536<<1)*6,prach2,(1536<<2)*6);
-	// here we have |empty | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536|
-	memmove(prach,prach+(1536<<1),(Ncp<<2));
-	// here we have |Prefix | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536 | Prach1536| Prach1536 | Prach1536 | Prach1536 | Prach1536|
-	prach_len = (1536*12)+Ncp; 
-      }      
     }
-  }
-  else if (fp->N_RB_UL <= 273) {// 92.16 or 122.88 Ms/s
-    if (fp->threequarter_fs==0) { //122.88 Ms/s
+  } else if (fp->N_RB_UL <= 273) {// 92.16 or 122.88 Ms/s
+    if (fp->threequarter_fs == 0) { // full sampling @ 122.88 Ms/s
       Ncp<<=2;
       prach2 = prach+(Ncp<<1);
-      if (prach_fmt == 0) { //24576 samples @ 30.72 Ms/s, 98304 samples @ 122.88 Ms/s
-	idft(IDFT_98304,prachF,prach2,1);
-	dftlen=98304;
-	// here we have |empty | Prach98304|
-	memmove(prach,prach+(98304<<1),(Ncp<<2));
-	// here we have |Prefix | Prach98304|
-	prach_len = (98304*1)+Ncp;
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) { //24576 samples @ 30.72 Ms/s, 98304 samples @ 122.88 Ms/s
+          idft(IDFT_98304,prachF,prach2,1);
+          // here we have |empty | Prach98304|
+          memmove(prach,prach+(98304<<1),(Ncp<<2));
+          // here we have |Prefix | Prach98304|
+          prach_len = (98304*1)+Ncp;
+        } else if (prach_fmt_id == 1) {
+          idft(IDFT_98304,prachF,prach2,1);
+          memmove(prach2+(98304<<1),prach2,(98304<<2));
+          // here we have |empty | Prach98304 | Prach98304|
+          memmove(prach,prach+(98304<<2),(Ncp<<2));
+          // here we have |Prefix | Prach98304 | Prach98304|
+          prach_len = (98304*2)+Ncp;
+        } else if (prach_fmt_id == 2) {
+          idft(IDFT_98304,prachF,prach2,1);
+          memmove(prach2+(98304<<1),prach2,(98304<<2));
+          // here we have |empty | Prach98304 | Prach98304| empty98304 | empty98304
+          memmove(prach2+(98304<<2),prach2,(98304<<3));
+          // here we have |empty | Prach98304 | Prach98304| Prach98304 | Prach98304
+          memmove(prach,prach+(98304<<3),(Ncp<<2));
+          // here we have |Prefix | Prach98304 | Prach98304| Prach98304 | Prach98304
+          prach_len = (98304*4)+Ncp;
+        } else if (prach_fmt_id == 3) { // 4x6144, Ncp 3168
+          idft(IDFT_24576,prachF,prach2,1);
+          memmove(prach2+(24576<<1),prach2,(24576<<2));
+          // here we have |empty | Prach24576 | Prach24576| empty24576 | empty24576
+          memmove(prach2+(24576<<2),prach2,(24576<<3));
+          // here we have |empty | Prach24576 | Prach24576| Prach24576 | Prach24576
+          memmove(prach,prach+(24576<<3),(Ncp<<2));
+          // here we have |Prefix | Prach24576 | Prach24576| Prach24576 | Prach24576
+          prach_len = (24576*4)+Ncp;
+        }
+      } else { // short sequence
+        if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
+          Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_4096,prachF,prach2,1);
+          // here we have |empty | Prach4096 |
+          if (prach_fmt_id != 7) {
+            memmove(prach2+(4096<<1),prach2,(4096<<2));
+            prach_len = (4096*2)+Ncp; 
+          }	else 	prach_len = (4096*1)+Ncp;
+          memmove(prach,prach+(4096<<1),(Ncp<<2));
+          // here we have |Prefix | Prach4096 | Prach4096 (if ! 0xc0) |
+        } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 4x4096
+          Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_4096,prachF,prach2,1);
+          // here we have |empty | Prach4096 |
+          memmove(prach2+(4096<<1),prach2,(4096<<2));
+          // here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 |
+          memmove(prach2+(4096<<2),prach2,(4096<<3));
+          // here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 |
+          memmove(prach,prach+(4096<<1),(Ncp<<2));
+          // here we have |Prefix | Prach4096 |
+          prach_len = (4096*4)+Ncp;
+        } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x4096
+          Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_4096,prachF,prach2,1);
+          // here we have |empty | Prach4096 |
+          memmove(prach2+(4096<<1),prach2,(4096<<2));
+          // here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
+          memmove(prach2+(4096<<2),prach2,(4096<<3));
+          // here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | empty4096 | empty4096
+          memmove(prach2+(4096<<3),prach2,(4096<<3));
+          // here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096
+          memmove(prach,prach+(4096<<1),(Ncp<<2));
+          // here we have |Prefix | Prach4096 |
+          prach_len = (4096*6)+Ncp;
+        } else if (prach_fmt_id == 6) { // 12x4096
+          Ncp+=64; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_4096,prachF,prach2,1);
+          // here we have |empty | Prach4096 |
+          memmove(prach2+(4096<<1),prach2,(4096<<2));
+          // here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
+          memmove(prach2+(4096<<2),prach2,(4096<<3));
+          // here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | empty4096 | empty4096
+          memmove(prach2+(4096<<3),prach2,(4096<<3));
+          // here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096
+          memmove(prach2+(4096<<1)*6,prach2,(4096<<2)*6);
+          // here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096|
+          memmove(prach,prach+(4096<<1),(Ncp<<2));
+          // here we have |Prefix | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096|
+          prach_len = (4096*12)+Ncp;
+        }
       }
-      else if (prach_fmt == 1) {
-	idft(IDFT_98304,prachF,prach2,1);
-	dftlen=98304;
-	memmove(prach2+(98304<<1),prach2,(98304<<2));
-	// here we have |empty | Prach98304 | Prach98304|
-	memmove(prach,prach+(98304<<2),(Ncp<<2));
-	// here we have |Prefix | Prach98304 | Prach98304|
-	prach_len = (98304*2)+Ncp;
-      }
-      else if (prach_fmt == 2) {
-	idft(IDFT_98304,prachF,prach2,1);
-	dftlen=98304;
-	memmove(prach2+(98304<<1),prach2,(98304<<2));
-	// here we have |empty | Prach98304 | Prach98304| empty98304 | empty98304
-	memmove(prach2+(98304<<2),prach2,(98304<<3));
-	// here we have |empty | Prach98304 | Prach98304| Prach98304 | Prach98304
-	memmove(prach,prach+(98304<<3),(Ncp<<2));
-	// here we have |Prefix | Prach98304 | Prach98304| Prach98304 | Prach98304
-	prach_len = (98304*4)+Ncp;
-      }
-      else if (prach_fmt == 3) { // 4x6144, Ncp 3168
-	idft(IDFT_24576,prachF,prach2,1);
-	dftlen=24576;
-	memmove(prach2+(24576<<1),prach2,(24576<<2));
-	// here we have |empty | Prach24576 | Prach24576| empty24576 | empty24576
-	memmove(prach2+(24576<<2),prach2,(24576<<3));
-	// here we have |empty | Prach24576 | Prach24576| Prach24576 | Prach24576
-	memmove(prach,prach+(24576<<3),(Ncp<<2));
-	// here we have |Prefix | Prach24576 | Prach24576| Prach24576 | Prach24576
-	prach_len = (24576*4)+(Ncp<<1);
-      }
-      else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	idft(IDFT_4096,prachF,prach2,1);
-	dftlen=4096;
-	// here we have |empty | Prach4096 |
-	if (prach_fmt != 0xc0) {
-	  memmove(prach2+(4096<<1),prach2,(4096<<2));
-	  prach_len = (4096*2)+Ncp; 
-	}
-	else 	prach_len = (4096*1)+Ncp; 
-	memmove(prach,prach+(4096<<1),(Ncp<<2));
-	// here we have |Prefix | Prach4096 | Prach4096 (if ! 0xc0)  | 
-
-      }
-      else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 4x4096
-	idft(IDFT_4096,prachF,prach2,1);
-	dftlen=4096;
-	// here we have |empty | Prach4096 |
-	memmove(prach2+(4096<<1),prach2,(4096<<2));
-	// here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 |
-	memmove(prach2+(4096<<2),prach2,(4096<<3));
-	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 |
-	memmove(prach,prach+(4096<<1),(Ncp<<2));
-	// here we have |Prefix | Prach4096 |
-	prach_len = (4096*4)+Ncp;  
-      }
-      else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x4096
-	idft(IDFT_4096,prachF,prach2,1);
-	dftlen=4096;
-	// here we have |empty | Prach4096 |
-	memmove(prach2+(4096<<1),prach2,(4096<<2));
-	// here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
-	memmove(prach2+(4096<<2),prach2,(4096<<3));
-	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | empty4096 | empty4096
-	memmove(prach2+((4096<<1)*3),prach2,(4096<<3));
-	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096
-	memmove(prach,prach+(4096<<1),(Ncp<<2));
-	// here we have |Prefix | Prach4096 | 
-	prach_len = (4096*6)+Ncp; 
-      }
-      else if (prach_fmt == 0xb4) { // 12x4096
-	idft(IDFT_4096,prachF,prach2,1);
-	dftlen=4096;
-	// here we have |empty | Prach4096 |
-	memmove(prach2+(4096<<1),prach2,(4096<<2));
-	// here we have |empty | Prach4096 | Prach4096| empty4096 | empty4096 | empty4096 | empty4096
-	memmove(prach2+(4096<<2),prach2,(4096<<3));
-	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | empty4096 | empty4096
-	memmove(prach2+(4096<<3),prach2,(4096<<3));
-	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096
-	memmove(prach2+(4096<<1)*6,prach2,(4096<<2)*6);
-	// here we have |empty | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096|
-	memmove(prach,prach+(4096<<1),(Ncp<<2));
-	// here we have |Prefix | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096 | Prach4096| Prach4096 | Prach4096 | Prach4096 | Prach4096|
-	prach_len = (4096*12)+Ncp; 
-      }
-    }
-    else {     // 92.16 Ms/s
+    } else { // three quarter sampling @ 92.16 Ms/s
       Ncp = (Ncp*3);
       prach2 = prach+(Ncp<<1);
-      if (prach_fmt == 0) {
-	idft(IDFT_73728,prachF,prach2,1);
-	dftlen=73728;
-	// here we have |empty | Prach73728|
-	memmove(prach,prach+(73728<<1),(Ncp<<4));
-	// here we have |Prefix | Prach73728|
-	prach_len = (73728*1)+Ncp;
-      }
-      else if (prach_fmt == 1) {
-	idft(IDFT_73728,prachF,prach2,1);
-	dftlen=73728;
-	memmove(prach2+(73728<<1),prach2,(73728<<2));
-	// here we have |empty | Prach73728 | Prach73728|
-	memmove(prach,prach+(73728<<2),(Ncp<<4));
-	// here we have |Prefix | Prach73728 | Prach73728|
-	prach_len = (73728*2)+Ncp;
-      }
-      if (prach_fmt == 2) {
-	idft(IDFT_73728,prachF,prach2,1);
-	dftlen=73728;
-	memmove(prach2+(73728<<1),prach2,(73728<<2));
-	// here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
-	memmove(prach2+(73728<<2),prach2,(73728<<3));
-	// here we have |empty | Prach73728 | Prach73728| Prach73728 | Prach73728
-	memmove(prach,prach+(73728<<3),(Ncp<<4));
-	// here we have |Prefix | Prach73728 | Prach73728| Prach73728 | Prach73728
-	prach_len = (73728*4)+Ncp;
-      }
-      else if (prach_fmt == 3) {
-	idft(IDFT_18432,prachF,prach2,1);
-	dftlen=18432;
-	memmove(prach2+(18432<<1),prach2,(18432<<2));
-	// here we have |empty | Prach18432 | Prach18432| empty18432 | empty18432
-	memmove(prach2+(18432<<2),prach2,(18432<<3));
-	// here we have |empty | Prach18432 | Prach18432| Prach18432 | Prach18432
-	memmove(prach,prach+(18432<<3),(Ncp<<4));
-	// here we have |Prefix | Prach18432 | Prach18432| Prach18432 | Prach18432
-	prach_len = (18432*4)+Ncp;
-      }
-      else if (prach_fmt == 0xa1 || prach_fmt == 0xb1 || prach_fmt == 0xc0) {
-	idft(IDFT_3072,prachF,prach2,1);
-	dftlen=3072;
-	// here we have |empty | Prach3072 |
-	if (prach_fmt != 0xc0) {
-	  memmove(prach2+(3072<<1),prach2,(3072<<2));
-	  prach_len = (3072*2)+Ncp;
-	} 
-	else 	  prach_len = (3072*1)+Ncp;
-	memmove(prach,prach+(3072<<1),(Ncp<<2));
-	// here we have |Prefix | Prach3072 | Prach3072 (if ! 0xc0)  | 
-      }
-      else if (prach_fmt == 0xa3 || prach_fmt == 0xb3) { // 6x3072
-	idft(IDFT_3072,prachF,prach2,1);
-	dftlen=3072;
-	// here we have |empty | Prach3072 |
-	memmove(prach2+(3072<<1),prach2,(3072<<2));
-	// here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072
-	memmove(prach2+(3072<<2),prach2,(3072<<3));
-	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | empty3072 | empty3072
-	memmove(prach2+((3072<<1)*3),prach2,(3072<<3));
-	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072
-	memmove(prach,prach+(3072<<1),(Ncp<<2));
-	// here we have |Prefix | Prach3072 | 
-	prach_len = (3072*6)+Ncp;
-      }
-      else if (prach_fmt == 0xa2 || prach_fmt == 0xb2) { // 4x3072
-	idft(IDFT_3072,prachF,prach2,1);
-	dftlen=3072;
-	// here we have |empty | Prach3072 |
-	memmove(prach2+(3072<<1),prach2,(3072<<2));
-	// here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 |
-	memmove(prach2+(3072<<2),prach2,(3072<<3));
-	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 |
-	memmove(prach,prach+(3072<<1),(Ncp<<2));
-	// here we have |Prefix | Prach3072 | 
-	prach_len = (3072*4)+Ncp;
-      }
-      else if (prach_fmt == 0xb4) { // 12x3072
-	idft(IDFT_3072,prachF,prach2,1);
-	dftlen=3072;
-	// here we have |empty | Prach3072 |
-	memmove(prach2+(3072<<1),prach2,(3072<<2));
-	// here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072
-	memmove(prach2+(3072<<2),prach2,(3072<<3));
-	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | empty3072 | empty3072
-	memmove(prach2+(3072<<3),prach2,(3072<<3));
-	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072
-	memmove(prach2+(3072<<1)*6,prach2,(3072<<2)*6);
-	// here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072|
-	memmove(prach,prach+(3072<<1),(Ncp<<2));
-	// here we have |Prefix | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072|
-	prach_len = (3072*12)+Ncp;
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) {
+          idft(IDFT_73728,prachF,prach2,1);
+          // here we have |empty | Prach73728|
+          memmove(prach,prach+(73728<<1),(Ncp<<2));
+          // here we have |Prefix | Prach73728|
+          prach_len = (73728*1)+Ncp;
+        } else if (prach_fmt_id == 1) {
+          idft(IDFT_73728,prachF,prach2,1);
+          memmove(prach2+(73728<<1),prach2,(73728<<2));
+          // here we have |empty | Prach73728 | Prach73728|
+          memmove(prach,prach+(73728<<2),(Ncp<<2));
+          // here we have |Prefix | Prach73728 | Prach73728|
+          prach_len = (73728*2)+Ncp;
+        } if (prach_fmt_id == 2) {
+          idft(IDFT_73728,prachF,prach2,1);
+          memmove(prach2+(73728<<1),prach2,(73728<<2));
+          // here we have |empty | Prach73728 | Prach73728| empty73728 | empty73728
+          memmove(prach2+(73728<<2),prach2,(73728<<3));
+          // here we have |empty | Prach73728 | Prach73728| Prach73728 | Prach73728
+          memmove(prach,prach+(73728<<3),(Ncp<<2));
+          // here we have |Prefix | Prach73728 | Prach73728| Prach73728 | Prach73728
+          prach_len = (73728*4)+Ncp;
+        } else if (prach_fmt_id == 3) {
+          idft(IDFT_18432,prachF,prach2,1);
+          memmove(prach2+(18432<<1),prach2,(18432<<2));
+          // here we have |empty | Prach18432 | Prach18432| empty18432 | empty18432
+          memmove(prach2+(18432<<2),prach2,(18432<<3));
+          // here we have |empty | Prach18432 | Prach18432| Prach18432 | Prach18432
+          memmove(prach,prach+(18432<<3),(Ncp<<2));
+          // here we have |Prefix | Prach18432 | Prach18432| Prach18432 | Prach18432
+          prach_len = (18432*4)+Ncp;
+        }
+      } else { // short sequence
+        if (prach_fmt_id == 0 || prach_fmt_id == 3 || prach_fmt_id == 7) {
+          Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_3072,prachF,prach2,1);
+          // here we have |empty | Prach3072 |
+          if (prach_fmt_id != 7) {
+            memmove(prach2+(3072<<1),prach2,(3072<<2));
+            prach_len = (3072*2)+Ncp;
+          } else 	  prach_len = (3072*1)+Ncp;
+	       memmove(prach,prach+(3072<<1),(Ncp<<2));
+	       // here we have |Prefix | Prach3072 | Prach3072 (if ! 0xc0) |
+        } else if (prach_fmt_id == 2 || prach_fmt_id == 5) { // 6x3072
+          Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_3072,prachF,prach2,1);
+          // here we have |empty | Prach3072 |
+          memmove(prach2+(3072<<1),prach2,(3072<<2));
+          // here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072
+          memmove(prach2+(3072<<2),prach2,(3072<<3));
+          // here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | empty3072 | empty3072
+          memmove(prach2+(3072<<3),prach2,(3072<<3));
+          // here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072
+          memmove(prach,prach+(3072<<1),(Ncp<<2));
+          // here we have |Prefix | Prach3072 |
+          prach_len = (3072*6)+Ncp;
+        } else if (prach_fmt_id == 1 || prach_fmt_id == 4) { // 4x3072
+          Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_3072,prachF,prach2,1);
+          // here we have |empty | Prach3072 |
+          memmove(prach2+(3072<<1),prach2,(3072<<2));
+          // here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 |
+          memmove(prach2+(3072<<2),prach2,(3072<<3));
+          // here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 |
+          memmove(prach,prach+(3072<<1),(Ncp<<2));
+          // here we have |Prefix | Prach3072 |
+          prach_len = (3072*4)+Ncp;
+        } else if (prach_fmt_id == 6) { // 12x3072
+          Ncp+=48; // This assumes we are transmitting starting in symbol 0 of a PRACH slot, 30 kHz, full sampling
+          prach2 = prach+(Ncp<<1);
+          idft(IDFT_3072,prachF,prach2,1);
+          // here we have |empty | Prach3072 |
+          memmove(prach2+(3072<<1),prach2,(3072<<2));
+          // here we have |empty | Prach3072 | Prach3072| empty3072 | empty3072 | empty3072 | empty3072
+          memmove(prach2+(3072<<2),prach2,(3072<<3));
+          // here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | empty3072 | empty3072
+          memmove(prach2+(3072<<3),prach2,(3072<<3));
+          // here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072
+          memmove(prach2+(3072<<1)*6,prach2,(3072<<2)*6);
+          // here we have |empty | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072|
+          memmove(prach,prach+(3072<<1),(Ncp<<2));
+          // here we have |Prefix | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072 | Prach3072| Prach3072 | Prach3072 | Prach3072 | Prach3072|
+          prach_len = (3072*12)+Ncp;
+        }
       }
     }
-  }    
-
-
-
-
-#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-  int j;
-  int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe;
-  LOG_D( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
-
-  for (i=prach_start,j=0; i<min(fp->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
-    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
-    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
   }
 
-  for (i=0; i<overflow; i++,j++) {
-    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
-    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
-  }
-#else
+  #ifdef NR_PRACH_DEBUG
+    LOG_I(PHY, "PRACH [UE %d] N_RB_UL %d prach_start %d, prach_len %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", Mod_id,
+      fp->N_RB_UL,
+      prach_start,
+      prach_len,
+      ue->rx_offset,
+      ue->hw_timing_advance,
+      ue->N_TA_offset);
+  #endif
 
-  LOG_D( PHY, "prach_start=%d\n", prach_start);
+  #if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+    int j, overflow = prach_start + prach_len - NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe;
 
-  for (i=0; i<prach_len; i++) {
-    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
-    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
-  }
-#endif
+    #ifdef NR_PRACH_DEBUG
+      LOG_I( PHY, "PRACH [UE %d] overflow = %d\n", Mod_id, overflow);
+    #endif
 
+    // prach_start=414.730, overflow=-39470 prach_len=6600 fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME 460.800 prach_start+prach_len 421.330 fp->samples_per_subframe 46080
 
+    // from prach_start=414.730 to prach_start+prach_len 421.330
+    for (i = prach_start, j = 0; i < min(fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME, prach_start + prach_len); i++, j++) {
+      ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
+      ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
+    }
 
-#if defined(PRACH_WRITE_OUTPUT_DEBUG)
-  LOG_M("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
-  LOG_M("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
-  LOG_M("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][prach_start]),fp->samples_per_subframe,1,1);
-  exit(-1);
-#endif
+    for (i = 0; i < overflow; i++,j++) {
+      ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
+      ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
+    }
+  #else // simulators
+    for (i=0; i<prach_len; i++) {
+      ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
+      ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
+    }
+  #endif
 
-  return signal_energy( (int*)prach, 256 );
+  //printf("----------------------\n");
+  //for(int ii = prach_start; ii<2*(prach_start + prach_len); ii++){
+  //  printf("PRACH rx data[%d] = %d\n", ii, ue->common_vars.txdata[0][ii]);
+  //}
+  //printf(" \n");
+
+  #if defined(PRACH_WRITE_OUTPUT_DEBUG)
+    LOG_M("prach_tx0.m", "prachtx0", prach+(Ncp<<1), prach_len-Ncp, 1, 1);
+    LOG_M("Prach_txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][prach_start]), 2*(prach_start+prach_len), 1, 1)
+  #endif
+
+  return signal_energy((int*)prach, 256);
 }
 

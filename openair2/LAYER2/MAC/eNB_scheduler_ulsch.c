@@ -1301,11 +1301,11 @@ schedule_ulsch_rnti(module_id_t   module_idP,
 
   /*
    * ULSCH preprocessor: set UE_template->
-   * pre_allocated_nb_rb_ul[slice_idx]
+   * pre_allocated_nb_rb_ul
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
    */
-  ulsch_scheduler_pre_processor(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP);
+  mac->pre_processor_ul.ul(module_idP, CC_id, frameP, subframeP, sched_frame, sched_subframeP);
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     if (UE_info->UE_template[CC_id][UE_id].rach_resource_type > 0)

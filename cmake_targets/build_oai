@@ -968,6 +968,7 @@ function main() {
     wait
   else
     echo_info "10. Bypassing the Tests ..."
+    echo_success "BUILD SHOULD BE SUCCESSFUL"
   fi
 
 }

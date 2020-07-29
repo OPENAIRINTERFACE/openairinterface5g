@@ -86,7 +86,7 @@ typedef enum {
   NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION= 0X86,
   NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION= 0X87,
   NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION= 0X88,
-  NFAPI_NR_PHY_MSG_TYPE_PACH_INDICATION= 0X89
+  NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION= 0X89
   //RESERVED 0X8a ~ 0xff
 } nfapi_nr_phy_msg_type_e;
 
@@ -623,22 +623,35 @@ typedef struct {
 
 //table 3-37 
 
-#define DCI_PAYLOAD_BTYE_LEN 12 //? TS38.212 sec 7.3.1
+#define DCI_PAYLOAD_BYTE_LEN 8 // 12 ? TS38.212 sec 7.3.1
+#define MAX_DCI_CORESET 8
 
-typedef struct 
-{
-  uint16_t rnti;//
-  uint16_t scrambling_id;//
-  uint16_t scrambling_rnti;/* */
-  uint8_t  cce_index;//
-  uint8_t  aggregation_level;//
-  nfapi_nr_tx_precoding_and_beamforming_t* precoding_and_beamforming_list;
-  //tx power info
-  uint8_t  beta_pdcch_1_0;/*PDCCH power value used for PDCCH Format 1_0 with CRC scrambled by SI-RNTI, PI-RNTI or RA-RNTI. This is ratio of
-SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1] Value :0->17 */
-  uint8_t  power_control_offset_ss;//PDCCH power value used for all other PDCCH Formats. This is ratio of SSB/PBCH block EPRE to PDCCH and PDCCH DMRS EPRE [TS38.214, sec 4.1] Values: 0: -3dB, 1: 0dB, 2: 3dB, 3: 6dB
-  uint16_t payload_size_bits;//The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0-> DCI_PAYLOAD_BTYE_LEN*8
-  uint8_t  payload[DCI_PAYLOAD_BTYE_LEN];//DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB
+typedef struct {
+  // The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
+  uint16_t RNTI[MAX_DCI_CORESET];
+  // For a UE-specific search space it equals the higher-layer parameter PDCCH-DMRSScrambling-ID if configured,
+  // otherwise it should be set to the phy cell ID. [TS38.211, sec 7.3.2.3] Value: 0->65535
+  uint16_t ScramblingId[MAX_DCI_CORESET];
+  // For a UE-specific search space where PDCCH-DMRSScrambling- ID is configured This param equals the CRNTI.
+  // Otherwise, it should be set to 0. [TS38.211, sec 7.3.2.3] Value: 0 -> 65535 
+  uint16_t ScramblingRNTI[MAX_DCI_CORESET];
+  // CCE start Index used to send the DCI Value: 0->135
+  uint8_t CceIndex[MAX_DCI_CORESET];
+  // Aggregation level used [TS38.211, sec 7.3.2.1] Value: 1,2,4,8,16
+  uint8_t AggregationLevel[MAX_DCI_CORESET];
+  // Precoding and Beamforming structure See Table 3-43
+  nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming[MAX_DCI_CORESET];
+  // PDCCH power value used for PDCCH Format 1_0 with CRC scrambled by SI-RNTI, PI-RNTI or RA-RNTI.
+  // This is ratio of SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1]
+  // Value :0->17 Report title: 5G FAPI: PHY API Specification Issue date: 29 June 2019 Version: 222.10.17 68 Field Type Description representing -8 to 8 dB in 1dB steps
+  uint8_t beta_PDCCH_1_0[MAX_DCI_CORESET];
+  // PDCCH power value used for all other PDCCH Formats.
+  // This is ratio of SSB/PBCH block EPRE to PDCCH and PDCCH DMRS EPRE [TS38.214, sec 4.1] Values: 0: -3dB,1: 0dB,2: 3dB,3: 6dB
+  uint8_t powerControlOffsetSS[MAX_DCI_CORESET];
+  // The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BYTE_LEN*8
+  uint16_t PayloadSizeBits[MAX_DCI_CORESET];
+  // DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB
+  uint8_t Payload[MAX_DCI_CORESET][DCI_PAYLOAD_BYTE_LEN]; 
 
 } nfapi_nr_dl_dci_pdu_t;
 
@@ -652,9 +665,6 @@ typedef struct {
   uint16_t PMIdx[275];
   uint16_t *beamIdx[275];
 } nr_beamforming_t;
-
-#define MAX_DCI_CORESET 8
-#define DCI_PAYLOAD_BYTE_LEN 8
 
 typedef struct {
   ///Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP,Value: 1->275
@@ -685,26 +695,8 @@ typedef struct {
   uint8_t precoderGranularity;
   ///Number of DCIs in this CORESET.Value: 0->MaxDciPerSlot
   uint16_t numDlDci;
-  ///The RNTI used for identifying the UE when receiving the PDU Value: 1 -> 65535.
-  uint16_t RNTI[MAX_DCI_CORESET];
-  ///For a UE-specific search space it equals the higher-layer parameter PDCCH-DMRSScrambling-ID if configured, otherwise it should be set to the phy cell ID. [TS38.211, sec 7.3.2.3] Value: 0->65535
-  uint16_t ScramblingId[MAX_DCI_CORESET];
-  ///For a UE-specific search space where PDCCH-DMRSScrambling- ID is configured This param equals the CRNTI. Otherwise, it should be set to 0. [TS38.211, sec 7.3.2.3] Value: 0 -> 65535 
-  uint16_t ScramblingRNTI[MAX_DCI_CORESET];
-  ///CCE start Index used to send the DCI Value: 0->135
-  uint8_t CceIndex[MAX_DCI_CORESET];
-  ///Aggregation level used [TS38.211, sec 7.3.2.1] Value: 1,2,4,8,16
-  uint8_t AggregationLevel[MAX_DCI_CORESET];
-  ///Precoding and Beamforming structure See Table 3-43
-  nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming[MAX_DCI_CORESET];
-  ///PDCCH power value used for PDCCH Format 1_0 with CRC scrambled by SI-RNTI, PI-RNTI or RA-RNTI. This is ratio of SSB/PBCH EPRE to PDCCH and PDCCH DMRS EPRE [TS38.213, sec 4.1] Value :0->17 Report title: 5G FAPI: PHY API Specification Issue date: 29 June 2019 Version: 222.10.17 68 Field Type Description representing -8 to 8 dB in 1dB steps
-  uint8_t beta_PDCCH_1_0[MAX_DCI_CORESET];
-  ///PDCCH power value used for all other PDCCH Formats. This is ratio of SSB/PBCH block EPRE to PDCCH and PDCCH DMRS EPRE [TS38.214, sec 4.1] Values: 0: -3dB,1: 0dB,2: 3dB,3: 6dB
-  uint8_t   powerControlOffsetSS[MAX_DCI_CORESET];
-///The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BTYE_LEN*8
-  uint16_t  PayloadSizeBits[MAX_DCI_CORESET];
-  ///DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB  
-  uint8_t  Payload[MAX_DCI_CORESET][DCI_PAYLOAD_BYTE_LEN]; 
+  ///DL DCI PDU
+  nfapi_nr_dl_dci_pdu_t dci_pdu;
 }  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
 
 typedef struct {
@@ -1037,10 +1029,12 @@ typedef struct
 {
   uint16_t phys_cell_id;
   uint8_t  num_prach_ocas;
+  // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
+  // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
   uint8_t  prach_format;
   uint8_t  num_ra;
   uint8_t  prach_start_symbol;
-  uint16_t num_cs;//
+  uint16_t num_cs;
   nfapi_nr_ul_beamforming_t beamforming;
 
 } nfapi_nr_prach_pdu_t;
@@ -1126,6 +1120,7 @@ typedef struct
   uint16_t  ul_dmrs_symb_pos;
   uint8_t  dmrs_config_type;
   uint16_t ul_dmrs_scrambling_id;
+  uint16_t pusch_identity;
   uint8_t  scid;
   uint8_t  num_dmrs_cdm_grps_no_data;
   uint16_t dmrs_ports;//DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
@@ -1498,7 +1493,7 @@ typedef struct
   //for dci_pusch_pdu
 typedef struct
 {
-  uint8_t  pdu_bit_map;
+  uint8_t  pduBitmap;
   uint32_t handle;
   uint16_t rnti;
   uint8_t  ul_cqi;
@@ -1513,7 +1508,7 @@ typedef struct
 //for PUCCH PDU Format 0/1
 typedef struct
 {
-  uint8_t  pdu_bit_map;
+  uint8_t  pduBitmap;
   uint32_t handle;
   uint16_t rnti;
   uint8_t  pucch_format;//PUCCH format Value: 0 -> 1 0: PUCCH Format0 1: PUCCH Format1
@@ -1529,7 +1524,7 @@ typedef struct
 //PUCCH PDU Format 2/3/4
 typedef struct
 {
-  uint8_t  pdu_bit_map;
+  uint8_t  pduBitmap;
   uint32_t handle;
   uint16_t rnti;
   uint8_t  pucch_format;//PUCCH format Value: 0 -> 2 0: PUCCH Format2 1: PUCCH Format3 2: PUCCH Format4
@@ -1566,7 +1561,7 @@ typedef struct
   uint16_t sfn;
   uint16_t slot;
   uint16_t num_ucis;
-  nfapi_nr_uci_t uci_list[NFAPI_MAX_NUM_UCI_INDICATION];
+  nfapi_nr_uci_t *uci_list;
 
 } nfapi_nr_uci_indication_t;
 

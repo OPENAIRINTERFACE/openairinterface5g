@@ -71,30 +71,30 @@ static void configure_nr_rrc(uint32_t gnb_id)
 
 /*------------------------------------------------------------------------------*/
 
-/*
+
 static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, const Enb_properties_array_t *enb_properties)
 {
   uint32_t         gnb_id;
-  MessageDef      *msg_p;
+  //MessageDef      *msg_p;
   uint32_t         register_gnb_pending = 0;
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      s1ap_register_enb_req_t *s1ap_register_gNB; //Type Temporarily reuse
+      //s1ap_register_enb_req_t *s1ap_register_gNB; //Type Temporarily reuse
 
       // note:  there is an implicit relationship between the data structure and the message name 
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, S1AP_REGISTER_ENB_REQ); //Message Temporarily reuse
+      /*msg_p = itti_alloc_new_message (TASK_GNB_APP, S1AP_REGISTER_ENB_REQ); //Message Temporarily reuse
 
-      RCconfig_NR_S1(msg_p, gnb_id);
+      RCconfig_NR_S1(msg_p, gnb_id);*/
 
       if (gnb_id == 0) RCconfig_nr_gtpu();
 
-      s1ap_register_gNB = &S1AP_REGISTER_ENB_REQ(msg_p); //Message Temporarily reuse
-      LOG_I(GNB_APP,"default drx %d\n",s1ap_register_gNB->default_drx);
+      /*s1ap_register_gNB = &S1AP_REGISTER_ENB_REQ(msg_p); //Message Temporarily reuse
+      LOG_I(GNB_APP,"default drx %d\n",s1ap_register_gNB->default_drx);*/
 
       LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
 
-      itti_send_msg_to_task (TASK_S1AP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+      //itti_send_msg_to_task (TASK_S1AP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
 
       register_gnb_pending++;
     }
@@ -102,7 +102,7 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   return register_gnb_pending;
 }
-*/
+
 
 /*------------------------------------------------------------------------------*/
 static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) {
@@ -131,6 +131,7 @@ void *gNB_app_task(void *args_p)
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
+
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
   const char                      *msg_name        = NULL;
@@ -175,7 +176,7 @@ void *gNB_app_task(void *args_p)
   if (EPC_MODE_ENABLED) {
   /* Try to register each gNB */
   //registered_gnb = 0;
-  //register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
+  __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
   } else {
   /* Start L2L1 task */
     msg_p = itti_alloc_new_message(TASK_GNB_APP, INITIALIZE_MESSAGE);

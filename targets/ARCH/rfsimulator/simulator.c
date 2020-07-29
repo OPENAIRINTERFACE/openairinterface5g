@@ -149,8 +149,12 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     // while calling new_channel_desc_scm() with path losses = 0
     static bool init_done=false;
     if (!init_done) {
-      randominit(0);
-      tableNor(0);
+	    uint64_t rand;
+	    FILE *h=fopen("/dev/random","r");
+            fread(&rand,sizeof(rand),1,h);
+	    fclose(h);
+      randominit(rand);
+      tableNor(rand);
       init_done=true;
     }
     ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
@@ -476,14 +480,16 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 	  b->trashingPacket=true;
 	} else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
-	  
+          if ( b->th.timestamp-b->lastReceivedTS < CirSize ) {
           for (uint64_t index=b->lastReceivedTS; index < b->th.timestamp; index++ ) {
             for (int a=0; a < nbAnt; a++) {
               b->circularBuf[(index*nbAnt+a)%CirSize].r = 0;
               b->circularBuf[(index*nbAnt+a)%CirSize].i = 0;
             }
           }
-
+          } else {
+	    memset(b->circularBuf, 0, sampleToByte(CirSize,1));
+	  }
           if (b->lastReceivedTS != 0 && b->th.timestamp-b->lastReceivedTS > 50 )
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
           b->lastReceivedTS=b->th.timestamp;
@@ -646,10 +652,11 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
                     );
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
-
+          const int64_t base=t->nextTimestamp*nbAnt+a;
           for ( int i=0; i < nsamps; i++ ) {
-            out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].r;
-            out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt+a)%CirSize].i;
+	    const int idx=(i*nbAnt+base)%CirSize;
+            out[i].r+=ptr->circularBuf[idx].r;
+            out[i].i+=ptr->circularBuf[idx].i;
           }
         } // end of no channel modeling
       } // end for a...

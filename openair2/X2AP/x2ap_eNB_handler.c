@@ -1652,7 +1652,6 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   x2ap_eNB_instance_t                *instance_p;
   x2ap_eNB_data_t                    *x2ap_eNB_data;
   MessageDef                         *msg;
-  int                                ue_id;
 
   DevAssert (pdu != NULL);
   x2SgNBAdditionRequest = &pdu->choice.initiatingMessage.value.choice.SgNBAdditionRequest;
@@ -1683,20 +1682,9 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
   }
-
-
-  // allocate a new X2AP UE ID
-  ue_id = x2ap_allocate_new_id(&instance_p->id_manager);
-  if (ue_id == -1) {
-    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
-    // TODO: cancel handover: send HO preparation failure to source eNB
-    exit(1);
-  }
-  // rnti is unknown yet, must not be set to -1, 0 is fine
-  x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.UE_X2AP_ID, ue_id);
-  x2ap_id_set_state(&instance_p->id_manager, ue_id, X2ID_STATE_TARGET);
-
-  X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_x2_id = ue_id;
+  /* ue_x2_id = MeNB X2AP Id */
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).ue_x2_id = ie->value.choice.UE_X2AP_ID;
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_assoc_id = assoc_id;
 
 
   /* X2AP_ProtocolIE_ID_id_NRUESecurityCapabilities */
@@ -1749,12 +1737,21 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
     	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability;
     	  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.full_E_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel;
 
-          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].eNB_addr.buffer,
+          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer,
         		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.buf,
         		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size);
 
-          X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].eNB_addr.length =
+          X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.length =
         		  e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+
+LOG_I(RRC,"x2u tunnel: index %d target sgw ip %d.%d.%d.%d length %d gtp teid %u\n",
+              	        		    i,
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[0],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[1],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[2],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.buffer[3],
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].sgw_addr.length,
+              	        		X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].gtp_teid);
 
           OCTET_STRING_TO_INT32(&e_RABS_ToBeAdded_SgNBAddReq_Item->resource_configuration.choice.sgNBPDCPpresent.s1_UL_GTPtunnelEndpoint.gTP_TEID,
         		  X2AP_ENDC_SGNB_ADDITION_REQ(msg).e_rabs_tobeadded[i].gtp_teid);
@@ -1771,13 +1768,11 @@ int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_SgNBAdditionRequest_IEs_t, ie, x2SgNBAdditionRequest,
 		  X2AP_ProtocolIE_ID_id_MeNBtoSgNBContainer, true);
 
-  X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
-  //X2AP_MeNBtoSgNBContainer_t *container = &ie->value.choice.MeNBtoSgNBContainer;
-    if (container->size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
-      { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+  if (ie->value.choice.MeNBtoSgNBContainer.size > 8192 ) // TODO: this is the size of rrc_buffer in struct x2ap_handover_req_s
+    { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
 
-    memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer, ie->value.choice.MeNBtoSgNBContainer.buf, ie->value.choice.MeNBtoSgNBContainer.size);
-    X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = ie->value.choice.MeNBtoSgNBContainer.size;
+  memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer, ie->value.choice.MeNBtoSgNBContainer.buf, ie->value.choice.MeNBtoSgNBContainer.size);
+  X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = ie->value.choice.MeNBtoSgNBContainer.size;
 
   itti_send_msg_to_task(TASK_RRC_GNB, instance_p->instance, msg);
 
@@ -1891,10 +1886,10 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 	    	X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->e_RAB_ID ;
 	    	if(e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->en_DC_ResourceConfiguration.pDCPatSgNB == X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present){
 
-	          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].eNB_addr.buffer,
+	          memcpy(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer,
 	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.buf,
 	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size);
-	          X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].eNB_addr.length =
+	          X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.length =
 	        		  e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
 
 	          OCTET_STRING_TO_INT32(&e_RABS_Admitted_ToBeAdded_SgNBAddReqAck_Item->resource_configuration.choice.sgNBPDCPpresent.s1_DL_GTPtunnelEndpoint.gTP_TEID,
@@ -1963,7 +1958,7 @@ int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
 		  instance_p = x2ap_eNB_get_instance(instance);
 		  DevAssert(instance_p != NULL);
 
-		  //Allocate an ITTI X2AP_SGNB_ADDITION_REQ message instead
+		  //Allocate an ITTI X2AP_sGNB_reconfiguration_complete message
 		  msg = itti_alloc_new_message(TASK_X2AP, X2AP_ENDC_SGNB_RECONF_COMPLETE);
 
 		  /* X2AP_ProtocolIE_ID_id_MeNB_UE_X2AP_ID */

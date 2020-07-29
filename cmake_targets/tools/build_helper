@@ -175,8 +175,21 @@ check_warnings() {
   fi
 }
 
+#check_errors:
+#    print error message if the compilation had errors
+#argument:
+#    $1: log file
+check_errors() {
+  #we look for 'warning:' in the compilation log file
+  error_count=`grep "error:" "$1" | wc -l`
+  if [ $error_count -gt 0 ]; then
+    echo_error "ERROR: $error_count error. See $1"
+  fi
+}
+
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
+  echo_info "Log file for compilation is being written to: $dlog/$2.$REL.txt"
   set +e
   {
     if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
@@ -193,15 +206,22 @@ compilations() {
        $COV_SCAN_PREFIX make -j`nproc` $2
     fi
     fi
-
+    ret=$?
   } > $dlog/$2.$REL.txt 2>&1
   set -e
-  echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
+  if [[ $ret -ne 0 ]]; then
+     check_warnings "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.$REL.txt"
+     echo_error "$2 compilation failed"
+     exit 1
+  fi
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
      check_warnings "$dlog/$2.$REL.txt"
   else
+     check_warnings "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.$REL.txt"
      echo_error "$2 compilation failed"
      exit 1
   fi
