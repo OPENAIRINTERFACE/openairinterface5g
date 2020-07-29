@@ -777,17 +777,18 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
 
+  uint8_t hrq_id;
   uint8_t max_ul_harq_pids = 3; // temp: for testing
   // schedule active harq processes
   NR_UE_ul_harq_t cur_harq;
-  for (uint8_t hrq_id; hrq_id < max_ul_harq_pids; hrq_id++) {
+  for (hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
     if (cur_harq.state==ACTIVE_NOT_SCHED)
       return hrq_id;
   }
 
   // schedule new harq processes
-  for (uint8_t hrq_id; hrq_id < max_ul_harq_pids; hrq_id++) {
+  for (hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
     if (cur_harq.state==INACTIVE)
       return hrq_id;
