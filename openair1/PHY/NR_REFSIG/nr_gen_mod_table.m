@@ -45,7 +45,7 @@ for r=0:1 %0 -- 1 LS
 for j=0:1 %0 -- 1 MS
   %% Formula is dispalayed
 
-qpsk_table(2*r+j+1) = ((1-r*2)*QPSK +  1j*(1-2*j)*QPSK);
+qpsk_table(2*j+r+1) = ((1-r*2)*QPSK +  1j*(1-2*j)*QPSK);
 end
 end
 
@@ -61,7 +61,7 @@ for b0=0:1
 for b1=0:1
 for b2=0:1
 for b3=0:1
-qam16_table2(b0*8+b1*4+b2*2+b3*1+1) = qam16_table(b0*2+b2*1+1) + 1j*qam16_table(b1*2+b3*1+1);
+qam16_table2(b3*8+b2*4+b1*2+b0*1+1) = qam16_table(b0*2+b2*1+1) + 1j*qam16_table(b1*2+b3*1+1);
 end
 end
 end
@@ -84,7 +84,7 @@ for b2=0:1
 for b3=0:1
 for b4=0:1
 for b5=0:1
-qam64_table2(b0*32+b1*16+b2*8+b3*4+b4*2+b5*1+1) = qam64_table(b0*4+b2*2+b4*1+1) + 1j*qam64_table(b1*4+b3*2+b5*1+1);
+qam64_table2(b5*32+b4*16+b3*8+b2*4+b1*2+b0*1+1) = qam64_table(b0*4+b2*2+b4*1+1) + 1j*qam64_table(b1*4+b3*2+b5*1+1);
 end
 end
 end
@@ -116,7 +116,7 @@ for b6=0:1
 for b7=0:1
 
 %%qam64_table2(b0*32+b1*16+b2*8+b3*4+b4*2+b5*1+1) = qam64_table(b0*4+b2*2+b4*1+1) + 1j*qam64_table(b1*4+b3*2+b5*1+1);
-qam256_table2(b0*128+b1*64+b2*32+b3*16+b4*8+b5*4+b6*2+b7*1+1) = qam256_table(b0*8+b2*4+b4*2+b6*1+1) + 1j*qam256_table(b1*8+b3*4+b5*2+b7*1+1);
+qam256_table2(b7*128+b6*64+b5*32+b4*16+b3*8+b2*4+b1*2+b0*1+1) = qam256_table(b0*8+b2*4+b4*2+b6*1+1) + 1j*qam256_table(b1*8+b3*4+b5*2+b7*1+1);
 end
 end
 end
