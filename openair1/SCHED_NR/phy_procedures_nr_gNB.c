@@ -448,7 +448,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           slot_offset -= ru->N_TA_offset;
           char name[128];
           FILE *f;
-          sprintf(name, "rxdata.%d.%d.raw", frame_rx,slot_rx);
+          sprintf(name, "rxdata.%d.%d.%d.raw", ulsch->rnti,frame_rx,slot_rx);
           f = fopen(name, "w"); if (f == NULL) exit(1);
           fwrite(&ru->common.rxdata[0][slot_offset],2,frame_parms->get_samples_per_slot(slot_rx,frame_parms)*2, f);
           fclose(f);
