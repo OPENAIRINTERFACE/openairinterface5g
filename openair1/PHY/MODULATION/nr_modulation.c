@@ -36,16 +36,10 @@ void nr_modulation(uint32_t *in,
 
   LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
+  uint16_t mask = ((1<<mod_order)-1);
   for (int i=0; i<length/mod_order; i++)
   {
-    idx = 0;
-    for (int j=0; j<mod_order; j++)
-    {
-      b_idx = (i*mod_order+j)&0x1f;
-      if (i && (!b_idx))
-        in++;
-      idx ^= (((*in)>>b_idx)&1)<<(mod_order-j-1);
-    }
+    idx = ((in[i*mod_order/32]>>(i*mod_order)) & mask);
 
     out[i<<1] = nr_mod_table[(offset+idx)<<1];
     out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
