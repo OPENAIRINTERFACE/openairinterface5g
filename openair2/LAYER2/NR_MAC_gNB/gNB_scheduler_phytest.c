@@ -53,6 +53,7 @@
 #include "NR_SearchSpace.h"
 #include "NR_ControlResourceSet.h"
 
+#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
 
 const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
@@ -783,15 +784,23 @@ uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
   NR_UE_ul_harq_t cur_harq;
   for (hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
-    if (cur_harq.state==ACTIVE_NOT_SCHED)
+    if (cur_harq.state==ACTIVE_NOT_SCHED) {
+#ifdef UL_HARQ_PRINT
+      printf("[SCHED] Found active ulharq id %d, scheduling it for retransmission\n",harq_id); 
+#endif
       return hrq_id;
+    }
   }
 
   // schedule new harq processes
   for (hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
-    if (cur_harq.state==INACTIVE)
+    if (cur_harq.state==INACTIVE) {
+#ifdef UL_HARQ_PRINT
+      printf("[SCHED] Found inactive ulharq id %d, scheduling it\n",harq_id); 
+#endif
       return hrq_id;
+    }
   }
 }
 

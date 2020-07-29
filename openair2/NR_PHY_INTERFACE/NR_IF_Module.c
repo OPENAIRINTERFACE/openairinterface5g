@@ -41,6 +41,7 @@
 #include "executables/softmodem-common.h"
 
 #define MAX_IF_MODULES 100
+#define UL_HARQ_PRINT
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
@@ -141,15 +142,24 @@ void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, uint8_t cr
         cur_harq.ndi ^= 1;
         cur_harq.round = 0;
         cur_harq.state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
+#ifdef UL_HARQ_PRINT
+        printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
+#endif
       } else {
         cur_harq.round++;
         cur_harq.state = ACTIVE_NOT_SCHED;
+#ifdef UL_HARQ_PRINT
+        printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
+#endif
       }
 
       if (!(cur_harq.round<max_harq_rounds)) {
         cur_harq.ndi ^= 1;
         cur_harq.state = INACTIVE; // failed after 4 rounds -> make inactive
         cur_harq.round = 0;
+#ifdef UL_HARQ_PRINT
+        printf("[HARQ HANDLER] Ulharq id %d crc failed in all round, freeing it for scheduler\n",hrq_id);
+#endif
       }
       return;
     }
