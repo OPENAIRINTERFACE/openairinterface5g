@@ -19,24 +19,28 @@
  *      contact@openairinterface.org
  */
 
-#ifndef MEMORY_POOLS_H_
-#define MEMORY_POOLS_H_
+/*!
+ * \file   slicing_internal.h
+ * \brief  Internal slice helper functions
+ * \author Robert Schmidt
+ * \date   2020
+ * \email  robert.schmidt@eurecom.fr
+ */
 
-#include <stdint.h>
+#ifndef __SLICING_INTERNAL_H__
+#define __SLICING_INTERNAL_H__
 
-typedef void * memory_pools_handle_t;
-typedef void * memory_pool_item_handle_t;
+#include "slicing.h"
 
-memory_pools_handle_t memory_pools_create (uint32_t pools_number);
+void slicing_add_UE(slice_info_t *si, int UE_id);
 
-char *memory_pools_statistics(memory_pools_handle_t memory_pools_handle);
+void _remove_UE(slice_t **s, uint8_t *assoc, int UE_id);
+void slicing_remove_UE(slice_info_t *si, int UE_id);
 
-int memory_pools_add_pool (memory_pools_handle_t memory_pools_handle, uint32_t pool_items_number, uint32_t pool_item_size);
+void _move_UE(slice_t **s, uint8_t *assoc, int UE_id, int to);
+void slicing_move_UE(slice_info_t *si, int UE_id, int idx);
 
-memory_pool_item_handle_t memory_pools_allocate (memory_pools_handle_t memory_pools_handle, uint32_t item_size, uint16_t info_0, uint16_t info_1);
+slice_t *_add_slice(uint8_t *n, slice_t **s);
+slice_t *_remove_slice(uint8_t *n, slice_t **s, uint8_t *assoc, int idx);
 
-int memory_pools_free (memory_pools_handle_t memory_pools_handle, memory_pool_item_handle_t memory_pool_item_handle, uint16_t info_0);
-
-void memory_pools_set_info (memory_pools_handle_t memory_pools_handle, memory_pool_item_handle_t memory_pool_item_handle, int index, uint16_t info);
-
-#endif /* MEMORY_POOLS_H_ */
+#endif /* __SLICING_INTERNAL_H__ */

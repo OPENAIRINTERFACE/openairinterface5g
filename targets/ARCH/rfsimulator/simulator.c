@@ -152,7 +152,8 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     if (!init_done) {
 	    uint64_t rand;
 	    FILE *h=fopen("/dev/random","r");
-            fread(&rand,sizeof(rand),1,h);
+            if ( 1 != fread(&rand,sizeof(rand),1,h) )
+              LOG_W(HW, "Simulator can't read /dev/random\n");
 	    fclose(h);
       randominit(rand);
       tableNor(rand);
@@ -499,6 +500,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
             LOG_W(HW,"UEsock: %d gap of: %ld in reception\n", fd, b->th.timestamp-b->lastReceivedTS );
 
           b->lastReceivedTS=b->th.timestamp;
+	  
         } else if ( b->lastReceivedTS > b->th.timestamp && b->th.size == 1 ) {
           LOG_W(HW,"Received Rx/Tx synchro out of order\n");
           b->trashingPacket=true;

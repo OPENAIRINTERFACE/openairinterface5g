@@ -329,7 +329,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->rbStart = (rbStart!=NULL) ? *rbStart : 0;
   pdsch_pdu_rel15->rbSize = (rbSize!=NULL) ? *rbSize : pdsch_pdu_rel15->BWPSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
-    // choose shortest PDSCH
+
   int startSymbolAndLength=0;
   int time_domain_assignment=2;
   int StartSymbolIndex,NrOfSymbols;
@@ -362,10 +362,10 @@ int configure_fapi_dl_pdu(int Mod_idP,
     AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
   // time domain assignment
   dci_pdu_rel15[0].time_domain_assignment.val = time_domain_assignment; // row index used here instead of SLIV;
-  // mcs ndi and rv
+  // mcs and rv
   dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
   dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
-  // harq pid
+  // harq pid and ndi
   dci_pdu_rel15[0].harq_pid = current_harq_pid;
   dci_pdu_rel15[0].ndi = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].ndi;
   // DAI
@@ -381,7 +381,8 @@ int configure_fapi_dl_pdu(int Mod_idP,
   UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].is_waiting = 1;
   // antenna ports
   dci_pdu_rel15[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
-
+  // dmrs sequence initialization
+  dci_pdu_rel15[0].dmrs_sequence_initialization.val = pdsch_pdu_rel15->SCID;
   LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
 	dci_pdu_rel15[0].frequency_domain_assignment.val,
 	pdsch_pdu_rel15->rbStart, 
@@ -437,7 +438,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
 
   rnti_types[0]   = NR_RNTI_C;
 
-  fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,bwp_id);
+  fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pdsch_pdu_rel15->BWPSize,bwp_id);
 
   LOG_D(MAC, "DCI params: rnti %x, rnti_type %d, dci_format %d\n \
 	                      coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
@@ -468,22 +469,70 @@ int configure_fapi_dl_pdu(int Mod_idP,
   return TBS; //Return TBS in bytes
 }
 
-void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types) {
+void config_uldci(NR_BWP_Uplink_t *ubwp,
+                  nfapi_nr_pusch_pdu_t *pusch_pdu,
+                  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                  dci_pdu_rel15_t *dci_pdu_rel15,
+                  int *dci_formats, int *rnti_types,
+                  int time_domain_assignment,
+                  int n_ubwp, int bwp_id) {
 
-  dci_pdu_rel15->frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, 
-										 pusch_pdu->rb_start, 
-										 NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
+  switch(dci_formats[(pdcch_pdu_rel15->numDlDci)-1]) {
+    case NR_UL_DCI_FORMAT_0_0:
+      dci_pdu_rel15->frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size,
+                                                                                         pusch_pdu->rb_start,
+	                                                                                 NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
 
-  dci_pdu_rel15->time_domain_assignment.val = 2; // row index used here instead of SLIV;
-  dci_pdu_rel15->frequency_hopping_flag.val = 0;
-  dci_pdu_rel15->mcs = 9;
-  
-  dci_pdu_rel15->format_indicator = 0;
-  dci_pdu_rel15->ndi = 1;
-  dci_pdu_rel15->rv = 0;
-  dci_pdu_rel15->harq_pid = 0;
-  dci_pdu_rel15->tpc = 2;
-  
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
+      dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
+      dci_pdu_rel15->mcs = 9;
+
+      dci_pdu_rel15->format_indicator = 0;
+      dci_pdu_rel15->ndi = 1;
+      dci_pdu_rel15->rv = 0;
+      dci_pdu_rel15->harq_pid = 0;
+      dci_pdu_rel15->tpc = 2;
+      break;
+    case NR_UL_DCI_FORMAT_0_1:
+      dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+      dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
+      dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
+      dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
+      dci_pdu_rel15->dai[0].val = 0; //TODO
+      // bwp indicator
+      if (n_ubwp < 4)
+        dci_pdu_rel15->bwp_indicator.val = bwp_id;
+      else
+        dci_pdu_rel15->bwp_indicator.val = bwp_id - 1; // as per table 7.3.1.1.2-1 in 38.212
+      // frequency domain assignment
+      if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->resourceAllocation==NR_PUSCH_Config__resourceAllocation_resourceAllocationType1)
+        dci_pdu_rel15->frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size,
+                                                                                             pusch_pdu->rb_start,
+                                                                                             NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275));
+      else
+        AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
+      // time domain assignment
+      dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
+      // mcs
+      dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
+      // tpc command for pusch
+      dci_pdu_rel15->tpc = 2; //TODO
+      // SRS resource indicator
+      if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
+        if (*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook)
+          dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
+        else
+          AssertFatal(1==0,"Non Codebook configuration non supported\n");
+      }
+      // Antenna Ports
+      dci_pdu_rel15->antenna_ports.val = 0; // TODO for now it is hardcoded, it should depends on cdm group no data and rank
+      // DMRS sequence initialization
+      dci_pdu_rel15->dmrs_sequence_initialization.val = pusch_pdu->scid;
+      break;
+    default :
+      AssertFatal(1==0,"Valid UL formats are 0_0 and 0_1 \n");
+  }
+
   LOG_D(MAC, "[gNB scheduler phytest] ULDCI type 0 payload: PDCCH CCEIndex %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
 	pdcch_pdu_rel15->dci_pdu.CceIndex[pdcch_pdu_rel15->numDlDci],
 	dci_pdu_rel15->frequency_domain_assignment.val,
@@ -493,10 +542,6 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr
 	dci_pdu_rel15->tpc,
 	dci_pdu_rel15->ndi, 
 	dci_pdu_rel15->rv);
-  
-  dci_formats[pdcch_pdu_rel15->numDlDci] = NR_UL_DCI_FORMAT_0_0;
-  rnti_types[pdcch_pdu_rel15->numDlDci]  = NR_RNTI_C;
-  pdcch_pdu_rel15->numDlDci++;
 
 }
     
@@ -738,7 +783,7 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   NR_ServingCellConfigCommon_t         *scc    = cc->ServingCellConfigCommon;
 
   int bwp_id=1;
-
+  int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   int UE_id = 0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
@@ -748,7 +793,9 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+  int n_ubwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  NR_PUSCH_Config_t *pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
   nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[Mod_idP]->UL_dci_req[0];
 
@@ -769,20 +816,28 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
 
   LOG_D(MAC, "Scheduling UE specific PUSCH\n");
   //UL_tti_req = &nr_mac->UL_tti_req[CC_id];
-  /*
-  // original configuration
-  rel15_ul->rnti                           = 0x1234;
-  rel15_ul->ulsch_pdu_rel15.start_rb       = 30;
-  rel15_ul->ulsch_pdu_rel15.number_rbs     = 50;
-  rel15_ul->ulsch_pdu_rel15.start_symbol   = 2;
-  rel15_ul->ulsch_pdu_rel15.number_symbols = 12;
-  rel15_ul->ulsch_pdu_rel15.nb_re_dmrs     = 6;
-  rel15_ul->ulsch_pdu_rel15.length_dmrs    = 1;
-  rel15_ul->ulsch_pdu_rel15.Qm             = 2;
-  rel15_ul->ulsch_pdu_rel15.mcs            = 9;
-  rel15_ul->ulsch_pdu_rel15.rv             = 0;
-  rel15_ul->ulsch_pdu_rel15.n_layers       = 1;
-  */
+
+  //Resource Allocation in time domain
+  int startSymbolAndLength=0;
+  int time_domain_assignment=1;
+  int StartSymbolIndex,NrOfSymbols,K2,mapping_type;
+
+  AssertFatal(time_domain_assignment<ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count,
+              "time_domain_assignment %d>=%d\n",time_domain_assignment,ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count);
+  startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
+  pusch_pdu->start_symbol_index = StartSymbolIndex;
+  pusch_pdu->nr_of_symbols = NrOfSymbols;
+
+  mapping_type = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+  if (ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2 != NULL)
+   K2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2;
+  else {
+    if (mu<2) K2=1;
+    else if(mu==2) K2=2;
+         else K2=3;
+  }
+
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = rnti;
   pusch_pdu->handle = 0; //not yet used
@@ -797,60 +852,123 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
   pusch_pdu->mcs_table = 0; //0: notqam256 [TS38.214, table 5.1.3.1-1] - corresponds to nr_target_code_rate_table1 in PHY
   pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
   pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table) ;
-  pusch_pdu->transform_precoding = 0;
-  pusch_pdu->data_scrambling_id = 0; //It equals the higher-layer parameter Data-scrambling-Identity if configured and the RNTI equals the C-RNTI, otherwise L2 needs to set it to physical cell id.;
+  if (pusch_Config->transformPrecoder == NULL) {
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
+      pusch_pdu->transform_precoding = 1;
+    else
+      pusch_pdu->transform_precoding = 0;
+  }
+  else
+    pusch_pdu->transform_precoding = *pusch_Config->transformPrecoder;
+  if (pusch_Config->dataScramblingIdentityPUSCH != NULL)
+    pusch_pdu->data_scrambling_id = *pusch_Config->dataScramblingIdentityPUSCH;
+  else
+    pusch_pdu->data_scrambling_id = *scc->physCellId;
+
   pusch_pdu->nrOfLayers = 1;
 
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
-  pusch_pdu->resource_alloc = 1; //type 1
-  //pusch_pdu->rb_bitmap;// for ressource alloc type 0
-  pusch_pdu->rb_start = 0;
-  pusch_pdu->rb_size = 50;
+  if (pusch_Config->resourceAllocation==NR_PUSCH_Config__resourceAllocation_resourceAllocationType1) {
+    pusch_pdu->resource_alloc = 1; //type 1
+    pusch_pdu->rb_start = 0;
+    pusch_pdu->rb_size = 50;
+  }
+  else
+    AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
+
   pusch_pdu->vrb_to_prb_mapping = 0;
-  pusch_pdu->frequency_hopping = 0;
+
+  if (pusch_Config->frequencyHopping==NULL)
+    pusch_pdu->frequency_hopping = 0;
+  else
+    pusch_pdu->frequency_hopping = 1;
+
   //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
-  pusch_pdu->uplink_frequency_shift_7p5khz = 0;
-  //Resource Allocation in time domain
-  pusch_pdu->start_symbol_index = 2;
-  pusch_pdu->nr_of_symbols = 12;
+  //pusch_pdu->uplink_frequency_shift_7p5khz = 0;
+
 
   // --------------------
   // ------- DMRS -------
   // --------------------
-  uint16_t l_prime_mask            = get_l_prime(pusch_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
-  pusch_pdu->ul_dmrs_symb_pos      = l_prime_mask << pusch_pdu->start_symbol_index;
-  pusch_pdu->dmrs_config_type      = 0;      // dmrs-type 1 (the one with a single DMRS symbol in the beginning)
-  pusch_pdu->ul_dmrs_scrambling_id = 0;      // If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id
-  pusch_pdu->scid                  = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
-                                             // Should match what is sent in DCI 0_1, otherwise set to 0
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
+  if (mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA)
+    NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
+  else
+    NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+  if (NR_DMRS_UplinkConfig->dmrs_Type == NULL)
+    pusch_pdu->dmrs_config_type = 0;
+  else
+    pusch_pdu->dmrs_config_type = 1;
+  pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
+  if (pusch_pdu->transform_precoding) { // transform precoding disabled
+    long *scramblingid;
+    if (pusch_pdu->scid == 0)
+      scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
+    else
+      scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID1;
+    if (scramblingid == NULL)
+      pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
+    else
+      pusch_pdu->ul_dmrs_scrambling_id = *scramblingid;
+  }
+  else {
+    pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
+    if (NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      pusch_pdu->pusch_identity = *NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
+    else
+      pusch_pdu->pusch_identity = *scc->physCellId;
+  }
+  pusch_dmrs_AdditionalPosition_t additional_pos;
+  if (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL)
+    additional_pos = 2;
+  else {
+    if (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3)
+      additional_pos = 3;
+    else
+      additional_pos = *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition;
+  }
+  pusch_maxLength_t pusch_maxLength;
+  if (NR_DMRS_UplinkConfig->maxLength == NULL)
+    pusch_maxLength = 1;
+  else
+    pusch_maxLength = 2;
+  uint16_t l_prime_mask = get_l_prime(pusch_pdu->nr_of_symbols, mapping_type, additional_pos, pusch_maxLength);
+  pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_pdu->start_symbol_index;
+
   pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
-  //pusch_pdu->dmrs_ports; // DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports
-                           // Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011,
-                           // and for each bit 0: DMRS port not used 1: DMRS port used
+  pusch_pdu->dmrs_ports = 1;
   // --------------------------------------------------------------------------------------------------------------------------------------------
 
   // --------------------
   // ------- PTRS -------
   // --------------------
-  uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
-  uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
-  uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-  uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
-  uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
-  pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
-  pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
-  pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
-  pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+  if (NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
+    // TODO to be fixed from RRC config
+    uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
+    uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
+    uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
+    uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
+    uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
+    pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
+    pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+    pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
+    pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-  if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
-    pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+    pusch_pdu->pdu_bit_map &= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+  }
+  else{
+//    if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
+      pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+  }
+
   // --------------------------------------------------------------------------------------------------------------------------------------------
 
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   //Optional Data only included if indicated in pduBitmap
+  // TODO from harq function as in pdsch
   pusch_pdu->pusch_data.rv_index = 0;
   pusch_pdu->pusch_data.harq_process_id = 0;
-  pusch_pdu->pusch_data.new_data_indicator = 0;
+  pusch_pdu->pusch_data.new_data_indicator = 1;
 
   uint8_t num_dmrs_symb = 0;
 
@@ -935,9 +1053,10 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
    return;
   }
   else {
-    dci_pdu_rel15_t dci_pdu_rel15[MAX_DCI_CORESET];
-    config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15, &dci_pdu_rel15[0], dci_formats, rnti_types);
-    fill_dci_pdu_rel15(secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+      dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
+      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,n_ubwp,bwp_id);
+      fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
+      free(dci_pdu_rel15);
   }
 }
 
