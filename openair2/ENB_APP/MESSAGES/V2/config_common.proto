@@ -61,82 +61,30 @@ enum flex_qam {
 //
 // Slice config related structures and enums
 //
-enum flex_dl_sorting {
-
-	CR_ROUND = 0;	// Highest HARQ first
-	CR_SRB12 = 1;	// Highest SRB1+2 first
-	CR_HOL   = 2;	// Highest HOL first
-	CR_LC    = 3;	// Greatest RLC buffer first
-	CR_CQI   = 4;	// Highest CQI first
-	CR_LCP   = 5;	// Highest LC priority first
+enum flex_slice_algorithm {
+  None = 0;
+  Static = 1;
+  NVS = 2;
 }
 
-enum flex_ul_sorting {
-	CRU_ROUND = 0;	// Highest HARQ first
-	CRU_BUF   = 1;	// Highest BSR first
-	CRU_BTS   = 2;	// More bytes to schedule first
-	CRU_MCS   = 3;  // Highest MCS first
-	CRU_LCP   = 4;  // Highest LC priority first
-	CRU_HOL   = 5;  // Highest HOL first
+message flex_slice_static {
+  optional uint32 posLow = 1;
+  optional uint32 posHigh = 2;
 }
 
-enum flex_dl_accounting_policy {
-	POL_FAIR   = 0;
-	POL_GREEDY = 1;
-	POL_NUM    = 2;
+message flex_slice {
+  optional uint32 id = 1;
+  optional string label = 2;
+  optional string scheduler = 3;
+  oneof params {
+    flex_slice_static static = 10;
+  }
 }
 
-enum flex_ul_accounting_policy {
-	POLU_FAIR   = 0;
-	POLU_GREEDY = 1;
-	POLU_NUM    = 2;
-}
-
-enum flex_slice_label {
-	xMBB  = 0;
-	URLLC = 1;
-	mMTC  = 2;
-	xMTC  = 3;
-	Other = 4;
-}
-
-message flex_dl_slice {
-	optional uint32 id = 1;
-	optional flex_slice_label label = 2;
-	// should be between 0 and 100
-	optional uint32 percentage = 3;
-	// whether this slice should be exempted form interslice sharing
-	optional bool   isolation = 4;
-	// increasing value means increasing prio
-	optional uint32 priority = 5;
-	// min and max RB to use (in frequency) in the range [0, N_RBG_MAX]
-	optional uint32 position_low = 6;
-	optional uint32 position_high = 7;
-	// maximum MCS to be allowed in this slice
-	optional uint32 maxmcs = 8;
-	repeated flex_dl_sorting sorting = 9;
-	optional flex_dl_accounting_policy accounting = 10;
-	optional string scheduler_name = 11;
-}
-
-message flex_ul_slice {
-	optional uint32 id = 1;
-	optional flex_slice_label label = 2;
-	// should be between 0 and 100
-	optional uint32 percentage = 3;
-	// whether this slice should be exempted form interslice sharing
-	optional bool   isolation = 4;
-	// increasing value means increasing prio
-	optional uint32 priority = 5;
-	// RB start to use (in frequency) in the range [0, N_RB_MAX]
-	optional uint32 first_rb = 6;
-	// TODO RB number
-	//optional uint32 length_rb = 7;
-	// maximum MCS to be allowed in this slice
-	optional uint32 maxmcs = 8;
-	repeated flex_ul_sorting sorting = 9;
-	optional flex_ul_accounting_policy accounting = 10;
-	optional string scheduler_name = 11;
+message flex_slice_dl_ul_config {
+  optional flex_slice_algorithm algorithm = 1;
+  repeated flex_slice slices = 2;
+  optional string scheduler = 3; // if no slicing
 }
 
 //

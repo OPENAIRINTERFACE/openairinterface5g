@@ -156,9 +156,6 @@
 /*!\brief minimum MAC data needed for transmitting 1 min RLC PDU size + 1 byte MAC subHeader */
 #define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
-/*!\brief maximum number of slices / groups */
-#define MAX_NUM_SLICES 10
-
 
 #define U_PLANE_INACTIVITY_VALUE 0   /* defined 10ms order (zero means infinity) */
 
@@ -545,7 +542,6 @@ typedef enum {
   SCHED_MODE_DEFAULT = 0,     /// default cheduler
   SCHED_MODE_FAIR_RR      /// fair raund robin
 } SCHEDULER_MODES;
-
 
 /*! \brief temporary struct for ULSCH sched */
 typedef struct {
@@ -1153,9 +1149,6 @@ typedef struct {
   UE_list_t list;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_ENB];
-
-  /// Sorting criteria for the UE list in the MAC preprocessor
-  uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
 } UE_info_t;
 
 /*! \brief deleting control information*/
@@ -1175,107 +1168,88 @@ typedef struct {
 } UE_free_list_t;
 
 /**
- * slice specific scheduler for the DL
- */
-typedef void (*slice_scheduler_dl)(module_id_t mod_id,
-                                   int         slice_idx,
-                                   frame_t     frame,
-                                   sub_frame_t subframe,
-                                   int        *mbsfn_flag);
-
-typedef struct {
-  slice_id_t id;
-
-  /// RB share for each slice
-  float     pct;
-
-  /// whether this slice is isolated from the others
-  int       isol;
-
-  int       prio;
-
-  /// Frequency ranges for slice positioning
-  int       pos_low;
-  int       pos_high;
-
-  // max mcs for each slice
-  int       maxmcs;
-
-  /// criteria for sorting policies of the slices
-  uint32_t  sorting;
-
-  /// Accounting policy (just greedy(1) or fair(0) setting for now)
-  int       accounting;
-
-  /// name of available scheduler
-  char     *sched_name;
-
-  /// pointer to the slice specific scheduler in DL
-  slice_scheduler_dl sched_cb;
-
-} slice_sched_conf_dl_t;
-
-typedef void (*slice_scheduler_ul)(module_id_t   mod_id,
-                                   int           slice_idx,
-                                   frame_t       frame,
-                                   sub_frame_t   subframe,
-                                   unsigned char sched_subframe,
-                                   uint16_t     *first_rb);
-
-typedef struct {
-  slice_id_t id;
-
-  /// RB share for each slice
-  float     pct;
-
-  // MAX MCS for each slice
-  int       maxmcs;
-
-  /// criteria for sorting policies of the slices
-  uint32_t  sorting;
-
-  /// starting RB (RB offset) of UL scheduling
-  int       first_rb;
-
-  /// name of available scheduler
-  char     *sched_name;
-
-  /// pointer to the slice specific scheduler in UL
-  slice_scheduler_ul sched_cb;
-
-} slice_sched_conf_ul_t;
-
-
-typedef struct {
-  /// counter used to indicate when all slices have pre-allocated UEs
-  //int      slice_counter;
-
-  /// indicates whether remaining RBs after first intra-slice allocation will
-  /// be allocated to UEs of the same slice
-  int       intraslice_share_active;
-  /// indicates whether remaining RBs after slice allocation will be
-  /// allocated to UEs of another slice. Isolated slices will be ignored
-  int       interslice_share_active;
-
-  /// number of active DL slices
-  int      n_dl;
-  slice_sched_conf_dl_t dl[MAX_NUM_SLICES];
-
-  /// number of active UL slices
-  int      n_ul;
-  slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
-
-  /// common rb allocation list between slices
-  uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
-} slice_info_t;
-
-/**
  * describes contiguous RBs
  */
 typedef struct {
   int start;
   int length;
 } contig_rbs_t;
+
+/**
+ * definition of a scheduling algorithm implementation used in the
+ * default DL scheduler
+ */
+typedef struct {
+  char *name;
+  void *(*setup)(void);
+  void (*unset)(void **);
+  int (*run)(
+      module_id_t, int, int, int, UE_list_t *, int, int, uint8_t *, void *);
+  void *data;
+} default_sched_dl_algo_t;
+
+/**
+ * definition of a scheduling algorithm implementation used in the
+ * default UL scheduler
+ */
+typedef struct {
+  char *name;
+  void *(*setup)(void);
+  void (*unset)(void **);
+  int (*run)(
+      module_id_t, int, int, int, int, int, UE_list_t *, int, int, contig_rbs_t *, void *);
+  void *data;
+} default_sched_ul_algo_t;
+
+typedef void (*pp_impl_dl)(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frame,
+                           sub_frame_t subframe);
+typedef void (*pp_impl_ul)(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frame,
+                           sub_frame_t subframe,
+                           frame_t sched_frame,
+                           sub_frame_t sched_subframe);
+
+struct slice_info_s;
+typedef struct {
+  int algorithm;
+
+  /// inform the slice algorithm about a new UE
+  void (*add_UE)(struct slice_info_s *s, int UE_id);
+  /// inform the slice algorithm about a UE that disconnected
+  void (*remove_UE)(struct slice_info_s *s, int UE_id);
+  /// move a UE to a slice in DL/UL, -1 means don't move (no-op).
+  void (*move_UE)(struct slice_info_s *s, int UE_id, int idx);
+
+  /// Adds a new slice through admission control. slice_params are
+  /// algorithm-specific parameters. sched is either a default_sched_ul_algo_t
+  /// or default_sched_dl_algo_t, depending on whether this implementation
+  /// handles UL/DL. If slice at index exists, updates existing
+  /// slice. Returns index of new slice or -1 on failure.
+  int (*addmod_slice)(struct slice_info_s *s,
+                      int id,
+                      char *label,
+                      void *sched,
+                      void *slice_params);
+  /// Returns slice through slice_idx. 1 if successful, 0 if not.
+  int (*remove_slice)(struct slice_info_s *s, uint8_t slice_idx);
+
+  union {
+    pp_impl_dl dl;
+    pp_impl_ul ul;
+  };
+
+  union {
+    default_sched_ul_algo_t ul_algo;
+    default_sched_dl_algo_t dl_algo;
+  };
+
+  void (*destroy)(struct slice_info_s **s);
+
+  struct slice_info_s *slices;
+} pp_impl_param_t;
 
 /*! \brief eNB common channels */
 typedef struct {
@@ -1400,9 +1374,6 @@ typedef struct eNB_MAC_INST_s {
   uint32_t ul_handle;
   UE_info_t UE_info;
 
-  /// slice-related configuration
-  slice_info_t slice_info;
-
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
   /// CCE table used to build DCI scheduling information
@@ -1437,6 +1408,11 @@ typedef struct eNB_MAC_INST_s {
   UE_free_list_t UE_free_list;
   /// for scheduling selection
   SCHEDULER_MODES scheduler_mode;
+  /// Default scheduler: Pre-processor implementation. Algorithms for UL/DL
+  /// are called by ULSCH/DLSCH, respectively. Pro-processor implementation can
+  /// encapsulate slicing.
+  pp_impl_param_t pre_processor_dl;
+  pp_impl_param_t pre_processor_ul;
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;
