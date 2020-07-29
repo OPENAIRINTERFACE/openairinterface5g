@@ -786,7 +786,7 @@ uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
     if (cur_harq.state==ACTIVE_NOT_SCHED) {
 #ifdef UL_HARQ_PRINT
-      printf("[SCHED] Found active ulharq id %d, scheduling it for retransmission\n",harq_id); 
+      printf("[SCHED] Found active ulharq id %d, scheduling it for retransmission\n",hrq_id); 
 #endif
       return hrq_id;
     }
@@ -797,7 +797,7 @@ uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
     if (cur_harq.state==INACTIVE) {
 #ifdef UL_HARQ_PRINT
-      printf("[SCHED] Found inactive ulharq id %d, scheduling it\n",harq_id); 
+      printf("[SCHED] Found inactive ulharq id %d, scheduling it\n",hrq_id); 
 #endif
       return hrq_id;
     }

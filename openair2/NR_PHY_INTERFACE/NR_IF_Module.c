@@ -136,27 +136,27 @@ void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, uint8_t cr
 
   int max_harq_rounds = 4; // TODO define macro
   for (uint8_t hrq_id = 0; hrq_id < NR_MAX_NB_HARQ_PROCESSES; hrq_id++) {
-    NR_UE_ul_harq_t cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
-    if ((cur_harq.last_tx_slot == slot-1) && cur_harq.state==ACTIVE_SCHED) {
+    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
+    if ((cur_harq->last_tx_slot == slot-1) && cur_harq->state==ACTIVE_SCHED) {
       if (!crc_status) {
-        cur_harq.ndi ^= 1;
-        cur_harq.round = 0;
-        cur_harq.state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
+        cur_harq->ndi ^= 1;
+        cur_harq->round = 0;
+        cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
 #ifdef UL_HARQ_PRINT
         printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
 #endif
       } else {
-        cur_harq.round++;
-        cur_harq.state = ACTIVE_NOT_SCHED;
+        cur_harq->round++;
+        cur_harq->state = ACTIVE_NOT_SCHED;
 #ifdef UL_HARQ_PRINT
         printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
 #endif
       }
 
-      if (!(cur_harq.round<max_harq_rounds)) {
-        cur_harq.ndi ^= 1;
-        cur_harq.state = INACTIVE; // failed after 4 rounds -> make inactive
-        cur_harq.round = 0;
+      if (!(cur_harq->round<max_harq_rounds)) {
+        cur_harq->ndi ^= 1;
+        cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
+        cur_harq->round = 0;
 #ifdef UL_HARQ_PRINT
         printf("[HARQ HANDLER] Ulharq id %d crc failed in all round, freeing it for scheduler\n",hrq_id);
 #endif
