@@ -53,6 +53,7 @@
 /* to add a set of new command to the telnet server shell */
 typedef void(*telnet_printfunc_t)(const char* format, ...);
 typedef int(*cmdfunc_t)(char*, int, telnet_printfunc_t prnt);
+typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 
 #define TELNETSRV_CMDFLAG_PUSHINTPOOLQ   (1<<0)    // ask the telnet server to push the command in a thread pool queue
 typedef struct cmddef {
@@ -67,7 +68,7 @@ typedef struct cmddef {
 /* structure used to send a command via a message queue to enable */
 /* executing a command in a thread different from the telnet server thread */
 typedef struct telnetsrv_qmsg {
-  cmdfunc_t cmdfunc;
+  qcmdfunc_t cmdfunc;
   telnet_printfunc_t prnt;
   int debug;
   char *cmdbuff;
@@ -144,7 +145,7 @@ VT escape sequence definition, for smarter display....
 #define TELNET_ADDCMD_FNAME "add_telnetcmd"
 #define TELNET_POLLCMDQ_FNAME "poll_telnetcmdq"
 typedef int(*add_telnetcmd_func_t)(char *, telnetshell_vardef_t *, telnetshell_cmddef_t *);
-typedef void(*poll_telnetcmdq_func_t)(void *qid);
+typedef void(*poll_telnetcmdq_func_t)(void *qid,void *arg);
 #ifdef TELNETSERVERCODE
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);
