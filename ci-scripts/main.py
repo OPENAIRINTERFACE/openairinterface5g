@@ -119,6 +119,7 @@ class OaiCiTest():
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
 		self.clean_repository = True
+		self.air_interface=''
 		self.expectedNbOfConnectedUEs = 0
 
 	def BuildOAIUE(self):
@@ -128,10 +129,10 @@ class OaiCiTest():
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		result = re.search('--nrUE', self.Build_OAI_UE_args)
 		if result is not None:
-			RAN.air_interface='nr'
+			self.air_interface='nr-uesoftmodem'
 			ue_prefix = 'NR '
 		else:
-			RAN.air_interface='lte'
+			self.air_interface='lte-uesoftmodem'
 			ue_prefix = ''
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
@@ -171,7 +172,7 @@ class OaiCiTest():
 						mismatch = True
 				if not mismatch:
 					SSH.close()
-					HTML.CreateHtmlTestRow(RAN.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+					HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK)
 					return
 
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
@@ -197,7 +198,7 @@ class OaiCiTest():
 		SSH.command('ls ran_build/build', '\$', 3)
 		SSH.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
-		result = re.search(RAN.air_interface + '-uesoftmodem', SSH.getBefore())
+		result = re.search(self.air_interface, SSH.getBefore())
 		if result is None:
 			buildStatus = False
 		SSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
@@ -322,7 +323,7 @@ class OaiCiTest():
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		if RAN.air_interface == 'lte':
+		if self.air_interface == 'lte-uesoftmodem':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			if result is None:
 				check_eNB = True
@@ -351,7 +352,7 @@ class OaiCiTest():
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets/ran_build/build', '\$', 5)
-		if RAN.air_interface == 'lte':
+		if self.air_interface == 'lte-uesoftmodem':
 			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 			# We may have to regenerate the .u* files
 			if result is None:
@@ -373,7 +374,7 @@ class OaiCiTest():
 			copyin_res = SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/reconfig.raw', '.')
 			if (copyin_res == 0):
 				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './reconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
-		SSH.command('echo "ulimit -c unlimited && ./'+ RAN.air_interface +'-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		SSH.command('echo "ulimit -c unlimited && ./'+ self.air_interface +' ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
 		self.UELogFile = 'ue_' + self.testCase_id + '.log'
@@ -404,7 +405,7 @@ class OaiCiTest():
 					doLoop = False
 					continue
 				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
-				if RAN.air_interface == 'nr':
+				if self.air_interface == 'nr-uesoftmodem':
 					result = re.search('Starting sync detection', SSH.getBefore())
 				else:
 					result = re.search('got sync', SSH.getBefore())
@@ -429,7 +430,7 @@ class OaiCiTest():
 			# That is the case for LTE
 			# In NR case, it's a positive message that will show if synchronization occurs
 			doLoop = True
-			if RAN.air_interface == 'nr':
+			if self.air_interface == 'nr-uesoftmodem':
 				loopCounter = 10
 			else:
 				# We are now checking if sync w/ eNB DOES NOT OCCUR
@@ -438,7 +439,7 @@ class OaiCiTest():
 			while (doLoop):
 				loopCounter = loopCounter - 1
 				if (loopCounter == 0):
-					if RAN.air_interface == 'nr':
+					if self.air_interface == 'nr-uesoftmodem':
 						# Here we do have great chances that UE did NOT cell-sync w/ gNB
 						doLoop = False
 						fullSyncStatus = False
@@ -457,7 +458,7 @@ class OaiCiTest():
 						fullSyncStatus = True
 						continue
 				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Frequency"', '\$', 4)
-				if RAN.air_interface == 'nr':
+				if self.air_interface == 'nr-uesoftmodem':
 					# Positive messaging -->
 					result = re.search('Measured Carrier Frequency', SSH.getBefore())
 					if result is not None:
@@ -486,12 +487,12 @@ class OaiCiTest():
 
 		if fullSyncStatus and gotSyncStatus:
 			doInterfaceCheck = False
-			if RAN.air_interface == 'lte':
+			if self.air_interface == 'lte-uesoftmodem':
 				result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
 				if result is None:
 					doInterfaceCheck = True
 			# For the moment, only in explicit noS1 without kernel module (ie w/ tunnel interface)
-			if RAN.air_interface == 'nr':
+			if self.air_interface == 'nr-uesoftmodem':
 				result = re.search('--noS1 --nokrnmod 1', str(self.Initialize_OAI_UE_args))
 				if result is not None:
 					doInterfaceCheck = True
@@ -531,7 +532,7 @@ class OaiCiTest():
 				self.UEDevicesStatus = []
 				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 		else:
-			if RAN.air_interface == 'lte':
+			if self.air_interface == 'lte-uesoftmodem':
 				if RAN.eNBmbmsEnables[0]:
 					HTML.htmlUEFailureMsg='oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
 				else:
@@ -1086,7 +1087,10 @@ class OaiCiTest():
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
-			SSH.command('adb devices', '\$', 15)
+			if self.ADBIPAddress == '192.168.18.196':
+				SSH.command('/home/oaici/remi/android-sdk-linux/platform-tools/adb devices', '\$', 15)
+			else:
+				SSH.command('adb devices', '\$', 15)
 			#self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
 			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
 			SSH.close()
@@ -2414,8 +2418,8 @@ class OaiCiTest():
 	def CheckOAIUEProcess(self, status_queue):
 		try:
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('stdbuf -o0 ps -aux | grep --color=never ' + RAN.air_interface + '-uesoftmodem | grep -v grep', '\$', 5)
-			result = re.search(RAN.air_interface + '-uesoftmodem', SSH.getBefore())
+			SSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface + ' | grep -v grep', '\$', 5)
+			result = re.search(self.air_interface, SSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m OAI UE Process Not Found! \u001B[0m')
 				status_queue.put(CONST.OAI_UE_PROCESS_FAILED)
@@ -2772,7 +2776,7 @@ class OaiCiTest():
 				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Failed</b>\n' + HTML.htmlUEFailureMsg
 				HTML.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
-				if RAN.air_interface == 'lte':
+				if self.air_interface == 'lte-uesoftmodem':
 					# In case of sniffing on commercial eNBs we have random results
 					# Not an error then
 					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
@@ -2811,7 +2815,7 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of eNB'
 			HTML.desc='Automatic Termination of eNB'
 			self.ShowTestID()
-			RAN.eNB_instance='0'
+			RAN.eNB_instance=0
 			RAN.TerminateeNB()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
@@ -3118,9 +3122,11 @@ def GetParametersFromXML(action):
 				RAN.Build_eNB_forced_workspace_cleanup=True
 			else:
 				RAN.Build_eNB_forced_workspace_cleanup=False
-		RAN.eNB_instance=test.findtext('eNB_instance')
-		if (RAN.eNB_instance is None):
-			RAN.eNB_instance='0'
+		eNB_instance=test.findtext('eNB_instance')
+		if (eNB_instance is None):
+			RAN.eNB_instance=0
+		else:
+			RAN.eNB_instance=int(eNB_instance)
 		RAN.eNB_serverId=test.findtext('eNB_serverId')
 		if (RAN.eNB_serverId is None):
 			RAN.eNB_serverId='0'
@@ -3135,18 +3141,22 @@ def GetParametersFromXML(action):
 
 	if action == 'WaitEndBuild_eNB':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
-		RAN.eNB_instance=test.findtext('eNB_instance')
-		if (RAN.eNB_instance is None):
+		eNB_instance=test.findtext('eNB_instance')
+		if (eNB_instance is None):
 			RAN.eNB_instance='0'
+		else:
+			RAN.eNB_instance=int(eNB_instance)
 		RAN.eNB_serverId=test.findtext('eNB_serverId')
 		if (RAN.eNB_serverId is None):
 			RAN.eNB_serverId='0'
 
 	if action == 'Initialize_eNB':
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
-		RAN.eNB_instance=test.findtext('eNB_instance')
-		if (RAN.eNB_instance is None):
-			RAN.eNB_instance='0'
+		eNB_instance=test.findtext('eNB_instance')
+		if (eNB_instance is None):
+			RAN.eNB_instance=0
+		else:
+			RAN.eNB_instance=int(eNB_instance)
 		RAN.eNB_serverId=test.findtext('eNB_serverId')
 		if (RAN.eNB_serverId is None):
 			RAN.eNB_serverId='0'
@@ -3154,17 +3164,18 @@ def GetParametersFromXML(action):
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
-			CiTestObj.air_interface = 'lte-softmodem'
+			RAN.air_interface[RAN.eNB_instance] = 'lte-softmodem'
 		elif (air_interface.lower() in ['nr','lte']):
-			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
+			RAN.air_interface[RAN.eNB_instance] = air_interface.lower() +'-softmodem'
 		else :
-			CiTestObj.air_interface = 'ocp-enb'
-		RAN.air_interface=CiTestObj.air_interface
+			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
 	if action == 'Terminate_eNB':
-		RAN.eNB_instance=test.findtext('eNB_instance')
+		eNB_instance=test.findtext('eNB_instance')
 		if (RAN.eNB_instance is None):
-			RAN.eNB_instance='0'
+			RAN.eNB_instance=0
+		else:
+			RAN.eNB_instance=int(eNB_instance)
 		RAN.eNB_serverId=test.findtext('eNB_serverId')
 		if (RAN.eNB_serverId is None):
 			RAN.eNB_serverId='0'
@@ -3172,12 +3183,11 @@ def GetParametersFromXML(action):
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
-			CiTestObj.air_interface = 'lte-softmodem'
+			RAN.air_interface[RAN.eNB_instance] = 'lte-softmodem'
 		elif (air_interface.lower() in ['nr','lte']):
-			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
+			RAN.air_interface[RAN.eNB_instance] = air_interface.lower() +'-softmodem'
 		else :
-			CiTestObj.air_interface = 'ocp-enb'
-		RAN.air_interface=CiTestObj.air_interface
+			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
 	if action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
@@ -3210,17 +3220,27 @@ def GetParametersFromXML(action):
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
-			CiTestObj.air_interface = 'lte-softmodem'
+			CiTestObj.air_interface = 'lte-uesoftmodem'
 		elif (air_interface.lower() in ['nr','lte']):
-			CiTestObj.air_interface = air_interface.lower() +'-softmodem'
+			CiTestObj.air_interface = air_interface.lower() +'-uesoftmodem'
 		else :
-			CiTestObj.air_interface = 'ocp-enb'
-		RAN.air_interface=CiTestObj.air_interface
+			#CiTestObj.air_interface = 'ocp-enb'
+			logging.error('OCP UE -- NOT SUPPORTED')
 
 	if action == 'Terminate_OAI_UE':
 		RAN.eNB_instance=test.findtext('UE_instance')
 		if (CiTestObj.UE_instance is None):
 			CiTestObj.UE_instance = '0'
+		
+		#local variable air_interface
+		air_interface = test.findtext('air_interface')		
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+			CiTestObj.air_interface = 'lte-uesoftmodem'
+		elif (air_interface.lower() in ['nr','lte']):
+			CiTestObj.air_interface = air_interface.lower() +'-uesoftmodem'
+		else :
+			#CiTestObj.air_interface = 'ocp-enb'
+			logging.error('OCP UE -- NOT SUPPORTED')
 
 	if action == 'Ping' or action == 'Ping_CatM_module':
 		CiTestObj.ping_args = test.findtext('ping_args')
