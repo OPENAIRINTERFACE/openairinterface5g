@@ -113,7 +113,7 @@ class OaiCiTest():
 		self.UEIPAddress = ''
 		self.UEUserName = ''
 		self.UEPassword = ''
-		self.UE_instance = ''
+		self.UE_instance = 0
 		self.UESourceCodePath = ''
 		self.UELogFile = ''
 		self.Build_OAI_UE_args = ''
@@ -3172,7 +3172,7 @@ def GetParametersFromXML(action):
 
 	if action == 'Terminate_eNB':
 		eNB_instance=test.findtext('eNB_instance')
-		if (RAN.eNB_instance is None):
+		if (eNB_instance is None):
 			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
@@ -3213,9 +3213,11 @@ def GetParametersFromXML(action):
 
 	if action == 'Initialize_OAI_UE':
 		CiTestObj.Initialize_OAI_UE_args = test.findtext('Initialize_OAI_UE_args')
-		CiTestObj.UE_instance = test.findtext('UE_instance')
-		if (CiTestObj.UE_instance is None):
-			CiTestObj.UE_instance = '0'
+		UE_instance = test.findtext('UE_instance')
+		if (UE_instance is None):
+			CiTestObj.UE_instance = 0
+		else:
+			CiTestObj.UE_instance = UE_instance
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
@@ -3228,9 +3230,11 @@ def GetParametersFromXML(action):
 			logging.error('OCP UE -- NOT SUPPORTED')
 
 	if action == 'Terminate_OAI_UE':
-		RAN.eNB_instance=test.findtext('UE_instance')
-		if (CiTestObj.UE_instance is None):
+		UE_instance=test.findtext('UE_instance')
+		if (UE_instance is None):
 			CiTestObj.UE_instance = '0'
+		else:
+			CiTestObj.UE_instance = int(UE_instance)
 		
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
