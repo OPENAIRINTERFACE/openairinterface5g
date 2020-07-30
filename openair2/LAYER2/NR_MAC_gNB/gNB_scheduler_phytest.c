@@ -492,7 +492,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       dci_pdu_rel15->ndi = 1;
       dci_pdu_rel15->rv = 0;
       dci_pdu_rel15->harq_pid = 0;
-      dci_pdu_rel15->tpc = 2;
+      dci_pdu_rel15->tpc = 1;
       break;
     case NR_UL_DCI_FORMAT_0_1:
       dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
@@ -517,7 +517,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       // mcs
       dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
       // tpc command for pusch
-      dci_pdu_rel15->tpc = 2; //TODO
+      dci_pdu_rel15->tpc = 1; //TODO
       // SRS resource indicator
       if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
         if (*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook)
