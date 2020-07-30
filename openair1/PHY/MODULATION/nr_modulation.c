@@ -29,20 +29,36 @@ void nr_modulation(uint32_t *in,
                    int16_t *out)
 {
   uint16_t offset;
-  uint8_t idx, b_idx;
+  uint16_t mask = ((1<<mod_order)-1);
+  uint8_t idx;
 
   offset = (mod_order==2)? NR_MOD_TABLE_QPSK_OFFSET : (mod_order==4)? NR_MOD_TABLE_QAM16_OFFSET : \
                     (mod_order==6)? NR_MOD_TABLE_QAM64_OFFSET: (mod_order==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
 
   LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
-  uint16_t mask = ((1<<mod_order)-1);
-  for (int i=0; i<length/mod_order; i++)
-  {
-    idx = ((in[i*mod_order/32]>>(i*mod_order)) & mask);
+  if (mod_order==6) {
+    uint16_t u = 1;
+    uint8_t shift_lut[3] = {0, 2, 4};
+    for (int i=0; i<length/mod_order; i++)
+    {
+      idx = ((in[i*mod_order/32]>>((i*mod_order)&0x1f)) & mask);
+      if ((((i+1)*mod_order)>32*u) && (i!=0))
+        idx |= (in[(i*mod_order/32)+1]<<shift_lut[(u++)%3]) & 0x3f;
+      else if (((i+1)*mod_order)==32*u) u++;
 
-    out[i<<1] = nr_mod_table[(offset+idx)<<1];
-    out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
+      out[i<<1] = nr_mod_table[(offset+idx)<<1];
+      out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
+    }
+  }
+  else {
+    for (int i=0; i<length/mod_order; i++)
+    {
+      idx = ((in[i*mod_order/32]>>((i*mod_order)&0x1f)) & mask);
+
+      out[i<<1] = nr_mod_table[(offset+idx)<<1];
+      out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
+    }
   }
 }
 
