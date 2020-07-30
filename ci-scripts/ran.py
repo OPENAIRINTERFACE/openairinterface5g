@@ -348,9 +348,9 @@ class RANManagement():
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			localEpcUserName = self.epcObj.GetUserName()
-			localEpcPassword = self.epcObj.GetPassword()
+			localEpcIpAddr = self.epcObj.IPAddress
+			localEpcUserName = self.epcObj.UserName
+			localEpcPassword = self.epcObj.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
@@ -457,9 +457,9 @@ class RANManagement():
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if (result is not None) and (self.epcObj is not None):
-					localEpcIpAddr = self.epcObj.GetIPAddress()
-					localEpcUserName = self.epcObj.GetUserName()
-					localEpcPassword = self.epcObj.GetPassword()
+					localEpcIpAddr = self.epcObj.IPAddress
+					localEpcUserName = self.epcObj.UserName
+					localEpcPassword = self.epcObj.Password
 					mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 					mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -588,9 +588,9 @@ class RANManagement():
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			localEpcUserName = self.epcObj.GetUserName()
-			localEpcPassword = self.epcObj.GetPassword()
+			localEpcIpAddr = self.epcObj.IPAddress
+			localEpcUserName = self.epcObj.UserName
+			localEpcPassword = self.epcObj.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
