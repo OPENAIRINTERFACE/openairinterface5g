@@ -3143,7 +3143,7 @@ def GetParametersFromXML(action):
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
-			RAN.eNB_instance='0'
+			RAN.eNB_instance=0
 		else:
 			RAN.eNB_instance=int(eNB_instance)
 		RAN.eNB_serverId=test.findtext('eNB_serverId')
@@ -3395,7 +3395,7 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	RAN.eNB_serverId='0'
-	RAN.eNB_instance='0'
+	RAN.eNB_instance=0
 	RAN.eNBSourceCodePath='/tmp/'
 	RAN.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
