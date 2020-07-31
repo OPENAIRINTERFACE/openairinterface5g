@@ -97,6 +97,7 @@ void exit_function(const char *file, const char *function, const int line, const
   if (s != NULL) {
     printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
+  softmodem_printresources(0,(telnet_printfunc_t)printf);
 
   close_log_mem();
   oai_exit = 1;
@@ -1167,6 +1168,7 @@ int main ( int argc, char **argv ) {
   T_Config_Init();
 #endif
   configure_linux();
+  set_softmodem_sighandler();
   cpuf=get_cpu_freq_GHz();
   set_taus_seed (0);
 
