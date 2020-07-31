@@ -435,17 +435,9 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   // ra_rnti from 5.1.3 in 38.321
   uint16_t ra_rnti=1+symbol+(slotP*14)+(freq_index*14*80)+(ul_carrier_id*14*80*8);
 
-  uint8_t index = ssb_index_from_prach(module_idP,
-                                           frameP,
-																					 slotP,
-																					 preamble_index,
-                                           freq_index,
-                                           symbol);
-
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_UE_list_t *UE_list = &nr_mac->UE_list;
-  NR_SSB_list_t *SSB_list = &nr_mac->SSB_list[index];
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
@@ -477,6 +469,15 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   LOG_I(MAC, "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, slotP, preamble_index);
 
   if (ra->state == RA_IDLE) {
+
+    uint8_t index = ssb_index_from_prach(module_idP,
+                                           frameP,
+																					 slotP,
+																					 preamble_index,
+                                           freq_index,
+                                           symbol);
+
+    NR_SSB_list_t *SSB_list = &nr_mac->SSB_list[index];
     int loop = 0;
     LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
     ra->state = Msg2;

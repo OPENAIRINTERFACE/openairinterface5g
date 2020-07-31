@@ -56,7 +56,7 @@ extern uint16_t sl_ahead;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
   if (UL_info->rach_ind.number_of_pdus>0) {
-    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
+    LOG_I(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
    for(int i = 0; i < UL_info->rach_ind.number_of_pdus; i++) {
     if (UL_info->rach_ind.pdu_list[i].num_preamble>0)
     AssertFatal(UL_info->rach_ind.pdu_list[i].num_preamble==1,
@@ -208,7 +208,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
 
-  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
+  LOG_I(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
