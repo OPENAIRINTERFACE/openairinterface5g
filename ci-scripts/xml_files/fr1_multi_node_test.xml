@@ -21,46 +21,57 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>build-tab</htmlTabRef>
-	<htmlTabName>Build</htmlTabName>
-	<htmlTabIcon>wrench</htmlTabIcon>
+	<htmlTabRef>test-fr1-tm1</htmlTabRef>
+	<htmlTabName>Test-FR1-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 000001 000002
- 000003 000004
+ 030000
+ 040000
+ 000001
+ 070000
+ 070001
 	</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+	<TestCaseExclusionList>
+	</TestCaseExclusionList>
+
+	<testCase id="030000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>lte</air_interface>
+	</testCase>
+
+	<testCase id="040000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize gNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+		<air_interface>nr</air_interface>
+	</testCase>
 
 	<testCase id="000001">
-		<class>Build_eNB</class>
-		<desc>Build eNB</desc>
-		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-		<backgroundBuild>True</backgroundBuild>
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
 	</testCase>
 
-	<testCase id="000004">
-		<class>WaitEndBuild_eNB</class>
-		<desc>Wait for end of Build eNB</desc>
+	<testCase id="070000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 	</testCase>
 
-	<testCase id="000002">
-		<class>Build_eNB</class>
-		<desc>Build gNB</desc>
-		<Build_eNB_args>-w USRP -c --gNB --ninja</Build_eNB_args>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
-		<backgroundBuild>True</backgroundBuild>
-	</testCase>
-
-	<testCase id="000003">
-		<class>WaitEndBuild_eNB</class>
-		<desc>Wait for end of Build gNB</desc>
+	<testCase id="070001">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>
-
 
 </testCaseList>
+

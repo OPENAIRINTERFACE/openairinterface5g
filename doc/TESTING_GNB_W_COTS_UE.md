@@ -1,4 +1,5 @@
-STATUS 2020/06/26 : information is up to date, but under continuous improvement
+STATUS 2020/07/30 : under continuous improvement ; updated the configuration files links with CI approved reference files
+
 
 ## Table of Contents ##
 
@@ -78,16 +79,16 @@ https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/do
 Each component (EPC, eNB, gNB) has its own configuration file.  
 These config files are passed as arguments of the run command line, using the option -O \<conf file\>
 
-Some config examples can be found in the following folder:  
-https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/develop/targets/PROJECTS/GENERIC-LTE-EPC/CONF
-
-Also base config files can be found here:  
-[enb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/enb.conf)  
-[gnb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/gnb.conf)
-
-TO DO : attach base confif files
+The **REFERENCE** files for eNB and gNB, **used by the CI**, can be found here:  
+[enb conf file](../ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf)
+[gnb conf file](../ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf)
 
 These files have to be updated manually to set the IP addresses and frequency.  
+
+
+**ATTENTION** : an **EXTERNAL** clock is used to sync the eNB and gNB,  
+whether the clock is internal or external is defined in the configuration files (!! details needed !!)   
+
 
 1- In the **eNB configuration file** :
 - look for MME IP address, and update the **ipv4 field** with the IP address of the **EPC** server
@@ -128,7 +129,7 @@ These files have to be updated manually to set the IP addresses and frequency.
                             }
                           );
 ```
-- look for X2 IP address, and update the **4 fields** with the IP address of the **eNB** server (notice : even if -in principle- S1 MME is not required for gNB setting)
+- look for X2 IP address, and update the **4 fields** with the IP address of the **eNB** server / **gNB** server as below  (notice : even if -in principle- S1 MME is not required for gNB setting)
 ```
 
     ///X2
@@ -146,11 +147,11 @@ These files have to be updated manually to set the IP addresses and frequency.
     {
 
         GNB_INTERFACE_NAME_FOR_S1_MME            = "eth0";
-        GNB_IPV4_ADDRESS_FOR_S1_MME              = "**YOUR_ENB_IP_ADDR**";
+        GNB_IPV4_ADDRESS_FOR_S1_MME              = "**YOUR_GNB_IP_ADDR**";
         GNB_INTERFACE_NAME_FOR_S1U               = "eth0";
-        GNB_IPV4_ADDRESS_FOR_S1U                 = "**YOUR_ENB_IP_ADDR**";
+        GNB_IPV4_ADDRESS_FOR_S1U                 = "**YOUR_GNB_IP_ADDR**";
         GNB_PORT_FOR_S1U                         = 2152; # Spec 2152
-        GNB_IPV4_ADDRESS_FOR_X2C                 = "**YOUR_ENB_IP_ADDR**";
+        GNB_IPV4_ADDRESS_FOR_X2C                 = "**YOUR_GNB_IP_ADDR**";
         GNB_PORT_FOR_X2C                         = 36422; # Spec 36422
     };
 

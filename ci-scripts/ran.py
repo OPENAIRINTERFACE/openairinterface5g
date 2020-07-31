@@ -77,8 +77,8 @@ class RANManagement():
 		self.backgroundBuildTestId = ['', '', '']
 		self.Build_eNB_forced_workspace_cleanup = False
 		self.Initialize_eNB_args = ''
-		self.air_interface = '' #changed from 'lte' to '' may lead to side effects in main
-		self.eNB_instance = ''
+		self.air_interface = ['', '', ''] #changed from 'lte' to '' may lead to side effects in main
+		self.eNB_instance = 0
 		self.eNB_serverId = ''
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
@@ -125,13 +125,13 @@ class RANManagement():
 		# Check if we build an 5G-NR gNB or an LTE eNB or an OCP eNB
 		result = re.search('--eNBocp', self.Build_eNB_args)
 		if result is not None:
-			self.air_interface='ocp-enb'
+			self.air_interface[self.eNB_instance] = 'ocp-enb'
 		else:	
 			result = re.search('--gNB', self.Build_eNB_args)
 			if result is not None:
-				self.air_interface = 'nr-softmodem'
+				self.air_interface[self.eNB_instance] = 'nr-softmodem'
 			else:
-				self.air_interface = 'lte-softmodem'
+				self.air_interface[self.eNB_instance] = 'lte-softmodem'
 				
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
@@ -205,7 +205,8 @@ class RANManagement():
 		if self.backgroundBuild:
 			mySSH.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
-			mySSH.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=build_enb_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ./my-lte-softmodem-build.sh', '\$', 5)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S ls', '\$', 5)
+			mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-build.sh' + ' > ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ' + ' 2>&1 &', lUserName, 5)
 			mySSH.close()
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
@@ -261,7 +262,7 @@ class RANManagement():
 
 		#check if we have the build corresponding to the air interface keywords (nr-softmode, lte-softmodem, ocp-enb)
 		logging.info('CHECK Build with IP='+lIpAddr+' SourcePath='+lSourcePath)
-		result = re.search(self.air_interface, mySSH.getBefore())
+		result = re.search(self.air_interface[self.eNB_instance], mySSH.getBefore())
 		if result is None:
 			buildStatus = False #if not, build failed
 		else:
@@ -304,11 +305,11 @@ class RANManagement():
 
 		#generate logging info depending on buildStatus and air interface
 		if buildStatus:
-			logging.info('\u001B[1m Building OAI ' + self.air_interface + ' Pass\u001B[0m')
+			logging.info('\u001B[1m Building OAI ' + self.air_interface[self.eNB_instance] + ' Pass\u001B[0m')
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)		
 		else:
-			logging.error('\u001B[1m Building OAI ' + self.air_interface + ' Failed\u001B[0m')
+			logging.error('\u001B[1m Building OAI ' + self.air_interface[self.eNB_instance] + ' Failed\u001B[0m')
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
 				self.htmlObj.CreateHtmlTabFooter(False)
@@ -348,9 +349,9 @@ class RANManagement():
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			localEpcUserName = self.epcObj.GetUserName()
-			localEpcPassword = self.epcObj.GetPassword()
+			localEpcIpAddr = self.epcObj.IPAddress
+			localEpcUserName = self.epcObj.UserName
+			localEpcPassword = self.epcObj.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
@@ -402,9 +403,11 @@ class RANManagement():
 			localMmeIpAddr = self.epcObj.MmeIPAddress
 			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
+		mySSH.command('sed -i -e \'s/CI_GNB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU2_IP_ADDR/' + self.eNB2IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		mySSH.command('sed -i -e \'s/CI_FR1_CTL_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
 		else:
@@ -426,15 +429,11 @@ class RANManagement():
 		if self.air_interface == 'nr':
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
-		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		# NOTE: WE SHALL do a check if the executable is present (in case build went wrong)
+		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		mySSH.command('hostnamectl','\$', 5)
-		result = re.search('CentOS Linux 7', mySSH.getBefore())
-		if result is not None:
-			mySSH.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
-		else:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
@@ -457,9 +456,9 @@ class RANManagement():
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if (result is not None) and (self.epcObj is not None):
-					localEpcIpAddr = self.epcObj.GetIPAddress()
-					localEpcUserName = self.epcObj.GetUserName()
-					localEpcPassword = self.epcObj.GetPassword()
+					localEpcIpAddr = self.epcObj.IPAddress
+					localEpcUserName = self.epcObj.UserName
+					localEpcPassword = self.epcObj.Password
 					mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 					mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -535,8 +534,8 @@ class RANManagement():
 				lPassWord = self.eNBPassword
 			mySSH = SSH.SSHConnection()
 			mySSH.open(lIpAddr, lUserName, lPassWord)
-			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface + ' | grep -v grep', '\$', 5)
-			result = re.search(self.air_interface, mySSH.getBefore())
+			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface[self.eNB_instance] + ' | grep -v grep', '\$', 5)
+			result = re.search(self.air_interface[self.eNB_instance], mySSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
 				status_queue.put(CONST.ENB_PROCESS_FAILED)
@@ -568,14 +567,13 @@ class RANManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		if (self.air_interface == 'lte-softmodem') or (self.air_interface == 'ocp-enb'):
+		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
 		mySSH.command('stdbuf -o0  ps -aux | grep --color=never -e softmodem -e ocp-enb | grep -v grep', '\$', 5)
 		result = re.search('(-softmodem|ocp)', mySSH.getBefore())
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
 			mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT -r .*-softmodem ocp-enb || true', '\$', 5)
 			time.sleep(10)
 			mySSH.command('stdbuf -o0  ps -aux | grep --color=never -e softmodem -e ocp-enb | grep -v grep', '\$', 5)
@@ -588,9 +586,9 @@ class RANManagement():
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			localEpcUserName = self.epcObj.GetUserName()
-			localEpcPassword = self.epcObj.GetPassword()
+			localEpcIpAddr = self.epcObj.IPAddress
+			localEpcUserName = self.epcObj.UserName
+			localEpcPassword = self.epcObj.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -831,11 +829,11 @@ class RANManagement():
 					mbmsRequestMsg += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
-		if (self.air_interface == 'lte-softmodem') or (self.air_interface == 'ocp-enb'):
+		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
-		if self.air_interface == 'nr-softmodem':
+		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
