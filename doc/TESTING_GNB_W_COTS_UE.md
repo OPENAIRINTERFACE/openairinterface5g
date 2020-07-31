@@ -216,26 +216,20 @@ Execute:
 
 ```
 
-For example:
-```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf | tee mylogfile.log
-```
-
-
 
 - **gNB** (on the gNB host)
 
 
 Execute: 
 ```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** | tee **YOUR_LOG_FILE**
+~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** -E | tee **YOUR_LOG_FILE**
 
 ```
 
-For example:
-```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf | tee mylogfile.log
-```
+**ATTENTION** : for the gNB execution,    
+The -E option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
+The -E opton is not needed when using a a N300 USRP  
+
 
 
 ## Test Case
