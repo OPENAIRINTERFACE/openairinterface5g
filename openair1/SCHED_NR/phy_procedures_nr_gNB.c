@@ -460,8 +460,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
             if (no_sig) {
-              LOG_I(PHY, "PUSCH not detected\n",ULSCH_id);
+              LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
               nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
+              return;
             }
 	  }
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
