@@ -82,10 +82,8 @@ Some config examples can be found in the following folder:
 https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/develop/targets/PROJECTS/GENERIC-LTE-EPC/CONF
 
 Also base config files can be found here:  
-[enb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/enb.conf)  
-[gnb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/gnb.conf)
-
-TO DO : attach base confif files
+[enb conf file](../ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf)
+[gnb conf file](../ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf)
 
 These files have to be updated manually to set the IP addresses and frequency.  
 
