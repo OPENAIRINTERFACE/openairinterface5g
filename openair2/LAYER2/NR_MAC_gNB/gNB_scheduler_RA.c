@@ -94,17 +94,16 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
                                     &N_dur,
                                     &RA_sfn_index,
                                     &N_RA_slot);
-  uint8_t index ,slot_index = 0;
+  uint8_t index = 0,slot_index = 0;
 	for (slot_index = 0;slot_index < N_RA_slot; slot_index++) {
     if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
        if((mu == 1) || (mu == 3))
          slot_index = 1;  //For scs = 30khz and 120khz
     }
-    for (index=0; index<N_t_slot; index++) {
-      start_symbol = start_symbol + index * N_dur + 14 * slot_index;
-		  temp_start_symbol = start_symbol % 14;
+    for (int i=0; i< N_t_slot; i++) {
+      temp_start_symbol = (start_symbol + i * N_dur + 14 * slot_index) % 14;
 		  if(symbol == temp_start_symbol) {
-			  start_symbol_index = index;
+			  start_symbol_index = i;
 		    break;
 		  }
 	  }
@@ -114,7 +113,6 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
       slot_index = 0;  //For scs = 30khz and 120khz
   }
   
- index = 0;
 //  prach_occasion_id = subframe_index * N_t_slot * N_RA_slot * fdm + N_RA_slot_index * N_t_slot * fdm + freq_index + fdm * start_symbol_index; 
  prach_occasion_id = (RA_sfn_index + slot_index) * N_t_slot * fdm + start_symbol_index * fdm + freq_index; 
 //one RO is shared by one or more SSB
@@ -246,10 +244,9 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
          N_RA_slot = 1;  //For scs = 30khz and 120khz
     }
 
-//  start_symbol = start_symbol + N_t_slot * N_dur + 14 * N_RA_slot;
+//  start_symbol = start_symbol_from_configuration + N_t_slot * N_dur + 14 * N_RA_slot;
     for (int index=0; index<N_t_slot; index++) {
-    start_symbol = start_symbol + index * N_dur + 14 * N_RA_slot;
-		temp_start_symbol = start_symbol % 14;
+    temp_start_symbol = (start_symbol + index * N_dur + 14 * N_RA_slot) % 14;
 
     UL_tti_req->SFN = frameP;
     UL_tti_req->Slot = slotP;
