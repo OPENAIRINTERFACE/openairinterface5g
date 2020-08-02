@@ -7044,6 +7044,17 @@ char openair_rrc_eNB_configuration(
   return 0;
 }
 
+static
+void rrc_eNB_generate_RRCConnectionReestablishmentReject_unknown_UE(protocol_ctxt_t* const ctxt_pP,
+                                                     const int CC_id)
+{
+  struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, ctxt_pP->rnti);
+  rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP,
+      ue_context_p,
+      CC_id);
+  ue_context_p->ue_context.ul_failure_timer = 500;  // 500 milliseconds to send the message and remove temporary entry
+}
+
 /*------------------------------------------------------------------------------*/
 int
 rrc_eNB_decode_ccch(
@@ -7122,12 +7133,14 @@ rrc_eNB_decode_ccch(
           uint16_t                          c_rnti = 0;
 
           if (rrcConnectionReestablishmentRequest->ue_Identity.physCellId != RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId) {
+            /* UE was moving from previous cell so quickly that RRCConnectionReestablishment for previous cell was recieved in this cell */
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%d), let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                   rrcConnectionReestablishmentRequest->ue_Identity.physCellId,
                   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId);
-            rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
+            rrc_eNB_generate_RRCConnectionReestablishmentReject_unknown_UE(ctxt_pP,
+                CC_id);
             break;
           }
 
@@ -7140,10 +7153,12 @@ rrc_eNB_decode_ccch(
 
           if (rrcConnectionReestablishmentRequest->ue_Identity.c_RNTI.size == 0 ||
               rrcConnectionReestablishmentRequest->ue_Identity.c_RNTI.size > 2) {
+            /* c_RNTI range error should not happen */
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest c_RNTI range error, let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-            rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
+            rrc_eNB_generate_RRCConnectionReestablishmentReject_unknown_UE(ctxt_pP,
+                CC_id);
             break;
           }
 
@@ -7155,7 +7170,8 @@ rrc_eNB_decode_ccch(
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest without UE context, let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-            rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
+            rrc_eNB_generate_RRCConnectionReestablishmentReject_unknown_UE(ctxt_pP,
+                CC_id);
             break;
           }
 
@@ -7222,8 +7238,10 @@ rrc_eNB_decode_ccch(
 
           if(ue_context_p->ue_context.ue_reestablishment_timer > 0) {
             LOG_E(RRC,
-                  PROTOCOL_RRC_CTXT_UE_FMT" RRRCConnectionReconfigurationComplete(Previous) don't receive, delete the Previous UE\n",
-                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+                PROTOCOL_RRC_CTXT_UE_FMT" RRRCConnectionReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status RRC_RECONFIGURED\n",
+                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+                ue_context_p->ue_context.Status
+                );
             ue_context_p->ue_context.Status = RRC_RECONFIGURED;
             protocol_ctxt_t  ctxt_old_p;
             PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
