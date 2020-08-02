@@ -57,16 +57,17 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
   uint16_t max_preamble[4]={0},max_preamble_energy[4]={0},max_preamble_delay[4]={0};
 
 
-  gNB->UL_INFO.rach_ind.number_of_pdus=0;
-
+  uint8_t pdu_index = 0;
   RU_t *ru;
   int aa=0;
   int ru_aa;
 
  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
-
-
+  gNB->UL_INFO.rach_ind.sfn             = frame;
+  gNB->UL_INFO.rach_ind.slot            = slot;
+  gNB->UL_INFO.rach_ind.pdu_list        = gNB->prach_pdu_indication_list;
+  gNB->UL_INFO.rach_ind.number_of_pdus  = 0;
 
   for (int i=0;i<gNB->num_RU;i++) {
     ru=gNB->RU_list[i];
@@ -101,38 +102,37 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
   if ((gNB->prach_energy_counter == 100) && 
       (max_preamble_energy[0] > gNB->measurements.prach_I0+100)) {
     
-    LOG_I(PHY,"[gNB %d][RAPROC] Frame %d, slot %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+    LOG_I(PHY,"[gNB %d][RAPROC] Frame %d, slot %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d start symbol %u freq index %u\n",
 	  gNB->Mod_id,
 	  frame,
 	  slot,
 	  max_preamble[0],
 	  max_preamble_energy[0]/10,
 	  max_preamble_energy[0]%10,
-	  max_preamble_delay[0]);
+	  max_preamble_delay[0],
+		prach_pdu->prach_start_symbol,
+		prach_pdu->num_ra);
     
     T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(gNB->Mod_id), T_INT(frame), T_INT(slot),
       T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
     
     
     gNB->UL_INFO.rach_ind.number_of_pdus  += 1;
-    gNB->UL_INFO.rach_ind.sfn             = frame;
-    gNB->UL_INFO.rach_ind.slot            = slot;
-    gNB->UL_INFO.rach_ind.pdu_list        = &gNB->prach_pdu_indication_list[i];
     
-    gNB->prach_pdu_indication_list[i].phy_cell_id  = gNB->gNB_config.cell_config.phy_cell_id.value;
-    gNB->prach_pdu_indication_list[i].symbol_index = prach_pdu->prach_start_symbol;  // FIXME to be changed for multi-ssb (this is only the start symbol of first occasion)
-    gNB->prach_pdu_indication_list[i].slot_index   = slot;
-    gNB->prach_pdu_indication_list[i].freq_index   = prach_pdu->num_ra;
-    gNB->prach_pdu_indication_list[i].avg_rssi     = (max_preamble_energy[0]<631) ? (128+(max_preamble_energy[0]/5)) : 254;
-    gNB->prach_pdu_indication_list[i].avg_snr      = 0xff; // invalid for now
+    gNB->prach_pdu_indication_list[pdu_index].phy_cell_id  = gNB->gNB_config.cell_config.phy_cell_id.value;
+    gNB->prach_pdu_indication_list[pdu_index].symbol_index = prach_pdu->prach_start_symbol; 
+    gNB->prach_pdu_indication_list[pdu_index].slot_index   = slot;
+    gNB->prach_pdu_indication_list[pdu_index].freq_index   = prach_pdu->num_ra;
+    gNB->prach_pdu_indication_list[pdu_index].avg_rssi     = (max_preamble_energy[0]<631) ? (128+(max_preamble_energy[0]/5)) : 254;
+    gNB->prach_pdu_indication_list[pdu_index].avg_snr      = 0xff; // invalid for now
 
-
-    gNB->prach_pdu_indication_list[i].num_preamble                        = 1;
-    gNB->prach_pdu_indication_list[i].preamble_list                       = gNB->preamble_list;
-    gNB->prach_pdu_indication_list[i].preamble_list[0].preamble_index     = max_preamble[0];
-    gNB->prach_pdu_indication_list[i].preamble_list[0].timing_advance     = max_preamble_delay[0];
-    gNB->prach_pdu_indication_list[i].preamble_list[0].preamble_pwr       = 0xffffffff;
-  }    
+    gNB->prach_pdu_indication_list[pdu_index].num_preamble                        = 1;
+    gNB->prach_pdu_indication_list[pdu_index].preamble_list                       = gNB->preamble_list;
+    gNB->prach_pdu_indication_list[pdu_index].preamble_list[0].preamble_index     = max_preamble[0];
+    gNB->prach_pdu_indication_list[pdu_index].preamble_list[0].timing_advance     = max_preamble_delay[0];
+    gNB->prach_pdu_indication_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
+    pdu_index++;
+	}
   gNB->measurements.prach_I0 = ((gNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10); 
   if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",gNB->measurements.prach_I0/10,gNB->measurements.prach_I0%10);
   if (gNB->prach_energy_counter < 100) gNB->prach_energy_counter++;

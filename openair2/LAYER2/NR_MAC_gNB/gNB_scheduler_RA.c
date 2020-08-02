@@ -54,9 +54,8 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,
 														 sub_frame_t slotP,
 														 uint16_t preamble_index,
-                             uint8_t freq_index,
-                             uint8_t symbol) {
-
+														 uint8_t freq_index,
+														 uint8_t symbol) {
 
 	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
@@ -471,11 +470,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   if (ra->state == RA_IDLE) {
 
     uint8_t index = ssb_index_from_prach(module_idP,
-                                           frameP,
-																					 slotP,
-																					 preamble_index,
-                                           freq_index,
-                                           symbol);
+		                                     frameP,
+																				 slotP,
+																				 preamble_index,
+																				 freq_index,
+																				 symbol);
 
     NR_SSB_list_t *SSB_list = &nr_mac->SSB_list[index];
     int loop = 0;
