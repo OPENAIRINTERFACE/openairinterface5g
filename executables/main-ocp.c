@@ -97,7 +97,6 @@ void exit_function(const char *file, const char *function, const int line, const
   if (s != NULL) {
     printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
-  softmodem_printresources(0,(telnet_printfunc_t)printf);
 
   close_log_mem();
   oai_exit = 1;
