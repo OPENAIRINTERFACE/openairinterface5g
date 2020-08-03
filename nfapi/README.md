@@ -36,7 +36,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
     * `unpack_dl_tti_request`   [x]
     * `unpack_ul_tti_request`   [x]
     * `unpack_ul_dci_request`
-    * `unpack_tx_data_request`
+    * `unpack_tx_data_request`  [x]
 
 * Similarly change all the `unpack` functions within the switch-case block.
 
@@ -45,7 +45,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
         * `dl_tti_request`  [x]
         * `ul_tti_request`  [x]
         * `ul_dci_request`
-        * `tx_data_request`
+        * `tx_data_request` [x]
 
 ### Task-C
 * Write the `ul_tti` alternative for `nfapi_vnf_p7_ul_config_req()` in `vnf_p7_interface.c` and other such functions.

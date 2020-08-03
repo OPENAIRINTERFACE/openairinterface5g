@@ -2085,6 +2085,69 @@ static uint8_t pack_hi_dci0_request_body_value(void *tlv, uint8_t **ppWritePacke
 	return 1;
 }
 
+static uint8_t pack_ul_dci_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+	nfapi_nr_ul_dci_request_pdus_t* value = (nfapi_nr_ul_dci_request_pdus_t*)tlv;
+	
+	return (push32(value->PDUType, ppWritePackedMsg, end) &&
+	   	    push16(value->PDUSize, ppWritePackedMsg, end) &&
+			push16(value->pdcch_pdu.pdcch_pdu_rel15.BWPSize, ppWritePackedMsg, end) &&
+			push16(value->pdcch_pdu.pdcch_pdu_rel15.BWPStart, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.SubcarrierSpacing, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.CyclicPrefix, ppWritePackedMsg, end) &&
+
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.StartSymbolIndex, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.DurationSymbols, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.FreqDomainResource, 6, 1, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.CceRegMappingType, ppWritePackedMsg, end) &&
+
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.RegBundleSize, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.InterleaverSize, ppWritePackedMsg, end) &&
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.CoreSetType, ppWritePackedMsg, end) &&
+			push16(value->pdcch_pdu.pdcch_pdu_rel15.ShiftIndex, ppWritePackedMsg, end) &&
+
+			push8(value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, ppWritePackedMsg, end) &&
+			push16(value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.RNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.ScramblingId, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.ScramblingRNTI, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.CceIndex, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.AggregationLevel, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.powerControlOffsetSS, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray16(value->pdcch_pdu.pdcch_pdu_rel15.PayloadSizeBits, MAX_DCI_CORESET, 1, ppWritePackedMsg, end) &&
+			pusharray8(value->pdcch_pdu.pdcch_pdu_rel15.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, ppWritePackedMsg, end)
+	);
+		  
+	
+
+
+}
+
+static uint8_t pack_ul_dci_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
+{
+	nfapi_nr_ul_dci_request_t *pNfapiMsg = (nfapi_nr_ul_dci_request_t*)msg;
+	
+	if (!(push16(pNfapiMsg->SFN, ppWritePackedMsg, end) &&
+		     push16(pNfapiMsg->Slot, ppWritePackedMsg, end) &&
+			 push16(pNfapiMsg->numPdus, ppWritePackedMsg, end)
+        ))
+		return 0;
+
+	for(int i=0; i<pNfapiMsg->numPdus; i++)
+	{
+		if(!pack_ul_dci_pdu_list_value(&pNfapiMsg->ul_dci_pdu_list[i], ppWritePackedMsg, end))
+			return 0;
+	}
+	return 1;
+
+
+}
+
+
+
 static uint8_t pack_hi_dci0_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
 	nfapi_hi_dci0_request_t *pNfapiMsg = (nfapi_hi_dci0_request_t*)msg;
@@ -3336,7 +3399,10 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 		case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
 			result = pack_tx_data_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
-#if 0
+		case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
+			result = pack_ul_dci_request(pMessageHeader, &pWritePackedMessage, end, config);
+			break;
+#if 0	
 		case NFAPI_DL_CONFIG_REQUEST:
                   //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() NFAPI_DL_CONFIG_REQUEST\n", __FUNCTION__);
 			result = pack_dl_config_request(pMessageHeader, &pWritePackedMessage, end, config);
@@ -3349,13 +3415,11 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
             //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() NFAPI_TX_REQUEST\n", __FUNCTION__);
 			result = pack_tx_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
-#endif
 		case NFAPI_HI_DCI0_REQUEST:
 			result = pack_hi_dci0_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
-
+#endif
 		
-
 		case NFAPI_UE_RELEASE_REQUEST:
 			result =pack_ue_release_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
@@ -5774,6 +5838,64 @@ static uint8_t unpack_hi_dci0_request_body_value(void *tlv, uint8_t **ppReadPack
 
 	return 1;
 }
+//unpack_ul_dci_pdu_list_value
+
+static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg)
+{
+	nfapi_nr_ul_dci_request_pdus_t* value = (nfapi_nr_ul_dci_request_pdus_t*)msg;
+	
+	return (pull32(ppReadPackedMsg, &value->PDUType, end) &&
+	   	    pull16(ppReadPackedMsg, &value->PDUSize, end) &&
+			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.BWPSize, end) &&
+			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.BWPStart, end) &&
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.SubcarrierSpacing, end) &&
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CyclicPrefix, end) &&
+
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.StartSymbolIndex, end) &&
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.DurationSymbols, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.FreqDomainResource, 6, 1, end) &&
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CceRegMappingType, end) &&
+
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.RegBundleSize, end) &&
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.InterleaverSize, end) &&
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CoreSetType, end) &&
+			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.ShiftIndex, end) &&
+
+			pull8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.precoderGranularity, end) &&
+			pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.RNTI, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.ScramblingId, MAX_DCI_CORESET, 1, end) &&
+
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.ScramblingRNTI, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.CceIndex, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.AggregationLevel, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.beta_PDCCH_1_0, MAX_DCI_CORESET, 1, end) &&
+
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.powerControlOffsetSS, MAX_DCI_CORESET, 1, end) &&
+			pullarray16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.PayloadSizeBits, MAX_DCI_CORESET, 1, end) &&
+			pullarray8(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.Payload[0], MAX_DCI_CORESET*DCI_PAYLOAD_BYTE_LEN, 1, end)
+	);
+		  
+}
+
+static uint8_t unpack_ul_dci_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
+{
+nfapi_nr_ul_dci_request_t *pNfapiMsg = (nfapi_nr_ul_dci_request_t*)msg;
+	
+	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) &&
+		     pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
+			 pull16(ppReadPackedMsg, &pNfapiMsg->numPdus, end)
+        ))
+		return 0;
+	for(int i=0; i< pNfapiMsg->numPdus; i++)
+		{
+			if (!unpack_ul_dci_pdu_list_value(ppReadPackedMsg, end, &pNfapiMsg->ul_dci_pdu_list[i]))
+				return 0;
+		}
+
+		return 1;
+
+}
 
 static uint8_t unpack_hi_dci0_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
 {
@@ -7596,6 +7718,12 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			else
 				return -1;
 			break;
+			case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
+			if (check_unpack_length(NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST, unpackedBufLen))
+				result = unpack_ul_dci_request(&pReadPackedMessage,  end, pMessageHeader, config);
+			else
+				return -1;
+			break;
 #if 0
 		case NFAPI_DL_CONFIG_REQUEST:
 			if (check_unpack_length(NFAPI_DL_CONFIG_REQUEST, unpackedBufLen))
@@ -7616,13 +7744,14 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			else
 				return -1;
 			break;
-#endif
-		case NFAPI_HI_DCI0_REQUEST:
+			case NFAPI_HI_DCI0_REQUEST:
 			if (check_unpack_length(NFAPI_HI_DCI0_REQUEST, unpackedBufLen))
 				result = unpack_hi_dci0_request(&pReadPackedMessage,  end, pMessageHeader, config);
 			else
 				return -1;
 			break;
+#endif
+		
 
 		case NFAPI_UE_RELEASE_REQUEST:
 			if (check_unpack_length(NFAPI_UE_RELEASE_REQUEST, unpackedBufLen))

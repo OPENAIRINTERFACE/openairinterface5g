@@ -1354,6 +1354,22 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)
   return retval;
 }
 
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req) {
+  nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
+  ul_dci_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ul_dci_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST;
+  //LOG_D(PHY, "[VNF] %s() HI_DCI0_REQ sfn_sf:%d dci:%d hi:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(hi_dci0_req->sfn_sf), hi_dci0_req->hi_dci0_request_body.number_of_dci, hi_dci0_req->hi_dci0_request_body.number_of_hi);
+  int retval = nfapi_vnf_p7_ul_dci_req(p7_config, ul_dci_req);
+
+  if (retval!=0) {
+    LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
+  } else {
+    ul_dci_req->numPdus = 0;
+  }
+
+  return retval;
+}
+
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   hi_dci0_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!

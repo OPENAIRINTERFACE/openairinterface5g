@@ -1369,6 +1369,7 @@ typedef struct {
 } nfapi_nr_ul_dci_request_pdus_t;
 
 typedef struct {
+  nfapi_p7_message_header_t header;
   uint16_t SFN;
   uint16_t Slot;
   uint8_t  numPdus;
