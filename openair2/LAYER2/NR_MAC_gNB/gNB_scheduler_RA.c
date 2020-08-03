@@ -73,6 +73,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
   uint16_t start_symbol_index = 0;
   uint8_t mu,N_dur,N_t_slot,start_symbol = 0, temp_start_symbol = 0, N_RA_slot;
   uint16_t format,RA_sfn_index = -1;
+	uint8_t config_period = 0;
   uint16_t prach_occasion_id = -1;
 	uint8_t num_active_ssb = cc->num_active_ssb;
 
@@ -92,7 +93,8 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
                                     &N_t_slot,
                                     &N_dur,
                                     &RA_sfn_index,
-                                    &N_RA_slot);
+                                    &N_RA_slot,
+																		&config_period);
   uint8_t index = 0,slot_index = 0;
 	for (slot_index = 0;slot_index < N_RA_slot; slot_index++) {
     if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
@@ -113,7 +115,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
   }
   
 //  prach_occasion_id = subframe_index * N_t_slot * N_RA_slot * fdm + N_RA_slot_index * N_t_slot * fdm + freq_index + fdm * start_symbol_index; 
- prach_occasion_id = (RA_sfn_index + slot_index) * N_t_slot * fdm + start_symbol_index * fdm + freq_index; 
+ prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period)*cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + start_symbol_index * fdm + freq_index; 
 //one RO is shared by one or more SSB
  if(num_ssb_per_RO <= 1 )
    index = (int) (prach_occasion_id / (int)(1/num_ssb_per_RO)) % num_active_ssb;
@@ -173,13 +175,15 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
     }
 	}	
 
-	for(int i = 0; (1 << i) < max_association_period;i++) {
+	for(int i = 1; (1 << (i-1)) <= max_association_period;i++) {
     if(total_RA_occasions >= (int) (num_active_ssb/num_ssb_per_RO)) {
-		 repetition = (uint16_t)((total_RA_occasions * num_ssb_per_RO )/num_active_ssb);
-		 break;
+		  repetition = (uint16_t)((total_RA_occasions * num_ssb_per_RO )/num_active_ssb);
+		  break;
 		} 
-		else 
-		 total_RA_occasions = total_RA_occasions * i;
+		else { 
+		  total_RA_occasions = total_RA_occasions * i;
+		  cc->max_association_period = i;
+		} 
 	}
 
  unused_RA_occasion = total_RA_occasions - (int)((num_active_ssb * repetition)/num_ssb_per_RO);
@@ -201,6 +205,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t mu,N_dur,N_t_slot,start_symbol = 0,temp_start_symbol = 0,N_RA_slot;
   uint16_t RA_sfn_index = -1;
+	uint8_t config_period = 0;
   uint16_t format;
   int slot_index = 0;
   uint16_t prach_occasion_id = -1;
@@ -223,7 +228,8 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
                                     &N_t_slot,
                                     &N_dur,
                                     &RA_sfn_index,
-                                    &N_RA_slot) ) {
+                                    &N_RA_slot,
+																		&config_period) ) {
     uint16_t format0 = format&0xff;      // first column of format from table
     uint16_t format1 = (format>>8)&0xff; // second column of format from table
 
@@ -251,7 +257,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
     UL_tti_req->Slot = slotP;
     for (int n=0; n < fdm; n++) { // one structure per frequency domain occasion
 
-      prach_occasion_id = (RA_sfn_index + slot_index) * N_t_slot * fdm + index * fdm + n;
+      prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period)*cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + index * fdm + n;
 			if(prach_occasion_id < cc->total_prach_occasions){  
 
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;

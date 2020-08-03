@@ -157,7 +157,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb = calloc(1,sizeof(struct NR_CFRA__resources__ssb));
   secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ra_ssb_OccasionMaskIndex = 0;
   struct NR_CFRA_SSB_Resource *ssbElem[8];
-  for(int i = 0; i < 8; i++) {
+  for(int i = 0; i < 1; i++) {
   ssbElem[i] = calloc(1,sizeof(struct NR_CFRA_SSB_Resource));
   ssbElem[i]->ssb = i;
   ssbElem[i]->ra_PreambleIndex = 63;

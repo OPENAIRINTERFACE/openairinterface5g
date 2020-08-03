@@ -181,8 +181,12 @@ typedef struct {
   uint8_t num_sf_allocation_pattern;
 	///Number of active SSBs
 	uint8_t num_active_ssb;
+	//Total available prach occasions per configuration period
+	uint32_t total_prach_occasions_per_config_period;
 	//Total available prach occasions
 	uint32_t total_prach_occasions;
+	//Max Association period
+	uint8_t max_association_period;
 } NR_COMMON_channels_t;
 
 

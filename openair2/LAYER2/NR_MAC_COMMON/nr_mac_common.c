@@ -1131,7 +1131,8 @@ int get_nr_prach_info_from_index(uint8_t index,
                                  uint8_t *N_t_slot,
                                  uint8_t *N_dur,
                                  uint16_t *RA_sfn_index,
-                                 uint8_t *N_RA_slot) {
+                                 uint8_t *N_RA_slot,
+																 uint8_t *config_period) {
 
   int x,y;
   int64_t s_map;
@@ -1161,6 +1162,7 @@ int get_nr_prach_info_from_index(uint8_t index,
             return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
         }
         if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+				  *config_period = x;
           *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];
           *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
           *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
@@ -1209,6 +1211,7 @@ int get_nr_prach_info_from_index(uint8_t index,
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
           } 
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
+				    *config_period = x;
             *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
             *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
             *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
