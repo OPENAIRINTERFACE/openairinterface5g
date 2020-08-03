@@ -29,7 +29,7 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
     * `pack_dl_config_request` becomes `pack_dl_tti_request`    [x]
     * `pack_ul_config_request` becomes `pack_ul_tti_request`    [x]
     * `pack_hi_dci0_request` becomes `pack_ul_dci_request`
-    * `pack_tx_request` becomes `pack_tx_data_request`
+    * `pack_tx_request` becomes `pack_tx_data_request`          [x]
 
 ### Task-B [unpacking]
 * Modify `nfapi_p7_message_unpack()` in `nfapi_p7.c`
@@ -52,15 +52,15 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
     * `dl_tti` is present as `nr_dl_config` [x]
     * `ul_tti` [x]
     * `ul_dci`
-    * `tx_data`
+    * `tx_data` [x]
 
 * Resolve the hard-coded areas in source code. [`HIGH-PRIORITY`] [x]
 
 * Write the `ul_tti` equivalent for `oai_nfapi_dl_config_req` in `nfapi_vnf.c` and other such functions.
     * `dl_tti` is present as `nr_dl_config` [x]
     * `ul_tti` is present as `oai_nfapi_ul_tti_req()` [x]
-    * `ul_dci`
-    * `tx_data`
+    * `ul_dci` 
+    * `tx_data` is present as `oai_nfapi_tx_data_req()` [x]
 
 * Check if `nr_schedule_response()` needs to be upgraded [x]
     * only a couple of `NFAPI_MODE!=VNF_MODE` checks *can be added* before calling the functions to handle PDUs
