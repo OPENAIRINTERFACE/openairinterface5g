@@ -1414,6 +1414,7 @@ typedef struct
 #define NFAPI_NR_MAX_TX_REQUEST_PDUS 16
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t SFN;
   uint16_t Slot;
   uint16_t Number_of_PDUs;

@@ -1320,6 +1320,23 @@ int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_tti_request_t *dl_config_req)
   return retval;
 }
 
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req)
+{
+  nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
+  tx_data_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  tx_data_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST;
+  //LOG_D(PHY, "[VNF] %s() TX_REQ sfn_sf:%d number_of_pdus:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(tx_req->sfn_sf), tx_req->tx_request_body.number_of_pdus);
+  int retval = nfapi_vnf_p7_tx_data_req(p7_config, tx_data_req);
+
+  if (retval!=0) {
+    LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
+  } else {
+    tx_data_req->Number_of_PDUs = 0;
+  }
+
+  return retval;
+}
+
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)
 {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;

@@ -2094,6 +2094,55 @@ static uint8_t pack_hi_dci0_request(void *msg, uint8_t **ppWritePackedMsg, uint8
 			 pack_p7_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
 }
 
+//pack_tx_data_pdu_list_value
+static uint8_t pack_tx_data_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+{
+	nfapi_nr_pdu_t* value = (nfapi_nr_pdu_t*)tlv;
+	
+	if(!(push32(value->num_TLV, ppWritePackedMsg, end) &&
+	    push16(value->PDU_index, ppWritePackedMsg, end) &&
+		push16(value->PDU_length, ppWritePackedMsg, end)
+	 ))
+		return 0;
+
+	uint16_t i = 0;
+	uint16_t total_number_of_tlvs = value->num_TLV;
+	for(; i < total_number_of_tlvs; ++i)
+	{
+		
+		if (!(push16(value->TLVs[i].length, ppWritePackedMsg, end) &&
+			push16(value->TLVs[i].tag, ppWritePackedMsg, end)))
+			return 0;
+
+		switch(value->TLVs[i].tag){
+			case 0:
+			{
+				if(!pusharray32(value->TLVs[i].value.direct, 16384, value->TLVs[i].length, ppWritePackedMsg, end))
+					return 0;
+				break;
+
+			}
+
+				
+			case 1:
+			{
+				if(!pusharray32(value->TLVs[i].value.ptr, value->TLVs[i].length , value->TLVs[i].length, ppWritePackedMsg, end))
+					return 0;
+				break;
+
+			}
+				
+			default:
+			{
+				// NFAPI_TRACE
+				break;
+			}
+				
+		}		
+	}
+	return 1;
+}
+
 static uint8_t pack_tx_request_body_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	nfapi_tx_request_body_t* value = (nfapi_tx_request_body_t*)tlv;
@@ -2137,6 +2186,26 @@ static uint8_t pack_tx_request_body_value(void* tlv, uint8_t **ppWritePackedMsg,
 	}
 
 	return 1;
+}
+
+static uint8_t pack_tx_data_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
+{
+	nfapi_nr_tx_data_request_t *pNfapiMsg = (nfapi_nr_tx_data_request_t*)msg;
+	
+	if (!(
+	 push16(pNfapiMsg->SFN, ppWritePackedMsg, end) &&
+	 push16(pNfapiMsg->Slot, ppWritePackedMsg, end) &&
+	 push16(pNfapiMsg->Number_of_PDUs, ppWritePackedMsg, end)
+	))
+	return 0;
+
+	for(int i=0; i<pNfapiMsg->Number_of_PDUs; i++)
+	{
+		if(!pack_tx_data_pdu_list_value(&pNfapiMsg->pdu_list[i], ppWritePackedMsg, end))
+			return 0;
+	}
+
+    return 1;
 }
 
 static uint8_t pack_tx_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
@@ -3265,6 +3334,9 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
 			result = pack_ul_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
+		case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
+			result = pack_tx_data_request(pMessageHeader, &pWritePackedMessage, end, config);
+			break;
 #if 0
 		case NFAPI_DL_CONFIG_REQUEST:
                   //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() NFAPI_DL_CONFIG_REQUEST\n", __FUNCTION__);
@@ -3274,15 +3346,16 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 		case NFAPI_UL_CONFIG_REQUEST:
 			result = pack_ul_config_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
+        case NFAPI_TX_REQUEST:
+            //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() NFAPI_TX_REQUEST\n", __FUNCTION__);
+			result = pack_tx_request(pMessageHeader, &pWritePackedMessage, end, config);
+			break;
 #endif
 		case NFAPI_HI_DCI0_REQUEST:
 			result = pack_hi_dci0_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
 
-		case NFAPI_TX_REQUEST:
-                        //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() NFAPI_TX_REQUEST\n", __FUNCTION__);
-			result = pack_tx_request(pMessageHeader, &pWritePackedMessage, end, config);
-			break;
+		
 
 		case NFAPI_UE_RELEASE_REQUEST:
 			result =pack_ue_release_request(pMessageHeader, &pWritePackedMessage, end, config);

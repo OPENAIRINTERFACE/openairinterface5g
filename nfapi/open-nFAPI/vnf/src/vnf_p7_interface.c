@@ -518,6 +518,14 @@ int nfapi_vnf_p7_hi_dci0_req(nfapi_vnf_p7_config_t* config, nfapi_hi_dci0_reques
 	vnf_p7_t* vnf_p7 = (vnf_p7_t*)config;
 	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &req->header);
 }
+int nfapi_vnf_p7_tx_data_req(nfapi_vnf_p7_config_t* config, nfapi_nr_tx_data_request_t* req)
+{
+	if(config == 0 || req == 0)
+		return -1;
+
+	vnf_p7_t* vnf_p7 = (vnf_p7_t*)config;
+	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &req->header);
+}
 int nfapi_vnf_p7_tx_req(nfapi_vnf_p7_config_t* config, nfapi_tx_request_t* req)
 {
 	if(config == 0 || req == 0)
