@@ -34,14 +34,14 @@
 
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
+		<desc>Initialize OCP-eNB (FDD/Band7/5MHz)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
 		<air_interface>ocp</air_interface>
 	</testCase>
 
 	<testCase id="030201">
 		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
+		<desc>Terminate OCP-eNB</desc>
 		<air_interface>ocp</air_interface>
 	</testCase>
 

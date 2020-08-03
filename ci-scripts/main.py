@@ -330,7 +330,7 @@ class OaiCiTest():
 				check_OAI_UE = False
 				pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE)
 				if (pStatus < 0):
-					HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', pStatus)
+					HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'KO', pStatus)
 					HTML.CreateHtmlTabFooter(False)
 					sys.exit(1)
 			UE_prefix = ''
@@ -522,7 +522,7 @@ class OaiCiTest():
 
 		SSH.close()
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
-			HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK, 'OAI UE')
+			HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 			if (self.ADBIPAddress != 'none'):
 				self.UEDevices = []
@@ -535,10 +535,10 @@ class OaiCiTest():
 					HTML.htmlUEFailureMsg='oaitun_ue1/oaitun_uem1 interfaces are either NOT mounted or NOT configured'
 				else:
 					HTML.htmlUEFailureMsg='oaitun_ue1 interface is either NOT mounted or NOT configured'
-				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
+				HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_NO_TUNNEL_INTERFACE, 'OAI UE')
 			else:
 				HTML.htmlUEFailureMsg='nr-uesoftmodem did NOT synced'
-				HTML.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
+				HTML.CreateHtmlTestRow(self.air_interface + ' ' +  self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB()
 
@@ -1085,11 +1085,7 @@ class OaiCiTest():
 			sys.exit('Insufficient Parameter')
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
-			if self.ADBIPAddress == '192.168.18.196':
-				SSH.command('/home/oaici/remi/android-sdk-linux/platform-tools/adb devices', '\$', 15)
-			else:
-				SSH.command('adb devices', '\$', 15)
-			#self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
+			SSH.command('adb devices', '\$', 15)
 			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
 			SSH.close()
 		else:
@@ -2584,7 +2580,7 @@ class OaiCiTest():
 					freq = result.group('carrier_frequency')
 					new_freq = re.sub('/[0-9]+','',freq)
 					float_freq = float(new_freq) / 1000000
-					HTML.SethtmlUEFailureMsg(HTML.GethtmlUEFailureMsg() + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz')
+					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz'
 					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + str(freq) + '\033[0m')
 				except Exception as e:
 					logging.error('\033[91m' + "    DL Carrier Frequency not found" + '\033[0m')

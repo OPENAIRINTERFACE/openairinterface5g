@@ -343,7 +343,7 @@ class RANManagement():
 		
 		if (self.pStatus < 0):
 			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', self.pStatus)
+				self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 				self.htmlObj.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
@@ -450,9 +450,9 @@ class RANManagement():
 					mySSH.command('killall --signal SIGKILL record', '\$', 5)
 				mySSH.close()
 				doLoop = False
-				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
+				logging.error('\u001B[1;37;41m eNB/gNB/ocp-eNB logging system did not show got sync! \u001B[0m')
 				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
+					self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if (result is not None) and (self.epcObj is not None):
@@ -510,8 +510,8 @@ class RANManagement():
 
 		mySSH.close()
 		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
-		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+			self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
+		logging.debug('\u001B[1m Initialize eNB/gNB/ocp-eNB Completed\u001B[0m')
 
 	def CheckeNBProcess(self, status_queue):
 		try:
