@@ -26,38 +26,11 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 030000
- 040000
- 000001
  070001
  070000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>
-
-	<testCase id="030000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-		<air_interface>lte</air_interface>
-	</testCase>
-
-	<testCase id="040000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize gNB (3/4 sampling rate)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E</Initialize_eNB_args>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
-		<air_interface>nr</air_interface>
-	</testCase>
-
-	<testCase id="000001">
-		<class>IdleSleep</class>
-		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
-	</testCase>
 
 	<testCase id="070000">
 		<class>Terminate_eNB</class>
