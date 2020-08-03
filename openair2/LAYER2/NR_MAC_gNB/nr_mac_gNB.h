@@ -253,6 +253,13 @@ typedef struct NR_sched_pucch {
   uint8_t resource_indicator;
 } NR_sched_pucch;
 
+typedef struct NR_sched_pusch {
+  int frame;
+  int slot;
+  bool active;
+  nfapi_nr_pusch_pdu_t pusch_pdu;
+} NR_sched_pusch;
+
 typedef struct NR_UE_harq {
   uint8_t is_waiting;
   uint8_t ndi;
@@ -265,6 +272,7 @@ typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
   NR_sched_pucch *sched_pucch;
+  NR_sched_pusch *sched_pusch;
   uint16_t ta_timer;
   int16_t ta_update;
   uint8_t current_harq_pid;

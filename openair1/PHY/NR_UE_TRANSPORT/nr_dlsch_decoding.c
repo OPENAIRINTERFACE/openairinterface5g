@@ -68,7 +68,7 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL)
   if (dlsch) {
     if (N_RB_DL != 273) {
       a_segments = a_segments*N_RB_DL;
-      a_segments = a_segments/273;
+      a_segments = a_segments/273 +1;
     }  
  
 
@@ -409,7 +409,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   if (harq_process->C > a_segments) {
@@ -947,7 +947,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   if (harq_process->C > a_segments) {
@@ -1525,7 +1525,7 @@ void nr_dlsch_decoding_process(void *arg)
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   if (harq_process->C > a_segments) {

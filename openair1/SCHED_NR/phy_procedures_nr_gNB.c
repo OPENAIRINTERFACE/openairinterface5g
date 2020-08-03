@@ -162,7 +162,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 
   if (gNB->pdcch_pdu || gNB->ul_dci_pdu) {
-    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+    LOG_I(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
 	  gNB->ul_dci_pdu==NULL?0:gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci,
 	  gNB->pdcch_pdu==NULL?0:gNB->pdcch_pdu->pdcch_pdu_rel15.numDlDci);
@@ -438,6 +438,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           (ulsch_harq->slot == slot_rx) &&
           (ulsch_harq->handled == 0)){
 
+          LOG_I(PHY, "PUSCH generation started in frame %d slot %d\n",
+                frame_rx,slot_rx);
+
 #ifdef DEBUG_RXDATA
           NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
           RU_t *ru = gNB->RU_list[0];
@@ -445,7 +448,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           slot_offset -= ru->N_TA_offset;
           char name[128];
           FILE *f;
-          sprintf(name, "rxdata.%d.%d.raw", frame_rx,slot_rx);
+          sprintf(name, "rxdata.%d.%d.%d.raw", ulsch->rnti,frame_rx,slot_rx);
           f = fopen(name, "w"); if (f == NULL) exit(1);
           fwrite(&ru->common.rxdata[0][slot_offset],2,frame_parms->get_samples_per_slot(slot_rx,frame_parms)*2, f);
           fclose(f);
@@ -454,14 +457,18 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
           uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
-          for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-            nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-          }
+	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+            if (no_sig) {
+              LOG_I(PHY, "ULSCH %d not received\n",ULSCH_id);
+              return;
+            }
+	  }
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,1);
-            nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
+          nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX,0);
           break;
         }

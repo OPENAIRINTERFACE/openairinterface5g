@@ -1082,6 +1082,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 nr_tti_rx,
                                 0, // p
                                 symbol,
+                                ulsch_id,
                                 bwp_start_subcarrier,
                                 rel15_ul);
   stop_meas(&gNB->ulsch_channel_estimation_stats);

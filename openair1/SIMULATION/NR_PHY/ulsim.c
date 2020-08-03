@@ -104,6 +104,7 @@ int rrc_init_nr_global_param(void){return(0);}
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
+uint8_t round_rv_map[4] = {1, 0, 2, 3};
 
 int main(int argc, char **argv)
 {
@@ -146,6 +147,7 @@ int main(int argc, char **argv)
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
+  uint8_t rv_index = 0;
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
@@ -556,6 +558,7 @@ int main(int argc, char **argv)
   uint16_t n_rb1 = 75;
   uint8_t mcs_table = 0;
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
+  uint8_t max_rounds = 4;
 
   uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
@@ -574,10 +577,18 @@ int main(int argc, char **argv)
 
   printf("\n");
 
-  for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
+  //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
+    varArray_t *table_rx=initVarArray(1000,sizeof(double));
+    for (trial = 0; trial < n_trials; trial++) {
+    uint8_t round = 0;
+    int error_flag;
+    gNB->ulsch[0][0]->harq_mask = 0;
 
-      varArray_t *table_rx=initVarArray(1000,sizeof(double));
+    while (round<max_rounds && !(gNB->ulsch[0][0]->harq_mask & 0x1)) {
+      ulsch_ue[0]->harq_processes[harq_pid]->round = round;
+      gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
+      rv_index = round_rv_map[round];
       reset_meas(&gNB->phy_proc_rx);
       reset_meas(&gNB->ulsch_decoding_stats);
       reset_meas(&gNB->ulsch_deinterleaving_stats);
@@ -658,9 +669,9 @@ int main(int argc, char **argv)
       pusch_pdu->uplink_frequency_shift_7p5khz = 0;
       pusch_pdu->start_symbol_index = start_symbol;
       pusch_pdu->nr_of_symbols = nb_symb_sch;
-      pusch_pdu->pusch_data.rv_index = 0;
+      pusch_pdu->pusch_data.rv_index = rv_index;
       pusch_pdu->pusch_data.harq_process_id = 0;
-      pusch_pdu->pusch_data.new_data_indicator = 0;
+      pusch_pdu->pusch_data.new_data_indicator = trial & 0x1;
       pusch_pdu->pusch_data.num_cb = 0;
       pusch_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
       pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
@@ -694,8 +705,8 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
       ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
-      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
-      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = trial & 0x1;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
@@ -762,8 +773,6 @@ int main(int argc, char **argv)
       errors_scrambling  = 0;
       errors_decoding    = 0;
 
-      int error_flag;
-      for (trial = 0; trial < n_trials; trial++) {
 	
 	error_flag = 0;
 	  //----------------------------------------------------------
@@ -833,6 +842,9 @@ int main(int argc, char **argv)
 	  error_flag = 1; 
 	  n_errors++;
 	}
+    printf("end of round %d rv_index %d\n",round, rv_index);
+    round++;
+    } // round
 	
         //----------------------------------------------------------
         //----------------- count and print errors -----------------
@@ -868,11 +880,11 @@ int main(int argc, char **argv)
 	if (n_trials == 1) {
 	  for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	    for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	      if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
+	      /*if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
 	      printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
 		     i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 		     i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-		     ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
+		     ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
 	    }
 	}
         if (errors_decoding > 0 && error_flag == 0) {
