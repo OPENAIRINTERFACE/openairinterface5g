@@ -698,7 +698,30 @@ class RANManagement():
 		X2HO_inNbProcedures = 0
 		X2HO_outNbProcedures = 0
 		global_status = CONST.ALL_PROCESSES_OK
+		# Runtime statistics
+		runTime = ''
+		userTime = ''
+		systemTime = ''
+		maxPhyMemUsage = ''
+		nbContextSwitches = ''
 		for line in enb_log_file.readlines():
+			# Runtime statistics
+			result = re.search('Run time:' ,str(line))
+			if result is not None:
+				runTime = str(line).strip()
+			if runTime != '':
+				result = re.search('Time executing user inst', str(line))
+				if result is not None:
+					userTime = 'to be decoded - 1'
+				result = re.search('Time executing system inst', str(line))
+				if result is not None:
+					systemTime = 'to be decoded - 2'
+				result = re.search('Max. Phy. memory usage:', str(line))
+				if result is not None:
+					maxPhyMemUsage = 'to be decoded - 3'
+				result = re.search('Number of context switch.*process origin', str(line))
+				if result is not None:
+					nbContextSwitches = 'to be decoded - 4'
 			if X2HO_state == CONST.X2_HO_REQ_STATE__IDLE:
 				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
 				if result is not None:
@@ -955,4 +978,11 @@ class RANManagement():
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
 			self.htmlObj.HmleNBFailureMsg=htmleNBFailureMsg
+		# Runtime statistics
+		if runTime != '':
+			logging.debug(runTime)
+			logging.debug('Time executing user inst   : ' + userTime)
+			logging.debug('Time executing system inst : ' + systemTime)
+			logging.debug('Max Physical Memory Usage  : ' + maxPhyMemUsage)
+			logging.debug('Nb Context Switches        : ' + nbContextSwitches)
 		return global_status
