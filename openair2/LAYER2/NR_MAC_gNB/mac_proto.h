@@ -151,7 +151,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
 void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   slotP,
-                                   int num_slots_per_tdd,
+                                   NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
 void nr_schedule_pusch(int Mod_idP,
