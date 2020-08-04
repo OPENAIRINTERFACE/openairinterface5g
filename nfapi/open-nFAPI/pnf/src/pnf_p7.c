@@ -141,6 +141,12 @@ void pnf_p7_free(pnf_p7_t* pnf_p7, void* ptr)
 }
 
 // todo : for now these just malloc/free need to move to a memory cache
+nfapi_nr_dl_tti_request_t* allocate_nfapi_dl_tti_request(pnf_p7_t* pnf_p7) 
+{ 
+	void *ptr= pnf_p7_malloc(pnf_p7, sizeof(nfapi_nr_dl_tti_request_t));
+        //printf("%s() ptr:%p\n", __FUNCTION__, ptr);
+        return ptr;
+}
 nfapi_dl_config_request_t* allocate_nfapi_dl_config_request(pnf_p7_t* pnf_p7) 
 { 
 	void *ptr= pnf_p7_malloc(pnf_p7, sizeof(nfapi_dl_config_request_t));
@@ -1350,7 +1356,99 @@ uint8_t is_p7_request_in_window(uint16_t sfnsf, const char* name, pnf_p7_t* phy)
 
 
 // P7 messages
-//
+#if 0 
+void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
+{
+	//NFAPI_TRACE(NFAPI_TRACE_INFO, "DL_CONFIG.req Received\n");
+
+	nfapi_nr_dl_tti_request_t* req  = allocate_nfapi_dl_tti_request(pnf_p7);
+
+	if(req == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_dl_tti_request structure\n");
+		return;
+	}
+
+	int unpack_result = nfapi_p7_message_unpack(pRecvMsg, recvMsgLen, req, sizeof(nfapi_nr_dl_tti_request_t), &(pnf_p7->_public.codec_config));
+
+	if(unpack_result == 0)
+	{
+		if(pthread_mutex_lock(&(pnf_p7->mutex)) != 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to lock mutex\n");
+			return;
+		}
+#if 0
+                if (
+                    0 && 
+                    (NFAPI_SFNSF2DEC(req->sfn_sf) % 100 ==0 ||
+                     NFAPI_SFNSF2DEC(req->sfn_sf) % 105 ==0 
+                    )
+                )
+                  NFAPI_TRACE(NFAPI_TRACE_INFO, "DL_CONFIG.req sfn_sf:%d pdcch:%u dci:%u pdu:%u pdsch_rnti:%u pcfich:%u\n", 
+                      NFAPI_SFNSF2DEC(req->sfn_sf),
+                      req->dl_config_request_body.number_pdcch_ofdm_symbols,
+                      req->dl_config_request_body.number_dci,
+                      req->dl_config_request_body.number_pdu,
+                      req->dl_config_request_body.number_pdsch_rnti,
+                      req->dl_config_request_body.transmission_power_pcfich
+                      );
+#endif
+                if(is_p7_request_in_window(req->sfn_sf, "dl_config_request", pnf_p7))
+                {
+                  uint32_t sfn_sf_dec = NFAPI_SFNSF2DEC(req->sfn_sf);
+                  uint8_t buffer_index = sfn_sf_dec % pnf_p7->_public.subframe_buffer_size;
+
+                        struct timespec t;
+                        clock_gettime(CLOCK_MONOTONIC, &t);
+
+                  NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE DL_CONFIG_REQ sfn_sf:%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, sfn_sf_dec, buffer_index);
+
+			// if there is already an dl_config_req make sure we free it.
+			if(pnf_p7->subframe_buffer[buffer_index].dl_config_req != 0)
+			{
+				NFAPI_TRACE(NFAPI_TRACE_NOTE, "%s() is_p7_request_in_window()=TRUE buffer_index occupied - free it first sfn_sf:%d buffer_index:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), buffer_index);
+				//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] Freeing dl_config_req at index %d (%d/%d)", 
+				//			pMyPhyInfo->sfnSf, bufferIdx,
+				//			SFNSF2SFN(dreq->sfn_sf), SFNSF2SF(dreq->sfn_sf));
+				deallocate_nfapi_dl_config_request(pnf_p7->subframe_buffer[buffer_index].dl_config_req, pnf_p7);
+			}
+
+			// saving dl_config_request in subframe buffer
+			pnf_p7->subframe_buffer[buffer_index].sfn_sf = req->sfn_sf;
+			pnf_p7->subframe_buffer[buffer_index].dl_config_req = req;
+
+			pnf_p7->stats.dl_conf_ontime++;
+			
+		}
+		else
+		{
+			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "NOT storing dl_config_req SFN/SF %d\n", req->sfn_sf);
+			deallocate_nfapi_dl_config_request(req, pnf_p7);
+
+			if(pnf_p7->_public.timing_info_mode_aperiodic)
+			{
+				pnf_p7->timing_info_aperiodic_send = 1;
+			}
+
+			pnf_p7->stats.dl_conf_late++;
+		}
+
+		if(pthread_mutex_unlock(&(pnf_p7->mutex)) != 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to unlock mutex\n");
+			return;
+		}
+	}
+	else
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "Failed to unpack dl_config_req");
+		deallocate_nfapi_dl_config_request(req, pnf_p7);
+	}
+}
+#endif
+
+
 void pnf_handle_dl_config_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 {
 	//NFAPI_TRACE(NFAPI_TRACE_INFO, "DL_CONFIG.req Received\n");
