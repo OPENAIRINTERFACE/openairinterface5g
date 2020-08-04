@@ -248,16 +248,6 @@ err_code_t flexran_agent_create_timer(mid_t    mod_id,
   return 0;
 }
 
-err_code_t flexran_agent_destroy_timers(mid_t mod_id) {
-  struct timesync *sync = &timesync[mod_id];
-  pthread_mutex_lock(&sync->mutex_timer);
-  for (int i = sync->timer_num - 1; i < 0; --i) {
-    flexran_agent_timer_remove_internal(sync, i);
-  }
-  pthread_mutex_unlock(&sync->mutex_timer);
-  return 0;
-}
-
 err_code_t flexran_agent_destroy_timer(mid_t mod_id, xid_t xid) {
   struct timesync *sync = &timesync[mod_id];
   pthread_mutex_lock(&sync->mutex_timer);
