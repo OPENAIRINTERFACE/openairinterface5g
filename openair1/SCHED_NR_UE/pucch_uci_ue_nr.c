@@ -46,9 +46,9 @@
 #include "SCHED_NR_UE/harq_nr.h"
 #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
 
-//#define DEFINE_VARIABLES_PUCCH_UE_NR_H
+#define DEFINE_VARIABLES_PUCCH_UE_NR_H
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
-//#undef DEFINE_VARIABLES_PUCCH_UE_NR_H
+#undef DEFINE_VARIABLES_PUCCH_UE_NR_H
 
 #endif
 
@@ -281,7 +281,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   ri_status = ((ue->cqi_report_config[gNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0) &&
                                                          (nr_is_ri_TXOp(ue,proc,gNB_id) == 1));
 
-  csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
+  //if (mac->csirc->reportQuantity.choice.ssb_Index_RSRP){ 
+	csi_status = get_csi_nr(ue, gNB_id, &csi_payload);
+  //}
 
   O_CSI = cqi_status + ri_status + csi_status;
 
@@ -517,13 +519,14 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     N_UCI = N_UCI + O_CRC;
 
     /* for format 2 and 3, number of prb should be adjusted to minimum value which cope to information size */
-    if (nb_of_prbs > 1 ) {
+    /*if (nb_of_prbs > 1 ) {
       int nb_prb_min = 0;
       int payload_in_bits;
       do {
         nb_prb_min++;
-        payload_in_bits = (nb_prb_min * N_sc_ctrl_RB * nb_symbols * Q_m * max_code_rate)/100; /* code rate has been multiplied by 100 */
-        NR_TST_PHY_PRINTF("PUCCH Adjust number of prb : (N_UCI : %d ) (payload_in_bits : %d) (N_sc_ctrl_RB : %d) (nb_symbols : %d) (Q_m : %d) (max_code_rate*100 : %d) \n",
+        payload_in_bits = (nb_prb_min * N_sc_ctrl_RB * nb_symbols * Q_m * max_code_rate)/100; */ /* code rate has been multiplied by 100 */
+        
+        /*NR_TST_PHY_PRINTF("PUCCH Adjust number of prb : (N_UCI : %d ) (payload_in_bits : %d) (N_sc_ctrl_RB : %d) (nb_symbols : %d) (Q_m : %d) (max_code_rate*100 : %d) \n",
                                                N_UCI,        payload_in_bits,       N_sc_ctrl_RB,       nb_symbols,       Q_m,       max_code_rate);
       } while (N_UCI > payload_in_bits);
 
@@ -534,7 +537,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       else {
         nb_of_prbs = nb_prb_min;
       }
-    }
+    }*/
 
     /* TS 38.213 9.2.4 for a positive SR transmission, payload b(0) = 0 */
     if ((O_SR == 1) && (format ==  pucch_format1_nr)) {
@@ -1026,7 +1029,10 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
               current_resource_id = r_PUCCH;
             }
             else {
-              current_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
+		if (pucch_resource_set_id !=0 )
+			current_resource_id = 3; //TBC mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
+		else
+			current_resource_id = 1;
             }
           }
 
@@ -1103,8 +1109,14 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
     if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
       pucch_max_pl_bits = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->maxPayloadMinus1;
-      if (uci_size <= (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
-        NR_TST_PHY_PRINTF("PUCCH found resource set %d \n",  pucch_resource_set_id);
+      if (uci_size <= 2) { //TBC rrc (((pucch_max_pl_bits != NULL) ? *pucch_max_pl_bits : 1706) + 1)) {
+        NR_TST_PHY_PRINTF("PUCCH found resource set %d max bits %d\n",  pucch_resource_set_id, pucch_max_pl_bits);
+        pucch_resource_set_id = 0;
+        return (pucch_resource_set_id);
+        break;
+      }
+      else {
+	pucch_resource_set_id = 1;
         return (pucch_resource_set_id);
         break;
       }
@@ -1163,10 +1175,10 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
     break;
   }
 
-  if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
+ /* if ((identified_format != NULL) && (identified_format->choice.setup->nrofSlots[0] != 1)) {
     LOG_E(PHY,"PUCCH not implemented multislots transmission : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (FALSE);
-  }
+  }*/
 
   if (nb_symbols_for_tx <= 2) {
     if (uci_size <= 2) {
@@ -1282,7 +1294,7 @@ int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_n
 *
 *********************************************************************/
 
-int      dummy_csi_status = 1;
+int      dummy_csi_status = 0;
 uint32_t dummy_csi_payload = 0;
 
 /* FFS TODO_NR code that should be developed */
@@ -1294,18 +1306,19 @@ int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
   float rsrp_db[7];
   int nElem = 98;
   int rsrp_offset = 17;
+  int csi_status = 12;
   
   rsrp_db[0] = get_nr_RSRP(0,0,0);
 
 
-  if (dummy_csi_status == 0) {
+  if (csi_status == 0) {
     *csi_payload = 0;
   }
   else {
     *csi_payload = binary_search_float_nr(RSRP_meas_mapping_nr,nElem, rsrp_db[0]) + rsrp_offset;
   }
 
-  return (dummy_csi_status);
+  return (csi_status);
 }
 
 /* FFS TODO_NR code that should be removed */
@@ -1372,6 +1385,9 @@ int get_ics_pucch(NR_PUCCH_Resource_t *pucch_resource, pucch_format_nr_t format_
 
     case pucch_format1_nr:
       return pucch_resource->format.choice.format1->initialCyclicShift;
+      
+    case pucch_format2_nr:
+      return 0;
 
     default:
       return -1;
