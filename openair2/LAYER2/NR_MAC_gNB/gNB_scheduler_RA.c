@@ -73,7 +73,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
   uint16_t start_symbol_index = 0;
   uint8_t mu,N_dur,N_t_slot,start_symbol = 0, temp_start_symbol = 0, N_RA_slot;
   uint16_t format,RA_sfn_index = -1;
-	uint8_t config_period = 0;
+	uint8_t config_period = 1;
   uint16_t prach_occasion_id = -1;
 	uint8_t num_active_ssb = cc->num_active_ssb;
 
@@ -143,7 +143,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   uint8_t mu,N_dur,N_t_slot,start_symbol,N_RA_slot = 0;
   uint16_t format,N_RA_sfn = 0,unused_RA_occasion,repetition = 0;
 	uint8_t num_active_ssb = 0;
-  uint8_t max_association_period = 0;
+  uint8_t max_association_period = 1;
 
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
     mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
@@ -185,6 +185,8 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
 		  cc->max_association_period = i;
 		} 
 	}
+  if(cc->max_association_period == 0)
+			cc->max_association_period = 1;
 
  unused_RA_occasion = total_RA_occasions - (int)((num_active_ssb * repetition)/num_ssb_per_RO);
  cc->total_prach_occasions = total_RA_occasions - unused_RA_occasion;
@@ -205,7 +207,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t mu,N_dur,N_t_slot,start_symbol = 0,temp_start_symbol = 0,N_RA_slot;
   uint16_t RA_sfn_index = -1;
-	uint8_t config_period = 0;
+	uint8_t config_period = 1;
   uint16_t format;
   int slot_index = 0;
   uint16_t prach_occasion_id = -1;
@@ -257,7 +259,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
     UL_tti_req->Slot = slotP;
     for (int n=0; n < fdm; n++) { // one structure per frequency domain occasion
 
-      prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period)*cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + index * fdm + n;
+      prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period) * cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + index * fdm + n;
 			if(prach_occasion_id < cc->total_prach_occasions){  
 
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
