@@ -627,7 +627,7 @@ class RANManagement():
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
 					if self.htmlObj is not None:
-						self.htmlObj.HmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
+						self.htmlObj.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
@@ -977,7 +977,7 @@ class RANManagement():
 			htmleNBFailureMsg += rlcMsg + '\n'
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
-			self.htmlObj.HmleNBFailureMsg=htmleNBFailureMsg
+			self.htmlObj.htmleNBFailureMsg=htmleNBFailureMsg
 		# Runtime statistics
 		if runTime != '':
 			logging.debug(runTime)
