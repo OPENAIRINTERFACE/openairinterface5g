@@ -297,6 +297,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
+    rnti_t rnti,
     uint8_t CC_id,
     frame_t frameP,
     uint8_t *pduP,
