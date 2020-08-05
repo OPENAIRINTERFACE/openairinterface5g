@@ -438,7 +438,6 @@ int restart_L1L2(module_id_t enb_id) {
   }
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
   set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
