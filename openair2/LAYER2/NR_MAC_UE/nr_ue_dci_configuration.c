@@ -123,7 +123,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, 275);
     rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275);
     rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
-    rel15->dci_length = nr_dci_size(mac->scg, def_dci_pdu_rel15, rel15->dci_format, NR_RNTI_C, rel15->BWPSize, bwp_id);
+    rel15->dci_length = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format, NR_RNTI_C, rel15->BWPSize, bwp_id);
     break;
     case NR_RNTI_RA:
     // we use the initial DL BWP
@@ -133,7 +133,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
     rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, 275); //NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-    rel15->dci_length = nr_dci_size(mac->scg, def_dci_pdu_rel15, rel15->dci_format, NR_RNTI_RA, rel15->BWPSize, bwp_id);
+    rel15->dci_length = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format, NR_RNTI_RA, rel15->BWPSize, bwp_id);
     break;
     case NR_RNTI_P:
     break;

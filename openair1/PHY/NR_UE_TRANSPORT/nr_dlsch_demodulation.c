@@ -183,9 +183,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     beamforming_mode = ue->transmission_mode[eNB_id] < 7 ? 0 :ue->transmission_mode[eNB_id];
     break;
 
-    default:
-      AssertFatal(1 == 0, "[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n", nr_tti_rx, type);
-    return(-1);
+  default:
+    LOG_E(PHY, "[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n", nr_tti_rx, type);
+    return -1;
     break;
   }
 
@@ -222,7 +222,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", codeword_TB1);
       #endif
 
-      AssertFatal(1 == 0, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
+      LOG_E(PHY, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
+      return -1;
 
     } else {
       LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
@@ -241,8 +242,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return (-1);
   }
 
-  if (dlsch0_harq == NULL)
-     AssertFatal(1 == 0, "Done\n");
+  if (dlsch0_harq == NULL) {
+    LOG_E(PHY, "Done\n");
+    return -1;
+  }
 
   dlsch0_harq->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
   dlsch0_harq->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);

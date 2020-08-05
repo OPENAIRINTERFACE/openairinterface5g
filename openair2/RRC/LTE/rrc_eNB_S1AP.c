@@ -96,35 +96,33 @@ void extract_imsi(uint8_t *pdu_buf, uint32_t pdu_len, rrc_eNB_ue_context_t *ue_c
         && pdu_len > NAS_MESSAGE_SECURITY_HEADER_SIZE))
     return;
 
+  /* Decode plain NAS message */
+  EMM_msg *e_msg = &nas_msg.plain.emm;
+  emm_msg_header_t *emm_header = &e_msg->header;
+
   if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
     /* Decode the message authentication code */
     DECODE_U32((char *) pdu_buf+size, header->message_authentication_code, size);
     /* Decode the sequence number */
     DECODE_U8((char *) pdu_buf+size, header->sequence_number, size);
-  }
+    /* Decode the security header type and the protocol discriminator */
+    DECODE_U8(pdu_buf + size, *(uint8_t *)(emm_header), size);
 
-  /* Note: the value of the pointer (i.e. the address) is given by value, so we
-   * can modify it as we want. The callee retains the original address! */
+    /* Check that this is the right message */
+    if (emm_header->protocol_discriminator != EPS_MOBILITY_MANAGEMENT_MESSAGE)
+      return;
+  }
   pdu_buf += size;
   pdu_len -= size;
-  /* Decode plain NAS message */
-  EMM_msg *e_msg = &nas_msg.plain.emm;
-  emm_msg_header_t *emm_header = &e_msg->header;
-  /* First decode the EMM message header */
-  int e_head_size = 0;
 
   /* Check that buffer contains more than only the header */
   if (pdu_len <= sizeof(emm_msg_header_t))
     return;
 
-  /* Decode the security header type and the protocol discriminator */
-  DECODE_U8(pdu_buf + e_head_size, *(uint8_t *)(emm_header), e_head_size);
+  /* First decode the EMM message header */
+  int e_head_size = 0;
   /* Decode the message type */
   DECODE_U8(pdu_buf + e_head_size, emm_header->message_type, e_head_size);
-
-  /* Check that this is the right message */
-  if (emm_header->protocol_discriminator != EPS_MOBILITY_MANAGEMENT_MESSAGE)
-    return;
 
   pdu_buf += e_head_size;
   pdu_len -= e_head_size;
