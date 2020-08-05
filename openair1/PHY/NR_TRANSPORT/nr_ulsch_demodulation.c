@@ -1077,7 +1077,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
   start_meas(&gNB->ulsch_channel_estimation_stats);
-  if (dmrs_symbol_flag == 1)
+  if (dmrs_symbol_flag == 1) {
     nr_pusch_channel_estimation(gNB,
                                 nr_tti_rx,
                                 0, // p
@@ -1085,6 +1085,14 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 ulsch_id,
                                 bwp_start_subcarrier,
                                 rel15_ul);
+
+    for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+      gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
+                                                                   rel15_ul->rb_size*12);
+      if (gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]==1) return (1);
+    }
+
+  }
   stop_meas(&gNB->ulsch_channel_estimation_stats);
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
@@ -1144,11 +1152,6 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   gNB->pusch_vars[ulsch_id]->log2_maxh);
     stop_meas(&gNB->ulsch_channel_compensation_stats);
 
-
-    int rxsig = signal_energy(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][(symbol*rel15_ul->rb_size*12)],
-                              rel15_ul->rb_size*12);
-
-    if (rxsig==1) return (rxsig);
 
 #ifdef NR_SC_FDMA
     nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);

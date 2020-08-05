@@ -288,6 +288,8 @@ typedef struct {
   NR_sched_pusch *sched_pusch;
   uint16_t ta_timer;
   int16_t ta_update;
+  uint8_t tpc0;
+  uint8_t tpc1;
   uint8_t current_harq_pid;
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
@@ -335,6 +337,8 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  /// Pusch target SNR
+  int                             pusch_target_snrx10;
   /// TA command
   int                             ta_command;
   /// MAC CE flag indicating TA length

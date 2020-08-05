@@ -310,10 +310,12 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
 
-  LOG_D(PHY, "Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", sync_pos,timing_advance_update);
+  LOG_I(PHY, "Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", sync_pos,timing_advance_update);
 
   // estimate UL_CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]) - 300;//(10*gNB->measurements.n0_power_dB[0]);
+  int SNRtimes10 = dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]) - (10*gNB->measurements.n0_subband_power_dB[0]);
+
+  LOG_I(PHY, "Estimated SNR for PUSCH is = %d dB\n", SNRtimes10/10);
 
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
@@ -359,6 +361,71 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
 
+// Function to fill UL RB mask to be used for N0 measurements
+void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
+
+  int rb2, rb, nb_rb;
+  for (int symbol=0;symbol<14;symbol++) {
+
+    nb_rb = 0;
+    for (int m=0;m<9;m++) gNB->rb_mask_ul[m] = 0;
+    gNB->ulmask_symb = -1;
+
+    for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+      NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
+      if (pucch) {
+        if ((pucch->active == 1) &&
+	    (pucch->frame == frame_rx) &&
+	    (pucch->slot == slot_rx) ) {
+
+          nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+          if ((symbol>=pucch_pdu->start_symbol_index) &&
+              (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
+            for (rb=0; rb<pucch_pdu->prb_size; rb++) {
+              rb2 = rb+pucch_pdu->prb_start;
+              gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+            }
+            nb_rb+=pucch_pdu->prb_size;
+            gNB->ulmask_symb = symbol;
+          }
+        }
+      }
+    }
+    for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
+      NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
+      int harq_pid;
+      NR_UL_gNB_HARQ_t *ulsch_harq;
+
+      if ((ulsch) &&
+          (ulsch->rnti > 0)) {
+        for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
+          ulsch_harq = ulsch->harq_processes[harq_pid];
+          AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+          if ((ulsch_harq->status == NR_ACTIVE) &&
+            (ulsch_harq->frame == frame_rx) &&
+            (ulsch_harq->slot == slot_rx) &&
+            (ulsch_harq->handled == 0)){
+            uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
+            uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
+            if ((symbol>=symbol_start) &&
+                (symbol<symbol_end)){
+              for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
+                rb2 = rb+ulsch_harq->ulsch_pdu.rb_start;
+                gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+              }
+              nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
+              gNB->ulmask_symb = symbol;
+            }
+          }
+        }
+      }
+      //TODO Add check for PRACH as well?
+    }
+    if (nb_rb<gNB->frame_parms.N_RB_UL)
+      return;
+  }
+}
+
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   uint8_t symbol;
@@ -384,6 +451,9 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
+
+  fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+  gNB_I0_measurements(gNB);
 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
@@ -431,7 +501,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
         (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	    ulsch_harq = ulsch->harq_processes[harq_pid];
+	ulsch_harq = ulsch->harq_processes[harq_pid];
     	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
     	if ((ulsch_harq->status == NR_ACTIVE) &&
           (ulsch_harq->frame == frame_rx) &&
