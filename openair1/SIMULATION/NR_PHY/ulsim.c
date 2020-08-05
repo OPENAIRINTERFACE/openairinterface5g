@@ -104,7 +104,7 @@ int rrc_init_nr_global_param(void){return(0);}
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
-uint8_t round_rv_map[4] = {1, 0, 2, 3};
+//const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 
 int main(int argc, char **argv)
 {
@@ -148,6 +148,10 @@ int main(int argc, char **argv)
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
   uint8_t rv_index = 0;
+  float roundStats[50];
+  float effRate; 
+  float eff_tp_check = 0.7;
+  uint8_t snrRun;
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
@@ -276,6 +280,9 @@ int main(int argc, char **argv)
       printf("Setting SNR0 to %f\n", snr0);
       break;
       
+    case 't':
+      eff_tp_check = (float)atoi(optarg)/100;
+      break;
       /*
 	case 'r':
 	ricean_factor = pow(10,-.1*atof(optarg));
@@ -374,6 +381,7 @@ int main(int argc, char **argv)
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-R N_RB_DL\n");
+      printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
       exit(-1);
@@ -559,6 +567,7 @@ int main(int argc, char **argv)
   uint8_t mcs_table = 0;
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
   uint8_t max_rounds = 4;
+  uint8_t crc_status = 0;
 
   uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
@@ -578,17 +587,23 @@ int main(int argc, char **argv)
   printf("\n");
 
   //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
+  snrRun = 0;
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
+    int error_flag = 0;
+    n_false_positive = 0;
+    effRate = 0;
+    n_errors = 0;
     for (trial = 0; trial < n_trials; trial++) {
     uint8_t round = 0;
-    int error_flag;
-    gNB->ulsch[0][0]->harq_mask = 0;
 
-    while (round<max_rounds && !(gNB->ulsch[0][0]->harq_mask & 0x1)) {
+    crc_status = 1;
+    errors_scrambling  = 0;
+    errors_decoding    = 0;
+    while (round<max_rounds && crc_status) {
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
-      rv_index = round_rv_map[round];
+      rv_index = nr_rv_round_map[round];
       reset_meas(&gNB->phy_proc_rx);
       reset_meas(&gNB->ulsch_decoding_stats);
       reset_meas(&gNB->ulsch_deinterleaving_stats);
@@ -732,7 +747,6 @@ int main(int argc, char **argv)
 
       if (input_fd == NULL) {
 
-        if (SNR==snr0) { 
 	  // set FAPI parameters for UE, put them in the scheduled response and call
 	  nr_ue_scheduled_response(&scheduled_response);
 	  
@@ -757,24 +771,14 @@ int main(int argc, char **argv)
 	  txlev_float = (double)txlev/scale; // output of signal_energy is fixed point representation
 	  
 	  
-	  //AWGN
-	}
       }	
       else n_trials = 1;
 
 
       sigma_dB = 10*log10(txlev_float)-SNR;
       sigma    = pow(10,sigma_dB/10);
-      printf("txlev_float %f, sigma_dB %f\n",10*log10(txlev_float),sigma_dB);
+      if(n_trials==1) printf("txlev_float %f, sigma_dB %f\n",10*log10(txlev_float),sigma_dB);
 
-      n_errors = 0;
-      n_false_positive = 0;
-
-      errors_scrambling  = 0;
-      errors_decoding    = 0;
-
-	
-	error_flag = 0;
 	  //----------------------------------------------------------
 	  //------------------------ add noise -----------------------
 	  //----------------------------------------------------------
@@ -841,8 +845,11 @@ int main(int argc, char **argv)
 	    gNB->ulsch[0][0]->max_ldpc_iterations+1) {
 	  error_flag = 1; 
 	  n_errors++;
-	}
-    printf("end of round %d rv_index %d\n",round, rv_index);
+    crc_status = 1;
+	} else {
+    crc_status = 0;
+  }
+    if(n_trials==1) printf("end of round %d rv_index %d\n",round, rv_index);
     round++;
     } // round
 	
@@ -892,12 +899,17 @@ int main(int argc, char **argv)
 	  if (n_trials==1)
 	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
         } 
+        roundStats[snrRun] += ((float)round);
+        if (!crc_status) effRate += ((float)TBS)/round;
       } // trial loop
+
+      roundStats[snrRun]/=((float)n_trials);
+      effRate /= n_trials;
 
       printf("*****************************************\n");
       printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %u/%u\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, available_bits*n_trials);
       printf("\n");
-      printf("SNR %f: Channel BLER %e, Channel BER %e\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials);
+      printf("SNR %f: Channel BLER %e, Channel BER %e Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials,roundStats[snrRun],effRate,effRate/TBS*100,TBS);
       printf("*****************************************\n");
       printf("\n");
  
@@ -925,6 +937,7 @@ int main(int argc, char **argv)
 	break;
       }
       
+    snrRun++;
   } // SNR loop
   printf("\n");
 

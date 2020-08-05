@@ -348,6 +348,8 @@ int nr_dlsch_encoding(unsigned char *a,
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
+  dlsch->harq_processes[harq_pid]->round = nr_rv_round_map[rel15->rvIndex[0]];
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
