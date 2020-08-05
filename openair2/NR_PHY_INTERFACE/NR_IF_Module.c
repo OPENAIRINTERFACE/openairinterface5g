@@ -41,7 +41,7 @@
 #include "executables/softmodem-common.h"
 
 #define MAX_IF_MODULES 100
-#define UL_HARQ_PRINT
+//#define UL_HARQ_PRINT
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];

@@ -672,10 +672,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   } else {
 
-//#ifdef gNB_DEBUG_TRACE
+#ifdef gNB_DEBUG_TRACE
     LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
           phy_vars_gNB->Mod_id,nr_tti_rx,harq_process->TBS);
-//#endif
+#endif
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;

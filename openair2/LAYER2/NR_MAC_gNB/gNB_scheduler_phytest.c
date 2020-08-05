@@ -53,7 +53,7 @@
 #include "NR_SearchSpace.h"
 #include "NR_ControlResourceSet.h"
 
-#define UL_HARQ_PRINT
+//#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
 
 const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
@@ -786,7 +786,7 @@ uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
     if (cur_harq.state==ACTIVE_NOT_SCHED) {
 #ifdef UL_HARQ_PRINT
-      printf("[SCHED] Found active ulharq id %d, scheduling it for retransmission\n",hrq_id); 
+      printf("[SCHED] Found ulharq id %d, scheduling it for retransmission\n",hrq_id);
 #endif
       return hrq_id;
     }
@@ -797,7 +797,7 @@ uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
     cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
     if (cur_harq.state==INACTIVE) {
 #ifdef UL_HARQ_PRINT
-      printf("[SCHED] Found inactive ulharq id %d, scheduling it\n",hrq_id); 
+      printf("[SCHED] Found new ulharq id %d, scheduling it\n",hrq_id);
 #endif
       return hrq_id;
     }
@@ -1006,7 +1006,6 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
     //Optional Data only included if indicated in pduBitmap
-    // TODO from harq function as in pdsch
     uint8_t harq_id = select_ul_harq_pid(&UE_list->UE_sched_ctrl[UE_id]);
     NR_UE_ul_harq_t *cur_harq = &UE_list->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
