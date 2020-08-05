@@ -282,7 +282,8 @@ err_code_t flexran_agent_destroy_timer(mid_t mod_id, xid_t xid) {
 void flexran_agent_timer_remove_internal(struct timesync *sync, int index) {
   LOG_I(FLEXRAN_AGENT, "remove timer xid %d (index %d) for agent %d\n",
         sync->timer[index]->xid, index, sync->timer[index]->mod_id);
-  flexran_agent_destroy_flexran_message(sync->timer[index]->msg);
+  if (sync->timer[index]->msg)
+    flexran_agent_destroy_flexran_message(sync->timer[index]->msg);
   free(sync->timer[index]);
   for (int i = index + 1; i < sync->timer_num; ++i)
     sync->timer[i - 1] = sync->timer[i];
