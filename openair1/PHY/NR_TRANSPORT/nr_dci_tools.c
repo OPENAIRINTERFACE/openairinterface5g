@@ -122,7 +122,11 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
 
   nr_cce_t* cce;
   nr_reg_t* reg;
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu_rel15;
+  if (gNB->pdcch_pdu != NULL)
+    pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
+  else
+    pdcch_pdu_rel15 = &gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
   int bsize = pdcch_pdu_rel15->RegBundleSize;
   int R = pdcch_pdu_rel15->InterleaverSize;
   int n_shift = pdcch_pdu_rel15->ShiftIndex;
@@ -251,7 +255,7 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
     //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu.Payload[i];
 
     // if there's no DL DCI then generate CCE list
-    if (gNB->pdcch_pdu) nr_fill_cce_list(gNB,0);  
+    nr_fill_cce_list(gNB,0);  
     /*
     LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
     LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
