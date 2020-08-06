@@ -340,11 +340,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, &nr_uac_BarringInfoSet);
 #endif
   //encode SIB1 to data
+  carrier->SIB1=(uint8_t *) malloc16(128);
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_DL_SCH_Message,
                                    NULL,
                                    (void *)sib1_message,
                                    carrier->SIB1,
-                                   100);
+                                   128);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
@@ -580,5 +581,6 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 
 
 int do_DLInformationTransfer_NR () {
+	return 0;
 }
 

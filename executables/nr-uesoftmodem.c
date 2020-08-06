@@ -79,6 +79,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 /* Callbacks, globals and object handlers */
 
 #include "PHY/TOOLS/nr_phy_scope.h"
+// at eNB 0, an UL scope for every UE
+//FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
