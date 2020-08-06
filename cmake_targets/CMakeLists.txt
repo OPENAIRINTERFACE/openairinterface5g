@@ -20,33 +20,8 @@
 # */
 
 # Author: laurent THOMAS, Lionel GAUTHIER
-###################### FOR CUDA#############################
-# author NCTU OpinConnect Terng-Yin Hsu,WEI-YING,LIN:
-# Add for PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
-# email tyhsu@cs.nctu.edu.tw
-###################### FOR CUDA#############################
+
 cmake_minimum_required (VERSION 3.0)
-
-
-
-##############################################
-# Base CUDA setting
-##############################################
-find_package(CUDA)
-message ("cuda include ${CUDA_INCLUDE_DIRS}")
-message ("cuda library ${CUDA_LIBRARY_DIRS}")
-
-add_definitions("-L/usr/local/cuda/lib64")
-
-SET(CUDA_NVCC_FLAGS
-  "${CUDA_NVCC_FLAGS};-arch=sm_75;")
-
-# Disable warnings for CUDA
-SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
-SET(CUDA_VERBOSE_BUILD ON)
-SET(CUDA_HOST_COMPILER "/usr/bin/g++")
-
-SET(CUDA_SEPARABLE_COMPILATION ON)
 
 #########################################################
 # Base directories, compatible with legacy OAI building #
@@ -63,6 +38,33 @@ set (OPENAIR_CMAKE   ${OPENAIR_DIR}/cmake_targets)
 set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
+
+
+
+##############################################
+# Base CUDA setting
+##############################################
+find_package(CUDA)
+if (CUDA_FOUND)
+    message ("cuda include ${CUDA_INCLUDE_DIRS}")
+    message ("cuda library ${CUDA_LIBRARY_DIRS}")
+
+    add_definitions("-L/usr/local/cuda/lib64")
+
+    SET(CUDA_NVCC_FLAGS
+      "${CUDA_NVCC_FLAGS};-arch=sm_60;")
+
+    # Disable warnings for CUDA
+    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
+    SET(CUDA_VERBOSE_BUILD ON)
+    SET(CUDA_HOST_COMPILER "/usr/bin/g++")
+
+    SET(CUDA_SEPARABLE_COMPILATION ON)
+
+else (CUDA_FOUND)
+   message ("No CUDA tool installed")
+endif ()
+
 
 ###########################################
 # macros to define options as there is numerous options in oai
@@ -194,13 +196,30 @@ endif()
 set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
 # add autotools definitions that were maybe used!
-# set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
-set(CMAKE_C_FLAGS
-	"${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP "
-)
-set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 "
-)
+if (CUDA_FOUND)
+	set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
+    set(CUDA_CMAKE_C_FLAGS
+           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D CUDA_FLAG"
+    )
+    set(CUDA_CMAKE_CXX_FLAGS
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D CUDA_FLAG"
+    )
+	
+	set(CMAKE_C_FLAGS
+           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER} -D CUDA_FLAG"
+    )
+    set(CMAKE_CXX_FLAGS
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER} -D CUDA_FLAG"
+    )
+else (CUDA_FOUND)
+    set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
+    set(CMAKE_C_FLAGS
+           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
+    )
+    set(CMAKE_CXX_FLAGS
+	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
+    )
+endif ()
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
@@ -1655,7 +1674,7 @@ add_library(PHY_MEX ${PHY_MEX_UE} ${CONFIG_LIB})
 #Layer 2 library
 #####################
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
-set(NR_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
+set(NR_GNB_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
 set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
 set(NR_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_PHY_INTERFACE)
@@ -1811,20 +1830,22 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_fairRR.c
   ${MAC_DIR}/eNB_scheduler_phytest.c
   ${MAC_DIR}/pre_processor.c
+  ${MAC_DIR}/slicing/slicing.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/config_ue.c
  )
 
 set (MAC_NR_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
-  ${NR_MAC_DIR}/main.c
-  ${NR_MAC_DIR}/config.c
-  ${NR_MAC_DIR}/gNB_scheduler.c
-  ${NR_MAC_DIR}/gNB_scheduler_bch.c
-  ${NR_MAC_DIR}/gNB_scheduler_dlsch.c
-  ${NR_MAC_DIR}/gNB_scheduler_ulsch.c
-  ${NR_MAC_DIR}/gNB_scheduler_primitives.c
-  ${NR_MAC_DIR}/gNB_scheduler_phytest.c
+  ${NR_GNB_MAC_DIR}/main.c
+  ${NR_GNB_MAC_DIR}/config.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_bch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_dlsch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_ulsch.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_primitives.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_phytest.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_RA.c
  )
 
 
@@ -1836,7 +1857,6 @@ set (MAC_SRC_UE
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
-  
  )
  
 set (MAC_NR_SRC_UE
@@ -1846,6 +1866,9 @@ set (MAC_NR_SRC_UE
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
   ${NR_UE_MAC_DIR}/nr_ue_dci_configuration.c
+  ${NR_UE_MAC_DIR}/nr_l1_helpers.c
+  ${NR_UE_MAC_DIR}/nr_ra_procedures.c
+  ${NR_UE_MAC_DIR}/rar_tools_nrUE.c
 )
 
 set (ENB_APP_SRC
@@ -1909,7 +1932,7 @@ add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB/nr_compute_tbs_common.c)
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
-include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")
+include_directories("${OPENAIR2_DIR}/LAYER2")
 include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
 #include_directories("${NFAPI_USER_DIR}"")
 
@@ -1936,6 +1959,19 @@ set (GTPV1U_SRC
 )
 add_library(GTPV1U ${GTPV1U_SRC})
 add_dependencies(GTPV1U rrc_flag)
+
+#NR case
+set (NR_GTPV1U_SRC
+  ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c
+  ${RRC_DIR}/rrc_eNB_GTPV1U.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTrxn.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uMsg.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1u.c
+  ${GTPV1U_DIR}/gtpv1u_teid_pool.c
+)
+add_library(NR_GTPV1U ${NR_GTPV1U_SRC})
+add_dependencies(NR_GTPV1U rrc_flag)
 
 set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_app.c
@@ -2264,26 +2300,28 @@ add_library(LFDS7
   ${lfds7_queue} ${lfds7_ring} ${lfds7_qbss} ${lfds7_stack} ${lfds7_freelist} ${lfds7_btree} ${lfds7_hash} ${lfds7_ordered_list} ${lfds7_unordered_list} ${lfds7_misc}
 )
 
-# Simulation library
-##########################
-set (SIMUSRC 
-${OPENAIR1_DIR}/SIMULATION/TOOLS/random_channel.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/rangen_double.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_channel.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_tv_channel.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/abstraction.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/channel_sim.c
-${OPENAIR1_DIR}/SIMULATION/RF/rf.c
-${OPENAIR1_DIR}/SIMULATION/RF/dac.c
-${OPENAIR1_DIR}/SIMULATION/RF/adc.c
-${OPENAIR_DIR}/targets/ARCH/rfsimulator/apply_channelmod.c
-#${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-)
+add_library(SIMU_COMMON
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/random_channel.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/rangen_double.c
+  )
 
 # Simulation library
 ##########################
-add_library( SIMU SHARED ${SIMUSRC} )
+set (SIMUSRC 
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_channel.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_tv_channel.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/abstraction.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/channel_sim.c
+  ${OPENAIR1_DIR}/SIMULATION/RF/rf.c
+  ${OPENAIR1_DIR}/SIMULATION/RF/dac.c
+  ${OPENAIR1_DIR}/SIMULATION/RF/adc.c
+  #${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  )
+
+# Simulation library
+##########################
+add_library(SIMU SHARED ${SIMUSRC} )
 
 add_library(SIMU_ETH
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2441,9 +2479,11 @@ target_link_libraries(gnbscope ${XFORMS_LIBRARIES})
 
 
 add_library(rfsimulator MODULE 
-	${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/simulator.c
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/apply_channelmod.c
+  ${OPENAIR_TARGETS}/ARCH/rfsimulator/new_channel_sim.c
 	)
-target_link_libraries(rfsimulator SIMU ${ATLAS_LIBRARIES})
+target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})
 
 add_library(oai_iqplayer MODULE 
 	${OPENAIR_TARGETS}/ARCH/iqplayer/iqplayer_lib.c
@@ -2466,7 +2506,7 @@ endif (${T_TRACER})
 add_custom_command (
   OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
   COMMAND make clean
-  COMMAND make
+  COMMAND make -j2
   COMMAND make check_vcd
   WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
@@ -2589,7 +2629,7 @@ add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer)
 target_link_libraries (ocp-enb
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_LIB SCHED_RU_LIB 
-  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7
+  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7 SIMU_COMMON
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB}
   -Wl,--end-group z dl)
 target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${LIB_LMS_LIBRARIES} ${T_LIB})
@@ -2659,7 +2699,7 @@ target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP F1AP_LIB
   GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
-  PHY_UE PHY_RU LFDS L2_UE L2_LTE LFDS7 SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  PHY_UE PHY_RU LFDS L2_UE L2_LTE LFDS7 SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
@@ -2685,6 +2725,7 @@ add_executable(nr-softmodem
   ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_gNB.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -2698,7 +2739,7 @@ add_executable(nr-softmodem
 
 target_link_libraries (nr-softmodem
   -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
+  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
   S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
@@ -2742,9 +2783,9 @@ add_executable(nr-uesoftmodem
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
+  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
-  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS L2_UE NR_L2_UE MAC_NR_COMMON S1AP_LIB S1AP_ENB
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -2753,29 +2794,6 @@ target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
 add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
-
-# USIM process
-#################
-#add_executable(usim
-#  ${OPENAIR3_DIR}/NAS/TOOLS/usim_data.c
-#  ${OPENAIR3_DIR}/NAS/USER/API/USIM/usim_api.c
-#  ${OPENAIR3_DIR}/NAS/USER/API/USIM/aka_functions.c
-#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/memory.c
-#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/nas_log.c
-#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/OctetString.c
-#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/TLVEncoder.c
-#  )
-#target_link_libraries (usim ${NAS_LIB} UTIL ${ITTI_LIB} LFDS pthread rt nettle crypto m)
-
-# ???
-#####################
-#add_executable(nvram
-#  ${OPENAIR3_DIR}/NAS/TOOLS/ue_data.c
-#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/memory.c
-#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/nas_log.c
-#  )
-#target_link_libraries (nvram LIB_NAS_UE UTIL ${ITTI_LIB} LFDS pthread rt nettle crypto m)
-
 
 ###################################"
 # Addexecutables for tests
@@ -2793,7 +2811,7 @@ add_executable(dlsim_tm4
   ${T_SOURCE}
   )
 target_link_libraries (dlsim_tm4
-  -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
+  -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
   pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES} ${T_LIB}
   )
 
@@ -2806,7 +2824,7 @@ add_executable(polartest
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(polartest
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
@@ -2821,35 +2839,51 @@ add_executable(smallblocktest
 
 
 target_link_libraries(smallblocktest
-  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-<<<<<<< HEAD
+
+# temp_C_flag = CMAKE_C_FLAGS
+#set(CMAKE_C_FLAGS " ")
+set (TEMP_C_FLAG ${CMAKE_C_FLAGS}) 
+set (CMAKE_C_FLAGS ${CUDA_CMAKE_C_FLAGS})
+
+set (TEMP_CXX_FLAG ${CMAKE_CXX_FLAGS}) 
+set (CMAKE_CXX_FLAGS ${CUDA_CMAKE_CXX_FLAGS})
+if (CUDA_FOUND)
 ###################################################
 # For CUDA library 
 ###################################################
-CUDA_ADD_LIBRARY(LDPC_CU 
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
-  )
-CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
-cuda_add_executable(ldpctest
-=======
-add_executable(ldpctest  
-  ${PHY_NR_CODINGIF}
->>>>>>> origin/develop
-  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-  ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
-  )
-<<<<<<< HEAD
+    
+    CUDA_ADD_LIBRARY(LDPC_CU 
+      ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
+      )
+    CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
+    cuda_add_executable(ldpctest
+      ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+      ${T_SOURCE}
+      ${SHLIB_LOADER_SOURCES}
+      )
+    target_link_libraries(ldpctest -ldl
+      -Wl,--start-group 
+      LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB 
+      -Wl,--end-group
+      m pthread ${ATLAS_LIBRARIES} dl
+      )
 
-target_link_libraries(ldpctest -ldl
-  -Wl,--start-group 
-  LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB 
-  -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
-  )
+else (CUDA_FOUND)
+    add_executable(ldpctest  
+       ${PHY_NR_CODINGIF}
+       ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+       ${T_SOURCE}
+       ${SHLIB_LOADER_SOURCES}
+       )
+
+endif ()
+set (CMAKE_C_FLAGS ${TEMP_C_FLAG})
+set (CMAKE_CXX_FLAGS ${TEMP_CXX_FLAG})
+
 
 # add_executable(ldpctest  
   # ${PHY_NR_CODINGIF}
@@ -2857,36 +2891,36 @@ target_link_libraries(ldpctest -ldl
   # ${T_SOURCE}
   # ${SHLIB_LOADER_SOURCES}
   # )
-=======
->>>>>>> origin/develop
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ) 
 
 target_link_libraries(ldpctest
-  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
 add_executable(nr_dlschsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_dlschsim 
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 
 add_executable(nr_pbchsim  
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_pbchsim
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 
@@ -2901,7 +2935,7 @@ add_executable(nr_pucchsim
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_pucchsim
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 
@@ -2915,7 +2949,7 @@ add_executable(nr_dlsim
   ${SHLIB_LOADER_SOURCES}
   )   
 target_link_libraries(nr_dlsim
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
@@ -2929,17 +2963,18 @@ add_executable(nr_prachsim
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim  
-   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB RRC_LIB NR_RRC_LIB L2_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
+   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB MAC_UE_NR SCHED_NR_UE_LIB RRC_LIB NR_RRC_LIB L2_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl)
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_ulschsim
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 
@@ -2953,7 +2988,7 @@ add_executable(nr_ulsim
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_ulsim
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ${ITTI_LIB} dl
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)
@@ -2972,7 +3007,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe}
-    -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
+    -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
     pthread m rt ${CONFIG_LIB} ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl
     )
    
@@ -3052,8 +3087,8 @@ if (${T_TRACER})
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_UE NR_L2_UE MAC_NR_COMMON MAC_NR MAC_UE_NR
-        CN_UTILS GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU SIMU_ETH OPENAIR0_LIB
-        ldpc_orig ldpc_optim ldpc_optim8seg ldpc PROTO_AGENT)
+        CN_UTILS GTPV1U NR_GTPV1U SCTP_CLIENT MME_APP UDP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU_COMMON SIMU SIMU_ETH OPENAIR0_LIB
+        ldpc_orig ldpc_optim ldpc_optim8seg ldpc PROTO_AGENT dfts)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
@@ -3096,7 +3131,7 @@ function(make_driver name dir)
   endforeach()
   CONFIGURE_FILE(${OPENAIR_CMAKE}/tools/Kbuild.cmake ${OPENAIR_BIN_DIR}/${name}/Kbuild)
   add_custom_command(OUTPUT ${name}.ko
-    COMMAND make -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
+    COMMAND make -j2 -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
     WORKING_DIRECTORY ${OPENAIR_BIN_DIR}/${name}
     COMMENT "building ${module}.ko"
     VERBATIM

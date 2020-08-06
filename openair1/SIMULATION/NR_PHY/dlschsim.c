@@ -40,7 +40,7 @@
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "SCHED_NR/sched_nr.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
@@ -65,6 +65,8 @@ uint16_t NB_UE_INST = 1;
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
 int main(int argc, char **argv)
 {
@@ -428,7 +430,7 @@ int main(int argc, char **argv)
 	uint8_t is_crnti = 0, llr8_flag = 0;
 	unsigned int TBS = 8424;
 	unsigned int available_bits;
-	uint8_t nb_re_dmrs = 6;
+	uint8_t nb_re_dmrs = 6;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
 	unsigned char mod_order;
         uint16_t rate;
@@ -442,7 +444,7 @@ int main(int argc, char **argv)
 	mod_order = nr_get_Qm_dl(Imcs, mcs_table);
         rate = nr_get_code_rate_dl(Imcs, mcs_table);
 	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, Nl);
+	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
 	rel15->rbSize         = nb_rb;
@@ -455,6 +457,7 @@ int main(int argc, char **argv)
         rel15->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	rel15->dlDmrsSymbPos = 4;
 	rel15->mcsIndex[0] = Imcs;
+        rel15->numDmrsCdmGrpsNoData = 1;
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);

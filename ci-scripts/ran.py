@@ -366,7 +366,7 @@ class RANManagement():
 		count = 40
 		buildOAIprocess = True
 		while (count > 0) and buildOAIprocess:
-			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 3)
+			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
 			if result is None:
 				buildOAIprocess = False
@@ -546,6 +546,9 @@ class RANManagement():
 		# Launch eNB with the modified config file
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
+		if self.air_interface == 'nr':
+			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
+			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
@@ -607,7 +610,11 @@ class RANManagement():
 					enbDidSync = True
 					time.sleep(10)
 
-		if enbDidSync and eNBinNoS1:
+		rruCheck = False
+		result = re.search('^rru|^du.band', str(config_file))
+		if result is not None:
+			rruCheck = True
+		if enbDidSync and eNBinNoS1 and not rruCheck:
 			mySSH.command('ifconfig oaitun_enb1', '\$', 4)
 			mySSH.command('ifconfig oaitun_enb1', '\$', 4)
 			result = re.search('inet addr:1|inet 1', mySSH.getBefore())
@@ -774,7 +781,7 @@ class RANManagement():
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
 		mySSH.close()
 
@@ -800,8 +807,11 @@ class RANManagement():
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		ulschAllocateCCEerror = 0
+		uplinkSegmentsAborted = 0
 		ulschReceiveOK = 0
 		gnbRxTxWakeUpFailure = 0
+		gnbTxWriteThreadEnabled = False
 		cdrxActivationMessageCount = 0
 		dropNotEnoughRBs = 0
 		mbmsRequestMsg = 0
@@ -812,6 +822,7 @@ class RANManagement():
 		X2HO_state = CONST.X2_HO_REQ_STATE__IDLE
 		X2HO_inNbProcedures = 0
 		X2HO_outNbProcedures = 0
+		global_status = CONST.ALL_PROCESSES_OK
 		for line in enb_log_file.readlines():
 			if X2HO_state == CONST.X2_HO_REQ_STATE__IDLE:
 				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
@@ -914,9 +925,18 @@ class RANManagement():
 			result = re.search('could not wakeup gNB rxtx process', str(line))
 			if result is not None:
 				gnbRxTxWakeUpFailure += 1
+			result = re.search('tx write thread ready', str(line))
+			if result is not None:
+				gnbTxWriteThreadEnabled = True
 			result = re.search('ULSCH in error in round|ULSCH 0 in error', str(line))
 			if result is not None:
 				ulschFailure += 1
+			result = re.search('ERROR ALLOCATING CCEs', str(line))
+			if result is not None:
+				ulschAllocateCCEerror += 1
+			result = re.search('uplink segment error.*aborted [1-9] segments', str(line))
+			if result is not None:
+				uplinkSegmentsAborted += 1
 			result = re.search('ULSCH received ok', str(line))
 			if result is not None:
 				ulschReceiveOK += 1
@@ -948,6 +968,10 @@ class RANManagement():
 				statMsg = nodeB_prefix + 'NB showed ' + str(gnbRxTxWakeUpFailure) + ' "could not wakeup gNB rxtx process" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
+			if gnbTxWriteThreadEnabled:
+				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -958,6 +982,14 @@ class RANManagement():
 			htmleNBFailureMsg += statMsg + '\n'
 		if ulschFailure > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			htmleNBFailureMsg += statMsg + '\n'
+		if ulschAllocateCCEerror > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(ulschAllocateCCEerror) + ' "eNB_dlsch_ulsch_scheduler(); ERROR ALLOCATING CCEs" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			htmleNBFailureMsg += statMsg + '\n'
+		if uplinkSegmentsAborted > 0:
+			statMsg = nodeB_prefix + 'NB showed ' + str(uplinkSegmentsAborted) + ' "uplink segment error 0/2, aborted * segments" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			htmleNBFailureMsg += statMsg + '\n'
 		if dropNotEnoughRBs > 0:
@@ -1030,30 +1062,23 @@ class RANManagement():
 					rruMsg = 'Slave RRU DID NOT receive the RRU_frame_resynch command from RAU'
 					logging.debug('\u001B[1;37;41m ' + rruMsg + ' \u001B[0m')
 					htmleNBFailureMsg += rruMsg + '\n'
-					self.prematureExit(True)
-					return CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
+					self.prematureExit = True
+					global_status = CONST.ENB_PROCESS_SLAVE_RRU_NOT_SYNCED
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with a Segmentation Fault! \u001B[0m')
-			if self.htmlObj is not None:
-				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-			return CONST.ENB_PROCESS_SEG_FAULT
+			global_status = CONST.ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with an assertion! \u001B[0m')
 			htmleNBFailureMsg += msgAssertion
-			if self.htmlObj is not None:
-				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-			return CONST.ENB_PROCESS_ASSERTION
+			global_status = CONST.ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
 			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
-			#return CONST.ENB_PROCESS_REALTIME_ISSUE
 		if rlcDiscardBuffer > 0:
 			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
 			htmleNBFailureMsg += rlcMsg + '\n'
-			if self.htmlObj is not None:
-				self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-			return CONST.ENB_PROCESS_REALTIME_ISSUE
+			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
 			self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
-		return 0
+		return global_status

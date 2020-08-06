@@ -1211,6 +1211,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
       }
 	
       if (!decodeSucess) {
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
+          T_INT(rdata->harq_pid));
 	fill_crc_indication(eNB,i,rdata->frame,rdata->subframe,1); // indicate NAK to MAC
 	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
@@ -1239,6 +1241,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
 	ulsch_harq->status = SCH_IDLE;
 	ulsch->harq_mask &= ~(1 << rdata->harq_pid);
+        T (T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
+           T_INT(rdata->harq_pid));
       }  // ulsch not in error
 	
       if (ulsch_harq->O_ACK>0)
@@ -1419,7 +1423,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
   pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
   // estimate timing advance for MAC
-  sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
+  sync_pos                               = lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check
 
   //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}

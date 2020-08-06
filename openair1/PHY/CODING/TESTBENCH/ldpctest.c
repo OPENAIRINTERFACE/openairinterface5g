@@ -27,9 +27,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-// extern "C" {
 #include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
-// }
 #define MAX_NUM_DLSCH_SEGMENTS 16
 #define MAX_BLOCK_LENGTH 8448
 
@@ -105,7 +103,7 @@ int test_ldpc(short No_iteration,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
               n_iter_stats_t *dec_iter,
-			  short run_cuda)
+              short run_cuda)
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -398,23 +396,24 @@ int test_ldpc(short No_iteration,
       decParams.numMaxIter=No_iteration;
       decParams.outMode = nrLDPC_outMode_BIT;
       //decParams.outMode =nrLDPC_outMode_LLRINT8;
-
-
+	  set_compact_BG(Zc,BG);
+	  init_LLR_DMA_for_CUDA(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length);
       for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
-
+#ifdef CUDA_FLAG
         if(run_cuda){
-          printf("***********run ldpc by cuda\n");
           n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
-      }  
-      else{ 
-        printf("**************run ldpc by cpu\n");  
-      // decode the sequence
-      // decoder supports BG2, Z=128 & 256
-      //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
-      ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
+        }  
+        else{ 
+        // decode the sequence
+        // decoder supports BG2, Z=128 & 256
+        //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
+        ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
+          n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
+        }
+#else
         n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-      }
+#endif
 	stop_meas(time_decoder);
       }
 
@@ -515,6 +514,7 @@ int test_ldpc(short No_iteration,
 
 int main(int argc, char *argv[])
 {
+  warmup_for_GPU();
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
@@ -561,7 +561,7 @@ int main(int argc, char *argv[])
         block_length = atoi(optarg);
         break;
 		
-	  case 'G':
+      case 'G':
         run_cuda = atoi(optarg);
         break;
 

@@ -51,17 +51,17 @@ int create_gNB_tasks(uint32_t gnb_nb)
   }
 
   if (gnb_nb > 0) {
-    /* Last task to create, others task must be ready before its start */
+    // Last task to create, others task must be ready before its start
     if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");
       return -1;
     }
   }
 
-/*
+
   if (EPC_MODE_ENABLED) {
       if (gnb_nb > 0) {
-        if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+        /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
           LOG_E(SCTP, "Create task for SCTP failed\n");
           return -1;
         }
@@ -69,7 +69,7 @@ int create_gNB_tasks(uint32_t gnb_nb)
         if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
           LOG_E(S1AP, "Create task for S1AP failed\n");
           return -1;
-        }
+        }*/
         if(!emulate_rf){
           if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
             LOG_E(UDP_, "Create task for UDP failed\n");
@@ -84,7 +84,15 @@ int create_gNB_tasks(uint32_t gnb_nb)
       }
 
    }
-*/
+
+  /*if (gnb_nb > 0) {
+      // Last task to create, others task must be ready before its start
+      if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
+        LOG_E(GNB_APP, "Create task for gNB APP failed\n");
+        return -1;
+      }
+    }*/
+
 
     if (gnb_nb > 0) {
       LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
@@ -100,4 +108,4 @@ int create_gNB_tasks(uint32_t gnb_nb)
 
   return 0;
 }
-#endif
+//#endif

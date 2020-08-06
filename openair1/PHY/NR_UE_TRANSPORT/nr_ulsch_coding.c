@@ -225,7 +225,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   unsigned int crc;
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
-  uint8_t nb_symb_sch ;
   uint32_t A, Z, F;
   uint32_t *pz; 
   uint8_t mod_order; 
@@ -263,8 +262,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
 
   LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
@@ -284,6 +282,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       printf("%02x.",a[i]);
     printf("\n");
     */
+
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
       crc = crc24a(harq_process->a,A)>>8;
@@ -313,7 +312,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
       memcpy(harq_process->b,harq_process->a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
     }
-
 ///////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -332,6 +330,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       BG = 1;
     }
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_IN);
     Kb=nr_segmentation(harq_process->b,
                        harq_process->c,
                        harq_process->B,
@@ -340,6 +339,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                        pz,
                        &harq_process->F,
                        BG);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_OUT);
 
     F = harq_process->F;
     Kr = harq_process->K;
@@ -390,7 +390,11 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     impp.n_segments=harq_process->C;
     impp.macro_num=0;
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
+    
     nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
@@ -436,6 +440,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->pusch_pdu.nrOfLayers,harq_process->C);
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,
                           BG,
@@ -447,6 +452,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                           Kr-F-2*(*pz),
                           harq_process->pusch_pdu.pusch_data.rv_index,
                           E);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_OUT);
 
 
 
@@ -465,10 +471,14 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     //stop_meas(rm_stats);
 
     //start_meas(i_stats);
-  nr_interleaving_ldpc(E,
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INTERLEAVING_LDPC, VCD_FUNCTION_IN);
+    
+    nr_interleaving_ldpc(E,
             mod_order,
             harq_process->e+r_offset,
             harq_process->f+r_offset);
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INTERLEAVING_LDPC, VCD_FUNCTION_OUT);
     //stop_meas(i_stats);
 
 
@@ -489,7 +499,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   memcpy(ulsch->g,harq_process->f,G); // g is the concatenated code block
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return(0);
 }

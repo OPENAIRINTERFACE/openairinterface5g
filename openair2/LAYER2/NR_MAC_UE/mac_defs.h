@@ -37,6 +37,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include "platform_types.h"
+
+/* PHY */
+#include "PHY/defs_nr_common.h"
+
+/* IF */
+#include "NR_IF_Module.h"
+#include "fapi_nr_ue_interface.h"
+
+/* MAC */
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "LAYER2/MAC/mac.h"
+#include "NR_MAC_COMMON/nr_mac_extern.h"
+
+/* RRC */
 #include "NR_DRX-Config.h"
 #include "NR_SchedulingRequestConfig.h"
 #include "NR_BSR-Config.h"
@@ -46,13 +61,9 @@
 #include "NR_MIB.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "NR_PhysicalCellGroupConfig.h"
-#include "NR_SpCellConfig.h"
+#include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
-#include "fapi_nr_ue_interface.h"
-#include "NR_IF_Module.h"
-#include "../NR_MAC_gNB/nr_mac_common.h"
-#include "PHY/defs_nr_common.h"
-#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
+
 
 #define NB_NR_UE_MAC_INST 1
 /*!\brief Maximum number of logical channl group IDs */
@@ -60,6 +71,7 @@
 
 /*!\brief value for indicating BSR Timer is not running */
 #define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
+
 
 typedef enum {
     SFN_C_MOD_2_EQ_0, 
@@ -133,24 +145,27 @@ typedef struct {
 #define MAX_NUM_BWP 2
 
 typedef enum {
-  RA_IDLE=0,
-  WAIT_RAR=1,
-  WAIT_CONTENTION_RESOLUTION=2
+  RA_UE_IDLE = 0,
+  WAIT_RAR = 1,
+  WAIT_CONTENTION_RESOLUTION = 2,
+  RA_SUCCEEDED = 3
 } RA_state_t;
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_ServingCellConfig_t          *scd;
+  NR_CellGroupConfig_t            *scg;
+  NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
   int                             servCellIndex;
   ////  MAC config
-  NR_DRX_Config_t    	          *drx_Config;
+  NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
-  NR_BSR_Config_t    	          *bsr_Config;
-  NR_TAG_Config_t	          *tag_Config;
-  NR_PHR_Config_t	          *phr_Config;
-  NR_RNTI_Value_t 	          *cs_RNTI;
-  NR_MIB_t 	                  *mib;
+  NR_BSR_Config_t                 *bsr_Config;
+  NR_TAG_Config_t                 *tag_Config;
+  NR_PHR_Config_t                 *phr_Config;
+  NR_RNTI_Value_t                 *cs_RNTI;
+  NR_MIB_t                         *mib;
 
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
@@ -163,14 +178,75 @@ typedef struct {
   SFN_C_TYPE type0_pdcch_ss_sfn_c;
   uint32_t type0_pdcch_ss_n_c;
   uint32_t type0_pdcch_consecutive_slots;
+  int rnti_type;
+
+  /* PDUs */
+  /// Outgoing CCCH pdu for PHY
+  CCCH_PDU CCCH_pdu;
+  ULSCH_PDU ulsch_pdu;
+
+  /* Random Access parameters */
   /// state of RA procedure
   RA_state_t ra_state;
-  ///     RA-rnti
+  /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
+  uint8_t RA_offset;
+  /// RA-rnti
   uint16_t ra_rnti;
-  ///     Temporary CRNTI
+  /// Temporary CRNTI
   uint16_t t_crnti;
-  ///     CRNTI
+  /// CRNTI
   uint16_t crnti;
+  /// number of attempt for rach
+  uint8_t RA_attempt_number;
+  /// Random-access procedure flag
+  uint8_t RA_active;
+  /// Random-access window counter
+  int8_t RA_window_cnt;
+  /// Random-access Msg3 size in bytes
+  uint8_t RA_Msg3_size;
+  /// Random-access prachMaskIndex
+  uint8_t RA_prachMaskIndex;
+  /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
+  uint8_t RA_usedGroupA;
+  /// BeamfailurerecoveryConfig
+  NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
+  /// Preamble Tx Counter
+  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
+  /// Preamble Power Ramping Counter
+  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
+  /// Random-access backoff counter
+  int16_t RA_backoff_indicator;
+  /// Random-access backoff counter
+  int16_t RA_backoff_cnt;
+  /// Random-access variable for window calculation (frame of last change in window counter)
+  uint32_t RA_tx_frame;
+  /// Random-access variable for window calculation (subframe of last change in window counter)
+  uint8_t RA_tx_subframe;
+  /// Scheduled RX frame for RA Msg2
+  uint16_t msg2_rx_frame;
+  /// Scheduled RX slot for RA Msg2
+  uint16_t msg2_rx_slot;
+  /// Random-access Group B maximum path-loss
+  /// Random-access variable for backoff (frame of last change in backoff counter)
+  uint32_t RA_backoff_frame;
+  /// Random-access variable for backoff (subframe of last change in backoff counter)
+  uint8_t RA_backoff_subframe;
+  /// Random-access Group B maximum path-loss
+  uint16_t RA_maxPL;
+  /// Random-access Contention Resolution Timer active flag
+  uint8_t RA_contention_resolution_timer_active;
+  /// Random-access Contention Resolution Timer count value
+  uint8_t RA_contention_resolution_cnt;
+  /// Msg3 Delta Preamble
+  int8_t deltaPreamble_Msg3;
+  /// Received TPC command (in dB) from RAR
+  int8_t Msg3_TPC;
+  /// Flag to monitor if matching RAPID was received in RAR
+  uint8_t RA_RAPID_found;
+  /// Flag to monitor if BI was received in RAR
+  uint8_t RA_BI_found;
+  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
+  uint8_t generate_nr_prach;
 
   ////	FAPI-like interface message
   fapi_nr_tx_request_t tx_request;

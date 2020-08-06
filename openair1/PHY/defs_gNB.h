@@ -43,6 +43,8 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
+#include "nfapi_nr_interface_scf.h"
+
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 #define MAX_PUCCH0_NID 8
 
@@ -51,6 +53,7 @@ typedef struct {
   int Nid[MAX_PUCCH0_NID];
   int lut[MAX_PUCCH0_NID][160][14];
 } NR_gNB_PUCCH0_LUT_t;
+
 
 typedef struct {
   uint32_t pbch_a;
@@ -156,6 +159,14 @@ typedef struct {
 } NR_gNB_DLSCH_t;
 
 typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_prach_pdu_t pdu;  
+} gNB_PRACH_list_t;
+
+#define NUMBER_OF_NR_PRACH_MAX 8
+
+typedef struct {
   /// \brief ?.
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
@@ -165,6 +176,7 @@ typedef struct {
   int16_t **rxsigF;
   /// \brief local buffer to compute prach_ifft
   int32_t *prach_ifft;
+  gNB_PRACH_list_t list[NUMBER_OF_NR_PRACH_MAX];
 } NR_gNB_PRACH;
 
 typedef struct {
@@ -172,8 +184,8 @@ typedef struct {
   nfapi_nr_pusch_pdu_t ulsch_pdu;
   /// Frame where current HARQ round was sent
   uint32_t frame;
-  /// Subframe where current HARQ round was sent
-  uint32_t subframe;
+  /// Slot where current HARQ round was sent
+  uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// Last TPC command
@@ -328,6 +340,15 @@ typedef struct {
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
 } NR_gNB_ULSCH_t;
 
+typedef struct {
+  uint8_t active;
+  /// Frame where current PUCCH pdu was sent
+  uint32_t frame;
+  /// Slot where current PUCCH pdu was sent
+  uint32_t slot;
+  /// ULSCH PDU
+  nfapi_nr_pucch_pdu_t pucch_pdu;
+} NR_gNB_PUCCH_t;
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -607,9 +628,9 @@ typedef struct {
 
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
-#define MAX_UL_PDUS_PER_SLOT 100
-#define MAX_NUM_NR_SRS_PDUS 100
-#define MAX_NUM_NR_UCI_PDUS 100
+#define MAX_UL_PDUS_PER_SLOT 8
+#define MAX_NUM_NR_SRS_PDUS 8
+#define MAX_NUM_NR_UCI_PDUS 8
 
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {
@@ -663,10 +684,13 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
+  NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
+  t_nrPolar_params    *uci_polarParams;
+
   uint8_t pbch_configured;
   char gNB_generate_rar;
 

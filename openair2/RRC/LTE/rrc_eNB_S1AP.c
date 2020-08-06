@@ -96,35 +96,33 @@ void extract_imsi(uint8_t *pdu_buf, uint32_t pdu_len, rrc_eNB_ue_context_t *ue_c
         && pdu_len > NAS_MESSAGE_SECURITY_HEADER_SIZE))
     return;
 
+  /* Decode plain NAS message */
+  EMM_msg *e_msg = &nas_msg.plain.emm;
+  emm_msg_header_t *emm_header = &e_msg->header;
+
   if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
     /* Decode the message authentication code */
     DECODE_U32((char *) pdu_buf+size, header->message_authentication_code, size);
     /* Decode the sequence number */
     DECODE_U8((char *) pdu_buf+size, header->sequence_number, size);
-  }
+    /* Decode the security header type and the protocol discriminator */
+    DECODE_U8(pdu_buf + size, *(uint8_t *)(emm_header), size);
 
-  /* Note: the value of the pointer (i.e. the address) is given by value, so we
-   * can modify it as we want. The callee retains the original address! */
+    /* Check that this is the right message */
+    if (emm_header->protocol_discriminator != EPS_MOBILITY_MANAGEMENT_MESSAGE)
+      return;
+  }
   pdu_buf += size;
   pdu_len -= size;
-  /* Decode plain NAS message */
-  EMM_msg *e_msg = &nas_msg.plain.emm;
-  emm_msg_header_t *emm_header = &e_msg->header;
-  /* First decode the EMM message header */
-  int e_head_size = 0;
 
   /* Check that buffer contains more than only the header */
   if (pdu_len <= sizeof(emm_msg_header_t))
     return;
 
-  /* Decode the security header type and the protocol discriminator */
-  DECODE_U8(pdu_buf + e_head_size, *(uint8_t *)(emm_header), e_head_size);
+  /* First decode the EMM message header */
+  int e_head_size = 0;
   /* Decode the message type */
   DECODE_U8(pdu_buf + e_head_size, emm_header->message_type, e_head_size);
-
-  /* Check that this is the right message */
-  if (emm_header->protocol_discriminator != EPS_MOBILITY_MANAGEMENT_MESSAGE)
-    return;
 
   pdu_buf += e_head_size;
   pdu_len -= e_head_size;
@@ -2284,3 +2282,75 @@ int s1ap_ue_context_release(instance_t instance, const uint32_t eNB_ue_s1ap_id) 
   }*/
   return 0;
 }
+
+
+int rrc_eNB_send_E_RAB_Modification_Indication(const protocol_ctxt_t *const ctxt_pP,
+                                 rrc_eNB_ue_context_t          *const ue_context_pP) {
+  MessageDef      *msg_p         = NULL;
+  int e_rab = 0;
+  int e_rab_modify_index = 0;
+  int e_rab_notmodify_index = 0;
+
+  uint8_t inde_list[ue_context_pP->ue_context.nb_of_e_rabs];
+  memset(inde_list, 0, ue_context_pP->ue_context.nb_of_e_rabs*sizeof(uint8_t));
+
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFICATION_IND);
+
+
+  S1AP_E_RAB_MODIFICATION_IND (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+  S1AP_E_RAB_MODIFICATION_IND (msg_p).mme_ue_s1ap_id = ue_context_pP->ue_context.mme_ue_s1ap_id;
+
+  LOG_I (RRC,"E-RAB modification indication: nb nb_of_e_rabs %u status %u\n",
+         ue_context_pP->ue_context.nb_of_e_rabs,
+         ue_context_pP->ue_context.e_rab[e_rab].status);
+
+  if (ue_context_pP->ue_context.nb_of_modify_endc_e_rabs > 0){
+	  S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_tobemodified = ue_context_pP->ue_context.nb_of_modify_endc_e_rabs;
+	  for (e_rab = 0; e_rab <  ue_context_pP->ue_context.setup_e_rabs ; e_rab++) {
+		  //Add E-RAB in the list of E-RABs to be modified
+		  if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_TOMODIFY) {
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+			  memcpy(S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].eNB_addr.buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length);
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].eNB_addr.length = ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length;
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_tobemodified[e_rab_modify_index].gtp_teid = ue_context_pP->ue_context.gnb_gtp_endc_teid[e_rab];
+			  e_rab_modify_index++;
+		  }
+		  //Add E-RAB in the list of E-RABs NOT to be modified
+		  else{
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+			  memcpy(S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].eNB_addr.buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].buffer,
+					  ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length);
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].eNB_addr.length = ue_context_pP->ue_context.gnb_gtp_endc_addrs[e_rab].length;
+			  S1AP_E_RAB_MODIFICATION_IND (msg_p).e_rabs_nottobemodified[e_rab_notmodify_index].gtp_teid = ue_context_pP->ue_context.gnb_gtp_endc_teid[e_rab];
+			  e_rab_notmodify_index++;
+		  }
+	  }
+	  S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_nottobemodified = e_rab_notmodify_index;
+  }
+
+  if (e_rab_modify_index > 0) {
+    LOG_I(RRC,"S1AP_E_RAB_MODIFICATION_IND: sending the message: nb_of_erabstobemodified %d, total e_rabs %d, index %d\n",
+    		S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_tobemodified, ue_context_pP->ue_context.setup_e_rabs, e_rab);
+    MSC_LOG_TX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      (const char *)&S1AP_E_RAB_MODIFICATION_IND (msg_p),
+      sizeof(s1ap_e_rab_modification_ind_t),
+      MSC_AS_TIME_FMT" E RAB MODIFICATION IND UE %X eNB_ue_s1ap_id %u e_rabs:%u succ",
+      MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_context_pP->ue_id_rnti,
+      S1AP_E_RAB_MODIFICATION_IND (msg_p).eNB_ue_s1ap_id,
+      e_rab_modify_index);
+    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+  } else {
+    itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+  }
+
+  return 0;
+}
+
+
+

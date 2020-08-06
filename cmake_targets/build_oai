@@ -406,7 +406,7 @@ function main() {
             shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
-            echo_info "Skipping build of shared libraries, rfsimulator, basicsimulator and transport protocol libraries"
+            echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
             shift;;
     --ninja)
         CMAKE_CMD="$CMAKE_CMD -GNinja"
@@ -701,7 +701,8 @@ function main() {
   if [ "$SIMUS_PHY" = "1" ] ; then
     echo_info "Compiling physical unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
-    simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim"
+    # simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim"
+	simlist="ldpctest"
     for f in $simlist ; do
       compilations \
         phy_simulators $f \
@@ -896,7 +897,7 @@ function main() {
               $build_dir rfsimulator \
               librfsimulator.so $dbin/librfsimulator.so.$REL
 
-          echo_info "Compiling basicsimulator"
+          echo_info "Compiling tcp_bridge_oai"
           compilations \
               $build_dir tcp_bridge_oai \
               libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
@@ -958,6 +959,7 @@ function main() {
     wait
   else
     echo_info "10. Bypassing the Tests ..."
+    echo_success "BUILD SHOULD BE SUCCESSFUL"
   fi
 
 }
