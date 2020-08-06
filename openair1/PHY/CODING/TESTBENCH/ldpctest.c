@@ -402,9 +402,17 @@ int test_ldpc(short No_iteration,
     	  start_meas(time_decoder);
 #ifdef CUDA_FLAG
         if(run_cuda){
+<<<<<<< HEAD
           n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
         }  
         else{ 
+=======
+          printf("***********run ldpc by cuda\n");
+          n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
+        }  
+        else{ 
+          printf("**************run ldpc by cpu\n");  
+>>>>>>> origin/develop
         // decode the sequence
         // decoder supports BG2, Z=128 & 256
         //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
