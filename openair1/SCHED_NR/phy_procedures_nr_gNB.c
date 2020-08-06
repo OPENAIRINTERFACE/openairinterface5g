@@ -377,7 +377,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         if ((pucch->active == 1) &&
 	    (pucch->frame == frame_rx) &&
 	    (pucch->slot == slot_rx) ) {
-
+          gNB->ulmask_symb = symbol;
           nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
           if ((symbol>=pucch_pdu->start_symbol_index) &&
               (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
@@ -386,7 +386,6 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
               gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
             }
             nb_rb+=pucch_pdu->prb_size;
-            gNB->ulmask_symb = symbol;
           }
         }
       }
@@ -407,6 +406,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             (ulsch_harq->handled == 0)){
             uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
             uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
+            gNB->ulmask_symb = symbol;
             if ((symbol>=symbol_start) &&
                 (symbol<symbol_end)){
               for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
@@ -414,7 +414,6 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                 gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
               }
               nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
-              gNB->ulmask_symb = symbol;
             }
           }
         }
