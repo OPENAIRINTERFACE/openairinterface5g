@@ -400,7 +400,8 @@ static void *scope_thread_gNB(void *arg) {
   //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
   //#endif
   size_t stksize=0;
-  pthread_attr_t atr= {0};
+  pthread_attr_t atr;
+  pthread_attr_init(&atr);
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
   sleep(3); // no clean interthread barriers
