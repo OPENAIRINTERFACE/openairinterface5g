@@ -277,7 +277,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   __m128i *pl = (__m128i*)&l;
   
     vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_IN);
-
+  
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
 
   if (!dlsch_llr) {
@@ -657,7 +657,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
     harq_process->errors[harq_process->round]++;
-    // harq_process->round++; // [hna] uncomment this line when HARQ is implemented
+    harq_process->round++; // [hna] uncomment this line when HARQ is implemented
 
     //    printf("Rate: [UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mlimit) {

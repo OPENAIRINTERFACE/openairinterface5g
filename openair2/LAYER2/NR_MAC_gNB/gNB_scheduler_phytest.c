@@ -53,7 +53,10 @@
 #include "NR_SearchSpace.h"
 #include "NR_ControlResourceSet.h"
 
+//#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
+
+const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 //uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
@@ -270,7 +273,6 @@ int configure_fapi_dl_pdu(int Mod_idP,
   int TBS;
   int bwp_id=1;
   int UE_id = 0;
-  uint8_t rv_round_map[4] = {0, 2, 3, 1};
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
 
@@ -316,7 +318,7 @@ int configure_fapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = (get_softmodem_params()->phy_test==1) ? 0 : rv_round_map[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
+  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
@@ -476,7 +478,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int *dci_formats, int *rnti_types,
-                  int time_domain_assignment,
+                  int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id) {
 
   switch(dci_formats[(pdcch_pdu_rel15->numDlDci)-1]) {
@@ -518,7 +520,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
       // mcs
       dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
       // tpc command for pusch
-      dci_pdu_rel15->tpc = 1; //TODO
+      dci_pdu_rel15->tpc = tpc;
       // SRS resource indicator
       if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
         if (*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook)
@@ -767,6 +769,33 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 }
 
+uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
+
+  uint8_t hrq_id;
+  uint8_t max_ul_harq_pids = 3; // temp: for testing
+  // schedule active harq processes
+  NR_UE_ul_harq_t cur_harq;
+  for (hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
+    cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
+    if (cur_harq.state==ACTIVE_NOT_SCHED) {
+#ifdef UL_HARQ_PRINT
+      printf("[SCHED] Found ulharq id %d, scheduling it for retransmission\n",hrq_id);
+#endif
+      return hrq_id;
+    }
+  }
+
+  // schedule new harq processes
+  for (hrq_id=0; hrq_id < max_ul_harq_pids; hrq_id++) {
+    cur_harq = sched_ctrl->ul_harq_processes[hrq_id];
+    if (cur_harq.state==INACTIVE) {
+#ifdef UL_HARQ_PRINT
+      printf("[SCHED] Found new ulharq id %d, scheduling it\n",hrq_id);
+#endif
+      return hrq_id;
+    }
+  }
+}
 
 void schedule_fapi_ul_pdu(int Mod_idP,
                           frame_t frameP,
@@ -970,10 +999,14 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
     //Optional Data only included if indicated in pduBitmap
-    // TODO from harq function as in pdsch
-    pusch_pdu->pusch_data.rv_index = 0;
-    pusch_pdu->pusch_data.harq_process_id = 0;
-    pusch_pdu->pusch_data.new_data_indicator = 1;
+    uint8_t harq_id = select_ul_harq_pid(&UE_list->UE_sched_ctrl[UE_id]);
+    NR_UE_ul_harq_t *cur_harq = &UE_list->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];
+    pusch_pdu->pusch_data.harq_process_id = harq_id;
+    pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
+    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
+
+    cur_harq->state = ACTIVE_SCHED;
+    cur_harq->last_tx_slot = pusch_sched->slot;
 
     uint8_t num_dmrs_symb = 0;
 
@@ -1060,7 +1093,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     }
     else {
       dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
-      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,n_ubwp,bwp_id);
+      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,UE_list->UE_sched_ctrl[UE_id].tpc0,n_ubwp,bwp_id);
       fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
       free(dci_pdu_rel15);
     }

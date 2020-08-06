@@ -285,6 +285,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
   gNB_mac = RC.nrmac[gnb_mod_idP];
   UE_list = &gNB_mac->UE_list;
+  int target_snrx10 = gNB_mac->pusch_target_snrx10;
 
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
@@ -300,17 +301,19 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           ul_cqi);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-  LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
-  for (int i = 0; i < sdu_lenP ; i++) {
+    LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
+    for (int i = 0; i < sdu_lenP ; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
 	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
 	  printf("%02x ",(unsigned char)sduP[i]);
-  }
-  printf("\n");
+    }
+    printf("\n");
 #endif
 
     if (sduP != NULL){
+      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
       UE_scheduling_control->ta_update = timing_advance;
+      LOG_I(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
       LOG_D(MAC, "Received PDU at MAC gNB \n");
       nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
     }

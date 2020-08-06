@@ -118,6 +118,9 @@ void mac_top_init_gNB(void)
         UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
         UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;
         UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].is_waiting = 0;
+        UE_list->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].round = 0;
+        UE_list->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].ndi = 0;
+        UE_list->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].state = 0;
       }
     }
 

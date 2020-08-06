@@ -50,6 +50,7 @@ void config_common(int Mod_idP,
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
+                           int tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int nsa_flag,
 			   uint32_t rnti,
@@ -137,7 +138,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int *dci_formats, int *rnti_types,
-                  int time_domain_assignment,
+                  int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id);
 
 void configure_fapi_dl_Tx(module_id_t Mod_idP,
@@ -227,6 +228,8 @@ void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
                                  NR_SearchSpace_t *ss);
+
+uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 

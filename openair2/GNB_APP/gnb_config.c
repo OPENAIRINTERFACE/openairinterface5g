@@ -522,6 +522,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
   int ssb_SubcarrierOffset = 31;
   int pdsch_AntennaPorts = 1;
+  int pusch_TargetSNRx10 = 200;
   uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
@@ -531,6 +532,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramlist_def_t SSBsParamList = {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET, NULL, 0};
   paramdef_t PDSCHANTENNAParams[] = PDSCHANTENNAPARAMS_DESC;
   paramlist_def_t PDSCHANTENNAParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
+  paramdef_t PUSCHTARGETPOWParams[] = TARGETPOWER_DESC;
+  paramlist_def_t PUSCHTARGETPOWParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
    ////////// Physical parameters
 
 
@@ -585,6 +588,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     config_getlist(&PDSCHANTENNAParamList, NULL, 0, aprefix);
     if (PDSCHANTENNAParamList.numelt > 0) config_get(PDSCHANTENNAParams,sizeof(PDSCHANTENNAParams)/sizeof(paramdef_t),aprefix);
 
+    config_getlist(&PUSCHTARGETPOWParamList, NULL, 0, aprefix);
+    if (PUSCHTARGETPOWParamList.numelt > 0) config_get(PUSCHTARGETPOWParams,sizeof(PUSCHTARGETPOWParams)/sizeof(paramdef_t),aprefix);
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);
     if (SCCsParamList.numelt > 0) {    
@@ -668,6 +673,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
         printf("pdsch_AntennaPorts %d\n",pdsch_AntennaPorts);
 	NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = pdsch_AntennaPorts;
+        printf("pusch_TargetSNRx10 %d\n",pusch_TargetSNRx10);
+	NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = pusch_TargetSNRx10;
 	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
