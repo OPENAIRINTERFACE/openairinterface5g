@@ -1586,6 +1586,7 @@ void *ru_thread( void *param ) {
     for(i = 0;i < NUMBER_OF_NR_RU_PRACH_MAX; i++) {
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       if (prach_id>=0) {
+					prach_id = 2;
 	rx_nr_prach_ru(ru,
 		       ru->prach_list[prach_id].fmt,
 		       ru->prach_list[prach_id].numRA,
