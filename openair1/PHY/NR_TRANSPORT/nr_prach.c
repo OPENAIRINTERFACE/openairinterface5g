@@ -43,7 +43,10 @@ extern const char *prachfmt[9];
 void init_prach_list(PHY_VARS_gNB *gNB) {
 
   AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) gNB->prach_vars.list[i].frame=-1;
+  for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++){
+		gNB->prach_vars.list[i].frame = -1;
+		gNB->prach_vars.list[i].slot  = -1;
+	}
 }
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id) {
@@ -93,7 +96,10 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 void init_prach_ru_list(RU_t *ru) {
 
   AssertFatal(ru!=NULL,"ruis null\n");
-  for (int i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) ru->prach_list[i].frame=-1;
+  for (int i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
+			ru->prach_list[i].frame = -1;
+			ru->prach_list[i].slot  = -1;
+	}		
   pthread_mutex_init(&ru->prach_list_mutex,NULL);
 }
 
