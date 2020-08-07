@@ -588,10 +588,10 @@ typedef struct {
   unsigned short n0_power_tot_dB;
   //! estimated avg noise power (dB)
   short n0_power_tot_dBm;
-  //! estimated avg noise power per RX ant (lin)
-  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB];
-  //! estimated avg noise power per RX ant (dB)
-  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB];
+  //! estimated avg noise power per RB per RX ant (lin)
+  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][275];
+  //! estimated avg noise power per RB per RX ant (dB)
+  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB (dB)
   short n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
