@@ -97,7 +97,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB) {
       }
       measurements->n0_power[aarx] = n0_subband_power_temp/nb_rb;
       measurements->n0_power_dB[aarx] = dB_fixed(measurements->n0_power[aarx]);
-      n0_power_tot += measurements->n0_subband_power[aarx];
+      n0_power_tot += measurements->n0_power[aarx];
     }
     measurements->n0_power_tot_dB = dB_fixed(n0_power_tot);
   }
