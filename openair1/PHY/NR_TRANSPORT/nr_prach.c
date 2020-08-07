@@ -46,22 +46,33 @@ void init_prach_list(PHY_VARS_gNB *gNB) {
   for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) gNB->prach_vars.list[i].frame=-1;
 }
 
+void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id) {
+
+  gNB->prach_vars.list[prach_id].frame = -1;
+	gNB->prach_vars.list[prach_id].slot  = -1;
+
+}
+
 int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame, int slot, find_type_t type) {
 
-  uint16_t i;
-  int16_t first_free_index=-1;
-
   AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) {
+  for (uint16_t i=0; i<NUMBER_OF_NR_PRACH_MAX; i++) {
     LOG_D(PHY,"searching for PRACH in %d.%d prach_index %d=> %d.%d\n", frame,slot,i,
 	  gNB->prach_vars.list[i].frame,gNB->prach_vars.list[i].slot);
-    if ((gNB->prach_vars.list[i].frame == frame) &&
-        (gNB->prach_vars.list[i].slot  == slot)) return i;
-    else if ((gNB->prach_vars.list[i].frame == -1) && (first_free_index==-1)) first_free_index=i;
+		if((type == SEARCH_EXIST_OR_FREE) &&
+		  (gNB->prach_vars.list[i].frame == -1) &&
+		  (gNB->prach_vars.list[i].slot == -1)) {
+		  LOG_I(PHY, "Providing free prach index %d\n",i);
+		  return i;
+		}
+    else if ((type == SEARCH_EXIST) &&
+		  (gNB->prach_vars.list[i].frame == frame) &&
+      (gNB->prach_vars.list[i].slot  == slot)) {
+		  LOG_I(PHY, "Providing existing prach index %d\n",i);
+		  return i;
+		}
   }
-  if (type == SEARCH_EXIST) return -1;
-
-  return first_free_index;
+  return -1;
 }
 
 void nr_fill_prach(PHY_VARS_gNB *gNB,
@@ -70,8 +81,8 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 		   nfapi_nr_prach_pdu_t *prach_pdu) {
 
   int prach_id = find_nr_prach(gNB,SFN,Slot,SEARCH_EXIST_OR_FREE);
-  AssertFatal( (prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX),
-              "illegal or no prach_id found!!! numRA %d prach_id %d\n",prach_pdu->num_ra,prach_id);
+  AssertFatal( ((prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX)) || (prach_id < 0),
+              "illegal or no prach_id found!!! prach_id %d\n",prach_id);
 
   gNB->prach_vars.list[prach_id].frame=SFN;
   gNB->prach_vars.list[prach_id].slot=Slot;
@@ -88,25 +99,28 @@ void init_prach_ru_list(RU_t *ru) {
 
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type) {
 
-  uint16_t i;
-  int16_t first_free_index=-1;
-
   AssertFatal(ru!=NULL,"ru is null\n");
   pthread_mutex_lock(&ru->prach_list_mutex);
-  for (i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
+  for (uint16_t i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
     LOG_D(PHY,"searching for PRACH in %d.%d : prach_index %d=> %d.%d\n", frame,slot,i,
 	  ru->prach_list[i].frame,ru->prach_list[i].slot);
-    if ((ru->prach_list[i].frame == frame) &&
-        (ru->prach_list[i].slot  == slot)) {
+		if((type == SEARCH_EXIST_OR_FREE) &&
+		  (ru->prach_list[i].frame == -1) &&
+		  (ru->prach_list[i].slot == -1)) {
+		  LOG_I(PHY, "Providing free prach index %d in ru\n",i);
+      pthread_mutex_unlock(&ru->prach_list_mutex);
+		  return i;
+		}	
+    else if ((type == SEARCH_EXIST) &&
+		  (ru->prach_list[i].frame == frame) &&
+      (ru->prach_list[i].slot  == slot)) {
+		  LOG_I(PHY, "Providing existing prach index %d in ru\n",i);
       pthread_mutex_unlock(&ru->prach_list_mutex);
       return i;
     }
-    else if ((ru->prach_list[i].frame == -1) && (first_free_index==-1)) first_free_index=i;
   }
   pthread_mutex_unlock(&ru->prach_list_mutex);
-  if (type == SEARCH_EXIST) return -1;
-
-  return first_free_index;
+  return -1;
 }
 
 void nr_fill_prach_ru(RU_t *ru,
@@ -115,7 +129,7 @@ void nr_fill_prach_ru(RU_t *ru,
 		      nfapi_nr_prach_pdu_t *prach_pdu) {
 
   int prach_id = find_nr_prach_ru(ru,SFN,Slot,SEARCH_EXIST_OR_FREE);
-  AssertFatal( (prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX),
+  AssertFatal( ((prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX)) || (prach_id < 0) ,
               "illegal or no prach_id found!!! prach_id %d\n",prach_id);
 
   pthread_mutex_lock(&ru->prach_list_mutex);
@@ -132,7 +146,8 @@ void free_nr_ru_prach_entry(RU_t *ru,
 			    int prach_id) {
 
   pthread_mutex_lock(&ru->prach_list_mutex);
-  ru->prach_list[prach_id].frame=-1;
+  ru->prach_list[prach_id].frame = -1;
+	ru->prach_list[prach_id].slot  = -1;
   pthread_mutex_unlock(&ru->prach_list_mutex);
 
 }

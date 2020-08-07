@@ -325,7 +325,7 @@ int nr_find_pucch(uint16_t rnti,
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
-
+void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
 void nr_decode_pucch1(int32_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
