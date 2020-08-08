@@ -29,13 +29,21 @@
 
 typedef struct {
 	uint16_t dl_conf_ontime;
+	uint16_t dl_tti_ontime;
 	uint16_t dl_conf_late;
+	uint16_t dl_tti_late;
 	uint16_t ul_conf_ontime;
+	uint16_t ul_tti_ontime;
 	uint16_t ul_conf_late;
+	uint16_t ul_tti_late;
 	uint16_t hi_dci0_ontime;
 	uint16_t hi_dci0_late;
+	uint16_t ul_dci_ontime;
+	uint16_t ul_dci_late;
 	uint16_t tx_ontime;
 	uint16_t tx_late;
+	uint16_t tx_data_ontime;
+	uint16_t tx_data_late;
 } pnf_p7_stats_t;
 
 

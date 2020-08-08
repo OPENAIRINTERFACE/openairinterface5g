@@ -47,11 +47,14 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
         * `ul_dci_request`  [x]
         * `tx_data_request` [x]
 * `nfapi_p7_message_unpack()` is called in `pnf_handle_dl_config_request()` in pnf_p7.c, so we need to add 
-    * `pnf_handle_dl_tti_request`
-    * `pnf_handle_ul_tti_request`
-    * `pnf_handle_ul_dci_request`
-    * `pnf_handle_tx_data_request`
+    * `pnf_handle_dl_tti_request` [x]
+    * `pnf_handle_ul_tti_request` [x]
+    * `pnf_handle_ul_dci_request` [x]
+    * `pnf_handle_tx_data_request`[x]
     to handle DL P7 messages at pnf
+* Added allocate and deallocate functions for all P7 DL messages in `pnf_p7.c`
+* Added `is_nr_p7_request_in_window()` fn in `pnf_p7.c` that is called in P7 message handle fns
+
 ### Task-C
 * Write the `ul_tti` alternative for `nfapi_vnf_p7_ul_config_req()` in `vnf_p7_interface.c` and other such functions.
     * `dl_tti` is present as `nr_dl_config` [x]

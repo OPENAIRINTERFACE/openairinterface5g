@@ -1012,7 +1012,6 @@ typedef struct {
   uint16_t SFN;
   /// Slot number (0-319)
   uint16_t Slot;
-  uint16_t sfn_slot;
   nfapi_nr_dl_tti_request_body_t dl_tti_request_body;
   nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_dl_tti_request_t;
