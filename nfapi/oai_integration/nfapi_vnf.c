@@ -482,7 +482,7 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
-   
+
     UL_RCC_INFO.harq_ind[index] = *ind;
 
     if (ind->harq_indication_body.number_of_harqs > 0)
