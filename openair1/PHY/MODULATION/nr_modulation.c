@@ -51,7 +51,7 @@ void nr_modulation(uint32_t *in,
   offset = (mod_order==2)? NR_MOD_TABLE_QPSK_OFFSET : (mod_order==4)? NR_MOD_TABLE_QAM16_OFFSET : \
                     (mod_order==6)? NR_MOD_TABLE_QAM64_OFFSET: (mod_order==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
 
-  LOG_I(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
+  LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
   switch (mod_order) {
 

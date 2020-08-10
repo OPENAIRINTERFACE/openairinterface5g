@@ -58,10 +58,11 @@ short nr_qpsk_mod_table[8] = {16384,16384,-16384,16384,16384,-16384,-16384,-1638
 #endif
 
   //16QAM
+  table = (short*) nr_16qam_byte_mod_table;
   for (i=0; i<256; i++) {
     for (j=0; j<2; j++) {
-      nr_16qam_byte_mod_table[i*4+(j*2)]   = (short)((1-2*((i>>(j*4))&1))*(2-(1-2*((i>>(j*4+2))&1))))*val*sqrt10*sqrt2;
-      nr_16qam_byte_mod_table[i*4+(j*2)+1] = (short)((1-2*((i>>(j*4+1))&1))*(2-(1-2*((i>>(j*4+3))&1))))*val*sqrt10*sqrt2;
+      table[i*4+(j*2)]   = (short)((1-2*((i>>(j*4))&1))*(2-(1-2*((i>>(j*4+2))&1))))*val*sqrt10*sqrt2;
+      table[i*4+(j*2)+1] = (short)((1-2*((i>>(j*4+1))&1))*(2-(1-2*((i>>(j*4+3))&1))))*val*sqrt10*sqrt2;
      //printf("%d j%d\n",nr_16qam_byte_mod_table[i*4+(j*2)],nr_16qam_byte_mod_table[i*4+(j*2)+1]);
     }
   }
