@@ -361,6 +361,9 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       DevAssert(harq->is_waiting);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
+
+  if (((uci_01->pduBitmap >> 1) & 0x01)) {
+    nr_rx_acknack(NULL,uci_01,NULL,UL_info,sched_ctrl,stats);
   }
 }
 
