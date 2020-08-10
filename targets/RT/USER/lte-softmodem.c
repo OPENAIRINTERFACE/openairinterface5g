@@ -556,6 +556,8 @@ int main ( int argc, char **argv )
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
   init_opt();
+  // to make a graceful exit when ctrl-c is pressed
+  set_softmodem_sighandler();
   check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"

@@ -21,21 +21,30 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>nr-ue-build-tab</htmlTabRef>
-	<htmlTabName>Build-NR-UE</htmlTabName>
-	<htmlTabIcon>wrench</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<htmlTabRef>test-fr1-tm1</htmlTabRef>
+	<htmlTabName>Test-FR1-TM1</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
-010102
+ 070001
+ 070000
 	</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+	<TestCaseExclusionList>
+	</TestCaseExclusionList>
 
-	<testCase id="010102">
-		<mode>TestUE</mode>
-		<class>Build_OAI_UE</class>
-		<desc>Build NR UE (USRP)</desc>
-		<Build_OAI_UE_args>--nrUE -w USRP --ninja</Build_OAI_UE_args>
-		<clean_repository>false</clean_repository>
+	<testCase id="070000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="070001">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
 </testCaseList>
+

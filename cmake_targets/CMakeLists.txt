@@ -27,6 +27,10 @@ cmake_minimum_required (VERSION 3.0)
 # Base directories, compatible with legacy OAI building #
 #########################################################
 set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
+if("${OPENAIR_DIR}" STREQUAL "")
+  string(REGEX REPLACE "/cmake_targets.*$" "" OPENAIR_DIR ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
 set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi/open-nFAPI)
 set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
@@ -2624,7 +2628,7 @@ add_executable(ocp-enb
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer)
+add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer coding params_libconfig rfsimulator)
 
 target_link_libraries (ocp-enb
   -Wl,--start-group

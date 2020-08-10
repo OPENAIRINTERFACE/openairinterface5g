@@ -101,6 +101,18 @@ class SSHConnection():
 		else:
 			sys.exit('SSH Connection Failed')
 
+
+
+
+	def cde_check_value(self, commandline, expected, timeout):
+		logging.debug(commandline)
+		self.ssh.timeout = timeout
+		self.ssh.sendline(commandline)
+		expected.append(pexpect.EOF)
+		expected.append(pexpect.TIMEOUT)
+		self.sshresponse = self.ssh.expect(expected)
+		return self.sshresponse
+
 	def command(self, commandline, expectedline, timeout):
 		logging.debug(commandline)
 		self.ssh.timeout = timeout
