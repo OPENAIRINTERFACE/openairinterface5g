@@ -34,64 +34,123 @@ void nr_modulation(uint32_t *in,
   int32_t* nr_mod_table32;
   int32_t* out32 = (int32_t*) out;
   uint8_t* in_bytes = (uint8_t*) in;
+  uint64_t* in64 = (uint64_t*) in;
+  int64_t* out64 = (int64_t*) out;
   uint8_t idx;
-  uint16_t u = 1;
-  uint8_t shift_lut[3] = {0, 2, 4};
+  uint32_t i,j;
+  uint32_t bit_cnt;
+  uint64_t x,x1,x2;
     
-#if defined(__SSE2__)
+#if defined(__AVX2__)
+  uint16_t *in_2bytes = (uint16_t*) in;
+  __m256i *nr_mod_table256;
+  __m256i *out256;
+#elif defined(__SSE2__)
   __m128i *nr_mod_table128;
   __m128i *out128;
-  __m64   *nr_mod_table64;
-  __m64   *out64;
 #endif
 
   offset = (mod_order==2)? NR_MOD_TABLE_QPSK_OFFSET : (mod_order==4)? NR_MOD_TABLE_QAM16_OFFSET : \
                     (mod_order==6)? NR_MOD_TABLE_QAM64_OFFSET: (mod_order==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
 
-  LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
+  LOG_I(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
   switch (mod_order) {
 
   case 6:
-    nr_mod_table32 = (int32_t*) nr_mod_table;
-    for (int i=0; i<length/mod_order; i++)
-    {
-      idx = ((in[i*mod_order/32]>>((i*mod_order)&0x1f)) & mask);
-      if ((((i+1)*mod_order)>32*u) && (i!=0))
-        idx |= (in[(i*mod_order/32)+1]<<shift_lut[(u++)%3]) & 0x3f;
-      else if (((i+1)*mod_order)==32*u) u++;
-
-      out32[i] = nr_mod_table32[(offset+idx)];
+    j = 0;
+    for (i=0; i<length/192; i++) {
+      x = in64[i*3]; 
+      x1 = x&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>24)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>36)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>48)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x2 = (x>>60);
+      x = in64[i*3+1];
+      x2 |= x<<4;
+      x1 = x2&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>24)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>36)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>48)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x2 = ((x>>56)&0xf0) | (x2>>60);
+      x = in64[i*3+2];
+      x2 |= x<<8;
+      x1 = x2&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>24)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>36)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x2>>48)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x2 = ((x>>52)&0xff0) | (x2>>60);
+      out64[j++] = nr_64qam_mod_table[x2];
+    }
+    i *= 24;
+    bit_cnt = i * 8;
+    while (bit_cnt < length) {
+      x = *((uint32_t*)(in_bytes+i));
+      x1 = x&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      x1 = (x>>12)&4095;
+      out64[j++] = nr_64qam_mod_table[x1];
+      i += 3;
+      bit_cnt += 24;
     }
     return;
-
+      
   case 8:
     nr_mod_table32 = (int32_t*) nr_mod_table;
-    for (int i=0; i<length/8; i++)
+    for (i=0; i<length/8; i++)
       out32[i] = nr_mod_table32[(offset+in_bytes[i])];
     return;
 
-#if defined(__SSE2__)
+#if defined(__AVX2__)
+  case 2:
+    nr_mod_table256 = (__m256i*) nr_qpsk_2byte_mod_table;
+    out256 = (__m256i*) out;
+    for (i=0; i<length/16; i++)
+      out256[i] = nr_mod_table256[in_2bytes[i]];
+    if (length%16)
+      out256[i+1] = nr_mod_table256[in_2bytes[i]];
+    return;
+
+#elif defined(__SSE2__)
   case 2:
     nr_mod_table128 = (__m128i*) nr_qpsk_byte_mod_table;
     out128 = (__m128i*) out;
-    for (int i=0; i<length/8; i++)
+    for (i=0; i<length/8; i++)
       out128[i] = nr_mod_table128[in_bytes[i]];
-    return;
-
-  case 4:
-    nr_mod_table64 = (__m64*) nr_qam16_byte_mod_table;
-    out64 = (__m64*) out;
-    for (int i=0; i<length/8; i++)
-      out64[i] = nr_mod_table64[in_bytes[i]];
+    if (length%8)
+      out128[i+1] = nr_mod_table128[in_bytes[i]];
     return;
 #endif
+
+  case 4:
+    out64 = (int64_t*) out;
+    for (int i=0; i<length/8; i++)
+      out64[i] = nr_16qam_byte_mod_table[in_bytes[i]];
+    return;
 
   default:
     break;
   }
 
-  nr_mod_table32 = (int32_t*) nr_mod_table;
+  nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
   for (int i=0; i<length/mod_order; i++)
   {
     idx = ((in[i*mod_order/32]>>((i*mod_order)&0x1f)) & mask);
