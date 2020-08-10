@@ -28,7 +28,8 @@
 #define NR_MOD_TABLE_QAM16_OFFSET 7
 #define NR_MOD_TABLE_QAM64_OFFSET 23
 #define NR_MOD_TABLE_QAM256_OFFSET 87
-short nr_qpsk_mod_table[8] = {16384,16384,-16384,16384,16384,-16384,-16384,-16384};
+
+short nr_qpsk_mod_table[8];
 
 #if defined(__AVX2__)
 __m256i nr_qpsk_2byte_mod_table[65536];
@@ -39,4 +40,6 @@ __m128i nr_qpsk_byte_mod_table[2048];
 int64_t nr_16qam_byte_mod_table[1024];
 
 int64_t nr_64qam_mod_table[4096];
+
+int32_t nr_256qam_mod_table[512];
 #endif

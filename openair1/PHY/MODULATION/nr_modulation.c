@@ -22,8 +22,6 @@
 #include "nr_modulation.h"
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
-
 void nr_modulation(uint32_t *in,
                    uint32_t length,
                    uint16_t mod_order,
@@ -114,7 +112,7 @@ void nr_modulation(uint32_t *in,
     return;
       
   case 8:
-    nr_mod_table32 = (int32_t*) nr_mod_table;
+    nr_mod_table32 = (int32_t*) nr_256qam_mod_table;
     for (i=0; i<length/8; i++)
       out32[i] = nr_mod_table32[(offset+in_bytes[i])];
     return;

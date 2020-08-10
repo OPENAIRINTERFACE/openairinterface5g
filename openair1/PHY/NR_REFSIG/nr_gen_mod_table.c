@@ -32,15 +32,9 @@ void nr_generate_modulation_table() {
   uint32_t i,j;
   short* table;
 
-  //QPSK m128
-  for (i=0; i<256; i++) {
-    for (j=0; j<4; j++) {
-      nr_qpsk_byte_mod_table[i*8+(j*2)]   = (short)(1-2*((i>>(j*2))&1))*val*sqrt2*sqrt2;
-      nr_qpsk_byte_mod_table[i*8+(j*2)+1] = (short)(1-2*((i>>(j*2+1))&1))*val*sqrt2*sqrt2;
-      //printf("%d j%d\n",nr_qpsk_byte_mod_table[i*8+(j*2)],nr_qpsk_byte_mod_table[i*8+(j*2)+1]);
-    }
-  }
+short nr_qpsk_mod_table[8] = {16384,16384,-16384,16384,16384,-16384,-16384,-16384};
 
+#if defined(__AVX2__)
   //QPSK m256
   table = (short*) nr_qpsk_2byte_mod_table;
   for (i=0; i<65536; i++) {
@@ -50,6 +44,18 @@ void nr_generate_modulation_table() {
       //printf("%d j%d\n",nr_qpsk_byte_mod_table[i*8+(j*2)],nr_qpsk_byte_mod_table[i*8+(j*2)+1]);
     }
   }
+#elif defined(__SSE2__)
+
+  //QPSK m128
+  table = (short*) nr_qpsk_byte_mod_table;
+  for (i=0; i<256; i++) {
+    for (j=0; j<4; j++) {
+      table[i*8+(j*2)]   = (short)(1-2*((i>>(j*2))&1))*val*sqrt2*sqrt2;
+      table[i*8+(j*2)+1] = (short)(1-2*((i>>(j*2+1))&1))*val*sqrt2*sqrt2;
+      //printf("%d j%d\n",nr_qpsk_byte_mod_table[i*8+(j*2)],nr_qpsk_byte_mod_table[i*8+(j*2)+1]);
+    }
+  }
+#endif
 
   //16QAM
   for (i=0; i<256; i++) {
@@ -68,6 +74,13 @@ void nr_generate_modulation_table() {
       table[i*4+(j*2)+1] = (short)((1-2*((i>>(j*6+1))&1))*(4-(1-2*((i>>(j*6+3))&1))*(2-(1-2*((i>>(j*6+5))&1)))))*val*sqrt42*sqrt2;
       //printf("%d j%d\n",table[i*4+(j*2)],table[i*4+(j*2)+1]);
     }
+  }
+
+  //256QAM
+  table = (short*) nr_256qam_mod_table;
+  for (i=0; i<256; i++) {
+    table[i*2]   = (short)((1-2*(i&1))*(8-(1-2*((i>>2)&1))*(4-(1-2*((i>>4)&1))*(2-(1-2*((i>>6)&1))))))*val*sqrt170*sqrt2;
+    table[i*2+1] = (short)((1-2*((i>>1)&1))*(8-(1-2*((i>>3)&1))*(4-(1-2*((i>>5)&1))*(2-(1-2*((i>>7)&1))))))*val*sqrt170*sqrt2;
   }
 }
 
