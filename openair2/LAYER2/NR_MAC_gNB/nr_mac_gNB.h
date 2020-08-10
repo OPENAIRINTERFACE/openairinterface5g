@@ -246,7 +246,16 @@ typedef struct pdcchStateInd {
   uint8_t servingCellId;
   uint8_t coresetId;
   uint8_t tciStateId;
+  bool tci_present_inDCI;
 } pdcchStateInd_t;
+
+typedef struct pucchSpatialRelation {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  uint8_t pucchResourceId;
+  bool s0tos7_actDeact[8];
+} pucchSpatialRelation_t;
 
 typedef struct SPCSIReportingpucch {
   bool is_scheduled;
@@ -271,12 +280,14 @@ typedef struct pdschTciStatesActDeact {
   uint8_t bwpId;
   uint8_t highestTciStateActivated;
   bool tciStateActDeact[MAX_TCI_STATES];
+  uint8_t codepoint[8];
 } pdschTciStatesActDeact_t;
 
 typedef struct UE_info {
   sp_zp_csirs_t sp_zp_csi_rs;
   csi_rs_im_t csi_im;
   pdcchStateInd_t pdcch_state_ind;
+  pucchSpatialRelation_t pucch_spatial_relation;
   SPCSIReportingpucch_t SP_CSI_reporting_pucch;
   aperiodicCSI_triggerStateSelection_t aperi_CSI_trigger;
   pdschTciStatesActDeact_t pdsch_TCI_States_ActDeact;
