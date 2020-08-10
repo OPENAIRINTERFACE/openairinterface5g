@@ -196,6 +196,23 @@ typedef enum {
   FOREACH_CAUSE_SECU(CAUSE_ENUM)
 } cause_secu_id_t;
 
+//TS 24.501 sub layer states for UE
+// for network side, only 5GMMderegistered, 5GMMderegistered_initiated, 5GMMregistered,  5GMMservice_request_initiated are valid
+typedef enum {
+  SGMMnull,
+  SGMMderegistered,
+  SGMMderegistered_initiated,
+  SGMMregistered,
+  SGMMregistered_initiated,
+  SGMMservice_request_initiated,
+} SGMM_UE_states;
+
+typedef struct {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+} SGScommonHeader_t;
+
 typedef struct {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
@@ -212,3 +229,19 @@ typedef struct {
 } Identityresponse_t;
 
 
+typedef struct {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+  int ngKSI:4;
+  int spare:4;
+  int ABBALen:8;
+} authenticationrequestHeader_t;
+
+typedef struct {
+  Extendedprotocoldiscriminator_t epd:8;
+  Security_header_t sh:8;
+  SGSmobilitymanagementmessages_t mt:8;
+} authenticationresponseHeader_t;
+
+//AUTHENTICATION RESULT

@@ -268,7 +268,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     }
   }
   if (pr_found)
-    UE_list->fiveG_connected[UE_id] = false;
+    UE_list->UEcontext[UE_id].fiveG_connected = false;
   else {
     LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated for UE_id %d\n",
           module_idP, preamble_index, UE_id);

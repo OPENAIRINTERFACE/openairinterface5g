@@ -377,7 +377,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
 
-  if (slot_txP== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
+  if (slot_txP== 0 && (UE_list->UEcontext[UE_id].fiveG_connected || get_softmodem_params()->phy_test)) {
     for (int k=0; k<nr_ulmix_slots; k++) {
       memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
@@ -449,7 +449,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     if (get_softmodem_params()->phy_test == 0)
       nr_schedule_RA(module_idP, frame_txP, slot_txP);
     else
-      UE_list->fiveG_connected[UE_id] = true;
+      UE_list->UEcontext[UE_id].fiveG_connected = true;
 
     // Phytest scheduling
 
@@ -471,7 +471,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       }
     }
 
-    if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
+    if (UE_list->UEcontext[UE_id].fiveG_connected && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
       ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
       nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
       nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
@@ -490,7 +490,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
 
     if (get_softmodem_params()->phy_test == 0) {
-      if (UE_list->fiveG_connected[UE_id])
+      if (UE_list->UEcontext[UE_id].fiveG_connected)
         nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
       schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
       nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);

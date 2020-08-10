@@ -2266,6 +2266,11 @@ set (SHLIB_LOADER_SOURCES
     ${OPENAIR_DIR}/common/utils/load_module_shlib.c
 )
 
+add_library(LIB_5GNAS_GNB
+	${NAS_SRC}/gNB/network_process_nas.c
+	${NAS_SRC}/NR_UE/ue_process_nas.c
+	)
+
 # Make lfds as a own source code (even if it is a outside library)
 # For better intergration with compilation flags & structure of cmake
 ###################################################################
