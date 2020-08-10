@@ -3,4 +3,5 @@ package protocol;
 
 enum flex_control_delegation_type {
      FLCDT_MAC_DL_UE_SCHEDULER = 1;		// DL UE scheduler delegation
+     FLCDT_AGENT_CONTROL_APP = 2;               // Generic control application
 }

@@ -225,7 +225,7 @@ message flex_ue_state_change {
 
 message flex_control_delegation {
 	optional flex_header header = 1;
-	optional uint32 delegation_type = 2;	// Bitmap of FLCDT_* flags
+	optional flex_control_delegation_type delegation_type = 2;	// The delegated object type, decides about further processing
 	optional bytes payload = 3;	  	// Byte array of shared lib containing the delegated functions
 	optional string name = 4;		// The delegated functions names ordered based on bitmap flags
 }
