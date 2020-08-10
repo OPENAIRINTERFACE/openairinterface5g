@@ -478,9 +478,9 @@ int main(int argc, char **argv)
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
 	harq_process->R = rate;
-        harq_process->dmrsConfigType = 1;
+	harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	harq_process->dlDmrsSymbPos = 4;
-        harq_process->n_dmrs_cdm_groups = 1;
+	harq_process->n_dmrs_cdm_groups = 1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
