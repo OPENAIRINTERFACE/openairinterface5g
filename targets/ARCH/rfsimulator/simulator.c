@@ -44,6 +44,7 @@
 #include <common/utils/assertions.h>
 #include <common/utils/LOG/log.h>
 #include <common/utils/load_module_shlib.h>
+#include <common/utils/telnetsrv/telnetsrv.h>
 #include <common/config/config_userapi.h>
 #include "common_lib.h"
 #include <openair1/PHY/defs_eNB.h>
@@ -78,11 +79,25 @@ extern RAN_CONTEXT_t RC;
 #define RFSIMULATOR_PARAMS_DESC {\
     {"serveraddr",             "<ip address to connect to>\n",          0,         strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
     {"serverport",             "<port to connect to>\n",                0,         u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
-    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0},\
+    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,               0,         strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0 },\
     {"IQfile",                 "<file path to use when saving IQs>\n",  0,         strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
-    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 }\
+    {"modelname",              "<channel model name>\n",                0,         strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
+    {"ploss",                  "<channel path loss in dB>\n",           0,         dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"forgetfact",             "<channel forget factor ((0 to 1)>\n",   0,         dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"offset",                 "<channel offset in samps>\n",           0,         iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
   };
 
+
+
+static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
+static telnetshell_cmddef_t rfsimu_cmdarray[] = {
+  {"setmodel","<model name>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},  
+  {"","",NULL},
+};
+
+static telnetshell_vardef_t rfsimu_vardef[] = {
+  {"",0,NULL}
+};  
 pthread_mutex_t Sockmutex;
 
 typedef struct complex16 sample_t; // 2*16 bits complex number
@@ -114,6 +129,11 @@ typedef struct {
   double sample_rate;
   double tx_bw;
   int channelmod;
+  double chan_pathloss;
+  double chan_forgetfact;
+  int    chan_offset;
+  void *telnetcmd_qid;
+  poll_telnetcmdq_func_t poll_telnetcmdq;
 } rfsimulator_state_t;
 
 
@@ -150,11 +170,11 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
     static bool init_done=false;
 
     if (!init_done) {
-	    uint64_t rand;
-	    FILE *h=fopen("/dev/random","r");
-            if ( 1 != fread(&rand,sizeof(rand),1,h) )
-              LOG_W(HW, "Simulator can't read /dev/random\n");
-	    fclose(h);
+	  uint64_t rand;
+	  FILE *h=fopen("/dev/random","r");
+      if ( 1 != fread(&rand,sizeof(rand),1,h) )
+        LOG_W(HW, "Simulator can't read /dev/random\n");
+	  fclose(h);
       randominit(rand);
       tableNor(rand);
       init_done=true;
@@ -164,9 +184,10 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
-                                            0.0, // forgetting_factor
-                                            0, // maybe used for TA
-                                            0); // path_loss in dB
+                                            bridge->chan_forgetfact, // forgetting_factor
+                                            bridge->chan_offset, // maybe used for TA
+                                            bridge->chan_pathloss); // path_loss in dB
+    set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
     random_channel(ptr->channel_model,false);
   }
 }
@@ -291,6 +312,41 @@ void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
     rfsimulator->typeStamp = ENB_MAGICDL_FDD;
   else
     rfsimulator->typeStamp = UE_MAGICDL_FDD;
+}
+
+static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg) {
+  char *modelname=NULL; 
+  int s = sscanf(buff,"%ms\n",&modelname);
+  if (s == 1) {
+    int channelmod=modelid_fromname(modelname);
+    if (channelmod<0)
+      prnt("ERROR: model %s unknown\n",modelname);
+    else {
+  	  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  	  for (int i=0; i<FD_SETSIZE; i++) {
+        buffer_t *b=&t->buf[i];
+        if (b->conn_sock >= 0 ) {
+          channel_desc_t *newmodel=new_channel_desc_scm(t->tx_num_channels,t->rx_num_channels,
+                                                channelmod,
+                                                t->sample_rate,
+                                                t->tx_bw,
+                                                t->chan_forgetfact, // forgetting_factor
+                                                t->chan_offset, // maybe used for TA
+                                                t->chan_pathloss); // path_loss in dB
+          set_channeldesc_owner(newmodel, RFSIMU_MODULEID);
+          random_channel(newmodel,false);
+          channel_desc_t *oldmodel=b->channel_model;
+          b->channel_model=newmodel;
+          free_channel_desc_scm(oldmodel);
+          prnt("New model %s applied to channel connected to sock %d\n",modelname,i);
+        }
+      }
+    }
+  } else {
+  	  prnt("ERROR: no model specified\n");  
+  }
+  free(modelname);
+  return CMDSTATUS_FOUND;
 }
 
 int server_start(openair0_device *device) {
@@ -647,7 +703,8 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       // it seems legacy behavior is: never in UL, each frame in DL
       if (reGenerateChannel)
         random_channel(ptr->channel_model,0);
-
+      if (t->poll_telnetcmdq)
+      	  t->poll_telnetcmdq(t->telnetcmd_qid,t);
       for (int a=0; a<nbAnt; a++) {
         if ( ptr->channel_model != NULL ) // apply a channel model
           rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
@@ -742,5 +799,18 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->tx_bw=openair0_cfg->tx_bw;
   //randominit(0);
   set_taus_seed(0);
+   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
+  add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
+ 
+  if (addcmd != NULL) {
+    rfsimulator->poll_telnetcmdq =  (poll_telnetcmdq_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_POLLCMDQ_FNAME);  
+    addcmd("rfsimu",rfsimu_vardef,rfsimu_cmdarray);
+    for(int i=0; rfsimu_cmdarray[i].cmdfunc != NULL; i++) {
+      if (	rfsimu_cmdarray[i].qptr != NULL) {
+        rfsimulator->telnetcmd_qid = rfsimu_cmdarray[i].qptr;
+        break;
+      }
+    }    
+  } 
   return 0;
 }
