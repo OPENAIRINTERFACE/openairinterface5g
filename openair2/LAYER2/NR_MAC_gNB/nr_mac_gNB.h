@@ -604,6 +604,9 @@ typedef struct {
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
+  uint8_t current_harq_pid;
+  struct CSI_Report CSI_report[MAX_MOBILES_PER_GNB][MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
+  NR_UE_sr_t sr_req;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
