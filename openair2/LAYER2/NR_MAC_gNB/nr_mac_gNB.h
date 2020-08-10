@@ -415,7 +415,6 @@ typedef struct nr_csi_report {
   CSI_Meas_bitlen_t csi_meas_bitlen;
 } nr_csi_report_t;
 
-
 //! fixme : need to enhace for the multiple TB CQI report
 
 
