@@ -424,7 +424,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
     int harq_pid;
-    int no_sig;
+    //int no_sig;
     NR_UL_gNB_HARQ_t *ulsch_harq;
 
     if ((ulsch) &&
