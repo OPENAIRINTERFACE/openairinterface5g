@@ -366,62 +366,63 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   int rb2, rb, nb_rb;
   for (int symbol=0;symbol<14;symbol++) {
+    if (gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1){
+      nb_rb = 0;
+      for (int m=0;m<9;m++) gNB->rb_mask_ul[m] = 0;
+      gNB->ulmask_symb = -1;
 
-    nb_rb = 0;
-    for (int m=0;m<9;m++) gNB->rb_mask_ul[m] = 0;
-    gNB->ulmask_symb = -1;
-
-    for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
-      NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
-      if (pucch) {
-        if ((pucch->active == 1) &&
-	    (pucch->frame == frame_rx) &&
-	    (pucch->slot == slot_rx) ) {
-          gNB->ulmask_symb = symbol;
-          nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
-          if ((symbol>=pucch_pdu->start_symbol_index) &&
-              (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
-            for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-              rb2 = rb+pucch_pdu->prb_start;
-              gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
-            }
-            nb_rb+=pucch_pdu->prb_size;
-          }
-        }
-      }
-    }
-    for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
-      NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
-      int harq_pid;
-      NR_UL_gNB_HARQ_t *ulsch_harq;
-
-      if ((ulsch) &&
-          (ulsch->rnti > 0)) {
-        for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-          ulsch_harq = ulsch->harq_processes[harq_pid];
-          AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-          if ((ulsch_harq->status == NR_ACTIVE) &&
-            (ulsch_harq->frame == frame_rx) &&
-            (ulsch_harq->slot == slot_rx) &&
-            (ulsch_harq->handled == 0)){
-            uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
-            uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
+      for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+        NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
+        if (pucch) {
+          if ((pucch->active == 1) &&
+	      (pucch->frame == frame_rx) &&
+	      (pucch->slot == slot_rx) ) {
             gNB->ulmask_symb = symbol;
-            if ((symbol>=symbol_start) &&
-                (symbol<symbol_end)){
-              for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
-                rb2 = rb+ulsch_harq->ulsch_pdu.rb_start;
+            nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+            if ((symbol>=pucch_pdu->start_symbol_index) &&
+                (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
+              for (rb=0; rb<pucch_pdu->prb_size; rb++) {
+                rb2 = rb+pucch_pdu->prb_start;
                 gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
               }
-              nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
+              nb_rb+=pucch_pdu->prb_size;
             }
           }
         }
       }
+      for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
+        NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
+        int harq_pid;
+        NR_UL_gNB_HARQ_t *ulsch_harq;
+
+        if ((ulsch) &&
+            (ulsch->rnti > 0)) {
+          for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
+            ulsch_harq = ulsch->harq_processes[harq_pid];
+            AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+            if ((ulsch_harq->status == NR_ACTIVE) &&
+                (ulsch_harq->frame == frame_rx) &&
+                (ulsch_harq->slot == slot_rx) &&
+                (ulsch_harq->handled == 0)){
+              uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
+              uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
+              gNB->ulmask_symb = symbol;
+              if ((symbol>=symbol_start) &&
+                  (symbol<symbol_end)){
+                for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
+                  rb2 = rb+ulsch_harq->ulsch_pdu.rb_start;
+                  gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+                }
+                nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
+              }
+            }
+          }
+        }
       //TODO Add check for PRACH as well?
+      }
+      if (nb_rb<gNB->frame_parms.N_RB_UL)
+        return;
     }
-    if (nb_rb<gNB->frame_parms.N_RB_UL)
-      return;
   }
 }
 
