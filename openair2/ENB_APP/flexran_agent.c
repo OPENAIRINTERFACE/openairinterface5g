@@ -233,6 +233,9 @@ int flexran_agent_start(mid_t mod_id)
     agent_task_created = 1;
   }
 
+  /* Init the app sublayer */
+  flexran_agent_app_init(mod_id);
+
   pthread_mutex_init(&flexran->mutex_node_ctrl, NULL);
   pthread_cond_init(&flexran->cond_node_ctrl, NULL);
 

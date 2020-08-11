@@ -42,6 +42,7 @@
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_s1ap.h"
+#include "flexran_agent_app.h"
 //#include "PHY/extern.h"
 #include "common/utils/LOG/log.h"
 #include "flexran_agent_mac_internal.h"
