@@ -13,7 +13,7 @@
   - Initialize_OAI_UE
   - Terminate_OAI_UE
   - DataDisable_UE
-  - DataEnable_
+  - DataEnable_UE
   - CheckStatusUE
   - Ping
   - Iperf
