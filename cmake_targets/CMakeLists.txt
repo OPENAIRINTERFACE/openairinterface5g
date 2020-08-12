@@ -1099,6 +1099,13 @@ add_library(FLEXRAN_AGENT
   )
 add_dependencies(FLEXRAN_AGENT rrc_flag)
 set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
+add_library(flapp_sample SHARED
+  ${OPENAIR2_DIR}/ENB_APP/flexran_apps/sample.c
+)
+set_target_properties(flapp_sample PROPERTIES C_VISIBILITY_PRESET hidden)
+add_custom_target(flapp_all DEPENDS
+  flapp_sample
+)
 #include_directories(${OPENAIR2_DIR}/ENB_APP)
 
 set(PROTOBUF_LIB "protobuf-c")
