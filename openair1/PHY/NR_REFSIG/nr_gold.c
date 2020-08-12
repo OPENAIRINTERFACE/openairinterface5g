@@ -65,11 +65,7 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
 
       reset = 1;
-<<<<<<< HEAD
-      x2 = ((1<<17) * (14*slot+symb+1) * ((Nid<<1)+1)) + (Nid<<1);
-=======
       x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid<<1));
->>>>>>> 3752a5f0a... generation of csi-rs sequence
 
       for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
         pdcch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);

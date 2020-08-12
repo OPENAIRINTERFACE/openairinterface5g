@@ -29,7 +29,7 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
                        int32_t** txdataF,
                        int16_t amp,
                        NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_csi_rs_pdu_t csi_params)
+                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params)
 {
 
   int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1];
