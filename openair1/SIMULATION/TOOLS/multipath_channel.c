@@ -201,11 +201,11 @@ void multipath_channel(channel_desc_t *desc,
 
       rx_sig_re[ii][i+dd] = rx_tmp.x*path_loss;
       rx_sig_im[ii][i+dd] = rx_tmp.y*path_loss;
-      /*
-      if ((ii==0)&&((i%32)==0)) {
-      printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.x,rx_tmp.y,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
-      }
-      */
+      
+      /*      if ((ii==0)&&((i%32)==0)) {
+	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.x,rx_tmp.y,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
+	}*/
+      
       //rx_sig_re[ii][i] = sqrt(.5)*(tx_sig_re[0][i] + tx_sig_re[1][i]);
       //rx_sig_im[ii][i] = sqrt(.5)*(tx_sig_im[0][i] + tx_sig_im[1][i]);
 

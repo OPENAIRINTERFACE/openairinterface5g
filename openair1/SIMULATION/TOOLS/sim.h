@@ -160,6 +160,11 @@ typedef enum {
   EVA,
   ETU,
   MBSFN,
+  TDL_A,
+  TDL_B,
+  TDL_C,
+  TDL_D,
+  TDL_E,
   Rayleigh8,
   Rayleigh1,
   Rayleigh1_800,
@@ -190,6 +195,11 @@ typedef enum {
   {"EVA",EVA},\
   {"ETU",ETU},\
   {"MBSFN",MBSFN},\
+  {"TDL_A",TDL_A},\
+  {"TDL_B",TDL_B},\
+  {"TDL_C",TDL_C},\
+  {"TDL_D",TDL_D},\
+  {"TDL_E",TDL_E},\
   {"Rayleigh8",Rayleigh8},\
   {"Rayleigh1",Rayleigh1},\
   {"Rayleigh1_800",Rayleigh1_800},\
@@ -243,33 +253,12 @@ typedef struct {
 } sim_t;
 
 
-/**
-\brief This routine initializes a new channel descriptor
-\param nb_tx Number of TX antennas
-\param nb_rx Number of RX antennas
-\param nb_taps Number of taps
-\param channel_length Length of the interpolated channel impulse response
-\param amps Linear amplitudes of the taps (length(amps)=channel_length). The values should sum up to 1.
-\param delays Delays of the taps. If delays==NULL the taps are assumed to be spaced equidistantly between 0 and t_max.
-\param R_sqrt Channel correlation matrix. If R_sqrt==NULL, no channel correlation is applied.
-\param Td Maximum path delay in mus.
-\param BW Channel bandwidth in MHz.
-\param ricean_factor Ricean factor applied to all taps.
-\param aoa Anlge of arrival
-\param forgetting_factor This parameter (0...1) allows for simple 1st order temporal variation
-\param max_Doppler This is the maximum Doppler frequency for Jakes' Model
-\param channel_offset This is a time delay to apply to channel
-\param path_loss_dB This is the path loss in dB
-\param random_aoa If set to 1, AoA of ricean component is randomized
-*/
-
-//channel_desc_t *new_channel_desc(uint8_t nb_tx,uint8_t nb_rx, uint8_t nb_taps, uint8_t channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, int32_t channel_offset, double path_loss_dB,uint8_t random_aoa);
-
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
-				                     double sampling_rate,
+				     double sampling_rate,
                                      double channel_bandwidth,
+				     double TDL_DS,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB);

@@ -106,6 +106,12 @@ uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 //const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 
+channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
+double s_re0[122880],s_im0[122880],r_re0[122880],r_im0[122880];
+double s_re1[122880],s_im1[122880],r_re1[122880],r_im1[122880];
+double r_re2[122880],r_im2[122880];
+double r_re3[122880],r_im3[122880];
+
 int main(int argc, char **argv)
 {
   char c;
@@ -116,23 +122,31 @@ int main(int argc, char **argv)
   uint8_t snr1set = 0;
   int slot = 8, frame = 0;
   FILE *output_fd = NULL;
+  double *s_re[2]= {s_re0,s_re1};
+  double *s_im[2]= {s_im0,s_im1};
+  double *r_re[4]= {r_re0,r_re1,r_re2,r_re3};
+  double *r_im[4]= {r_im0,r_im1,r_im2,r_im3};
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
+  double maxDoppler = 0.0;
   uint8_t n_tx = 1, n_rx = 1;
   //uint8_t transmission_mode = 1;
   //uint16_t Nid_cell = 0;
-  channel_desc_t *gNB2UE;
+  channel_desc_t *UE2gNB;
   uint8_t extended_prefix_flag = 0;
   //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
+  double tx_gain=1.0;
+  double N0=30;
+
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
   //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
-  int start_symbol = 2;
+  int start_symbol = 0;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t precod_nbr_layers = 1;
@@ -155,6 +169,8 @@ int main(int argc, char **argv)
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
+
+  double TDL_DS = 30e-9;
 
   int ibwps=24;
   int ibwp_rboffset=41;
@@ -234,7 +250,22 @@ int main(int argc, char **argv)
       case 'G':
 	channel_model = ETU;
 	break;
-	
+
+      case 'H':
+        channel_model = TDL_C;
+	TDL_DS = 30e-9;
+	break;
+  
+      case 'I':
+	channel_model = TDL_C;
+	TDL_DS = 300e-9;
+        break;
+     
+      case 'J':
+	channel_model=TDL_D;
+	TDL_DS = 30e-9;
+	break;
+
       default:
 	printf("Unsupported channel model!\n");
 	exit(-1);
@@ -401,13 +432,26 @@ int main(int argc, char **argv)
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
+  double sampling_frequency;
+  double bandwidth;
 
-  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model,
-                                61.44e6, //N_RB2sampling_rate(N_RB_DL),
-                                40e6, //N_RB2channel_bandwidth(N_RB_DL),
+  if (N_RB_UL >= 217) sampling_frequency = 122.88e6;
+  else if (N_RB_UL >= 106) sampling_frequency = 61.44e6;
+  else { printf("Need at least 106 PRBs\b"); exit(-1); }
+  if (N_RB_UL == 273) bandwidth = 100e6;
+  else if (N_RB_UL == 217) bandwidth = 80e6;
+  else if (N_RB_UL == 106) bandwidth = 40e6;
+  else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
+			   
+
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
+                                sampling_frequency,
+                                bandwidth,
+				TDL_DS,
                                 0, 0, 0);
 
-  if (gNB2UE == NULL) {
+  UE2gNB->max_Doppler = maxDoppler;
+  if (UE2gNB == NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
@@ -468,7 +512,6 @@ int main(int argc, char **argv)
   rrc_mac_config_req_gNB(0,0,1,200,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
-
 
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
@@ -573,6 +616,8 @@ int main(int argc, char **argv)
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
+
+  if (input_fd != NULL) max_rounds=1;
 
   if(1<<ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
@@ -774,21 +819,37 @@ int main(int argc, char **argv)
       }	
       else n_trials = 1;
 
+      if (input_fd == NULL ) {
 
-      sigma_dB = 10*log10(txlev_float)-SNR;
-      sigma    = pow(10,sigma_dB/10);
-      if(n_trials==1) printf("txlev_float %f, sigma_dB %f\n",10*log10(txlev_float),sigma_dB);
+	sigma_dB = N0;
+	sigma    = pow(10,sigma_dB/10);
 
-	  //----------------------------------------------------------
-	  //------------------------ add noise -----------------------
-	  //----------------------------------------------------------
-	if (input_fd == NULL ) {
-	  for (i=0; i<slot_length; i++) {
-	    for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/sqrt(scale)   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/sqrt(scale) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
-	    }
+	tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/txlev_float);
+	if(n_trials==1) printf("txlev_float %f, sigma_dB %f, tx_gain %f tx_offset %d, slot_offset %d\n",10*log10(txlev_float),sigma_dB,tx_gain,tx_offset,slot_offset);
+
+	for (i=0; i<slot_length; i++) {
+	  for (int aa=0; aa<1; aa++) {
+	    s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
+	    s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
 	  }
+	}
+	
+
+	if (UE2gNB->max_Doppler == 0) {
+	  multipath_channel(UE2gNB,s_re,s_im,r_re,r_im,
+			    slot_length,0);
+	} else {
+	  multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
+			       2*slot_length,0);
+	}
+	for (i=0; i<slot_length; i++) {
+	  if (n_trials== 1 && i<256) printf("i %d : (%f,%f)*%f = (%f,%f) \n",i,r_re[0][i],r_im[0][i],tx_gain,r_re[0][i]*tx_gain,r_im[0][i]*tx_gain);
+	  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
+	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((tx_gain*r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((tx_gain*r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+	  }
+	}
+	
 	}
 	else {
 	  AssertFatal(frame_parms->nb_antennas_rx == 1, "nb_ant != 1\n");
@@ -799,7 +860,7 @@ int main(int argc, char **argv)
 	  int ta_offset=1600;
 	  if (N_RB_DL <217) ta_offset=800;
 	  else if (N_RB_DL < 106) ta_offset = 400;
-
+	  fseek(input_fd,(slot_length<<2)+2000,SEEK_SET);
 	  fread((void*)&gNB->common_vars.rxdata[0][slot_offset],
 		sizeof(int16_t),
 		slot_length<<1,
@@ -821,14 +882,14 @@ int main(int argc, char **argv)
         start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-	if (n_trials==1) {
+	if (n_trials==1 && round==0) {
 	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][0],frame_parms->samples_per_subframe*10,1,1);
 
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0]+start_symbol*frame_parms->ofdm_symbol_size,nb_symb_sch*frame_parms->ofdm_symbol_size,1,1);
 
 	}
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
-	if (n_trials == 1) { 
+	if (n_trials == 1  && round==0) { 
 	  LOG_M("rxsigF0_ext.m","rxsF0_ext",
 		&gNB->pusch_vars[0]->rxdataF_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
 	  LOG_M("chestF0.m","chF0",
