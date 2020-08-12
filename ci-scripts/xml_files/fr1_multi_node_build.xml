@@ -21,21 +21,46 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>nr-ue-build-tab</htmlTabRef>
-	<htmlTabName>Build-NR-UE</htmlTabName>
+	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabName>Build</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
-	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
-010102
+ 000001 000002
+ 000003 000004
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="010102">
-		<mode>TestUE</mode>
-		<class>Build_OAI_UE</class>
-		<desc>Build NR UE (USRP)</desc>
-		<Build_OAI_UE_args>--nrUE -w USRP --ninja</Build_OAI_UE_args>
-		<clean_repository>false</clean_repository>
+	<testCase id="000001">
+		<class>Build_eNB</class>
+		<desc>Build eNB</desc>
+		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<backgroundBuild>True</backgroundBuild>
 	</testCase>
+
+	<testCase id="000004">
+		<class>WaitEndBuild_eNB</class>
+		<desc>Wait for end of Build eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="000002">
+		<class>Build_eNB</class>
+		<desc>Build gNB</desc>
+		<Build_eNB_args>-w USRP -c --gNB --ninja</Build_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+		<backgroundBuild>True</backgroundBuild>
+	</testCase>
+
+	<testCase id="000003">
+		<class>WaitEndBuild_eNB</class>
+		<desc>Wait for end of Build gNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+	</testCase>
+
 
 </testCaseList>

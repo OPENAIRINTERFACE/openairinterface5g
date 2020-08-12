@@ -547,7 +547,7 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
     ul_req_tmp->ul_config_request_body.number_of_pdus = 0;
 
     if (ul_req->ul_config_request_body.number_of_pdus>0) {
-      LOG_D(PHY, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
+      LOG_D(MAC, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
     }
 
     memcpy((void *)ul_req->ul_config_request_body.ul_config_pdu_list,
@@ -555,6 +555,11 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
            ul_req->ul_config_request_body.number_of_pdus*sizeof(nfapi_ul_config_request_pdu_t));
   }
 }
+
+extern int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+extern int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+extern void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
+extern void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 void
 eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
@@ -843,6 +848,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           }
 
           /* Note: This should not be done in the MAC! */
+	  /*
           for (int ii=0; ii<MAX_MOBILES_PER_ENB; ii++) {
             LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
 
@@ -862,6 +868,17 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               clean_eNb_dlsch(dlsch);
             }
           }
+	  */
+
+	int id;
+
+	// clean ULSCH entries for rnti
+	id = find_ulsch(rnti,RC.eNB[module_idP][CC_id],SEARCH_EXIST);
+        if (id>=0) clean_eNb_ulsch(RC.eNB[module_idP][CC_id]->ulsch[id]);
+
+	// clean DLSCH entries for rnti
+	id = find_dlsch(rnti,RC.eNB[module_idP][CC_id],SEARCH_EXIST);
+        if (id>=0) clean_eNb_dlsch(RC.eNB[module_idP][CC_id]->dlsch[id][0]);
 
           for (int j = 0; j < 10; j++) {
             nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
