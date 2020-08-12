@@ -365,6 +365,8 @@ typedef struct {
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
   /// - third index: sample [0..]
   int32_t **txdataF;
+  int32_t *debugBuff;
+  int32_t debugBuff_sample_offset;
 } NR_gNB_COMMON;
 
 
