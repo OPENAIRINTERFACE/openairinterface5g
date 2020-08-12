@@ -184,7 +184,9 @@ void rx_nr_prach_ru(RU_t *ru,
   for (int aa=0; aa<ru->nb_rx; aa++){ 
     if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
     prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
+    LOG_I(PHY,"GES printing received signal %d\n",*prach[aa]);
   } 
+
 
   int dftlen=0;
   int mu = fp->numerology_index;
@@ -286,7 +288,10 @@ void rx_nr_prach_ru(RU_t *ru,
   if (k<0) k+=(fp->ofdm_symbol_size);
   
   k*=K;
-  k+=kbar; 
+  k+=kbar;
+
+	LOG_I(PHY,"GES printing frequency domain k value %d fp->N_RB_UL %d n_ra_prb %d kbar %d\n",k,fp->N_RB_UL,n_ra_prb,kbar);
+	 
   int reps=1;
 
   for (int aa=0; aa<ru->nb_rx; aa++) {
@@ -355,6 +360,7 @@ void rx_nr_prach_ru(RU_t *ru,
       } else { // threequarter sampling
 	//	40 MHz @ 46.08 Ms/s
 	prach2 = prach[aa] + (3*Ncp); // 46.08 is 1.5 * 30.72, times 2 for I/Q
+	LOG_I(PHY,"GES printing prach2 %p prach[aa] %p Ncp %d\n",prach2,prach[aa],Ncp);
 	if (prach_sequence_length == 0) {
 	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
@@ -524,7 +530,7 @@ void rx_nr_prach_ru(RU_t *ru,
     }
 
     //Coherent combining of PRACH repetitions (assumes channel does not change, to be revisted for "long" PRACH)
-    LOG_I(PHY,"Doing PRACH combining of %d reptitions N_ZC %d\n",reps,N_ZC);
+    LOG_I(PHY,"Doing PRACH combining of %d reptitions N_ZC %d,mu %d prachFormat %d prach2 %p content %d\n",reps,N_ZC,mu,prachFormat,prach2,*prach2);
     int16_t rxsigF_tmp[N_ZC<<1];
     //    if (k+N_ZC > dftlen) { // PRACH signal is split around DC 
     int16_t *rxsigF2=rxsigF[aa];
@@ -534,6 +540,7 @@ void rx_nr_prach_ru(RU_t *ru,
       if (k2==(dftlen<<1)) k2=0;
       rxsigF_tmp[j] = rxsigF2[k2];
       for (int i=1;i<reps;i++) rxsigF_tmp[j] += rxsigF2[k2+(i*dftlen<<1)];
+			LOG_I(PHY,"GES printing %d rxsigF_tmp[j] %d\n",j,rxsigF_tmp[j]);
     }
     memcpy((void*)rxsigF2,(void *)rxsigF_tmp,N_ZC<<2);
 		LOG_I(PHY,"GES printing rxsigF2 %d\n",*rxsigF2);
