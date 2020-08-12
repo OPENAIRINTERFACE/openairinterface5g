@@ -1137,6 +1137,7 @@ int main ( int argc, char **argv ) {
   T_Config_Init();
 #endif
   configure_linux();
+  set_softmodem_sighandler();
   cpuf=get_cpu_freq_GHz();
   set_taus_seed (0);
 
@@ -1319,8 +1320,9 @@ int main ( int argc, char **argv ) {
 
   // end of CI modifications
   //getchar();
-  if(IS_SOFTMODEM_DOFORMS)
-    load_softscope("enb");
+  if(IS_SOFTMODEM_DOFORMS) {
+    load_softscope("enb",NULL);
+  }
 
   itti_wait_tasks_end();
   oai_exit=1;

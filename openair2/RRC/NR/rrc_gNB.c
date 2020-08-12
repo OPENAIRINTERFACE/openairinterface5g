@@ -182,7 +182,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
   rrc->carrier.MIB             = (uint8_t *) malloc16(4);
   rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
-   rrc->carrier.sizeof_SIB1      = do_SIB1_NR(rrc,configuration);
+   rrc->carrier.sizeof_SIB1      = do_SIB1_NR(&rrc->carrier,configuration);
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,

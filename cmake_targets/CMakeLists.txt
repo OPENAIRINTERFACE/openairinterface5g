@@ -2482,8 +2482,8 @@ add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_
 target_link_libraries(enbscope ${XFORMS_LIBRARIES})
 target_link_libraries(uescope ${XFORMS_LIBRARIES})
 
-add_library(gnbscope MODULE ${XFORMS_SOURCE_NR})
-target_link_libraries(gnbscope ${XFORMS_LIBRARIES})
+add_library(nrscope MODULE ${XFORMS_SOURCE_NR})
+target_link_libraries(nrscope ${XFORMS_LIBRARIES})
 
 
 add_library(rfsimulator MODULE 
@@ -2632,7 +2632,7 @@ add_executable(ocp-enb
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer)
+add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer coding params_libconfig rfsimulator)
 
 target_link_libraries (ocp-enb
   -Wl,--start-group
@@ -2739,7 +2739,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE_NR}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2821,7 +2821,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${XFORMS_SOURCE_NR}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${UTIL_SRC}
   ${CONFIG_SOURCES}

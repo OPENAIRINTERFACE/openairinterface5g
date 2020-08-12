@@ -119,8 +119,6 @@ int restart_L1L2(module_id_t gnb_id) {
 
 static int wait_for_sync = 0;
 static char *itti_dump_file = NULL;
-static char *parallel_config = NULL;
-static char *worker_config = NULL;
 static double snr_dB=20;
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};

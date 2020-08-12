@@ -765,7 +765,7 @@ int main( int argc, char **argv ) {
   }
 
   if(IS_SOFTMODEM_DOFORMS)
-    load_softscope("ue");
+    load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);
