@@ -769,7 +769,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 }
 
-uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
+int8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
 
   uint8_t hrq_id;
   uint8_t max_ul_harq_pids = 3; // temp: for testing
@@ -795,6 +795,8 @@ uint8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
       return hrq_id;
     }
   }
+  LOG_E(MAC,"All UL HARQ processes are busy. Cannot schedule ULSCH\n");
+  return -1;
 }
 
 void schedule_fapi_ul_pdu(int Mod_idP,
@@ -999,7 +1001,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
     //Optional Data only included if indicated in pduBitmap
-    uint8_t harq_id = select_ul_harq_pid(&UE_list->UE_sched_ctrl[UE_id]);
+    int8_t harq_id = select_ul_harq_pid(&UE_list->UE_sched_ctrl[UE_id]);
+    if (harq_id < 0) return;
     NR_UE_ul_harq_t *cur_harq = &UE_list->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
