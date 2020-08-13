@@ -639,7 +639,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   for (preamble_index=0 ; preamble_index<64 ; preamble_index++) {
 
-    if (LOG_DEBUGFLAG(PRACH)){
+//    if (LOG_DEBUGFLAG(PRACH)){
+		  if(1) {
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],(N_ZC==839) ? 840: 140));
       if (en>60) LOG_D(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
     }
@@ -718,7 +719,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     }
 
     // Compute DFT of RX signal (conjugate input, results in conjugate output) for each new rootSequenceIndex
-    if (LOG_DEBUGFLAG(PRACH)) {
+//    if (LOG_DEBUGFLAG(PRACH)) {
+		if(1) {
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
       if (en>60) LOG_I(PHY,"frame %d, subframe %d : preamble index %d, NCS %d, N_ZC/NCS %d: offset %d, preamble shift %d , en %d)\n",
 		       frame,subframe,preamble_index,NCS,N_ZC/NCS,preamble_offset,preamble_shift,en);
@@ -782,7 +784,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       lev = (int32_t)prach_ifft[(preamble_shift2+i)];
       levdB = dB_fixed_times10(lev);
       if (levdB>*max_preamble_energy) {
-	LOG_D(PHY,"preamble_index %d, delay %d en %d dB > %d dB\n",preamble_index,i,levdB,*max_preamble_energy);
+	LOG_I(PHY,"preamble_index %d, delay %d en %d dB > %d dB\n",preamble_index,i,levdB,*max_preamble_energy);
 	*max_preamble_energy  = levdB;
 	*max_preamble_delay   = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate 
 	*max_preamble         = preamble_index;
