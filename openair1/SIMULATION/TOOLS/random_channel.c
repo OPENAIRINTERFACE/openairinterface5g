@@ -695,9 +695,10 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         sum_amps += chan_desc->amps[i];
       }
 
-      for (i = 0; i<chan_desc->nb_taps; i++)
+      for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i] /= sum_amps;
-
+	tdl_delays[i] *= DS_TDL;
+      }
       chan_desc->delays         = tdl_delays;
       chan_desc->ricean_factor  = tdl_ricean_factor;
       chan_desc->aoa            = 0;
@@ -1733,15 +1734,14 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
 
               desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
               desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
-              //    printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
+	      //	      printf("l %d : desc->ch.x %f, s %e, delay %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x,s,desc->delays[l]);
             } //nb_taps
 
 #ifdef DEBUG_CH
-            k=0;
-            printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
+            printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
 #endif
-          }
-        } //channel_length
+          } //channel_length
+        } 
       } //aatx
     } //aarx
 

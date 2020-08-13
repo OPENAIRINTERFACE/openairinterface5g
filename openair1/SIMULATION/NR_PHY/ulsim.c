@@ -127,7 +127,7 @@ int main(int argc, char **argv)
   double *r_re[4]= {r_re0,r_re1,r_re2,r_re3};
   double *r_im[4]= {r_im0,r_im1,r_im2,r_im3};
   //uint8_t write_output_file = 0;
-  int trial, n_trials = 1, n_errors = 0, n_false_positive = 0, delay = 0;
+  int trial, n_trials = 1, n_false_positive = 0, delay = 0;
   double maxDoppler = 0.0;
   uint8_t n_tx = 1, n_rx = 1;
   //uint8_t transmission_mode = 1;
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
 
-  double TDL_DS = 30e-9;
+  double DS_TDL = .03;
 
   int ibwps=24;
   int ibwp_rboffset=41;
@@ -253,17 +253,17 @@ int main(int argc, char **argv)
 
       case 'H':
         channel_model = TDL_C;
-	TDL_DS = 30e-9;
+	DS_TDL = .030; // 30 ns
 	break;
   
       case 'I':
 	channel_model = TDL_C;
-	TDL_DS = 300e-9;
+	DS_TDL = .3;  // 300ns
         break;
      
       case 'J':
 	channel_model=TDL_D;
-	TDL_DS = 30e-9;
+	DS_TDL = .03;
 	break;
 
       default:
@@ -435,19 +435,20 @@ int main(int argc, char **argv)
   double sampling_frequency;
   double bandwidth;
 
-  if (N_RB_UL >= 217) sampling_frequency = 122.88e6;
-  else if (N_RB_UL >= 106) sampling_frequency = 61.44e6;
+  if (N_RB_UL >= 217) sampling_frequency = 122.88;
+  else if (N_RB_UL >= 106) sampling_frequency = 61.44;
   else { printf("Need at least 106 PRBs\b"); exit(-1); }
-  if (N_RB_UL == 273) bandwidth = 100e6;
-  else if (N_RB_UL == 217) bandwidth = 80e6;
-  else if (N_RB_UL == 106) bandwidth = 40e6;
+  if (N_RB_UL == 273) bandwidth = 100;
+  else if (N_RB_UL == 217) bandwidth = 80;
+  else if (N_RB_UL == 106) bandwidth = 40;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
 			   
+  if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
                                 sampling_frequency,
                                 bandwidth,
-				TDL_DS,
+				DS_TDL,
                                 0, 0, 0);
 
   UE2gNB->max_Doppler = maxDoppler;
@@ -588,7 +589,7 @@ int main(int argc, char **argv)
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
   uint32_t errors_decoding   = 0;
-  uint32_t errors_scrambling = 0;
+  
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -633,19 +634,23 @@ int main(int argc, char **argv)
 
   //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   snrRun = 0;
+  int n_errs;
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
     n_false_positive = 0;
     effRate = 0;
-    n_errors = 0;
+    int n_errors[4] = {0,0,0,0};;
+    int round_trials[4]={0,0,0,0};
+    uint32_t errors_scrambling[4] = {0,0,0,0};
+
     for (trial = 0; trial < n_trials; trial++) {
     uint8_t round = 0;
 
     crc_status = 1;
-    errors_scrambling  = 0;
     errors_decoding    = 0;
     while (round<max_rounds && crc_status) {
+      round_trials[round]++;
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
@@ -837,13 +842,12 @@ int main(int argc, char **argv)
 
 	if (UE2gNB->max_Doppler == 0) {
 	  multipath_channel(UE2gNB,s_re,s_im,r_re,r_im,
-			    slot_length,0);
+			    slot_length,0,(n_trials==1)?1:0);
 	} else {
 	  multipath_tv_channel(UE2gNB,s_re,s_im,r_re,r_im,
 			       2*slot_length,0);
 	}
 	for (i=0; i<slot_length; i++) {
-	  if (n_trials== 1 && i<256) printf("i %d : (%f,%f)*%f = (%f,%f) \n",i,r_re[0][i],r_im[0][i],tx_gain,r_re[0][i]*tx_gain,r_im[0][i]*tx_gain);
 	  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
 	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((tx_gain*r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
 	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((tx_gain*r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
@@ -901,104 +905,116 @@ int main(int argc, char **argv)
 	}
         start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
-
+	
 	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
 	    gNB->ulsch[0][0]->max_ldpc_iterations+1) {
 	  error_flag = 1; 
-	  n_errors++;
-    crc_status = 1;
+	  n_errors[round]++;
+	  crc_status = 1;
 	} else {
-    crc_status = 0;
-  }
-    if(n_trials==1) printf("end of round %d rv_index %d\n",round, rv_index);
-    round++;
+	  crc_status = 0;
+	}
+	if(n_trials==1) printf("end of round %d rv_index %d\n",round, rv_index);
+
+	for (i = 0; i < available_bits; i++) {
+	  
+	  if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
+	     ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
+	    {
+	      /*if(errors_scrambling == 0)
+		printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
+	      errors_scrambling[round]++;
+	    }
+	}
+	round++;
+
     } // round
-	
+    
         //----------------------------------------------------------
         //----------------- count and print errors -----------------
         //----------------------------------------------------------
 
-        for (i = 0; i < available_bits; i++) {
 
-          if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
-             ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
-          {
-            /*if(errors_scrambling == 0)
-              printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
-            errors_scrambling++;
-          }
-        }
-
-        if (errors_scrambling > 0) {
-	  if (n_trials==1)
-	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling);
-        }
-
-        for (i = 0; i < TBS; i++) {
-
-          estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-          test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-
-          if (estimated_output_bit[i] != test_input_bit[i]) {
-            /*if(errors_decoding == 0)
-              printf("\x1B[34m""[frame %d][trial %d]\t1st bit in error in decoding     = %d\n" "\x1B[0m", frame, trial, i);*/
-            errors_decoding++;
-          }
-        }
-	if (n_trials == 1) {
-	  for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
-	    for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	      /*if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
-	      printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
-		     i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
-		     i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-		     ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
-	    }
+    
+    if (n_trials == 1 && errors_scrambling[0] > 0) {
+      printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling);
+    }
+    
+    for (i = 0; i < TBS; i++) {
+      
+      estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
+      test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
+      
+      if (estimated_output_bit[i] != test_input_bit[i]) {
+	/*if(errors_decoding == 0)
+	  printf("\x1B[34m""[frame %d][trial %d]\t1st bit in error in decoding     = %d\n" "\x1B[0m", frame, trial, i);*/
+	errors_decoding++;
+      }
+    }
+    if (n_trials == 1) {
+      for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
+	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
+	  /*if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
+	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
+	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
+	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
+	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
 	}
-        if (errors_decoding > 0 && error_flag == 0) {
-          n_false_positive++;
-	  if (n_trials==1)
-	    printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
-        } 
-        roundStats[snrRun] += ((float)round);
-        if (!crc_status) effRate += ((float)TBS)/round;
-      } // trial loop
-
-      roundStats[snrRun]/=((float)n_trials);
-      effRate /= n_trials;
-
-      printf("*****************************************\n");
-      printf("SNR %f: n_errors (negative CRC) = %d/%d, false_positive %d/%d, errors_scrambling %u/%u\n", SNR, n_errors, n_trials, n_false_positive, n_trials, errors_scrambling, available_bits*n_trials);
+    }
+    if (errors_decoding > 0 && error_flag == 0) {
+      n_false_positive++;
+      if (n_trials==1)
+	printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in decoding     = %u\n" "\x1B[0m", frame, trial, errors_decoding);
+    } 
+    roundStats[snrRun] += ((float)round);
+    if (!crc_status) effRate += ((float)TBS)/round;
+    } // trial loop
+    
+    roundStats[snrRun]/=((float)n_trials);
+    effRate /= n_trials;
+    
+    printf("*****************************************\n");
+    printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0], round_trials[0],n_errors[1], round_trials[1],n_errors[2], round_trials[2],n_errors[3], round_trials[3], n_false_positive, n_trials, errors_scrambling[0],available_bits*n_trials,errors_scrambling[1],available_bits*n_trials,errors_scrambling[2],available_bits*n_trials,errors_scrambling[3],available_bits*n_trials);
+    printf("\n");
+    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR,
+	   (double)n_errors[0]/round_trials[0],
+	   (double)n_errors[1]/round_trials[0],
+	   (double)n_errors[2]/round_trials[0],
+	   (double)n_errors[3]/round_trials[0],
+	   (double)errors_scrambling[0]/available_bits/round_trials[0],
+	   (double)errors_scrambling[1]/available_bits/round_trials[0],
+	   (double)errors_scrambling[2]/available_bits/round_trials[0],
+	   (double)errors_scrambling[3]/available_bits/round_trials[0],
+	   roundStats[snrRun],effRate,effRate/TBS*100,TBS);
+    printf("*****************************************\n");
+    printf("\n");
+    
+    if (print_perf==1) {
+      printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
+      printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
+      printStatIndent(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
+      printStatIndent(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
+      printStatIndent(&gNB->ulsch_llr_stats,"ULSCH llr computation");
+      printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
+      printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+      printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
+      printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
+      printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
       printf("\n");
-      printf("SNR %f: Channel BLER %e, Channel BER %e Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR,(double)n_errors/n_trials,(double)errors_scrambling/available_bits/n_trials,roundStats[snrRun],effRate,effRate/TBS*100,TBS);
-      printf("*****************************************\n");
-      printf("\n");
- 
-      if (print_perf==1) {
-        printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
-        printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
-        printStatIndent(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
-        printStatIndent(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
-        printStatIndent(&gNB->ulsch_llr_stats,"ULSCH llr computation");
-        printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
-        printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
-        printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
-        printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
-        printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
-        printf("\n");
-      }
-
-      if(n_trials==1)
-	break;
-
-      if ((float)n_errors/(float)n_trials <= target_error_rate) {
-	printf("*************\n");
-	printf("PUSCH test OK\n");
-	printf("*************\n");
-	break;
-      }
+    }
+    
+    if(n_trials==1)
+      break;
+    
+    if ((float)n_errors[0]/(float)n_trials <= target_error_rate) {
+      printf("*************\n");
+      printf("PUSCH test OK\n");
+      printf("*************\n");
+      break;
+    }
       
     snrRun++;
+    n_errs = n_errors[0];
   } // SNR loop
   printf("\n");
 
@@ -1014,5 +1030,5 @@ int main(int argc, char **argv)
   if (scg_fd)
     fclose(scg_fd);
 
-  return (n_errors);
+  return (n_errs);
 }

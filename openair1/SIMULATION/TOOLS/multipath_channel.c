@@ -44,7 +44,8 @@ void multipath_channel(channel_desc_t *desc,
                        double rx_sig_re[2][30720*2],
                        double rx_sig_im[2][30720*2],
                        uint32_t length,
-                       uint8_t keep_channel)
+                       uint8_t keep_channel,
+		       int log_channel)
 {
 
   int i,ii,j,l;
@@ -150,7 +151,8 @@ void multipath_channel(channel_desc_t *desc,
                        double *rx_sig_re[2],
                        double *rx_sig_im[2],
                        uint32_t length,
-                       uint8_t keep_channel)
+                       uint8_t keep_channel,
+		       int log_channel)
 {
 
   int i,ii,j,l;
@@ -196,6 +198,11 @@ void multipath_channel(channel_desc_t *desc,
 
           rx_tmp.x += (tx.x * desc->ch[ii+(j*desc->nb_rx)][l].x) - (tx.y * desc->ch[ii+(j*desc->nb_rx)][l].y);
           rx_tmp.y += (tx.y * desc->ch[ii+(j*desc->nb_rx)][l].x) + (tx.x * desc->ch[ii+(j*desc->nb_rx)][l].y);
+	  if (i==0 && log_channel == 1) {
+	    printf("channel[%d][%d][%d] = %f dB (%e,%e)\n",ii,j,l,10*log10(pow(desc->ch[ii+(j*desc->nb_rx)][l].x,2.0)+pow(desc->ch[ii+(j*desc->nb_rx)][l].y,2.0)),
+		   desc->ch[ii+(j*desc->nb_rx)][l].x,
+		   desc->ch[ii+(j*desc->nb_rx)][l].y);
+	  }
         } //l
       }  // j
 

@@ -277,7 +277,8 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
            double rx_sig_re[2],
            double rx_sig_im[2],
            uint32_t length,
-           uint8_t keep_channel)
+           uint8_t keep_channel,
+	   int log_channel)
 
 \brief This function generates and applys a random frequency selective random channel model.
 @param desc Pointer to channel descriptor
@@ -287,6 +288,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 @param rx_sig_im output signal (imaginary component)
 @param length Length of input signal
 @param keep_channel Set to 1 to keep channel constant for null-B/F
+@param log_channel=1 make channel coefficients come out for first sample of input
 */
 
 void multipath_channel(channel_desc_t *desc,
@@ -295,7 +297,8 @@ void multipath_channel(channel_desc_t *desc,
                        double *rx_sig_re[2],
                        double *rx_sig_im[2],
                        uint32_t length,
-                       uint8_t keep_channel);
+                       uint8_t keep_channel,
+		       int log_channel);
 /*
 \fn double compute_pbch_sinr(channel_desc_t *desc,
                              channel_desc_t *desc_i1,
