@@ -1167,6 +1167,7 @@ int main ( int argc, char **argv ) {
   T_Config_Init();
 #endif
   configure_linux();
+  set_softmodem_sighandler();
   cpuf=get_cpu_freq_GHz();
   set_taus_seed (0);
 
