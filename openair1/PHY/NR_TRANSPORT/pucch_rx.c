@@ -1047,6 +1047,8 @@ void init_pucch2_luts() {
     bit = (i&0x80) > 0 ? 0 : 1;
    *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,7);
    *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,7);
+
+#ifdef DEBUG_NR_PUCCH_RX
    printf("i %d, lut_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",i,
 	  ((int16_t *)lut_num_i)[0],
 	  ((int16_t *)lut_num_i)[1],
@@ -1056,6 +1058,7 @@ void init_pucch2_luts() {
 	  ((int16_t *)lut_num_i)[5],
 	  ((int16_t *)lut_num_i)[6],
 	  ((int16_t *)lut_num_i)[7]);
+#endif 
   }
 }
 

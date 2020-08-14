@@ -1018,7 +1018,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 unsigned char harq_pid)
 {
 
-  uint8_t aarx, aatx, dmrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
+  uint8_t aarx, aatx, dmrs_symbol_flag, ptrs_symbol_flag; // dmrs_symbol_flag, a flag to indicate DMRS REs in current symbol
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   uint8_t L_ptrs = 0; // PTRS parameter
   int avgs;
@@ -1027,7 +1027,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
 
   dmrs_symbol_flag = 0;
-  gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol = 0;
+  ptrs_symbol_flag = 0;
 
   if(symbol == rel15_ul->start_symbol_index){
     gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = 0;
@@ -1069,7 +1069,10 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {  // if there is ptrs pdu
     if(is_ptrs_symbol(symbol, gNB->pusch_vars[ulsch_id]->ptrs_symbols))
+    {
+      ptrs_symbol_flag = 1;
       gNB->pusch_vars[ulsch_id]->ptrs_symbol_index = symbol;
+    }
   }
 
 
@@ -1099,6 +1102,12 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul,
                                 frame_parms);
     stop_meas(&gNB->ulsch_rbs_extraction_stats);
+
+    if(ptrs_symbol_flag == 1)
+    {
+      /*  Subtract total PTRS RE's in the smybol from PUSCH RE's  */
+      nb_re_pusch -= gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol;
+    }
 
     nr_ulsch_scale_channel(gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
                            frame_parms,

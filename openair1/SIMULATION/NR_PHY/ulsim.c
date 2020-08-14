@@ -561,6 +561,7 @@ int main(int argc, char **argv)
   uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
+  int ptrs_symbols = 0; // to calculate total PTRS RE's in a slot
 
   if(1<<ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
@@ -838,6 +839,15 @@ int main(int argc, char **argv)
         //----------------- count and print errors -----------------
         //----------------------------------------------------------
 
+        if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+            for (int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++){
+               ptrs_symbols += ((gNB->pusch_vars[UE_id]->ptrs_symbols) >> i) & 1;
+            }
+            /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
+            available_bits = available_bits - (2 * ptrs_symbols * (nb_rb/((ptrs_freq_density)?4:2)));
+            printf("After PTRS subtraction available_bits are : %d \n", available_bits);
+        }
+
         for (i = 0; i < available_bits; i++) {
 
           if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
@@ -865,7 +875,7 @@ int main(int argc, char **argv)
             errors_decoding++;
           }
         }
-	if (n_trials == 1) {
+	if (n_trials == 1 && errors_decoding > 0) {
 	  for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	    for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
 	      if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
