@@ -38,7 +38,7 @@ void nr_modulation(uint32_t *in,
   uint32_t bit_cnt;
   uint64_t x,x1,x2;
     
-#if defined(__AVX2__)
+#if 0//defined(__AVX2__)
   uint16_t *in_2bytes = (uint16_t*) in;
   __m256i *nr_mod_table256;
   __m256i *out256;
@@ -113,7 +113,9 @@ void nr_modulation(uint32_t *in,
       out32[i] = nr_mod_table32[in_bytes[i]];
     return;
 
-#if defined(__AVX2__)
+#if 0//defined(__AVX2__) 
+// disabling this as it is slower than SSE2 
+// (maybe because L1 cache could not hold the large table)
   case 2:
     nr_mod_table256 = (__m256i*) nr_qpsk_2byte_mod_table;
     out256 = (__m256i*) out;

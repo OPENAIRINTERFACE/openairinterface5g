@@ -31,7 +31,7 @@
 
 short nr_qpsk_mod_table[8];
 
-#if defined(__AVX2__)
+#if 0//defined(__AVX2__)
 __m256i nr_qpsk_2byte_mod_table[65536];
 #elif defined(__SSE2__)
 __m128i nr_qpsk_byte_mod_table[2048];

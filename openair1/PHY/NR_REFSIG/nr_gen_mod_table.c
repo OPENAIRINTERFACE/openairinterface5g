@@ -34,7 +34,7 @@ void nr_generate_modulation_table() {
 
 short nr_qpsk_mod_table[8] = {16384,16384,-16384,16384,16384,-16384,-16384,-16384};
 
-#if defined(__AVX2__)
+#if 0//defined(__AVX2__)
   //QPSK m256
   table = (short*) nr_qpsk_2byte_mod_table;
   for (i=0; i<65536; i++) {
