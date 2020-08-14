@@ -27,7 +27,6 @@ void nr_modulation(uint32_t *in,
                    uint16_t mod_order,
                    int16_t *out)
 {
-  uint16_t offset;
   uint16_t mask = ((1<<mod_order)-1);
   int32_t* nr_mod_table32;
   int32_t* out32 = (int32_t*) out;
@@ -47,9 +46,6 @@ void nr_modulation(uint32_t *in,
   __m128i *nr_mod_table128;
   __m128i *out128;
 #endif
-
-  offset = (mod_order==2)? NR_MOD_TABLE_QPSK_OFFSET : (mod_order==4)? NR_MOD_TABLE_QAM16_OFFSET : \
-                    (mod_order==6)? NR_MOD_TABLE_QAM64_OFFSET: (mod_order==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
 
   LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
@@ -114,7 +110,7 @@ void nr_modulation(uint32_t *in,
   case 8:
     nr_mod_table32 = (int32_t*) nr_256qam_mod_table;
     for (i=0; i<length/8; i++)
-      out32[i] = nr_mod_table32[(offset+in_bytes[i])];
+      out32[i] = nr_mod_table32[in_bytes[i]];
     return;
 
 #if defined(__AVX2__)
@@ -153,7 +149,7 @@ void nr_modulation(uint32_t *in,
   {
     idx = ((in[i*mod_order/32]>>((i*mod_order)&0x1f)) & mask);
 
-    out32[i] = nr_mod_table32[(offset+idx)];
+    out32[i] = nr_mod_table32[idx];
   }
 }
 
