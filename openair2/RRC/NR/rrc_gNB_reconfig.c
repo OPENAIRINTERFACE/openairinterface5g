@@ -56,6 +56,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int initial_csi_index) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
+
+  if(servingcellconfigcommon->ssb_PositionsInBurst->present !=2)
+    AssertFatal(1==0,"Currenrly implemented only for medium size SSB bitmap\n");
+  uint8_t bitmap = servingcellconfigcommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0];
+
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
@@ -193,8 +198,28 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
-#if 0
+
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList));
+
+ int n_ssb = 0;
+ NR_TCI_State_t *tcic[8];
+ for (int i=0;i<8;i++) {
+   if ((bitmap>>(7-i))&0x01){
+     tcic[i]=calloc(1,sizeof(*tcic[i]));
+     tcic[i]->tci_StateId=n_ssb;
+     tcic[i]->qcl_Type1.cell=NULL;
+     tcic[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcic[i]->qcl_Type1.bwp_Id));
+     *tcic[i]->qcl_Type1.bwp_Id=1;
+     tcic[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
+     tcic[i]->qcl_Type1.referenceSignal.choice.ssb = i;
+     tcic[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
+     ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcic[i]);
+     n_ssb++;
+   }
+ }
+
+
+#if 0
 
  NR_TCI_State_t*tci0=calloc(1,sizeof(*tci0));
  tci0->tci_StateId=0;
@@ -276,85 +301,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  tci7->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci7);
 
- NR_TCI_State_t*tci8=calloc(1,sizeof(*tci8));
- tci8->tci_StateId=8;
- tci8->qcl_Type1.cell=NULL;
- tci8->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci8->qcl_Type1.bwp_Id));
- *tci8->qcl_Type1.bwp_Id=1;
- tci8->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci8->qcl_Type1.referenceSignal.choice.ssb = 0;
- tci8->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci8);
-
- NR_TCI_State_t*tci9=calloc(1,sizeof(*tci9));
- tci9->tci_StateId=9;
- tci9->qcl_Type1.cell=NULL;
- tci9->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci9->qcl_Type1.bwp_Id));
- *tci9->qcl_Type1.bwp_Id=1;
- tci9->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci9->qcl_Type1.referenceSignal.choice.ssb = 1;
- tci9->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci9);
-
- NR_TCI_State_t*tci10=calloc(1,sizeof(*tci10));
- tci10->tci_StateId=10;
- tci10->qcl_Type1.cell=NULL;
- tci10->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci10->qcl_Type1.bwp_Id));
- *tci10->qcl_Type1.bwp_Id=1;
- tci10->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci10->qcl_Type1.referenceSignal.choice.ssb = 2;
- tci10->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci10);
-
- NR_TCI_State_t*tci11=calloc(1,sizeof(*tci11));
- tci11->tci_StateId=11;
- tci11->qcl_Type1.cell=NULL;
- tci11->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci11->qcl_Type1.bwp_Id));
- *tci11->qcl_Type1.bwp_Id=1;
- tci11->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci11->qcl_Type1.referenceSignal.choice.ssb = 3;
- tci11->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci11);
-
- NR_TCI_State_t*tci12=calloc(1,sizeof(*tci12));
- tci12->tci_StateId=12;
- tci12->qcl_Type1.cell=NULL;
- tci12->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci12->qcl_Type1.bwp_Id));
- *tci12->qcl_Type1.bwp_Id=1;
- tci12->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci12->qcl_Type1.referenceSignal.choice.ssb = 4;
- tci12->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci12);
-
- NR_TCI_State_t*tci13=calloc(1,sizeof(*tci13));
- tci13->tci_StateId=13;
- tci13->qcl_Type1.cell=NULL;
- tci13->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci13->qcl_Type1.bwp_Id));
- *tci13->qcl_Type1.bwp_Id=1;
- tci13->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci13->qcl_Type1.referenceSignal.choice.ssb = 5;
- tci13->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci13);
-
- NR_TCI_State_t*tci14=calloc(1,sizeof(*tci14));
- tci14->tci_StateId=14;
- tci14->qcl_Type1.cell=NULL;
- tci14->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci14->qcl_Type1.bwp_Id));
- *tci14->qcl_Type1.bwp_Id=1;
- tci14->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci14->qcl_Type1.referenceSignal.choice.ssb = 6;
- tci14->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci14);
-
- NR_TCI_State_t*tci15=calloc(1,sizeof(*tci15));
- tci15->tci_StateId=15;
- tci15->qcl_Type1.cell=NULL;
- tci15->qcl_Type1.bwp_Id=calloc(1,sizeof(*tci15->qcl_Type1.bwp_Id));
- *tci15->qcl_Type1.bwp_Id=1;
- tci15->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tci15->qcl_Type1.referenceSignal.choice.ssb = 7;
- tci15->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tci15);
 #endif
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToReleaseList=NULL;
@@ -436,9 +382,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
  NR_TCI_StateId_t *tci[8];
  for (int i=0;i<8;i++) {
-   tci[i]=calloc(1,sizeof(*tci[i]));
-   *tci[i] = i;
-   ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
+   if ((bitmap>>(7-i))&0x01){
+     tci[i]=calloc(1,sizeof(*tci[i]));
+     *tci[i] = i;
+     ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
+   }
  }
  coreset->tci_StatesPDCCH_ToReleaseList = NULL;
  coreset->tci_PresentInDCI = NULL;
@@ -567,7 +515,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=NULL;
+ //bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=NULL;
+ bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
+
 #if 0
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
 
@@ -650,87 +600,26 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  tcid7->qcl_Type1.referenceSignal.choice.csi_rs = 30;
  tcid7->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeA;
  ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid7);
-
- NR_TCI_State_t*tcid8=calloc(1,sizeof(*tcid8));
- tcid8->tci_StateId=8;
- tcid8->qcl_Type1.cell=NULL;
- tcid8->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid8->qcl_Type1.bwp_Id));
- *tcid8->qcl_Type1.bwp_Id=1;
- tcid8->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid8->qcl_Type1.referenceSignal.choice.ssb = 0;
- tcid8->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid8);
-
- NR_TCI_State_t*tcid9=calloc(1,sizeof(*tcid9));
- tcid9->tci_StateId=9;
- tcid9->qcl_Type1.cell=NULL;
- tcid9->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid9->qcl_Type1.bwp_Id));
- *tcid9->qcl_Type1.bwp_Id=1;
- tcid9->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid9->qcl_Type1.referenceSignal.choice.ssb = 1;
- tcid9->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid9);
-
- NR_TCI_State_t*tcid10=calloc(1,sizeof(*tcid10));
- tcid10->tci_StateId=10;
- tcid10->qcl_Type1.cell=NULL;
- tcid10->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid10->qcl_Type1.bwp_Id));
- *tcid10->qcl_Type1.bwp_Id=1;
- tcid10->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid10->qcl_Type1.referenceSignal.choice.ssb = 2;
- tcid10->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid10);
-
- NR_TCI_State_t*tcid11=calloc(1,sizeof(*tcid11));
- tcid11->tci_StateId=11;
- tcid11->qcl_Type1.cell=NULL;
- tcid11->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid11->qcl_Type1.bwp_Id));
- *tcid11->qcl_Type1.bwp_Id=1;
- tcid11->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid11->qcl_Type1.referenceSignal.choice.ssb = 3;
- tcid11->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid11);
-
- NR_TCI_State_t*tcid12=calloc(1,sizeof(*tcid12));
- tcid12->tci_StateId=12;
- tcid12->qcl_Type1.cell=NULL;
- tcid12->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid12->qcl_Type1.bwp_Id));
- *tcid12->qcl_Type1.bwp_Id=1;
- tcid12->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid12->qcl_Type1.referenceSignal.choice.ssb = 4;
- tcid12->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid12);
-
- NR_TCI_State_t*tcid13=calloc(1,sizeof(*tcid13));
- tcid13->tci_StateId=13;
- tcid13->qcl_Type1.cell=NULL;
- tcid13->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid13->qcl_Type1.bwp_Id));
- *tcid13->qcl_Type1.bwp_Id=1;
- tcid13->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid13->qcl_Type1.referenceSignal.choice.ssb = 5;
- tcid13->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid13);
-
- NR_TCI_State_t*tcid14=calloc(1,sizeof(*tcid14));
- tcid14->tci_StateId=14;
- tcid14->qcl_Type1.cell=NULL;
- tcid14->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid14->qcl_Type1.bwp_Id));
- *tcid14->qcl_Type1.bwp_Id=1;
- tcid14->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid14->qcl_Type1.referenceSignal.choice.ssb = 6;
- tcid14->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid14);
-
- NR_TCI_State_t*tcid15=calloc(1,sizeof(*tcid15));
- tcid15->tci_StateId=15;
- tcid15->qcl_Type1.cell=NULL;
- tcid15->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid15->qcl_Type1.bwp_Id));
- *tcid15->qcl_Type1.bwp_Id=1;
- tcid15->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
- tcid15->qcl_Type1.referenceSignal.choice.ssb = 7;
- tcid15->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
- ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid15);
 #endif
+
+
+ n_ssb = 0;
+ NR_TCI_State_t *tcid[8];
+ for (int i=0;i<8;i++) {
+   if ((bitmap>>(7-i))&0x01){
+     tcid[i]=calloc(1,sizeof(*tcid[i]));
+     tcid[i]->tci_StateId=n_ssb;
+     tcid[i]->qcl_Type1.cell=NULL;
+     tcid[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid[i]->qcl_Type1.bwp_Id));
+     *tcid[i]->qcl_Type1.bwp_Id=1;
+     tcid[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
+     tcid[i]->qcl_Type1.referenceSignal.choice.ssb = i;
+     tcid[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
+     ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid[i]);
+     n_ssb++;
+   }
+ }
+
 
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToReleaseList=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->vrb_ToPRB_Interleaver=NULL;
@@ -1135,34 +1024,45 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
+
  NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
- ssbresset0->csi_SSB_ResourceSetId=0; 
- NR_SSB_Index_t *ssbresset00=calloc(1,sizeof(*ssbresset00));
- *ssbresset00=0;
- ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset00);
- if (n_physical_antenna_ports > 1) {
+ ssbresset0->csi_SSB_ResourceSetId=0;
+ if ((bitmap>>7)&0x01){
+   NR_SSB_Index_t *ssbresset00=calloc(1,sizeof(*ssbresset00));
+   *ssbresset00=0;
+   ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset00);
+ }
+ if ((bitmap>>6)&0x01) {
    NR_SSB_Index_t *ssbresset01=calloc(1,sizeof(*ssbresset01));
    *ssbresset01=1;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset01);
  }
- if (n_physical_antenna_ports > 3) {
+ if ((bitmap>>5)&0x01) {
    NR_SSB_Index_t *ssbresset02=calloc(1,sizeof(*ssbresset02));
    *ssbresset02=2;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset02);
+ }
+ if ((bitmap>>4)&0x01) {
    NR_SSB_Index_t *ssbresset03=calloc(1,sizeof(*ssbresset03));
    *ssbresset03=3;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset03);
  }
- if (n_physical_antenna_ports > 7) {
+ if ((bitmap>>3)&0x01) {
    NR_SSB_Index_t *ssbresset04=calloc(1,sizeof(*ssbresset04));
    *ssbresset04=4;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset04);
+ }
+ if ((bitmap>>2)&0x01) {
    NR_SSB_Index_t *ssbresset05=calloc(1,sizeof(*ssbresset05));
    *ssbresset05=5;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset05);
+ }
+ if ((bitmap>>1)&0x01) {
    NR_SSB_Index_t *ssbresset06=calloc(1,sizeof(*ssbresset06));
    *ssbresset06=6;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset06);
+ }
+ if ((bitmap)&0x01) {
    NR_SSB_Index_t *ssbresset07=calloc(1,sizeof(*ssbresset07));
    *ssbresset07=7;
    ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset07);
