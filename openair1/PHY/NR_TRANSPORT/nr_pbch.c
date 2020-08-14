@@ -61,7 +61,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
   /// QPSK modulation
   for (int m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
-    idx = ((((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((gold_pbch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
+    idx = (((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&3);
     mod_dmrs[m<<1] = nr_qpsk_mod_table[idx<<1];
     mod_dmrs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
 #ifdef DEBUG_PBCH_DMRS
@@ -323,7 +323,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   /// QPSK modulation
   for (int i=0; i<NR_POLAR_PBCH_E>>1; i++) {
-    idx = (((pbch->pbch_e[(i<<1)>>5]>>((i<<1)&0x1f))&1)<<1) ^ ((pbch->pbch_e[((i<<1)+1)>>5]>>(((i<<1)+1)&0x1f))&1);
+    idx = ((pbch->pbch_e[(i<<1)>>5]>>((i<<1)&0x1f))&3);
     mod_pbch_e[i<<1] = nr_qpsk_mod_table[idx<<1];
     mod_pbch_e[(i<<1)+1] = nr_qpsk_mod_table[(idx<<1)+1];
 #ifdef DEBUG_PBCH
