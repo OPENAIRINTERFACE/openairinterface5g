@@ -32,7 +32,14 @@ void nr_generate_modulation_table() {
   uint32_t i,j;
   short* table;
 
-short nr_qpsk_mod_table[8] = {16384,16384,-16384,16384,16384,-16384,-16384,-16384};
+nr_qpsk_mod_table[0] = 16384;
+nr_qpsk_mod_table[1] = 16384;
+nr_qpsk_mod_table[2] = -16384;
+nr_qpsk_mod_table[3] = 16384;
+nr_qpsk_mod_table[4] = 16384;
+nr_qpsk_mod_table[5] = -16384;
+nr_qpsk_mod_table[6] = -16384;
+nr_qpsk_mod_table[7] = -16384;
 
 #if 0//defined(__AVX2__)
   //QPSK m256
