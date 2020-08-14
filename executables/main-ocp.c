@@ -80,6 +80,7 @@ int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];
 int split73;
 char * split73_config;
 int split73;
+int usrp_tx_thread = 0;
 
 static void *ru_thread( void *param );
 void kill_RU_proc(RU_t *ru) {
@@ -1152,6 +1153,7 @@ int restart_L1L2(module_id_t enb_id) {
 }
 
 int main ( int argc, char **argv ) {
+  //mtrace();
   int i;
   int CC_id = 0;
   int node_type = ngran_eNB;
@@ -1165,6 +1167,7 @@ int main ( int argc, char **argv ) {
   T_Config_Init();
 #endif
   configure_linux();
+  set_softmodem_sighandler();
   cpuf=get_cpu_freq_GHz();
   set_taus_seed (0);
 

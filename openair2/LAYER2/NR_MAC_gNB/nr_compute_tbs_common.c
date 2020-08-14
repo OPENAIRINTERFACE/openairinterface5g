@@ -39,6 +39,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 			uint16_t nb_symb_sch,
 			uint16_t nb_dmrs_prb,
                         uint16_t nb_rb_oh,
+                        uint8_t tb_scaling,
 			uint8_t Nl)
 {
 
@@ -54,7 +55,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
     scale = (R>1024)?11:10;
 
     // Intermediate number of information bits
-    Ninfo = (nb_re * R * Qm * Nl)>>scale;
+    Ninfo = ((nb_re * R * Qm * Nl)>>scale)>>tb_scaling;
 
     if (Ninfo <=3824) {
     	n = max(3, floor(log2(Ninfo)) - 6);

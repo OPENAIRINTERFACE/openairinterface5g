@@ -24,8 +24,8 @@
  * \author     R. Knopp, K.H. HSU, G. Casati
  * \date       2019
  * \version    0.1
- * \company    Eurecom / NTUST / Fraunhofer IIS 
- * \email:     knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr, guido.casati@iis.fraunhofer.de 
+ * \company    Eurecom / NTUST / Fraunhofer IIS
+ * \email:     knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr, guido.casati@iis.fraunhofer.de
  * \note
  * \warning
  */
@@ -40,6 +40,10 @@
 #define NR_BCCH_DL_SCH 3 // SI
 
 #define NR_BCCH_BCH 5    // MIB
+
+#define CCCH_PAYLOAD_SIZE_MAX 128
+
+#define RAR_PAYLOAD_SIZE_MAX  128
 
 //  For both DL/UL-SCH
 //  Except:
@@ -67,36 +71,234 @@
 //  R: Reserved bit, set to zero.
 
 typedef struct {
-    uint8_t LCID:6;     // octet 1 [5:0]
-    uint8_t F:1;        // octet 1 [6]
-    uint8_t R:1;        // octet 1 [7]
-    uint8_t L:8;        // octet 2 [7:0]
+  uint8_t LCID: 6;    // octet 1 [5:0]
+  uint8_t F: 1;       // octet 1 [6]
+  uint8_t R: 1;       // octet 1 [7]
+  uint8_t L: 8;       // octet 2 [7:0]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_SHORT;
 
 typedef struct {
-    uint8_t LCID:6;     // octet 1 [5:0]
-    uint8_t F:1;        // octet 1 [6]
-    uint8_t R:1;        // octet 1 [7]
-    uint8_t L1:8;       // octet 2 [7:0]
-    uint8_t L2:8;       // octet 3 [7:0]
+  uint8_t LCID: 6;    // octet 1 [5:0]
+  uint8_t F: 1;       // octet 1 [6]
+  uint8_t R: 1;       // octet 1 [7]
+  uint8_t L1: 8;      // octet 2 [7:0]
+  uint8_t L2: 8;      // octet 3 [7:0]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_LONG;
 
 typedef struct {
-    uint8_t LCID:6;     // octet 1 [5:0]
-    uint8_t R:2;        // octet 1 [7:6]
+  uint8_t LCID: 6;    // octet 1 [5:0]
+  uint8_t R: 2;       // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
+
+// BSR MAC CEs
+// TS 38.321 ch. 6.1.3.1
+// Short BSR for a specific logical channel group ID
+typedef struct {
+  uint8_t Buffer_size: 5;  // octet 1 LSB
+  uint8_t LcgID: 3;        // octet 1 MSB
+} __attribute__ ((__packed__)) NR_BSR_SHORT;
+
+typedef NR_BSR_SHORT NR_BSR_SHORT_TRUNCATED;
+
+// Long BSR for all logical channel group ID
+typedef struct {
+  uint8_t Buffer_size7: 8;
+  uint8_t Buffer_size6: 8;
+  uint8_t Buffer_size5: 8;
+  uint8_t Buffer_size4: 8;
+  uint8_t Buffer_size3: 8;
+  uint8_t Buffer_size2: 8;
+  uint8_t Buffer_size1: 8;
+  uint8_t Buffer_size0: 8;
+  uint8_t LcgID0: 1;
+  uint8_t LcgID1: 1;
+  uint8_t LcgID2: 1;
+  uint8_t LcgID3: 1;
+  uint8_t LcgID4: 1;
+  uint8_t LcgID5: 1;
+  uint8_t LcgID6: 1;
+  uint8_t LcgID7: 1;
+} __attribute__ ((__packed__)) NR_BSR_LONG;
+
+typedef NR_BSR_LONG NR_BSR_LONG_TRUNCATED;
 
 // 38.321 ch. 6.1.3.4
 typedef struct {
-    uint8_t TA_COMMAND:6;   // octet 1 [5:0]
-    uint8_t TAGID:2;        // octet 1 [7:6]
+  uint8_t TA_COMMAND: 6;  // octet 1 [5:0]
+  uint8_t TAGID: 2;       // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_CE_TA;
+
+// single Entry PHR MAC CE
+// TS 38.321 ch. 6.1.3.8
+typedef struct {
+  uint8_t PH: 6;
+  uint8_t R1: 2;
+  uint8_t PCMAX: 6;
+  uint8_t R2: 6;
+} __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
+
+
+// SP ZP CSI-RS Resource Set Activation/Deactivation MAC CE
+// 38.321 ch. 6.1.3.19
+typedef struct {
+  uint8_t BWPID: 2;       // octet 1 [1:0]
+  uint8_t CELLID: 5;      // octet 1 [6:2]
+  uint8_t A_D: 1;         // octet 1 [7]
+  uint8_t CSIRS_RSC_ID: 4; // octet 2 [3:0]
+  uint8_t R: 4;            // octet 2 [7:4]
+} __attribute__ ((__packed__)) NR_MAC_CE_SP_ZP_CSI_RS_RES_SET;
+
+//TS 38.321 Sec 6.1.3.15, TCI State indicaton for UE-Specific PDCCH MAC CE
+typedef struct {
+  uint8_t CoresetId1: 3;   //Octect 1 [2:0]
+  uint8_t ServingCellId: 5; //Octect 1 [7:3]
+  uint8_t TciStateId: 7;   //Octect 2 [6:0]
+  uint8_t CoresetId2: 1;   //Octect 2 [7]
+} __attribute__ ((__packed__)) NR_TCI_PDCCH;
+
+//TS 38.321 Sec 6.1.3.14, TCI State activation/deactivation for UE Specific PDSCH MAC CE
+typedef struct {
+  uint8_t BWP_Id: 2;       //Octect 1 [1:0]
+  uint8_t ServingCellId: 5; //Octect 1 [6:2]
+  uint8_t R: 1;            //Octect 1 [7]
+  uint8_t T[];             //Octects 2 to MAX TCI States/8
+} __attribute__ ((__packed__)) NR_TCI_PDSCH_APERIODIC_CSI;
+
+//TS 6.1.3.16, SP CSI reporting on PUCCH Activation/Deactivation MAC CE
+typedef struct {
+  uint8_t BWP_Id: 2;      //Octect 1 [1:0]
+  uint8_t ServingCellId: 5; //Octect 1 [6:2]
+  uint8_t R1: 1;        //Octect 1 [7]
+  uint8_t S0: 1;        //Octect 2 [0]
+  uint8_t S1: 1;        //Octect 2 [1]
+  uint8_t S2: 1;        //Octect 2 [2]
+  uint8_t S3: 1;        //Octect 2 [3]
+  uint8_t R2: 4;        //Octect 2 [7:4]
+} __attribute__ ((__packed__)) NR_PUCCH_CSI_REPORTING;
+
+
+//TS 38.321 sec 6.1.3.12
+//SP CSI-RS / CSI-IM Resource Set Activation/Deactivation MAC CE
+typedef struct {
+  uint8_t BWP_ID: 2;
+  uint8_t SCID: 5;
+  uint8_t A_D: 1;
+  uint8_t SP_CSI_RSID: 6;
+  uint8_t IM: 1;
+  uint8_t R1: 1;
+  uint8_t SP_CSI_IMID: 6;
+  uint8_t R2: 2;
+  struct TCI_S {
+    uint8_t TCI_STATE_ID: 6;
+    uint8_t R: 2;
+  } __attribute__ ((__packed__)) TCI_STATE;
+} __attribute__ ((__packed__)) CSI_RS_CSI_IM_ACT_DEACT_MAC_CE;
+
+
+//* RAR MAC subheader // TS 38.321 ch. 6.1.5, 6.2.2 *//
+// - E: The Extension field is a flag indicating if the MAC subPDU including this MAC subheader is the last MAC subPDU or not in the MAC PDU
+// - T: The Type field is a flag indicating whether the MAC subheader contains a Random Access Preamble ID or a Backoff Indicator (0, BI) (1, RAPID)
+// - R: Reserved bit, set to "0"
+// - BI: The Backoff Indicator field identifies the overload condition in the cell.
+// - RAPID: The Random Access Preamble IDentifier field identifies the transmitted Random Access Preamble
+
+/*!\brief RAR MAC subheader with RAPID */
+typedef struct {
+  uint8_t RAPID: 6;
+  uint8_t T: 1;
+  uint8_t E: 1;
+} __attribute__ ((__packed__)) NR_RA_HEADER_RAPID;
+
+/*!\brief RAR MAC subheader with Backoff Indicator */
+typedef struct {
+  uint8_t BI: 4;
+  uint8_t R: 2;
+  uint8_t T: 1;
+  uint8_t E: 1;
+} __attribute__ ((__packed__)) NR_RA_HEADER_BI;
+
+// TS 38.321 ch. 6.2.3
+typedef struct {
+  uint8_t TA1: 7;         // octet 1 [6:0]
+  uint8_t R: 1;           // octet 1 [7]
+  uint8_t UL_GRANT_1: 3;  // octet 2 [2:0]
+  uint8_t TA2: 5;         // octet 2 [7:3]
+  uint8_t UL_GRANT_2: 8;  // octet 3 [7:0]
+  uint8_t UL_GRANT_3: 8;  // octet 4 [7:0]
+  uint8_t UL_GRANT_4: 8;  // octet 5 [7:0]
+  uint8_t TCRNTI_1: 8;    // octet 6 [7:0]
+  uint8_t TCRNTI_2: 8;    // octet 7 [7:0]
+} __attribute__ ((__packed__)) NR_MAC_RAR;
+
+// DCI pdu structures. Used by both gNB and UE.
+typedef struct {
+  uint16_t val;
+  uint8_t nbits;
+} dci_field_t;
+
+typedef struct {
+
+  uint8_t     format_indicator; //1 bit
+  uint8_t     ra_preamble_index; //6 bits
+  uint8_t     ss_pbch_index; //6 bits
+  uint8_t     prach_mask_index; //4 bits
+  uint8_t     mcs; //5 bits
+  uint8_t     ndi; //1 bit
+  uint8_t     rv; //2 bits
+  uint8_t     harq_pid; //4 bits
+  uint8_t     tpc; //2 bits
+  uint8_t     short_messages_indicator; //2 bits
+  uint8_t     short_messages; //8 bits
+  uint8_t     tb_scaling; //2 bits
+  uint8_t     pucch_resource_indicator; //3 bits
+  uint8_t     system_info_indicator; //1 bit
+  uint8_t     ulsch_indicator;
+  uint8_t     slot_format_indicator_count;
+  uint8_t     *slot_format_indicators;
+ 
+  uint8_t     pre_emption_indication_count;
+  uint16_t    *pre_emption_indications; //14 bit each
+ 
+  uint8_t     block_number_count;
+  uint8_t     *block_numbers;
+  uint8_t     padding;
+
+  dci_field_t mcs2; //variable
+  dci_field_t ndi2; //variable
+  dci_field_t rv2; //variable
+  dci_field_t frequency_domain_assignment; //variable
+  dci_field_t time_domain_assignment; //variable
+  dci_field_t frequency_hopping_flag; //variable
+  dci_field_t vrb_to_prb_mapping; //variable
+  dci_field_t dai[2]; //variable
+  dci_field_t pdsch_to_harq_feedback_timing_indicator; //variable
+  dci_field_t carrier_indicator; //variable
+  dci_field_t bwp_indicator; //variable
+  dci_field_t prb_bundling_size_indicator; //variable
+  dci_field_t rate_matching_indicator; //variable
+  dci_field_t zp_csi_rs_trigger; //variable
+  dci_field_t transmission_configuration_indication; //variable
+  dci_field_t srs_request; //variable
+  dci_field_t cbgti; //variable
+  dci_field_t cbgfi; //variable
+  dci_field_t srs_resource_indicator; //variable
+  dci_field_t precoding_information; //variable
+  dci_field_t csi_request; //variable
+  dci_field_t ptrs_dmrs_association; //variable
+  dci_field_t beta_offset_indicator; //variable
+  dci_field_t cloded_loop_indicator; //variable
+  dci_field_t ul_sul_indicator; //variable
+  dci_field_t antenna_ports; //variable
+  dci_field_t dmrs_sequence_initialization;
+  dci_field_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+
+} dci_pdu_rel15_t;
 
 //  38.321 ch6.2.1, 38.331
 #define DL_SCH_LCID_CCCH                           0x00
 #define DL_SCH_LCID_DCCH                           0x01
 #define DL_SCH_LCID_DCCH1                          0x02
-#define DL_SCH_LCID_DTCH                           0x03
+#define DL_SCH_LCID_DTCH                           0x04
 #define DL_SCH_LCID_RECOMMENDED_BITRATE            0x2F
 #define DL_SCH_LCID_SP_ZP_CSI_RS_RES_SET_ACT       0x30
 #define DL_SCH_LCID_PUCCH_SPATIAL_RELATION_ACT     0x31
@@ -105,7 +307,7 @@ typedef struct {
 #define DL_SCH_LCID_TCI_STATE_IND_UE_SPEC_PDCCH    0x34
 #define DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH    0x35
 #define DL_SCH_LCID_APERIODIC_CSI_TRI_STATE_SUBSEL 0x36
-#define DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT   0X37 
+#define DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT   0X37
 #define DL_SCH_LCID_DUPLICATION_ACT                0X38
 #define DL_SCH_LCID_SCell_ACT_4_OCT                0X39
 #define DL_SCH_LCID_SCell_ACT_1_OCT                0X3A
@@ -118,8 +320,8 @@ typedef struct {
 #define UL_SCH_LCID_CCCH                           0x00
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
-#define UL_SCH_LCID_DTCH						   0x03
-#define UL_SCH_LCID_SRB3                           0x04
+#define UL_SCH_LCID_SRB3                           0x03
+#define UL_SCH_LCID_DTCH                           0x04
 #define UL_SCH_LCID_CCCH_MSG3                      0x21
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
@@ -133,9 +335,9 @@ typedef struct {
 #define UL_SCH_LCID_L_BSR                          0x3E
 #define UL_SCH_LCID_PADDING                        0x3F
 
-#define NR_MAX_NUM_LCID							   32
-#define NR_MAX_NUM_LCGID							8
-#define MAX_RLC_SDU_SUBHEADER_SIZE					3
+#define NR_MAX_NUM_LCID                32
+#define NR_MAX_NUM_LCGID              8
+#define MAX_RLC_SDU_SUBHEADER_SIZE          3
 
 
 #endif /*__LAYER2_MAC_H__ */

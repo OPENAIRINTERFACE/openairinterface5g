@@ -60,6 +60,17 @@ int flexran_agent_s1ap_stats_reply(mid_t mod_id,
 /* Free allocated S1AP stats message */
 void flexran_agent_s1ap_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
+/* Add or remove MME updates */
+void flexran_agent_handle_mme_update(mid_t mod_id,
+                                     size_t n_mme,
+                                     Protocol__FlexS1apMme **mme);
+
+/* Set a new PLMN configuration */
+void flexran_agent_handle_plmn_update(mid_t mod_id,
+                                      int CC_id,
+                                      size_t n_plmn,
+                                      Protocol__FlexPlmn **plmn_id);
+
 /* Register technology specific interface callbacks */
 int flexran_agent_register_s1ap_xface(mid_t mod_id);
 

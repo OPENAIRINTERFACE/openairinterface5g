@@ -29,6 +29,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <dlfcn.h>
 
 #include "common/utils/LOG/log.h"
 #include "assertions.h"
@@ -260,6 +261,16 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
         global_scheduler_mode=SCHED_MODE_DEFAULT;
         printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
       }
+
+      char *s = *MacRLC_ParamList.paramarray[j][MACRLC_DEFAULT_SCHED_DL_ALGO_IDX].strptr;
+      void *d = dlsym(NULL, s);
+      AssertFatal(d, "%s(): no default scheduler DL algo '%s' found\n", __func__, s);
+      // release default, add new
+      pp_impl_param_t *dl_pp = &RC.mac[j]->pre_processor_dl;
+      dl_pp->dl_algo.unset(&dl_pp->dl_algo.data);
+      dl_pp->dl_algo = *(default_sched_dl_algo_t *) d;
+      dl_pp->dl_algo.data = dl_pp->dl_algo.setup();
+      LOG_I(ENB_APP, "using default scheduler DL algo '%s'\n", dl_pp->dl_algo.name);
     }// j=0..num_inst
   } /*else {// MacRLC_ParamList.numelt > 0 // ignore it
 
@@ -1545,7 +1556,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
               printf("No eMBMS configuration, skipping it\n");
               // eMTC configuration
-              char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char brparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
               config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
               RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
@@ -1554,7 +1565,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               else                            printf("No eMTC configuration, skipping it\n");
 
               // Sidelink configuration
-              char SLparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char SLparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
               config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
               // Sidelink Resource pool information

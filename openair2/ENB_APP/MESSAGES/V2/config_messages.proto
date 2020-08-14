@@ -49,14 +49,8 @@ message flex_cell_config {
 }
 
 message flex_slice_config {
-	// whether remaining RBs after first intra-slice allocation will
-	// be allocated to UEs of the same slice
-	optional bool   intraslice_share_active = 3;
-	// whether remaining RBs after slice allocation will be allocated
-	// to UEs of another slice. Isolated slices will be ignored.
-	optional bool   interslice_share_active = 4;
-	repeated flex_dl_slice dl = 1;
-	repeated flex_ul_slice ul = 2;
+  optional flex_slice_dl_ul_config dl = 6;
+  optional flex_slice_dl_ul_config ul = 7;
 }
 
 message flex_ue_config {

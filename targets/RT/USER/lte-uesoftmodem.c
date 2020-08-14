@@ -171,6 +171,8 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
+int usrp_tx_thread = 0;
+
 
 char *usrp_args=NULL;
 char *usrp_clksrc=NULL;
@@ -757,7 +759,7 @@ int main( int argc, char **argv ) {
   }
 
   if(IS_SOFTMODEM_DOFORMS)
-    load_softscope("ue");
+    load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);

@@ -67,7 +67,7 @@ UE_TIMING_TRACE="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
-OPTIONAL_LIBRARIES="telnetsrv enbscope uescope msc"
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -96,7 +96,9 @@ Options
    enable cmake debugging messages
 --eNB
   Makes the LTE softmodem
---gNB
+--eNBocp
+  Makes the OCP LTE softmodem
+-gNB
   Makes the NR softmodem
 --nrUE
   Makes the NR UE softmodem
@@ -237,7 +239,11 @@ function main() {
             eNB=1
             echo_info "Will compile eNB"
             shift;;
-       --gNB)
+       --eNBocp)
+            eNBocp=1
+            echo_info "Will compile OCP eNB"
+            shift;;
+      --gNB)
             gNB=1
             NR="True"
             echo_info "Will compile gNB"
@@ -443,7 +449,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$gNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -574,12 +580,13 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
     # softmodem compilation
 
     cmake_file=$DIR/$build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
+    echo "project (OpenAirInterface)"                                    >> $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )"       >> $cmake_file
     echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file
@@ -605,6 +612,9 @@ function main() {
     execlist=""
     if [ "$eNB" = "1" ] ; then
       execlist="$execlist lte-softmodem"
+    fi
+    if [ "$eNBocp" = "1" ] ; then
+      execlist="$execlist ocp-enb"
     fi
     if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
@@ -821,7 +831,7 @@ function main() {
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
@@ -959,6 +969,7 @@ function main() {
     wait
   else
     echo_info "10. Bypassing the Tests ..."
+    echo_success "BUILD SHOULD BE SUCCESSFUL"
   fi
 
 }
