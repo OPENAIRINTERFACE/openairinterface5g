@@ -902,6 +902,8 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
 	  LOG_M("rxsigF0_comp.m","rxsF0_comp",
 		&gNB->pusch_vars[0]->rxdataF_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
+		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
         start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
