@@ -84,7 +84,7 @@ int main(int argc, char **argv)
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
-  channel_desc_t *gNB2UE;
+  channel_desc_t *UE2gNB;
   int format=0;
   //uint8_t extended_prefix_flag=0;
   FILE *input_fd=NULL;
@@ -100,6 +100,8 @@ int main(int argc, char **argv)
   uint16_t nrofPRB=2;
   uint8_t timeDomainOCC=0;
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
+
+  double DS_TDL = .03;
   
   int N_RB_DL=273,mu=1;
   float target_error_rate=0.001;
@@ -162,6 +164,20 @@ int main(int argc, char **argv)
       case 'G':
         channel_model=ETU;
         break;
+      case 'H':
+        channel_model = TDL_C;
+	DS_TDL = .030; // 30 ns
+	break;
+  
+      case 'I':
+	channel_model = TDL_C;
+	DS_TDL = .3;  // 300ns
+        break;
+     
+      case 'J':
+	channel_model=TDL_D;
+	DS_TDL = .03;
+	break;
 
       default:
         printf("Unsupported channel model!\n");
@@ -402,9 +418,9 @@ int main(int argc, char **argv)
 	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
   }
 
-  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, 0, 0, 0);
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0);
 
-  if (gNB2UE==NULL) {
+  if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }

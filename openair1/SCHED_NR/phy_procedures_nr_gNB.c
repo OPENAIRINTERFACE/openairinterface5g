@@ -244,11 +244,11 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
   start_meas(&gNB->ulsch_unscrambling_stats);
-  nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
-                        G,
-                        0,
-                        pusch_pdu->data_scrambling_id,
-                        pusch_pdu->rnti);
+  nr_ulsch_unscrambling_optim(gNB->pusch_vars[ULSCH_id]->llr,
+			      G,
+			      0,
+			      pusch_pdu->data_scrambling_id,
+			      pusch_pdu->rnti);
   stop_meas(&gNB->ulsch_unscrambling_stats);
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
