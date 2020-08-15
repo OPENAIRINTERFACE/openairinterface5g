@@ -416,6 +416,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       DevAssert(harq->is_waiting);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
+    nr_rx_acknack(NULL,NULL,uci_234,UL_info,sched_ctrl,stats);
   }
   if ((uci_234->pduBitmap >> 1) & 0x01) {
 
