@@ -646,6 +646,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   int res_found = 0;
 
   pucch_pdu->bit_len_harq = O_ack;
+  pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
 
   uint16_t O_uci = O_csi + O_ack;
 

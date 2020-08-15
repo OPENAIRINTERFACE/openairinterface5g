@@ -191,7 +191,7 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
     uint8_t idx = 0;
     uint8_t ssb_idx = 0;
     uint8_t diff_rsrp_idx = 0;
-    uint8_t bitlen_ssbri = log (nb_ssb_resources)/log (2);
+    uint8_t bitlen_ssbri = nb_ssb_resources>1 ?log (nb_ssb_resources)/log (2):1;
     sched_ctrl->nr_of_csi_report[UE_id] = nb_ssb_resource_set;
 
     LOG_I(MAC,"csi_payload = %d, bitlen_ssbri = %d, nb_ssb_resource_set = %d,nb_ssb_resources = %d\n",payload_size, bitlen_ssbri, nb_ssb_resource_set,nb_ssb_resources);
