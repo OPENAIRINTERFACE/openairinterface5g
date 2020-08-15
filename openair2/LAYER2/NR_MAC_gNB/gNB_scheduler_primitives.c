@@ -1806,59 +1806,6 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   }
 }
 
-<<<<<<< HEAD
-=======
-// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
-void nr_update_pucch_scheduling(int Mod_idP,
-                                int UE_id,
-                                frame_t frameP,
-                                sub_frame_t slotP,
-                                int slots_per_tdd,
-                                int *pucch_id) {
-
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  NR_sched_pucch *curr_pucch;
-  int first_ul_slot_tdd,k,i;
-  uint8_t pdsch_to_harq_feedback[8];
-  int found = 0;
-  int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
-    nr_ulmix_slots++;
-
-  // this is hardcoded for now as ue specific
-  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  get_pdsch_to_harq_feedback(Mod_idP,UE_id,ss_type,pdsch_to_harq_feedback);
-
-  // for each possible ul or mixed slot
-  for (k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
-    // if there is free room in current pucch structure
-    if (curr_pucch->dai_c<MAX_ACK_BITS) {
-      curr_pucch->frame = frameP;
-      curr_pucch->dai_c++;
-      curr_pucch->resource_indicator = 0;//4;//0; // in phytest with only 1 UE we are using just the 1st resource
-      // first pucch occasion in first UL or MIXED slot
-      first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-      i = 0;
-      while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
-        if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
-          found = 1;
-        if (found == 0) i++;
-      }
-      if (found == 1) {
-        // computing slot in which pucch is scheduled
-        curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
-        curr_pucch->timing_indicator = i; // index in the list of timing indicators
-        *pucch_id = k;
-        return;
-      }
-    }
-  }
-  AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
-}
-
->>>>>>> Added more logs and fixed assertion
 
 bool find_free_CCE(module_id_t module_id,
                    sub_frame_t slot,
