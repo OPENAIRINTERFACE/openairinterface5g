@@ -2979,6 +2979,7 @@ target_link_libraries(nr_ulschsim
 
 add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
