@@ -185,10 +185,11 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)rxdataF_comp;
   __m128i *ch_mag,*ch_magb;
+  register __m128i xmm0,xmm1,xmm2;
 #elif defined(__arm__)
   int16x8_t *rxF = (int16x8_t*)&rxdataF_comp;
   int16x8_t *ch_mag,*ch_magb; // [hna] This should be uncommented once channel estimation is implemented
-  int16x8_t xmm1,xmm2;
+  int16x8_t xmm0,xmm1,xmm2;
 #endif
 
   int i;
@@ -208,14 +209,14 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 
 
   for (i=0; i<nb_re; i++) {
-
+    xmm0 = rxF[i];
 #if defined(__x86_64__) || defined(__i386__)
-    xmm1 = _mm_abs_epi16(rxF[i]);
+    xmm1 = _mm_abs_epi16(xmm0);
     xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
     xmm2 = _mm_abs_epi16(xmm1);
     xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
 #elif defined(__arm__)
-    xmm1 = vabsq_s16(rxF[i]);
+    xmm1 = vabsq_s16(xmm0);
     xmm1 = vsubq_s16(ch_mag[i],xmm1);
     xmm2 = vabsq_s16(xmm1);
     xmm2 = vsubq_s16(ch_magb[i],xmm2);
@@ -224,14 +225,16 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
     // ---------------------------------------
     // 1st RE
     // ---------------------------------------
-    ulsch_llr[0] = ((short *)&rxF[i])[0];
-    ulsch_llr[1] = ((short *)&rxF[i])[1];
 #if defined(__x86_64__) || defined(__i386__)
+    ulsch_llr[0] = _mm_extract_epi16(xmm0,0);
+    ulsch_llr[1] = _mm_extract_epi16(xmm0,1);
     ulsch_llr[2] = _mm_extract_epi16(xmm1,0);
     ulsch_llr[3] = _mm_extract_epi16(xmm1,1);
     ulsch_llr[4] = _mm_extract_epi16(xmm2,0);
     ulsch_llr[5] = _mm_extract_epi16(xmm2,1);
 #elif defined(__arm__)
+    ulsch_llr[0] = vgetq_lane_s16(xmm0,0);
+    ulsch_llr[1] = vgetq_lane_s16(xmm0,1);
     ulsch_llr[2] = vgetq_lane_s16(xmm1,0);
     ulsch_llr[3] = vgetq_lane_s16(xmm1,1);
     ulsch_llr[4] = vgetq_lane_s16(xmm2,0);
@@ -244,14 +247,16 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
     // ---------------------------------------
     // 2nd RE
     // ---------------------------------------
-    ulsch_llr[0] = ((short *)&rxF[i])[2];
-    ulsch_llr[1] = ((short *)&rxF[i])[3];
 #if defined(__x86_64__) || defined(__i386__)
+    ulsch_llr[0] = _mm_extract_epi16(xmm0,2);
+    ulsch_llr[1] = _mm_extract_epi16(xmm0,3);
     ulsch_llr[2] = _mm_extract_epi16(xmm1,2);
     ulsch_llr[3] = _mm_extract_epi16(xmm1,3);
     ulsch_llr[4] = _mm_extract_epi16(xmm2,2);
     ulsch_llr[5] = _mm_extract_epi16(xmm2,3);
 #elif defined(__arm__)
+    ulsch_llr[2] = vgetq_lane_s16(xmm0,2);
+    ulsch_llr[3] = vgetq_lane_s16(xmm0,3);
     ulsch_llr[2] = vgetq_lane_s16(xmm1,2);
     ulsch_llr[3] = vgetq_lane_s16(xmm1,3);
     ulsch_llr[4] = vgetq_lane_s16(xmm2,2);
@@ -264,14 +269,16 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
     // ---------------------------------------
     // 3rd RE
     // ---------------------------------------
-    ulsch_llr[0] = ((short *)&rxF[i])[4];
-    ulsch_llr[1] = ((short *)&rxF[i])[5];
 #if defined(__x86_64__) || defined(__i386__)
+    ulsch_llr[0] = _mm_extract_epi16(xmm0,4);
+    ulsch_llr[1] = _mm_extract_epi16(xmm0,5);
     ulsch_llr[2] = _mm_extract_epi16(xmm1,4);
     ulsch_llr[3] = _mm_extract_epi16(xmm1,5);
     ulsch_llr[4] = _mm_extract_epi16(xmm2,4);
     ulsch_llr[5] = _mm_extract_epi16(xmm2,5);
 #elif defined(__arm__)
+    ulsch_llr[0] = vgetq_lane_s16(xmm0,4);
+    ulsch_llr[1] = vgetq_lane_s16(xmm0,5);
     ulsch_llr[2] = vgetq_lane_s16(xmm1,4);
     ulsch_llr[3] = vgetq_lane_s16(xmm1,5);
     ulsch_llr[4] = vgetq_lane_s16(xmm2,4);
@@ -284,14 +291,16 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
     // ---------------------------------------
     // 4th RE
     // ---------------------------------------
-    ulsch_llr[0] = ((short *)&rxF[i])[6];
-    ulsch_llr[1] = ((short *)&rxF[i])[7];
 #if defined(__x86_64__) || defined(__i386__)
+    ulsch_llr[0] = _mm_extract_epi16(xmm0,6);
+    ulsch_llr[1] = _mm_extract_epi16(xmm0,7);
     ulsch_llr[2] = _mm_extract_epi16(xmm1,6);
     ulsch_llr[3] = _mm_extract_epi16(xmm1,7);
     ulsch_llr[4] = _mm_extract_epi16(xmm2,6);
     ulsch_llr[5] = _mm_extract_epi16(xmm2,7);
 #elif defined(__arm__)
+    ulsch_llr[0] = vgetq_lane_s16(xmm0,6);
+    ulsch_llr[1] = vgetq_lane_s16(xmm0,7);
     ulsch_llr[2] = vgetq_lane_s16(xmm1,6);
     ulsch_llr[3] = vgetq_lane_s16(xmm1,7);
     ulsch_llr[4] = vgetq_lane_s16(xmm2,6);

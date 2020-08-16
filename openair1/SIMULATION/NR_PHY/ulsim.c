@@ -655,6 +655,7 @@ int main(int argc, char **argv)
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
       reset_meas(&gNB->phy_proc_rx);
+      reset_meas(&gNB->rx_pusch_stats);
       reset_meas(&gNB->ulsch_decoding_stats);
       reset_meas(&gNB->ulsch_deinterleaving_stats);
       reset_meas(&gNB->ulsch_rate_unmatching_stats);
@@ -993,10 +994,11 @@ int main(int argc, char **argv)
     
     if (print_perf==1) {
       printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
-      printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
-      printStatIndent(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
-      printStatIndent(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
-      printStatIndent(&gNB->ulsch_llr_stats,"ULSCH llr computation");
+      printStatIndent(&gNB->rx_pusch_stats,"RX PUSCH time");
+      printStatIndent2(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
+      printStatIndent2(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
+      printStatIndent2(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
+      printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
       printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
