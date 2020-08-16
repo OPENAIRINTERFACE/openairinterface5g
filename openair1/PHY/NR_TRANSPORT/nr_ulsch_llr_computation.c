@@ -34,9 +34,6 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/impl_defs_top.h"
 
-__m128i  xmm0 __attribute__ ((aligned(32)));
-__m128i  xmm1 __attribute__ ((aligned(32)));
-__m128i  xmm2 __attribute__ ((aligned(32)));
 
 
 //----------------------------------------------------------------------------------------------
@@ -47,20 +44,19 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
                       uint32_t nb_re,
                       uint8_t  symbol)
 {
-  int i;
-
   uint32_t *rxF   = (uint32_t*)rxdataF_comp;
   uint32_t *llr32 = (uint32_t*)ulsch_llr;
 
   if (!llr32) {
     LOG_E(PHY,"nr_ulsch_qpsk_llr: llr is null, symbol %d, llr32 = %p\n",symbol, llr32);
   }
-
+  /*
   for (i = 0; i < nb_re; i++) {
     *llr32 = *rxF;
     rxF++;
     llr32++;
-  }
+    }*/
+  memcpy1((void*)llr32,(void*)rxF,nb_re<<2);
 }
 
 //----------------------------------------------------------------------------------------------
@@ -76,9 +72,17 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 {
 
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+  __m256i *rxF = (__m256i*)rxdataF_comp;
+  __m256i *ch_mag;
+  __m256i llr256[2];
+  register __m256i xmm0;
+#else
   __m128i *rxF = (__m128i*)rxdataF_comp;
   __m128i *ch_mag;
   __m128i llr128[2];
+  register __m128i xmm0;
+#endif
   uint32_t *llr32;
 
 #elif defined(__arm__)
@@ -90,7 +94,12 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 
 
   int i;
-  unsigned char len_mod4 = 0;
+
+#ifdef __AVX2__
+  int off = ((nb_rb&1) == 1)? 4:0;
+#else
+  int off = 0;
+#endif
 
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -100,22 +109,69 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 #endif
 
 #if defined(__x86_64__) || defined(__i386__)
-  ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*nb_rb*12)];
+#ifdef __AVX2__
+    ch_mag = (__m256i*)&ul_ch_mag[0][(symbol*(off+(nb_rb*12)))];
+#else
+    ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*(off+(nb_rb*12)))];
+#endif
 #elif defined(__arm__)
   ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*nb_rb*12)];
 #endif
 
-  len_mod4 = nb_re&3;
+#ifdef __AVX2__
+  unsigned char len_mod8 = nb_re&7;
+  nb_re >>= 3;  // length in quad words (4 REs)
+  nb_re += (len_mod8 == 0 ? 0 : 1);
+#else
+  unsigned char len_mod4 = nb_re&3;
   nb_re >>= 2;  // length in quad words (4 REs)
   nb_re += (len_mod4 == 0 ? 0 : 1);
+#endif
 
   for (i=0; i<nb_re; i++) {
-
 #if defined(__x86_64__) || defined(__i386)
+#ifdef __AVX2__
+    xmm0 = _mm256_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
+    xmm0 = _mm256_subs_epi16(ch_mag[i],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
+ 
+    llr256[0] = _mm256_unpacklo_epi32(rxF[i],xmm0); // llr128[0] contains the llrs of the 1st,2nd,5th and 6th REs
+    llr256[1] = _mm256_unpackhi_epi32(rxF[i],xmm0); // llr128[1] contains the llrs of the 3rd, 4th, 7th and 8th REs
+    
+    // 1st RE
+    llr32[0] = _mm256_extract_epi32(llr256[0],0); // llr32[0] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[1] = _mm256_extract_epi32(llr256[0],1); // llr32[1] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
 
+    // 2nd RE
+    llr32[2] = _mm256_extract_epi32(llr256[0],2); // llr32[2] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[3] = _mm256_extract_epi32(llr256[0],3); // llr32[3] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    // 3rd RE
+    llr32[4] = _mm256_extract_epi32(llr256[1],0); // llr32[4] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[5] = _mm256_extract_epi32(llr256[1],1); // llr32[5] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    // 4th RE
+    llr32[6] = _mm256_extract_epi32(llr256[1],2); // llr32[6] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[7] = _mm256_extract_epi32(llr256[1],3); // llr32[7] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    // 5th RE
+    llr32[8] = _mm256_extract_epi32(llr256[0],4); // llr32[8] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[9] = _mm256_extract_epi32(llr256[0],5); // llr32[9] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    // 6th RE
+    llr32[10] = _mm256_extract_epi32(llr256[0],6); // llr32[10] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[11] = _mm256_extract_epi32(llr256[0],7); // llr32[11] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    // 7th RE
+    llr32[12] = _mm256_extract_epi32(llr256[1],4); // llr32[12] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[13] = _mm256_extract_epi32(llr256[1],5); // llr32[13] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    // 8th RE
+    llr32[14] = _mm256_extract_epi32(llr256[1],6); // llr32[14] low 16 bits-> y_R        , high 16 bits-> y_I
+    llr32[15] = _mm256_extract_epi32(llr256[1],7); // llr32[15] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
+
+    llr32+=16;
+#else
     xmm0 = _mm_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
-    
-    
     xmm0 = _mm_subs_epi16(ch_mag[i],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
 
     llr128[0] = _mm_unpacklo_epi32(rxF[i],xmm0); // llr128[0] contains the llrs of the 1st and 2nd REs
@@ -138,6 +194,7 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
     llr32[7] = _mm_extract_epi32(llr128[1],3); // llr32[7] low 16 bits-> |h|-|y_R|^2, high 16 bits-> |h|-|y_I|^2
 
     llr32+=8;
+#endif
 #elif defined(__arm__)
     xmm0 = vabsq_s16(rxF[i]);
     xmm0 = vqsubq_s16((*(__m128i*)&ones[0]),xmm0);
