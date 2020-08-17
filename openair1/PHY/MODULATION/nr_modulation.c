@@ -38,11 +38,7 @@ void nr_modulation(uint32_t *in,
   uint32_t bit_cnt;
   uint64_t x,x1,x2;
     
-#if 0//defined(__AVX2__)
-  uint16_t *in_2bytes = (uint16_t*) in;
-  __m256i *nr_mod_table256;
-  __m256i *out256;
-#elif defined(__SSE2__)
+#if defined(__SSE2__)
   __m128i *nr_mod_table128;
   __m128i *out128;
 #endif
@@ -50,6 +46,44 @@ void nr_modulation(uint32_t *in,
   LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
 
   switch (mod_order) {
+
+#if defined(__SSE2__)
+  case 2:
+    nr_mod_table128 = (__m128i*) nr_qpsk_byte_mod_table;
+    out128 = (__m128i*) out;
+    for (i=0; i<length/8; i++)
+      out128[i] = nr_mod_table128[in_bytes[i]];
+    // the bits that are left out
+    i = i*8/2;
+    nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
+    while (i<length/2){
+      idx = ((in_bytes[(i*2)/8]>>((i*2)&0x7)) & mask);
+      out32[i] = nr_mod_table32[idx];
+      i++;
+    }
+    return;
+#else
+  case 2:
+    nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
+    for (i=0; i<length/mod_order; i++) {
+      idx = ((in[i*2/32]>>((i*2)&0x1f)) & mask);
+      out32[i] = nr_mod_table32[idx];
+    }
+    return;
+#endif
+
+  case 4:
+    out64 = (int64_t*) out;
+    for (i=0; i<length/8; i++)
+      out64[i] = nr_16qam_byte_mod_table[in_bytes[i]];
+    // the bits that are left out
+    i = i*8/4;
+    while (i<length/4){
+      idx = ((in_bytes[(i*4)/8]>>((i*4)&0x7)) & mask);
+      out32[i] = nr_16qam_mod_table[idx];
+      i++;
+    }
+    return;
 
   case 6:
     j = 0;
@@ -113,46 +147,10 @@ void nr_modulation(uint32_t *in,
       out32[i] = nr_mod_table32[in_bytes[i]];
     return;
 
-#if 0//defined(__AVX2__) 
-// disabling this as it is slower than SSE2 
-// (maybe because L1 cache could not hold the large table)
-  case 2:
-    nr_mod_table256 = (__m256i*) nr_qpsk_2byte_mod_table;
-    out256 = (__m256i*) out;
-    for (i=0; i<length/16; i++)
-      out256[i] = nr_mod_table256[in_2bytes[i]];
-    if (length%16)
-      out256[i+1] = nr_mod_table256[in_2bytes[i]];
-    return;
-
-#elif defined(__SSE2__)
-  case 2:
-    nr_mod_table128 = (__m128i*) nr_qpsk_byte_mod_table;
-    out128 = (__m128i*) out;
-    for (i=0; i<length/8; i++)
-      out128[i] = nr_mod_table128[in_bytes[i]];
-    if (length%8)
-      out128[i+1] = nr_mod_table128[in_bytes[i]];
-    return;
-#endif
-
-  case 4:
-    out64 = (int64_t*) out;
-    for (int i=0; i<length/8; i++)
-      out64[i] = nr_16qam_byte_mod_table[in_bytes[i]];
-    return;
-
   default:
     break;
   }
 
-  nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
-  for (int i=0; i<length/mod_order; i++)
-  {
-    idx = ((in[i*mod_order/32]>>((i*mod_order)&0x1f)) & mask);
-
-    out32[i] = nr_mod_table32[idx];
-  }
 }
 
 void nr_layer_mapping(int16_t **mod_symbs,

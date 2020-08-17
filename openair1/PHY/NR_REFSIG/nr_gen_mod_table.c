@@ -21,7 +21,6 @@
 
 #include "nr_refsig.h"
 #include "nr_mod_table.h"
-#include <math.h>
 
 void nr_generate_modulation_table() {
   float sqrt2 = 0.70711;
@@ -32,27 +31,14 @@ void nr_generate_modulation_table() {
   uint32_t i,j;
   short* table;
 
-nr_qpsk_mod_table[0] = 16384;
-nr_qpsk_mod_table[1] = 16384;
-nr_qpsk_mod_table[2] = -16384;
-nr_qpsk_mod_table[3] = 16384;
-nr_qpsk_mod_table[4] = 16384;
-nr_qpsk_mod_table[5] = -16384;
-nr_qpsk_mod_table[6] = -16384;
-nr_qpsk_mod_table[7] = -16384;
-
-#if 0//defined(__AVX2__)
-  //QPSK m256
-  table = (short*) nr_qpsk_2byte_mod_table;
-  for (i=0; i<65536; i++) {
-    for (j=0; j<8; j++) {
-      table[i*16+(j*2)]   = (short)(1-2*((i>>(j*2))&1))*val*sqrt2*sqrt2;
-      table[i*16+(j*2)+1] = (short)(1-2*((i>>(j*2+1))&1))*val*sqrt2*sqrt2;
-      //printf("%d j%d\n",nr_qpsk_byte_mod_table[i*8+(j*2)],nr_qpsk_byte_mod_table[i*8+(j*2)+1]);
-    }
+  // QPSK
+  for (i=0; i<4; i++) {
+    nr_qpsk_mod_table[i*2]   = (short)(1-2*(i&1))*val*sqrt2*sqrt2;
+    nr_qpsk_mod_table[i*2+1] = (short)(1-2*((i>>1)&1))*val*sqrt2*sqrt2;
+    //printf("%d j%d\n",nr_qpsk_mod_table[i*2],nr_qpsk_mod_table[i*2+1]);
   }
-#elif defined(__SSE2__)
 
+#if defined(__SSE2__)
   //QPSK m128
   table = (short*) nr_qpsk_byte_mod_table;
   for (i=0; i<256; i++) {
@@ -72,6 +58,13 @@ nr_qpsk_mod_table[7] = -16384;
       table[i*4+(j*2)+1] = (short)((1-2*((i>>(j*4+1))&1))*(2-(1-2*((i>>(j*4+3))&1))))*val*sqrt10*sqrt2;
      //printf("%d j%d\n",nr_16qam_byte_mod_table[i*4+(j*2)],nr_16qam_byte_mod_table[i*4+(j*2)+1]);
     }
+  }
+
+  table = (short*) nr_16qam_mod_table;
+  for (i=0; i<16; i++) {
+    table[i*2]   = (short)((1-2*(i&1))*(2-(1-2*((i>>2)&1))))*val*sqrt10*sqrt2;
+    table[i*2+1] = (short)((1-2*((i>>1)&1))*(2-(1-2*((i>>3)&1))))*val*sqrt10*sqrt2;
+    //printf("%d j%d\n",table[i*2],table[i*2+1]);
   }
 
   //64QAM
