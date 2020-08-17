@@ -36,6 +36,7 @@
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
@@ -521,6 +522,15 @@ int main(int argc, char **argv)
       }
       int rxlev = signal_energy(&rxdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
 				frame_parms->ofdm_symbol_size);
+
+      // noise measurement
+      gNB->ulmask_symb = startingSymbolIndex;
+      for (int rb=0; rb<nrofPRB; rb++) {
+        int rb2 = rb+startingPRB;
+        gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+      }
+      gNB_I0_measurements(gNB);
+
       if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
 	nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
