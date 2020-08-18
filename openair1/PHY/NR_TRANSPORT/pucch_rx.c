@@ -360,12 +360,13 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     printf("PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re,corr_im,10*log10(corr_re*corr_re + corr_im*corr_im));
 #endif
     temp=corr_re*corr_re + corr_im*corr_im;
+    no_corr+=temp;
     if (temp>xrtmag) {
       xrtmag=temp;
       maxpos=i;
     }
-    else no_corr+=temp;
   }
+  no_corr-=xrtmag;
   if (nr_sequences>1)
     no_corr/=(nr_sequences-1);
 
