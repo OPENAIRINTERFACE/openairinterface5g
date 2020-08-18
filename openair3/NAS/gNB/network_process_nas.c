@@ -74,11 +74,11 @@ SGSsessionmanagementmessages:
  * Messages emission
  */
 
-void identityRequest(void *msg, NRUEcontext_t *UE) {
+int identityRequest(void **msg, NRUEcontext_t *UE) {
 }
 
-void authenticationRequest(void *msg, NRUEcontext_t *UE) {
+int authenticationRequest(void **msg, NRUEcontext_t *UE) {
 }
 
-void securityModeCommand(void *msg, NRUEcontext_t *UE) {
+int securityModeCommand(void **msg, NRUEcontext_t *UE) {
 }

@@ -66,7 +66,7 @@ typedef enum {
 } Security_header_t;
 
 typedef enum {
-  SUCI=0,
+  SUCI=1,
   SGGUTI,
   IMEI,
   SGSTMSI,
@@ -221,14 +221,33 @@ typedef struct {
 } Identityrequest_t;
 
 // the message continues with the identity value, depending on identity type, see TS 14.501, 9.11.3.4
-typedef struct {
+typedef struct __attribute__((packed)) {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
-  identitytype_t mi:8;
+  uint16_t len;
 } Identityresponse_t;
 
-
+typedef struct __attribute__((packed)) {
+  Identityresponse_t common;
+  identitytype_t mi:8;
+  int supiFormat:4;
+  int identityType:4;
+  int mcc1:4;
+  int mcc2:4;
+  int mcc3:4;
+  int mnc3:4;
+  int mnc2:4;
+  int mnc1:4;
+  int routing1:4;
+  int routing2:4;
+  int routing3:4;
+  int routing4:4;
+  int protectScheme:4;
+  int spare:4;
+  uint8_t hplmnId;
+} IdentityresponseIMSI_t;
+  
 typedef struct {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
@@ -243,5 +262,6 @@ typedef struct {
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
 } authenticationresponseHeader_t;
+
 
 //AUTHENTICATION RESULT

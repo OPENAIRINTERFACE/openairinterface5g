@@ -1005,10 +1005,11 @@ int main( int argc, char **argv ) {
                  (void *)NULL, "time_meas", -1, OAI_PRIORITY_RT_LOW);
   }
 
-  if (do_forms==1) {
+  if(IS_SOFTMODEM_DOFORMS) {
     scopeParms_t tmp= {&argc, argv, &ru, RC.gNB[0]};
-    gNBinitScope(&tmp);
+    load_softscope("nr",&tmp);
   }
+
 
   while(!oai_exit)
     sleep(1);

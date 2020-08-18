@@ -78,11 +78,14 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 /* Callbacks, globals and object handlers */
 
+//#include "stats.h"
+// current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
-#include <openair1/PHY/TOOLS/phy_scope_interface.h>
+#include <openair3/NAS/NR_UE/nr_user_def.h>
 
 // Raphael : missing
 pthread_cond_t nfapi_sync_cond;
@@ -756,6 +759,10 @@ int main( int argc, char **argv ) {
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  char * resp;
+nr_user_nas_t UErrc={0};
+  int size=identityResponse(&resp, &UErrc); 
  
   if(IS_SOFTMODEM_DOFORMS) { 
     load_softscope("nr",PHY_vars_UE_g[0][0]);
