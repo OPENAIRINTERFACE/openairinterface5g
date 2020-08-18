@@ -707,7 +707,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
       Xu=(int16_t*)gNB->X_u[preamble_offset-first_nonzero_root_idx];
 
-      LOG_I(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_offset-first_nonzero_root_idx);
+      LOG_D(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_offset-first_nonzero_root_idx);
 
 
       memset(prach_ifft,0,((N_ZC==839) ? 2048 : 256)*sizeof(int32_t));
@@ -790,7 +790,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   else *TA = *TA/2;
 
 
-  //if (LOG_DUMPFLAG(PRACH)) {
+  if (LOG_DUMPFLAG(PRACH)) {
     //int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     //    if (en>60) {
       int k = (12*n_ra_prb) - 6*fp->N_RB_UL;
@@ -807,7 +807,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       LOG_M("Xu.m","xu",Xu,N_ZC,1,1);
       LOG_M("prach_ifft0.m","prach_t0",prach_ifft,1024,1,1);
       //    }
-  //} /* LOG_DUMPFLAG(PRACH) */
+  } /* LOG_DUMPFLAG(PRACH) */
   stop_meas(&gNB->rx_prach);
 
 }

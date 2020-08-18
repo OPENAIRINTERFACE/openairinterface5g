@@ -161,6 +161,7 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
+                                            30e-9,  // TDL delay-spread parameter
                                             0.0, // forgetting_factor
                                             0, // maybe used for TA
                                             0); // path_loss in dB
