@@ -373,12 +373,8 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // computing start of next period
   uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame_mac[mu];
-	//scheduling msg2 based on identified active SSB from RO
-	for(int i = 0;i <= last_dl_slot_period;i++) {
-	  if (index == ( (start_next_period + i ) % num_active_ssb ))
-	    *msg2_slot = start_next_period + i;
-	}
-//  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+
+  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
  
   switch(response_window){
@@ -448,7 +444,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  NR_RA_t *ra = &cc->ra[0];
 
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
@@ -466,6 +461,9 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           module_idP, preamble_index, UE_id);
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
   }
+
+  for (int i = 0; i < NB_RA_PROC_MAX; i++) {
+  NR_RA_t *ra = &cc->ra[i];
 
   // This should be handled differently when we use the initialBWP for RA
   ra->bwp_id=1;
@@ -523,6 +521,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       abort();
     }
 
+    UE_id = find_nr_UE_id(module_idP, ra->rnti);
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     UE_list->tc_rnti[UE_id] = ra->rnti;
@@ -543,6 +542,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     return;
   }
+	}
   LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
@@ -554,15 +554,17 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   int CC_id = 0;
   gNB_MAC_INST *mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
-  NR_RA_t *ra = &cc->ra[0];
 
   start_meas(&mac->schedule_ra);
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+  
+	NR_RA_t *ra = &cc->ra[i];
 
-  //for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
   LOG_D(MAC,"RA[state:%d]\n",ra->state);
   switch (ra->state){
     case Msg2:
-      nr_generate_Msg2(module_idP, CC_id, frameP, slotP);
+      nr_generate_Msg2(module_idP, CC_id, frameP, slotP,ra);
       break;
     case Msg4:
       //generate_Msg4(module_idP, CC_id, frameP, slotP, ra);
@@ -573,7 +575,8 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
     default:
     break;
   }
-  //}
+    }
+  }
   stop_meas(&mac->schedule_ra);
 }
 
@@ -744,13 +747,14 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
 void nr_generate_Msg2(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
-                      sub_frame_t slotP){
+                      sub_frame_t slotP,
+											NR_RA_t *ra){
 
   int UE_id = 0, dci_formats[2], rnti_types[2], mcsIndex;
   int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
-  NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[0];
-  NR_RA_t                               *ra = &cc->ra[0];
+  NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
+//  NR_RA_t                               *ra = &cc->ra[0];
   NR_UE_list_t                     *UE_list = &nr_mac->UE_list;
   NR_SearchSpace_t *ss = ra->ra_ss;
 
@@ -923,6 +927,7 @@ void nr_generate_Msg2(module_id_t module_idP,
 }
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
+  
   NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[0];
   LOG_D(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
   ra->state = IDLE;

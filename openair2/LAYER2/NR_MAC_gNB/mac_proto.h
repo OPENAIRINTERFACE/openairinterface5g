@@ -284,7 +284,8 @@ void config_nr_mib(int Mod_idP,
 void nr_generate_Msg2(module_id_t module_idP,
                       int CC_id,
                       frame_t frameP,
-                      sub_frame_t slotP);
+                      sub_frame_t slotP,
+											NR_RA_t *ra);
 
 void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
 

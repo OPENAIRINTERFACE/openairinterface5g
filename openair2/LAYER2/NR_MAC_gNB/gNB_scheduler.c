@@ -442,7 +442,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     */
 
     // This schedules MIB
-
+    if((slot_txP == 0) && (frame_txP & 7) == 0)
     schedule_nr_mib(module_idP, frame_txP, slot_txP);
 
     if (get_softmodem_params()->phy_test == 0)

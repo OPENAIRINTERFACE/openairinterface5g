@@ -65,13 +65,11 @@ int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame, int slot, find_type_t type) {
 		if((type == SEARCH_EXIST_OR_FREE) &&
 		  (gNB->prach_vars.list[i].frame == -1) &&
 		  (gNB->prach_vars.list[i].slot == -1)) {
-		  LOG_I(PHY, "Providing free prach index %d\n",i);
 		  return i;
 		}
     else if ((type == SEARCH_EXIST) &&
 		  (gNB->prach_vars.list[i].frame == frame) &&
       (gNB->prach_vars.list[i].slot  == slot)) {
-		  LOG_I(PHY, "Providing existing prach index %d\n",i);
 		  return i;
 		}
   }
@@ -113,14 +111,12 @@ int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type) {
 		if((type == SEARCH_EXIST_OR_FREE) &&
 		  (ru->prach_list[i].frame == -1) &&
 		  (ru->prach_list[i].slot == -1)) {
-		  LOG_I(PHY, "Providing free prach index %d in ru\n",i);
       pthread_mutex_unlock(&ru->prach_list_mutex);
 		  return i;
 		}	
     else if ((type == SEARCH_EXIST) &&
 		  (ru->prach_list[i].frame == frame) &&
       (ru->prach_list[i].slot  == slot)) {
-		  LOG_I(PHY, "Providing existing prach index %d in ru\n",i);
       pthread_mutex_unlock(&ru->prach_list_mutex);
       return i;
     }
@@ -184,7 +180,6 @@ void rx_nr_prach_ru(RU_t *ru,
   for (int aa=0; aa<ru->nb_rx; aa++){ 
     if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 
     prach[aa] = (int16_t*)&ru->common.rxdata[aa][(slot2*fp->get_samples_per_slot(slot,fp))-ru->N_TA_offset];
-    LOG_I(PHY,"GES printing received signal %d\n",*prach[aa]);
   } 
 
 
@@ -290,8 +285,6 @@ void rx_nr_prach_ru(RU_t *ru,
   k*=K;
   k+=kbar;
 
-	LOG_I(PHY,"GES printing frequency domain k value %d fp->N_RB_UL %d n_ra_prb %d kbar %d\n",k,fp->N_RB_UL,n_ra_prb,kbar);
-	 
   int reps=1;
 
   for (int aa=0; aa<ru->nb_rx; aa++) {
@@ -360,7 +353,6 @@ void rx_nr_prach_ru(RU_t *ru,
       } else { // threequarter sampling
 	//	40 MHz @ 46.08 Ms/s
 	prach2 = prach[aa] + (3*Ncp); // 46.08 is 1.5 * 30.72, times 2 for I/Q
-	LOG_I(PHY,"GES printing prach2 %p prach[aa] %p Ncp %d\n",prach2,prach[aa],Ncp);
 	if (prach_sequence_length == 0) {
 	  AssertFatal(fp->N_RB_UL <= 107,"cannot do 108..136 PRBs with 3/4 sampling\n");
 	  if (prachFormat == 0 || prachFormat == 1 || prachFormat == 2) {
@@ -540,7 +532,6 @@ void rx_nr_prach_ru(RU_t *ru,
       if (k2==(dftlen<<1)) k2=0;
       rxsigF_tmp[j] = rxsigF2[k2];
       for (int i=1;i<reps;i++) rxsigF_tmp[j] += rxsigF2[k2+(i*dftlen<<1)];
-			LOG_I(PHY,"GES printing %d rxsigF_tmp[j] %d\n",j,rxsigF_tmp[j]);
     }
     memcpy((void*)rxsigF2,(void *)rxsigF_tmp,N_ZC<<2);
 		LOG_I(PHY,"GES printing rxsigF2 %d\n",*rxsigF2);
@@ -639,8 +630,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
   for (preamble_index=0 ; preamble_index<64 ; preamble_index++) {
 
-//    if (LOG_DEBUGFLAG(PRACH)){
-		  if(1) {
+    if (LOG_DEBUGFLAG(PRACH)){
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],(N_ZC==839) ? 840: 140));
       if (en>60) LOG_D(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
     }
@@ -719,14 +709,13 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     }
 
     // Compute DFT of RX signal (conjugate input, results in conjugate output) for each new rootSequenceIndex
-//    if (LOG_DEBUGFLAG(PRACH)) {
-		if(1) {
+    if (LOG_DEBUGFLAG(PRACH)) {
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
       if (en>60) LOG_I(PHY,"frame %d, subframe %d : preamble index %d, NCS %d, N_ZC/NCS %d: offset %d, preamble shift %d , en %d)\n",
 		       frame,subframe,preamble_index,NCS,N_ZC/NCS,preamble_offset,preamble_shift,en);
     }
 
-    LOG_I(PHY,"PRACH RX preamble_index %d, preamble_offset %d\n",preamble_index,preamble_offset);
+    LOG_D(PHY,"PRACH RX preamble_index %d, preamble_offset %d\n",preamble_index,preamble_offset);
 
 
     if (new_dft == 1) {
@@ -734,7 +723,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
       Xu=(int16_t*)gNB->X_u[preamble_offset-first_nonzero_root_idx];
 
-      LOG_I(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_offset-first_nonzero_root_idx);
+      LOG_D(PHY,"PRACH RX new dft preamble_offset-first_nonzero_root_idx %d\n",preamble_offset-first_nonzero_root_idx);
 
 
       memset(prach_ifft,0,((N_ZC==839) ? 2048 : 256)*sizeof(int32_t));
