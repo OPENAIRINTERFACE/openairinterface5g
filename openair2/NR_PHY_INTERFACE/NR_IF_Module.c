@@ -78,7 +78,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 }
 
 
-void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int target_snrx10) {
   // TODO
   int max_harq_rounds = 4; // TODO define macro
   int num_ucis = UL_info->uci_ind.num_ucis;
@@ -93,18 +93,23 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
           // handle harq
           int harq_idx_s = 0;
+          // tpc (power control)
+          sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
           // iterate over received harq bits
           for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
             // search for the right harq process
             for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+              // if the gNB received ack with a good confidence or if the max harq rounds was reached
               if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-                if (uci_pdu->harq->harq_list[harq_bit].harq_value == 0)
-                  sched_ctrl->harq_processes[harq_idx].round++;
-                if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) ||
-                   (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                if (((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) &&
+                    (uci_pdu->harq->harq_confidence_level == 0)) ||
+                    (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                  // toggle NDI and reset round
                   sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
                   sched_ctrl->harq_processes[harq_idx].round = 0;
                 }
+                else
+                  sched_ctrl->harq_processes[harq_idx].round++;
                 sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
                 harq_idx_s = harq_idx + 1;
                 break;
@@ -268,7 +273,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_uci(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
+  handle_nr_uci(UL_info,&mac->UE_list.UE_sched_ctrl[0],mac->pucch_target_snrx10);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0]);

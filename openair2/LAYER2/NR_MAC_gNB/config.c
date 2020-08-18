@@ -329,6 +329,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
                            int pusch_tgt_snrx10,
+                           int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int add_ue,
 			   uint32_t rnti,
@@ -354,7 +355,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
   
     RC.nrmac[Mod_idP]->pusch_target_snrx10 = pusch_tgt_snrx10;
-  
+    RC.nrmac[Mod_idP]->pucch_target_snrx10 = pucch_tgt_snrx10;
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
     phycfg.CC_id  = 0;

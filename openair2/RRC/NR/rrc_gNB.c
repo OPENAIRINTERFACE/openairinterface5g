@@ -187,6 +187,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc) {
                          rrc->carrier.ssb_SubcarrierOffset,
                          rrc->carrier.pdsch_AntennaPorts,
                          rrc->carrier.pusch_TargetSNRx10,
+                         rrc->carrier.pucch_TargetSNRx10,
                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
                          0,
                          0, // WIP hardcoded rnti
@@ -267,6 +268,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_TargetSNRx10 = configuration->pusch_TargetSNRx10;
+  rrc->carrier.pucch_TargetSNRx10 = configuration->pucch_TargetSNRx10;
   /// System Information INIT
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
   init_NR_SI(rrc);

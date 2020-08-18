@@ -339,6 +339,8 @@ typedef struct gNB_MAC_INST_s {
   NR_IF_Module_t                  *if_inst;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
+  /// Pucch target SNR
+  int                             pucch_target_snrx10;
   /// TA command
   int                             ta_command;
   /// MAC CE flag indicating TA length

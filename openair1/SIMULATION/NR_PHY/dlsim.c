@@ -192,7 +192,8 @@ int main(int argc, char **argv)
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int run_initial_sync=0;
   int do_pdcch_flag=1;
-
+  int pusch_tgt_snrx10 = 200;
+  int pucch_tgt_snrx10 = 200;
   int loglvl=OAILOG_INFO;
 
   float target_error_rate = 0.01;
@@ -529,9 +530,9 @@ int main(int argc, char **argv)
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0,1,scc,0,0,NULL);
+  rrc_mac_config_req_gNB(0,0,1,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,1,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   // stub to configure frame_parms
