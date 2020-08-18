@@ -1,0 +1,16 @@
+oppo:
+  - sudo adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - sudo adb shell input keyevent 20
+  - sudo adb shell input tap 968 324
+s10:
+  - sudo adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - sudo adb shell input keyevent 20
+  - sudo adb shell input tap 968 324
+s20:
+  - sudo adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - sudo adb shell input keyevent 20
+  - sudo adb shell input tap 968 324
+xperia:
+  - sudo adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - sudo adb shell input keyevent 20
+  - sudo adb shell input tap 968 324

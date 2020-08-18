@@ -33,14 +33,16 @@ import logging
 import sshconnection
 #time.sleep
 import time
+#to load cots_ue dictionary
+import yaml
 
 class CotsUe:
-	def __init__(self,model,UEIPAddr,UEUserName,UEPassWord):
-		self.model = model
-		self.UEIPAddr = UEIPAddr 
-		self.UEUserName = UEUserName
-		self.UEPassWord = UEPassWord
-		self.runargs = '' #on of off to toggle airplane mode on/off
+	def __init__(self,ADBIPAddr,ADBUserName,ADBPassWord):
+		self.cots_id = '' #cots id from yaml oppo, s10 etc...
+		self.ADBIPAddr = ADBIPAddr 
+		self.ADBUserName = ADBUserName
+		self.ADBPassWord = ADBPassWord
+		self.cots_run_mode = '' #on of off to toggle airplane mode on/off
 		self.__SetAirplaneRetry = 3
 
 #-----------------$
@@ -49,39 +51,45 @@ class CotsUe:
 
 	def Check_Airplane(self):
 		mySSH = sshconnection.SSHConnection()
-		mySSH.open(self.UEIPAddr, self.UEUserName, self.UEPassWord)
+		mySSH.open(self.ADBIPAddr, self.ADBUserName, self.ADBPassWord)
 		status=mySSH.cde_check_value('sudo adb shell settings get global airplane_mode_on ', ['0','1'],5)
 		mySSH.close()
 		return status
 
 
-	def Set_Airplane(self,target_state_str):
-		mySSH = sshconnection.SSHConnection()
-		mySSH.open(self.UEIPAddr, self.UEUserName, self.UEPassWord)
-		mySSH.command('sudo adb start-server','$',5)
-		logging.info("Toggling COTS UE Airplane mode to : "+target_state_str)
-		current_state = self.Check_Airplane()
-		if target_state_str.lower()=="on": 
-			target_state=1
-		else:
-			target_state=0
-		if current_state != target_state:
-			#toggle state
-			retry = 0 
-			while (current_state!=target_state) and (retry < self.__SetAirplaneRetry):
-				mySSH.command('sudo adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS', '\$', 5)
-				mySSH.command('sudo adb shell input keyevent 20', '\$', 5)
-				mySSH.command('sudo adb shell input tap 968 324', '\$', 5)
-				time.sleep(1)
-				current_state = self.Check_Airplane()
-				retry+=1
+	def Set_Airplane(self, target_id, target_state_str):
+		#load cots commands dictionary
+		with open('cots_ue_ctl.yaml','r') as file:
+			cots_ue_ctl = yaml.load(file,Loader=yaml.FullLoader)
+		if target_id in cots_ue_ctl:
+			mySSH = sshconnection.SSHConnection()
+			mySSH.open(self.ADBIPAddr, self.ADBUserName, self.ADBPassWord)
+			mySSH.command('sudo adb start-server','$',5)
+			logging.info("Toggling COTS UE Airplane mode to : "+target_state_str)
+			current_state = self.Check_Airplane()
+			if target_state_str.lower()=="on": 
+				target_state=1
+			else:
+				target_state=0
 			if current_state != target_state:
-				logging.error("ATTENTION : Could not toggle to : "+target_state_str)
-				logging.error("Current state is : "+ str(current_state))
+				#toggle state
+				retry = 0 
+				while (current_state!=target_state) and (retry < self.__SetAirplaneRetry):
+					#loop over the command list from dictionary for the selected ue, to switch to required state
+					for i in range (0,len(cots_ue_ctl[target_id])):
+						mySSH.command(cots_ue_ctl[target_id][i], '\$', 5)
+					time.sleep(1)
+					current_state = self.Check_Airplane()
+					retry+=1
+				if current_state != target_state:
+					logging.error("ATTENTION : Could not toggle to : "+target_state_str)
+					logging.error("Current state is : "+ str(current_state))
+			else:
+				print("Airplane mode is already "+ target_state_str)
+			mySSH.command('sudo adb kill-server','$',5)
+			mySSH.close()
 		else:
-			print("Airplane mode is already "+ target_state_str)
-		mySSH.command('sudo adb kill-server','$',5)
-		mySSH.close()
+			logging.error("COTS UE Id from XML could not be found in UE YAML dictionary cots_ue_ctl.yaml)
 
 
 

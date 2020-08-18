@@ -32,7 +32,8 @@
 	<testCase id="010000">
 		<class>COTS_UE_Airplane</class>
 		<desc>Toggle COTS Airplane mode ON</desc>
-		<cots_ue_airplane_args>ON</cots_ue_airplane_args>
+		<cots_id>oppo</cots_id>
+		<cots_run_mode>ON</cots_run_mode>
 	</testCase>
 
 
