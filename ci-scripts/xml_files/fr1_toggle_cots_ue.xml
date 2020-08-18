@@ -21,21 +21,19 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>nr-ue-build-tab</htmlTabRef>
-	<htmlTabName>Build-NR-UE</htmlTabName>
-	<htmlTabIcon>wrench</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<htmlTabRef>test-airplane-mode</htmlTabRef>
+	<htmlTabName>AirplaneToggle</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
-010102
+ 010000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="010102">
-		<mode>TestUE</mode>
-		<class>Build_OAI_UE</class>
-		<desc>Build NR UE (USRP)</desc>
-		<Build_OAI_UE_args>--nrUE -w USRP --ninja</Build_OAI_UE_args>
-		<clean_repository>false</clean_repository>
+	<testCase id="010000">
+		<class>COTS_UE_Airplane</class>
+		<desc>Toggle COTS Airplane mode ON</desc>
+		<cots_ue_airplane_args>ON</cots_ue_airplane_args>
 	</testCase>
+
 
 </testCaseList>

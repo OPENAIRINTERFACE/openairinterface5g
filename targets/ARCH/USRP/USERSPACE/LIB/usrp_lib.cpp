@@ -976,7 +976,6 @@ extern "C" {
     double usrp_master_clock;
   
     if (device_adds[0].get("type") == "b200") {
-      printf("Found USRP b200\n");
       device->type = USRP_B200_DEV;
       usrp_master_clock = 30.72e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
