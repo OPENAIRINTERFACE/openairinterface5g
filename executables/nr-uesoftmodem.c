@@ -687,13 +687,6 @@ int main( int argc, char **argv ) {
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
     
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-      if (frame_parms[CC_id]->frame_type == TDD)
-      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
-    }
-   
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     UE[CC_id]->mac_enabled = 1;
@@ -752,8 +745,14 @@ int main( int argc, char **argv ) {
       UE[CC_id]->N_TA_offset = (int)(N_TA_offset * factor);
       LOG_I(PHY,"UE %d Setting N_TA_offset to %d samples (factor %f, UL Freq %lu, N_RB %d)\n", UE[CC_id]->Mod_id, UE[CC_id]->N_TA_offset, factor, UE[CC_id]->frame_parms.ul_CarrierFreq, N_RB);
     }
-  }
 
+   // Overwrite DL frequency (for FR2 testing)
+    if (downlink_frequency[0][0]!=0){
+      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+      if (frame_parms[CC_id]->frame_type == TDD)
+      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    }
+  }
   //  printf("tx_max_power = %d -> amp %d\n",tx_max_power[0],get_tx_amp(tx_max_poHwer,tx_max_power));
   init_openair0();
   // init UE_PF_PO and mutex lock
