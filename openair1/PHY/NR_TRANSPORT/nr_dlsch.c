@@ -150,7 +150,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
   nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs-xOverhead)*rel15->rbSize*rel15->NrOfCodewords;
   uint8_t Qm = rel15->qamModOrder[0];
   uint32_t encoded_length = nb_re*Qm;
-  int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(256)));
+  int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
   /// CRC, coding, interleaving and rate matching
   AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
