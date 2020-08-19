@@ -506,6 +506,13 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
 
+  for (i=0; i <NUMBER_OF_NR_PDCCH_MAX; i++) {
+    LOG_I(PHY,"Initializing PDCCH list for PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
+    gNB->pdcch_pdu[i].frame=-1;
+    LOG_I(PHY,"Initializing UL PDCCH list for UL PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
+    gNB->ul_pdcch_pdu[i].frame=-1;
+  }
+    
   for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
     gNB->pucch[i] = new_gNB_pucch();

@@ -26,6 +26,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "SCHED/sched_eNB.h"
@@ -160,22 +161,34 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
+  int pdcch_pdu_id=find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST);
+  int ul_pdcch_pdu_id=find_nr_ul_dci(frame,slot,gNB,SEARCH_EXIST);
 
-  if (gNB->pdcch_pdu || gNB->ul_dci_pdu) {
-    LOG_I(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+  LOG_D(PHY,"[gNB %d] Frame %d slot %d, pdcch_pdu_id %d, ul_pdcch_pdu_id %d\n",
+	gNB->Mod_id,frame,slot,pdcch_pdu_id,ul_pdcch_pdu_id);
+
+  if (pdcch_pdu_id >= 0 || ul_pdcch_pdu_id >= 0) {
+    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
-	  gNB->ul_dci_pdu==NULL?0:gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci,
-	  gNB->pdcch_pdu==NULL?0:gNB->pdcch_pdu->pdcch_pdu_rel15.numDlDci);
+	  ul_pdcch_pdu_id==0?0:gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
+	  pdcch_pdu_id==0?0:gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
-    nr_generate_dci_top(gNB->pdcch_pdu,
-			gNB->ul_dci_pdu,
+    nr_generate_dci_top(gNB,
+			pdcch_pdu_id>=0 ? &gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu : NULL,
+			ul_pdcch_pdu_id>=0 ? &gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu : NULL,
 			gNB->nr_gold_pdcch_dmrs[slot],
 			&gNB->common_vars.txdataF[0][txdataF_offset],
 			AMP, *fp);
-  
+
+    // free up entry in pdcch tables
+    if (pdcch_pdu_id>=0) gNB->pdcch_pdu[pdcch_pdu_id].frame = -1;
+    if (ul_pdcch_pdu_id>=0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,0);
+    if (pdcch_pdu_id >= 0) gNB->pdcch_pdu[pdcch_pdu_id].frame = -1;
+    if (ul_pdcch_pdu_id >= 0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
   }
  
   for (int i=0; i<gNB->num_pdsch_rnti; i++) {
