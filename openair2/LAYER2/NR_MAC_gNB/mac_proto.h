@@ -132,7 +132,13 @@ int configure_fapi_dl_pdu(int Mod_id,
                          uint16_t *rbSize,
                          uint16_t *rbStart);
 
-void config_uldci(NR_BWP_Uplink_t *ubwp,nfapi_nr_pusch_pdu_t *pusch_pdu,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15, dci_pdu_rel15_t *dci_pdu_rel15, int *dci_formats, int *rnti_types);
+void config_uldci(NR_BWP_Uplink_t *ubwp,
+                  nfapi_nr_pusch_pdu_t *pusch_pdu,
+                  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                  dci_pdu_rel15_t *dci_pdu_rel15,
+                  int *dci_formats, int *rnti_types,
+                  int time_domain_assignment,
+                  int n_ubwp, int bwp_id);
 
 void configure_fapi_dl_Tx(module_id_t Mod_idP,
                           frame_t       frameP,
@@ -203,7 +209,8 @@ int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
                        NR_ServingCellConfigCommon_t *scc,
                        NR_BWP_Downlink_t *bwp);
 
-void fill_dci_pdu_rel15(NR_CellGroupConfig_t *secondaryCellGroup,
+void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
+                        NR_CellGroupConfig_t *secondaryCellGroup,
                         nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int *dci_formats,
@@ -288,6 +295,8 @@ void nr_process_mac_pdu(
     frame_t frameP,
     uint8_t *pduP,
     uint16_t mac_pdu_len);
+
+int binomial(int n, int k);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.
