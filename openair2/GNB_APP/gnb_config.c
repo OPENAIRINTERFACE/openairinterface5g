@@ -529,12 +529,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
-  paramdef_t SSBsParams[] = SSBPARAMS_DESC;
-  paramlist_def_t SSBsParamList = {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET, NULL, 0};
-  paramdef_t PDSCHANTENNAParams[] = PDSCHANTENNAPARAMS_DESC;
-  paramlist_def_t PDSCHANTENNAParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
-  paramdef_t PUSCHTARGETPOWParams[] = TARGETPOWER_DESC;
-  paramlist_def_t PUSCHTARGETPOWParamList = {GNB_CONFIG_STRING_PDSCHANTENNAPORTS, NULL, 0};
    ////////// Physical parameters
 
 
@@ -583,14 +577,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     }
 
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
-    config_getlist(&SSBsParamList, NULL, 0, aprefix);
-    if (SSBsParamList.numelt > 0) config_get(SSBsParams,sizeof(SSBsParams)/sizeof(paramdef_t),aprefix);
-
-    config_getlist(&PDSCHANTENNAParamList, NULL, 0, aprefix);
-    if (PDSCHANTENNAParamList.numelt > 0) config_get(PDSCHANTENNAParams,sizeof(PDSCHANTENNAParams)/sizeof(paramdef_t),aprefix);
-
-    config_getlist(&PUSCHTARGETPOWParamList, NULL, 0, aprefix);
-    if (PUSCHTARGETPOWParamList.numelt > 0) config_get(PUSCHTARGETPOWParams,sizeof(PUSCHTARGETPOWParams)/sizeof(paramdef_t),aprefix);
 
     config_getlist(&SCCsParamList, NULL, 0, aprefix);
     if (SCCsParamList.numelt > 0) {    
@@ -666,19 +652,16 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 		      (NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l]);
 	}
-	
-        // Parse optional physical parameters
-        sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
+        printf("SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
+        printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
+        printf("pusch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr;
+        printf("pucch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pucch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr;
+        NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
 
-        printf("SSB SCO %d\n",ssb_SubcarrierOffset);
-	NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = ssb_SubcarrierOffset;
-        printf("pdsch_AntennaPorts %d\n",pdsch_AntennaPorts);
-	NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = pdsch_AntennaPorts;
-        printf("pusch_TargetSNRx10 %d\n",pusch_TargetSNRx10);
-	NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = pusch_TargetSNRx10;
-        printf("pucch_TargetSNRx10 %d\n",pucch_TargetSNRx10);
-	NRRRC_CONFIGURATION_REQ (msg_p).pucch_TargetSNRx10 = pucch_TargetSNRx10;
-	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
     }//End for (k=0; k <num_gnbs ; k++)
@@ -787,11 +770,7 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   if (GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt>0) {
     // Output a list of all gNBs.
        config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
-    
-    
-      
-      
-    
+
     if (GNBParamList.numelt > 0) {
       for (k = 0; k < GNBParamList.numelt; k++) {
 	if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {
