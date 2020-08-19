@@ -396,9 +396,11 @@ int test_ldpc(short No_iteration,
       decParams.numMaxIter=No_iteration;
       decParams.outMode = nrLDPC_outMode_BIT;
       //decParams.outMode =nrLDPC_outMode_LLRINT8;
+#ifdef CUDA_FLAG
 	  set_compact_BG(Zc,BG);
 	  init_LLR_DMA_for_CUDA(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length);
-      for(j=0;j<n_segments;j++) {
+#endif
+	  for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
 #ifdef CUDA_FLAG
         if(run_cuda){
@@ -514,7 +516,9 @@ int test_ldpc(short No_iteration,
 
 int main(int argc, char *argv[])
 {
+#ifdef CUDA_FLAG	
   warmup_for_GPU();
+#endif
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
