@@ -33,18 +33,38 @@
 /*   optname                     helpstr                     paramflags           XXXptr                               defXXXval                          type         numelt  */
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define UICC_PARAMS_DESC {\
-    {"imsi",             "USIM IMSI\n",          0,         strptr:&(uicc->imsi),              defstrval:"",           TYPE_STRING,    0 },\
-    {"nmc_size"          "number of digits in NMC", 0,      iptr:&(uicc->nmc_size),            defintval:2,            TYPE_INT,       0 },\
-    {"key",              "USIM Ki\n",            0,         strptr:&(uicc->key),               defstrval:"",           TYPE_STRING,    0 },\
-    {"opc",              "USIM OPc\n",           0,         strptr:&(uicc->opc),               defstrval:"",           TYPE_STRING,    0 },\
+    {"imsi",             "USIM IMSI\n",          0,         strptr:&(uicc->imsiStr),              defstrval:"",           TYPE_STRING,    0 },\
+    {"nmc_size"          "number of digits in NMC", 0,      iptr:&(uicc->nmc_size),               defintval:2,            TYPE_INT,       0 },\
+    {"key",              "USIM Ki\n",            0,         strptr:&(uicc->keyStr),               defstrval:"",           TYPE_STRING,    0 },\
+    {"opc",              "USIM OPc\n",           0,         strptr:&(uicc->opcStr),               defstrval:"",           TYPE_STRING,    0 },\
+    {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",       TYPE_STRING,    0 },\
+    {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",     TYPE_STRING,    0 },\
   };
+
+const char *hexTable="0123456789abcdef";
+static inline void to_hex(char *in, uint8_t *out, bool swap) {
+  if (swap)
+    for (size_t i=0; in[i]!=0; i++) {
+      out+=hexTable[in[i]    & 0xf];
+      out+=hexTable[in[i]>>4 & 0xf];
+    } else {
+    for (size_t i=0; in[i]!=0; i++) {
+      out+=hexTable[in[i]>>4 & 0xf];
+      out+=hexTable[in[i]    & 0xf];
+    }
+  }
+}
 
 uicc_t *init_uicc(char *sectionName) {
   uicc_t *uicc=(uicc_t *)calloc(sizeof(uicc_t),1);
   paramdef_t uicc_params[] = UICC_PARAMS_DESC;
   int ret = config_get( uicc_params,sizeof(uicc_params)/sizeof(paramdef_t),sectionName);
   AssertFatal(ret >= 0, "configuration couldn't be performed");
-  LOG_I(HW, "UICC simulation: IMSI=%s, Ki=%s, OPc=%s\n", uicc->imsi, uicc->key, uicc->opc);
+  LOG_I(HW, "UICC simulation: IMSI=%s, Ki=%s, OPc=%s\n", uicc->imsiStr, uicc->keyStr, uicc->opcStr);
+  to_hex(uicc->keyStr,uicc->key, false);
+  to_hex(uicc->opcStr,uicc->opc, false);
+  to_hex(uicc->sqnStr,uicc->sqn, false);
+  to_hex(uicc->amfStr,uicc->amf, false);
   return uicc;
 }
 

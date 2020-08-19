@@ -20,6 +20,8 @@
 * For more information about the OpenAirInterface (OAI) Software Alliance:
 *      contact@openairinterface.org
 */
+#ifndef USIM_INTERFACE_H
+#define USIM_INTERFACE_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,9 +36,15 @@
 #include "common_lib.h"
 
 typedef struct {
-  char *imsi;
-  char *key;
-  char *opc;
+  char *imsiStr;
+  char *keyStr;
+  char *opcStr;
+  char *amfStr;
+  char *sqnStr;
+  uint8_t key[16];
+  uint8_t opc[16];
+  uint8_t amf[2];
+  uint8_t sqn[6];
   int nmc_size;
 } uicc_t;
 
@@ -44,3 +52,4 @@ typedef struct {
  * Read the configuration file, section name variable to be able to manage several UICC
  */
 uicc_t *init_uicc(char *sectionName);
+#endif

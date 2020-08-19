@@ -76,7 +76,7 @@ int identityResponse(void **msg, nr_user_nas_t *UE) {
     UE->uicc=init_uicc("uicc");
 
   // TS 24.501 9.11.3.4
-  int imsiL=strlen(UE->uicc->imsi);
+  int imsiL=strlen(UE->uicc->imsiStr);
   int msinL=imsiL-3-UE->uicc->nmc_size;
   int respSize=sizeof(IdentityresponseIMSI_t) + (msinL+1)/2;
   IdentityresponseIMSI_t *resp=(IdentityresponseIMSI_t *) calloc(respSize,1);
@@ -85,17 +85,17 @@ int identityResponse(void **msg, nr_user_nas_t *UE) {
   resp->common.mt=Identityresponse;
   resp->common.len=htons(respSize-sizeof(Identityresponse_t));
   resp->mi=SUCI;
-  resp->mcc1=UE->uicc->imsi[0]-'0';
-  resp->mcc2=UE->uicc->imsi[1]-'0';
-  resp->mcc3=UE->uicc->imsi[2]-'0';
-  resp->mnc1=UE->uicc->imsi[3]-'0';
-  resp->mnc2=UE->uicc->imsi[4]-'0';
-  resp->mnc3=UE->uicc->nmc_size==2? 0xF : UE->uicc->imsi[3]-'0';
+  resp->mcc1=UE->uicc->imsiStr[0]-'0';
+  resp->mcc2=UE->uicc->imsiStr[1]-'0';
+  resp->mcc3=UE->uicc->imsiStr[2]-'0';
+  resp->mnc1=UE->uicc->imsiStr[3]-'0';
+  resp->mnc2=UE->uicc->imsiStr[4]-'0';
+  resp->mnc3=UE->uicc->nmc_size==2? 0xF : UE->uicc->imsiStr[3]-'0';
   // TBD: routing to fill (FF ?)
   char *out=(char *)(resp+1);
-  char *ptr=UE->uicc->imsi + 3 + UE->uicc->nmc_size;
+  char *ptr=UE->uicc->imsiStr + 3 + UE->uicc->nmc_size;
 
-  while ( ptr < UE->uicc->imsi+strlen(UE->uicc->imsi) ) {
+  while ( ptr < UE->uicc->imsiStr+strlen(UE->uicc->imsiStr) ) {
     *out=((*(ptr+1)-'0')<<4) | (*(ptr) -'0');
     out++;
     ptr+=2;
@@ -105,7 +105,6 @@ int identityResponse(void **msg, nr_user_nas_t *UE) {
     *out=((*(ptr-1)-'0')) | 0xF0;
 
   *msg=resp;
-  log_dump(NAS, resp,  respSize, LOG_DUMP_CHAR, "\n");
   return respSize;
 }
 

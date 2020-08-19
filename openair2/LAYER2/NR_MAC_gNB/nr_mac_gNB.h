@@ -69,6 +69,7 @@
 #include "NR_TAG.h"
 
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
+#include <openair3/UICC/usim_interface.h>
 
 
 /* Defs */
@@ -282,7 +283,8 @@ typedef struct NR_preamble_ue {
 } NR_preamble_ue;
 
 typedef struct {
-   boolean_t fiveG_connected;
+  boolean_t fiveG_connected;
+  uicc_t *uicc;
 } NRUEcontext_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/

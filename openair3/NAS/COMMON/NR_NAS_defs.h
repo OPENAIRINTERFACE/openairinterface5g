@@ -1,4 +1,16 @@
 
+/* TS 24.007 possible L3 formats:
+   Table 11.1: Formats of information elements
+   Format Meaning IEI present LI present Value part present
+   T Type only yes no no
+   V Value only no no yes
+   TV Type and Value yes no yes
+   LV Length and Value no yes yes
+   TLV Type, Length and Value yes yes yes
+   LV-E Length and Value no yes yes
+   TLV-E Type, Length and Value yes yes yes
+*/
+
 //TS 24.501, chap 9.2 => TS 24.007
 typedef enum {
   SGSsessionmanagementmessages=0x2e, //LTEbox: 0xC0 ???
@@ -190,6 +202,12 @@ static const cause_text_info_t cause_secu_text_info[] = {
   FOREACH_CAUSE_SECU(CAUSE_TEXT)
 };
 
+// IEI (information element identifier) are spread in each message definition
+#define IEI_RAND 0x21
+#define IEI_AUTN 0x20
+#define IEI_EAP  0x78
+#define IEI_AuthenticationResponse 0x2d
+
 #define CAUSE_ENUM(LabEl, nUmID ) LabEl = nUmID,
 //! Tasks id of each task
 typedef enum {
@@ -226,7 +244,8 @@ typedef struct __attribute__((packed)) {
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
   uint16_t len;
-} Identityresponse_t;
+}
+Identityresponse_t;
 
 typedef struct __attribute__((packed)) {
   Identityresponse_t common;
@@ -246,22 +265,31 @@ typedef struct __attribute__((packed)) {
   int protectScheme:4;
   int spare:4;
   uint8_t hplmnId;
-} IdentityresponseIMSI_t;
-  
-typedef struct {
+}
+IdentityresponseIMSI_t;
+
+typedef struct  __attribute__((packed)) {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
   int ngKSI:4;
   int spare:4;
   int ABBALen:8;
-} authenticationrequestHeader_t;
+  int ABBA:16;
+  uint8_t ieiRAND;
+  uint8_t RAND[16];
+  uint8_t ieiAUTN;
+  uint8_t AUTNlen;
+  uint8_t AUTN[16];
+}
+authenticationrequestHeader_t;
 
 typedef struct {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
 } authenticationresponseHeader_t;
+
 
 
 //AUTHENTICATION RESULT
