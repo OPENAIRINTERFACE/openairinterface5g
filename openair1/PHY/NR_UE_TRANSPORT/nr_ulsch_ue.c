@@ -93,7 +93,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
-                               uint8_t frame,
+                               uint32_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id) {
@@ -206,9 +206,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
       }
 #ifdef DEBUG_MAC_PDU
-      LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS/8);
+      LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d at SFN/SF: %d/%d \n", TBS/8, frame, slot);
       for (i = 0; i < TBS / 8; i++) {
-        printf("%02x",harq_process_ul_ue->a[i]);
+        printf("%02x ",harq_process_ul_ue->a[i]);
       }
       printf("\n");
 #endif
