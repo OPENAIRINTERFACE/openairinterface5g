@@ -43,6 +43,7 @@ class CotsUe:
 		self.ADBUserName = ADBUserName
 		self.ADBPassWord = ADBPassWord
 		self.cots_run_mode = '' #on of off to toggle airplane mode on/off
+		self.__cots_cde_dict_file = 'cots_ue_ctl.yaml'
 		self.__SetAirplaneRetry = 3
 
 #-----------------$
@@ -59,7 +60,7 @@ class CotsUe:
 
 	def Set_Airplane(self, target_id, target_state_str):
 		#load cots commands dictionary
-		with open('cots_ue_ctl.yaml','r') as file:
+		with open(self.__cots_cde_dict_file,'r') as file:
 			cots_ue_ctl = yaml.load(file,Loader=yaml.FullLoader)
 		if target_id in cots_ue_ctl:
 			mySSH = sshconnection.SSHConnection()
@@ -89,7 +90,8 @@ class CotsUe:
 			mySSH.command('sudo adb kill-server','$',5)
 			mySSH.close()
 		else:
-			logging.error("COTS UE Id from XML could not be found in UE YAML dictionary cots_ue_ctl.yaml)
+			logging.error("COTS UE Id from XML could not be found in UE YAML dictionary " + self.__cots_cde_dict_file)
+			sys.exit("COTS UE Id from XML could not be found in UE YAML dictionary " + self.__cots_cde_dict_file)
 
 
 
