@@ -170,8 +170,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (pdcch_pdu_id >= 0 || ul_pdcch_pdu_id >= 0) {
     LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
-	  ul_pdcch_pdu_id==0?0:gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
-	  pdcch_pdu_id==0?0:gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
+	  gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
+	  gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
@@ -191,23 +191,23 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     if (ul_pdcch_pdu_id >= 0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
   }
  
-  for (int i=0; i<gNB->num_pdsch_rnti; i++) {
+  for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
-    LOG_D(PHY, "PDSCH generation started (%d)\n", gNB->num_pdsch_rnti);
+    LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
     nr_generate_pdsch(gNB->dlsch[i][0],
-		      gNB->nr_gold_pdsch_dmrs[slot],
-		      gNB->common_vars.txdataF,
-		      AMP, frame, slot, fp, 0,
-		      &gNB->dlsch_encoding_stats,
-		      &gNB->dlsch_scrambling_stats,
-		      &gNB->dlsch_modulation_stats,
-		      &gNB->tinput,
-		      &gNB->tprep,
-		      &gNB->tparity,
-		      &gNB->toutput,
-		      &gNB->dlsch_rate_matching_stats,
-		      &gNB->dlsch_interleaving_stats,
-		      &gNB->dlsch_segmentation_stats);
+                      gNB->nr_gold_pdsch_dmrs[slot],
+                      gNB->common_vars.txdataF,
+                      AMP, frame, slot, fp, 0,
+                      &gNB->dlsch_encoding_stats,
+                      &gNB->dlsch_scrambling_stats,
+                      &gNB->dlsch_modulation_stats,
+                      &gNB->tinput,
+                      &gNB->tprep,
+                      &gNB->tparity,
+                      &gNB->toutput,
+                      &gNB->dlsch_rate_matching_stats,
+                      &gNB->dlsch_interleaving_stats,
+                      &gNB->dlsch_segmentation_stats);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
