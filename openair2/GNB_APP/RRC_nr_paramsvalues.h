@@ -41,6 +41,7 @@
 #define GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET                   "ssb_SubcarrierOffset"
 #define GNB_CONFIG_STRING_PDSCHANTENNAPORTS                     "pdsch_AntennaPorts"
 #define GNB_CONFIG_STRING_PUSCHTARGETPOWX10                     "pusch_TargetSNRx10"
+#define GNB_CONFIG_STRING_PUCCHTARGETPOWX10                     "pucch_TargetSNRx10"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON               "servingCellConfigCommon"
 #define GNB_CONFIG_STRING_PHYSCELLID                            "physCellId"
 #define GNB_CONFIG_STRING_NTIMINGADVANCEOFFSET                  "n_TimingAdvanceOffset"
@@ -226,7 +227,9 @@
 
 #define SSBPARAMS_DESC {{GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,NULL,0,iptr:&ssb_SubcarrierOffset,defintval:0,TYPE_INT,0}}
 #define PDSCHANTENNAPARAMS_DESC {{GNB_CONFIG_STRING_PDSCHANTENNAPORTS,NULL,0,iptr:&pdsch_AntennaPorts,defintval:1,TYPE_INT,0}}
-#define TARGETPOWER_DESC {{GNB_CONFIG_STRING_PUSCHTARGETPOWX10,NULL,0,iptr:&pusch_TargetSNRx10,defintval:200,TYPE_INT,0}}
+#define TARGETPOWER_DESC { \
+{GNB_CONFIG_STRING_PUSCHTARGETPOWX10,NULL,0,iptr:&pusch_TargetSNRx10,defintval:200,TYPE_INT,0},\
+{GNB_CONFIG_STRING_PUCCHTARGETPOWX10,NULL,0,iptr:&pucch_TargetSNRx10,defintval:200,TYPE_INT,0}}
 
 #define SCCPARAMS_DESC(scc) { \
 {GNB_CONFIG_STRING_PHYSCELLID,NULL,0,i64ptr:scc->physCellId,defint64val:0,TYPE_INT64,0/*0*/}, \

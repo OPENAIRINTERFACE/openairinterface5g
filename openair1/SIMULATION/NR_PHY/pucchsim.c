@@ -81,7 +81,7 @@ int main(int argc, char **argv)
   //int freq_offset;
   //int subframe_offset;
   //char fname[40], vname[40];
-  int trial,n_trials=100,n_errors=0,ack_nack_errors=0;
+  int trial,n_trials=100,n_errors=0,ack_nack_errors=0,sr_errors=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
@@ -494,6 +494,7 @@ int main(int argc, char **argv)
   
   for(SNR=snr0;SNR<=snr1;SNR=SNR+1){
     ack_nack_errors=0;
+    sr_errors=0;
     n_errors = 0;
     for (trial=0; trial<n_trials; trial++) {
       bzero(txdataF[aa],frame_parms->ofdm_symbol_size*sizeof(int));
@@ -548,15 +549,23 @@ int main(int argc, char **argv)
 	pucch_pdu.start_symbol_index    = startingSymbolIndex;
 	pucch_pdu.prb_start             = startingPRB;
         nr_decode_pucch0(gNB,nr_tti_tx,&uci_pdu,&pucch_pdu);
-        if(nr_bit==1)
-          ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
-        else
-          ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
-	free(uci_pdu.harq->harq_list);
+        if(sr_flag==1){
+          if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
+            sr_errors+=1;
+        }
+        if(nr_bit>0){
+          if(nr_bit==1)
+            ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
+          else
+            ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
+	  free(uci_pdu.harq->harq_list);
+        }
       }
       else if (format==1) {
-	
-        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,&(payload_received),frame_parms,amp,nr_tti_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
+        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,
+                         &(payload_received),frame_parms,amp,nr_tti_tx,
+                         m0,nrofSymbols,startingSymbolIndex,startingPRB,
+                         startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
         if(nr_bit==1)
           ack_nack_errors+=((actual_payload^payload_received)&1);
         else
@@ -595,8 +604,11 @@ int main(int argc, char **argv)
       }
       n_errors=((actual_payload^payload_received)&1)+(((actual_payload^payload_received)&2)>>1)+(((actual_payload^payload_received)&4)>>2)+n_errors;
     }
-    printf("SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
-    if((float)ack_nack_errors/(float)(n_trials)<=target_error_rate){
+    if (sr_flag == 1)
+      printf("SR: SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,sr_errors);
+    if(nr_bit > 0)
+      printf("ACK/NACK: SNR=%f, n_trials=%d, n_bit_errors=%d\n",SNR,n_trials,ack_nack_errors);
+    if((float)(ack_nack_errors+sr_errors)/(float)(n_trials)<=target_error_rate){
       printf("PUCCH test OK\n");
       break;
     }

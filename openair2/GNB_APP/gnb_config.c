@@ -523,6 +523,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int ssb_SubcarrierOffset = 31;
   int pdsch_AntennaPorts = 1;
   int pusch_TargetSNRx10 = 200;
+  int pucch_TargetSNRx10 = 200;
   uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
@@ -675,6 +676,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 	NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = pdsch_AntennaPorts;
         printf("pusch_TargetSNRx10 %d\n",pusch_TargetSNRx10);
 	NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = pusch_TargetSNRx10;
+        printf("pucch_TargetSNRx10 %d\n",pucch_TargetSNRx10);
+	NRRRC_CONFIGURATION_REQ (msg_p).pucch_TargetSNRx10 = pucch_TargetSNRx10;
 	NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;	   
 	  
       }//
