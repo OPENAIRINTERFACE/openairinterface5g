@@ -1300,6 +1300,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->servingCellMO=NULL;
 
 }
+#endif
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
