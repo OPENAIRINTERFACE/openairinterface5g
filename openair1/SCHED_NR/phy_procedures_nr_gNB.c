@@ -170,8 +170,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (pdcch_pdu_id >= 0 || ul_pdcch_pdu_id >= 0) {
     LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
-	  ul_pdcch_pdu_id==0?0:gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
-	  pdcch_pdu_id==0?0:gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
+	  gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
+	  gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
