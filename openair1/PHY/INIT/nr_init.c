@@ -506,6 +506,8 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
 
+  memset(gNB->num_pdsch_rnti, 0, sizeof(uint16_t)*80);
+
   for (i=0; i <NUMBER_OF_NR_PDCCH_MAX; i++) {
     LOG_I(PHY,"Initializing PDCCH list for PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
     gNB->pdcch_pdu[i].frame=-1;
