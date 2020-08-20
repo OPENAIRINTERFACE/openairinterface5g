@@ -251,6 +251,8 @@ void dump_nr_ue_list(NR_UE_list_t *listP, int ul_flag);
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
+int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
+
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,

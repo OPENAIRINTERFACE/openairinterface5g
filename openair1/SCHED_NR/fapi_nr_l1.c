@@ -153,7 +153,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 	  TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs,
 	  number_ul_dci_pdu,number_ul_tti_pdu);
 
-  int pdcch_received=0;
+//  int pdcch_received=0;
   gNB->num_pdsch_rnti=0;
   for (int i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
     gNB->dlsch[i][0]->rnti=0;
@@ -176,13 +176,13 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       break;
 
       case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
-	AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
+//	AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
         LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
         handle_nfapi_nr_pdcch_pdu(gNB,
 				  frame, slot,
 				  &dl_tti_pdu->pdcch_pdu);
  
-	pdcch_received = 1;
+//	pdcch_received = 1;
 
       break;
       case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:

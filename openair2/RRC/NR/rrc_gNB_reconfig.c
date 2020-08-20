@@ -181,9 +181,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   ssbElem[5] = calloc(1,sizeof(struct NR_CFRA_SSB_Resource));
   ssbElem[5]->ssb = 5;
   ssbElem[5]->ra_PreambleIndex = 63;
-  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list,ssbElem[i]);
+  ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list,ssbElem[5]);
   ssbElem[6] = calloc(1,sizeof(struct NR_CFRA_SSB_Resource));
-  ssbElem[6]->ssb = i;
+  ssbElem[6]->ssb = 6;
   ssbElem[6]->ra_PreambleIndex = 63;
   ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list,ssbElem[6]);
   ssbElem[7] = calloc(1,sizeof(struct NR_CFRA_SSB_Resource));

@@ -1437,6 +1437,25 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   return -1;
 }
 
+int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
+//------------------------------------------------------------------------------
+{
+  int RA_id;
+  RA_t *ra = (RA_t *) &RC.nrmac[mod_idP]->common_channels[CC_idP].ra[0];
+
+  for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
+    LOG_D(MAC, "Checking RA_id %d for %x : state %d\n",
+          RA_id,
+          rntiP,
+          ra[RA_id].state);
+
+    if (ra[RA_id].state != IDLE && ra[RA_id].rnti == rntiP)
+      return RA_id;
+  }
+
+  return -1;
+}
+//------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   int UE_id;
