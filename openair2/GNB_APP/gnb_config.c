@@ -520,10 +520,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
-  int ssb_SubcarrierOffset = 31;
-  int pdsch_AntennaPorts = 1;
-  int pusch_TargetSNRx10 = 200;
-  int pucch_TargetSNRx10 = 200;
   uint64_t ssb_bitmap=0xff;
   memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
