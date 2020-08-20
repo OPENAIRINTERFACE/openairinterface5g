@@ -2269,7 +2269,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   /* RACH */
   if (get_softmodem_params()->do_ra==1) {
-    if ((ue->UE_mode[gNB_id] == PRACH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
+    if ((ue->UE_mode[gNB_id] < PUSCH) && (ue->prach_vars[gNB_id]->prach_Config_enabled == 1)) {
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
   }
@@ -3289,9 +3289,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
-  uint8_t dmrs_type = dlsch0->harq_processes[harq_pid]->dmrsConfigType;
-  uint8_t nb_re_dmrs = (dmrs_type==NFAPI_NR_DMRS_TYPE1)?6:4; // TODO: should changed my mac
-  uint16_t length_dmrs = 1; //cfg->pdsch_config.dmrs_max_length.value;
+  uint8_t dmrs_type, nb_re_dmrs;
+  uint16_t length_dmrs = 1; 
   uint16_t nb_symb_sch = 9;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind;
@@ -3316,6 +3315,13 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   is_cw0_active = dlsch0->harq_processes[harq_pid]->status;
   nb_symb_sch = dlsch0->harq_processes[harq_pid]->nb_symbols;
   start_symbol = dlsch0->harq_processes[harq_pid]->start_symbol;
+  dmrs_type = dlsch0->harq_processes[harq_pid]->dmrsConfigType;
+  if (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
+    nb_re_dmrs = 6*dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+  }
+  else {
+    nb_re_dmrs = 4*dlsch0->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+  }
 
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
@@ -4606,6 +4612,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     if (ue->prach_cnt == 3)
       ue->prach_cnt = 0;
+  } else if (nr_prach == 2) {
+    nr_ra_succeeded(mod_id, ue->CC_id, gNB_id);
   }
 
   // if we're calibrating the PRACH kill the pointer to its resources so that the RA protocol doesn't continue

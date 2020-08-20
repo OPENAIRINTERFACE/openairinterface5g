@@ -40,6 +40,16 @@ The present clause specifies several numerical functions for testing of digital 
 
 #define NB_SAMPLES_CHANNEL_OFFSET 4
 
+typedef enum {
+  UNSPECIFIED_MODID=0,
+  RFSIMU_MODULEID=1
+} channelmod_moduleid_t;
+#define MODULEID_STR_INIT {"","rfsimulator"}
+
+#define CHANMODEL_FREE_DELAY       1<<0
+#define CHANMODEL_FREE_RSQRT_6     1<<1
+#define CHANMODEL_FREE_RSQRT_NTAPS 1<<2
+#define CHANMODEL_FREE_AMPS        1<<3
 typedef struct {
   ///Number of tx antennas
   uint8_t nb_tx;
@@ -92,6 +102,14 @@ typedef struct {
   time_stats_t interp_time;
   time_stats_t interp_freq;
   time_stats_t convolution;
+  /// index in the channel descriptors array
+  unsigned int chan_idx;
+  /// id of the channel modeling algorithm
+  int modelid;
+  /// identifies channel descriptor owner (the module which created this descriptor)
+  channelmod_moduleid_t module_id;
+  /// flags to properly trigger memory free
+  unsigned int free_flags;
 } channel_desc_t;
 
 typedef struct {
@@ -224,8 +242,9 @@ typedef enum {
 #define CONFIG_HLP_SNR     "Set average SNR in dB (for --siml1 option)\n"
 #define CHANNELMOD_SECTION "channelmod"
 #define CHANNELMOD_PARAMS_DESC {  \
-    {"s"      , CONFIG_HLP_SNR, PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB , defdblval:25, TYPE_DOUBLE, 0},\
-    {"sinr_dB", NULL          , 0                                , dblptr:&sinr_dB, defdblval:0 , TYPE_DOUBLE, 0},\
+    {"s"      , CONFIG_HLP_SNR,         PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB,    defdblval:25, TYPE_DOUBLE, 0},\
+    {"sinr_dB", NULL,                   0                                , dblptr:&sinr_dB,   defdblval:0 , TYPE_DOUBLE, 0},\
+    {"max_chan, CONFIG_HLP_MAX_CHAN",   0,                                 uptr:&max_chan,    defintval:10,  TYPE_UINT,   0},\
   }
 
 #include "platform_constants.h"
@@ -262,9 +281,18 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB);
+/**
+\brief free memory allocated for a model descriptor
+\param ch points to the model, which cannot be used after calling this fuction
+*/
+void free_channel_desc_scm(channel_desc_t *ch);
 
-
-
+/**
+\brief This set the ownerid of a model descriptor, can be later used to check what module created a channel model
+\param cdesc points to the model descriptor
+\param module_id identifies the channel model. should be define as a macro in simu.h
+*/
+void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_id);
 /** \fn void random_channel(channel_desc_t *desc)
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model.
 \param desc Pointer to the channel descriptor

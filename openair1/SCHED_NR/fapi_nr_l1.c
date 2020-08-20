@@ -159,6 +159,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     gNB->dlsch[i][0]->rnti=0;
     gNB->dlsch[i][0]->harq_mask=0;
   }
+
   gNB->pbch_configured=0;
 
   for (int i=0;i<number_dl_pdu;i++) {

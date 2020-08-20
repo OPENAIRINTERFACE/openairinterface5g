@@ -134,7 +134,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   int avgs = 0;// rb;
   NR_DL_UE_HARQ_t *dlsch0_harq, *dlsch1_harq = NULL;
 
-  uint8_t beamforming_mode;
+  uint8_t beamforming_mode = 0;
 
   int32_t **rxdataF_comp_ptr;
   int32_t **dl_ch_mag_ptr;
@@ -162,24 +162,34 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     pdsch_vars = ue->pdsch_vars_SI;
     dlsch = &ue->dlsch_SI[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-    beamforming_mode = 0;
+
     break;
 
   case RA_PDSCH:
     pdsch_vars = ue->pdsch_vars_ra;
     dlsch = &ue->dlsch_ra[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-    beamforming_mode = 0;
+
+    // WIP TBR Hotfix
+    memcpy((void*)&pdsch_vars[eNB_id]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], (void*)&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], ue->frame_parms.ofdm_symbol_size*sizeof(int32_t));
 
     break;
 
   case PDSCH:
     pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
-    beamforming_mode = ue->transmission_mode[eNB_id] < 7 ? 0 :ue->transmission_mode[eNB_id];
-
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
     dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
+    beamforming_mode = ue->transmission_mode[eNB_id] < 7 ? 0 :ue->transmission_mode[eNB_id];
+    break;
+
+  default:
+    LOG_E(PHY, "[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n", nr_tti_rx, type);
+    return -1;
+    break;
+  }
+
+  if (dlsch1_harq){
 
     //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
@@ -191,47 +201,51 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       dlsch1_harq = dlsch[codeword_TB1]->harq_processes[harq_pid];
 
       #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming both TBs are active\n");
+        printf("[DEMOD] I am assuming both TBs are active, in cw0 %d and cw1 %d \n", codeword_TB0, codeword_TB1);
       #endif
 
     } else if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status != ACTIVE) ) {
       codeword_TB0 = dlsch0_harq->codeword;
-      codeword_TB1 = -1;
-      dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+      dlsch0_harq = dlsch[codeword_TB0]->harq_processes[harq_pid];
       dlsch1_harq = NULL;
 
       #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming only TB0 is active\n");
+        printf("[DEMOD] I am assuming only TB0 is active, in cw %d \n", codeword_TB0);
       #endif
 
     } else if ((dlsch0_harq->status != ACTIVE) && (dlsch1_harq->status == ACTIVE)){
-      codeword_TB0 = -1;
       codeword_TB1 = dlsch1_harq->codeword;
       dlsch0_harq  = NULL;
-      dlsch1_harq  = dlsch[1]->harq_processes[codeword_TB1];
+      dlsch1_harq  = dlsch[codeword_TB1]->harq_processes[harq_pid];
 
       #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", dlsch1_harq->codeword);
+        printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", codeword_TB1);
       #endif
 
-      AssertFatal(1 == 0, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
+      LOG_E(PHY, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
+      return -1;
 
     } else {
       LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
       return(-1);
     }
+  } else if (dlsch0_harq) {
+    if (dlsch0_harq->status == ACTIVE)
+      codeword_TB0 = dlsch0_harq->codeword;
+      dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      break;
-
-    default:
-      AssertFatal(1 == 0, "[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n", nr_tti_rx, type);
-      return(-1);
-      break;
-
+      #ifdef DEBUG_HARQ
+        printf("[DEMOD] I am assuming only TB0 is active\n");
+      #endif
+  } else {
+    LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
+    return (-1);
   }
 
-  if (dlsch0_harq == NULL)
-     AssertFatal(1 == 0, "Done\n");
+  if (dlsch0_harq == NULL) {
+    LOG_E(PHY, "Done\n");
+    return -1;
+  }
 
   dlsch0_harq->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
   dlsch0_harq->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
@@ -2377,7 +2391,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-    k = frame_parms->first_carrier_offset + 12*start_rb; 
+    k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
 
     if (high_speed_flag == 1)
       dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];

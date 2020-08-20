@@ -353,4 +353,5 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
+
 #endif /*__NR_TRANSPORT__H__*/
