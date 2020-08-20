@@ -150,6 +150,7 @@ void nr_modulation(uint32_t *in,
   default:
     break;
   }
+  AssertFatal(false,"Invalid or unsupported modulation order %d\n",mod_order);
 
 }
 
