@@ -40,7 +40,15 @@ esac
 KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
-SUDO='sudo -E'
+#check if we run inside a container
+IS_CONTAINER=`egrep -c "docker|kubepods" /proc/self/cgroup`
+#sudo is not needed inside a container
+if [ $IS_CONTAINER -eq 0 ]
+then
+  SUDO='sudo -S -E'
+else
+  SUDO=''
+fi
 
 ###############################
 ## echo and  family
@@ -104,6 +112,7 @@ check_supported_distribution() {
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
+        "rhel7.8")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -234,29 +243,43 @@ compilations() {
 install_protobuf_from_source(){
     protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
     echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
-    (
+#commented for debug    (
     cd /tmp
     echo "Downloading protobuf"
     #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
     #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
-    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
-    cd protobuf-3.3.0/
-    ./configure
-    echo "Compiling protobuf"
-    make -j`nproc`
-    $SUDO make install
-    $SUDO ldconfig
-    ) >& $protobuf_install_log
+    
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+      wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
+      cd protobuf-3.3.0/
+      ./configure
+      echo "Compiling protobuf"
+      make -j`nproc`
+      $SUDO make install
+      $SUDO ldconfig
+    else
+      export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
+      rm -rf /tmp/protobuf
+      git clone --depth=1 --branch=v3.3.0 https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
+      cd /tmp/protobuf
+      git submodule update --init --recursive
+      ./autogen.sh
+      ./configure
+      make -j`nproc`
+      make install
+    fi
+#commented for debug    ) >& $protobuf_install_log
 }
 
 install_protobuf_c_from_source(){
     protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
     echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
-    (
+#commented for debug    (
     if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
         export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
     fi
@@ -272,7 +295,7 @@ install_protobuf_c_from_source(){
     make -j`nproc`
     $SUDO make install
     $SUDO ldconfig
-    ) >& $protobuf_c_install_log
+#commented for debug    ) >& $protobuf_c_install_log
 }
 
 install_usrp_uhd_driver_from_source(){
