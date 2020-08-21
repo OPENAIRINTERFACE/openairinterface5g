@@ -1,6 +1,6 @@
 #include <openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
 #include <openair3/NAS/NR_UE/nr_user_def.h>
-
+#include <openair3/NAS/COMMON/milenage.h>
 
 void SGSabortNet(void *msg, nr_user_nas_t *UE) {
 }
@@ -116,7 +116,7 @@ int authenticationResponse(void **msg,nr_user_nas_t *UE) {
   if (UE->uicc == NULL)
     // config file section hardcoded as "uicc", nevertheless it opens to manage several UEs or a multi SIM UE
     UE->uicc=init_uicc("uicc");
-
+  
   myCalloc(resp, authenticationresponse_t);
   resp->epd=SGSmobilitymanagementmessages;
   resp->sh=0;
@@ -127,12 +127,14 @@ int authenticationResponse(void **msg,nr_user_nas_t *UE) {
   uint8_t ik[16], ck[16], res[8], AUTN[16];
   milenage_generate(UE->uicc->opc, UE->uicc->amf, UE->uicc->key,
                     UE->uicc->sqn, UE->uicc->rand, AUTN, ik, ck, res);
-
-  if ( memcmp(UE-uicc->autn, AUTN ) {
-} else {
-}
-*msg=resp;
-     return sizeof(authenticationresponse_t);
+  
+  if ( memcmp(UE->uicc->autn, AUTN, sizeof(AUTN))  ) {
+    // prepare and send good answer
+  } else {
+    // prepare and send autn is not compatible with us
+  }
+  *msg=resp;
+  return sizeof(authenticationresponse_t);
 }
 
 int securityModeComplete(void **msg, nr_user_nas_t *UE) {

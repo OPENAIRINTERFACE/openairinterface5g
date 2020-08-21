@@ -726,9 +726,6 @@ int restart_L1L2(module_id_t gnb_id) {
   
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this gNB */
-  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
   LOG_I(GNB_APP, "attempting to create ITTI tasks\n");
   // No more rrc thread, as many race conditions are hidden behind

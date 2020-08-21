@@ -1093,9 +1093,13 @@ int restart_L1L2(module_id_t enb_id) {
   pthread_mutex_lock(&sync_mutex);
   sync_var = -1;
   pthread_mutex_unlock(&sync_mutex);
+
   /* copy the changed frame parameters to the RU */
   /* TODO this should be done for all RUs associated to this eNB */
   memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+
+  RC.ru_mask |= (1 << ru->idx);
+
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
   init_UE_info(&RC.mac[enb_id]->UE_info);
@@ -1320,9 +1324,14 @@ int main ( int argc, char **argv ) {
 
   // end of CI modifications
   //getchar();
+<<<<<<< HEAD
   if(IS_SOFTMODEM_DOFORMS) {
     load_softscope("enb",NULL);
   }
+=======
+  if(IS_SOFTMODEM_DOFORMS)
+    load_softscope("enb", NULL);
+>>>>>>> 7f28f8d10dc0d73fd4b10d4a89fde554158f9fb5
 
   itti_wait_tasks_end();
   oai_exit=1;

@@ -41,7 +41,7 @@
    @mac_s: Buffer for MAC-S = 64-bit resync authentication code, or %NULL
    Returns: true on success, false on failure
 */
-bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
+static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
                  const u8 *sqn, const u8 *amf, u8 *mac_a, u8 *mac_s) {
   u8 tmp1[16], tmp2[16], tmp3[16];
   int i;
@@ -95,7 +95,7 @@ bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
    @akstar: Buffer for AK = 48-bit anonymity key (f5*), or %NULL
    Returns: true on success, false on failure
 */
-bool milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
+static bool milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
                     u8 *res, u8 *ck, u8 *ik, u8 *ak, u8 *akstar) {
   u8 tmp1[16], tmp2[16], tmp3[16];
   int i;
@@ -185,7 +185,7 @@ bool milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
    @res: Buffer for RES = 64-bit signed response (f2), or %NULL
    @res_len: Max length for res; set to used length or 0 on failure
 */
-bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
+static bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
                        const u8 *sqn, const u8 *_rand, u8 *autn, u8 *ik,
                        u8 *ck, u8 *res) {
   int i;
@@ -215,7 +215,7 @@ bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
    Returns: 0 = success (sqn filled), -1 on failure
 */
 #define p(a) printf("%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (int)((a)[0]), (int)((a)[1]), (int)((a)[2]), (int)((a)[3]),(int)((a)[4]), (int)((a)[5]));
-bool milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
+static bool milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
                    u8 *sqn) {
   u8 amf[2] = { 0x00, 0x00 }; /* TS 33.102 v7.0.0, 6.3.3 */
   u8 ak[6], mac_s[8];
@@ -245,7 +245,7 @@ bool milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
    @kc: Buffer for Kc = 64-bit Kc
    Returns: 0 on success, -1 on failure
 */
-bool gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres, u8 *kc) {
+static bool gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres, u8 *kc) {
   u8 res[8], ck[16], ik[16];
   int i;
 
@@ -281,7 +281,7 @@ bool gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres, u8 *kc)
    @auts: 112-bit buffer for AUTS
    Returns: 0 on success, -1 on failure, or -2 on synchronization failure
 */
-int milenage_check(const u8 *opc, const u8 *k, const u8 *sqn, const u8 *_rand,
+static int milenage_check(const u8 *opc, const u8 *k, const u8 *sqn, const u8 *_rand,
                    const u8 *autn, u8 *ik, u8 *ck, u8 *res, size_t *res_len,
                    u8 *auts) {
   int i;
@@ -325,7 +325,7 @@ int milenage_check(const u8 *opc, const u8 *k, const u8 *sqn, const u8 *_rand,
   return 0;
 }
 
-void milenage_opc_gen(const u8 *k, const u8 *op, u8 *opc) {
+static void milenage_opc_gen(const u8 *k, const u8 *op, u8 *opc) {
   int i;
   /* Encrypt OP using K */
   aes_128_encrypt_block(k, op, opc);
