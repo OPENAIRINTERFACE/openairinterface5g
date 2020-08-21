@@ -1,5 +1,9 @@
 # RELEASE NOTES: #
 
+## [v1.2.2](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tags/v1.2.2) -> August 2020. ##
+
+* Bug fix for supporting multi-antennas in RF simulator
+
 ## [v1.2.1](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tags/v1.2.1) -> February 2020. ##
 
 * Bug fix for mutex lock for wake-up signal
