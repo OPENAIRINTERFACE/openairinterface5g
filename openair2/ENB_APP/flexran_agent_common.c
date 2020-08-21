@@ -434,40 +434,47 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
                      RC.flexran[mod_id]->cache_name,
                      control_delegation_msg->name);
   if (len >= sizeof(target)) {
-    LOG_E(FLEXRAN_AGENT, "target has been truncated, cannot write file\n");
+    LOG_E(FLEXRAN_AGENT, "target has been truncated, cannot write file name\n");
     return 0;
   }
 
-  /* use low-level API: check whether exists while creating so we can abort if
-   * it exists to not overwrite anything */
-  int fd = open(target, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
-  if (fd >= 0) {
-    ssize_t l = write(fd,
-                      control_delegation_msg->payload.data,
-                      control_delegation_msg->payload.len);
-    close(fd);
-    if (l < control_delegation_msg->payload.len) {
-      LOG_E(FLEXRAN_AGENT,
-            "could not write complete control delegation to %s: only %ld out of "
-            "%ld bytes\n",
-            target,
-            l,
-            control_delegation_msg->payload.len);
-      return 0;
-    } else if (l < 0) {
-      LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
-            target, strerror(errno));
-      return 0;
-    }
-    LOG_I(FLEXRAN_AGENT, "wrote shared object %s\n", target);
-  } else {
-    if (errno == EEXIST) {
-      LOG_I(FLEXRAN_AGENT, "file %s already exists, remove it first\n", target);
+  if (control_delegation_msg->has_payload) {
+    /* use low-level API: check whether exists while creating so we can abort if
+     * it exists to not overwrite anything */
+    int fd = open(target, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
+    if (fd >= 0) {
+      ssize_t l = write(fd,
+                        control_delegation_msg->payload.data,
+                        control_delegation_msg->payload.len);
+      close(fd);
+      if (l < control_delegation_msg->payload.len) {
+        LOG_E(FLEXRAN_AGENT,
+              "could not write complete control delegation to %s: only %ld out of "
+              "%ld bytes\n",
+              target,
+              l,
+              control_delegation_msg->payload.len);
+        return 0;
+      } else if (l < 0) {
+        LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
+              target, strerror(errno));
+        return 0;
+      }
+      LOG_I(FLEXRAN_AGENT, "wrote shared object %s\n", target);
     } else {
-      LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
-            target, strerror(errno));
-      return 0;
+      if (errno == EEXIST) {
+        LOG_I(FLEXRAN_AGENT, "file %s already exists, remove it first\n", target);
+      } else {
+        LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
+              target, strerror(errno));
+        return 0;
+      }
     }
+  } else {
+    LOG_W(FLEXRAN_AGENT, "remove file %s\n", target);
+    int rc = remove(target);
+    if (rc < 0)
+      LOG_E(FLEXRAN_AGENT, "cannot remove file %s: %s\n", target, strerror(errno));
   }
 
   return 0;
