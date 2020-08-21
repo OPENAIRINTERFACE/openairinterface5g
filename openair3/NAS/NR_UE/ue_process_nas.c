@@ -13,6 +13,13 @@ void nas_schedule(void) {
  */
 
 void SGSauthenticationReq(void *msg, nr_user_nas_t *UE) {
+  authenticationrequestHeader_t *amsg=(authenticationrequestHeader_t *) msg;
+  arrayCpy(UE->uicc->rand,amsg->RAND);
+  arrayCpy(UE->uicc->autn,amsg->AUTN);
+  nas_schedule();
+}
+
+void SGSidentityReq(void *msg, nr_user_nas_t *UE) {
   Identityrequest_t *idmsg=(Identityrequest_t *) msg;
 
   if (idmsg->it == SUCI ) {
@@ -20,9 +27,6 @@ void SGSauthenticationReq(void *msg, nr_user_nas_t *UE) {
     nas_schedule();
   } else
     LOG_E(NAS,"Not developped: identity request for %d\n", idmsg->it);
-}
-
-void SGSidentityReq(void *msg, nr_user_nas_t *UE) {
 }
 
 void SGSsecurityModeCommand(void *msg, nr_user_nas_t *UE) {
@@ -109,7 +113,26 @@ int identityResponse(void **msg, nr_user_nas_t *UE) {
 }
 
 int authenticationResponse(void **msg,nr_user_nas_t *UE) {
-  return -1;
+  if (UE->uicc == NULL)
+    // config file section hardcoded as "uicc", nevertheless it opens to manage several UEs or a multi SIM UE
+    UE->uicc=init_uicc("uicc");
+
+  myCalloc(resp, authenticationresponse_t);
+  resp->epd=SGSmobilitymanagementmessages;
+  resp->sh=0;
+  resp->mt=Authenticationresponse;
+  resp->iei=IEI_AuthenticationResponse;
+  resp->RESlen=sizeof(resp->RES);
+  // Verify the AUTN
+  uint8_t ik[16], ck[16], res[8], AUTN[16];
+  milenage_generate(UE->uicc->opc, UE->uicc->amf, UE->uicc->key,
+                    UE->uicc->sqn, UE->uicc->rand, AUTN, ik, ck, res);
+
+  if ( memcmp(UE-uicc->autn, AUTN ) {
+} else {
+}
+*msg=resp;
+     return sizeof(authenticationresponse_t);
 }
 
 int securityModeComplete(void **msg, nr_user_nas_t *UE) {

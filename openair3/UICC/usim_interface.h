@@ -46,6 +46,8 @@ typedef struct {
   uint8_t amf[2];
   uint8_t sqn[6];
   int nmc_size;
+  uint8_t rand[16];
+  uint8_t autn[16];
 } uicc_t;
 
 /*

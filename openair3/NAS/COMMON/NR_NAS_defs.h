@@ -288,7 +288,10 @@ typedef struct {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
-} authenticationresponseHeader_t;
+  uint8_t iei;
+  uint8_t RESlen;
+  uint8_t RES[16];
+} authenticationresponse_t;
 
 
 
