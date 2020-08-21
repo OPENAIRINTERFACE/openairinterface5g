@@ -40,7 +40,7 @@
 //#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+extern short nr_qpsk_mod_table[8];
 
 uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
                                                     9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31
@@ -61,9 +61,9 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
   /// QPSK modulation
   for (int m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
-    idx = ((((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((gold_pbch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
-    mod_dmrs[m<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+    idx = (((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&3);
+    mod_dmrs[m<<1] = nr_qpsk_mod_table[idx<<1];
+    mod_dmrs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
 #ifdef DEBUG_PBCH_DMRS
     printf("m %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", m, idx, gold_pbch_dmrs[(m<<1)>>5], (((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
            (((gold_pbch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_dmrs[(m<<1)], mod_dmrs[(m<<1)+1]);
@@ -323,9 +323,9 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   /// QPSK modulation
   for (int i=0; i<NR_POLAR_PBCH_E>>1; i++) {
-    idx = (((pbch->pbch_e[(i<<1)>>5]>>((i<<1)&0x1f))&1)<<1) ^ ((pbch->pbch_e[((i<<1)+1)>>5]>>(((i<<1)+1)&0x1f))&1);
-    mod_pbch_e[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-    mod_pbch_e[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1)+1];
+    idx = ((pbch->pbch_e[(i<<1)>>5]>>((i<<1)&0x1f))&3);
+    mod_pbch_e[i<<1] = nr_qpsk_mod_table[idx<<1];
+    mod_pbch_e[(i<<1)+1] = nr_qpsk_mod_table[(idx<<1)+1];
 #ifdef DEBUG_PBCH
     printf("i %d idx %d  mod_pbch %d %d\n", i, idx, mod_pbch_e[2*i], mod_pbch_e[2*i+1]);
 #endif
