@@ -666,13 +666,12 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       }
 
       break;
-<<<<<<< HEAD
       
     case TDL_A:
     case TDL_B:
     case TDL_C:  
     case TDL_D:  
-  case TDL_E:
+    case TDL_E:
       if (channel_model == TDL_A) {  
 	tdl_paths=TDL_A_PATHS;
 	tdl_delays=tdl_a_delays;
@@ -762,9 +761,6 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
       break;
 
-=======
-                               
->>>>>>> origin/develop
     case EPA:
       chan_desc->nb_taps        = 7;
       chan_desc->Td             = .410;
