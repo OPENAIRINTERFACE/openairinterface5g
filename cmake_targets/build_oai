@@ -209,7 +209,7 @@ function main() {
                     GDB=0
                     CMAKE_BUILD_TYPE="RelWithDebInfo"
                     echo_info "Will Compile with gdb symbols"
-                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
                     shift
                     ;;
                 "MinSizeRel")

@@ -440,6 +440,14 @@ void init_channelmod(void) ;
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
 
+/* Linear phase noise model */
+/*!
+  \brief This function produce phase noise and add to input signal
+  \param ts Sampling time 
+  \param *Re *Im Real and Imag part of the signal
+*/
+void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
+
 #include "targets/RT/USER/rfsim.h"
 
 void do_DL_sig(sim_t *sim,

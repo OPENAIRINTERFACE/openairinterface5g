@@ -447,7 +447,7 @@ int main(int argc, char **argv)
 				  0);
   fix_scc(scc,ssb_bitmap);
 
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+  // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
 
@@ -562,13 +562,12 @@ int main(int argc, char **argv)
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
   int ptrs_symbols = 0; // to calculate total PTRS RE's in a slot
+  double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size);
+
+  number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
 
   if(1<<ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
-
-  for (i = 0; i < nb_symb_sch; i++) {
-    number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
-  }
 
   mod_order      = nr_get_Qm_ul(Imcs, 0);
   code_rate      = nr_get_code_rate_ul(Imcs, 0);
@@ -586,6 +585,7 @@ int main(int argc, char **argv)
       reset_meas(&gNB->ulsch_ldpc_decoding_stats);
       reset_meas(&gNB->ulsch_unscrambling_stats);
       reset_meas(&gNB->ulsch_channel_estimation_stats);
+      reset_meas(&gNB->ulsch_ptrs_processing_stats);
       reset_meas(&gNB->ulsch_llr_stats);
       reset_meas(&gNB->ulsch_channel_compensation_stats);
       reset_meas(&gNB->ulsch_rbs_extraction_stats);
@@ -765,19 +765,24 @@ int main(int argc, char **argv)
 
       int error_flag;
       for (trial = 0; trial < n_trials; trial++) {
-	
-	error_flag = 0;
-	  //----------------------------------------------------------
-	  //------------------------ add noise -----------------------
-	  //----------------------------------------------------------
-	if (input_fd == NULL ) {
-	  for (i=0; i<slot_length; i++) {
-	    for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/sqrt(scale)   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-	      ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/sqrt(scale) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
-	    }
-	  }
-	}
+
+        error_flag = 0;
+        //----------------------------------------------------------
+        //------------------------ add noise -----------------------
+        //----------------------------------------------------------
+        if (input_fd == NULL ) {
+          for (i=0; i<slot_length; i++) {
+            for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
+              /* Add phase noise if enabled */
+              if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+                phase_noise(ts, &((int16_t*)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)],
+                            &((int16_t*)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1]);
+              }
+              ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/sqrt(scale)   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+              ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/sqrt(scale) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+            }
+          }
+        }
 	else {
 	  AssertFatal(frame_parms->nb_antennas_rx == 1, "nb_ant != 1\n");
 	  // 800 samples is N_TA_OFFSET for FR1 @ 30.72 Ms/s,
@@ -825,6 +830,10 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
 	  LOG_M("rxsigF0_comp.m","rxsF0_comp",
 		&gNB->pusch_vars[0]->rxdataF_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+#ifdef DEBUG_UL_PTRS
+          LOG_M("rxdataF_ptrs_comp.m","ptrs_comp",
+                &gNB->pusch_vars[0]->rxdataF_ptrs_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+#endif
 	}
         start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
@@ -902,6 +911,7 @@ int main(int argc, char **argv)
       if (print_perf==1) {
         printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
         printStatIndent(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
+        printStatIndent(&gNB->ulsch_ptrs_processing_stats,"ULSCH PTRS Processing time");
         printStatIndent(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
         printStatIndent(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
         printStatIndent(&gNB->ulsch_llr_stats,"ULSCH llr computation");

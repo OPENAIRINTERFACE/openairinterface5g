@@ -223,3 +223,30 @@ int nr_pbch_dmrs_rx(int symbol,
   
   return(0);
 }
+
+/*!
+  \brief This function generate gold ptrs sequence for each OFDM symbol
+  \param *in gold sequence for ptrs per OFDM symbol
+  \param length is number of RE in a OFDM symbol
+  \param *output pointer to all ptrs RE in a OFDM symbol
+*/
+void nr_ptrs_rx_gen(uint32_t *in, uint32_t length, int16_t *output)
+{
+  uint16_t offset;
+  uint8_t idx, b_idx;
+  int mod_order = 2;
+  offset = NR_MOD_TABLE_QPSK_OFFSET;
+  for (int i=0; i<length/mod_order; i++)
+    {
+      idx = 0;
+      for (int j=0; j<mod_order; j++)
+        {
+          b_idx = (i*mod_order+j)&0x1f;
+          if (i && (!b_idx))
+            in++;
+          idx ^= (((*in)>>b_idx)&1)<<(mod_order-j-1);
+        }
+      output[i<<1] = nr_rx_mod_table[(offset+idx)<<1];
+      output[(i<<1)+1] =  nr_rx_mod_table[((offset+idx)<<1)+1];
+    }
+}

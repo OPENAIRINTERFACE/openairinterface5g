@@ -372,7 +372,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+number_of_symbols; l++) {
-
+      ptrs_idx = 0; // every PTRS symbol has a new gold sequence
       k = start_sc;
       n = 0;
       dmrs_idx = 0;

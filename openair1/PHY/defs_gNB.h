@@ -403,6 +403,10 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **rxdataF_comp;
+  /// \brief Holds the PTRS compensated signal.
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_ptrs_comp;
   /// \brief Magnitude of the UL channel estimates. Used for 2nd-bit level thresholds in LLR computation
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
@@ -446,6 +450,14 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS subcarriers per OFDM symbol
   uint16_t ptrs_sc_per_ofdm_symbol;
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_phase_per_slot;
+  /// \brief Total RE count after PTRS RE's are extracted from respective symbol.
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int16_t **ptrs_valid_re_per_slot;
   /// flag to verify if channel level computation is done
   uint8_t cl_done;
 } NR_gNB_PUSCH;
@@ -775,9 +787,11 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_deinterleaving_stats;
   time_stats_t ulsch_unscrambling_stats;
   time_stats_t ulsch_channel_estimation_stats;
+  time_stats_t ulsch_ptrs_processing_stats;
   time_stats_t ulsch_channel_compensation_stats;
   time_stats_t ulsch_rbs_extraction_stats;
   time_stats_t ulsch_llr_stats;
+
   /*
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
