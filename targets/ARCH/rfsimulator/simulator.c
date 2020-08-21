@@ -332,6 +332,7 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
                                                 channelmod,
                                                 t->sample_rate,
                                                 t->tx_bw,
+                                                30e-9,  // TDL delay-spread parameter
                                                 t->chan_forgetfact, // forgetting_factor
                                                 t->chan_offset, // maybe used for TA
                                                 t->chan_pathloss); // path_loss in dB
