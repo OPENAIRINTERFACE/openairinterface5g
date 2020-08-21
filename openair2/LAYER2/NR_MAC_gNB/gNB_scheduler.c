@@ -451,6 +451,29 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     else
       UE_list->fiveG_connected[UE_id] = true;
 
+    if (get_softmodem_params()->phy_test == 1) {
+      if (slot_txP == 7){
+	NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[0].ra[0];
+	ra->Msg2_frame = frame_txP;
+	ra->Msg2_slot = slot_txP;
+	ra->state = Msg2;
+	ra->bwp_id = 1;
+	NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+	NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+	struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+	for (int i=0;i<commonSearchSpaceList->list.count;i++) {
+	  NR_SearchSpace_t *ss=commonSearchSpaceList->list.array[i];
+	  if(ss->searchSpaceId == *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)
+	    ra->ra_ss=ss;
+	}
+	AssertFatal(ra->ra_ss!=NULL,"no search space for RA'n");
+
+	nr_generate_Msg2(module_idP, 0/*CC_id*/,
+			 frame_txP,
+			 slot_txP);
+      }
+    }
+
     // Phytest scheduling
 
     if (get_softmodem_params()->phy_test) {

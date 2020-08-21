@@ -763,6 +763,42 @@ set(HWLIB_TCP_BRIDGE_OAI_SOURCE
 add_library(tcp_bridge_oai MODULE ${HWLIB_TCP_BRIDGE_OAI_SOURCE} )
 set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 
+# Benetel 4G library
+######################################################################
+
+set(HWLIB_BENETEL_4G_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/benetel.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/shared_buffers.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/low.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/low_dpdk.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/dpdk_driver.c
+  )
+add_library(benetel_4g MODULE ${HWLIB_BENETEL_4G_SOURCE} )
+
+set_target_properties(benetel_4g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -march=native -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
+
+SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
+TARGET_LINK_LIBRARIES(benetel_4g ${DPDK_LIBS})
+TARGET_LINK_LIBRARIES(benetel_4g pthread dl rt m numa)
+
+# Benetel 5G library
+######################################################################
+
+set(HWLIB_BENETEL_5G_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/5g/benetel.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/5g/shared_buffers.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/5g/low.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/5g/low_dpdk.c
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/5g/dpdk_driver.c
+  )
+add_library(benetel_5g MODULE ${HWLIB_BENETEL_5G_SOURCE} )
+
+set_target_properties(benetel_5g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -march=native -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
+
+SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
+TARGET_LINK_LIBRARIES(benetel_5g ${DPDK_LIBS})
+TARGET_LINK_LIBRARIES(benetel_5g pthread dl rt m numa)
+
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")

@@ -9075,46 +9075,52 @@ void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, 
     return;
   }
 
-  protocol_ctxt_t ctxt;
-  rrc_eNB_ue_context_t *ue_context;
-  unsigned char buffer[8192];
-  int size;
-  ue_context = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], m->rnti);
-  ue_context->ue_context.nb_of_modify_endc_e_rabs = m->nb_e_rabs_admitted_tobeadded;
-  int j=0;
+    protocol_ctxt_t ctxt;
+    rrc_eNB_ue_context_t *ue_context;
+    unsigned char buffer[8192];
+    int size;
 
-  while(j < m->nb_e_rabs_admitted_tobeadded) {
-    for (int e_rab_idx=0; e_rab_idx<ue_context->ue_context.setup_e_rabs; e_rab_idx++) {
-      //Update ue_context information with gNB's address and new GTP tunnel ID
-      if( ue_context->ue_context.e_rab[e_rab_idx].param.e_rab_id == m->e_rabs_admitted_tobeadded[j].e_rab_id) {
-        memcpy(ue_context->ue_context.gnb_gtp_endc_addrs[e_rab_idx].buffer,
-               m->e_rabs_admitted_tobeadded[j].gnb_addr.buffer,
-               m->e_rabs_admitted_tobeadded[j].gnb_addr.length);
-        ue_context->ue_context.gnb_gtp_endc_addrs[e_rab_idx].length = m->e_rabs_admitted_tobeadded[j].gnb_addr.length;
-        ue_context->ue_context.gnb_gtp_endc_teid[e_rab_idx] = m->e_rabs_admitted_tobeadded[j].gtp_teid;
-        ue_context->ue_context.e_rab[e_rab_idx].status = E_RAB_STATUS_TOMODIFY;
-        break;
+    ue_context = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], m->rnti);
+    if (ue_context) {
+      ue_context->ue_context.nb_of_modify_endc_e_rabs = m->nb_e_rabs_admitted_tobeadded;
+
+      int j=0;
+      while(j < m->nb_e_rabs_admitted_tobeadded){
+	for (int e_rab_idx=0; e_rab_idx<ue_context->ue_context.setup_e_rabs; e_rab_idx++){
+	  //Update ue_context information with gNB's address and new GTP tunnel ID
+	  if( ue_context->ue_context.e_rab[e_rab_idx].param.e_rab_id == m->e_rabs_admitted_tobeadded[j].e_rab_id){
+	    memcpy(ue_context->ue_context.gnb_gtp_endc_addrs[e_rab_idx].buffer,
+		   m->e_rabs_admitted_tobeadded[j].gnb_addr.buffer,
+		   m->e_rabs_admitted_tobeadded[j].gnb_addr.length);
+	    ue_context->ue_context.gnb_gtp_endc_addrs[e_rab_idx].length = m->e_rabs_admitted_tobeadded[j].gnb_addr.length;
+	    ue_context->ue_context.gnb_gtp_endc_teid[e_rab_idx] = m->e_rabs_admitted_tobeadded[j].gtp_teid;
+	    ue_context->ue_context.e_rab[e_rab_idx].status = E_RAB_STATUS_TOMODIFY;
+	    break;
+	  }
+	}
+	j++;
       }
+
+      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                    0,
+                                    ENB_FLAG_YES,
+                                    m->rnti,
+                                    0, 0);
+
+      size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, scg_CellGroupConfig, nr1_conf);
+
+      rrc_data_req(&ctxt,
+                   DCCH,
+                   rrc_eNB_mui++,
+                   SDU_CONFIRM_NO,
+                   size,
+                   buffer,
+                   PDCP_TRANSMISSION_MODE_CONTROL);
+    } else {
+      LOG_E(F1AP, "no ue_context for RNTI %x, acknowledging release\n", m->rnti);
     }
 
-    j++;
-  }
-
-  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-                                0,
-                                ENB_FLAG_YES,
-                                m->rnti,
-                                0, 0);
-  size = rrc_eNB_generate_RRCConnectionReconfiguration_endc(&ctxt, ue_context, buffer, 8192, scg_CellGroupConfig, nr1_conf);
-  rrc_data_req(&ctxt,
-               DCCH,
-               rrc_eNB_mui++,
-               SDU_CONFIRM_NO,
-               size,
-               buffer,
-               PDCP_TRANSMISSION_MODE_CONTROL);
 }
-
 
 //-----------------------------------------------------------------------------
 void *rrc_enb_process_itti_msg(void *notUsed) {
