@@ -62,11 +62,13 @@ class CotsUe:
 		#load cots commands dictionary
 		with open(self.__cots_cde_dict_file,'r') as file:
 			cots_ue_ctl = yaml.load(file,Loader=yaml.FullLoader)
+		#check if ue id is in the dictionary
 		if target_id in cots_ue_ctl:
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.ADBIPAddr, self.ADBUserName, self.ADBPassWord)
-			mySSH.command('sudo adb start-server','$',5)
+			mySSH.command('sudo adb start-server','\$',5)
 			logging.info("Toggling COTS UE Airplane mode to : "+target_state_str)
+			#get current state
 			current_state = self.Check_Airplane()
 			if target_state_str.lower()=="on": 
 				target_state=1
@@ -82,13 +84,15 @@ class CotsUe:
 					time.sleep(1)
 					current_state = self.Check_Airplane()
 					retry+=1
+				#could not toggle despite the retry
 				if current_state != target_state:
 					logging.error("ATTENTION : Could not toggle to : "+target_state_str)
 					logging.error("Current state is : "+ str(current_state))
 			else:
 				print("Airplane mode is already "+ target_state_str)
-			mySSH.command('sudo adb kill-server','$',5)
+			mySSH.command('sudo adb kill-server','\$',5)
 			mySSH.close()
+		#ue id is NOT in the dictionary
 		else:
 			logging.error("COTS UE Id from XML could not be found in UE YAML dictionary " + self.__cots_cde_dict_file)
 			sys.exit("COTS UE Id from XML could not be found in UE YAML dictionary " + self.__cots_cde_dict_file)
