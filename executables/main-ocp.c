@@ -1324,14 +1324,8 @@ int main ( int argc, char **argv ) {
 
   // end of CI modifications
   //getchar();
-<<<<<<< HEAD
-  if(IS_SOFTMODEM_DOFORMS) {
-    load_softscope("enb",NULL);
-  }
-=======
   if(IS_SOFTMODEM_DOFORMS)
     load_softscope("enb", NULL);
->>>>>>> 7f28f8d10dc0d73fd4b10d4a89fde554158f9fb5
 
   itti_wait_tasks_end();
   oai_exit=1;

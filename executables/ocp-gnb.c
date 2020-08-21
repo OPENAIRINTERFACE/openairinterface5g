@@ -46,6 +46,7 @@
 #include <forms.h>
 #include <executables/stats.h>
 #include <openair1/PHY/TOOLS/nr_phy_scope.h>
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 // Global vars
 #include <openair2/LAYER2/MAC/mac_vars.h>
