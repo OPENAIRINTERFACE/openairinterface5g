@@ -155,6 +155,7 @@ init_SI(
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
   if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE) {
+
     LOG_I(RRC, "Configuring MIB FeMBMS (N_RB_DL %d)\n",
           (int)configuration->N_RB_DL[CC_id]);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
@@ -231,6 +232,7 @@ init_SI(
             RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf);
     }
 
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].FeMBMS_flag=1;
     //AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
   }
 
@@ -496,12 +498,15 @@ init_SI(
                            (LTE_PMCH_InfoList_r9_t *) NULL,
                            sib1_v13ext,
                            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].FeMBMS_flag,
-                           (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                           (carrier->sib1_MBMS==NULL?(LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL:(LTE_BCCH_DL_SCH_Message_MBMS_t *)carrier->sib1_MBMS),//(LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
                            (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                           (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                           (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                           (LTE_MBSFN_AreaInfoList_r9_t *) NULL
-                          );
+                        (carrier->sib1_MBMS==NULL?(struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL:(struct LTE_NonMBSFN_SubframeConfig_r14 *)carrier->sib1_MBMS->nonMBSFN_SubframeConfig_r14),//(struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (carrier->sib1_MBMS==NULL?(LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL:(LTE_SystemInformationBlockType1_MBMS_r14_t *)carrier->sib1_MBMS->systemInformationBlockType13_r14),//(LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (carrier->sib1_MBMS==NULL?(LTE_MBSFN_AreaInfoList_r9_t *) NULL:(LTE_MBSFN_AreaInfoList_r9_t *)&carrier->sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9)//(LTE_MBSFN_AreaInfoList_r9_t *) NULL
+
+			,(LTE_MBSFNAreaConfiguration_r9_t*) NULL
+
+                         );
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -584,7 +589,8 @@ init_MCCH(
                            (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                            (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                            (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                           (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                           (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+			   (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                           );
   }
 
@@ -1481,7 +1487,8 @@ rrc_eNB_generate_RRCConnectionReestablishment(
                                  (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                                  (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                                  (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                 (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                                 (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+			         (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                                 );
           break;
         }
@@ -5781,7 +5788,8 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
     (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
     (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-    (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+    (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+    (LTE_MBSFNAreaConfiguration_r9_t*) NULL
   );
   // Configure target eNB SRB2
   /// SRB2
@@ -6461,7 +6469,8 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
     (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
     (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
     (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-    (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+    (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+    (LTE_MBSFNAreaConfiguration_r9_t*) NULL
   );
 }
 
@@ -6677,7 +6686,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                                    (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                                    (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                                    (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+   				   (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                                   );
           }
         } else {        // remove LCHAN from MAC/PHY
@@ -6736,7 +6746,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                                    (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                                    (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                                    (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+   				   (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                                   );
           }
         } // end else of if (ue_context_pP->ue_context.DRB_active[drb_id] == 0)
@@ -6898,7 +6909,8 @@ rrc_eNB_generate_RRCConnectionSetup(
                                      (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                                      (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                                      (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                     (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                                     (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+   				     (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                                     );
               break;
             }
@@ -8371,6 +8383,8 @@ rrc_eNB_decode_dcch(
       case LTE_UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10:
         T(T_ENB_RRC_MBMS_COUNTING_RESPONSE_R10, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
           T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+    	LOG_E(RRC, "THINH [LTE_UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10]\n");
+
         break;
 
       case LTE_UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:

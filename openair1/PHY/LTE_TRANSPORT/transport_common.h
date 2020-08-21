@@ -67,6 +67,7 @@
 
 #if !defined(SI_RNTI)
   #define SI_RNTI  (rnti_t)0xffff
+  #define SI_RNTI_MBMS  (rnti_t)0xfff9
 #endif
 #if !defined(M_RNTI)
   #define M_RNTI   (rnti_t)0xfffd

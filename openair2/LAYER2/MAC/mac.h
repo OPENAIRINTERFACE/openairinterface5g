@@ -56,6 +56,7 @@
 #include "LTE_MobilityControlInfo.h"
 #include "LTE_MBSFN-AreaInfoList-r9.h"
 #include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_MBSFNAreaConfiguration-r9.h"
 #include "LTE_PMCH-InfoList-r9.h"
 #include "LTE_SCellToAddMod-r10.h"
 #include "LTE_SystemInformationBlockType1-v1310-IEs.h"
@@ -409,9 +410,11 @@ typedef struct {
 /*!\brief Values of BCCH SIB_BR logical channel (fake) */
 #define BCCH_SI_BR 7    // SI-BR
 /*!\brief Values of BCCH SIB1_MBMS logical channel (fake) */
-#define BCCH_SIB1_MBMS 60              // SIB1_MBMS //TODO better armonize index
+#define MIBCH_MBMS 10              // SIB1_MBMS //TODO better armonize index
+#define BCCH_SIB1_MBMS 12              // SIB1_MBMS //TODO better armonize index
 /*!\brief Values of BCCH SI_MBMS logical channel (fake) */
-#define BCCH_SI_MBMS 61                // SIB_MBMS //TODO better armonize index
+#define BCCH_SI_MBMS 13                // SIB_MBMS //TODO better armonize index
+#define MCCH_COUNTING 14
 /*!\brief Value of CCCH / SRB0 logical channel */
 #define CCCH 0      // srb0
 /*!\brief DCCH / SRB1 logical channel */
@@ -1286,6 +1289,8 @@ typedef struct {
   /// MBSFN SubframeConfig
   struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
   struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+  struct LTE_MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
+  uint8_t commonSF_AllocPeriod_r9;
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
   /// MBMS Flag

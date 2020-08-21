@@ -731,6 +731,7 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
   if (subframeP == 0) {
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       cc = &eNB->common_channels[CC_id];
+      //printf("*cc->sib1_MBMS->si_WindowLength_r14 %d \n", *cc->sib1_MBMS->si_WindowLength_r14);
       vrb_map = (void *) &cc->vrb_map;
       N_RB_DL = to_prb(cc->mib->message.dl_Bandwidth);
       dl_config_request = &eNB->DL_req[CC_id];
@@ -911,6 +912,64 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
   stop_meas(&eNB->schedule_si_mbms);
 }
 
+void
+schedule_fembms_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
+  eNB_MAC_INST *eNB = RC.mac[module_idP];
+  COMMON_channels_t *cc;
+  nfapi_dl_config_request_pdu_t *dl_config_pdu;
+  nfapi_tx_request_pdu_t *TX_req;
+  int mib_sdu_length;
+  int CC_id;
+  nfapi_dl_config_request_t *dl_config_request;
+  nfapi_dl_config_request_body_t *dl_req;
+  uint16_t sfn_sf = frameP << 4 | subframeP;
+  AssertFatal(subframeP == 0, "Subframe must be 0\n");
+  AssertFatal((frameP & 15) == 0, "Frame must be a multiple of 16\n");
+
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    dl_config_request = &eNB->DL_req[CC_id];
+    dl_req = &dl_config_request->dl_config_request_body;
+    cc = &eNB->common_channels[CC_id];
+    mib_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MIBCH_MBMS, 0xFFFF, 1, &cc->MIB_pdu.payload[0], 0); // not used in this case
+    LOG_D(MAC, "Frame %d, subframe %d: BCH PDU length %d\n", frameP, subframeP, mib_sdu_length);
+
+    if (mib_sdu_length > 0) {
+      LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
+
+      if ((frameP & 1023) < 40)
+        LOG_D(MAC,
+              "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
+              module_idP, frameP, CC_id, mib_sdu_length,
+              (int) cc->mib->message.schedulingInfoSIB1_BR_r13);
+
+      dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+      memset((void *) dl_config_pdu, 0,
+             sizeof(nfapi_dl_config_request_pdu_t));
+      dl_config_pdu->pdu_type                                = NFAPI_DL_CONFIG_BCH_PDU_TYPE, dl_config_pdu->pdu_size =
+            2 + sizeof(nfapi_dl_config_bch_pdu);
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.tl.tag             = NFAPI_DL_CONFIG_REQUEST_BCH_PDU_REL8_TAG;
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.length             = mib_sdu_length;
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.pdu_index          = eNB->pdu_index[CC_id];
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.transmission_power = 6000;
+      dl_req->tl.tag                                         = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+      dl_req->number_pdu++;
+      dl_config_request->header.message_id = NFAPI_DL_CONFIG_REQUEST;
+      dl_config_request->sfn_sf = sfn_sf;
+      LOG_D(MAC, "eNB->DL_req[0].number_pdu %d (%p)\n", dl_req->number_pdu, &dl_req->number_pdu);
+      // DL request
+      TX_req = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus];
+      TX_req->pdu_length = 3;
+      TX_req->pdu_index = eNB->pdu_index[CC_id]++;
+      TX_req->num_segments = 1;
+      TX_req->segments[0].segment_length = 3;
+      TX_req->segments[0].segment_data = cc[CC_id].MIB_pdu.payload;
+      eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
+      eNB->TX_req[CC_id].sfn_sf = sfn_sf;
+      eNB->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
+      eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+    }
+  }
+}
 
 void
 schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
