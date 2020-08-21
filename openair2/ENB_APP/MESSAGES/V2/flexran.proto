@@ -237,6 +237,7 @@ message flex_control_delegation {
 message flex_agent_reconfiguration {
 	optional flex_header header = 1;
 	optional string policy = 2;		// The policy changes using YAML syntax in string format    
+  repeated flex_agent_reconfiguration_system systems = 3; // The policy changes.
 }
 
 // Extensions of the echo request and reply
