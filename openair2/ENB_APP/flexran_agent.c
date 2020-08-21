@@ -115,7 +115,6 @@ error:
   return NULL;
 }
 
-
 int channel_container_init = 0;
 int flexran_agent_start(mid_t mod_id)
 {

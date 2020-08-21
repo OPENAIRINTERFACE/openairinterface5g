@@ -1103,8 +1103,13 @@ add_library(flapp_sample SHARED
   ${OPENAIR2_DIR}/ENB_APP/flexran_apps/sample.c
 )
 set_target_properties(flapp_sample PROPERTIES C_VISIBILITY_PRESET hidden)
+add_library(flapp_imsi SHARED
+  ${OPENAIR2_DIR}/ENB_APP/flexran_apps/imsi.c
+)
+set_target_properties(flapp_imsi PROPERTIES C_VISIBILITY_PRESET hidden)
 add_custom_target(flapp_all DEPENDS
   flapp_sample
+  flapp_imsi
 )
 #include_directories(${OPENAIR2_DIR}/ENB_APP)
 

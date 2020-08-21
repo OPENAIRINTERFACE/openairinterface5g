@@ -3092,12 +3092,13 @@ int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id) {
   return slices->s[idx]->id;
 }
 
-void flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
+int flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return 0;
   int idx = flexran_find_dl_slice(mod_id, slice_id);
-  if (idx < 0) return;
+  if (idx < 0) return 0;
   pp_impl_param_t *dl = &RC.mac[mod_id]->pre_processor_dl;
   dl->move_UE(dl->slices, ue_id, idx);
+  return 1;
 }
 
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
@@ -3108,12 +3109,13 @@ int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
   return slices->s[idx]->id;
 }
 
-void flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
+int flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return 0;
   int idx = flexran_find_ul_slice(mod_id, slice_id);
-  if (idx < 0) return;
+  if (idx < 0) return 0;
   pp_impl_param_t *ul = &RC.mac[mod_id]->pre_processor_ul;
   ul->move_UE(ul->slices, ue_id, idx);
+  return 1;
 }
 
 int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object) {

@@ -669,12 +669,12 @@ int flexran_set_ul_slice_algo(mid_t mod_id, Protocol__FlexSliceAlgorithm algo);
 /* Get the DL slice ID for a UE */
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id);
 /* Set the DL slice for a UE */
-void flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
+int flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
 
 /* Get the UL slice ID for a UE */
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id);
 /* Set the UL slice for a UE */
-void flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
+int flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id);
 
 /* Create slice in DL, returns the new slice index, object can be shared
  * library for the scheduler or NULL */
