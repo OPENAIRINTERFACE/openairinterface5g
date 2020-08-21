@@ -507,7 +507,23 @@ int flexran_agent_map_name_to_delegated_object(mid_t mod_id, const char *name,
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexAgentReconfiguration *agent_reconfiguration_msg = input->agent_reconfiguration_msg;
-  apply_reconfiguration_policy(mod_id, agent_reconfiguration_msg->policy, strlen(agent_reconfiguration_msg->policy));
+  if (agent_reconfiguration_msg->policy) {
+    /* for compatibility: call old YAML configuration code, although we don't
+     * use it anymore */
+    apply_reconfiguration_policy(mod_id,
+                                 agent_reconfiguration_msg->policy,
+                                 strlen(agent_reconfiguration_msg->policy));
+  }
+  for (int i = 0; i < agent_reconfiguration_msg->n_systems; ++i) {
+    const Protocol__FlexAgentReconfigurationSystem *sys = agent_reconfiguration_msg->systems[i];
+    if (strcmp(sys->system, "app") == 0) {
+      flexran_agent_handle_apps(mod_id, sys->subsystems, sys->n_subsystems);
+    } else {
+      LOG_E(FLEXRAN_AGENT,
+            "unknown system name %s in flex_agent_reconfiguration message\n",
+            sys->system);
+    }
+  }
   *msg = NULL;
   return 0;
 }
