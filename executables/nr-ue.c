@@ -728,7 +728,7 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
-               ((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX -2)%nb_slot_frame),&UE->frame_parms,0)];
+               ((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX - RX_NB_TH)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
@@ -749,17 +749,6 @@ void *UE_thread(void *arg) {
                                            rxp,
                                            readBlockSize,
                                            UE->frame_parms.nb_antennas_rx),"");
-
-    AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-                     timestamp+
-                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX -2) - firstSymSamp -
-                     openair0_cfg[0].tx_sample_advance,
-                     txp,
-                     writeBlockSize,
-                     UE->frame_parms.nb_antennas_tx,
-                     1),"");
 
     if( slot_nr==(nb_slot_frame-1)) {
       // read in first symbol of next frame and adjust for timing drift
@@ -794,7 +783,7 @@ void *UE_thread(void *arg) {
         pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
       }
 
-      usleep(200);
+      usleep(100);
     }
 
     if (  (decoded_frame_rx != curMsg->proc.frame_rx) &&
@@ -802,6 +791,17 @@ void *UE_thread(void *arg) {
           (((decoded_frame_rx+2) % MAX_FRAME_NUMBER) != curMsg->proc.frame_rx))
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
             decoded_frame_rx, curMsg->proc.frame_rx  );
+
+    AssertFatal( writeBlockSize ==
+                 UE->rfdevice.trx_write_func(&UE->rfdevice,
+                     timestamp+
+                     UE->frame_parms.get_samples_slot_timestamp(slot_nr,
+                     &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) - firstSymSamp -
+                     openair0_cfg[0].tx_sample_advance,
+                     txp,
+                     writeBlockSize,
+                     UE->frame_parms.nb_antennas_tx,
+                     1),"");
 
     nbSlotProcessing++;
     msgToPush->key=slot_nr;
