@@ -238,6 +238,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,
                          rrc->carrier.pdsch_AntennaPorts,
+                         rrc->carrier.pusch_TargetSNRx10,
+                         rrc->carrier.pucch_TargetSNRx10,
                          NULL,
                          1, // add_ue flag
                          ue_context_p->ue_id_rnti,

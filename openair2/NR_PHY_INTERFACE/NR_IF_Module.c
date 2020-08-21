@@ -41,6 +41,7 @@
 #include "executables/softmodem-common.h"
 
 #define MAX_IF_MODULES 100
+//#define UL_HARQ_PRINT
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
@@ -77,7 +78,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 }
 
 
-void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int target_snrx10) {
   // TODO
   int max_harq_rounds = 4; // TODO define macro
   int num_ucis = UL_info->uci_ind.num_ucis;
@@ -88,22 +89,27 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
       case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
 
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        if (get_softmodem_params()->phy_test == 0) {
+        //if (get_softmodem_params()->phy_test == 0) {
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
           // handle harq
           int harq_idx_s = 0;
+          // tpc (power control)
+          sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
           // iterate over received harq bits
           for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
             // search for the right harq process
             for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+              // if the gNB received ack with a good confidence or if the max harq rounds was reached
               if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-                if (uci_pdu->harq->harq_list[harq_bit].harq_value == 0)
-                  sched_ctrl->harq_processes[harq_idx].round++;
-                if ((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) ||
-                   (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                if (((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) &&
+                    (uci_pdu->harq->harq_confidence_level == 0)) ||
+                    (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                  // toggle NDI and reset round
                   sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
                   sched_ctrl->harq_processes[harq_idx].round = 0;
                 }
+                else
+                  sched_ctrl->harq_processes[harq_idx].round++;
                 sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
                 harq_idx_s = harq_idx + 1;
                 break;
@@ -120,7 +126,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
               }
             }
           }
-        }
+        //}
         break;
       }
 
@@ -131,8 +137,43 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
   UL_info->uci_ind.num_ucis = 0;
 }
 
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, uint8_t crc_status) {
 
-void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
+  int max_harq_rounds = 4; // TODO define macro
+  for (uint8_t hrq_id = 0; hrq_id < NR_MAX_NB_HARQ_PROCESSES; hrq_id++) {
+    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
+    if ((cur_harq->last_tx_slot == slot-1) && cur_harq->state==ACTIVE_SCHED) {
+      if (!crc_status) {
+        cur_harq->ndi ^= 1;
+        cur_harq->round = 0;
+        cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
+#ifdef UL_HARQ_PRINT
+        printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
+#endif
+      } else {
+        cur_harq->round++;
+        cur_harq->state = ACTIVE_NOT_SCHED;
+#ifdef UL_HARQ_PRINT
+        printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
+#endif
+      }
+
+      if (!(cur_harq->round<max_harq_rounds)) {
+        cur_harq->ndi ^= 1;
+        cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
+        cur_harq->round = 0;
+#ifdef UL_HARQ_PRINT
+        printf("[HARQ HANDLER] Ulharq id %d crc failed in all round, freeing it for scheduler\n",hrq_id);
+#endif
+      }
+      return;
+    }
+  }
+
+}
+
+
+void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
   if(nfapi_mode == 1) {
     if (UL_info->crc_ind.number_crcs>0) {
       //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
@@ -158,6 +199,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
           if (UL_info->crc_ind.crc_list[j].rnti ==
               UL_info->rx_ind.pdu_list[i].rnti) {
             LOG_D(PHY, "UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].crc_indication_rel8.crc_flag:%d\n", j, UL_info->crc_ind.crc_list[j].tb_crc_status);
+
+            handle_nr_ul_harq(UL_info->slot, sched_ctrl, UL_info->crc_ind.crc_list[j].tb_crc_status);
 
             if (UL_info->crc_ind.crc_list[j].tb_crc_status == 1) { // CRC error indication
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->slot);
@@ -230,10 +273,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
-  handle_nr_uci(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
+  handle_nr_uci(UL_info,&mac->UE_list.UE_sched_ctrl[0],mac->pucch_target_snrx10);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info);
+  handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
 
   if (nfapi_mode != 1) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {

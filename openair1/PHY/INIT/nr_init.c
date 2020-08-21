@@ -199,6 +199,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
     common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
   }
+  common_vars->debugBuff = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
+  common_vars->debugBuff_sample_offset = 0; 
 
 
   // Channel estimates for SRS
@@ -504,6 +506,15 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
 
+  memset(gNB->num_pdsch_rnti, 0, sizeof(uint16_t)*80);
+
+  for (i=0; i <NUMBER_OF_NR_PDCCH_MAX; i++) {
+    LOG_I(PHY,"Initializing PDCCH list for PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
+    gNB->pdcch_pdu[i].frame=-1;
+    LOG_I(PHY,"Initializing UL PDCCH list for UL PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
+    gNB->ul_pdcch_pdu[i].frame=-1;
+  }
+    
   for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
     gNB->pucch[i] = new_gNB_pucch();

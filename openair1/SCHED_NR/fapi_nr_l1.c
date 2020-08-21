@@ -94,9 +94,9 @@ void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Frame %d, Slot %d: DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, pdcch_pdu->pdcch_pdu_rel15.numDlDci);
 
   // copy dci configuration into gNB structure
-  gNB->pdcch_pdu = pdcch_pdu;
+  //  gNB->pdcch_pdu = pdcch_pdu;
 
-  nr_fill_dci(gNB,frame,slot);
+  nr_fill_dci(gNB,frame,slot,pdcch_pdu);
 
 
 
@@ -109,9 +109,9 @@ void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Frame %d, Slot %d: UL DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci);
 
   // copy dci configuration into gNB structure
-  gNB->ul_dci_pdu = ul_dci_request_pdu;
+  //  gNB->ul_dci_pdu = ul_dci_request_pdu;
 
-  nr_fill_ul_dci(gNB,frame,slot);
+  nr_fill_ul_dci(gNB,frame,slot,ul_dci_request_pdu);
 
 }
 
@@ -154,13 +154,12 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 	  number_ul_dci_pdu,number_ul_tti_pdu);
 
   int pdcch_received=0;
-  gNB->num_pdsch_rnti=0;
+  gNB->num_pdsch_rnti[slot]=0;
   for (int i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
     gNB->dlsch[i][0]->rnti=0;
     gNB->dlsch[i][0]->harq_mask=0;
   }
-  gNB->pdcch_pdu = NULL;
-  gNB->ul_dci_pdu = NULL;
+
   gNB->pbch_configured=0;
 
   for (int i=0;i<number_dl_pdu;i++) {

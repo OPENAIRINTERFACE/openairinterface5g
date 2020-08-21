@@ -729,6 +729,7 @@ int main(int argc, char **argv) {
                                 channel_model,
                                 N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
+                                30e-9,
                                 forgetting_factor,
                                 delay,
                                 0);

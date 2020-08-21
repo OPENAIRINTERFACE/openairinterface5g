@@ -55,5 +55,6 @@ void init_scrambling_luts(void);
 
 extern __m64 byte2m64_re[256];
 extern __m64 byte2m64_im[256];
+extern __m128i byte2m128i[256];
 
 #endif

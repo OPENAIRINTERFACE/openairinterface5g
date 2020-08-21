@@ -50,6 +50,8 @@ void config_common(int Mod_idP,
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
+                           int pusch_tgt_snrx10,
+                           int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int nsa_flag,
 			   uint32_t rnti,
@@ -137,7 +139,7 @@ void config_uldci(NR_BWP_Uplink_t *ubwp,
                   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int *dci_formats, int *rnti_types,
-                  int time_domain_assignment,
+                  int time_domain_assignment, uint8_t tpc,
                   int n_ubwp, int bwp_id);
 
 void configure_fapi_dl_Tx(module_id_t Mod_idP,
@@ -154,9 +156,10 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                    NR_sched_pucch *pucch_sched,
                                    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_config);
 
-void nr_schedule_uss_ulsch_phytest(int Mod_idP,
-                                   frame_t       frameP,
-                                   sub_frame_t   slotP);
+void nr_schedule_pusch(int Mod_idP,
+                       int UE_id,
+                       frame_t       frameP,
+                       sub_frame_t   slotP);
 
 void nr_update_pucch_scheduling(int Mod_idP,
                                 int UE_id,
@@ -227,6 +230,8 @@ void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
                                  NR_SearchSpace_t *ss);
 
+uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
+
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
 int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
@@ -288,6 +293,11 @@ void nr_generate_Msg2(module_id_t module_idP,
 
 void nr_schedule_reception_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP);
 
+void schedule_fapi_ul_pdu(int Mod_idP,
+                          frame_t frameP,
+                          sub_frame_t slotP,
+                          int num_slots_per_tdd,
+                          int time_domain_assignment);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -297,6 +307,8 @@ void nr_process_mac_pdu(
     uint16_t mac_pdu_len);
 
 int binomial(int n, int k);
+
+bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.

@@ -292,6 +292,8 @@ typedef struct {
   uint16_t dlDmrsSymbPos;
   /// DMRS Configuration Type
   uint8_t dmrsConfigType;
+  // Number of DMRS CDM groups with no data
+  uint8_t n_dmrs_cdm_groups;
   /// Starting Symbol number
   uint16_t start_symbol;
   /// Current subband PMI allocation

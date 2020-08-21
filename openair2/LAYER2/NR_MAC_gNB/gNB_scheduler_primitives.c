@@ -1466,6 +1466,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
            0,
            sizeof(NR_UE_sched_ctrl_t));
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(sizeof(NR_sched_pusch));
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
@@ -1481,6 +1482,18 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 		  0);
   return -1;
 }
+
+
+uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
+  // al values passed to this function are x10
+
+  int snrx10 = (cqi*5) - 640;
+  if (snrx10 > target + incr) return 0; // decrease 1dB
+  if (snrx10 < target - incr) return 2; // increase 1dB
+  if (snrx10 < target - (3*incr)) return 3; // increase 3dB
+  return 1; // no change
+}
+
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,

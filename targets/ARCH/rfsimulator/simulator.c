@@ -184,10 +184,12 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
+                                            30e-9,  // TDL delay-spread parameter
                                             bridge->chan_forgetfact, // forgetting_factor
                                             bridge->chan_offset, // maybe used for TA
                                             bridge->chan_pathloss); // path_loss in dB
     set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
+
     random_channel(ptr->channel_model,false);
   }
 }
@@ -705,7 +707,8 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
         random_channel(ptr->channel_model,0);
       if (t->poll_telnetcmdq)
       	  t->poll_telnetcmdq(t->telnetcmd_qid,t);
-      for (int a=0; a<nbAnt; a++) {
+
+      for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
         if ( ptr->channel_model != NULL ) // apply a channel model
           rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
                       a,
@@ -716,15 +719,16 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
                     );
         else { // no channel modeling
           sample_t *out=(sample_t *)samplesVoid[a];
-          const int64_t base=t->nextTimestamp*nbAnt+a;
-
-          for ( int i=0; i < nsamps; i++ ) {
-	    const int idx=(i*nbAnt+base)%CirSize;
-            out[i].r+=ptr->circularBuf[idx].r;
-            out[i].i+=ptr->circularBuf[idx].i;
-          }
+          int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
+          //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
+          for (int i=0; i < nsamps; i++) {//loop over nsamps
+        	  for (int a_tx=0; a_tx<nbAnt_tx; a_tx++){//sum up signals from nbAnt_tx antennas
+        		  out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
+        		  out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
+        	  } // end for a_tx
+          } // end for i (number of samps)
         } // end of no channel modeling
-      } // end for a...
+      } // end for a (number of rx antennas)
     }
   }
 

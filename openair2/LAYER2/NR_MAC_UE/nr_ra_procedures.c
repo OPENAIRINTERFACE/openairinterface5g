@@ -62,9 +62,8 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
-extern int64_t table_6_3_3_2_2_prachConfig_Index [256][9];
 extern int64_t table_6_3_3_2_3_prachConfig_Index [256][9];
-extern const uint16_t nr_slots_per_frame[5];
+extern const uint8_t nr_slots_per_frame[5];
 
 //extern uint8_t  nfapi_mode;
 
@@ -364,7 +363,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   AssertFatal(CC_id == 0,"Transmission on secondary CCs is not supported yet\n");
 
-  if (UE_mode == PRACH && prach_resources->init_msg1) {
+  if (UE_mode < PUSCH && prach_resources->init_msg1) {
 
     LOG_D(MAC, "nr_ue_get_rach, RA_active value: %d", mac->RA_active);
 
@@ -449,7 +448,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         nr_get_RA_window(mac);
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach)
+        if (mac->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 1, prach_resources, rach_ConfigDedicated);
 
         offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
@@ -471,7 +470,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
             payload[offset + j] = 0; // mac_pdu[offset + j] = 0;
         }
       } 
-    } else { // RACH is active
+    } else if (mac->RA_window_cnt != -1) { // RACH is active
 
       ////////////////////////////////////////////////////////////////
       /////* Random Access Response reception (5.1.4 TS 38.321) */////
@@ -482,7 +481,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // - handle beam failure recovery request
       // - handle DL assignment on PDCCH for RA-RNTI
       // - handle backoff and raResponseWindow params
-      // - disabled contention resolution as OAI NSA is contention-free based
 
       // LOG_D(MAC, "[MAC][UE %d][RAPROC] frame %d, subframe %d: RA Active, window cnt %d (RA_tx_frame %d, RA_tx_subframe %d)\n",
       //   mod_id, frame, nr_tti_tx, mac->RA_window_cnt, mac->RA_tx_frame, mac->RA_tx_subframe);
@@ -495,12 +493,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       if (mac->RA_window_cnt >= 0 && mac->RA_RAPID_found == 1) {
 
-        // mac->ra_state = WAIT_CONTENTION_RESOLUTION;
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
+        mac->RA_window_cnt = -1;
+        mac->ra_state = RA_SUCCEEDED;
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR successfully received \n", mod_id, frame, nr_tti_tx);
 
       } else if (mac->RA_window_cnt == 0 && !mac->RA_RAPID_found) {
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR reception failed \n", mod_id, frame, nr_tti_tx);
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR reception failed \n", mod_id, frame, nr_tti_tx);
 
         mac->ra_state = RA_UE_IDLE;
         mac->RA_PREAMBLE_TRANSMISSION_COUNTER++;
@@ -572,21 +571,21 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // mac->RA_tx_subframe = nr_tti_tx;
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach)
+        if (mac->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
 
       } else {
 
         mac->RA_window_cnt--;
 
-        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: subframe %d: RAR reception not successful, (RA window count %d) \n",
+        LOG_I(MAC, "[MAC][UE %d][RAPROC] Frame %d: nr_tti_tx %d: RAR reception not successful, (RA window count %d) \n",
           mod_id,
           frame,
           nr_tti_tx,
           mac->RA_window_cnt);
 
         // Fill in preamble and PRACH resources
-        if (mac->generate_nr_prach)
+        if (mac->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, nr_tti_tx, 0, prach_resources, rach_ConfigDedicated);
 
       }
@@ -616,28 +615,28 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
   mac->RA_window_cnt = mac->RA_offset*nr_slots_per_frame[mu]; // taking into account the 2 frames gap introduced by OAI gNB
 
   switch (ra_ResponseWindow) {
-    case 0:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
       mac->RA_window_cnt += 1;
       break;
-    case 1:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl2:
       mac->RA_window_cnt += 2;
       break;
-    case 2:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl4:
       mac->RA_window_cnt += 4;
       break;
-    case 3:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl8:
       mac->RA_window_cnt += 8;
       break;
-    case 4:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl10:
       mac->RA_window_cnt += 10;
       break;
-    case 5:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl20:
       mac->RA_window_cnt += 20;
       break;
-    case 6:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl40:
       mac->RA_window_cnt += 40;
       break;
-    case 7:
+    case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl80:
       mac->RA_window_cnt += 80;
       break;
   }

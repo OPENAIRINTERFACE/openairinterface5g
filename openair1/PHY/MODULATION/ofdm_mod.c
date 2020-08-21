@@ -27,6 +27,7 @@
 This section deals with basic functions for OFDM Modulation.
 
 
+
 */
 
 #include "PHY/defs_eNB.h"
@@ -47,6 +48,7 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
   PHY_ofdm_mod(txdataF,        // input
 	       txdata,         // output
 	       frame_parms->ofdm_symbol_size,                
+
 	       1,                 // number of symbols
 	       frame_parms->nb_prefix_samples0,               // number of prefix samples
 	       CYCLIC_PREFIX);
@@ -177,7 +179,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
         /*for (j=0; j<fftsize ; j++) {
           output_ptr[j] = temp_ptr[j];
         }*/
-        memcpy((void*)output_ptr,(void*)temp_ptr,fftsize<<2);
+        memcpy1((void*)output_ptr,(void*)temp_ptr,fftsize<<2);
       }
 
       j=fftsize;

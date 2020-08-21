@@ -42,8 +42,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 extern RAN_CONTEXT_t RC;
-
-const uint8_t nr_slots_per_frame_mac[5] = {10, 20, 40, 80, 160};
+extern const uint8_t nr_slots_per_frame[5];
 
 uint8_t DELTA[4]= {2,3,4,6};
 
@@ -54,114 +53,116 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
 
-  uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint8_t mu,N_dur,N_t_slot,start_symbol;
-  uint16_t format;
+  if (is_nr_UL_slot(scc,slotP)) {
 
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
-    mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
-  else
-    mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+    uint8_t mu,N_dur,N_t_slot,start_symbol;
+    uint16_t format;
 
-  // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
-  if ( get_nr_prach_info_from_index(config_index,
-                                    (int)frameP,
-                                    (int)slotP,
-                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-                                    mu,
-                                    cc->frame_type,
-                                    &format,
-                                    &start_symbol,
-                                    &N_t_slot,
-                                    &N_dur) ) {
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+      mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+    else
+      mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
-    int fdm = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;
-    uint16_t format0 = format&0xff;      // first column of format from table
-    uint16_t format1 = (format>>8)&0xff; // second column of format from table
+    // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
+    if ( get_nr_prach_info_from_index(config_index,
+                                      (int)frameP,
+                                      (int)slotP,
+                                      scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                      mu,
+                                      cc->frame_type,
+                                      &format,
+                                      &start_symbol,
+                                      &N_t_slot,
+                                      &N_dur) ) {
 
-    UL_tti_req->SFN = frameP;
-    UL_tti_req->Slot = slotP;
-    for (int n=0; n<(1<<fdm); n++) { // one structure per frequency domain occasion
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
-      nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
-      memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
-      UL_tti_req->n_pdus+=1;
+      int fdm = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;
+      uint16_t format0 = format&0xff;      // first column of format from table
+      uint16_t format1 = (format>>8)&0xff; // second column of format from table
 
-      // filling the prach fapi structure
-      prach_pdu->phys_cell_id = *scc->physCellId;
-      prach_pdu->num_prach_ocas = N_t_slot;
-      prach_pdu->prach_start_symbol = start_symbol;
-      prach_pdu->num_ra = n;
-      prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
-                                  format0,
-                                  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
-      // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
-      // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
-      if (format1!=0xff) {
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 9;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 10;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 11;
-            break;
-        default:
-          AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
+      UL_tti_req->SFN = frameP;
+      UL_tti_req->Slot = slotP;
+      for (int n=0; n<(1<<fdm); n++) { // one structure per frequency domain occasion
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
+        nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
+        memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
+        UL_tti_req->n_pdus+=1;
+
+        // filling the prach fapi structure
+        prach_pdu->phys_cell_id = *scc->physCellId;
+        prach_pdu->num_prach_ocas = N_t_slot;
+        prach_pdu->prach_start_symbol = start_symbol;
+        prach_pdu->num_ra = n;
+        prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
+                                    format0,
+                                    scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
+        // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
+        // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
+        if (format1!=0xff) {
+          switch(format0) {
+            case 0xa1:
+              prach_pdu->prach_format = 9;
+              break;
+            case 0xa2:
+              prach_pdu->prach_format = 10;
+              break;
+            case 0xa3:
+              prach_pdu->prach_format = 11;
+              break;
+          default:
+            AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
+          }
         }
-      }
-      else{
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 0;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 1;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 2;
-            break;
-          case 0xb1:
-            prach_pdu->prach_format = 3;
-            break;
-          case 0xb2:
-            prach_pdu->prach_format = 4;
-            break;
-          case 0xb3:
-            prach_pdu->prach_format = 5;
-            break;
-          case 0xb4:
-            prach_pdu->prach_format = 6;
-            break;
-          case 0xc0:
-            prach_pdu->prach_format = 7;
-            break;
-          case 0xc2:
-            prach_pdu->prach_format = 8;
-            break;
-          case 0:
-            // long formats are handled @ PHY
-            break;
-          case 1:
-            // long formats are handled @ PHY
-            break;
-          case 2:
-            // long formats are handled @ PHY
-            break;
-          case 3:
-            // long formats are handled @ PHY
-            break;
-        default:
-          AssertFatal(1==0,"Invalid PRACH format");
+        else{
+          switch(format0) {
+            case 0xa1:
+              prach_pdu->prach_format = 0;
+              break;
+            case 0xa2:
+              prach_pdu->prach_format = 1;
+              break;
+            case 0xa3:
+              prach_pdu->prach_format = 2;
+              break;
+            case 0xb1:
+              prach_pdu->prach_format = 3;
+              break;
+            case 0xb2:
+              prach_pdu->prach_format = 4;
+              break;
+            case 0xb3:
+              prach_pdu->prach_format = 5;
+              break;
+            case 0xb4:
+              prach_pdu->prach_format = 6;
+              break;
+            case 0xc0:
+              prach_pdu->prach_format = 7;
+              break;
+            case 0xc2:
+              prach_pdu->prach_format = 8;
+              break;
+            case 0:
+              // long formats are handled @ PHY
+              break;
+            case 1:
+              // long formats are handled @ PHY
+              break;
+            case 2:
+              // long formats are handled @ PHY
+              break;
+            case 3:
+              // long formats are handled @ PHY
+              break;
+          default:
+            AssertFatal(1==0,"Invalid PRACH format");
+          }
         }
       }
     }
   }
 }
-
 
 void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
@@ -185,7 +186,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     tdd_period_slot++;
 
   // computing start of next period
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame_mac[mu];
+  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
   *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
 
@@ -217,16 +218,16 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     default:
       AssertFatal(1==0,"Invalid response window value %d\n",response_window);
   }
-  AssertFatal(slot_window<=nr_slots_per_frame_mac[mu],"Msg2 response window needs to be lower or equal to 10ms");
+  AssertFatal(slot_window<=nr_slots_per_frame[mu],"Msg2 response window needs to be lower or equal to 10ms");
 
   // slot and frame limit to transmit msg2 according to response window
-  uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame_mac[mu];
+  uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
   //uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
 
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
-  while ((*msg2_slot>slot_limit) || ((*msg2_frame*nr_slots_per_frame_mac[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
+  while ((*msg2_slot>slot_limit) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
     if((*msg2_slot%tdd_period_slot) > 0)
       (*msg2_slot)--;
     else
@@ -397,11 +398,11 @@ void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
   uint8_t k2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
 
   temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-  ra->Msg3_slot = temp_slot%nr_slots_per_frame_mac[mu];
-  if (nr_slots_per_frame_mac[mu]>temp_slot)
+  ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+  if (nr_slots_per_frame[mu]>temp_slot)
     ra->Msg3_frame = current_frame;
   else
-    ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame_mac[mu]);
+    ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
 
   ra->msg3_nb_rb = 18;
   ra->msg3_first_rb = 0;
@@ -601,7 +602,11 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     LOG_D(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
 
-    mcsIndex = 0; // Qm>2 not allowed for RAR
+    // Qm>2 not allowed for RAR
+    if (get_softmodem_params()->do_ra)
+      mcsIndex = 9;
+    else
+      mcsIndex = 0;
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = RA_rnti;
