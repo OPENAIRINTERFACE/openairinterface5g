@@ -1022,7 +1022,6 @@ typedef struct {
   /// Timing Advance updates variables
   /// Timing advance update computed from the TA command signalled from gNB
   int                      timing_advance;
-  int                      hw_timing_advance;
   int                      N_TA_offset; ///timing offset used in TDD
   NR_UL_TIME_ALIGNMENT_t   ul_time_alignment[NUMBER_OF_CONNECTED_gNB_MAX];
 

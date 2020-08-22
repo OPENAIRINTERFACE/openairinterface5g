@@ -797,7 +797,7 @@ void *UE_thread(void *arg) {
                      timestamp+
                      UE->frame_parms.get_samples_slot_timestamp(slot_nr,
                      &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) - firstSymSamp -
-                     openair0_cfg[0].tx_sample_advance,
+                     openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - UE->timing_advance,
                      txp,
                      writeBlockSize,
                      UE->frame_parms.nb_antennas_tx,
