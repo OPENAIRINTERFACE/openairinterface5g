@@ -2931,7 +2931,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 		    i_mod,
 		    dlsch0->current_harq_pid);
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars_ra[eNB_id]->llr_offset[m]=ue->pdsch_vars_ra[eNB_id]->llr_offset[m-1];
+	if      (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
 	else if (pdsch == PDSCH)    nr_rx_pdsch(ue,
                                   pdsch,
                                   eNB_id,
@@ -3178,14 +3178,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (1) {
     switch (pdsch) {
     case SI_PDSCH:
-      pdsch_vars = ue->pdsch_vars_SI[eNB_id];
-      break;
     case RA_PDSCH:
-      pdsch_vars = ue->pdsch_vars_ra[eNB_id];
-      break;
     case P_PDSCH:
-      pdsch_vars = ue->pdsch_vars_p[eNB_id];
-      break;
     case PDSCH:
       pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
       break;

@@ -159,19 +159,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   switch (type) {
   case SI_PDSCH:
-    pdsch_vars = ue->pdsch_vars_SI;
+    pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = &ue->dlsch_SI[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     break;
 
   case RA_PDSCH:
-    pdsch_vars = ue->pdsch_vars_ra;
+    pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = &ue->dlsch_ra[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
-    // WIP TBR Hotfix
-    memcpy((void*)&pdsch_vars[eNB_id]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], (void*)&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], ue->frame_parms.ofdm_symbol_size*sizeof(int32_t));
 
     break;
 
