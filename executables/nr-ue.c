@@ -803,6 +803,9 @@ void *UE_thread(void *arg) {
                      UE->frame_parms.nb_antennas_tx,
                      1),"");
 
+    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
+      memset(txp[i], 0, writeBlockSize);
+
     nbSlotProcessing++;
     msgToPush->key=slot_nr;
     pushTpool(Tpool, msgToPush);
