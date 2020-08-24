@@ -260,9 +260,6 @@ int configure_fapi_dl_pdu(int Mod_idP,
                           uint16_t *rbSize,
                           uint16_t *rbStart) {
 
-
-  LOG_I(MAC, "Inside configure_fapi_dl_pdu() \n");
-
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
