@@ -763,7 +763,7 @@ ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
         uint16_t stop_mtch_val = ((uint16_t)(payload_ptr[2*j] & 0x07) << 8) | (uint16_t)payload_ptr[2*j+1];
         UE_mac_inst[module_idP].pmch_lcids[j] = (payload_ptr[2*j] & 0xF8) >> 3;
         UE_mac_inst[module_idP].pmch_stop_mtch[j] = stop_mtch_val;
-        LOG_I(MAC,"lcid(%d),stop_mtch_val %d frameP(%d)\n", UE_mac_inst[module_idP].pmch_lcids[j], stop_mtch_val, frameP);
+        LOG_D(MAC,"lcid(%d),stop_mtch_val %d frameP(%d)\n", UE_mac_inst[module_idP].pmch_lcids[j], stop_mtch_val, frameP);
 
         if ((stop_mtch_val >= 2043) && (stop_mtch_val <= 2046)) {
           LOG_D(MAC,"(reserved)\n");
@@ -772,7 +772,7 @@ ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
         UE_mac_inst[module_idP].msi_status_v[j] = 0;
 
         if (UE_mac_inst[module_idP].mcch_status==1) {
-          LOG_I(MAC,"[UE %d] Frame %d : MCH->MSI for sync area %d (eNB %d, %d bytes), LCID(%d)(%d)\n", module_idP, frameP, sync_area, eNB_index, rx_lengths[i], UE_mac_inst[module_idP].pmch_lcids[j] , UE_mac_inst[module_idP].pmch_stop_mtch[j]);
+          LOG_D(MAC,"[UE %d] Frame %d : MCH->MSI for sync area %d (eNB %d, %d bytes), LCID(%d)(%d)\n", module_idP, frameP, sync_area, eNB_index, rx_lengths[i], UE_mac_inst[module_idP].pmch_lcids[j] , UE_mac_inst[module_idP].pmch_stop_mtch[j]);
 
           if (UE_mac_inst[module_idP].pmch_stop_mtch[j] < 2043) {
             UE_mac_inst[module_idP].pmch_stop_mtch[j] += UE_mac_inst[module_idP].msi_current_alloc;
@@ -781,7 +781,7 @@ ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
         }
       }
     } else if (rx_lcids[i] == MCCH_LCHANID) {
-      LOG_I(MAC,"[UE %d] Frame %d : SDU %d MCH->MCCH for sync area %d (eNB %d, %d bytes)\n",module_idP,frameP, i, sync_area, eNB_index, rx_lengths[i]);
+      LOG_D(MAC,"[UE %d] Frame %d : SDU %d MCH->MCCH for sync area %d (eNB %d, %d bytes)\n",module_idP,frameP, i, sync_area, eNB_index, rx_lengths[i]);
       mac_rrc_data_ind_ue(module_idP,
                           CC_id,
                           frameP,0, // unknown subframe

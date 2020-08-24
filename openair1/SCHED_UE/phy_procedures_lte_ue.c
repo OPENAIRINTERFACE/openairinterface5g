@@ -2493,7 +2493,7 @@ if((ue->frame_parms.FeMBMS_active == 0)|| is_fembms_cas_subframe(frame_rx,subfra
     }
 
     if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
-      LOG_UI(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
+      LOG_D(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
              ue->Mod_id,
              frame_rx,
              subframe_rx,
@@ -2504,7 +2504,7 @@ if((ue->frame_parms.FeMBMS_active == 0)|| is_fembms_cas_subframe(frame_rx,subfra
              ue->frame_parms.phich_config_common.phich_duration,
              ue->frame_parms.phich_config_common.phich_resource);
     }
-    LOG_I(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
+    LOG_D(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
              ue->Mod_id,
              frame_rx,
              subframe_rx,
@@ -3033,7 +3033,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
         //  if (subframe_rx==9)
         //  mac_xface->macphy_exit("Why are we exiting here?");
       } else { // decoding successful
-        LOG_I(PHY,"[UE %d] Frame %d, subframe %d: PMCH OK (%d,%d), passing to L2 (TBS %d, iter %d,G %d) ret %d\n",
+        LOG_D(PHY,"[UE %d] Frame %d, subframe %d: PMCH OK (%d,%d), passing to L2 (TBS %d, iter %d,G %d) ret %d\n",
               ue->Mod_id,
               frame_rx,subframe_rx,
               ue->dlsch_mcch_errors[sync_area][0],
