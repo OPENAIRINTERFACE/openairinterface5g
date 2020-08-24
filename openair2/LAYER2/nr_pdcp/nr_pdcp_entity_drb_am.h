@@ -19,16 +19,20 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _ASN1_UTILS_H_
-#define _ASN1_UTILS_H_
+#ifndef _NR_PDCP_ENTITY_DRB_AM_H_
+#define _NR_PDCP_ENTITY_DRB_AM_H_
 
-int decode_t_reassembly(int v);
-int decode_t_status_prohibit(int v);
-int decode_t_poll_retransmit(int v);
-int decode_poll_pdu(int v);
-int decode_poll_byte(int v);
-int decode_max_retx_threshold(int v);
-int decode_sn_field_length_um(int v);
-int decode_sn_field_length_am(int v);
+#include "nr_pdcp_entity.h"
 
-#endif /* _ASN1_UTILS_H_ */
+typedef struct {
+  nr_pdcp_entity_t common;
+  int rb_id;
+} nr_pdcp_entity_drb_am_t;
+
+void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *entity, char *buffer, int size);
+void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *entity, char *buffer, int size,
+                                    int sdu_id);
+void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *entity, char *key);
+void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *entity);
+
+#endif /* _NR_PDCP_ENTITY_DRB_AM_H_ */

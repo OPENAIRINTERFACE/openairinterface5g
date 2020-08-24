@@ -364,8 +364,6 @@ static void UE_synch(void *arg) {
 }
 
 void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
-
-
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_tti_tx);
   uint8_t gNB_id = 0;
