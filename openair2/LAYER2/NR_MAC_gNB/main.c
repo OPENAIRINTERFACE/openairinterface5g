@@ -35,6 +35,7 @@
 #include "assertions.h"
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "RRC/NR/nr_rrc_defs.h"
 #include "common/utils/LOG/log.h"
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -89,7 +90,7 @@ void mac_top_init_gNB(void)
     pdcp_layer_init();
 
     if(IS_SOFTMODEM_NOS1)
-      nr_ip_over_LTE_DRB_preconfiguration();
+      nr_DRB_preconfiguration();
 
     rrc_init_nr_global_param();
 

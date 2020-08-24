@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <openair1/PHY/defs_eNB.h>
+#include <common/utils/telnetsrv/telnetsrv_proccmd.h>
 
 #define CU_PORT "7878"
 #define DU_PORT "8787"
@@ -325,5 +326,6 @@ void fep_full(RU_t *ru, int subframe);
 void feptx_prec(RU_t *ru,int frame,int subframe);
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+void softmodem_printresources(int sig, telnet_printfunc_t pf);
 extern uint16_t sf_ahead;
 #endif

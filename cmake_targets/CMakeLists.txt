@@ -27,6 +27,10 @@ cmake_minimum_required (VERSION 3.0)
 # Base directories, compatible with legacy OAI building #
 #########################################################
 set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
+if("${OPENAIR_DIR}" STREQUAL "")
+  string(REGEX REPLACE "/cmake_targets.*$" "" OPENAIR_DIR ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
 set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi/open-nFAPI)
 set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
@@ -1252,7 +1256,7 @@ set(SCHED_SRC_NR_UE
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/fapi_nr_ue_l1.c 
-  ${OPENAIR1_DIR}/SCHED_NR/phy_frame_config_nr.c
+  ${OPENAIR1_DIR}/SCHED_NR_UE/phy_frame_config_nr_ue.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/harq_nr.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/pucch_uci_ue_nr.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/pucch_power_control_ue_nr.c 
@@ -1740,9 +1744,15 @@ set(NR_RLC_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_rlc/nr_rlc_sdu.c
   ${OPENAIR2_DIR}/LAYER2/nr_rlc/nr_rlc_ue_manager.c
   )
+  
+set(NR_PDCP_SRC
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_oai_api.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_ue_manager.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_entity_drb_am.c
+  )
 
 set(L2_SRC
-  ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
   ${PDCP_DIR}/pdcp.c
   ${PDCP_DIR}/pdcp_fifo.c
   ${PDCP_DIR}/pdcp_sequence_manager.c
@@ -1750,7 +1760,22 @@ set(L2_SRC
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
   ${PDCP_DIR}/pdcp_netlink.c
+  ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
 #  ${RRC_DIR}/rrc_UE.c
+  ${RRC_DIR}/rrc_eNB.c
+  ${RRC_DIR}/rrc_eNB_endc.c
+  ${RRC_DIR}/rrc_eNB_S1AP.c
+  ${RRC_DIR}/rrc_eNB_M2AP.c
+  ${RRC_DIR}/rrc_eNB_UE_context.c
+  ${RRC_DIR}/rrc_common.c
+  ${RRC_DIR}/L2_interface.c
+  ${RRC_DIR}/L2_interface_common.c
+  ${RRC_DIR}/L2_interface_ue.c
+  )
+  
+set(L2_RRC_SRC
+  ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
+  #  ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
   ${RRC_DIR}/rrc_eNB_endc.c
   ${RRC_DIR}/rrc_eNB_S1AP.c
@@ -1768,6 +1793,7 @@ set(L2_LTE_SRC
 
 set(L2_NR_SRC
   ${NR_RLC_SRC}
+  ${NR_PDCP_SRC}
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
@@ -1792,19 +1818,16 @@ set(L2_SRC_UE
   ${RRC_DIR}/L2_interface_ue.c
   )
   
-set(LTE_NR_L2_SRC_UE
-  ${PDCP_DIR}/pdcp.c
-  ${PDCP_DIR}/pdcp_fifo.c
-  ${PDCP_DIR}/pdcp_sequence_manager.c
-  ${PDCP_DIR}/pdcp_primitives.c
-  ${PDCP_DIR}/pdcp_util.c
-  ${PDCP_DIR}/pdcp_security.c
-  ${PDCP_DIR}/pdcp_netlink.c
-  ${RLC_V2}
-  )
-
+set(L2_RRC_SRC_UE
+  ${RRC_DIR}/rrc_UE.c
+  ${RRC_DIR}/rrc_common.c
+  ${RRC_DIR}/L2_interface_common.c
+  ${RRC_DIR}/L2_interface_ue.c
+  )  
+  
 set(NR_L2_SRC_UE
   ${NR_RLC_SRC}
+  ${NR_PDCP_SRC}
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
@@ -1830,6 +1853,7 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_fairRR.c
   ${MAC_DIR}/eNB_scheduler_phytest.c
   ${MAC_DIR}/pre_processor.c
+  ${MAC_DIR}/slicing/slicing.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/config_ue.c
  )
@@ -1913,10 +1937,23 @@ add_library(L2_NR
   ${MAC_NR_SRC}
   ${GNB_APP_SRC}
   )
+
+add_library(L2_LTE_NR
+  ${L2_RRC_SRC}
+  ${MAC_SRC}
+  ${ENB_APP_SRC}
+  ${MCE_APP_SRC}
+)
+  
 add_dependencies(L2_NR rrc_flag nr_rrc_flag s1ap_flag x2_flag)
 
 add_library(L2_UE
   ${L2_SRC_UE}
+  ${MAC_SRC_UE}
+)
+
+add_library(L2_UE_LTE_NR
+  ${L2_RRC_SRC_UE}
   ${MAC_SRC_UE}
 )
 
@@ -2473,8 +2510,8 @@ add_library(uescope MODULE ${XFORMS_SOURCE} ${XFORMS_SOURCE_SOFTMODEM} ${XFORMS_
 target_link_libraries(enbscope ${XFORMS_LIBRARIES})
 target_link_libraries(uescope ${XFORMS_LIBRARIES})
 
-add_library(gnbscope MODULE ${XFORMS_SOURCE_NR})
-target_link_libraries(gnbscope ${XFORMS_LIBRARIES})
+add_library(nrscope MODULE ${XFORMS_SOURCE_NR})
+target_link_libraries(nrscope ${XFORMS_LIBRARIES})
 
 
 add_library(rfsimulator MODULE 
@@ -2623,7 +2660,7 @@ add_executable(ocp-enb
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
-add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer)
+add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer coding params_libconfig rfsimulator)
 
 target_link_libraries (ocp-enb
   -Wl,--start-group
@@ -2730,7 +2767,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${GTPU_need_ITTI}
-  ${XFORMS_SOURCE_NR}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2740,7 +2777,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
-  S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
 
@@ -2772,7 +2809,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${XFORMS_SOURCE_NR}
+  ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${UTIL_SRC}
   ${CONFIG_SOURCES}
@@ -2782,7 +2819,7 @@ add_executable(nr-uesoftmodem
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
-  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB S1AP_LIB S1AP_ENB
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} 
   -Wl,--end-group z dl)

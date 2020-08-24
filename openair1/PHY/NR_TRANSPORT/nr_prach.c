@@ -37,7 +37,6 @@
 extern uint16_t prach_root_sequence_map_0_3[838];
 extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
-extern int16_t nr_ru[2*839];
 extern const char *prachfmt[9];
 
 void init_prach_list(PHY_VARS_gNB *gNB) {
@@ -540,7 +539,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint16_t           rootSequenceIndex;  
   int                numrootSequenceIndex;
   uint8_t            restricted_set;      
-  uint8_t            n_ra_prb;
+  uint8_t            n_ra_prb=0xFF;
   int16_t            *prachF=NULL;
   int                nb_rx;
 

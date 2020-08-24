@@ -260,8 +260,6 @@ int configure_fapi_dl_pdu(int Mod_idP,
                           uint16_t *rbSize,
                           uint16_t *rbStart) {
 
-
-
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -596,7 +594,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest frame %d slot %d\n",frameP,slotP);
 
   int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
-  int lcid, offset, i, header_length_last, TBS_bytes;
+  int lcid, offset, i, header_length_last, TBS_bytes = 0;
   int UE_id = 0, CC_id = 0;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
@@ -630,69 +628,61 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   if (TBS_bytes == 0)
    return;
- 
-  //The --NOS1 use case currently schedules DLSCH transmissions only when there is IP traffic arriving
-  //through the LTE stack
-  if (IS_SOFTMODEM_NOS1){
 
-    for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
+  lcid = DL_SCH_LCID_DTCH;
 
-      // TODO: check if the lcid is active
+  //for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 
-      LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",
-        module_idP, frameP, lcid, TBS_bytes, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3);
+  // TODO: check if the lcid is active
 
-      if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
-        rlc_status = mac_rlc_status_ind(module_idP,
-                                        rnti,
-                                        module_idP,
-                                        frameP,
-                                        slotP,
-                                        ENB_FLAG_YES,
-                                        MBMS_FLAG_NO,
-                                        lcid,
-                                        0,
-                                        0);
+  LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",
+      module_idP, frameP, lcid, TBS_bytes, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3);
 
-        if (rlc_status.bytes_in_buffer > 0) {
+  //if (TBS_bytes - ta_len - header_length_total - sdu_length_total - 3 > 0) {
+  rlc_status = mac_rlc_status_ind(module_idP,
+      rnti,
+      module_idP,
+      frameP,
+      slotP,
+      ENB_FLAG_YES,
+      MBMS_FLAG_NO,
+      lcid,
+      0,
+      0);
 
-          LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
-            module_idP, frameP, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
-            lcid, header_length_total, TBS_bytes);
+  if (rlc_status.bytes_in_buffer > 0) {
 
-          sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                                                   rnti,
-                                                   module_idP,
-                                                   frameP,
-                                                   ENB_FLAG_YES,
-                                                   MBMS_FLAG_NO,
-                                                   lcid,
-                                                   TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
-                                                   (char *)&mac_sdus[sdu_length_total],
-                                                   0,
-                                                   0);
+    LOG_I(MAC, "configure fapi due to data availability \n");
 
-          LOG_D(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n", module_idP, sdu_lengths[num_sdus], lcid);
+    LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
+        module_idP, frameP, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
+        lcid, header_length_total, TBS_bytes);
 
-          sdu_lcids[num_sdus] = lcid;
-          sdu_length_total += sdu_lengths[num_sdus];
-          header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
-          header_length_total += header_length_last;
+    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+        rnti,
+        module_idP,
+        frameP,
+        ENB_FLAG_YES,
+        MBMS_FLAG_NO,
+        lcid,
+        TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
+        (char *)&mac_sdus[sdu_length_total],
+        0,
+        0);
 
-          num_sdus++;
+    LOG_W(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n", module_idP, sdu_lengths[num_sdus], lcid);
 
-          //ue_sched_ctl->uplane_inactivity_timer = 0;
-        }
-      } else { // no TBS_bytes left
-      break;
-      }
-    }
+    sdu_lcids[num_sdus] = lcid;
+    sdu_length_total += sdu_lengths[num_sdus];
+    header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
+    header_length_total += header_length_last;
 
-  } //if (IS_SOFTMODEM_NOS1)
+    num_sdus++;
+
+    //ue_sched_ctl->uplane_inactivity_timer = 0;
+  }
+
   else {
-
-    //When the --NOS1 option is not enabled, DLSCH transmissions with random data
-    //occur every time that the current function is called (dlsch phytest mode)
 
     LOG_D(MAC,"Configuring DL_TX in %d.%d\n", frameP, slotP);
 
@@ -718,7 +708,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     }
     #endif
 
-  } // else IS_SOFTMODEM_NOS1
+  }
 
   // there is at least one SDU or TA command
   // if (num_sdus > 0 ){
@@ -997,10 +987,9 @@ void schedule_fapi_ul_pdu(int Mod_idP,
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      pusch_pdu->pdu_bit_map &= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
     }
     else{
-  //    if(1<<pusch_pdu->pusch_ptrs.ptrs_time_density >= pusch_pdu->nr_of_symbols)
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
     }
 

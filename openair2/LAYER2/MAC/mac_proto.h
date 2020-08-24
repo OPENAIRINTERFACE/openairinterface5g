@@ -187,8 +187,6 @@ void add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
 
 void init_UE_info(UE_info_t *UE_info);
 
-void init_slice_info(slice_info_t *sli);
-
 int mac_top_init(int eMBMS_active, char *uecap_xer,
                  uint8_t cba_group_active, uint8_t HO_active);
 
@@ -661,6 +659,7 @@ int prev(UE_list_t *listP, int nodeP);
 void add_ue_list(UE_list_t *listP, int UE_id);
 int remove_ue_list(UE_list_t *listP, int UE_id);
 void dump_ue_list(UE_list_t *listP);
+void init_ue_list(UE_list_t *listP);
 int UE_num_active_CC(UE_info_t *listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
@@ -675,10 +674,10 @@ void set_ul_DAI(int module_idP,
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int CC_id,
-                                   int frameP,
+                                   frame_t frameP,
                                    sub_frame_t subframeP,
-                                   int sched_frameP,
-                                   unsigned char sched_subframeP);
+                                   frame_t sched_frameP,
+                                   sub_frame_t sched_subframeP);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
 
