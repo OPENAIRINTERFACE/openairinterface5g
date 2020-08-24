@@ -327,6 +327,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const rnti_t rntiP,
                uint8_t * sduP,
                const uint16_t sdu_lenP,
-               const uint16_t timing_advance, const uint8_t ul_cqi);
+               const uint16_t timing_advance,
+               const uint8_t ul_cqi,
+               const uint16_t rssi);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

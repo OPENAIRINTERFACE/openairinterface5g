@@ -290,6 +290,7 @@ typedef struct {
   int16_t ta_update;
   uint8_t tpc0;
   uint8_t tpc1;
+  uint16_t ul_rssi;
   uint8_t current_harq_pid;
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];

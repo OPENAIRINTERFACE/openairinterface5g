@@ -213,7 +213,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
                         (uint8_t *)NULL,
                         UL_info->rx_ind.pdu_list[i].pdu_length,
                         UL_info->rx_ind.pdu_list[i].timing_advance,
-                        UL_info->rx_ind.pdu_list[i].ul_cqi);
+                        UL_info->rx_ind.pdu_list[i].ul_cqi,
+                        UL_info->rx_ind.pdu_list[i].rssi);
             } else {
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->slot);
               nr_rx_sdu(UL_info->module_id,
@@ -224,7 +225,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
                         UL_info->rx_ind.pdu_list[i].pdu,
                         UL_info->rx_ind.pdu_list[i].pdu_length,
                         UL_info->rx_ind.pdu_list[i].timing_advance,
-                        UL_info->rx_ind.pdu_list[i].ul_cqi);
+                        UL_info->rx_ind.pdu_list[i].ul_cqi,
+                        UL_info->rx_ind.pdu_list[i].rssi);
             }
             break;
           }

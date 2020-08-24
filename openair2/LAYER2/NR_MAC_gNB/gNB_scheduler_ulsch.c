@@ -266,7 +266,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                uint8_t *sduP,
                const uint16_t sdu_lenP,
                const uint16_t timing_advance,
-               const uint8_t ul_cqi){
+               const uint8_t ul_cqi,
+               const uint16_t rssi){
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
   NR_UE_list_t *UE_list = NULL;
@@ -291,6 +292,16 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           UE_id,
           ul_cqi);
 
+    // if not missed detection (10dB threshold for now)
+    if (UE_scheduling_control->ul_rssi < (100+rssi)) {
+      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
+      UE_scheduling_control->ta_update = timing_advance;
+    }
+    else{
+      UE_scheduling_control->tpc0 = 1;
+    }
+    UE_scheduling_control->ul_rssi = rssi;
+
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
     for (int i = 0; i < sdu_lenP ; i++) {
@@ -302,8 +313,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
-      UE_scheduling_control->ta_update = timing_advance;
       LOG_I(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
       LOG_D(MAC, "Received PDU at MAC gNB \n");
       nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
