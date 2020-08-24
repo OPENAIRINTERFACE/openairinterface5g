@@ -765,7 +765,7 @@ void nr_DRB_preconfiguration(void)
 
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
 
-  RLC_BearerConfig->logicalChannelIdentity = 3;
+  RLC_BearerConfig->logicalChannelIdentity = 4;
   RLC_BearerConfig->servedRadioBearer = calloc(1,sizeof(*RLC_BearerConfig->servedRadioBearer));
   RLC_BearerConfig->servedRadioBearer->present =    NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
 
