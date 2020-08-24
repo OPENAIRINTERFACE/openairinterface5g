@@ -123,7 +123,7 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char *ue_cont_res_id,
                           unsigned char short_padding,
                           unsigned short post_padding){return 0;}
-void nr_ip_over_LTE_DRB_preconfiguration(void){}
+void nr_DRB_preconfiguration(void){}
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
