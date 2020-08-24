@@ -897,7 +897,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			}
 		}
 
-		if(tx_slot_buffer != 0)
+		if(tx_slot_buffer->ul_dci_req!= 0)
 		{
 			if(pnf_p7->_public.ul_dci_req_fn)
 				(pnf_p7->_public.ul_dci_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->ul_dci_req);
@@ -1010,7 +1010,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			//deallocate_nfapi_tx_request(subframe_buffer->tx_req, pnf_p7);
 			if(slot_buffer->ul_tti_req != 0)
 			{
-				deallocate_nfapi_ul_config_request(slot_buffer->ul_tti_req, pnf_p7);
+				deallocate_nfapi_ul_tti_request(slot_buffer->ul_tti_req, pnf_p7);
 				slot_buffer->ul_tti_req = 0;
 
 			}

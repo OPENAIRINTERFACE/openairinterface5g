@@ -1655,7 +1655,8 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 	nfapi_nr_config_request_scf_t *pNfapiMsg = (nfapi_nr_config_request_scf_t*)msg;
 
 	pNfapiMsg->tdd_table.max_tdd_periodicity_list = (nfapi_nr_max_tdd_periodicity_t*) malloc(20*sizeof(nfapi_nr_max_tdd_periodicity_t));
-	pNfapiMsg->tdd_table.max_tdd_periodicity_list[0].max_num_of_symbol_per_slot_list = (nfapi_nr_max_num_of_symbol_per_slot_t*) malloc(14*sizeof(nfapi_nr_max_num_of_symbol_per_slot_t));
+	for(int i=0;i<40;i++)
+	pNfapiMsg->tdd_table.max_tdd_periodicity_list[i].max_num_of_symbol_per_slot_list = (nfapi_nr_max_num_of_symbol_per_slot_t*) malloc(14*sizeof(nfapi_nr_max_num_of_symbol_per_slot_t));
 
 
 	unpack_tlv_t unpack_fns[] =
