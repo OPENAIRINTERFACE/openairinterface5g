@@ -2901,6 +2901,7 @@ add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2914,6 +2915,7 @@ add_executable(nr_pbchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2929,6 +2931,7 @@ add_executable(nr_pucchsim
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2940,6 +2943,7 @@ target_link_libraries(nr_pucchsim
 
 add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
@@ -2955,6 +2959,7 @@ target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 
 add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c 
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
@@ -2966,6 +2971,7 @@ target_link_libraries(nr_prachsim
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${UTIL_SRC}

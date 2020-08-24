@@ -143,12 +143,12 @@ int main(int argc, char **argv)
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  int loglvl = OAILOG_WARNING;
+  int loglvl = OAILOG_INFO;
   //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
   uint16_t nb_rb = 50;
-  uint8_t Imcs = 9;
+  int Imcs = 9;
   uint8_t precod_nbr_layers = 1;
   int gNB_id = 0;
   int ap;
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
-  uint8_t rv_index = 0;
+  int rv_index = 0;
   float roundStats[50];
   float effRate; 
   float eff_tp_check = 0.7;
@@ -169,6 +169,7 @@ int main(int argc, char **argv)
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
+  int file_offset;
 
   double DS_TDL = .03;
   int pusch_tgt_snrx10 = 200;
@@ -182,7 +183,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:L:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:L:G:H:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -386,7 +387,15 @@ int main(int argc, char **argv)
     case 'L':
       loglvl = atoi(optarg);
       break;
-      
+
+    case 'G':
+      file_offset = atoi(optarg);
+      break;
+
+    case 'H':
+      slot = atoi(optarg);
+      break;
+  
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
@@ -636,6 +645,55 @@ int main(int argc, char **argv)
   //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   snrRun = 0;
   int n_errs;
+
+  double factor = 1;
+  if (openair0_cfg[0].threequarter_fs== 1) factor =.75;
+  int ta_offset=1600;
+  if (N_RB_DL <217) ta_offset=800;
+  else if (N_RB_DL < 106) ta_offset = 400;
+
+  int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);// - (int)(800*factor);
+  int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
+
+  if (input_fd != NULL)	{
+    AssertFatal(frame_parms->nb_antennas_rx == 1, "nb_ant != 1\n");
+    // 800 samples is N_TA_OFFSET for FR1 @ 30.72 Ms/s,
+    AssertFatal(frame_parms->subcarrier_spacing==30000,"only 30 kHz for file input for now (%d)\n",frame_parms->subcarrier_spacing);
+  
+    //    slot_offset -= (int)(800*factor);
+
+    fseek(input_fd,file_offset*((slot_length<<2)+4000+16),SEEK_SET);
+    fread((void*)&n_rnti,sizeof(int16_t),1,input_fd);
+    printf("rnti %x\n",n_rnti);
+    fread((void*)&nb_rb,sizeof(int16_t),1,input_fd);
+    printf("nb_rb %d\n",nb_rb);
+    int16_t dummy;
+    fread((void*)&start_rb,sizeof(int16_t),1,input_fd);
+    //fread((void*)&dummy,sizeof(int16_t),1,input_fd);
+    printf("rb_start %d\n",start_rb);
+    fread((void*)&nb_symb_sch,sizeof(int16_t),1,input_fd);
+    //fread((void*)&dummy,sizeof(int16_t),1,input_fd);
+    printf("nb_symb_sch %d\n",nb_symb_sch);
+    fread((void*)&start_symbol,sizeof(int16_t),1,input_fd);
+    printf("start_symbol %d\n",start_symbol);
+    fread((void*)&Imcs,sizeof(int16_t),1,input_fd);
+    printf("mcs %d\n",Imcs);
+    fread((void*)&rv_index,sizeof(int16_t),1,input_fd);
+    printf("rv_index %d\n",rv_index);
+    //    fread((void*)&harq_pid,sizeof(int16_t),1,input_fd);
+    fread((void*)&dummy,sizeof(int16_t),1,input_fd);
+    printf("harq_pid %d\n",harq_pid);
+    fread((void*)&gNB->common_vars.rxdata[0][slot_offset-delay],
+	  sizeof(int16_t),
+	  slot_length<<1,
+	  input_fd);
+    for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
+				   slot_offset,
+				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
+				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
+    fclose(input_fd);
+  }
+  
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
@@ -704,7 +762,7 @@ int main(int argc, char **argv)
 	else
 	  pusch_pdu->bwp_start = ibwp_start;
 	pusch_pdu->bwp_size = ibwp_size;
-	start_rb += (ibwp_start - abwp_start);
+	start_rb = (ibwp_start - abwp_start);
 	printf("msg3: ibwp_size %d, abwp_size %d, ibwp_start %d, abwp_start %d\n",
 	       ibwp_size,abwp_size,ibwp_start,abwp_start);
       }
@@ -727,7 +785,7 @@ int main(int argc, char **argv)
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
       pusch_pdu->dmrs_ports = 1;
-      pusch_pdu->num_dmrs_cdm_grps_no_data = 1;
+      pusch_pdu->num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
       pusch_pdu->resource_alloc = 1; 
       pusch_pdu->rb_start = start_rb;
       pusch_pdu->rb_size = nb_rb;
@@ -791,8 +849,6 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
 
       nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
-      int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);// - (int)(800*factor);
-      int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
       for (int i=0;i<(TBS>>3);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
       double scale = 1;
@@ -857,26 +913,7 @@ int main(int argc, char **argv)
 	}
 	
 	}
-	else {
-	  AssertFatal(frame_parms->nb_antennas_rx == 1, "nb_ant != 1\n");
-	  // 800 samples is N_TA_OFFSET for FR1 @ 30.72 Ms/s,
-	  AssertFatal(frame_parms->subcarrier_spacing==30000,"only 30 kHz for file input for now (%d)\n",frame_parms->subcarrier_spacing);
-	  double factor = 1;
-	  if (openair0_cfg[0].threequarter_fs== 1) factor =.75;
-	  int ta_offset=1600;
-	  if (N_RB_DL <217) ta_offset=800;
-	  else if (N_RB_DL < 106) ta_offset = 400;
-	  fseek(input_fd,(slot_length<<2)+2000,SEEK_SET);
-	  fread((void*)&gNB->common_vars.rxdata[0][slot_offset],
-		sizeof(int16_t),
-		slot_length<<1,
-		input_fd);
-	  for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
-					 slot_offset,
-					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
-					 ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
-	  fclose(input_fd);
-	}
+
 	////////////////////////////////////////////////////////////
 	
 	//----------------------------------------------------------
@@ -889,21 +926,28 @@ int main(int argc, char **argv)
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
 	if (n_trials==1 && round==0) {
-	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][0],frame_parms->samples_per_subframe*10,1,1);
+	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
 
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0]+start_symbol*frame_parms->ofdm_symbol_size,nb_symb_sch*frame_parms->ofdm_symbol_size,1,1);
 
 	}
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
 	if (n_trials == 1  && round==0) { 
+#ifdef __AVX2__
+	  int off = ((nb_rb&1) == 1)? 4:0;
+#else
+	  int off = 0;
+#endif
+
 	  LOG_M("rxsigF0_ext.m","rxsF0_ext",
-		&gNB->pusch_vars[0]->rxdataF_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+		&gNB->pusch_vars[0]->rxdataF_ext[0][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 	  LOG_M("chestF0.m","chF0",
 		&gNB->pusch_vars[0]->ul_ch_estimates[0][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
 	  LOG_M("chestF0_ext.m","chF0_ext",
-		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
+		(nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 	  LOG_M("rxsigF0_comp.m","rxsF0_comp",
-		&gNB->pusch_vars[0]->rxdataF_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
+		&gNB->pusch_vars[0]->rxdataF_comp[0][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
 		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}

@@ -318,7 +318,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 	}
 	
 #ifdef DEBUG_RB_EXT
-	printf("re = %d, ptrs_symbol_flag = %d, symbol = %d\n", re, ptrs_symbol_flag, symbol);
+	printf("re = %d, kprime %d, n %d, is_ptrs_symbol = %d, symbol = %d\n", re, k_prime,n,is_ptrs_symbol, symbol);
 #endif
 
 	if ( is_dmrs_re == 0 && is_ptrs_re == 0) {
@@ -329,7 +329,9 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 	  ul_ch0_ptrs_ext[ul_ch0_ptrs_ext_index] = ul_ch0_ptrs[ul_ch0_ptrs_index];
 	  
 #ifdef DEBUG_RB_EXT
-	  printf("rxF_ext[%d] = (%d,%d)\n", rxF_ext_index>>1, rxF_ext[rxF_ext_index],rxF_ext[rxF_ext_index+1]);
+	  printf("dmrs symb %d: rxF_ext[%d] = (%d,%d), ul_ch0_ext[%d] = (%d,%d)\n", 
+		 is_dmrs_symbol,rxF_ext_index>>1, rxF_ext[rxF_ext_index],rxF_ext[rxF_ext_index+1],
+		 ul_ch0_ext_index,  ((int16_t*)&ul_ch0_ext[ul_ch0_ext_index])[0],  ((int16_t*)&ul_ch0_ext[ul_ch0_ext_index])[1]);
 #endif
 	  ul_ch0_ext_index++;
 	  ul_ch0_ptrs_ext_index++;
@@ -1088,6 +1090,9 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   dmrs_symbol_flag = ((rel15_ul->ul_dmrs_symb_pos)>>symbol)&0x01;
 
+  LOG_D(PHY,"symbol %d bwp_start_subcarrier %d, rb_start %d, first_carrier_offset %d\n",symbol,bwp_start_subcarrier,rel15_ul->rb_start,frame_parms->first_carrier_offset);
+  LOG_D(PHY,"ul_dmrs_symb_pos %x\n",rel15_ul->ul_dmrs_symb_pos);
+
   if (dmrs_symbol_flag == 1){
     if (((rel15_ul->ul_dmrs_symb_pos)>>((symbol+1)%frame_parms->symbols_per_slot))&0x01)
       AssertFatal(1==0,"Double DMRS configuration is not yet supported\n");
@@ -1100,6 +1105,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     else {
       nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*4));
     }
+    LOG_D(PHY,"dmrs_symbol: nb_re_pusch %d\n",nb_re_pusch);
     gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
   } else {
     nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
