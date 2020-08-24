@@ -305,11 +305,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     if (UE_scheduling_control->ul_rssi < (100+rssi)) {
       UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
       UE_scheduling_control->ta_update = timing_advance;
+      UE_scheduling_control->ul_rssi = rssi;
     }
     else{
       UE_scheduling_control->tpc0 = 1;
     }
-    UE_scheduling_control->ul_rssi = rssi;
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");

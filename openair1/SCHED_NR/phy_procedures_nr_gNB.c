@@ -362,7 +362,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   gNB->rx_pdu_list[num_rx].harq_id = harq_pid;
   gNB->rx_pdu_list[num_rx].ul_cqi = cqi;
   gNB->rx_pdu_list[num_rx].timing_advance = timing_advance_update;
-  gNB->rx_pdu_list[num_rx].rssi = 0xffff; // invalid value as this is not yet computed
+  gNB->rx_pdu_list[num_rx].rssi = 1280 - (10*dB_fixed(2047*2047)-dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]));
   if (crc_flag)
     gNB->rx_pdu_list[num_rx].pdu_length = 0;
   else {
