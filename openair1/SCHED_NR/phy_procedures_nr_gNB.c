@@ -348,7 +348,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   gNB->crc_pdu_list[num_crc].ul_cqi = cqi;
   gNB->crc_pdu_list[num_crc].timing_advance = timing_advance_update;
   // in terms of dBFS range -128 to 0 with 0.1 step
-  gNB->crc_pdu_list[num_crc].rssi = 1280 - (10*dB_fixed(2047*2047)-dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]));
+  gNB->crc_pdu_list[num_crc].rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]));
 
   gNB->UL_INFO.crc_ind.number_crcs++;
 
@@ -362,7 +362,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   gNB->rx_pdu_list[num_rx].harq_id = harq_pid;
   gNB->rx_pdu_list[num_rx].ul_cqi = cqi;
   gNB->rx_pdu_list[num_rx].timing_advance = timing_advance_update;
-  gNB->rx_pdu_list[num_rx].rssi = 1280 - (10*dB_fixed(2047*2047)-dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]));
+  gNB->rx_pdu_list[num_rx].rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(gNB->pusch_vars[ULSCH_id]->ulsch_power[0]));
   if (crc_flag)
     gNB->rx_pdu_list[num_rx].pdu_length = 0;
   else {
