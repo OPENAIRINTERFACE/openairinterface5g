@@ -3043,6 +3043,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
     ${OPENAIR_DIR}/common/utils/backtrace.c
     ${OPENAIR_DIR}/common/utils/system.c
+    ${OPENAIR_DIR}/common/utils/utils.c
     ${XFORMS_SOURCE}
     ${T_SOURCE}
     ${CONFIG_SOURCES}

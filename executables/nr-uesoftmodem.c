@@ -38,7 +38,7 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_common_vars.h"
@@ -358,7 +358,9 @@ static void get_options(void) {
     frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
   }
 
-  init_symbol_rotation(frame_parms,frame_parms[CC_id]->dl_CarrierFreq);
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
+  }
 
   UE_scan=0;
 

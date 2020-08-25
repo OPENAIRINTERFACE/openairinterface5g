@@ -27,6 +27,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"

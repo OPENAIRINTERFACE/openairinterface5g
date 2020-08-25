@@ -93,6 +93,7 @@ int main(int argc, char **argv){
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
   uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
   uint64_t SSB_positions = 0x01, absoluteFrequencyPointA = 640000;
+  double DS_TDL = .03;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
@@ -558,6 +559,7 @@ int main(int argc, char **argv){
                                 channel_model,
                                 fs,
                                 bw,
+                                DS_TDL,
                                 0.0,
                                 delay,
                                 0);
