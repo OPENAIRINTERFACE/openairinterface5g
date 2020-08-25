@@ -121,7 +121,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 	apply_nr_rotation(fp,
 			  (int16_t*)&ru->common.txdataF_BF[aa][slot_offsetF],
 			  slot,
-			  1,
+			  first_symbol,
 			  num_symbols,
 			  fp->ofdm_symbol_size);
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
