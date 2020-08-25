@@ -495,6 +495,9 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   compute_nr_prach_seq(short_sequence, num_sequences, rootSequenceIndex, RC.gNB[Mod_id]->X_u);
 
   RC.gNB[Mod_id]->configured     = 1;
+
+  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
 

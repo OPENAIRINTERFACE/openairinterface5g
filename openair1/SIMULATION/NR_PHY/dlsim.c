@@ -38,6 +38,7 @@
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
@@ -573,6 +574,7 @@ int main(int argc, char **argv)
                                 channel_model,
  				fs,
 				bw,
+				30e-9,
                                 0,
                                 0,
                                 0);
@@ -779,12 +781,12 @@ int main(int argc, char **argv)
         int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
         
         if (n_trials==1) {
-          LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+          LOG_M("txsigF0.m","txsF0", &gNB->common_vars.txdataF[0][txdataF_offset],frame_parms->samples_per_slot_wCP,1,1);
           if (gNB->frame_parms.nb_antennas_tx>1)
-          LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+          LOG_M("txsigF1.m","txsF1", &gNB->common_vars.txdataF[1][txdataF_offset],frame_parms->samples_per_slot_wCP,1,1);
         }
         int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
-        if (n_trials==1) printf("samples_per_slot_wCP = %d\n", frame_parms->samples_per_slot_wCP);
+        if (n_trials==1) printf("tx_offset %d, txdataF_offset %d \n", tx_offset,txdataF_offset);
         
         //TODO: loop over slots
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
@@ -796,24 +798,51 @@ int main(int argc, char **argv)
                          12,
                          frame_parms->nb_prefix_samples,
                          CYCLIC_PREFIX);
-          } else {
+          } else {/*
             nr_normal_prefix_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
                                  &txdata[aa][tx_offset],
                                  14,
                                  frame_parms);
+		  */
+	    PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
+			 (int*)&txdata[aa][tx_offset],
+			 frame_parms->ofdm_symbol_size,
+			 1,
+			 frame_parms->nb_prefix_samples0,
+			 CYCLIC_PREFIX);
+	    	    
+	    apply_nr_rotation(frame_parms,
+			      (int16_t*)&txdata[aa][tx_offset],
+			      slot,
+			      0,
+			      1,
+			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
+	    PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset+frame_parms->ofdm_symbol_size],
+			 (int*)&txdata[aa][tx_offset+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+			 frame_parms->ofdm_symbol_size,
+			 13,
+			 frame_parms->nb_prefix_samples,
+			 CYCLIC_PREFIX);
+	    apply_nr_rotation(frame_parms,
+			      (int16_t*)&txdata[aa][tx_offset+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+			      slot,
+			      1,
+			      13,
+			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+	    
           }
         }
        
         if (n_trials==1) {
-          LOG_M("txsig0.m","txs0", txdata[0],frame_length_complex_samples,1,1);
+          LOG_M("txsig0.m","txs0", &txdata[0][tx_offset],frame_parms->get_samples_slot_timestamp(slot,frame_parms,0),1,1);
           if (gNB->frame_parms.nb_antennas_tx>1)
-            LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
+            LOG_M("txsig1.m","txs1", &txdata[1][tx_offset],frame_parms->get_samples_slot_timestamp(slot,frame_parms,0),1,1);
         }
         if (output_fd) {
           printf("writing txdata to binary file\n");
           fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
         }
-        
+
         int txlev = signal_energy(&txdata[0][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0], frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
         
         //  if (n_trials==1) printf("txlev %d (%f)\n",txlev,10*log10((double)txlev));

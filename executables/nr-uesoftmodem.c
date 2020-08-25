@@ -358,6 +358,8 @@ static void get_options(void) {
     frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
   }
 
+  init_symbol_rotation(frame_parms,frame_parms[CC_id]->dl_CarrierFreq);
+
   UE_scan=0;
 
   if (tddflag > 0) {

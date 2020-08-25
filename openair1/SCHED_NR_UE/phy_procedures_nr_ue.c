@@ -1426,7 +1426,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,
     }
 
     if (isBad) {
-      LOG_I(PHY,"Skip PUSCH generation!\n");
+      LOG_D(PHY,"Skip PUSCH generation!\n");
       ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
     }
   }
@@ -2231,7 +2231,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   memset(ue->common_vars.txdataF[0], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
 
-  LOG_I(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
+  LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
 #if UE_TIMING_TRACE
   start_meas(&ue->phy_proc_tx);
@@ -2252,14 +2252,14 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 */
 
    if (get_softmodem_params()->usim_test==0) {
-      LOG_I(PHY, "Generating PUCCH\n");
+      LOG_D(PHY, "Generating PUCCH\n");
       pucch_procedures_ue_nr(ue,
                              gNB_id,
                              proc,
                              FALSE);
    }
 
-    LOG_I(PHY, "Sending Uplink data \n");
+    LOG_D(PHY, "Sending Uplink data \n");
     nr_ue_pusch_common_procedures(ue,
                                   slot_tx,
                                   &ue->frame_parms,1);
@@ -2273,7 +2273,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
       nr_ue_prach_procedures(ue, proc, gNB_id, mode);
     }
   }
-  LOG_I(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
+  LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -3729,7 +3729,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
   int frame_rx;
   uint8_t nr_tti_rx;
-  uint8_t pilot0;
+  uint8_t pilot0; 
   uint8_t pilot1;
   uint8_t slot1;
 
@@ -4055,6 +4055,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   int coreset_nb_rb=0;
   int coreset_start_rb=0;
+  int symbol_offset_in_subframe=0;
+
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
   
@@ -4064,7 +4066,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if ((ue->decode_MIB == 1) && slot_pbch)
     {
       LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-
+      symbol_offset_in_subframe = (nr_tti_rx % fp->slots_per_subframe)*fp->symbols_per_slot;
       for (int i=1; i<4; i++) {
 
 	nr_slot_fep(ue,

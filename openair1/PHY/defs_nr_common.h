@@ -322,6 +322,8 @@ struct NR_DL_FRAME_PARMS {
   uint8_t nb_antenna_ports_gNB;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
+  /// sequence which is computed based on carrier frequency and numerology to rotate/derotate each OFDM symbol according to Section 5.3 in 38.211
+  int16_t symbol_rotation[224*2];
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
