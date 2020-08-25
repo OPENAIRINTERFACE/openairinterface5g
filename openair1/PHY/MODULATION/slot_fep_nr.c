@@ -490,6 +490,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
   ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+  LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symbol_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
   rotate_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
 		    (int16_t*)&rot2,
 		    (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
