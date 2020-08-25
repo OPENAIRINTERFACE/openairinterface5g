@@ -411,8 +411,11 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq) {
   double tl=0,poff,exp_re,exp_im;
   double Ncp,Ncpm1=Ncp0;
 
-  fp->symbol_rotation[0] = 32767;
-  fp->symbol_rotation[1] = 0;
+  poff = 2*M_PI*((Ncp0*Tc))*f0;
+  exp_re = cos(poff);
+  exp_im = sin(-poff);
+  fp->symbol_rotation[0]=(int16_t)floor(exp_re*32767);
+  fp->symbol_rotation[1]=(int16_t)floor(exp_im*32767);
   LOG_I(PHY,"Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n",f0,nsymb);
   LOG_I(PHY,"Symbol rotation %d/%d => (%d,%d)\n",0,nsymb,fp->symbol_rotation[0],fp->symbol_rotation[1]);
   for (int l=1;l<nsymb;l++) {

@@ -926,13 +926,16 @@ int main(int argc, char **argv)
         start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
+        phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+
 	if (n_trials==1 && round==0) {
 	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
 
 	  LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0]+start_symbol*frame_parms->ofdm_symbol_size,nb_symb_sch*frame_parms->ofdm_symbol_size,1,1);
 
 	}
-        phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+
+
 	if (n_trials == 1  && round==0) { 
 #ifdef __AVX2__
 	  int off = ((nb_rb&1) == 1)? 4:0;
