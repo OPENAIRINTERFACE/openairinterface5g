@@ -397,8 +397,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_pdu->pucch_format = 0; // format 0
   uci_pdu->ul_cqi = cqi; // currently not valid
   uci_pdu->timing_advance = 0xffff; // currently not valid
-  uci_pdu->rssi = 0xffff; // currently not valid
-
+  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
