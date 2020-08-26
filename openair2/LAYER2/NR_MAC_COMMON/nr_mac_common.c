@@ -31,6 +31,7 @@
  */
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "asn1_conversions.h"
 
 // ================================================
 // SSB to RO mapping private defines and structures
@@ -1040,6 +1041,10 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
 
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
+  // WIP-IDCC Force config index to 44 for debug
+//  LOG_D(MAC,"Change PRACH config index from %d to 44 for debug\n", config_index);
+//  config_index = 44;
+
   if (setup->msg1_SubcarrierSpacing)
     mu = *setup->msg1_SubcarrierSpacing;
   else
@@ -1066,6 +1071,7 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
   // WIP-IDCC: RACH preambles are not mapped yet (assumptions: ssb_per_rach is <= 1, totalNumberOfRA = CB-preamblesPerSSB - see NR_MAC_UE/nr_ra_procedures.c->nr_get_prach_resources)
 
   // Identify the proper PRACH Configuration Index table according to the operating frequency
+  LOG_D(MAC,"Pointa %d, mu = %d\n", pointa, mu);
   if (pointa > 2016666) { //FR2
     int y2;  // PRACH Configuration Index table additional variable used to compute the valid frame numbers
     uint8_t slot_60khz;
@@ -1080,6 +1086,7 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
 
     prach_assoc_pattern.nb_of_prach_conf_period_in_max_period = MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD / x;
     nb_of_frames_per_prach_conf_period = x;
+    LOG_D(MAC,"nb_of_prach_conf_period_in_max_period %d\n", prach_assoc_pattern.nb_of_prach_conf_period_in_max_period);
 
     // Fill in the PRACH occasions table for every slot in every frame in every PRACH configuration periods in the maximum association pattern period
     // ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1092,11 +1099,14 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
       prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].nb_of_frame = nb_of_frames_per_prach_conf_period;
       prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].nb_of_slot = nr_slots_per_frame[mu];
 
+      LOG_D(MAC,"PRACH Conf Period Idx %d\n", prach_conf_period_idx);
+
       // For every frames in a PRACH configuration period
       // ------------------------------------------------
       for (prach_conf_period_frame_idx=0; prach_conf_period_frame_idx<nb_of_frames_per_prach_conf_period; prach_conf_period_frame_idx++) {
         frame = (prach_conf_period_idx * nb_of_frames_per_prach_conf_period) + prach_conf_period_frame_idx;
 
+        LOG_D(MAC,"PRACH Conf Period Frame Idx %d - Frame %d\n", prach_conf_period_frame_idx, frame);
         // Is it a valid frame for this PRACH configuration index? (n_sfn mod x = y)
         if ( (frame%x)==y || (frame%x)==y2 ) {
 
@@ -1126,9 +1136,12 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
               uint8_t n_prach_occ_in_time;
               uint8_t n_prach_occ_in_freq;
 
+              prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].nb_of_prach_occasion_in_time = N_t_slot;
+              prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].nb_of_prach_occasion_in_freq = nb_fdm;
+
               for (n_prach_occ_in_time=0; n_prach_occ_in_time<N_t_slot; n_prach_occ_in_time++) {
                 uint8_t start_symbol = prach_conf_start_symbol + n_prach_occ_in_time * N_dur;
-                prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].nb_of_prach_occasion_in_time++;
+                LOG_D(MAC,"PRACH Occ in time %d\n", n_prach_occ_in_time);
 
                 for (n_prach_occ_in_freq=0; n_prach_occ_in_freq<nb_fdm; n_prach_occ_in_freq++) {
                   prach_occasion_info_t *prach_occasion_p = &prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].prach_occasion[n_prach_occ_in_time][n_prach_occ_in_freq];
@@ -1139,7 +1152,11 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
                   prach_occasion_p->slot = slot;
                   prach_occasion_p->format = format;
                   prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].nb_of_prach_occasion++;
-                  prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].nb_of_prach_occasion_in_freq++;
+
+                  LOG_D(MAC,"Adding a PRACH occasion: fdm %d, frame %d, slot-symbol %d-%d, occ_in_time-occ_in-freq %d-%d, nb ROs in conf period %d, for this slot: RO# in time %d, RO# in freq %d\n",
+                      frame, slot, start_symbol, n_prach_occ_in_time, n_prach_occ_in_freq, prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].nb_of_prach_occasion,
+                      prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].nb_of_prach_occasion_in_time,
+                      prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].prach_occasion_slot_map[prach_conf_period_frame_idx][slot].nb_of_prach_occasion_in_freq);
                 } // For every freq in the slot
               } // For every time occasions in the slot
             } // Valid slot?
@@ -1157,29 +1174,26 @@ static void build_ssb_list(NR_ServingCellConfigCommon_t *scc) {
   // Create the list of transmitted SSBs
   // ===================================
   // WIP-IDCC: Assumption: the optional ssb_PositionsInBurst is provided
-  BIT_STRING_t *ssb_bitmap = &scc->ssb_PositionsInBurst->choice.shortBitmap;
-
-  // Fill in the Tx SSBs list by going through all the bits set in the SSB bitmask
+  BIT_STRING_t *ssb_bitmap = &scc->ssb_PositionsInBurst->choice.longBitmap;
+  uint64_t ssb_positionsInBurst;
   uint8_t nb_of_bytes = ssb_bitmap->size;
-  uint8_t last_bit = 0;
-  uint8_t *byte_p = ssb_bitmap->buf;
   uint8_t ssb_idx = 0;
 
-  // Loop through the SSB idx bitmask starting with bit 0 up to the max of the bitmask
-  for (uint8_t byte_nb=nb_of_bytes; byte_nb>=1; byte_nb--) {
-    if (byte_nb == nb_of_bytes) {
-      last_bit = ssb_bitmap->bits_unused;
-    }
+  // WIP-IDCC: Support only long SSB bitmap for now
+  if (8 == nb_of_bytes) {
+    ssb_positionsInBurst = BIT_STRING_to_uint64(ssb_bitmap);
 
-    for (uint8_t bit_nb=last_bit; bit_nb<=sizeof(uint8_t)-1; bit_nb++) {
+    LOG_D(MAC,"SSB config: SSB_positions_in_burst 0x%llx\n", ssb_positionsInBurst);
+
+    for (uint8_t bit_nb=63; bit_nb<=63; bit_nb--) {
       // If SSB is transmitted
-      if (*byte_p>>bit_nb & 0x01) {
+      if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
         ssb_list.nb_tx_ssb++;
         ssb_list.tx_ssb[ssb_idx].transmitted = true;
+        LOG_D(MAC,"SSB idx %d transmitted\n", ssb_idx);
       }
       ssb_idx++;
     }
-    byte_p++;
   }
 }
 
@@ -1199,6 +1213,8 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
 
   // Determine the SSB to RACH mapping ratio
   // =======================================
+  LOG_D(MAC,"SSB per RACH config %u\n", ssb_perRACH_config);
+
   switch (ssb_perRACH_config){
     case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
       multiple_ssb_per_ro = false;
@@ -1236,12 +1252,14 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
       AssertFatal(1 == 0, "Unsupported ssb_perRACH_config %d\n", ssb_perRACH_config);
       break;
   }
+  LOG_D(MAC,"SSB rach ratio %d, Multiple SSB per RO %d\n", ssb_rach_ratio, multiple_ssb_per_ro);
 
   // Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period
   // ==============================================================================================================
   // WIP-IDCC: Assumption for now is that all the PRACH configuration periods within a maximum association pattern period have the same number of PRACH occasions
   //      (No PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule)
   //      There is only one possible association period
+  LOG_D(MAC,"Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period\n");
   if (true == multiple_ssb_per_ro) {
     required_nb_of_prach_occasion = ((ssb_list.nb_tx_ssb-1) + ssb_rach_ratio) / ssb_rach_ratio;
   }
@@ -1274,6 +1292,10 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
   prach_assoc_pattern.prach_association_period_list[0].nb_of_frame = prach_assoc_pattern.prach_association_period_list[0].nb_of_prach_conf_period * prach_assoc_pattern.prach_conf_period_list[0].nb_of_frame;
   prach_assoc_pattern.nb_of_frame = prach_assoc_pattern.prach_association_period_list[0].nb_of_frame;
 
+  LOG_D(MAC,"Assoc period %d, Nb of frames in assoc period %d\n",
+        prach_assoc_pattern.prach_association_period_list[0].nb_of_prach_conf_period,
+        prach_assoc_pattern.prach_association_period_list[0].nb_of_frame);
+
   // Proceed to the SSB to RO mapping
   // ================================
   uint8_t association_period_idx; // Association period index within the association pattern
@@ -1282,6 +1304,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
   prach_conf_period_t *prach_conf_period_p;
 
   // Map all the association periods within the association pattern period
+  LOG_D(MAC,"Proceed to the SSB to RO mapping\n");
   for (association_period_idx=0; association_period_idx<prach_assoc_pattern.nb_of_assoc_period; association_period_idx++) {
     uint8_t n_prach_conf=0; // PRACH Configuration period index within the association period
     uint8_t frame=0;
@@ -1394,7 +1417,12 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
                     AssertFatal(MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN > ssb_list.tx_ssb[ssb_idx].nb_mapped_ro,"Too many mapped ROs (%d) to a single SSB\n", ssb_list.tx_ssb[ssb_idx].nb_mapped_ro);
                     nb_mapped_ro_in_association_period++;
 
+                    LOG_D(MAC,"Mapped ssb_idx %u to RO slot-symbol %u-%u, %u-%u-%u/%u\n", ssb_idx, ro_p->slot, ro_p->start_symbol, slot, ro_in_time, ro_in_freq, prach_conf_period_p->prach_occasion_slot_map[frame][slot].nb_of_prach_occasion_in_freq);
+                    LOG_D(MAC,"Nb mapped ROs for this ssb idx: in the association period only %u / total %u\n", ssb_list.tx_ssb[ssb_idx].nb_mapped_ro, nb_mapped_ro_in_association_period);
+
                     // Exit the loop if this SSB has been mapped to all the required ROs
+                    // WIP: Assuming that ssb_rach_ratio equals the maximum nb of a given ssb_idx mapped within an assocation period: this is true if
+                    //      no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
                     if (nb_mapped_ro_in_association_period == ssb_rach_ratio) {
                       ro_in_freq++;
                       break;
@@ -1402,23 +1430,31 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
                   } // for ro_in_freq
 
                   // Exit the loop if this SSB has been mapped to all the required ROs
-                  if (nb_mapped_ro_in_association_period == ssb_rach_ratio) break;
-                  else ro_in_freq = 0; // else go to the next time symbol in that slot
+                  if (nb_mapped_ro_in_association_period == ssb_rach_ratio) {
+                    break;
+                  }
+                  else ro_in_freq = 0; // else go to the next time symbol in that slot and reset the freq index
                 } // for ro_in_time
 
                 // Exit the loop if this SSB has been mapped to all the required ROs
-                if (nb_mapped_ro_in_association_period == ssb_rach_ratio) break;
-                else ro_in_time = 0; // else go to the next slot in that PRACH config period
+                if (nb_mapped_ro_in_association_period == ssb_rach_ratio) {
+                  break;
+                }
+                else ro_in_time = 0; // else go to the next slot in that PRACH config period and reset the symbol index
               } // for slot
 
               // Exit the loop if this SSB has been mapped to all the required ROs
-              if (nb_mapped_ro_in_association_period == ssb_rach_ratio) break;
-              else slot = 0; // else go to the next frame in that PRACH config period
+              if (nb_mapped_ro_in_association_period == ssb_rach_ratio) {
+                break;
+              }
+              else slot = 0; // else go to the next frame in that PRACH config period and reset the slot index
             } // for frame
 
             // Exit the loop if this SSB has been mapped to all the required ROs
-            if (nb_mapped_ro_in_association_period == ssb_rach_ratio) break;
-            else frame = 0; // else go to the next PRACH config period in that association period
+            if (nb_mapped_ro_in_association_period == ssb_rach_ratio) {
+              break;
+            }
+            else frame = 0; // else go to the next PRACH config period in that association period and reset the frame index
           } // for n_prach_conf
 
         } // if ssb_idx is transmitted
@@ -1436,13 +1472,17 @@ void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc) {
   memset(&ssb_list, 0, sizeof(ssb_list_info_t));
 
   // Build the list of all the valid RACH occasions in the maximum association pattern period according to the PRACH config
+  LOG_D(MAC,"Build RO list\n");
   build_ro_list(scc);
 
   // Build the list of all the valid/transmitted SSBs according to the config
+  LOG_D(MAC,"Build SSB list\n");
   build_ssb_list(scc);
 
   // Map the transmitted SSBs to the ROs and create the association pattern according to the config
+  LOG_D(MAC,"Map SSB to RO\n");
   map_ssb_to_ro(scc);
+  LOG_D(MAC,"Map SSB to RO done\n");
 }
 
 // Returns a RACH occasion if any matches the SSB idx, the frame and the slot
