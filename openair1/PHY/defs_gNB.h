@@ -465,37 +465,6 @@ typedef struct {
   uint8_t cl_done;
 } NR_gNB_PUSCH;
 
-typedef struct LDPCDecode_s {
-  PHY_BARS_gNB *gNB;
-  NR_UL_gNB_HARQ_t *ulsch_harq;
-  t_nrLDPC_dec_params *p_decoderParms;
-  short* ulsch_llr; 
-  int harq_pid;
-  int rv_index;
-  int A;
-  int E;
-  int Kc;
-  int Qm;
-  int nbSegments;
-  int segment_r;
-  int r_offset;
-  int Tbslbrm;
-  int decodeIterations;
-} ldpcDecode_t
-
-struct ldpcReqId {
-  uint16_t rnti;
-  uint16_t frame;
-  uint8_t  subframe;
-  uint8_t  codeblock;
-  uint16_t spare;
-} __attribute__((packed));
-
-union ldpcReqUnion {
-  struct ldpcReqId s;
-  uint64_t p;
-};
-
 /// Context data structure for RX/TX portion of slot processing
 typedef struct {
   /// Component Carrier index
@@ -839,5 +808,40 @@ typedef struct PHY_VARS_gNB_s {
   int nbDecode;
 
 } PHY_VARS_gNB;
+
+typedef struct LDPCDecode_s {
+  PHY_VARS_gNB *gNB;
+  NR_UL_gNB_HARQ_t *ulsch_harq;
+  t_nrLDPC_dec_params *p_decoderParms;
+  NR_gNB_ULSCH_t *ulsch;
+  short* ulsch_llr; 
+  int ulsch_id;
+  int harq_pid;
+  int rv_index;
+  int A;
+  int E;
+  int Kc;
+  int Qm;
+  int Kr_bytes;
+  int nbSegments;
+  int segment_r;
+  int r_offset;
+  int offset;
+  int Tbslbrm;
+  int decodeIterations;
+} ldpcDecode_t;
+
+struct ldpcReqId {
+  uint16_t rnti;
+  uint16_t frame;
+  uint8_t  subframe;
+  uint8_t  codeblock;
+  uint16_t spare;
+} __attribute__((packed));
+
+union ldpcReqUnion {
+  struct ldpcReqId s;
+  uint64_t p;
+};
 
 #endif
