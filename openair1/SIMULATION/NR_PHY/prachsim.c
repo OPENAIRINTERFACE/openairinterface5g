@@ -37,7 +37,6 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
