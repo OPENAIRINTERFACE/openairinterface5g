@@ -225,6 +225,17 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 */
 
+void nr_postDecode(PHY_VARS_gNB gNB, notifiedFIFO_elt_t *req) {
+  ldpcDecode_t *rdata = (ldpcDeocde_t*) NotifiedFifoData(req);
+  NR_UL_gNB_HARQ_t ulsch_harq = rdata->ulsch_harq;
+
+  bool decodeSuccess = (rdata->deocdeIterations <= rdata->p_decoderParms->numMaxIter);
+  ulsch_harq->processedSegments++;
+  LOG_D(PHY, "processing result of segment: %d, processed %d/%d\n",
+	rdata->segment_r, ulsch_harq->processedSegments, rdata->nbSegments);
+  proc->nbDecode--;
+  LOG_D(PHY,"remain to decoded in subframe: %d\n", proc->nbDecode);
+
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)
 {
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
@@ -282,17 +293,22 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //----------------------------------------------------------
 
   start_meas(&gNB->ulsch_decoding_stats);
-  ret = nr_ulsch_decoding(gNB,
-                          ULSCH_id,
-                          gNB->pusch_vars[ULSCH_id]->llr,
-                          frame_parms,
-                          pusch_pdu,
-                          frame_rx,
-                          slot_rx,
-                          harq_pid,
-                          G);
+  nr_ulsch_decoding(gNB,
+                    ULSCH_id,
+                    gNB->pusch_vars[ULSCH_id]->llr,
+                    frame_parms,
+                    pusch_pdu,
+                    frame_rx,
+                    slot_rx,
+                    harq_pid,
+                    G);
   stop_meas(&gNB->ulsch_decoding_stats);
 
+  while (gNB->nbDecode > 0) {
+    notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
+    nr_postDecode(gNB, req);
+    delNotifiedFIFO_elt(req);
+  }
 
   if (ret > gNB->ulsch[ULSCH_id][0]->max_ldpc_iterations){
     LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);

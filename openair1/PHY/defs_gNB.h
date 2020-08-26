@@ -252,6 +252,8 @@ typedef struct {
   int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
+  /// Number of segments processed so far
+  uint32_t processedSegments;
   //////////////////////////////////////////////////////////////
 
 
@@ -463,6 +465,36 @@ typedef struct {
   uint8_t cl_done;
 } NR_gNB_PUSCH;
 
+typedef struct LDPCDecode_s {
+  PHY_BARS_gNB *gNB;
+  NR_UL_gNB_HARQ_t *ulsch_harq;
+  t_nrLDPC_dec_params *p_decoderParms;
+  short* ulsch_llr; 
+  int harq_pid;
+  int rv_index;
+  int A;
+  int E;
+  int Kc;
+  int Qm;
+  int nbSegments;
+  int segment_r;
+  int r_offset;
+  int Tbslbrm;
+  int decodeIterations;
+} ldpcDecode_t
+
+struct ldpcReqId {
+  uint16_t rnti;
+  uint16_t frame;
+  uint8_t  subframe;
+  uint8_t  codeblock;
+  uint16_t spare;
+} __attribute__((packed));
+
+union ldpcReqUnion {
+  struct ldpcReqId s;
+  uint64_t p;
+};
 
 /// Context data structure for RX/TX portion of slot processing
 typedef struct {
@@ -802,6 +834,9 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
   */
+  notifiedFIFO_t *respDecode;
+  tpool_t *threadPool;
+  int nbDecode;
 
 } PHY_VARS_gNB;
 
