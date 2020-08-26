@@ -244,8 +244,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       cfg->ssb_table.ssb_mask_list[0].ssb_mask = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       for (i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[i+4]<<i*8);
       }
       break;
     default:

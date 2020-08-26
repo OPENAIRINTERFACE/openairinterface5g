@@ -101,11 +101,11 @@ static inline uint64_t BIT_STRING_to_uint64(BIT_STRING_t *asn) {
 
   shift = ((asn->size - 1) * 8) - asn->bits_unused;
   for (index = 0; index < (asn->size - 1); index++) {
-    result |= asn->buf[index] << shift;
+    result |= ((uint64_t)asn->buf[index]) << shift;
     shift -= 8;
   }
 
-  result |= asn->buf[index] >> asn->bits_unused;
+  result |= ((uint64_t)asn->buf[index]) >> asn->bits_unused;
 
   return result;
 }
