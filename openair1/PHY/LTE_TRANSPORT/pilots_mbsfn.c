@@ -20,12 +20,12 @@
  */
 
 /*! \file PHY/LTE_TRANSPORT/pilots_mbsfn.c
-* \brief Top-level routines for generating DL mbsfn reference signals
-* \authors S. Paranche, R. Knopp
+* \brief Top-level routines for generating DL mbsfn reference signals / DL mbsfn reference signals for FeMBMS
+* \authors S. Paranche, R. Knopp, J. Morgade
 * \date 2012
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr
+* \email: knopp@eurecom.fr, javier.morgade@ieee.org
 * \note
 * \warning
 */
@@ -84,4 +84,32 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *eNB,
   return(0);
 }
 
+
+int generate_mbsfn_pilot_khz_1dot25(PHY_VARS_eNB *eNB,
+                         L1_rxtx_proc_t *proc,
+                         int32_t **txdataF,
+                         int16_t amp)
+
+{
+
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  uint32_t subframe_offset,Nsymb;
+  int subframe = proc->subframe_tx;
+
+
+  if (subframe<0 || subframe>= 10) {
+    LOG_E(PHY,"generate_mbsfn_pilots_subframe: subframe not in range (%d)\n",subframe);
+    return(-1);
+  }
+
+  Nsymb = (frame_parms->Ncp==NORMAL) ? 7 : 6;
+
+  subframe_offset = subframe*frame_parms->ofdm_symbol_size*Nsymb<<1;
+
+  lte_dl_mbsfn_khz_1dot25(eNB,
+                &txdataF[0][subframe_offset+0],
+                amp,subframe);
+
+  return(0);
+}
 
