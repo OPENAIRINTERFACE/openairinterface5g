@@ -444,7 +444,6 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
                      0);
     }
   }
-
 }
 
 void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
@@ -484,8 +483,25 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
           pucch->active = 0;
 	  break;
+        case 2:
+
+          num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
+          gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
+          gNB->UL_INFO.uci_ind.sfn = frame_rx;
+          gNB->UL_INFO.uci_ind.slot = slot_rx;
+          gNB->uci_pdu_list[num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
+          gNB->uci_pdu_list[num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_2_3_4_t);
+          nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu_format2 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_2_3_4;
+
+          nr_decode_pucch2(gNB,
+                           slot_rx,
+                           uci_pdu_format2,
+                           pucch_pdu);
+
+          gNB->UL_INFO.uci_ind.num_ucis += 1;
+          pucch->active = 0;
         default:
-	  AssertFatal(1==0,"Only PUCCH format 0 is currently supported\n");
+	  AssertFatal(1==0,"Only PUCCH formats 0 and 2 are currently supported\n");
         }
       }
     }
