@@ -3295,7 +3295,8 @@ def GetParametersFromXML(action):
 		ldpc.runargs = test.findtext('physim_run_args')
 		
 	if action == 'COTS_UE_Airplane':
-		COTS_UE.runargs = test.findtext('cots_ue_airplane_args')
+		COTS_UE.cots_id = test.findtext('cots_id')
+		COTS_UE.cots_run_mode = test.findtext('cots_run_mode')
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -3323,11 +3324,15 @@ import yaml
 xml_class_list_file=''
 if (os.path.isfile('xml_class_list.yml')):
 	xml_class_list_file='xml_class_list.yml'
-if (os.path.isfile('ci-scripts/xml_class_list.yml')):
-	xml_class_list_file='ci-scripts/xml_class_list.yml'
+elif (os.path.isfile('ci_scripts/xml_class_list.yml')):
+	xml_class_list_file='ci_scripts/xml_class_list.yml'
+else:
+	logging.error("XML action list yaml file cannot be found")
+	sys.exit("XML action list yaml file cannot be found")
+#file will be opened only if it exists
 with open(xml_class_list_file,'r') as file:
-    # The FullLoader parameter handles the conversion from YAML
-    # scalar values to Python the dictionary format
+    # The FullLoader parameter handles the conversion 
+    #from YAML scalar values to Python dictionary format
     xml_class_list = yaml.load(file,Loader=yaml.FullLoader)
 
 mode = ''
@@ -3375,8 +3380,9 @@ if py_param_file_present == True:
 #-----------------------------------------------------------
 # COTS UE instanciation
 #-----------------------------------------------------------
-#COTS_UE instanciation can only be done here for the moment, due to code architecture
-COTS_UE=cls_cots_ue.CotsUe('oppo', CiTestObj.UEIPAddress, CiTestObj.UEUserName,CiTestObj.UEPassword)
+#COTS_UE instanciation and ADB server init
+#ue id and ue mode are retrieved from xml
+COTS_UE=cls_cots_ue.CotsUe(CiTestObj.ADBIPAddress, CiTestObj.ADBUserName,CiTestObj.ADBPassword)
 
 
 #-----------------------------------------------------------
@@ -3689,7 +3695,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'COTS_UE_Airplane':
-					COTS_UE.Set_Airplane(COTS_UE.runargs)
+					#cots id and cots run mode were read from xml test file
+					COTS_UE.Set_Airplane(COTS_UE.cots_id, COTS_UE.cots_run_mode)
 				else:
 					sys.exit('Invalid class (action) from xml')
 		CiTestObj.FailReportCnt += 1

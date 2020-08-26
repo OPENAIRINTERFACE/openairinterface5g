@@ -1,0 +1,18 @@
+oppo:
+  - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - adb shell input keyevent 20
+  - adb shell input tap 968 324
+s10:
+  - adb shell input keyevent KEYCODE_POWER
+  - adb shell input swipe 200 900 200 300
+  - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - adb shell input tap 968 324
+s20:
+  - adb shell input keyevent KEYCODE_POWER
+  - adb shell input swipe 200 900 200 300
+  - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
+  - adb shell input tap 968 324
+xperia:
+  - tbd
+  - tbd
+  - tbd
