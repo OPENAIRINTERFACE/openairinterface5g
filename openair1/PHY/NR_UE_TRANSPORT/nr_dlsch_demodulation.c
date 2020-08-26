@@ -230,19 +230,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       return(-1);
     }
   } else if (dlsch0_harq) {
-    if (dlsch0_harq->status == ACTIVE)
+    if (dlsch0_harq->status == ACTIVE) {
       codeword_TB0 = dlsch0_harq->codeword;
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
       #ifdef DEBUG_HARQ
         printf("[DEMOD] I am assuming only TB0 is active\n");
       #endif
+    } else {
+      LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
+      return (-1);
+    }
   } else {
-    LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
-    return (-1);
-  }
-
-  if (dlsch0_harq == NULL) {
     LOG_E(PHY, "Done\n");
     return -1;
   }

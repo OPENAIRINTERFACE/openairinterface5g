@@ -90,7 +90,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   if(nb_symbols == 0) return;
 
-  short temp[4096*4] __attribute__((aligned(32)));
+  short temp[2*2*6144*4] __attribute__((aligned(32)));
   unsigned short i,j;
   short k;
 
@@ -127,9 +127,23 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   case 3072:
     idftsize = IDFT_3072;
     break;
+
   case 4096:
     idftsize = IDFT_4096;
     break;
+
+  case 6144:
+    idftsize= IDFT_6144;
+    break;
+
+ case 12288:
+    idftsize= IDFT_12288;
+    break;
+
+ case 24576:
+    idftsize= IDFT_24576;
+    break;
+
   default:
     idftsize = IDFT_512;
     break;

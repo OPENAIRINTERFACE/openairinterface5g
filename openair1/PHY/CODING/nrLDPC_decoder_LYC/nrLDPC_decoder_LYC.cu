@@ -32,7 +32,7 @@
 #include "bgs/BG2_I6"
 #include "bgs/BG2_I7"
 
-#define MAX_ITERATION 5
+#define MAX_ITERATION 2
 #define MC	1
 
 #define cudaCheck(ans) { cudaAssert((ans), __FILE__, __LINE__); }
@@ -49,13 +49,21 @@ typedef struct{
   char y;
   short value;
 } h_element;
+#include "bgs/BG1_compact_in_C.h"
 
+__device__ char dev_const_llr[68*384];
+__device__ char dev_dt [46*68*384];
+__device__ char dev_llr[68*384];
+__device__ unsigned char dev_tmp[68*384];
 
 h_element h_compact1 [46*19] = {};
 h_element h_compact2 [68*30] = {};
 
-__device__ __constant__ h_element dev_h_compact1[46*19];  // used in kernel 1
-__device__ __constant__ h_element dev_h_compact2[68*30];  // used in kernel 2
+__device__  h_element dev_h_compact1[46*19];  // used in kernel 1
+__device__  h_element dev_h_compact2[68*30];  // used in kernel 2
+
+// __device__ __constant__ h_element dev_h_compact1[46*19];  // used in kernel 1
+// __device__ __constant__ h_element dev_h_compact2[68*30];  // used in kernel 2
 
 // row and col element count
 __device__ __constant__ char h_ele_row_bg1_count[46] = {
@@ -92,9 +100,93 @@ __global__ void warmup()
 	// warm up gpu for time measurement
 }
 
+extern "C"
+void warmup_for_GPU(){
+	
+	warmup<<<20,1024 >>>();
+
+}
+
+extern "C"
+void set_compact_BG(int Zc,short BG){
+	
+	int row,col;
+	if(BG == 1){
+		row = 46;
+		col = 68;
+	}
+	else{
+		row = 42;
+		col = 52;
+	}
+	int compact_row = 30; 
+	int compact_col = 19;
+	if(BG==2){compact_row = 10, compact_col = 23;}
+	int memorySize_h_compact1 = row * compact_col * sizeof(h_element);
+	int memorySize_h_compact2 = compact_row * col * sizeof(h_element);
+	int lift_index = 0;
+	short lift_set[][9] = {
+		{2,4,8,16,32,64,128,256},
+		{3,6,12,24,48,96,192,384},
+		{5,10,20,40,80,160,320},
+		{7,14,28,56,112,224},
+		{9,18,36,72,144,288},
+		{11,22,44,88,176,352},
+		{13,26,52,104,208},
+		{15,30,60,120,240},
+		{0}
+	};
+	
+	for(int i = 0; lift_set[i][0] != 0; i++){
+		for(int j = 0; lift_set[i][j] != 0; j++){
+			if(Zc == lift_set[i][j]){
+				lift_index = i;
+				break;
+			}
+		}
+	}
+	printf("\nZc = %d BG = %d\n",Zc,BG);
+	switch(lift_index){
+			case 0:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I0, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I0, memorySize_h_compact2) );
+				break;
+			case 1:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I1, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I1, memorySize_h_compact2) );
+				break;
+			case 2:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I2, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I2, memorySize_h_compact2) );
+				break;
+			case 3:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I3, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I3, memorySize_h_compact2) );
+				break;
+			case 4:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I4, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I4, memorySize_h_compact2) );
+				break;
+			case 5:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I5, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I5, memorySize_h_compact2) );
+				break;
+			case 6:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I6, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I6, memorySize_h_compact2) );
+				break;
+			case 7:
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, host_h_compact1_I7, memorySize_h_compact1) );
+				cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, host_h_compact2_I7, memorySize_h_compact2) );
+				break;
+		}
+	
+	// return 0;
+}
+
 
 // Kernel 1
-__global__ void ldpc_cnp_kernel_1st_iter(char * dev_llr, char * dev_dt, int BG, int row, int col, int Zc)
+__global__ void ldpc_cnp_kernel_1st_iter(/*char * dev_llr,*/ int BG, int row, int col, int Zc)
 {
 //	if(blockIdx.x == 0 && threadIdx.x == 1) printf("cnp %d\n", threadIdx.x);
 	int iMCW = blockIdx.y;		// codeword id
@@ -153,7 +245,7 @@ __global__ void ldpc_cnp_kernel_1st_iter(char * dev_llr, char * dev_dt, int BG, 
 	for(int i = 0; i < s; i++){
 		// v0: Best performance so far. 0.75f is the value of alpha.
 		sq = 1 - 2 * ((Q_sign >> i) & 0x01);
-		R_temp = 0.8 * sign * sq * (i != idx_min ? rmin1 : rmin2);
+		R_temp = 0.75f * sign * sq * (i != idx_min ? rmin1 : rmin2);
 		// write results to global memory
 		h_element_t = dev_h_compact1[i*row+iBlkRow];
 		int addr_temp = offsetR + h_element_t.y * row * Zc;
@@ -163,7 +255,7 @@ __global__ void ldpc_cnp_kernel_1st_iter(char * dev_llr, char * dev_dt, int BG, 
 }
 
 // Kernel_1
-__global__ void ldpc_cnp_kernel(char * dev_llr, char * dev_dt, int BG, int row, int col, int Zc)
+__global__ void ldpc_cnp_kernel(/*char * dev_llr, char * dev_dt,*/ int BG, int row, int col, int Zc)
 {
 //	if(blockIdx.x == 0 && threadIdx.x == 1) printf("cnp\n");
 	int iMCW = blockIdx.y;
@@ -223,7 +315,7 @@ __global__ void ldpc_cnp_kernel(char * dev_llr, char * dev_dt, int BG, int row, 
 //	The 2nd recursion
 	for(int i = 0; i < s; i ++){
 		sq = 1 - 2 * ((Q_sign >> i) & 0x01);
-		R_temp = 0.8 * sign * sq * (i != idx_min ? rmin1 : rmin2);
+		R_temp = 0.75f * sign * sq * (i != idx_min ? rmin1 : rmin2);
 		
 
 		// write results to global memory
@@ -236,7 +328,7 @@ __global__ void ldpc_cnp_kernel(char * dev_llr, char * dev_dt, int BG, int row, 
 
 // Kernel 2: VNP processing
 __global__ void
-ldpc_vnp_kernel_normal(char * dev_llr, char * dev_dt, char * dev_const_llr, int BG, int row, int col, int Zc)
+ldpc_vnp_kernel_normal(/*char * dev_llr, char * dev_dt, char * dev_const_llr,*/ int BG, int row, int col, int Zc)
 {	
 	int iMCW = blockIdx.y;
 	int iBlkCol = blockIdx.x;
@@ -276,7 +368,7 @@ ldpc_vnp_kernel_normal(char * dev_llr, char * dev_dt, char * dev_const_llr, int 
 }
 
 
-__global__ void pack_decoded_bit(char *dev, unsigned char *host, int col, int Zc)
+__global__ void pack_decoded_bit(/*char *dev, unsigned char *host,*/ int col, int Zc)
 {
 	__shared__ unsigned char tmp[128];
 	int iMCW = blockIdx.y;
@@ -284,15 +376,15 @@ __global__ void pack_decoded_bit(char *dev, unsigned char *host, int col, int Zc
 	int btid = threadIdx.x;
 	tmp[btid] = 0;
 	
-	if(dev[tid] < 0){
+	if(dev_llr[tid] < 0){
 		tmp[btid] = 1 << (7-(btid&7));
 	}
 	__syncthreads();
 	
 	if(threadIdx.x < 16){
-		host[iMCW * col*Zc + blockIdx.x*16+threadIdx.x] = 0;
+		dev_tmp[iMCW * col*Zc + blockIdx.x*16+threadIdx.x] = 0;
 		for(int i = 0; i < 8; i++){
-			host[iMCW * col*Zc + blockIdx.x*16+threadIdx.x] += tmp[threadIdx.x*8+i];
+			dev_tmp[iMCW * col*Zc + blockIdx.x*16+threadIdx.x] += tmp[threadIdx.x*8+i];
 		}
 	}
 }
@@ -369,18 +461,11 @@ void read_BG(int BG, int *h, int row, int col)
 	*/
 }
 
-
 extern "C"
-int32_t nrLDPC_decoder_LYC(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length, time_stats_t *time_decoder)
-{
-	// alloc mem
-	//unsigned char *decision = (unsigned char*)p_out;
-
-    uint16_t Zc          = p_decParams->Z;
-    uint8_t  BG         = p_decParams->BG;
-    uint8_t  numMaxIter = p_decParams->numMaxIter;
-    e_nrLDPC_outMode outMode = p_decParams->outMode;
+void init_LLR_DMA_for_CUDA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length){
 	
+	uint16_t Zc          = p_decParams->Z;
+    uint8_t  BG         = p_decParams->BG;
 	uint8_t row,col;
 	if(BG == 1){
 		row = 46;
@@ -390,96 +475,41 @@ int32_t nrLDPC_decoder_LYC(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8
 		row = 42;
 		col = 52;
 	}
-	int compact_row = 30, compact_col = 19, lift_index=0;;
-	if(BG==2){compact_row = 10, compact_col = 23;}
+	unsigned char *hard_decision = (unsigned char*)p_out;
+	int memorySize_llr_cuda = col * Zc * sizeof(char) * MC;
+	cudaCheck( cudaMemcpyToSymbol(dev_const_llr, p_llr, memorySize_llr_cuda) );
+	cudaCheck( cudaMemcpyToSymbol(dev_llr, p_llr, memorySize_llr_cuda) );
+	cudaDeviceSynchronize();
 	
-	short lift_set[][9] = {
-		{2,4,8,16,32,64,128,256},
-		{3,6,12,24,48,96,192,384},
-		{5,10,20,40,80,160,320},
-		{7,14,28,56,112,224},
-		{9,18,36,72,144,288},
-		{11,22,44,88,176,352},
-		{13,26,52,104,208},
-		{15,30,60,120,240},
-		{0}
-	};
-	
-	for(int i = 0; lift_set[i][0] != 0; i++){
-		for(int j = 0; lift_set[i][j] != 0; j++){
-			if(Zc == lift_set[i][j]){
-				lift_index = i;
-				break;
-			}
-		}
-	}
-	
-	int *h = NULL;
-	switch(lift_index){
-		case 0:
-			h = (BG == 1)? h_base_0:h_base_8;
-			break;
-		case 1:
-			h = (BG == 1)? h_base_1:h_base_9;
-			break;
-		case 2:
-			h = (BG == 1)? h_base_2:h_base_10;
-			break;
-		case 3:
-			h = (BG == 1)? h_base_3:h_base_11;
-			break;
-		case 4:
-			h = (BG == 1)? h_base_4:h_base_12;
-			break;
-		case 5:
-			h = (BG == 1)? h_base_5:h_base_13;
-			break;
-		case 6:
-			h = (BG == 1)? h_base_6:h_base_14;
-			break;
-		case 7:
-			h = (BG == 1)? h_base_7:h_base_15;
-			break;
-	}
-	/* pack BG in compact graph */
-	read_BG(BG, h, row, col);
-	
-	
-	int memorySize_h_compact1 = row * compact_col * sizeof(h_element);
-	int memorySize_h_compact2 = compact_row * col * sizeof(h_element);
+}
 
-//	cpu
-	int memorySize_hard_decision = col * Zc * sizeof(unsigned char) * MC;
-	
-	
+extern "C"
+int32_t nrLDPC_decoder_LYC(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length, time_stats_t *time_decoder)
+{
+
+
+    uint16_t Zc          = p_decParams->Z;
+    uint8_t  BG         = p_decParams->BG;
+    uint8_t  numMaxIter = p_decParams->numMaxIter;
+    e_nrLDPC_outMode outMode = p_decParams->outMode;
+	cudaError_t cudaStatus;
+	uint8_t row,col;
+	if(BG == 1){
+		row = 46;
+		col = 68;
+	}
+	else{
+		row = 42;
+		col = 52;
+	}
+
 //	alloc memory
 	unsigned char *hard_decision = (unsigned char*)p_out;
-	
 //	gpu
 	int memorySize_llr_cuda = col * Zc * sizeof(char) * MC;
-	int memorySize_dt_cuda = row * Zc * col * sizeof(char) * MC;
-
-
-//	alloc memory
-	char *dev_llr;
-	char *dev_dt;
-	char *dev_const_llr;
-	unsigned char *dev_tmp;
+	cudaCheck( cudaMemcpyToSymbol(dev_const_llr, p_llr, memorySize_llr_cuda) );
+	cudaCheck( cudaMemcpyToSymbol(dev_llr, p_llr, memorySize_llr_cuda) );
 	
-	cudaCheck( cudaMalloc((void **)&dev_tmp, memorySize_hard_decision) );
-	cudaCheck( cudaMalloc((void **)&dev_llr, memorySize_llr_cuda) );
-	cudaCheck( cudaMalloc((void **)&dev_const_llr, memorySize_llr_cuda) );
-	cudaCheck( cudaMalloc((void **)&dev_dt, memorySize_dt_cuda) );
-	
-//	memcpy host to device	
-
-	cudaCheck( cudaMemcpyToSymbol(dev_h_compact1, h_compact1, memorySize_h_compact1) );
-	cudaCheck( cudaMemcpyToSymbol(dev_h_compact2, h_compact2, memorySize_h_compact2) );
-	cudaCheck( cudaMemcpy((void*)dev_const_llr, p_llr, memorySize_llr_cuda, cudaMemcpyHostToDevice) );
-start_meas(time_decoder);
-	cudaCheck( cudaMemcpy((void*)dev_llr, p_llr, memorySize_llr_cuda, cudaMemcpyHostToDevice) );
-	
-
 // Define CUDA kernel dimension
 	int blockSizeX = Zc;
 	dim3 dimGridKernel1(row, MC, 1); 	// dim of the thread blocks
@@ -488,61 +518,35 @@ start_meas(time_decoder);
     dim3 dimGridKernel2(col, MC, 1);
     dim3 dimBlockKernel2(blockSizeX, 1, 1);	
 	cudaDeviceSynchronize();
-	
-	cudaEvent_t start, end;
-	float time;
 
-	warmup<<<dimGridKernel1, dimBlockKernel1>>>();
-	warmup<<<dimGridKernel2, dimBlockKernel2>>>();
-
-
-	cudaEventCreate(&start);
-	cudaEventCreate(&end);
-	cudaEventRecord(start, 0);
-	
-//	cudaProfilerStart();
-	
 // lauch kernel 
+
 	for(int ii = 0; ii < MAX_ITERATION; ii++){
 		// first kernel	
 		if(ii == 0){
 			ldpc_cnp_kernel_1st_iter 
 			<<<dimGridKernel1, dimBlockKernel1>>>
-			(dev_llr, dev_dt, BG, row, col, Zc);
+			(/*dev_llr,*/ BG, row, col, Zc);
 		}else{
 			ldpc_cnp_kernel
 			<<<dimGridKernel1, dimBlockKernel1>>>
-			(dev_llr, dev_dt, BG, row, col, Zc);
+			(/*dev_llr,*/ BG, row, col, Zc);
 		}
-		
 		// second kernel
-		
-			ldpc_vnp_kernel_normal
-			<<<dimGridKernel2, dimBlockKernel2>>>
-			(dev_llr, dev_dt, dev_const_llr, BG, row, col, Zc);
-		
+		ldpc_vnp_kernel_normal
+		<<<dimGridKernel2, dimBlockKernel2>>>
+		// (dev_llr, dev_const_llr,BG, row, col, Zc);
+		(BG, row, col, Zc);
 	}
+	
 	int pack = (block_length/128)+1;
 	dim3 pack_block(pack, MC, 1);
-	pack_decoded_bit<<<pack_block,128>>>(dev_llr, dev_tmp, col, Zc);
-
-
-	cudaEventRecord(end, 0);
-	cudaEventSynchronize(end);
-	cudaEventElapsedTime(&time, start, end);
+	pack_decoded_bit<<<pack_block,128>>>(/*dev_llr,*/ /*dev_tmp,*/ col, Zc);
 	
-
-	//cudaCheck( cudaMemcpy((*)hard_decision, (const void*)dev_tmp, memorySize_hard_decision, cudaMemcpyDeviceToHost) );
-	cudaCheck( cudaMemcpy((void*)hard_decision, (const void*)dev_tmp, (block_length/8)*sizeof(unsigned char), cudaMemcpyDeviceToHost) );
+	cudaCheck( cudaMemcpyFromSymbol((void*)hard_decision, (const void*)dev_tmp, (block_length/8)*sizeof(unsigned char)) );
 	cudaDeviceSynchronize();
-stop_meas(time_decoder);
 	
-	cudaCheck( cudaFree(dev_llr) );
-	cudaCheck( cudaFree(dev_dt) );
-	cudaCheck( cudaFree(dev_const_llr) );
-	cudaCheck( cudaFree(dev_tmp) );
-	
-	//free(hard_decision);
+
 	return MAX_ITERATION;
 	
 }
