@@ -812,7 +812,7 @@ typedef struct PHY_VARS_gNB_s {
 typedef struct LDPCDecode_s {
   PHY_VARS_gNB *gNB;
   NR_UL_gNB_HARQ_t *ulsch_harq;
-  t_nrLDPC_dec_params *p_decoderParms;
+  t_nrLDPC_dec_params decoderParms;
   NR_gNB_ULSCH_t *ulsch;
   short* ulsch_llr; 
   int ulsch_id;

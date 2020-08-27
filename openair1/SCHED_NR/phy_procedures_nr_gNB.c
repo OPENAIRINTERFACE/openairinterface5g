@@ -231,7 +231,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   NR_gNB_ULSCH_t *ulsch = rdata->ulsch;
   int r = rdata->segment_r;
 
-  bool decodeSuccess = (rdata->decodeIterations <= rdata->p_decoderParms->numMaxIter);
+  bool decodeSuccess = (rdata->decodeIterations <= rdata->decoderParms.numMaxIter);
   ulsch_harq->processedSegments++;
   LOG_D(PHY, "processing result of segment: %d, processed %d/%d\n",
 	rdata->segment_r, ulsch_harq->processedSegments, rdata->nbSegments);

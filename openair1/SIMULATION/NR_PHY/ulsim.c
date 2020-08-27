@@ -473,7 +473,8 @@ int main(int argc, char **argv)
   gNB = RC.gNB[0];
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initTpool("n", gNB->threadPool, true);
+  char tp_param[] = "-1,-1,-1,-1,-1,-1";
+  initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
   //gNB_config = &gNB->gNB_config;
 

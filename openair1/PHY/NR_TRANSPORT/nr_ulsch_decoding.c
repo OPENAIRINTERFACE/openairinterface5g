@@ -293,7 +293,7 @@ uint32_t nr_processULSegment(void* arg) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) arg;
   PHY_VARS_gNB *phy_vars_gNB = rdata->gNB;
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
-  t_nrLDPC_dec_params *p_decoderParms = rdata->p_decoderParms;
+  t_nrLDPC_dec_params *p_decoderParms = &rdata->decoderParms;
   int length_dec;
   int no_iteration_ldpc;
   int Kr;
@@ -311,7 +311,7 @@ uint32_t nr_processULSegment(void* arg) {
   uint8_t kc = rdata->Kc;
   uint32_t Tbslbrm = rdata->Tbslbrm;
   short* ulsch_llr = rdata->ulsch_llr;
-  int max_ldpc_iterations = rdata->p_decoderParms->numMaxIter;
+  int max_ldpc_iterations = p_decoderParms->numMaxIter;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
 
   int16_t  z [68*384];
@@ -617,7 +617,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     rdata->gNB = phy_vars_gNB;
     rdata->ulsch_harq = harq_process;
-    rdata->p_decoderParms = p_decParams;
+    rdata->decoderParms = decParams;
     rdata->ulsch_llr = ulsch_llr;
     rdata->Kc = kc;
     rdata->harq_pid = harq_pid;
