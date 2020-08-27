@@ -330,7 +330,7 @@ uint32_t nr_processULSegment(void* arg) {
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
 
-  start_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
+  //start_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
   ////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////// nr_deinterleaving_ldpc ///////////////////////////////////
@@ -367,7 +367,7 @@ uint32_t nr_processULSegment(void* arg) {
 
   ///////////////////////// ulsch_harq->e =====> ulsch_harq->d /////////////////////////
 
-  start_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
+  //start_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
 
   if (nr_rate_matching_ldpc_rx(Ilbrm,
                                Tbslbrm,
@@ -406,7 +406,7 @@ uint32_t nr_processULSegment(void* arg) {
     length_dec = (ulsch_harq->B+24*ulsch_harq->C)/ulsch_harq->C;
   }
 
-  start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
+  //start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 
   memset(pv,0,2*ulsch_harq->Z*sizeof(int16_t));
   memset((pv+K_bytes_F),127,ulsch_harq->F*sizeof(int16_t));
@@ -456,7 +456,7 @@ uint32_t nr_processULSegment(void* arg) {
     ulsch_harq->c[r][m]= (uint8_t) llrProcBuf[m];
   }
 
-  stop_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
+  //stop_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 }
 
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
@@ -493,6 +493,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int Kr_bytes = Kr>>3;
     
   phy_vars_gNB->nbDecode = 0;
+  harq_process->processedSegments = 0;
 
   if (!harq_process) {
     LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
@@ -619,6 +620,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->p_decoderParms = p_decParams;
     rdata->ulsch_llr = ulsch_llr;
     rdata->Kc = kc;
+    rdata->harq_pid = harq_pid;
     rdata->segment_r = r;
     rdata->nbSegments = harq_process->C;
     rdata->E = E;

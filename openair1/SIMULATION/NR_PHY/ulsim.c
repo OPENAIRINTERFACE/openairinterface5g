@@ -56,6 +56,7 @@
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "common/utils/threadPool/thread-pool.h"
 
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
@@ -470,6 +471,10 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initTpool("n", gNB->threadPool, true);
+  initNotifiedFIFO(gNB->respDecode);
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
@@ -1050,9 +1055,9 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
-      printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
-      printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
-      printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
+      //printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
+      //printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
+      //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
       printf("\n");
     }
     

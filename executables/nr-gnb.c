@@ -793,6 +793,11 @@ void init_gNB_proc(int inst) {
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
   pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
   sync_phy_proc.phy_proc_CC_id = 0;
+
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initTpool("n", gNB->threadPool, true);
+  initNotifiedFIFO(gNB->respDecode);
 }
 
 
