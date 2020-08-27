@@ -530,6 +530,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     LOG_I(MAC, "[UE %d] Configuring LTE_NonMBSFN \n",
           Mod_idP);
     phy_config_sib1_fembms_ue(Mod_idP, CC_idP, 0, nonMBSFN_SubframeConfig);
+    UE_mac_inst[Mod_idP].non_mbsfn_SubframeConfig = nonMBSFN_SubframeConfig;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME

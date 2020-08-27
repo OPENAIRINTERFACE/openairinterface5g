@@ -43,7 +43,17 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
+#include "nfapi_nr_interface_scf.h"
+
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
+#define MAX_PUCCH0_NID 8
+
+typedef struct {
+  int nb_id;
+  int Nid[MAX_PUCCH0_NID];
+  int lut[MAX_PUCCH0_NID][160][14];
+} NR_gNB_PUCCH0_LUT_t;
+
 
 typedef struct {
   uint32_t pbch_a;
@@ -149,6 +159,14 @@ typedef struct {
 } NR_gNB_DLSCH_t;
 
 typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_prach_pdu_t pdu;  
+} gNB_PRACH_list_t;
+
+#define NUMBER_OF_NR_PRACH_MAX 8
+
+typedef struct {
   /// \brief ?.
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
@@ -158,6 +176,7 @@ typedef struct {
   int16_t **rxsigF;
   /// \brief local buffer to compute prach_ifft
   int32_t *prach_ifft;
+  gNB_PRACH_list_t list[NUMBER_OF_NR_PRACH_MAX];
 } NR_gNB_PRACH;
 
 typedef struct {
@@ -165,8 +184,8 @@ typedef struct {
   nfapi_nr_pusch_pdu_t ulsch_pdu;
   /// Frame where current HARQ round was sent
   uint32_t frame;
-  /// Subframe where current HARQ round was sent
-  uint32_t subframe;
+  /// Slot where current HARQ round was sent
+  uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// Last TPC command
@@ -321,6 +340,15 @@ typedef struct {
   uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
 } NR_gNB_ULSCH_t;
 
+typedef struct {
+  uint8_t active;
+  /// Frame where current PUCCH pdu was sent
+  uint32_t frame;
+  /// Slot where current PUCCH pdu was sent
+  uint32_t slot;
+  /// ULSCH PDU
+  nfapi_nr_pucch_pdu_t pucch_pdu;
+} NR_gNB_PUCCH_t;
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -561,13 +589,13 @@ typedef struct {
   //! estimated avg noise power (dB)
   short n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
-  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][100];
+  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
-  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][100];
+  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB (dB)
-  short n0_subband_power_tot_dB[100];
+  short n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
-  short n0_subband_power_tot_dBm[100];
+  short n0_subband_power_tot_dBm[275];
   // gNB measurements (per user)
   //! estimated received spatial signal power (linear)
   unsigned int   rx_spatial_power[NUMBER_OF_NR_DLSCH_MAX][2][2];
@@ -587,22 +615,22 @@ typedef struct {
   /// Wideband CQI (sum of all RX antennas, in dB)
   char           wideband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][100];
+  int            subband_cqi[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][275];
   /// Total Subband CQI and RB (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX][100];
+  int            subband_cqi_tot[NUMBER_OF_NR_DLSCH_MAX][275];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][100];
+  int            subband_cqi_dB[NUMBER_OF_NR_DLSCH_MAX][MAX_NUM_RU_PER_gNB][275];
   /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_NR_DLSCH_MAX][100];
+  int            subband_cqi_tot_dB[NUMBER_OF_NR_DLSCH_MAX][275];
   /// PRACH background noise level
   int            prach_I0;
 } PHY_MEASUREMENTS_gNB;
 
 #define MAX_NUM_NR_RX_RACH_PDUS 4
 #define MAX_NUM_NR_RX_PRACH_PREAMBLES 4
-#define MAX_UL_PDUS_PER_SLOT 100
-#define MAX_NUM_NR_SRS_PDUS 100
-#define MAX_NUM_NR_UCI_PDUS 100
+#define MAX_UL_PDUS_PER_SLOT 8
+#define MAX_NUM_NR_SRS_PDUS 8
+#define MAX_NUM_NR_UCI_PDUS 8
 
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {
@@ -644,6 +672,7 @@ typedef struct PHY_VARS_gNB_s {
 
   //Sched_Rsp_t         Sched_INFO;
   nfapi_nr_ul_tti_request_t     UL_tti_req;
+  nfapi_nr_uci_indication_t uci_indication;
   
   nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
   nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
@@ -655,13 +684,18 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
+  NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
+  t_nrPolar_params    *uci_polarParams;
+
   uint8_t pbch_configured;
   char gNB_generate_rar;
 
+  // PUCCH0 Look-up table for cyclic-shifts
+  NR_gNB_PUCCH0_LUT_t pucch0_lut;
   /// NR synchronization sequences
   int16_t d_pss[NR_PSS_LENGTH];
   int16_t d_sss[NR_SSS_LENGTH];
@@ -713,6 +747,7 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
+  int pucch0_thres;
   /*
   time_stats_t phy_proc;
   */

@@ -24,6 +24,7 @@
 	<htmlTabRef>nr-ue-build-tab</htmlTabRef>
 	<htmlTabName>Build-NR-UE</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
+	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
 010102
 	</TestCaseRequestedList>
@@ -33,7 +34,7 @@
 		<mode>TestUE</mode>
 		<class>Build_OAI_UE</class>
 		<desc>Build NR UE (USRP)</desc>
-		<Build_OAI_UE_args>--nrUE -w USRP</Build_OAI_UE_args>
+		<Build_OAI_UE_args>--nrUE -w USRP --ninja</Build_OAI_UE_args>
 		<clean_repository>false</clean_repository>
 	</testCase>
 

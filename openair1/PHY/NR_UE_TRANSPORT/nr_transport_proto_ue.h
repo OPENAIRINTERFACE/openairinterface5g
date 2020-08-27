@@ -37,6 +37,9 @@
 #include <math.h>
 #include "nfapi_interface.h"
 
+#define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
+#define NR_PUSCH_y 3 // UCI placeholder bit
+
 // Functions below implement 36-211 and 36-212
 
 /** @addtogroup _PHY_TRANSPORT_
@@ -65,24 +68,6 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
 
 NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
-
-void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
-
-int rx_pmch(PHY_VARS_NR_UE *phy_vars_ue,
-            unsigned char eNB_id,
-            uint8_t subframe,
-            unsigned char symbol);
-
-/** \brief Dump OCTAVE/MATLAB files for PMCH debugging
-    @param phy_vars_ue Pointer to UE variables
-    @param eNB_id index of eNB in ue variables
-    @param coded_bits_per_codeword G from 36.211
-    @param subframe Index of subframe
-    @returns 0 on success
-*/
-void dump_mch(PHY_VARS_NR_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int subframe);
-
-
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -1053,7 +1038,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                      NR_DL_FRAME_PARMS* frame_parms,
-                     uint8_t harq_pid);
+                     uint8_t harq_pid,
+                     unsigned int G);
 
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
   @param[in] in, Pointer to input bits
@@ -1078,7 +1064,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
-                               uint8_t frame,
+                               uint32_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id);
@@ -1401,8 +1387,10 @@ void ulsch_modulation(int32_t **txdataF,
                       NR_UE_ULSCH_t *ulsch);
 
 
-
-
+uint8_t allowed_ulsch_re_in_dmrs_symbol(uint16_t k,
+                                        uint16_t start_sc,
+                                        uint8_t numDmrsCdmGrpsNoData,
+                                        uint8_t dmrs_type);
 
 
 int generate_ue_dlsch_params_from_dci(int frame,
@@ -1539,11 +1527,11 @@ uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,NR_DL_FRAME
 
 void pdcch_interleaving(NR_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
 
-void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t slot,
-                           int16_t *z, int16_t *z2,uint32_t length, uint16_t pdcch_DMRS_scrambling_id);
-
-
-
+void nr_pdcch_unscrambling(int16_t *z,
+                           uint16_t scrambling_RNTI,
+                           uint32_t length,
+                           uint16_t pdcch_DMRS_scrambling_id,
+                           int16_t *z2);
 
 void dlsch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
                         int mbsfn_flag,
@@ -1756,9 +1744,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 			    uint8_t is_crnti,
 			    uint8_t llr8_flag);
 
-
-
-int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf );
+int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
 
 void *dlsch_thread(void *arg);
 /**@}*/

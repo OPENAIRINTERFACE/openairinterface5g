@@ -25,7 +25,8 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
@@ -39,7 +40,6 @@
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "nfapi_nr_interface.h"
 
 /*
@@ -112,6 +112,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
           );*/
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
   crcTableInit();
+  init_scrambling_luts();
+  init_pucch2_luts();
   load_nrLDPClib();
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
@@ -130,6 +132,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
+  nr_generate_modulation_table();
   nr_init_pdcch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
   nr_init_pbch_interleaver(gNB->nr_pbch_interleaver);
   //PDSCH DMRS init
@@ -151,11 +154,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-
   nr_init_pdsch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
 
   //PUSCH DMRS init
   gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
+
   uint32_t ****pusch_dmrs = gNB->nr_gold_pusch_dmrs;
 
   for(int nscid=0; nscid<2; nscid++) {
@@ -174,6 +177,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
+  LOG_D(PHY,"Initializing PUSCH DMRS Gold sequence with (%x,%x)\n",Nid_pusch[0],Nid_pusch[1]);
   nr_gold_pusch(gNB, &Nid_pusch[0]);
 
   /// Transport init necessary for NR synchro
@@ -229,6 +233,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
   */
   prach_vars->prach_ifft       = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
+
+  init_prach_list(gNB);
 
   int N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
@@ -403,7 +409,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->nr_band = 78;
-  fp->threequarter_fs= 0;
+//  fp->threequarter_fs= 0;
 
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
@@ -415,6 +421,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
 
 void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   uint8_t Mod_id = phy_config->Mod_id;
+  uint8_t short_sequence, num_sequences, rootSequenceIndex, fd_occasion;
   NR_DL_FRAME_PARMS *fp = &RC.gNB[Mod_id]->frame_parms;
   nfapi_nr_config_request_scf_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
 
@@ -478,6 +485,14 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
     return;
   }
 
+  fd_occasion = 0;
+  nfapi_nr_prach_config_t *prach_config = &gNB_config->prach_config;
+  short_sequence = prach_config->prach_sequence_length.value;
+  num_sequences = prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value;
+  rootSequenceIndex = prach_config->num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index.value;
+
+  compute_nr_prach_seq(short_sequence, num_sequences, rootSequenceIndex, RC.gNB[Mod_id]->X_u);
+
   RC.gNB[Mod_id]->configured     = 1;
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
@@ -489,6 +504,12 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
+
+  for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
+    gNB->pucch[i] = new_gNB_pucch();
+    AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
+  }
 
   for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
 

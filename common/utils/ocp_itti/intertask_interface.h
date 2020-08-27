@@ -256,6 +256,7 @@ typedef struct IttiMsgText_s {
 //#include <proto.h>
 
 #include <openair3/GTPV1-U/gtpv1u_eNB_task.h>
+#include <openair3/GTPV1-U/gtpv1u_gNB_task.h>
 void *rrc_enb_process_itti_msg(void *);
 #include <openair3/SCTP/sctp_eNB_task.h>
 #include <openair3/S1AP/s1ap_eNB.h>
@@ -414,7 +415,7 @@ static const message_info_t messages_info[] = {
 #undef MESSAGE_DEF
 };
 
-typedef struct __attribute__ ((__packed__)) MessageDef_s {
+typedef struct MessageDef_s {
   MessageHeader ittiMsgHeader; /**< Message header */
   msg_t         ittiMsg;
 } MessageDef;

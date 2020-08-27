@@ -851,9 +851,7 @@ void init_eNB_proc(int inst) {
 
   for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
     eNB = RC.eNB[inst][CC_id];
-#ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing eNB processes instance:%d CC_id %d \n",inst,CC_id);
-#endif
     proc = &eNB->proc;
     L1_proc                        = &proc->L1_proc;
     L1_proc_tx                     = &proc->L1_proc_tx;
@@ -1247,9 +1245,7 @@ void init_eNB(int single_thread_flag,
       eNB->abstraction_flag   = 0;
       eNB->single_thread_flag = single_thread_flag;
       LOG_I(PHY,"Initializing eNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
-#ifndef OCP_FRAMEWORK
       LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
-#endif
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
       eNB->if_inst->schedule_response   = schedule_response;

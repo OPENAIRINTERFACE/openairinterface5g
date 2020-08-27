@@ -75,7 +75,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "system.h"
 #include <openair2/GNB_APP/gnb_app.h>
-
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
 #include "stats.h"
 #include "nr-softmodem.h"
@@ -83,9 +83,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 #include "NB_IoT_interface.h"
 #include "x2ap_eNB.h"
-
-short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,16384,16384,-16384,-16384,16384,16384,16384,-16384,-16384,16384,-16384,-16384,7327,7327,7327,21981,21981,7327,21981,21981,7327,-7327,7327,-21981,21981,-7327,21981,-21981,-7327,7327,-7327,21981,-21981,7327,-21981,21981,-7327,-7327,-7327,-21981,-21981,-7327,-21981,-21981,10726,10726,10726,3576,3576,10726,3576,3576,10726,17876,10726,25027,3576,17876,3576,25027,17876,10726,17876,3576,25027,10726,25027,3576,17876,17876,17876,25027,25027,17876,25027,25027,10726,-10726,10726,-3576,3576,-10726,3576,-3576,10726,-17876,10726,-25027,3576,-17876,3576,-25027,17876,-10726,17876,-3576,25027,-10726,25027,-3576,17876,-17876,17876,-25027,25027,-17876,25027,-25027,-10726,10726,-10726,3576,-3576,10726,-3576,3576,-10726,17876,-10726,25027,-3576,17876,-3576,25027,-17876,10726,-17876,3576,-25027,10726,-25027,3576,-17876,17876,-17876,25027,-25027,17876,-25027,25027,-10726,-10726,-10726,-3576,-3576,-10726,-3576,-3576,-10726,-17876,-10726,-25027,-3576,-17876,-3576,-25027,-17876,-10726,-17876,-3576,-25027,-10726,-25027,-3576,-17876,-17876,-17876,-25027,-25027,-17876,-25027,-25027,8886,8886,8886,12439,12439,8886,12439,12439,8886,5332,8886,1778,12439,5332,12439,1778,5332,8886,5332,12439,1778,8886,1778,12439,5332,5332,5332,1778,1778,5332,1778,1778,8886,19547,8886,15993,12439,19547,12439,15993,8886,23101,8886,26655,12439,23101,12439,26655,5332,19547,5332,15993,1778,19547,1778,15993,5332,23101,5332,26655,1778,23101,1778,26655,19547,8886,19547,12439,15993,8886,15993,12439,19547,5332,19547,1778,15993,5332,15993,1778,23101,8886,23101,12439,26655,8886,26655,12439,23101,5332,23101,1778,26655,5332,26655,1778,19547,19547,19547,15993,15993,19547,15993,15993,19547,23101,19547,26655,15993,23101,15993,26655,23101,19547,23101,15993,26655,19547,26655,15993,23101,23101,23101,26655,26655,23101,26655,26655,8886,-8886,8886,-12439,12439,-8886,12439,-12439,8886,-5332,8886,-1778,12439,-5332,12439,-1778,5332,-8886,5332,-12439,1778,-8886,1778,-12439,5332,-5332,5332,-1778,1778,-5332,1778,-1778,8886,-19547,8886,-15993,12439,-19547,12439,-15993,8886,-23101,8886,-26655,12439,-23101,12439,-26655,5332,-19547,5332,-15993,1778,-19547,1778,-15993,5332,-23101,5332,-26655,1778,-23101,1778,-26655,19547,-8886,19547,-12439,15993,-8886,15993,-12439,19547,-5332,19547,-1778,15993,-5332,15993,-1778,23101,-8886,23101,-12439,26655,-8886,26655,-12439,23101,-5332,23101,-1778,26655,-5332,26655,-1778,19547,-19547,19547,-15993,15993,-19547,15993,-15993,19547,-23101,19547,-26655,15993,-23101,15993,-26655,23101,-19547,23101,-15993,26655,-19547,26655,-15993,23101,-23101,23101,-26655,26655,-23101,26655,-26655,-8886,8886,-8886,12439,-12439,8886,-12439,12439,-8886,5332,-8886,1778,-12439,5332,-12439,1778,-5332,8886,-5332,12439,-1778,8886,-1778,12439,-5332,5332,-5332,1778,-1778,5332,-1778,1778,-8886,19547,-8886,15993,-12439,19547,-12439,15993,-8886,23101,-8886,26655,-12439,23101,-12439,26655,-5332,19547,-5332,15993,-1778,19547,-1778,15993,-5332,23101,-5332,26655,-1778,23101,-1778,26655,-19547,8886,-19547,12439,-15993,8886,-15993,12439,-19547,5332,-19547,1778,-15993,5332,-15993,1778,-23101,8886,-23101,12439,-26655,8886,-26655,12439,-23101,5332,-23101,1778,-26655,5332,-26655,1778,-19547,19547,-19547,15993,-15993,19547,-15993,15993,-19547,23101,-19547,26655,-15993,23101,-15993,26655,-23101,19547,-23101,15993,-26655,19547,-26655,15993,-23101,23101,-23101,26655,-26655,23101,-26655,26655,-8886,-8886,-8886,-12439,-12439,-8886,-12439,-12439,-8886,-5332,-8886,-1778,-12439,-5332,-12439,-1778,-5332,-8886,-5332,-12439,-1778,-8886,-1778,-12439,-5332,-5332,-5332,-1778,-1778,-5332,-1778,-1778,-8886,-19547,-8886,-15993,-12439,-19547,-12439,-15993,-8886,-23101,-8886,-26655,-12439,-23101,-12439,-26655,-5332,-19547,-5332,-15993,-1778,-19547,-1778,-15993,-5332,-23101,-5332,-26655,-1778,-23101,-1778,-26655,-19547,-8886,-19547,-12439,-15993,-8886,-15993,-12439,-19547,-5332,-19547,-1778,-15993,-5332,-15993,-1778,-23101,-8886,-23101,-12439,-26655,-8886,-26655,-12439,-23101,-5332,-23101,-1778,-26655,-5332,-26655,-1778,-19547,-19547,-19547,-15993,-15993,-19547,-15993,-15993,-19547,-23101,-19547,-26655,-15993,-23101,-15993,-26655,-23101,-19547,-23101,-15993,-26655,-19547,-26655,-15993,-23101,-23101,-23101,-26655,-26655,-23101,-26655,-26655};
-
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -156,7 +153,6 @@ char channels[128] = "0";
 
 int rx_input_level_dBm;
 
-uint32_t do_forms=0;
 int otg_enabled;
 
 //int number_of_cards = 1;
@@ -178,10 +174,12 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 extern void init_eNB_afterRU(void);
+extern void *udp_eNB_task(void *args_p);
 
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
+int usrp_tx_thread = 0;
 
 
 static char *parallel_config = NULL;
@@ -384,10 +382,10 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
   if (gnb_nb > 0) {
     /* Last task to create, others task must be ready before its start */
-    if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
+    /*if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");
       return -1;
-    }
+    }*/
     if(itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0){
     	LOG_E(SCTP, "Create task for SCTP failed\n");
     	return -1;
@@ -402,35 +400,39 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  /*
-    if (EPC_MODE_ENABLED) {
-        if (gnb_nb > 0) {
-          if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-            LOG_E(SCTP, "Create task for SCTP failed\n");
-            return -1;
-          }
+  if (EPC_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0)) {
+    if (gnb_nb > 0) {
+      /*if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+        LOG_E(SCTP, "Create task for SCTP failed\n");
+        return -1;
+      }
 
-          if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
-            LOG_E(S1AP, "Create task for S1AP failed\n");
-            return -1;
-          }
-          if(!emulate_rf){
-            if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-              LOG_E(UDP_, "Create task for UDP failed\n");
-              return -1;
-            }
-          }
+      if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
+        LOG_E(S1AP, "Create task for S1AP failed\n");
+        return -1;
+      }*/
 
-          if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
-            LOG_E(GTPU, "Create task for GTPV1U failed\n");
-            return -1;
-          }
+
+      if(!emulate_rf){
+        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
+          LOG_E(UDP_, "Create task for UDP failed\n");
+          return -1;
         }
+      }
 
+      if (itti_create_task (TASK_GTPV1_U, &gtpv1u_gNB_task, NULL) < 0) {
+        LOG_E(GTPU, "Create task for GTPV1U failed\n");
+        return -1;
+      }
     }
-  */
+  }
+
 
   if (gnb_nb > 0) {
+    if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
+		  LOG_E(GNB_APP, "Create task for gNB APP failed\n");
+		  return -1;
+	}
     LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
 
     if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
@@ -448,7 +450,11 @@ static void get_options(void) {
 
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
 
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+  get_common_options(SOFTMODEM_GNB_BIT );
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
+
 
 
 
@@ -708,7 +714,6 @@ int stop_L1L2(module_id_t gnb_id) {
  */
 int restart_L1L2(module_id_t gnb_id) {
   RU_t *ru = RC.ru[gnb_id];
-  int cc_id;
   MessageDef *msg_p = NULL;
   LOG_W(GNB_APP, "restarting nr-softmodem\n");
   /* block threads */
@@ -718,9 +723,6 @@ int restart_L1L2(module_id_t gnb_id) {
   
 
   RC.ru_mask |= (1 << ru->idx);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this gNB */
-  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
   LOG_I(GNB_APP, "attempting to create ITTI tasks\n");
   // No more rrc thread, as many race conditions are hidden behind
@@ -812,7 +814,6 @@ int main( int argc, char **argv )
   configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
-  get_common_options(SOFTMODEM_GNB_BIT );
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -820,6 +821,10 @@ int main( int argc, char **argv )
   }
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+
+  if (get_softmodem_params()->do_ra)
+    AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
 #if T_TRACER
   T_Config_Init();
@@ -950,12 +955,14 @@ if(!IS_SOFTMODEM_NOS1)
   printf("RC.nb_RU:%d\n", RC.nb_RU);
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
-
-  if (do_forms==1) {
+  if(IS_SOFTMODEM_DOFORMS) {
+  	
     scopeParms_t p;
     p.argc=&argc;
     p.argv=argv;
-    startScope(&p);
+    p.gNB=RC.gNB[0];
+    p.ru=RC.ru[0];
+    load_softscope("nr",&p);
   }
 
   if (nfapi_mode != 1 && nfapi_mode != 2) {

@@ -73,7 +73,9 @@
   #ifdef UESIM_EXPANSION
     #define MAX_MOBILES_PER_ENB         256
     #define MAX_MOBILES_PER_ENB_NB_IoT  256
+    #define MAX_MOBILES_PER_GNB         256
     #define MAX_eNB                      2
+    #define MAX_gNB                      2
   #else
     #ifdef LARGE_SCALE
       #define MAX_MOBILES_PER_ENB         128
@@ -99,6 +101,7 @@
 
 #define NUMBER_OF_NR_DLSCH_MAX 2//16
 #define NUMBER_OF_NR_ULSCH_MAX 2//16
+#define NUMBER_OF_NR_PUCCH_MAX 2
 #define NUMBER_OF_NR_SR_MAX 16
 
 

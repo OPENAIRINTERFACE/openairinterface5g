@@ -72,7 +72,7 @@ int nr_rrc_mac_config_req_ue(
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     //NR_ServingCellConfigCommon_t    *sccP,
-    NR_SpCellConfig_t               *spCell_ConfigP);
+    NR_CellGroupConfig_t            *cell_group_config);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
@@ -84,23 +84,9 @@ NR_UE_MAC_INST_t *get_mac_inst(
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
-   \param module_id     module id
-   \param gNB_index     corresponding gNB index
-   \param cc_id         component carrier id
-   \param rx_frame      receive frame number
-   \param rx_slot       receive slot number
-   \param tx_frame      transmit frame number
-   \param tx_slot       transmit slot number*/
-NR_UE_L2_STATE_t nr_ue_scheduler(
-    const module_id_t module_id,
-    const uint8_t gNB_index,
-    const int cc_id,
-    const frame_t rx_frame,
-    const slot_t rx_slot,
-    const int32_t ssb_index,
-    const frame_t tx_frame,
-    const slot_t tx_slot);
-
+   \param dl_info     DL indication
+   \param ul_info     UL indication*/
+NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
 
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
@@ -115,7 +101,7 @@ uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
 
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format);
 int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index,fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
@@ -123,8 +109,6 @@ uint32_t get_ssb_slot(uint32_t ssb_index);
 
 
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
-
-
 
 /* \brief Get payload (MAC PDU) from UE PHY
 @param module_idP Instance id of UE in machine
@@ -154,16 +138,30 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
                            uint8_t gNB_index,
                            NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
 
+
+uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
+                                    uint8_t *pdu,
+                                    uint8_t num_sdus,
+                                    uint16_t *sdu_lengths,
+                                    uint8_t *sdu_lcids,
+                                    uint8_t power_headroom,
+                                    uint16_t crnti,
+                                    uint16_t truncated_bsr,
+                                    uint16_t short_bsr,
+                                    uint16_t long_bsr,
+                                    unsigned short post_padding,
+                                    uint16_t buflen);
+
 int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac,fapi_nr_dl_config_request_t *dl_config,int frame,int slot);
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
 void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                          int dci_format,
                          uint8_t dci_length,
                          uint16_t rnti,
                          uint64_t *dci_pdu,
-                         nr_dci_pdu_rel15_t *nr_pdci_info_extracted);
+                         dci_pdu_rel15_t *nr_pdci_info_extracted);
 
 
 uint8_t
@@ -175,5 +173,96 @@ int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
                          int nrofUplinkSlots,   int nrofUplinkSymbols);
 
+/** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
+    @param Mod_id Module id of UE
+    @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
+*/
+int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t module_idP, uint8_t CC_id);
+
+/** \brief Function to compute DELTA_PREAMBLE from 38.321 subclause 7.3
+   (for RA power ramping procedure and Msg3 PUSCH power control policy)
+    @param Mod_id Module id of UE
+    @returns DELTA_PREAMBLE
+*/
+int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format);
+
+/* Random Access */
+
+/* \brief This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211 tables 6.3.3.2.x
+and fills the PRACH PDU per each FD occasion.
+@param module_idP Index of UE instance
+@param frameP Frame index
+@param slotP Slot index
+@returns void
+*/
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+
+/* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
+@param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
+@param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
+@param t_crnti Pointer to PHY variable containing the T_CRNTI
+@param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
+random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
+@returns timing advance or 0xffff if preamble doesn't match
+*/
+uint16_t nr_ue_process_rar(module_id_t mod_id,
+                           int CC_id,
+                           frame_t frameP,
+                           uint8_t * dlsch_buffer,
+                           rnti_t * t_crnti,
+                           uint8_t preamble_index,
+                           uint8_t * selected_rar_buffer);
+
+void nr_process_rar(nr_downlink_indication_t *dl_info);
+
+void ue_contention_resolution(module_id_t module_id, uint8_t gNB_index, int cc_id, frame_t tx_frame);
+
+void nr_ra_failed(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+
+void nr_ra_succeeded(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
+
+/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.
+If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC
+attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB
+index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for
+andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
+@param mod_id Index of UE instance
+@param CC_id Component Carrier Index
+@param frame
+@param gNB_id gNB index
+@param nr_tti_tx slot for PRACH transmission
+@returns indication to generate PRACH to phy */
+uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
+                       module_id_t mod_id,
+                       int CC_id,
+                       UE_MODE_t UE_mode,
+                       frame_t frame,
+                       uint8_t gNB_id,
+                       int nr_tti_tx);
+
+/* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
+@param module_idP Index of UE instance
+@param CC_id Component Carrier Index
+@param gNB_index gNB index
+@param t_id
+@param rach_ConfigDedicated
+@returns void */
+void nr_get_prach_resources(module_id_t mod_id,
+                            int CC_id,
+                            uint8_t gNB_id,
+                            uint8_t t_id,
+                            uint8_t first_Msg3,
+                            NR_PRACH_RESOURCES_t *prach_resources,
+                            NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
+
+void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
+
+void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
+
+void nr_ue_msg2_scheduler(module_id_t mod_id, uint16_t rach_frame, uint16_t rach_slot, uint16_t *msg2_frame, uint16_t *msg2_slot);
 #endif
 /** @}*/

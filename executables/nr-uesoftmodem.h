@@ -4,7 +4,6 @@
 #include <executables/softmodem-common.h>
 #include "PHY/defs_nr_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include <openair2/LAYER2/NR_MAC_gNB/mac_proto.h>
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
@@ -62,19 +61,11 @@
   {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL, iptr:&single_thread_flag,              defintval:1,           TYPE_INT,    0}, \
   {"nr-dlsch-demod-shift",  CONFIG_HLP_DLSHIFT,     0,              iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,           TYPE_INT,    0}, \
   {"A" ,                    CONFIG_HLP_TADV,        0,              uptr:&timing_advance,                  defintval:0,           TYPE_UINT,   0}, \
-  {"C" ,                    CONFIG_HLP_DLF,         0,              u64ptr:&(downlink_frequency[0][0]),    defuintval:0,TYPE_UINT64, 0}, \
-  {"a" ,                    CONFIG_HLP_CHOFF,       0,              iptr:&chain_offset,                    defintval:0,           TYPE_INT,    0}, \
-  {"d" ,                    CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL, uptr:&do_forms,                        defintval:0,           TYPE_INT,    0}, \
   {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL, iptr:&threequarter_fs,                 defintval:0,           TYPE_INT,    0}, \
   {"m" ,                    CONFIG_HLP_DLMCS,       0,              uptr:&target_dl_mcs,                   defintval:0,           TYPE_UINT,   0}, \
   {"t" ,                    CONFIG_HLP_ULMCS,       0,              uptr:&target_ul_mcs,                   defintval:0,           TYPE_UINT,   0}, \
-  {"q" ,                    CONFIG_HLP_STMON,       PARAMFLAG_BOOL, iptr:&opp_enabled,                     defintval:0,           TYPE_INT,    0}, \
   {"T" ,                    CONFIG_HLP_TDD,         PARAMFLAG_BOOL, iptr:&tddflag,                         defintval:0,           TYPE_INT,    0}, \
   {"V" ,                    CONFIG_HLP_VCD,         PARAMFLAG_BOOL, iptr:&vcdflag,                         defintval:0,           TYPE_INT,    0}, \
-  {"numerology" ,           CONFIG_HLP_NUMEROLOGY,  0,              iptr:&numerology,                      defintval:0,           TYPE_INT,    0}, \
-  {"emulate-rf" ,           CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL, iptr:&emulate_rf,                      defintval:0,           TYPE_INT,    0}, \
-  {"parallel-config",       CONFIG_HLP_PARALLEL_CMD,0,              strptr:(char **)&parallel_config,      defstrval:NULL,        TYPE_STRING, 0}, \
-  {"worker-config",         CONFIG_HLP_WORKER_CMD,  0,              strptr:(char **)&worker_config,        defstrval:NULL,        TYPE_STRING, 0}, \
   {"s" ,                    CONFIG_HLP_SNR,         0,              dblptr:&snr_dB,                        defdblval:25,          TYPE_DOUBLE, 0}, \
   {"nbiot-disable",         CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL, iptr:&nonbiotflag,                     defintval:0,           TYPE_INT,    0}, \
   {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&UE_no_timing_correction, defintval:0,        TYPE_INT,    0}, \

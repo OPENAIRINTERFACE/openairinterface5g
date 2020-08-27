@@ -24,6 +24,7 @@
 	<htmlTabRef>gnb-build-tab</htmlTabRef>
 	<htmlTabName>Build-gNB</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
+	<repeatCount>4</repeatCount>
 	<TestCaseRequestedList>
 010101
 	</TestCaseRequestedList>
@@ -33,7 +34,7 @@
 		<mode>TesteNB</mode>	
 		<class>Build_eNB</class>
 		<desc>Build gNB (USRP)</desc>
-		<Build_eNB_args>--gNB -w USRP</Build_eNB_args>
+		<Build_eNB_args>--gNB -w USRP --ninja</Build_eNB_args>
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 

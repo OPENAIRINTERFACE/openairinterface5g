@@ -37,6 +37,7 @@ memleak:openair2/UTIL/OMG/omg_hashtable.c
 //    _emm_as_encode function creates the encoded buffer
 //
 memleak:openair3/NAS/UE/EMM/SAP/emm_as.c
+memleak:openair1/PHY/INIT/nr_init_ue.c
 //-----------------------------------------------------------------------------
 //*****************************************************************************
 // section for files not used in oai exec's included in CI.

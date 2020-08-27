@@ -36,7 +36,7 @@
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/CODING/nrLDPC_extern.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
@@ -49,7 +49,7 @@
 //#define DEBUG_DLSCH_FREE 1
 
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
 {
   int i;
   int r;
@@ -64,7 +64,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
       a_segments = a_segments/273;
     }  
 
-    uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
 
 #ifdef DEBUG_DLSCH_FREE
@@ -82,7 +81,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,dlsch_bytes);
+          free16(dlsch->harq_processes[i]->b,a_segments*1056);
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           LOG_D(PHY,"Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
@@ -131,7 +130,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,uint16_t N_RB)
     }
 
     free16(dlsch,sizeof(NR_gNB_DLSCH_t));
-    dlsch = NULL;
+    *dlschptr = NULL;
   }
 
 }
@@ -151,7 +150,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   if (N_RB != 273) {
     a_segments = a_segments*N_RB;
-    a_segments = a_segments/273;
+    a_segments = (a_segments + 272) / 273;
   }  
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
@@ -336,13 +335,19 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t E;
   uint8_t Ilbrm = 1;
   uint32_t Tbslbrm = 950984; //max tbs
-  uint8_t nb_re_dmrs = rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1 ? 6:4;
+  uint8_t nb_re_dmrs;
+
+  if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1)
+    nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
+  else
+    nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
+
   uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
   uint16_t R=rel15->targetCodeRate[0];
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
 
@@ -460,6 +465,9 @@ int nr_dlsch_encoding(unsigned char *a,
 
   }
 
+    F = dlsch->harq_processes[harq_pid]->F;
+
+    Kr = dlsch->harq_processes[harq_pid]->K;
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     if (F>0) {
@@ -531,7 +539,7 @@ int nr_dlsch_encoding(unsigned char *a,
     r_offset += E;
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
   return 0;
 }

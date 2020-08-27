@@ -28,9 +28,11 @@
  * @ingroup _mac
  */
 
+
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
+
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
@@ -87,7 +89,13 @@ void nr_process_mac_pdu(
             /*#ifdef DEBUG_HEADER_PARSING
               LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
             #endif*/
-
+        case UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY:
+              // 38.321 Ch6.1.3.20
+              mac_ce_len = 2;
+              break;
+        case UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION:
+                // 38.321 Ch6.1.3.7
+                break;
         case UL_SCH_LCID_S_BSR:
         	//38.321 section 6.1.3.1
         	//fixed length
@@ -170,6 +178,24 @@ void nr_process_mac_pdu(
         	//  end of MAC PDU, can ignore the rest.
         	break;
 
+        // MAC SDUs
+        case UL_SCH_LCID_SRB1:
+              // todo
+              break;
+        case UL_SCH_LCID_SRB2:
+              // todo
+              break;
+        case UL_SCH_LCID_SRB3:
+              // todo
+              break;
+        case UL_SCH_LCID_CCCH_MSG3:
+              // todo
+              break;
+        case UL_SCH_LCID_CCCH:
+              // todo
+              mac_subheader_len = 2;
+              break;
+
         case UL_SCH_LCID_DTCH:
                 //  check if LCID is valid at current time.
                 if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
@@ -183,7 +209,7 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+                LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
@@ -223,12 +249,11 @@ void nr_process_mac_pdu(
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
 
         if (pdu_len < 0) {
-          LOG_E(MAC, "%s() residual mac pdu length < 0!\n", __func__);
+          LOG_E(MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
           return;
         }
     }
 }
-
 
 /*
 * When data are received on PHY and transmitted to MAC
@@ -245,7 +270,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
   NR_UE_list_t *UE_list = NULL;
-  UE_sched_ctrl_t *UE_scheduling_control = NULL;
+  NR_UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   current_rnti = rntiP;
   UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
@@ -255,13 +280,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
 
-    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
           frameP,
           slotP,
-          UE_scheduling_control->round_UL[CC_idP][harq_pid],
           current_rnti,
           UE_id,
           ul_cqi);
@@ -282,4 +306,20 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
     }
   }
+  else {
+    // random access pusch with TC-RNTI
+    if (sduP != NULL) { // if the CRC passed
+      for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+        if (UE_list->active[i] == TRUE) {
+          if (UE_list->tc_rnti[i] == current_rnti) {
+            // for now the only thing we are doing is set the UE as 5G connected
+            UE_list->fiveG_connected[i] = true;
+            LOG_I(MAC, "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly and UE_id %d is now 5G connected\n",
+                  gnb_mod_idP, current_rnti, i);
+          }
+        }
+      }
+    }
+  }
 }
+

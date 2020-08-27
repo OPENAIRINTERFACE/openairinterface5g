@@ -64,7 +64,7 @@
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB #0 (FDD/Band7/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 123456</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 123456</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 	</testCase>
@@ -72,11 +72,7 @@
 	<testCase id="030105">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB #1 (FDD/Band7/5MHz)</desc>
-<<<<<<< HEAD
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].target_enb_x2_ip_address.[0].ipv4 CI_RCC_IP_ADDR --eNBs.[0].target_enb_x2_ip_address.[0].preference ipv4 --eNBs.[0].eNB_ID 0xe01 --eNBs.[0].component_carriers.[0].Nid_cell 1 --eNBs.[0].nr_cellid 98765</Initialize_eNB_args>
-=======
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.slave.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --THREAD_STRUCT.[0].parallel_config PARALLEL_RU_L1_TRX_SPLIT --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 98765</Initialize_eNB_args>
->>>>>>> origin/develop_inria_ci_deployment
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.slave.usrpb210.conf --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --eNBs.[0].enable_measurement_reports yes --eNBs.[0].enable_x2 yes --eNBs.[0].nr_cellid 98765</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>

@@ -29,11 +29,9 @@
 *
 ************************************************************************/
 
-#include "SCHED_NR_UE/defs.h"
+#include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
-#include "SCHED_NR_UE/phy_frame_config_nr.h"
-#include "PHY/impl_defs_nr.h"
-#include "PHY/impl_defs_top.h"
+#include "SCHED_NR/phy_frame_config_nr.h"
 
 /*******************************************************************
 *

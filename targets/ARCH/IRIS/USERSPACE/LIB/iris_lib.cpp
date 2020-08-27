@@ -510,6 +510,11 @@ int trx_iris_reset_stats(openair0_device *device) {
 
 }
 
+int trx_iris_write_init(openair0_device *device)
+{
+    return 0;
+}
+
 
 extern "C" {
 /*! \brief Initialize Openair Iris target. It returns 0 if OK
@@ -831,6 +836,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     device->trx_set_freq_func = trx_iris_set_freq;
     device->trx_set_gains_func = trx_iris_set_gains;
     device->openair0_cfg = openair0_cfg;
+    device->trx_write_init = trx_iris_write_init;
 
     s->sample_rate = openair0_cfg[0].sample_rate;
     // TODO:

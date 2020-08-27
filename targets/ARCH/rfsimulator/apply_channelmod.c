@@ -34,6 +34,9 @@
 #include <common/utils/LOG/log.h>
 #include <common/config/config_userapi.h>
 #include <openair1/SIMULATION/TOOLS/sim.h>
+#include <common/utils/telnetsrv/telnetsrv.h>
+#include <common/utils/load_module_shlib.h>
+#include <targets/ARCH/rfsimulator/rfsimulator.h>
 
 /*
   Legacy study:
@@ -99,8 +102,8 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
       } //l
     }
 
-    out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
-    out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussdouble(0.0,1.0));
+    out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
     out_ptr++;
   }
 
@@ -112,3 +115,4 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
           channelDesc->path_loss_dB,
           10*log10(noise_per_sample));
 }
+
