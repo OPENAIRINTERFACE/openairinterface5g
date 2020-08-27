@@ -293,7 +293,6 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                           G);
   stop_meas(&gNB->ulsch_decoding_stats);
 
-
   if (ret > gNB->ulsch[ULSCH_id][0]->max_ldpc_iterations){
     LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
     nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
