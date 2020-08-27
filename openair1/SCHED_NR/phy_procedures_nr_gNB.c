@@ -259,7 +259,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
@@ -268,7 +268,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
     } else {
-      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
             rdata->harq_pid,ulsch_harq->status, ulsch_harq->round,ulsch_harq->TBS,r);
       if (ulsch_harq->round >= ulsch->Mlimit) {
@@ -374,7 +374,6 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   uint16_t mu = gNB->frame_parms.numerology_index;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
-  printf("ulsch_id %d harq_pid %d\n",ULSCH_id,harq_pid);
 
   nfapi_nr_pusch_pdu_t *pusch_pdu = &harq_process->ulsch_pdu;
 

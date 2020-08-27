@@ -707,6 +707,17 @@ int main(int argc, char **argv)
     int n_errors[4] = {0,0,0,0};;
     int round_trials[4]={0,0,0,0};
     uint32_t errors_scrambling[4] = {0,0,0,0};
+    reset_meas(&gNB->phy_proc_rx);
+    reset_meas(&gNB->rx_pusch_stats);
+    reset_meas(&gNB->ulsch_decoding_stats);
+    reset_meas(&gNB->ulsch_deinterleaving_stats);
+    reset_meas(&gNB->ulsch_rate_unmatching_stats);
+    reset_meas(&gNB->ulsch_ldpc_decoding_stats);
+    reset_meas(&gNB->ulsch_unscrambling_stats);
+    reset_meas(&gNB->ulsch_channel_estimation_stats);
+    reset_meas(&gNB->ulsch_llr_stats);
+    reset_meas(&gNB->ulsch_channel_compensation_stats);
+    reset_meas(&gNB->ulsch_rbs_extraction_stats);
 
     for (trial = 0; trial < n_trials; trial++) {
     uint8_t round = 0;
@@ -718,17 +729,6 @@ int main(int argc, char **argv)
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
       gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
-      reset_meas(&gNB->phy_proc_rx);
-      reset_meas(&gNB->rx_pusch_stats);
-      reset_meas(&gNB->ulsch_decoding_stats);
-      reset_meas(&gNB->ulsch_deinterleaving_stats);
-      reset_meas(&gNB->ulsch_rate_unmatching_stats);
-      reset_meas(&gNB->ulsch_ldpc_decoding_stats);
-      reset_meas(&gNB->ulsch_unscrambling_stats);
-      reset_meas(&gNB->ulsch_channel_estimation_stats);
-      reset_meas(&gNB->ulsch_llr_stats);
-      reset_meas(&gNB->ulsch_channel_compensation_stats);
-      reset_meas(&gNB->ulsch_rbs_extraction_stats);
 
       UE_proc.nr_tti_tx = slot;
       UE_proc.frame_tx = frame;
