@@ -1151,6 +1151,7 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc) {
                   prach_occasion_p->frame = frame;
                   prach_occasion_p->slot = slot;
                   prach_occasion_p->format = format;
+                  printf("\nprach_conf_period_idx : %d, .nb_of_prach_occasion : %d\n",prach_conf_period_idx,prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].nb_of_prach_occasion);
                   prach_assoc_pattern.prach_conf_period_list[prach_conf_period_idx].nb_of_prach_occasion++;
 
                   LOG_D(MAC,"Adding a PRACH occasion: fdm %d, frame %d, slot-symbol %d-%d, occ_in_time-occ_in-freq %d-%d, nb ROs in conf period %d, for this slot: RO# in time %d, RO# in freq %d\n",
