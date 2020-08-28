@@ -357,10 +357,6 @@ static void get_options(void) {
     frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
   }
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
-  }
-
   UE_scan=0;
 
   if (tddflag > 0) {
@@ -689,10 +685,12 @@ int main( int argc, char **argv ) {
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
-    
+
     // Overwrite DL frequency (for FR2 testing)
     if (downlink_frequency[0][0]!=0)
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
