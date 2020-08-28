@@ -3034,9 +3034,9 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
   int first_symbol_flag=0;
 
   if (!dlsch0)
-    return;
+    return 0;
   if (dlsch0->active == 0)
-    return;
+    return 0;
 
   if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
@@ -3129,6 +3129,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
 	}
     } // CRNTI active
   }
+  return 0;
 }
 
 // WIP fix:
@@ -4181,7 +4182,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->generic_stat);
 #endif
   // do procedures for C-RNTI
-  int ret_pdsch;
+  int ret_pdsch = 0;
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     ret_pdsch = nr_ue_pdsch_procedures(ue,
