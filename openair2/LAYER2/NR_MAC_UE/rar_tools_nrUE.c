@@ -107,9 +107,10 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
     uint8_t n_subPDUs = 0;        // number of RAR payloads
     uint8_t n_subheaders = 0;     // number of MAC RAR subheaders
     //uint8_t best_rx_rapid = -1;   // the closest RAPID receive from all RARs
-    unsigned char freq_hopping, msg3_t_alloc, mcs, tpc_command, csi_req;
-    uint16_t ta_command = 0, msg3_f_alloc, bwp_size;
-    int f_alloc, mask;
+    //unsigned char freq_hopping, msg3_t_alloc, mcs, tpc_command, csi_req; // WIP
+    //uint16_t ta_command = 0, msg3_f_alloc, bwp_size; // WIP
+    uint16_t ta_command = 0;
+    //int f_alloc, mask; // WIP
 
     AssertFatal(CC_id == 0, "RAR reception on secondary CCs is not supported yet\n");
 
@@ -143,6 +144,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
     // LOG_I(MAC, "[UE %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
     //   mod_id, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
 
+    #if 0 // TbD WIP Msg3 development ongoing
     if (ue_mac->RA_RAPID_found) {
       // TC-RNTI
       *t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
@@ -200,6 +202,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
       ue_mac->t_crnti = 0;
       ta_command = (0xffff);
     }
+    #endif
 
     // move the selected RAR to the front of the RA_PDSCH buffer
     memcpy((void *) (selected_rar_buffer + 0), (void *) rarh, 1);

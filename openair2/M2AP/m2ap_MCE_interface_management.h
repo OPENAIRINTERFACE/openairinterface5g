@@ -150,10 +150,7 @@ int MCE_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
                                                   uint32_t stream,
                                                   M2AP_M2AP_PDU_t *pdu);
 
-int MCE_handle_MBMS_SESSION_UPDATE_FAILURE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M2AP_M2AP_PDU_t *pdu);
+int MCE_handle_MBMS_SESSION_UPDATE_FAILURE(instance_t instance,module_id_t du_mod_idP);
 
 /*
  * Service Counting Request
@@ -165,10 +162,7 @@ int MCE_handle_MBMS_SERVICE_COUNTING_RESPONSE(instance_t instance,
                                                   uint32_t stream,
                                                   M2AP_M2AP_PDU_t *pdu);
 
-int MCE_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M2AP_M2AP_PDU_t *pdu);
+int MCE_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance, module_id_t du_mod_idP);
 /*
  * Service Counting Results Report
  */

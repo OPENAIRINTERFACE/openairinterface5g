@@ -68,8 +68,6 @@
 
 extern RAN_CONTEXT_t RC;
 
-extern int n_active_slices;
-
   // Note the 2 scs values in the table names represent resp. scs_common and pdcch_scs
 /// LUT for the number of symbols in the coreset indexed by coreset index (4 MSB rmsi_pdcch_config)
 uint8_t nr_coreset_nsymb_pdcch_type_0_scs_15_15[15] = {2,2,2,3,3,3,1,1,2,2,3,3,1,2,3};
@@ -1467,8 +1465,17 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
+    UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
-    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(sizeof(NR_sched_pusch));
+    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
+    for (int k=0; k<num_slots_ul; k++) {
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
+             0,
+             sizeof(NR_sched_pucch));
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
+             0,
+             sizeof(NR_sched_pusch));
+    }
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,

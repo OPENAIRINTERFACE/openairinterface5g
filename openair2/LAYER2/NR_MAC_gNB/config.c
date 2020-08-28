@@ -298,30 +298,6 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
   else LOG_I(PHY,"TDD has been properly configurated\n");
   }
 
-/*
-  // PDCCH-ConfigCommon
-  cfg->pdcch_config.controlResourceSetZero.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero;
-  cfg->pdcch_config.searchSpaceZero.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
-
-  // PDSCH-ConfigCommon
-  cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
-  cfg->pdsch_config.dmrs_TypeA_Position.value = scc->dmrs_TypeA_Position;
-  AssertFatal(cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value<=NFAPI_NR_PDSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value);
-  for (int i=0;i<cfg->pdsch_config.num_PDSCHTimeDomainResourceAllocations.value;i++) {
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_k0[i].value=*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_mappingType[i].value=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
-    cfg->pdsch_config.PDSCHTimeDomainResourceAllocation_startSymbolAndLength[i].value=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
-  }
-
-  // PUSCH-ConfigCommon
-  cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count;
-  cfg->pusch_config.dmrs_TypeA_Position.value = scc->dmrs_TypeA_Position+2;
-  AssertFatal(cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value<=NFAPI_NR_PUSCH_CONFIG_MAXALLOCATIONS,"illegal TimeDomainAllocation count %d\n",cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value);
-  for (int i=0;i<cfg->pusch_config.num_PUSCHTimeDomainResourceAllocations.value;i++) {
-    cfg->pusch_config.PUSCHTimeDomainResourceAllocation_k2[i].value=*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2;
-  }*/
-
-
 }
 
 
@@ -329,6 +305,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
                            int pusch_tgt_snrx10,
+                           int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int add_ue,
 			   uint32_t rnti,
@@ -354,7 +331,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
   
     RC.nrmac[Mod_idP]->pusch_target_snrx10 = pusch_tgt_snrx10;
-  
+    RC.nrmac[Mod_idP]->pucch_target_snrx10 = pucch_tgt_snrx10;
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
     phycfg.CC_id  = 0;

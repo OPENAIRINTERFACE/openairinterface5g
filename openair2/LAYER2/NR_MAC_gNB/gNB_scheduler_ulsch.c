@@ -36,6 +36,7 @@
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
+    rnti_t rnti,
     uint8_t CC_id,
     frame_t frameP,
     uint8_t *pduP,
@@ -219,25 +220,33 @@ void nr_process_mac_pdu(
 
                     LOG_T(MAC, "\n");
                 #endif
-
-                if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= UL_SCH_LCID_DTCH) {
-
-                    mac_rlc_data_ind(module_idP,
-                                     0x1234,
-                                     module_idP,
-                                     frameP,
-                                     ENB_FLAG_YES,
-                                     MBMS_FLAG_NO,
-                                     rx_lcid,
-                                     (char *) (pdu_ptr + mac_subheader_len),
-                                     mac_sdu_len,
-                                     1,
-                                     NULL);
-                  } else {
-                    LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, module_idP);
-                  }
+                if(IS_SOFTMODEM_NOS1){
+                  mac_rlc_data_ind(module_idP,
+                      0x1234,
+                      module_idP,
+                      frameP,
+                      ENB_FLAG_YES,
+                      MBMS_FLAG_NO,
+                      rx_lcid,
+                      (char *) (pdu_ptr + mac_subheader_len),
+                      mac_sdu_len,
+                      1,
+                      NULL);
                 }
+                else{
+                  mac_rlc_data_ind(module_idP,
+                      rnti,
+                      module_idP,
+                      frameP,
+                      ENB_FLAG_YES,
+                      MBMS_FLAG_NO,
+                      rx_lcid,
+                      (char *) (pdu_ptr + mac_subheader_len),
+                      mac_sdu_len,
+                      1,
+                      NULL);
+                }
+
 
             break;
 
@@ -266,7 +275,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                uint8_t *sduP,
                const uint16_t sdu_lenP,
                const uint16_t timing_advance,
-               const uint8_t ul_cqi){
+               const uint8_t ul_cqi,
+               const uint16_t rssi){
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
   NR_UE_list_t *UE_list = NULL;
@@ -291,6 +301,17 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           UE_id,
           ul_cqi);
 
+    // if not missed detection (10dB threshold for now)
+    if (UE_scheduling_control->ul_rssi < (100+rssi)) {
+      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
+      UE_scheduling_control->ta_update = timing_advance;
+      UE_scheduling_control->ul_rssi = rssi;
+      LOG_D(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+    }
+    else{
+      UE_scheduling_control->tpc0 = 1;
+    }
+
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
     for (int i = 0; i < sdu_lenP ; i++) {
@@ -302,11 +323,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
-      UE_scheduling_control->ta_update = timing_advance;
-      LOG_I(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
       LOG_D(MAC, "Received PDU at MAC gNB \n");
-      nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
+      nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
     }
   }
   else {

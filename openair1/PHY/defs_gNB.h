@@ -112,6 +112,17 @@ typedef struct {
   uint32_t F;
 } NR_DL_gNB_HARQ_t;
 
+typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
+} NR_gNB_PDCCH_t;
+
+typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_ul_dci_request_pdus_t pdcch_pdu;
+} NR_gNB_UL_PDCCH_t;
 
 typedef struct {
   /// Pointers to 16 HARQ processes for the DLSCH
@@ -365,6 +376,8 @@ typedef struct {
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
   /// - third index: sample [0..]
   int32_t **txdataF;
+  int32_t *debugBuff;
+  int32_t debugBuff_sample_offset;
 } NR_gNB_COMMON;
 
 
@@ -674,17 +687,19 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_nr_ul_tti_request_t     UL_tti_req;
   nfapi_nr_uci_indication_t uci_indication;
   
-  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
-  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
+  //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
+  //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   nfapi_nr_dl_tti_ssb_pdu      ssb_pdu;
 
-  int num_pdsch_rnti;
+  uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH         pbch;
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
+  NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
+  NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
@@ -776,6 +791,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_interleaving_stats;
   time_stats_t dlsch_segmentation_stats;
 
+  time_stats_t rx_pusch_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;

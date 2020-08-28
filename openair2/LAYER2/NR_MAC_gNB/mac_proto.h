@@ -50,7 +50,8 @@ void config_common(int Mod_idP,
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
-                           int tgt_snrx10,
+                           int pusch_tgt_snrx10,
+                           int pucch_tgt_snrx10,
                            NR_ServingCellConfigCommon_t *scc,
 			   int nsa_flag,
 			   uint32_t rnti,
@@ -63,7 +64,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 sub_frame_t subframeP);
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
-			       frame_t frame_txP, sub_frame_t slot_txP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 int nr_generate_dlsch_pdu(module_id_t Mod_idP,
@@ -157,8 +157,16 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
+                       int num_slots_per_tdd,
+                       int ul_slots,
                        frame_t       frameP,
                        sub_frame_t   slotP);
+
+void nr_schedule_pucch(int Mod_idP,
+                       int UE_id,
+                       int nr_ulmix_slots,
+                       frame_t frameP,
+                       sub_frame_t slotP);
 
 void nr_update_pucch_scheduling(int Mod_idP,
                                 int UE_id,
@@ -296,10 +304,12 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                           frame_t frameP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
+                          int ul_slots,
                           int time_domain_assignment);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
+    rnti_t rnti,
     uint8_t CC_id,
     frame_t frameP,
     uint8_t *pduP,
@@ -326,6 +336,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const rnti_t rntiP,
                uint8_t * sduP,
                const uint16_t sdu_lenP,
-               const uint16_t timing_advance, const uint8_t ul_cqi);
+               const uint16_t timing_advance,
+               const uint8_t ul_cqi,
+               const uint16_t rssi);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

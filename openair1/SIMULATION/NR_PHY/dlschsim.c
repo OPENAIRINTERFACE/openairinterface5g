@@ -37,7 +37,6 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
@@ -59,7 +58,8 @@ double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
         uint8_t mcs_table = 0;
-
+        double DS_TDL = .03;
 	cpuf = get_cpu_freq_GHz();
 
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
@@ -337,6 +337,7 @@ int main(int argc, char **argv)
 	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
 				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
 				      40e6, //N_RB2channel_bandwidth(N_RB_DL),
+                                      DS_TDL,
 				      0, 0, 0);
 
 	if (gNB2UE == NULL) {
@@ -478,8 +479,9 @@ int main(int argc, char **argv)
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
 	harq_process->R = rate;
-        harq_process->dmrsConfigType = 1;
+	harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	harq_process->dlDmrsSymbPos = 4;
+	harq_process->n_dmrs_cdm_groups = 1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);

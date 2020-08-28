@@ -310,15 +310,68 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 {
 
-  uint32_t EQm;
-
-  EQm = E/Qm;
-
-  for (int j = 0; j< EQm; j++){
-	  for (int i = 0; i< Qm; i++){
-		  e[(i*EQm + j)] = f[(i+j*Qm)];
-	  }
+  int j2;
+  int16_t *e1,*e2,*e3,*e4,*e5,*e6,*e7;
+  switch(Qm) {
+  case 2:
+    e1=e+(E/2);
+    for (int j = 0,j2=0; j< E/2; j+=2,j2+=4){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e[j+1]  = f[j2+2];
+      e1[j+1] = f[j2+3];
+    }
+    break;
+  case 4:
+    e1=e+(E/4);
+    e2=e1+(E/4);
+    e3=e2+(E/4);
+    for (int j = 0,j2=0; j< E/4; j++,j2+=4){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e2[j] = f[j2+2];
+      e3[j] = f[j2+3];
+    }
+    break;
+  case 6:
+    e1=e+(E/6);
+    e2=e1+(E/6);
+    e3=e2+(E/6);
+    e4=e3+(E/6);
+    e5=e4+(E/6);
+    for (int j = 0,j2=0; j< E/6; j++,j2+=6){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e2[j] = f[j2+2];
+      e3[j] = f[j2+3];
+      e4[j] = f[j2+4];
+      e5[j] = f[j2+5];
+    }
+    break;
+  case 8:
+    e1=e+(E/6);
+    e2=e1+(E/6);
+    e3=e2+(E/6);
+    e4=e3+(E/6);
+    e5=e4+(E/6);
+    e6=e5+(E/6);
+    e7=e6+(E/6);
+    for (int j = 0,j2=0; j< E/8; j++,j2+=8){
+      e[j]  = f[j2];
+      e1[j] = f[j2+1];
+      e2[j] = f[j2+2];
+      e3[j] = f[j2+3];
+      e4[j] = f[j2+4];
+      e5[j] = f[j2+5];
+      e6[j] = f[j2+6];
+      e7[j] = f[j2+7];
+    }
+    break;
+  default:
+    AssertFatal(1==0,"Should not get here : Qm %d\n",Qm);
+    break;
   }
+
 }
 
 

@@ -38,13 +38,12 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 //#include "../../SIMU/USER/init_lte.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 #include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
@@ -76,12 +75,12 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
 
+/* Callbacks, globals and object handlers */
+
 //#include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
+#include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
-// at eNB 0, an UL scope for every UE
-//FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -151,14 +150,11 @@ char ref[128] = "internal";
 char channels[128] = "0";
 
 
-static char *parallel_config = NULL;
-static char *worker_config = NULL;
-
 int rx_input_level_dBm;
 
 //static int online_log_messages=0;
 
-uint32_t do_forms=0;
+
 int otg_enabled;
 //int number_of_cards = 1;
 
@@ -588,7 +584,7 @@ void init_pdcp(void) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
-  nr_ip_over_LTE_DRB_preconfiguration();*/
+  nr_DRB_preconfiguration();*/
   pdcp_module_init(pdcp_initmask);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
@@ -689,10 +685,12 @@ int main( int argc, char **argv ) {
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
-    
+
     // Overwrite DL frequency (for FR2 testing)
     if (downlink_frequency[0][0]!=0)
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
@@ -761,8 +759,10 @@ int main( int argc, char **argv ) {
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   configure_linux();
   mlockall(MCL_CURRENT | MCL_FUTURE);
-  if (do_forms)
-     nrUEinitScope(PHY_vars_UE_g[0][0]);
+ 
+  if(IS_SOFTMODEM_DOFORMS) { 
+    load_softscope("nr",PHY_vars_UE_g[0][0]);
+  }     
   number_of_cards = 1;
 
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

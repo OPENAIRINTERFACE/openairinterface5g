@@ -275,6 +275,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
   fp->soundingrs_ul_config_common.srs_MaxUpPts = cfg->srs_config.max_up_pts.value;
   fp->num_MBSFN_config = 0;
   fp->NonMBSFN_config_flag =cfg->fembms_config.non_mbsfn_config_flag.value;
+  fp->FeMBMS_active = fp->NonMBSFN_config_flag;
   fp->NonMBSFN_config.non_mbsfn_SubframeConfig = cfg->fembms_config.non_mbsfn_subframeconfig.value;
   fp->NonMBSFN_config.radioframeAllocationPeriod = cfg->fembms_config.radioframe_allocation_period.value;
   fp->NonMBSFN_config.radioframeAllocationOffset = cfg->fembms_config.radioframe_allocation_offset.value;

@@ -251,6 +251,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
+  bool active;
 } NR_sched_pucch;
 
 typedef struct NR_sched_pusch {
@@ -290,6 +291,7 @@ typedef struct {
   int16_t ta_update;
   uint8_t tpc0;
   uint8_t tpc1;
+  uint16_t ul_rssi;
   uint8_t current_harq_pid;
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
@@ -329,16 +331,14 @@ typedef struct gNB_MAC_INST_s {
   eth_params_t                    eth_params_s;
   /// Module
   module_id_t                     Mod_id;
-  /// frame counter
-  frame_t                         frame;
-  /// slot counter
-  int                             slot;
   /// timing advance group
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
+  /// Pucch target SNR
+  int                             pucch_target_snrx10;
   /// TA command
   int                             ta_command;
   /// MAC CE flag indicating TA length

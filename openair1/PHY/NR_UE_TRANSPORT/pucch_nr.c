@@ -963,7 +963,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   uint64_t b[16]; // limit to 1024-bit encoded length
   // M_bit is the number of bits of block b (payload after encoding)
   uint16_t M_bit;
-  nr_uci_encoding(payload,nr_bit,pucch_format2_nr,0,nrofSymbols,nrofPRB,1,0,0,(void*)b,&M_bit);
+  nr_uci_encoding(payload,nr_bit,pucch_format2_nr,0,nrofSymbols,nrofPRB,1,0,0,&b[0],&M_bit);
   /*
    * Implementing TS 38.211
    * Subclauses 6.3.2.5.1 Scrambling (PUCCH format 2)
@@ -985,7 +985,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.1 scrambling format 2
    */
-  nr_pucch2_3_4_scrambling(M_bit,rnti,data_scrambling_id,b,btilde);
+  nr_pucch2_3_4_scrambling(M_bit,rnti,data_scrambling_id,&b[0],btilde);
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.2 modulation format 2
    * btilde shall be modulated as described in subclause 5.1 using QPSK
@@ -1154,7 +1154,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   //nrofPRB = 2; // only for test purposes
   if (fmt == pucch_format4_nr) nrofPRB = 1;
 
-  nr_uci_encoding(payload,nr_bit,fmt,is_pi_over_2_bpsk_enabled,nrofSymbols,nrofPRB,n_SF_PUCCH_s,intraSlotFrequencyHopping,add_dmrs,(void*)b,&M_bit);
+  nr_uci_encoding(payload,nr_bit,fmt,is_pi_over_2_bpsk_enabled,nrofSymbols,nrofPRB,n_SF_PUCCH_s,intraSlotFrequencyHopping,add_dmrs,&b[0],&M_bit);
   /*
    * Implementing TS 38.211
    * Subclauses 6.3.2.6.1 Scrambling (PUCCH formats 3 and 4)
@@ -1176,7 +1176,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.6.1 scrambling formats 3 and 4
    */
-  nr_pucch2_3_4_scrambling(M_bit,rnti,n_id,b,btilde);
+  nr_pucch2_3_4_scrambling(M_bit,rnti,n_id,&b[0],btilde);
   /*
    * Implementing TS 38.211 Subclause 6.3.2.6.2 modulation formats 3 and 4
    *
