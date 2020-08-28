@@ -1035,6 +1035,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   if (nb_re_pusch > 0) {
 
+    gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] = nb_re_pusch;
+
     start_meas(&gNB->ulsch_rbs_extraction_stats);
     nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                                 gNB->pusch_vars[ulsch_id],
@@ -1124,53 +1126,31 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                symbol,
                                nb_re_pusch);
       stop_meas(&gNB->ulsch_ptrs_processing_stats);
-      /*---------------------------------------------------------------------------------------------------- */
-      /*  Calculate LLR based upon new compensated data after all PTRS symbols are processed                 */
-      /*-----------------------------------------------------------------------------------------------------*/
-      if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1))
-      {
-        for (int aarx=0; aarx< frame_parms->nb_antennas_rx; aarx++)
-        {
-          for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++)
-          {
-            start_meas(&gNB->ulsch_llr_stats);
-            nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_ptrs_comp[aarx][i * (rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                                 gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
-                                 gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
-                                 &gNB->pusch_vars[ulsch_id]->llr[gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                                 rel15_ul->rb_size,
-                                 gNB->pusch_vars[ulsch_id]->ptrs_valid_re_per_slot[aarx][i],
-                                 i,
-                                 rel15_ul->qam_mod_order);
-            stop_meas(&gNB->ulsch_llr_stats);
-            gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset +  gNB->pusch_vars[ulsch_id]->ptrs_valid_re_per_slot[aarx][i];
-          }// symbol loop
-          /* For scope library rxdataF_comp is used so in PTRS case we point it to correct data pointer */
-          gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx] = gNB->pusch_vars[ulsch_id]->rxdataF_ptrs_comp[aarx];
-        }// antenna loop
-      }// last symbol check
-    }// PTRS processing
-    else // if no ptrs is enabled
+
+      /*  Subtract total PTRS RE's in the symbol from PUSCH RE's */
+      gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] -= gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol;
+    }
+
+    /*---------------------------------------------------------------------------------------------------- */
+    /*--------------------  LLRs computation  -------------------------------------------------------------*/
+    /*-----------------------------------------------------------------------------------------------------*/
+    if(symbol == (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols -1))
     {
-    //----------------------------------------------------------
-    //-------------------- LLRs computation --------------------
-    //----------------------------------------------------------
-
-    start_meas(&gNB->ulsch_llr_stats);
-    AssertFatal(gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order+nb_re_pusch*rel15_ul->qam_mod_order < (8*((3*8*6144)+12)) , "Mysterious llr buffer size check");
-    nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB],
-                         gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
-                         gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
-                         &gNB->pusch_vars[ulsch_id]->llr[gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                         rel15_ul->rb_size,
-                         nb_re_pusch,
-                         symbol,
-                         rel15_ul->qam_mod_order);
-    stop_meas(&gNB->ulsch_llr_stats);
-
-    gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset +  nb_re_pusch;
-    }/* End for PTRS Condition */
+      for(uint8_t i =rel15_ul->start_symbol_index; i< (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols);i++)
+        {
+          start_meas(&gNB->ulsch_llr_stats);
+          nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[0][i * (rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                               gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                               gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
+                               &gNB->pusch_vars[ulsch_id]->llr[gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                               rel15_ul->rb_size,
+                               gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i],
+                               i,
+                               rel15_ul->qam_mod_order);
+          stop_meas(&gNB->ulsch_llr_stats);
+          gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset = gNB->pusch_vars[ulsch_id]->rxdataF_ext_offset +  gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[i];
+        }// symbol loop
+    }// last symbol check
   }
   return (0);
-
 }

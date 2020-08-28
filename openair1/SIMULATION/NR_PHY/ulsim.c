@@ -830,10 +830,6 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
 	  LOG_M("rxsigF0_comp.m","rxsF0_comp",
 		&gNB->pusch_vars[0]->rxdataF_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
-#ifdef DEBUG_UL_PTRS
-          LOG_M("rxdataF_ptrs_comp.m","ptrs_comp",
-                &gNB->pusch_vars[0]->rxdataF_ptrs_comp[0][(start_symbol+1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size,1,1);
-#endif
 	}
         start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////

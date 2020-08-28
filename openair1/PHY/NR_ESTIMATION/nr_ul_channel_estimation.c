@@ -536,7 +536,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
 {
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int16_t *phase_per_symbol;
-  int16_t *no_re_per_symbol;
 
   uint8_t         L_ptrs          = 0;
   uint8_t         right_side_ref  = 0;
@@ -560,8 +559,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   for (int aarx=0; aarx< frame_parms->nb_antennas_rx; aarx++)
   {
     phase_per_symbol = (int16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
-    no_re_per_symbol = gNB->pusch_vars[ulsch_id]->ptrs_valid_re_per_slot[aarx];
-    no_re_per_symbol[symbol] = nb_re_pusch;
     /* if not PTRS symbol set current ptrs symbol index to zero*/
     gNB->pusch_vars[ulsch_id]->ptrs_symbol_index = 0;
     gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol = 0;
@@ -581,8 +578,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                                 gNB->nr_gold_pusch_dmrs[rel15_ul->scid],
                                 &phase_per_symbol[2* symbol],
                                 &gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol);
-      /*  Subtract total PTRS RE's in the symbol from PUSCH RE's */
-      no_re_per_symbol[symbol] = nb_re_pusch - gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol;
     }
     /* DMRS Symbol channel estimates extraction */
     else if(dmrs_symbol_flag)
@@ -621,9 +616,11 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
         left_side_ref = right_side_ref;
       } /*loop over dmrs positions */
 
-      //nr_pusch_phase_interpolation(phase_per_symbol,rel15_ul->start_symbol_index,frame_parms->symbols_per_slot );
 #ifdef DEBUG_UL_PTRS
       LOG_M("ptrsEst.m","est",gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
+      LOG_M("rxdataF_bf_ptrs_comp.m","bf_ptrs_cmp",
+            &gNB->pusch_vars[0]->rxdataF_comp[aarx][rel15_ul->start_symbol_index * NR_NB_SC_PER_RB * rel15_ul->rb_size],
+            rel15_ul->nr_of_symbols * NR_NB_SC_PER_RB * rel15_ul->rb_size,1,1);
 #endif
 
       /*------------------------------------------------------------------------------------------------------- */
@@ -636,7 +633,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
 #endif
         rotate_cpx_vector((int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
                           &phase_per_symbol[2* i],
-                          (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_ptrs_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                          (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
                           (rel15_ul->rb_size * NR_NB_SC_PER_RB),
                           15);
       }// symbol loop
