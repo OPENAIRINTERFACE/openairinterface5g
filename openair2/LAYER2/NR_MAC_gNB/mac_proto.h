@@ -64,7 +64,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 sub_frame_t subframeP);
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
-			       frame_t frame_txP, sub_frame_t slot_txP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 int nr_generate_dlsch_pdu(module_id_t Mod_idP,
@@ -158,8 +157,16 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
+                       int num_slots_per_tdd,
+                       int ul_slots,
                        frame_t       frameP,
                        sub_frame_t   slotP);
+
+void nr_schedule_pucch(int Mod_idP,
+                       int UE_id,
+                       int nr_ulmix_slots,
+                       frame_t frameP,
+                       sub_frame_t slotP);
 
 void nr_update_pucch_scheduling(int Mod_idP,
                                 int UE_id,
@@ -297,6 +304,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                           frame_t frameP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
+                          int ul_slots,
                           int time_domain_assignment);
 
 void nr_process_mac_pdu(

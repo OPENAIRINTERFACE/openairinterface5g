@@ -800,6 +800,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                           frame_t frameP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
+                          int ul_slots,
                           int time_domain_assignment) {
 
   gNB_MAC_INST                      *nr_mac    = RC.nrmac[Mod_idP];
@@ -847,7 +848,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     uint16_t rnti = UE_list->rnti[UE_id];
 
-    NR_sched_pusch *pusch_sched = UE_list->UE_sched_ctrl[UE_id].sched_pusch;
+    int first_ul_slot = num_slots_per_tdd - ul_slots;
+    NR_sched_pusch *pusch_sched = &UE_list->UE_sched_ctrl[UE_id].sched_pusch[slotP+K2-first_ul_slot];
     pusch_sched->frame = frameP;
     pusch_sched->slot = slotP + K2;
     pusch_sched->active = true;
