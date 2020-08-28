@@ -663,9 +663,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
     harq_process->errors[harq_process->round]++;
-    harq_process->round++; // [hna] uncomment this line when HARQ is implemented
 
-    //    printf("Rate: [UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
+    //    printf("Rate: [UE %d] DLSCH: Setting NACK for slot %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,nr_tti_rx,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;

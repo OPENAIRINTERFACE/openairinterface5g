@@ -722,6 +722,8 @@ int main(int argc, char **argv)
     //n_alamouti = 0;
     errors_scrambling=0;
     n_false_positive = 0;
+    if (n_trials== 1) num_rounds = 1;
+
     for (trial = 0; trial < n_trials; trial++) {
 
       errors_bit = 0;
@@ -755,6 +757,7 @@ int main(int argc, char **argv)
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
         UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
+
 
         UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;   
         UE_list->UE_sched_ctrl[0].current_harq_pid = harq_pid;
@@ -1014,6 +1017,7 @@ int main(int argc, char **argv)
 	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
       LOG_M("chestF0.m","chF0",UE->pdsch_vars[0][0]->dl_ch_estimates_ext,N_RB_DL*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
+      LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE->current_thread_id[UE_proc.nr_tti_rx]][0]->llr[0],available_bits,1,0);
       break;
     }
 
