@@ -751,14 +751,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
         }
       #endif
     } else {
-      #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
       if (frameP%100 == 0){
         LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
         for(int i = 0; i < 10; i++) {
-          LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]); //LOG_I(MAC, "%x. ", mac_payload[i]);
+          LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i]); //LOG_I(MAC, "%x. ", mac_payload[i]);
         }
       }
-      #endif
+#endif
     }
   }
   else {  // There is no data from RLC or MAC header, so don't schedule
