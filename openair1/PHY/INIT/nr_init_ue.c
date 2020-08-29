@@ -39,6 +39,7 @@
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -681,6 +682,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->bitrate[eNB_id] = 0;
     ue->total_received_bits[eNB_id] = 0;
   }
+  // init NR modulation lookup tables
+  nr_generate_modulation_table();
 
   /////////////////////////PUSCH init/////////////////////////
   ///////////
