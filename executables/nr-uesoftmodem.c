@@ -44,6 +44,7 @@
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 //#include "../../SIMU/USER/init_lte.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 #include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
@@ -764,11 +765,11 @@ int main( int argc, char **argv ) {
   nr_user_nas_t UErrc={0};
   NRUEcontext_t UEnas={0};
   int size=identityRequest((void**)&resp, &UEnas); 
-  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   identity Request:\n" );;
+  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   identity Request:\n" );
   size=identityResponse((void**)&resp, &UErrc); 
-  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   identity Response:\n" );;
+  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   identity Response:\n" );
   size=authenticationRequest((void**)&resp, &UEnas); 
-  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   authentication request:\n" );;
+  log_dump(NAS, resp, size, LOG_DUMP_CHAR,"   authentication request:\n" );
  
   if(IS_SOFTMODEM_DOFORMS) { 
     load_softscope("nr",PHY_vars_UE_g[0][0]);

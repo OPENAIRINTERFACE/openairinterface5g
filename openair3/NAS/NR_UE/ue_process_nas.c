@@ -2,6 +2,41 @@
 #include <openair3/NAS/NR_UE/nr_user_def.h>
 #include <openair3/NAS/COMMON/milenage.h>
 
+void servingNetworkName(uint8_t * msg,nr_user_nas_t *UE) {
+  //SNN-network-identifier in TS 24.501
+  // TS 24.501: If the MNC of the serving PLMN has two digits, then a zero is added at the beginning.
+  const char * format="5G:mnc000.mcc000.3gppnetwork.org";
+  memcpy(msg,format, strlen(format));
+  if (UE->uicc->nmc_size == 2) 
+    memcpy(msg+7, UE->uicc->imsiStr+3, 2);
+  else 
+    memcpy(msg+6, UE->uicc->imsiStr+3, 3);
+  memcpy(msg+13, UE->uicc->imsiStr, 3);
+}
+
+xresToxresStar(uint8_t * msg),nr_user_nas_t *UE {
+  // TS 33.220  annex B.2 => FC=0x6B in TS 33.501 annex A.4
+  //input S to KDF
+  uint8_t S[64]={0};
+  S[0]=0x6B;
+  servingNetworkName(S+1, UE);
+  *(uint16_t*)(msg+strlen(msg))=htons(strlen(msg));
+  msg+=strlen(msg)+sizeof(uint16_t);
+  // add rand
+  memcpy(msg, UE->uicc->rand, sizeof(UE->uicc->rand) ) ;
+  *(uint16_t*)(msg+sizeof(UE->uicc->rand))=htons(sizeof(UE->uicc->rand));
+  msg+=sizeof(UE->uicc->rand)+sizeof(uint16_t);
+  msg+=strlen(msg)+sizeof(uint16_t);
+  // add xres
+  memcpy(msg, UE->uicc->xres, sizeof(UE->uicc->xres) ) ;
+  *(uint16_t*)(msg+sizeof(UE->uicc->xres))=htons(sizeof(UE->uicc->xres));
+  msg+=sizeof(UE->uicc->xres)+sizeof(uint16_t);
+  // S is done
+
+  
+  
+}
+
 void SGSabortNet(void *msg, nr_user_nas_t *UE) {
 }
 
@@ -16,6 +51,9 @@ void SGSauthenticationReq(void *msg, nr_user_nas_t *UE) {
   authenticationrequestHeader_t *amsg=(authenticationrequestHeader_t *) msg;
   arrayCpy(UE->uicc->rand,amsg->RAND);
   arrayCpy(UE->uicc->autn,amsg->AUTN);
+  // AUTHENTICATION REQUEST message that contains a valid ngKSI, SQN and MAC is received
+  // TBD verify ngKSI (we set it as '2', see gNB code)
+  // SQN and MAC are tested in auth resp processing
   nas_schedule();
 }
 
@@ -122,14 +160,16 @@ int authenticationResponse(void **msg,nr_user_nas_t *UE) {
   resp->sh=0;
   resp->mt=Authenticationresponse;
   resp->iei=IEI_AuthenticationResponse;
-  resp->RESlen=sizeof(resp->RES);
+  resp->RESlen=sizeof(resp->RES); // always 16 see TS 24.501 Table 8.2.2.1.1
   // Verify the AUTN
   uint8_t ik[16], ck[16], res[8], AUTN[16];
   milenage_generate(UE->uicc->opc, UE->uicc->amf, UE->uicc->key,
                     UE->uicc->sqn, UE->uicc->rand, AUTN, ik, ck, res);
+
   
   if ( memcmp(UE->uicc->autn, AUTN, sizeof(AUTN))  ) {
     // prepare and send good answer
+    
   } else {
     // prepare and send autn is not compatible with us
   }
