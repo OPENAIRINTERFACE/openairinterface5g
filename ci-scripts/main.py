@@ -3329,6 +3329,7 @@ elif (os.path.isfile('ci_scripts/xml_class_list.yml')):
 else:
 	logging.error("XML action list yaml file cannot be found")
 	sys.exit("XML action list yaml file cannot be found")
+
 #file will be opened only if it exists
 with open(xml_class_list_file,'r') as file:
     # The FullLoader parameter handles the conversion 
