@@ -161,7 +161,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   ssbElem[0]->ssb = 0;
   ssbElem[0]->ra_PreambleIndex = 63;
   ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list,ssbElem[0]);
-#if 1
+#if 0
   ssbElem[1] = calloc(1,sizeof(struct NR_CFRA_SSB_Resource));
   ssbElem[1]->ssb = 1;
   ssbElem[1]->ra_PreambleIndex = 62;

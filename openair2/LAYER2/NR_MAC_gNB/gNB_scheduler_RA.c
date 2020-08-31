@@ -444,6 +444,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+	NR_RA_t *ra = &cc->ra[0];
 
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
@@ -461,9 +462,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           module_idP, preamble_index, UE_id);
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
   }
-
-  for (int i = 0; i < NB_RA_PROC_MAX; i++) {
-  NR_RA_t *ra = &cc->ra[i];
 
   // This should be handled differently when we use the initialBWP for RA
   ra->bwp_id=1;
@@ -542,7 +540,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     return;
   }
-	}
   LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
@@ -556,10 +553,12 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
   NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
 
   start_meas(&mac->schedule_ra);
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+
+//  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+//    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
   
-	NR_RA_t *ra = &cc->ra[i];
+//	NR_RA_t *ra = &cc->ra[i];
+	NR_RA_t *ra = &cc->ra[0];
 
   LOG_D(MAC,"RA[state:%d]\n",ra->state);
   switch (ra->state){
@@ -575,8 +574,8 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
     default:
     break;
   }
-    }
-  }
+//    }
+//  }
   stop_meas(&mac->schedule_ra);
 }
 
