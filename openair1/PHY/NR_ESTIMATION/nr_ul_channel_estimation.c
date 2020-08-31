@@ -672,8 +672,8 @@ void nr_pusch_phase_estimation(NR_DL_FRAME_PARMS *frame_parms,
   uint16_t              re_cnt           = 0;
   uint16_t              cnt              = 0;
   unsigned short        nb_re_pusch      = NR_NB_SC_PER_RB * rel15_ul->rb_size;
-  uint8_t               K_ptrs           = (rel15_ul->pusch_ptrs.ptrs_freq_density)?4:2;
-  uint16_t              sc_per_symbol    = rel15_ul->rb_size/K_ptrs;
+  uint8_t               K_ptrs           = rel15_ul->pusch_ptrs.ptrs_freq_density;
+  uint16_t              sc_per_symbol    = (rel15_ul->rb_size + K_ptrs - 1)/K_ptrs;
   int16_t              *ptrs_p           = (int16_t *)malloc(sizeof(int32_t)*(sc_per_symbol));
   int16_t              *dmrs_comp_p      = (int16_t *)malloc(sizeof(int32_t)*(sc_per_symbol));
   double                abs              = 0.0;
@@ -683,7 +683,7 @@ void nr_pusch_phase_estimation(NR_DL_FRAME_PARMS *frame_parms,
   double                alpha            = 0;
 #endif
   /* generate PTRS RE for the symbol */
-  nr_ptrs_rx_gen(ptrs_gold_seq[Ns][symbol],rel15_ul->rb_size,ptrs_p);
+  nr_gen_ref_conj_symbols(ptrs_gold_seq[Ns][symbol],sc_per_symbol*2,ptrs_p, NR_MOD_TABLE_QPSK_OFFSET,2);// 2 for QPSK
 
   /* loop over all sub carriers to get compensated RE on ptrs symbols*/
   for (int re = 0; re < nb_re_pusch; re++)

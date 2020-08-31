@@ -149,7 +149,8 @@ int main(int argc, char **argv)
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
-
+  int enable_ptrs = 0;
+  int ptrs_arg[2] = {-1,-1};
   int ibwps=24;
   int ibwp_rboffset=41;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
@@ -159,7 +160,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:L:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:T:L:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -345,6 +346,15 @@ int main(int argc, char **argv)
     case 'L':
       loglvl = atoi(optarg);
       break;
+
+   case 'T':
+      enable_ptrs=1;
+      int i = 0;
+      for(; optind < argc; optind++){
+        ptrs_arg[i] = atoi(argv[optind]);
+        i++;
+      }
+      break;
       
     default:
     case 'h':
@@ -374,6 +384,7 @@ int main(int argc, char **argv)
       printf("-R N_RB_DL\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
+      printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       exit(-1);
       break;
 
@@ -565,6 +576,21 @@ int main(int argc, char **argv)
   double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size);
 
   number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
+  /* -T option enable PTRS */
+  if(enable_ptrs)
+  {
+    /* validate parameters othwerwise default values are used */
+    if(ptrs_arg[0] == 0 || ptrs_arg[0] == 1 || ptrs_arg[0] == 2 )
+    {
+      ptrs_time_density = ptrs_arg[0];
+    }
+    if(ptrs_arg[1] == 2 || ptrs_arg[1] == 4 )
+    {
+      ptrs_freq_density = ptrs_arg[1];
+    }
+    pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
+    printf("PTRS Enabled with L %d, K %d \n",ptrs_time_density, ptrs_freq_density );
+  }
 
   if(1<<ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
@@ -849,7 +875,7 @@ int main(int argc, char **argv)
                ptrs_symbols += ((gNB->pusch_vars[UE_id]->ptrs_symbols) >> i) & 1;
             }
             /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
-            available_bits = available_bits - (2 * ptrs_symbols * (nb_rb/((ptrs_freq_density)?4:2)));
+            available_bits -= 2 * ptrs_symbols * ((pusch_pdu->rb_size + ptrs_freq_density - 1) /ptrs_freq_density);
             printf("After PTRS subtraction available_bits are : %d \n", available_bits);
         }
 

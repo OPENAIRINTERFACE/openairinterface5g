@@ -230,12 +230,9 @@ int nr_pbch_dmrs_rx(int symbol,
   \param length is number of RE in a OFDM symbol
   \param *output pointer to all ptrs RE in a OFDM symbol
 */
-void nr_ptrs_rx_gen(uint32_t *in, uint32_t length, int16_t *output)
+void nr_gen_ref_conj_symbols(uint32_t *in, uint32_t length, int16_t *output, uint16_t offset, int mod_order)
 {
-  uint16_t offset;
   uint8_t idx, b_idx;
-  int mod_order = 2;
-  offset = NR_MOD_TABLE_QPSK_OFFSET;
   for (int i=0; i<length/mod_order; i++)
     {
       idx = 0;
