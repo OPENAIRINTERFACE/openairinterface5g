@@ -191,7 +191,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->phy_proc_tx);
 #endif
 
-  if (ue->UE_mode[gNB_id] == PUSCH || get_softmodem_params()->phy_test == 1){
+  if (ue->UE_mode[gNB_id] <= PUSCH || get_softmodem_params()->phy_test == 1){
 
    if (ue->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
      nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, thread_id, gNB_id);
