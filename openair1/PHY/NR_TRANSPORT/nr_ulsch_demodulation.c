@@ -1046,6 +1046,69 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
 }
 
+void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
+			    int32_t **rxdataF_comp,
+			    int32_t **ul_ch_mag,
+			    int32_t **ul_ch_magb,
+			    uint8_t symbol,
+			    uint16_t nb_rb) {
+  int n_rx = frame_parms->nb_antennas_rx;
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i *rxdataF_comp128[1+n_rx],*ul_ch_mag128[1+n_rx],*ul_ch_mag128b[1+n_rx];
+#elif defined(__arm__)
+  int16x8_t *rxdataF_comp128_0,*ul_ch_mag128_0,*ul_ch_mag128_0b;
+  int16x8_t *rxdataF_comp128_1,*ul_ch_mag128_1,*ul_ch_mag128_1b;
+#endif
+  int32_t i;
+
+#ifdef __AVX2__
+  int off = ((nb_rb&1) == 1)? 4:0;
+#else
+  int off = 0;
+#endif
+
+  if (frame_parms->nb_antennas_rx>1) {
+#if defined(__x86_64__) || defined(__i386__)
+    int nb_re = nb_rb*12;
+    for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+      rxdataF_comp128[aa]   = (__m128i *)&rxdataF_comp[aa][(symbol*(nb_re + off))];
+      ul_ch_mag128[aa]      = (__m128i *)&ul_ch_mag[aa][(symbol*(nb_re + off))];
+      ul_ch_mag128b[aa]     = (__m128i *)&ul_ch_magb[aa][(symbol*(nb_re + off))];
+      
+      // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
+      for (i=0; i<nb_rb*3; i++) {
+	rxdataF_comp128[0][i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128[aa][i],1),_mm_srai_epi16(rxdataF_comp128[aa][i],1));
+	ul_ch_mag128[0][i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128[aa][i],1),_mm_srai_epi16(ul_ch_mag128[aa][i],1));
+	ul_ch_mag128b[0][i]   = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128b[aa][i],1),_mm_srai_epi16(ul_ch_mag128b[aa][i],1));
+	//	rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
+      }
+      
+#elif defined(__arm__)
+      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
+      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
+      ul_ch_mag128_0      = (int16x8_t *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
+      ul_ch_mag128_1      = (int16x8_t *)&ul_ch_mag[1][symbol*frame_parms->N_RB_DL*12];
+      ul_ch_mag128_0b     = (int16x8_t *)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
+      ul_ch_mag128_1b     = (int16x8_t *)&ul_ch_magb[1][symbol*frame_parms->N_RB_DL*12];
+      
+      // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
+      for (i=0; i<nb_rb*3; i++) {
+	rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+	ul_ch_mag128_0[i]    = vhaddq_s16(ul_ch_mag128_0[i],ul_ch_mag128_1[i]);
+	ul_ch_mag128_0b[i]   = vhaddq_s16(ul_ch_mag128_0b[i],ul_ch_mag128_1b[i]);
+	rxdataF_comp128_0[i] = vqaddq_s16(rxdataF_comp128_0[i],(*(int16x8_t *)&jitterc[0]));
+      }
+      
+#endif
+    }
+  }
+
+#if defined(__x86_64__) || defined(__i386__)
+  _mm_empty();
+  _m_empty();
+#endif
+}
+
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t ulsch_id,
                 uint32_t frame,
@@ -1198,7 +1261,14 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                   gNB->pusch_vars[ulsch_id]->log2_maxh);
     stop_meas(&gNB->ulsch_channel_compensation_stats);
 
-
+    start_meas(&gNB->ulsch_mrc_stats);
+    nr_ulsch_detection_mrc(frame_parms,
+			   gNB->pusch_vars[ulsch_id]->rxdataF_comp,
+			   gNB->pusch_vars[ulsch_id]->ul_ch_mag,
+			   gNB->pusch_vars[ulsch_id]->ul_ch_magb,
+			   symbol,
+			   rel15_ul->rb_size);
+    stop_meas(&gNB->ulsch_mrc_stats);
 #ifdef NR_SC_FDMA
     nr_idft(&((uint32_t*)gNB->pusch_vars[ulsch_id]->rxdataF_ext[0])[symbol * rel15_ul->rb_size * NR_NB_SC_PER_RB], nb_re_pusch);
 #endif

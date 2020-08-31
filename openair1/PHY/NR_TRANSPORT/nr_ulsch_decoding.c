@@ -479,7 +479,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     stop_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
 
-    LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
+    LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rvidx %d, round %d)...\n",
           harq_pid,r, G,
           Kr*3,
           harq_process->TBS,

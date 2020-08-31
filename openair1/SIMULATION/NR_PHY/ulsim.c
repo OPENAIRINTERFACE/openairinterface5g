@@ -721,6 +721,7 @@ int main(int argc, char **argv)
       reset_meas(&gNB->ulsch_unscrambling_stats);
       reset_meas(&gNB->ulsch_channel_estimation_stats);
       reset_meas(&gNB->ulsch_llr_stats);
+      reset_meas(&gNB->ulsch_mrc_stats);
       reset_meas(&gNB->ulsch_channel_compensation_stats);
       reset_meas(&gNB->ulsch_rbs_extraction_stats);
 
@@ -1046,6 +1047,7 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
       printStatIndent2(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
       printStatIndent2(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
+      printStatIndent2(&gNB->ulsch_mrc_stats,"ULSCH mrc computation");
       printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
