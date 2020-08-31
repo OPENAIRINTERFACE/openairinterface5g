@@ -3324,8 +3324,8 @@ import yaml
 xml_class_list_file=''
 if (os.path.isfile('xml_class_list.yml')):
 	xml_class_list_file='xml_class_list.yml'
-elif (os.path.isfile('ci_scripts/xml_class_list.yml')):
-	xml_class_list_file='ci_scripts/xml_class_list.yml'
+elif (os.path.isfile('ci-scripts/xml_class_list.yml')):
+	xml_class_list_file='ci-scripts/xml_class_list.yml'
 else:
 	logging.error("XML action list yaml file cannot be found")
 	sys.exit("XML action list yaml file cannot be found")
