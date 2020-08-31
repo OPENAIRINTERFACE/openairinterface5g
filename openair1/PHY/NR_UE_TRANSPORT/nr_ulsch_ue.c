@@ -312,10 +312,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if ((ul_dmrs_symb_pos >> l) & 0x01) {
         is_dmrs_sym = 1;
 
-        if (dmrs_type == pusch_dmrs_type1)
-          dmrs_idx = start_rb*6;
-        else
-          dmrs_idx = start_rb*4;
+        if (harq_process_ul_ue->pusch_pdu.transform_precoding == 1){ // if transform precoding is disabled
+          if (dmrs_type == pusch_dmrs_type1)
+            dmrs_idx = start_rb*6;
+          else
+            dmrs_idx = start_rb*4;
+        } else {
+            dmrs_idx = 0;
+        }
 
         nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
