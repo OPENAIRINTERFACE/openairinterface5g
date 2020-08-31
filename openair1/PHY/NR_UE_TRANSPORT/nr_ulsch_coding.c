@@ -41,6 +41,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+//#define DEBUG_ULSCH_CODING
 
 void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
 
@@ -269,7 +270,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   //  if (harq_process->Ndi == 1) {  // this is a new packet
   if (harq_process->round == 0) {  // this is a new packet
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
   printf("encoding thinks this is a new packet \n");
 #endif
 
@@ -343,7 +344,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     F = harq_process->F;
     Kr = harq_process->K;
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
     uint16_t Kr_bytes;
     Kr_bytes = Kr>>3;
 #endif
@@ -356,7 +357,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     //start_meas(te_stats);
     for (r=0; r<harq_process->C; r++) {
       //channel_input[r] = &harq_process->d[r][0];
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
       printf("Encoder: B %d F %d \n",harq_process->B, harq_process->F);
       printf("start ldpc encoder segment %d/%d\n",r,harq_process->C);
       printf("input %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
@@ -398,7 +399,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
     write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
     write_output("ulsch_enc_output0.m","enc0",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,4);
 #endif
@@ -420,7 +421,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
             }
     }
 
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d)...\n",
         r,
         G,
@@ -429,7 +430,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 #endif
 
     //start_meas(rm_stats);
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
   printf("rvidx in encoding = %d\n", harq_process->pusch_pdu.pusch_data.rv_index);
 #endif
 
@@ -456,7 +457,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
 
 
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
     for (int i =0; i<16; i++)
       printf("output ratematching e[%d]= %d r_offset %d\n", i,harq_process->e[i+r_offset], r_offset);
 #endif
@@ -482,7 +483,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     //stop_meas(i_stats);
 
 
-#ifdef DEBUG_DLSCH_CODING
+#ifdef DEBUG_ULSCH_CODING
     for (int i =0; i<16; i++)
       printf("output interleaving f[%d]= %d r_offset %d\n", i,harq_process->f[i+r_offset], r_offset);
 
