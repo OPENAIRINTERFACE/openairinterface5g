@@ -1554,13 +1554,86 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   }
 }
 
+
+void nr_csi_meas_reporting(int Mod_idP,
+                           int UE_id,
+                           frame_t frame,
+                           sub_frame_t slot,
+                           int n_slots_frame) {
+
+
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  NR_sched_pucch *curr_pucch;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_CSI_MeasConfig_t *csi_measconfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+
+  AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count>0,"NO CSI report configuration available");
+  // TODO for now we assume only one csi report config available
+  NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[0];
+
+  AssertFatal(csirep->reportConfigType.choice.periodic!=NULL,"Only periodic CSI reporting is implemented currently");
+  int period, offset;
+  NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
+
+  switch(p_and_o){
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
+      period = 4;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
+      period = 5;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
+      period = 8;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
+      period = 10;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
+      period = 16;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
+      period = 20;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
+      period = 40;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
+      period = 80;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
+      period = 160;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
+      break;
+    case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
+      period = 320;
+      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+      break;
+  default:
+    AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
+  }
+  // schedule csi measurement reception according to 5.2.1.4 in 38.214
+  if ( ((n_slots_frame*frame + slot - offset)%period) == 0) {
+
+  }
+
+}
+
+
 // function to update pucch scheduling parameters in UE list when a USS DL is scheduled
-void nr_update_pucch_scheduling(int Mod_idP,
-                                int UE_id,
-                                frame_t frameP,
-                                sub_frame_t slotP,
-                                int slots_per_tdd,
-                                int *pucch_id) {
+void nr_acknack_scheduling(int Mod_idP,
+                           int UE_id,
+                           frame_t frameP,
+                           sub_frame_t slotP,
+                           int slots_per_tdd,
+                           int *pucch_id) {
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
@@ -1579,25 +1652,28 @@ void nr_update_pucch_scheduling(int Mod_idP,
   // for each possible ul or mixed slot
   for (k=0; k<nr_ulmix_slots; k++) {
     curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
-    // if there is free room in current pucch structure
-    if (curr_pucch->dai_c<MAX_ACK_BITS) {
-      curr_pucch->frame = frameP;
-      curr_pucch->dai_c++;
-      curr_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
-      // first pucch occasion in first UL or MIXED slot
-      first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-      i = 0;
-      while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
-        if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
-          found = 1;
-        if (found == 0) i++;
-      }
-      if (found == 1) {
-        // computing slot in which pucch is scheduled
-        curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
-        curr_pucch->timing_indicator = i; // index in the list of timing indicators
-        *pucch_id = k;
-        return;
+    //if it is possible to schedule acknack in current pucch (no exclusive csi pucch)
+    if ((curr_pucch->csi_bits == 0) || (curr_pucch->simultaneous_harqcsi==true)) {
+      // if there is free room in current pucch structure
+      if (curr_pucch->dai_c<MAX_ACK_BITS) {
+        curr_pucch->frame = frameP;
+        curr_pucch->dai_c++;
+        curr_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
+        // first pucch occasion in first UL or MIXED slot
+        first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+        i = 0;
+        while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+          if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
+            found = 1;
+          if (found == 0) i++;
+        }
+        if (found == 1) {
+          // computing slot in which pucch is scheduled
+          curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
+          curr_pucch->timing_indicator = i; // index in the list of timing indicators
+          *pucch_id = k;
+          return;
+        }
       }
     }
   }

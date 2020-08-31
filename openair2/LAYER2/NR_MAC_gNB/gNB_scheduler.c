@@ -470,8 +470,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedule SR
   // TODO
 
-  // This schedule CSI
-  // TODO
+  // This schedule CSI measurement reporting
+  if(UE_list->fiveG_connected[UE_id] == true)
+    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
@@ -508,7 +509,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot%num_slots_per_tdd))) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
-    nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
+    nr_acknack_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
     nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
     // resetting ta flag
     gNB->ta_len = 0;

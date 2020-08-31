@@ -248,6 +248,9 @@ typedef struct UE_info {
 typedef struct NR_sched_pucch {
   int frame;
   int ul_slot;
+  bool sr_flag;
+  int csi_bits;
+  bool simultaneous_harqcsi;
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
