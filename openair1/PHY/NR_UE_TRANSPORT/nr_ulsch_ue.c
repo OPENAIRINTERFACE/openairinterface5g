@@ -226,7 +226,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////PTRS parameters' initialization/////////////////////////
   ///////////
 
-  int16_t mod_ptrs[(nb_rb/2)*(NR_SYMBOLS_PER_SLOT-1)*2]; // assume maximum number of PTRS per pusch allocation
+  int16_t mod_ptrs[nb_rb] __attribute((aligned(16))); // assume maximum number of PTRS per pusch allocation
   K_ptrs = 0; // just to avoid a warning
 
   if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
