@@ -901,7 +901,8 @@ int main(int argc, char **argv)
         //----------------- count and print errors -----------------
         //----------------------------------------------------------
 
-        if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+        if ((pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) && (trial==0)) {
+            ptrs_symbols = 0;
             for (int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++){
                ptrs_symbols += ((gNB->pusch_vars[UE_id]->ptrs_symbols) >> i) & 1;
             }
