@@ -957,22 +957,6 @@ int main(int argc, char **argv)
     printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
     printf("\n");
 
-    if (n_trials == 1) {
-      
-      LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0], frame_length_complex_samples, 1, 1);
-      if (UE->frame_parms.nb_antennas_rx>1)
-	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
-      LOG_M("chestF0.m","chF0",UE->pdsch_vars[0][0]->dl_ch_estimates_ext,N_RB_DL*12*14,1,1);
-      write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
-      break;
-    }
-
-    //if ((float)n_errors/(float)n_trials <= target_error_rate) {
-    if (effRate >= (eff_tp_check*TBS)) {
-      printf("PDSCH test OK\n");
-      break;
-    }
-
     if (print_perf==1) {
       printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",
 	     1000>>*scc->ssbSubcarrierSpacing,dlsch_config.rbSize,dlsch_config.mcsIndex[0],
@@ -1023,6 +1007,23 @@ int main(int argc, char **argv)
       printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC");
       */
     }
+
+    if (n_trials == 1) {
+      
+      LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0], frame_length_complex_samples, 1, 1);
+      if (UE->frame_parms.nb_antennas_rx>1)
+	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
+      LOG_M("chestF0.m","chF0",UE->pdsch_vars[0][0]->dl_ch_estimates_ext,N_RB_DL*12*14,1,1);
+      write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
+      break;
+    }
+
+    //if ((float)n_errors/(float)n_trials <= target_error_rate) {
+    if (effRate >= (eff_tp_check*TBS)) {
+      printf("PDSCH test OK\n");
+      break;
+    }
+
     snrRun++;
   } // NSR
 
