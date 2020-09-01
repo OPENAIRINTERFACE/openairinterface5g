@@ -3321,16 +3321,19 @@ def receive_signal(signum, frame):
 
 #loading xml action list from yaml
 import yaml
-xml_class_list_file='ci-scripts/xml_class_list.yml'
+xml_class_list_file='xml_class_list.yml'
 if (os.path.isfile(xml_class_list_file)):
-	#file will be opened only if it exists
-    with open(xml_class_list_file,'r') as file:
-    # The FullLoader parameter handles the conversion 
-    #from YAML scalar values to Python dictionary format
-      xml_class_list = yaml.load(file,Loader=yaml.FullLoader)
+	yaml_file=xml_class_list_file
+elif (os.path.isfile('ci-scripts/'+xml_class_list_file)):
+	yaml_file='ci-scripts/'+xml_class_list_file
 else:
 	logging.error("XML action list yaml file cannot be found")
 	sys.exit("XML action list yaml file cannot be found")
+
+with open(yaml_file,'r') as f:
+    # The FullLoader parameter handles the conversion-$
+    #from YAML scalar values to Python dictionary format$
+    xml_class_list = yaml.load(f,Loader=yaml.FullLoader)
 
 
 
