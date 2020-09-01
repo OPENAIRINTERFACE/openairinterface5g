@@ -98,7 +98,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
           // iterate over received harq bits
           for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
             // search for the right harq process
-            for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+            for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES; harq_idx++) {
               // if the gNB received ack with a good confidence or if the max harq rounds was reached
               if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
                 if (((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) &&
@@ -114,7 +114,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
                 harq_idx_s = harq_idx + 1;
                 break;
               }
-              // if gNB fails to receive a ACK/NACK
+              // if feedback slot processing is aborted
               else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
                       (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
                 sched_ctrl->harq_processes[harq_idx].round++;
