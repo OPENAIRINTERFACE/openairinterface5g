@@ -137,39 +137,38 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
   UL_info->uci_ind.num_ucis = 0;
 }
 
-void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, uint8_t crc_status) {
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, nfapi_nr_crc_t crc_pdu) {
 
   int max_harq_rounds = 4; // TODO define macro
-  for (uint8_t hrq_id = 0; hrq_id < NR_MAX_NB_HARQ_PROCESSES; hrq_id++) {
-    NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
-    if ((cur_harq->last_tx_slot == slot-1) && cur_harq->state==ACTIVE_SCHED) {
-      if (!crc_status) {
-        cur_harq->ndi ^= 1;
-        cur_harq->round = 0;
-        cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
+  uint8_t hrq_id = crc_pdu.harq_id;
+  NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
+  if (cur_harq->state==ACTIVE_SCHED) {
+    if (!crc_pdu.tb_crc_status) {
+      cur_harq->ndi ^= 1;
+      cur_harq->round = 0;
+      cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
 #ifdef UL_HARQ_PRINT
-        printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
+      printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
 #endif
-      } else {
-        cur_harq->round++;
-        cur_harq->state = ACTIVE_NOT_SCHED;
+    } else {
+      cur_harq->round++;
+      cur_harq->state = ACTIVE_NOT_SCHED;
 #ifdef UL_HARQ_PRINT
-        printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
+      printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
 #endif
-      }
-
-      if (!(cur_harq->round<max_harq_rounds)) {
-        cur_harq->ndi ^= 1;
-        cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
-        cur_harq->round = 0;
-#ifdef UL_HARQ_PRINT
-        printf("[HARQ HANDLER] Ulharq id %d crc failed in all round, freeing it for scheduler\n",hrq_id);
-#endif
-      }
-      return;
     }
-  }
 
+    if (!(cur_harq->round<max_harq_rounds)) {
+      cur_harq->ndi ^= 1;
+      cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
+      cur_harq->round = 0;
+#ifdef UL_HARQ_PRINT
+      printf("[HARQ HANDLER] Ulharq id %d crc failed in all round, freeing it for scheduler\n",hrq_id);
+#endif
+    }
+    return;
+  } else
+    AssertFatal(1,"Incorrect UL HARQ process %d or invalid state %d\n",hrq_id,cur_harq->state);
 }
 
 
@@ -200,7 +199,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
               UL_info->rx_ind.pdu_list[i].rnti) {
             LOG_D(PHY, "UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].crc_indication_rel8.crc_flag:%d\n", j, UL_info->crc_ind.crc_list[j].tb_crc_status);
 
-            handle_nr_ul_harq(UL_info->slot, sched_ctrl, UL_info->crc_ind.crc_list[j].tb_crc_status);
+            handle_nr_ul_harq(UL_info->slot, sched_ctrl, UL_info->crc_ind.crc_list[j]);
 
             if (UL_info->crc_ind.crc_list[j].tb_crc_status == 1) { // CRC error indication
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->slot);
