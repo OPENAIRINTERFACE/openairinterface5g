@@ -155,14 +155,19 @@ static uint8_t check_trigger_meas_event(
   LTE_Q_OffsetRange_t ofs, LTE_Q_OffsetRange_t ocs, long a3_offset, LTE_TimeToTrigger_t ttt);
 
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
+static void decode_MBMSCountingRequest(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
+
 uint8_t rrc_ue_generate_SidelinkUEInformation( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,LTE_SL_DestinationInfoList_r12_t  *destinationInfoList, long *discTxResourceReq,
     SL_TRIGGER_t mode);
 
-
-
-
-
-
+void
+rrc_ue_process_MBMSCountingRequest(
+  const protocol_ctxt_t *const ctxt_pP,
+  LTE_MBMSCountingRequest_r10_t *MBMSCountingRequest,
+  uint8_t eNB_index
+		);
+ 
+protocol_ctxt_t ctxt_pP_local;
 
 
 /*------------------------------------------------------------------------------*/
@@ -520,6 +525,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete(
   LOG_D(RLC,
         "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
         ctxt_pP->frame, ctxt_pP->module_id+NB_eNB_INST, size, eNB_index, rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
+  ctxt_pP_local.rnti = ctxt_pP->rnti;
   rrc_data_req_ue (
     ctxt_pP,
     DCCH,
@@ -1572,6 +1578,65 @@ rrc_ue_process_securityModeCommand(
                  securityModeCommand->criticalExtensions.present);
 }
 
+void
+rrc_ue_process_MBMSCountingRequest(
+  const protocol_ctxt_t *const ctxt_pP,
+  LTE_MBMSCountingRequest_r10_t *MBMSCountingRequest,
+  uint8_t eNB_index
+)
+{
+  asn_enc_rval_t enc_rval;
+  LTE_UL_DCCH_Message_t ul_dcch_msg;
+  struct LTE_CountingResponseInfo_r10 CountingResponse;
+  uint8_t buffer[200];
+  //int i;
+  LOG_I(RRC,"[UE %d] Frame %d: Receiving from (MCCH), Processing MBMSCoutingRequest (eNB %d)\n",
+        ctxt_pP->module_id,
+        ctxt_pP->frame,
+        eNB_index);
+  memset((void *)&ul_dcch_msg,0,sizeof(LTE_UL_DCCH_Message_t));
+  memset((void *)&CountingResponse,0,sizeof(struct LTE_CountingResponseInfo_r10));
+
+
+  ul_dcch_msg.message.present           = LTE_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10;
+  LTE_MBMSCountingResponse_r10_t *MBMSCountingResponse = &ul_dcch_msg.message.choice.c1.choice.mbmsCountingResponse_r10;
+
+  MBMSCountingResponse->criticalExtensions.present = LTE_MBMSCountingResponse_r10__criticalExtensions_PR_c1;
+  MBMSCountingResponse->criticalExtensions.choice.c1.present = LTE_MBMSCountingResponse_r10__criticalExtensions__c1_PR_countingResponse_r10; 
+  LTE_MBMSCountingResponse_r10_IEs_t *MBMSCountingResponse_r10_IEs = &MBMSCountingResponse->criticalExtensions.choice.c1.choice.countingResponse_r10;
+
+  MBMSCountingResponse_r10_IEs->mbsfn_AreaIndex_r10 = calloc(1,sizeof(long));
+ // MBMSCountingResponse_r10_IEs->countingResponseList_r10 = calloc(1,sizeof(struct LTE_CountingResponseList_r10));
+//
+//  ASN_SEQUENCE_ADD(
+//        &MBMSCountingResponse->criticalExtensions.choice.c1.choice.countingResponse_r10.countingResponseList_r10.list,
+//        &CountingResponse);
+//
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, 100);
+      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                   enc_rval.failed_type->name, enc_rval.encoded);
+
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+        xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+      }
+        xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+
+
+ LOG_I(RRC,"MBMSCountingResponse Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      rrc_data_req_ue (
+        &ctxt_pP_local,
+        DCCH,
+        rrc_mui++,
+        SDU_CONFIRM_NO,
+        (enc_rval.encoded + 7) / 8,
+        buffer,
+        PDCP_TRANSMISSION_MODE_CONTROL);
+
+}
+
+
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_ueCapabilityEnquiry(
@@ -2189,8 +2254,8 @@ rrc_ue_decode_dcch(
 #endif
 }
 
-const char siWindowLength[8][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","ERR"};
-const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
+const char siWindowLength[9][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
+const char siWindowLength_int[8] = {1,2,5,10,15,20,40,80};
 
 const char SIBType[12][6] = {"SIB3","SIB4","SIB5","SIB6","SIB7","SIB8","SIB9","SIB10","SIB11","SIB12","SIB13","Spare"};
 const char SIBPeriod[8][6]= {"rf8","rf16","rf32","rf64","rf128","rf256","rf512","ERR"};
@@ -2700,7 +2765,7 @@ int decode_SIB1_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_in
   //LOG_I( RRC, "TDD subframeAssignment                     : %ld\n", sib1_MBMS->tdd_Config->subframeAssignment );
   //LOG_I( RRC, "TDD specialSubframePatterns                : %ld\n", sib1_MBMS->tdd_Config->specialSubframePatterns );
   //}
-  LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1_MBMS->si_WindowLength_r14,7)] );
+  LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1_MBMS->si_WindowLength_r14,8)] );
   LOG_I( RRC, "systemInfoValueTag                         : %ld\n", sib1_MBMS->systemInfoValueTag_r14 );
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod_MBMS     = siPeriod_int[sib1_MBMS->schedulingInfoList_MBMS_r14.list.array[0]->si_Periodicity_r14];
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize_MBMS = siWindowLength_int[sib1_MBMS->si_WindowLength_r14];
@@ -2898,7 +2963,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
     LOG_I( RRC, "TDD specialSubframePatterns                : %ld\n", sib1->tdd_Config->specialSubframePatterns );
   }
 
-  LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1->si_WindowLength,7)] );
+  LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1->si_WindowLength,8)] );
   LOG_I( RRC, "systemInfoValueTag                         : %ld\n", sib1->systemInfoValueTag );
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod     = siPeriod_int[sib1->schedulingInfoList.list.array[0]->si_Periodicity];
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize = siWindowLength_int[sib1->si_WindowLength];
@@ -4225,7 +4290,7 @@ int decode_MCCH_Message( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB
           ctxt_pP->frame,
           mbsfn_sync_area);
     return 0; // avoid decoding to prevent memory bloating
-  } else if(UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State >= RRC_CONNECTED /*|| UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State == RRC_RECONFIGURED*/){
+  } else if(1/*UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State >= RRC_CONNECTED*/ /*|| UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State == RRC_RECONFIGURED*/){
     dec_rval = uper_decode_complete(NULL,
                                     &asn_DEF_LTE_MCCH_Message,
                                     (void **)&mcch,
@@ -4244,6 +4309,7 @@ int decode_MCCH_Message( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB
     if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
       xer_fprint(stdout, &asn_DEF_LTE_MCCH_Message, (void *)mcch);
     }
+      xer_fprint(stdout, &asn_DEF_LTE_MCCH_Message, (void *)mcch);
 
     if (mcch->message.present == LTE_MCCH_MessageType_PR_c1) {
       LOG_D(RRC,"[UE %d] Found mcch message \n",
@@ -4265,7 +4331,29 @@ int decode_MCCH_Message( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB
           ctxt_pP->frame,
           mbsfn_sync_area);
       }
+    }else if(mcch->message.present == LTE_MCCH_MessageType_PR_later){
+      LOG_D(RRC,"[UE %d] Found mcch message \n",
+            ctxt_pP->module_id);
+        if(mcch->message.choice.later.present == LTE_MCCH_MessageType__later_PR_c2){
+		if(mcch->message.choice.later.choice.c2.present == LTE_MCCH_MessageType__later__c2_PR_mbmsCountingRequest_r10){
+        		LOG_I(RRC,"[UE %d] Frame %d : Found MBMSCountingRequest from eNB %d %p\n",
+              			ctxt_pP->module_id,
+              			ctxt_pP->frame,
+              			eNB_index,&mcch->message.choice.later.choice.c2.choice.mbmsCountingRequest_r10);
+
+  			rrc_ue_process_MBMSCountingRequest(ctxt_pP,&mcch->message.choice.later.choice.c2.choice.mbmsCountingRequest_r10,eNB_index);
+
+			decode_MBMSCountingRequest(
+          			ctxt_pP->module_id,
+          			eNB_index,
+          			ctxt_pP->frame,
+          			mbsfn_sync_area);
+
+
+		}
+	}
     }
+
   }
 
   return 0;
@@ -4323,7 +4411,7 @@ void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_index, f
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                        );
-  if(UE_rrc_inst[ue_mod_idP].Info[eNB_index].State >= RRC_CONNECTED /*|| UE_rrc_inst[ue_mod_idP].Info[eNB_index].State == RRC_RECONFIGURED*/)
+  if(1/*UE_rrc_inst[ue_mod_idP].Info[eNB_index].State >= RRC_CONNECTED*/ /*|| UE_rrc_inst[ue_mod_idP].Info[eNB_index].State == RRC_RECONFIGURED*/)
   	UE_rrc_inst[ue_mod_idP].Info[eNB_index].MCCHStatus[mbsfn_sync_area] = 1;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_idP, ENB_FLAG_NO, UE_rrc_inst[ue_mod_idP].Info[eNB_index].rnti, frameP, 0,eNB_index);
   // Config Radio Bearer for MBMS user data (similar way to configure for eNB side in init_MBMS function)
@@ -4347,6 +4435,13 @@ void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_index, f
   // */
 }
 
+void decode_MBMSCountingRequest( module_id_t ue_mod_idP, uint8_t eNB_index, frame_t frameP, uint8_t mbsfn_sync_area ) {
+  //uint8_t i;
+  //protocol_ctxt_t               ctxt;
+
+
+
+}
 
 //-----------------------------------------------------------------------------
 void *rrc_ue_task( void *args_p ) {

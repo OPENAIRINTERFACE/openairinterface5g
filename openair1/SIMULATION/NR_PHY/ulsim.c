@@ -37,7 +37,6 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
@@ -736,7 +735,8 @@ int main(int argc, char **argv)
       scheduled_response.slot = slot;
       scheduled_response.dl_config = NULL;
       scheduled_response.ul_config = &ul_config;
-      scheduled_response.dl_config = NULL;
+      scheduled_response.tx_request = (fapi_nr_tx_request_t *) malloc(sizeof(fapi_nr_tx_request_t));
+      scheduled_response.tx_request->tx_request_body = (fapi_nr_tx_request_body_t *) malloc(sizeof(fapi_nr_tx_request_body_t));
 
       ul_config.slot = slot;
       ul_config.number_pdus = 1;

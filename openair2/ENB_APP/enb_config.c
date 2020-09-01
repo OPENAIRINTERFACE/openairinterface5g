@@ -3052,7 +3052,8 @@ void configure_du_mac(int inst) {
                          (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+			 (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                         );
 }
 

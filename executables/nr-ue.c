@@ -35,9 +35,7 @@
 #include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
-//#ifndef NO_RAT_NR
-#include "SCHED_NR/phy_frame_config_nr.h"
-//#endif
+#include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
 
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
@@ -123,7 +121,7 @@ extern double cpuf;
 #ifndef NO_RAT_NR
   #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
 #else
-  #define DURATION_RX_TO_TX           (4)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
+  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
 #endif
 
 #define FRAME_PERIOD    100000000ULL
@@ -577,12 +575,6 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
 
-  if (IS_SOFTMODEM_RFSIM) {
-    LOG_D(PHY,"SET rx_offset %d \n",UE->rx_offset);
-    //UE->rx_offset_diff=0;
-    return 0;
-  }
-
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
        UE->rx_offset > 0 ) {
@@ -736,7 +728,7 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
-               ((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX)%nb_slot_frame),&UE->frame_parms,0)];
+               ((curMsg->proc.nr_tti_rx + DURATION_RX_TO_TX -2)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
@@ -762,7 +754,7 @@ void *UE_thread(void *arg) {
                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                      timestamp+
                      UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                     &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp -
+                     &UE->frame_parms,DURATION_RX_TO_TX -2) - firstSymSamp -
                      openair0_cfg[0].tx_sample_advance,
                      txp,
                      writeBlockSize,
@@ -829,6 +821,7 @@ void *UE_thread(void *arg) {
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
+
   } // while !oai_exit
 
   return NULL;
