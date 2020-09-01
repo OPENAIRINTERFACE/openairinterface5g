@@ -53,7 +53,7 @@ class CotsUe:
 	def Check_Airplane(self):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.ADBIPAddr, self.ADBUserName, self.ADBPassWord)
-		status=mySSH.cde_check_value('sudo adb shell settings get global airplane_mode_on ', ['0','1'],5)
+		status=mySSH.cde_check_value('adb shell settings get global airplane_mode_on ', ['0','1'],5)
 		mySSH.close()
 		return status
 
@@ -66,7 +66,9 @@ class CotsUe:
 		if target_id in cots_ue_ctl:
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.ADBIPAddr, self.ADBUserName, self.ADBPassWord)
-			mySSH.command('sudo adb start-server','\$',5)
+			logging.info(str(self.ADBIPAddr)+' '+str(self.ADBUserName)+' '+str(self.ADBPassWord))
+			mySSH.command('adb start-server','\$',5)
+			mySSH.command('adb devices','\$',5)
 			logging.info("Toggling COTS UE Airplane mode to : "+target_state_str)
 			#get current state
 			current_state = self.Check_Airplane()
@@ -90,7 +92,7 @@ class CotsUe:
 					logging.error("Current state is : "+ str(current_state))
 			else:
 				print("Airplane mode is already "+ target_state_str)
-			mySSH.command('sudo adb kill-server','\$',5)
+			mySSH.command('adb kill-server','\$',5)
 			mySSH.close()
 		#ue id is NOT in the dictionary
 		else:
