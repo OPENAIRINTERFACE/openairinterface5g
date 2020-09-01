@@ -21,33 +21,74 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>start-nodes</htmlTabRef>
-	<htmlTabName>Start-Nodes</htmlTabName>
+	<htmlTabRef>TEST-FR1-TM1</htmlTabRef>
+	<htmlTabName>FR1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 010000
  030000
  040000
+ 050000
+ 020000
+ 070001
+ 070000
+
 	</TestCaseRequestedList>
-	<TestCaseExclusionList>
-	</TestCaseExclusionList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="010000">
+		<class>COTS_UE_Airplane_ON</class>
+		<desc>Toggle COTS Airplane mode ON</desc>
+		<cots_id>oppo</cots_id>
+		<cots_run_mode>ON</cots_run_mode>
+	</testCase>
 
 	<testCase id="030000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band13.tm1.50PRB.emtc.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>
+   </testCase>
+
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band13.tm1.50PRB.emtc.conf</Initialize_eNB_args>
+		<desc>Initialize gNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
+	</testCase>
 
+	<testCase id="020000">
+		<class>COTS_UE_Airplane_OFF</class>
+		<desc>Toggle COTS Airplane mode OFF</desc>
+		<cots_id>oppo</cots_id>
+		<cots_run_mode>OFF</cots_run_mode>
+	</testCase>
+
+	<testCase id="050000">
+		<class>Ping</class>
+		<desc>ping (5MHz - 20 sec)</desc>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="070000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
+
+	<testCase id="070001">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
 </testCaseList>
+
