@@ -472,7 +472,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedule CSI measurement reporting
   if(UE_list->fiveG_connected[UE_id] == true)
-    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, slots_per_frame[*scc->ssbSubcarrierSpacing]);
+    nr_csi_meas_reporting(module_idP, UE_id, frame, slot, num_slots_per_tdd, nr_ulmix_slots, slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected

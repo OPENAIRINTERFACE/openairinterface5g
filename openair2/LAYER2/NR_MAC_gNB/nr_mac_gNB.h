@@ -254,7 +254,6 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
-  bool active;
 } NR_sched_pucch;
 
 typedef struct NR_sched_pusch {

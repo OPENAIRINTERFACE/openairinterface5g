@@ -1559,13 +1559,18 @@ void nr_csi_meas_reporting(int Mod_idP,
                            int UE_id,
                            frame_t frame,
                            sub_frame_t slot,
+                           int slots_per_tdd,
+                           int ul_slots,
                            int n_slots_frame) {
 
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   NR_sched_pucch *curr_pucch;
+  NR_PUCCH_ResourceSet_t *pucchresset;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_CSI_MeasConfig_t *csi_measconfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
+  NR_PUCCH_Config_t *pucch_Config = ubwp->bwp_Dedicated->pucch_Config->choice.setup;
 
   AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count>0,"NO CSI report configuration available");
   // TODO for now we assume only one csi report config available
@@ -1621,9 +1626,53 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
   // schedule csi measurement reception according to 5.2.1.4 in 38.214
   if ( ((n_slots_frame*frame + slot - offset)%period) == 0) {
+    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[slot-slots_per_tdd+ul_slots];
 
+    NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+
+    int found = -1;
+    pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
+    int n_list = pucchresset->resourceList.list.count;
+    for (int i=0; i<n_list; i++) {
+      if (*pucchresset->resourceList.list.array[i] == pucchcsires->pucch_Resource)
+        found = i;
+    }
+    AssertFatal(found>-1,"CSI resource not found among PUCCH resources");
+
+    curr_pucch->resource_indicator = found;
+
+    n_list = pucch_Config->resourceToAddModList->list.count;
+
+    // going through the list of PUCCH resources to find the one indexed by resource_id
+    for (int i=0; i<n_list; i++) {
+      NR_PUCCH_Resource_t *pucchres = pucch_Config->resourceToAddModList->list.array[i];
+      if (pucchres->pucch_ResourceId == *pucchresset->resourceList.list.array[found]) {
+        switch(pucchres->format.present){
+          case NR_PUCCH_Resource__format_PR_format2:
+            if (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
+              curr_pucch->simultaneous_harqcsi = false;
+            else
+              curr_pucch->simultaneous_harqcsi = true;
+            break;
+          case NR_PUCCH_Resource__format_PR_format3:
+            if (pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
+              curr_pucch->simultaneous_harqcsi = false;
+            else
+              curr_pucch->simultaneous_harqcsi = true;
+            break;
+          case NR_PUCCH_Resource__format_PR_format4:
+            if (pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
+              curr_pucch->simultaneous_harqcsi = false;
+            else
+              curr_pucch->simultaneous_harqcsi = true;
+            break;
+        default:
+          AssertFatal(1==0,"Invalid PUCCH format type");
+        }
+      }
+    }
+    curr_pucch->csi_bits =25; // TODO function to compute CSI meas report bit size
   }
-
 }
 
 
