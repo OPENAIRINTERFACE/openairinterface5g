@@ -150,7 +150,13 @@ int main(int argc, char **argv)
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
   int enable_ptrs = 0;
-  int ptrs_arg[2] = {-1,-1};
+  int modify_dmrs = 0;
+  /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
+  int ptrs_arg[2] = {-1,-1};// Invalid values
+  /* DMRS TYPE = dmrs_arg[0], Add Pos = dmrs_arg[1] */
+  int dmrs_arg[2] = {-1,-1};// Invalid values
+  uint8_t dmrs_type = typeB; // Default Values
+  pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos0; // Default Values
   int ibwps=24;
   int ibwp_rboffset=41;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
@@ -160,7 +166,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:T:L:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:T:U:L:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -349,13 +355,17 @@ int main(int argc, char **argv)
 
    case 'T':
       enable_ptrs=1;
-      int i = 0;
-      for(; optind < argc; optind++){
-        ptrs_arg[i] = atoi(argv[optind]);
-        i++;
+      for(i=0; i < atoi(optarg); i++){
+        ptrs_arg[i] = atoi(argv[optind++]);
       }
       break;
-      
+
+    case 'U':
+      modify_dmrs = 1;
+      for(i=0; i < atoi(optarg); i++){
+        dmrs_arg[i] = atoi(argv[optind++]);
+      }
+      break;
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
@@ -385,6 +395,7 @@ int main(int argc, char **argv)
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
       exit(-1);
       break;
 
@@ -568,8 +579,28 @@ int main(int argc, char **argv)
   uint8_t mcs_table = 0;
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
 
+  /* validate parameters othwerwise default values are used */
+  /* -U flag can be used to set DMRS parameters*/
+  if(modify_dmrs)
+  {
+    if(dmrs_arg[0] == 0)
+    {
+      dmrs_type = typeA;
+    }
+    else if (dmrs_arg[0] == 1)
+    {
+      dmrs_type = typeB;
+    }
+    /* Additional DMRS positions */
+    if(dmrs_arg[1] >= 0 && dmrs_arg[1] <=3 )
+    {
+      add_pos = dmrs_arg[1];
+    }
+    printf("NOTE: DMRS config is modified with Type %d , Additional Position %d \n",dmrs_type, add_pos );
+  }
+
   uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
-  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
+  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, dmrs_type, add_pos, length_dmrs);  // [hna] remove dmrs struct
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
   int ptrs_symbols = 0; // to calculate total PTRS RE's in a slot
@@ -589,7 +620,7 @@ int main(int argc, char **argv)
       ptrs_freq_density = ptrs_arg[1];
     }
     pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
-    printf("PTRS Enabled with L %d, K %d \n",ptrs_time_density, ptrs_freq_density );
+    printf("NOTE: PTRS Enabled with L %d, K %d \n", ptrs_time_density, ptrs_freq_density );
   }
 
   if(1<<ptrs_time_density >= nb_symb_sch)
