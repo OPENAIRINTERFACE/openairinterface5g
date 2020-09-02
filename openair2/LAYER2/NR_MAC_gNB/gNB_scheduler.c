@@ -441,6 +441,7 @@ void tci_handling(module_id_t Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t 
     }//tci_presentInDCI
   }//is-triggering_beam_switch
 }//tci handling
+
 void clear_nr_nfapi_information(gNB_MAC_INST *gNB,
                                 int CC_idP,
                                 frame_t frameP,

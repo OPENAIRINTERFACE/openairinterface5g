@@ -274,7 +274,8 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
                                 NR_UE_sched_ctrl_t *sched_ctrl,
                                 frame_t frame,
                                 slot_t slot,
-				NR_SubcarrierSpacing_t scs
+				NR_SubcarrierSpacing_t scs, int UE_id,
+				module_id_t Mod_idP
                               ) {
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   uint8_t idx = 0;
