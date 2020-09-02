@@ -1017,7 +1017,7 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           sub_frame_t current_slot,
                           uint8_t Msg3_tda_id){
 
-  int delta;
+  int delta = 0;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
   int mu = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
   struct NR_PUSCH_TimeDomainResourceAllocationList *pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;

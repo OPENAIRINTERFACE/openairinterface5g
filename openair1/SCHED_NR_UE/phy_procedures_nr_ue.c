@@ -811,36 +811,12 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
   module_id_t module_id = dl_info->module_id;
-  int cc_id = dl_info->cc_id, frame_rx = dl_info->proc->frame_rx, nr_tti_rx = dl_info->proc->nr_tti_rx, ta_command, delta;
+  int cc_id = dl_info->cc_id, frame_rx = dl_info->proc->frame_rx, nr_tti_rx = dl_info->proc->nr_tti_rx, ta_command;
   uint8_t gNB_index = dl_info->gNB_index; // *rar;
-  //fapi_nr_dci_indication_t *dci_ind = dl_info->dci_ind;
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
   NR_UE_DLSCH_t *dlsch0 = ue->dlsch_ra[gNB_index];
   UE_MODE_t UE_mode = ue->UE_mode[gNB_index];
   NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_index];
-  uint16_t slots_per_frame = ue->frame_parms.slots_per_frame;
-
-  uint8_t mu_pusch = 1, sliv_S, sliv_L;
-  // definition table j Table 6.1.2.1.1-4
-  uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
-  uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
-    {j,  0,14}, // row index 1
-    {j,  0,12}, // row index 2
-    {j,  0,10}, // row index 3
-    {j,  2,10}, // row index 4
-    {j,  4,10}, // row index 5
-    {j,  4,8},  // row index 6
-    {j,  4,6},  // row index 7
-    {j+1,0,14}, // row index 8
-    {j+1,0,12}, // row index 9
-    {j+1,0,10}, // row index 10
-    {j+2,0,14}, // row index 11
-    {j+2,0,12}, // row index 12
-    {j+2,0,10}, // row index 13
-    {j,  8,6},  // row index 14
-    {j+3,0,14}, // row index 15
-    {j+3,0,10}  // row index 16
-  };
 
   LOG_D(PHY,"[UE %d][RAPROC] Frame %d subframe %d Received RAR mode %d\n", module_id, frame_rx, nr_tti_rx, UE_mode);
 
@@ -868,29 +844,9 @@ void nr_process_rar(nr_downlink_indication_t *dl_info) {
 
         nr_process_timing_advance_rar(ue, dl_info->proc, ta_command);
 
-        if (ue->mode != debug_prach) {
-
-          switch (mu_pusch) {
-            case 0:
-            delta = 2;
-            break;
-            case 1:
-            delta = 3;
-            break;
-            case 2:
-            delta = 4;
-            break;
-            case 3:
-            delta = 6;
-            break;
-          }
-
-          #ifdef DEBUG_RA
-          LOG_D(PHY,"[UE %d][RAPROC] Msg3 nr_tti_rx %d delta %d\n", ue->Mod_id, nr_tti_rx, delta);
-          #endif
-
+        if (ue->mode != debug_prach)
           ue->UE_mode[gNB_index] = RA_RESPONSE;
-        }
+
       } else {
         LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match !!!\n", ue->Mod_id, prach_resources->ra_PreambleIndex);
       }
