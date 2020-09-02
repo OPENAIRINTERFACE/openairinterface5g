@@ -389,12 +389,14 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t pmi_x2;
   uint8_t cqi;
 };
+
 typedef struct CRI_SSB_RSRP {
   uint8_t nr_ssbri_cri;
   uint8_t CRI_SSBRI[MAX_NR_OF_REPORTED_RS];
   uint8_t RSRP;
   uint8_t diff_RSRP[MAX_NR_OF_REPORTED_RS - 1];
 } CRI_SSB_RSRP_t;
+
 struct CSI_Report {
   NR_CSI_Report_Config_PR present;
   union Config_CSI_Report {
@@ -408,6 +410,23 @@ typedef struct NR_UE_sr {
   uint8_t nr_of_srs;
   bool ul_SR [MAX_SR_BITLEN];
 } NR_UE_sr_t;
+
+typedef struct {
+  uint8_t nb_ssbri_cri;
+  uint8_t cri_ssbri_bitlen;
+  uint8_t rsrp_bitlen;
+  uint8_t diff_rsrp_bitlen;
+}CRI_SSBRI_RSRP_bitlen_t;
+
+#define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
+typedef struct nr_csi_report {
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  long periodicity;
+  NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
+  uint8_t nb_of_nzp_csi_report;
+  uint8_t nb_of_csi_ssb_report;
+  CRI_SSBRI_RSRP_bitlen_t CSI_report_bitlen[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
+} nr_csi_report_t;
 
 /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report 
   the number of CSI_report will depend on number of CSI resource sets that are configured in CSI-ResourceConfig RRC IE
@@ -605,8 +624,7 @@ typedef struct {
   uint8_t tpc1;
   uint16_t ul_rssi;
   uint8_t current_harq_pid;
-  struct CSI_Report CSI_report[MAX_MOBILES_PER_GNB][MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
-  NR_UE_sr_t sr_req;
+  struct CSI_Report CSI_report[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free

@@ -90,7 +90,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
   return -1;
 }
-
+#if 0
 //!TODO : smae function can be written to handle csi_resources
 uint8_t get_ssb_resources (NR_CSI_MeasConfig_t *csi_MeasConfig, 
 		NR_CSI_ResourceConfigId_t csi_ResourceConfigId, 
@@ -308,7 +308,7 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       uint8_t diff_rsrp_idx = 0;
       uint8_t cri_ssbri_bitlen = UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen.cri_ssbri_bitlen;
 
-    LOG_I(MAC,"csi_payload = %d, bitlen_ssbri = %d, nb_ssb_resource_set = %d,nb_ssb_resources = %d\n",payload_size, bitlen_ssbri, nb_ssb_resource_set,nb_ssb_resources);
+    LOG_I(MAC,"csi_payload = %d, bitlen_ssbri = %d, nb_ssb_resource_set = %d\n",payload_size, bitlen_ssbri, nb_ssb_resource_set);
     /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report
      * the number of CSI_report will depend on number of CSI resource sets that are configured in CSI-ResourceConfig RRC IE
      * From spec 38.331 from the IE CSI-ResourceConfig for SSB RSRP reporting we can configure only one resource set

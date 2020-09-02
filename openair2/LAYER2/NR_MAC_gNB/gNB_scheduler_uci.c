@@ -369,6 +369,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                sub_frame_t slot,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
 {
+  NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[Mod_idP]->UE_list.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
@@ -413,6 +414,21 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
+  if ((uci_234->pduBitmap >> 1) & 0x01) {
+    int bwp_id =1;
+    NR_BWP_Uplink_t *ubwp=RC.nrmac[Mod_idP]->UE_list.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+    NR_SubcarrierSpacing_t scs=ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+    LOG_I(PHY,"SFN/SF:%d%d scs %ld \n",
+       UL_info->frame,UL_info->slot,
+       scs);
+    //API to parse the csi report and store it into sched_ctrl
+    extract_pucch_csi_report (csi_MeasConfig, uci_pdu, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, Mod_idP);
+  }
+
+  if (uci_pdu -> pduBitmap & 0x08) {
+          ///Handle CSI Report 2
+  }
+
 }
 
 
