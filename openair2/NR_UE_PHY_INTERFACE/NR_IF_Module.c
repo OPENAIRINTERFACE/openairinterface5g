@@ -257,12 +257,12 @@ int nr_ue_if_module_kill(uint32_t module_id) {
 
   if (nr_ue_if_module_inst[module_id] != NULL){
     free(nr_ue_if_module_inst[module_id]);
-  } 
+  }
   return 0;
 }
 
 int nr_ue_dcireq(nr_dcireq_t *dcireq) {
-  
+
   fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
   dl_config->sfn = UE_mac->dl_config_request.sfn;

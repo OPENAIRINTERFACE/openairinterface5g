@@ -963,7 +963,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         //if (!IS_SOFTMODEM_NOS1 || !data_existing) {
           //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
           //and block this traffic from being forwarded to the upper layers at the gNB
-          printf("[DEBUG_MSG3] Random data to be tranmsitted (TBS_bytes %d, pdu_index %d ul_config (%p) list (%p): \n", TBS_bytes, pdu_index, scheduled_response.ul_config, ul_config_list);
+          LOG_D(MAC, "Random data to be tranmsitted (TBS_bytes %d): \n", TBS_bytes);
           //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
           //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
           //have a valid LCID (nr_process_mac_pdu function)
