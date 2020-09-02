@@ -476,7 +476,7 @@ void generate_Msg2(module_id_t module_idP,
     }
   } else {
     if ((ra->Msg2_frame == frameP) && (ra->Msg2_subframe == subframeP)) {
-      LOG_D(MAC,
+      LOG_I(MAC,
             "[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, state %d\n",
             module_idP, CC_idP, frameP, subframeP, ra->state);
       // Allocate 4 PRBS starting in RB 0
@@ -1295,7 +1295,7 @@ initiate_ra_proc(module_id_t module_idP,
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
   }
 
-  LOG_D(MAC,
+  LOG_I(MAC,
         "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
         module_idP, CC_id, frameP, subframeP, preamble_index);
   LOG_D(MAC,
@@ -1305,7 +1305,6 @@ initiate_ra_proc(module_id_t module_idP,
   uint16_t msg2_subframe = subframeP;
   int offset;
   static uint8_t failure_cnt = 0 ;
-
   if (prach_ParametersListCE_r13 &&
       prach_ParametersListCE_r13->list.count < rach_resource_type) {
     LOG_E(MAC,

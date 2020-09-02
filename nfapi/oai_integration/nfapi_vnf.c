@@ -421,7 +421,8 @@ int phy_subframe_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id,
 }
 
 int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indication_t *ind) {
-  LOG_I(MAC, "%s() NFAPI SFN/SF:%d number_of_preambles:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
+  LOG_I(MAC, "%s() NFAPI Frame: %d Subframe: %d number_of_preambles:%u\n", __FUNCTION__,
+      NFAPI_SFNSF2SFN(ind->sfn_sf), NFAPI_SFNSF2SF(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   printf("[VNF] RACH_IND eNB:%p sfn_sf:%d number_of_preambles:%d\n", eNB, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rach_indication_body.number_of_preambles);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
@@ -478,15 +479,18 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
 
 int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  LOG_I(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
+  LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
 
     UL_RCC_INFO.harq_ind[index] = *ind;
 
-    if (ind->harq_indication_body.number_of_harqs > 0)
+    if (ind->harq_indication_body.number_of_harqs > 0) {
       UL_RCC_INFO.harq_ind[index].harq_indication_body.harq_pdu_list = malloc(sizeof(nfapi_harq_indication_pdu_t)*ind->harq_indication_body.number_of_harqs );
+      LOG_D(MAC, "%s() NFAPI sfn_sf = %d.%d number_of_harqs: %u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
+            NFAPI_SFNSF2SF(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
+    }
     for (int i=0; i<ind->harq_indication_body.number_of_harqs; i++) {
         memcpy(&UL_RCC_INFO.harq_ind[index].harq_indication_body.harq_pdu_list[i], &ind->harq_indication_body.harq_pdu_list[i], sizeof(nfapi_harq_indication_pdu_t));
     }
@@ -506,6 +510,8 @@ int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indicatio
 
 int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
+  LOG_I(MAC, "Got into phy_crc_indication Frame: %d Subframe: %d\n",
+    NFAPI_SFNSF2SFN(ind->sfn_sf), NFAPI_SFNSF2SF(ind->sfn_sf));
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   if(NFAPI_MODE == NFAPI_MODE_VNF){
     int8_t index = NFAPI_SFNSF2SF(ind->sfn_sf);
@@ -533,8 +539,8 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
   dest_ind->crc_indication_body.crc_pdu_list = dest_pdu_list;
 
   if (ind->crc_indication_body.number_of_crcs==0)
-    LOG_D(MAC, "%s() NFAPI SFN/SF:%d IND:number_of_crcs:%u UL_INFO:crcs:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->crc_indication_body.number_of_crcs,
-          eNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs);
+    LOG_D(MAC, "%s() NFAPI sfn_sf = %d.%d number_of_crcs: %u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
+            NFAPI_SFNSF2SF(ind->sfn_sf), ind->crc_indication_body.number_of_crcs);
 
   for (int i=0; i<ind->crc_indication_body.number_of_crcs; i++) {
     memcpy(&dest_ind->crc_indication_body.crc_pdu_list[i], &ind->crc_indication_body.crc_pdu_list[i], sizeof(ind->crc_indication_body.crc_pdu_list[0]));
@@ -580,6 +586,9 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
 int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
 
+  LOG_I(MAC, "Got into phy_rx_indication Frame: %d Subframe: %d\n",
+    NFAPI_SFNSF2SFN(ind->sfn_sf), NFAPI_SFNSF2SF(ind->sfn_sf));
+
   if (ind->rx_indication_body.number_of_pdus==0) {
     LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_pdus:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rx_indication_body.number_of_pdus);
   }
@@ -590,8 +599,11 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
 
     UL_RCC_INFO.rx_ind[index] = *ind;
 
-    if (ind->rx_indication_body.number_of_pdus > 0)
+    if (ind->rx_indication_body.number_of_pdus > 0) {
       UL_RCC_INFO.rx_ind[index].rx_indication_body.rx_pdu_list = malloc(sizeof(nfapi_rx_indication_pdu_t)*ind->rx_indication_body.number_of_pdus );
+      LOG_I(MAC, "%s() NFAPI Frame: %d Subframe: %d number_of_pdus: %u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
+            NFAPI_SFNSF2SF(ind->sfn_sf), ind->rx_indication_body.number_of_pdus);
+    }
 
     for (int i=0; i<ind->rx_indication_body.number_of_pdus; i++) {
       nfapi_rx_indication_pdu_t *dest_pdu = &UL_RCC_INFO.rx_ind[index].rx_indication_body.rx_pdu_list[i];
@@ -664,8 +676,11 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
 
     UL_RCC_INFO.sr_ind[index] = *ind;
     LOG_D(MAC,"%s() UL_INFO[%d].sr_ind.sr_indication_body.number_of_srs:%d\n", __FUNCTION__, index, eNB->UL_INFO.sr_ind.sr_indication_body.number_of_srs);
-    if (ind->sr_indication_body.number_of_srs > 0)
+    if (ind->sr_indication_body.number_of_srs > 0) {
       UL_RCC_INFO.sr_ind[index].sr_indication_body.sr_pdu_list = malloc(sizeof(nfapi_sr_indication_pdu_t)*ind->sr_indication_body.number_of_srs );
+      LOG_D(MAC, "%s() NFAPI sfn_sf = %d.%d number_of_srs: %u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
+            NFAPI_SFNSF2SF(ind->sfn_sf), ind->sr_indication_body.number_of_srs);
+    }
 
     for (int i=0; i<ind->sr_indication_body.number_of_srs; i++) {
         nfapi_sr_indication_pdu_t *dest_pdu = &UL_RCC_INFO.sr_ind[index].sr_indication_body.sr_pdu_list[i];
@@ -695,6 +710,39 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
   return 1;
 }
 
+static bool is_ue_same(int ue_id_1, int ue_id_2)
+{
+  if (ue_id_1 == ue_id_2)
+  {
+    return true;
+  }
+  return false;
+}
+
+static void analyze_cqi_pdus_for_duplicates(nfapi_cqi_indication_t *ind)
+{
+  uint16_t num_cqis = ind->cqi_indication_body.number_of_cqis;
+  for (int i = 0; i < num_cqis; i++)
+  {
+    nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
+
+    LOG_I(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+          src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
+
+    for (int j = i + 1; j < num_cqis; j++)
+    {
+      int rnti_i = ind->cqi_indication_body.cqi_pdu_list[i].rx_ue_information.rnti;
+      int rnti_j = ind->cqi_indication_body.cqi_pdu_list[j].rx_ue_information.rnti;
+      if (is_ue_same(rnti_i, rnti_j))
+      {
+        LOG_E(MAC, "Problem, two cqis received from a single UE for rnti %x\n",
+              rnti_i);
+        abort();
+      }
+    }
+  }
+}
+
 int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_t *ind) {
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_cqi_ind(p7_vnf->mac, ind);
@@ -708,11 +756,15 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
     if (ind->cqi_indication_body.number_of_cqis > 0){
       UL_RCC_INFO.cqi_ind[index].cqi_indication_body.cqi_pdu_list = malloc(sizeof(nfapi_cqi_indication_pdu_t)*ind->cqi_indication_body.number_of_cqis );
       UL_RCC_INFO.cqi_ind[index].cqi_indication_body.cqi_raw_pdu_list = malloc(sizeof(nfapi_cqi_indication_raw_pdu_t)*ind->cqi_indication_body.number_of_cqis );
+      LOG_I(MAC, "%s() NFAPI Frame: %d Subframe: %d, num_cqis: %u\n", __FUNCTION__, NFAPI_SFNSF2SFN(ind->sfn_sf),
+            NFAPI_SFNSF2SF(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
     }
-    for (int i=0; i<ind->cqi_indication_body.number_of_cqis; i++) {
-        nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
-        LOG_D(MAC, "SR_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
-                    src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
+
+    analyze_cqi_pdus_for_duplicates(ind);
+
+    for (int i=0; i < ind->cqi_indication_body.number_of_cqis; i++) {
+      nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
+
         memcpy(&UL_RCC_INFO.cqi_ind[index].cqi_indication_body.cqi_pdu_list[i],
                src_pdu, sizeof(nfapi_cqi_indication_pdu_t));
 
@@ -726,7 +778,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   dest_ind->cqi_indication_body.cqi_raw_pdu_list = ind->cqi_indication_body.cqi_raw_pdu_list;
   for(int i=0; i<ind->cqi_indication_body.number_of_cqis; i++) {
     nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
-    LOG_D(MAC, "SR_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+    LOG_D(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
                 src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
     memcpy(&dest_ind->cqi_indication_body.cqi_pdu_list[i],
            src_pdu, sizeof(nfapi_cqi_indication_pdu_t));
@@ -1121,6 +1173,21 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   dl_config_req->header.message_id = NFAPI_DL_CONFIG_REQUEST;
+  if (dl_config_req->dl_config_request_body.number_pdu > 0)
+  {
+    for (int i = 0; i < dl_config_req->dl_config_request_body.number_pdu; i++)
+        {
+            uint8_t pdu_type = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].pdu_type;
+            if(pdu_type ==  NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)
+            {
+                uint16_t dl_rnti = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].dlsch_pdu.dlsch_pdu_rel8.rnti;
+                uint16_t numPDUs = dl_config_req->dl_config_request_body.number_pdu;
+                LOG_I(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
+                           " with a RNTI value of: %x and with number of PDUs: %u\n",
+                      NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_rnti, numPDUs);
+            }
+        }
+  }
   int retval = nfapi_vnf_p7_dl_config_req(p7_config, dl_config_req);
   dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
   dl_config_req->dl_config_request_body.number_dci                          = 0;
@@ -1191,8 +1258,37 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   ul_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   ul_config_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
   //LOG_D(PHY, "[VNF] %s() header message_id:%02x\n", __FUNCTION__, ul_config_req->header.message_id);
-  //LOG_D(PHY, "[VNF] %s() UL_CONFIG sfn_sf:%d PDUs:%d rach_prach_frequency_resources:%d srs_present:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ul_config_req->sfn_sf), ul_config_req->ul_config_request_body.number_of_pdus, ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
+  LOG_D(PHY, "[VNF] %s() UL_CONFIG Frame: %d Subframe: %d PDUs:%d rach_prach_frequency_resources:%d srs_present:%d\n",
+      __FUNCTION__, NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf), ul_config_req->ul_config_request_body.number_of_pdus,
+      ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
   int retval = nfapi_vnf_p7_ul_config_req(p7_config, ul_config_req);
+
+  uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  for (int i = 0; i < num_pdus; i++)
+  {
+    uint8_t pdu_type = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type;
+    if (pdu_type != 1)
+    {
+      continue;
+    }
+    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u\n",
+          num_pdus, i, pdu_type);
+    for (int j = i + 1; j < num_pdus; j++)
+    {
+      uint8_t pdu_type2 = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].pdu_type;
+      if (pdu_type == pdu_type2)
+      {
+        uint16_t rnti_i = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+        uint16_t rnti_j = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+        if (is_ue_same(rnti_i, rnti_j))
+        {
+          LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x\n",
+                rnti_i);
+          abort();
+        }
+      }
+    }
+  }
 
   if (retval!=0) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);

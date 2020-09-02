@@ -23,6 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include "vnf_p7.h"
 
@@ -180,7 +181,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		clock_gettime(CLOCK_MONOTONIC, &pselect_start);
 		//long millisecond = pselect_start.tv_nsec / 1e6;
 
-		if((last_millisecond == -1) || (millisecond == last_millisecond) || (millisecond == (last_millisecond + 1) % 1000) )
+		if((last_millisecond == -1) || (millisecond == last_millisecond) || (millisecond == (last_millisecond + 1) % 1000))
 		{
                   //NFAPI_TRACE(NFAPI_TRACE_INFO, "pselect_start:%d.%d sf_start:%d.%d\n", pselect_start.tv_sec, pselect_start.tv_nsec, sf_start.tv_sec, sf_start.tv_nsec);
 
@@ -255,8 +256,8 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 if (selectRetval==-1 && errno == 22)
 {
   NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d], sf_dur:%d.%ld\n", 
-  pselect_timeout.tv_sec, pselect_timeout.tv_nsec, 
-  phy->insync_minor_adjustment_duration, phy->insync_minor_adjustment, 
+  pselect_timeout.tv_sec, pselect_timeout.tv_nsec,
+  phy->insync_minor_adjustment_duration, phy->insync_minor_adjustment,
   sf_duration.tv_sec, sf_duration.tv_nsec);
 }
 			if(selectRetval == 0)
@@ -362,9 +363,7 @@ if (selectRetval==-1 && errno == 22)
 			while(curr != 0)
 			{
 				curr->sfn_sf = increment_sfn_sf(curr->sfn_sf);
-				
 				vnf_sync(vnf_p7, curr);
-
 				curr = curr->next;
 			}
 

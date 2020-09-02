@@ -16,7 +16,7 @@
 
 
 #include <time.h>
-
+#include <stdio.h>
 #include <sys/time.h>
 #include <stdlib.h>
 #include <string.h>
@@ -505,7 +505,7 @@ int vnf_build_send_dl_node_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t
 	dl_node_sync.t1 = calculate_t1(p7_info->sfn_sf, vnf_p7->sf_start_time_hr);
 	dl_node_sync.delta_sfn_sf = 0;
 
-	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);	
+	return vnf_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);
 }
 
 int vnf_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info)
@@ -1229,7 +1229,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 			{
 				/*NFAPI_TRACE(NFAPI_TRACE_NOTE, "***** Adjusting VNF phy_id:%d SFN/SF (%s) from %d to %d (%d) mode:%s zeroCount:%u sync:%s\n",
 					ind.header.phy_id, (phy->in_sync ? "via sfn" : "now"),
-					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment, 
+					NFAPI_SFNSF2DEC(curr_sfn_sf), NFAPI_SFNSF2DEC(new_sfn_sf), phy->adjustment,
 					phy->filtered_adjust ? "FILTERED" : "ABSOLUTE",
 					phy->zero_count,
 					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");*/
@@ -1276,7 +1276,8 @@ void vnf_handle_timing_info(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
           //if (vnf_pnf_sfnsf_delta>1 || vnf_pnf_sfnsf_delta < -1)
           if (vnf_pnf_sfnsf_delta>0 || vnf_pnf_sfnsf_delta < 0)
           {
-            NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() LARGE SFN/SF DELTA between PNF and VNF delta:%d VNF:%d PNF:%d\n\n\n\n\n\n\n\n\n", __FUNCTION__, vnf_pnf_sfnsf_delta, NFAPI_SFNSF2DEC(vnf_p7->p7_connections[0].sfn_sf), NFAPI_SFNSF2DEC(ind.last_sfn_sf));
+            NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() LARGE SFN/SF DELTA between PNF and VNF delta:%d VNF:%d PNF:%d\n\n\n\n\n\n\n\n\n",
+			 __FUNCTION__, vnf_pnf_sfnsf_delta, NFAPI_SFNSF2DEC(vnf_p7->p7_connections[0].sfn_sf), NFAPI_SFNSF2DEC(ind.last_sfn_sf));
             // Panos: Careful here!!! Modification of the original nfapi-code
             vnf_p7->p7_connections[0].sfn_sf = ind.last_sfn_sf;
           }

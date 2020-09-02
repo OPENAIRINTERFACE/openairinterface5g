@@ -1047,18 +1047,28 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     LOG_D(MAC, "received from proxy frame %d subframe %d\n",
           NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
     if (dl_config_req != NULL) {
-      LOG_D(MAC, "dl_config_req pdus: %u Frame: %d Subframe: %d\n",
-      dl_config_req->dl_config_request_body.number_pdu,
-      NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf));
+      uint16_t dl_num_pdus = dl_config_req->dl_config_request_body.number_pdu;
+      LOG_W(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
+            " with number of PDUs: %u\n",
+            NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
+            dl_num_pdus);
+      if (dl_num_pdus > 0) {
+        char *dl_str = nfapi_dl_config_req_to_string(dl_config_req);
+        LOG_D(MAC, "dl_config_req: %s\n", dl_str);
+        free(dl_str);
+      }
     }
     if (tx_request_pdu_list != NULL) {
       LOG_D(MAC, "tx_req segments: %u\n",
       tx_request_pdu_list->num_segments);
     }
     if (ul_config_req != NULL) {
-      LOG_D(MAC, "ul_config_req pdus: %u Frame: %d Subframe: %d\n",
-      ul_config_req->ul_config_request_body.number_of_pdus,
-      NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf));
+      uint8_t ul_num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+      if (ul_num_pdus > 0) {
+        char *ul_str = nfapi_ul_config_req_to_string(ul_config_req);
+        LOG_D(MAC, "ul_config_req: %s\n", ul_str);
+        free(ul_str);
+      }
     }
     if (hi_dci0_req != NULL) {
       LOG_D(MAC, "hi_dci0_req pdus: %u Frame: %d Subframe: %d\n",
@@ -1164,7 +1174,6 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
                 // The one working strangely...
                 //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
                 PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
-                LOG_D(MAC, "Celtics prach_resources %p\n", prach_resources);
                 if (prach_resources != NULL) {
                   UE_mac_inst[ue_Mod_id].ra_frame = rx_frame;
                   LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
@@ -1185,9 +1194,9 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
           // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
           // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
           // Generate UL_indications which correspond to UL traffic.
-          if (ul_config_req != NULL) {   // check to see if you get every 2 ms   //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
-            ul_config_req_UE_MAC(ul_config_req, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), ue_Mod_id);  // Andrew - send over socket to proxy here
-          }                                                                               // Andrew - else send a dummy over the socket
+          if (ul_config_req != NULL) { //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
+            ul_config_req_UE_MAC(ul_config_req, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), ue_Mod_id);
+          }
         }
 
       phy_procedures_UE_SL_RX(UE, proc);
@@ -1218,8 +1227,8 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
-        send_standalone_msg(UL_INFO, UL_INFO->cqi_ind.header.message_id);
-        sent_any = true;
+      send_standalone_msg(UL_INFO, UL_INFO->cqi_ind.header.message_id);
+      sent_any = true;
       UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
     }
 

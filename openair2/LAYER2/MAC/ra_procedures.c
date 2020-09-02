@@ -282,7 +282,7 @@ Msg3_transmitted(module_id_t module_idP, uint8_t CC_id,
 }
 
 
-PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
+PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id, // TODO: edit here for sending multiple rachs
                                frame_t frameP, uint8_t eNB_indexP,
                                sub_frame_t subframeP) {
   uint8_t Size = 0;
