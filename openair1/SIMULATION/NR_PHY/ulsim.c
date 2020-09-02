@@ -459,11 +459,12 @@ int main(int argc, char **argv)
 				DS_TDL,
                                 0, 0, 0);
 
-  UE2gNB->max_Doppler = maxDoppler;
   if (UE2gNB == NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
+
+  UE2gNB->max_Doppler = maxDoppler;
 
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
@@ -689,7 +690,6 @@ int main(int argc, char **argv)
 				   slot_offset,
 				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
 				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
-    fclose(input_fd);
   }
   
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
