@@ -67,7 +67,12 @@ COPY --from=gnb-build /oai-ran/targets/bin/libcoding.so .
 COPY --from=gnb-build /oai-ran/targets/bin/libparams_libconfig.so .
 #COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
+#COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc.so .
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so .
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so .
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so .
+
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
 #RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
 RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
