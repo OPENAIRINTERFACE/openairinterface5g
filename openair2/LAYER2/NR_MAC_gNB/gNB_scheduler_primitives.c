@@ -623,7 +623,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
         else 
           AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
       }
-      else {
+      if (pucchresset->pucch_ResourceSetId == 1 && O_uci>2) {
         N3 = pucchresset->maxPayloadMinus1!= NULL ?  *pucchresset->maxPayloadMinus1 : 1706;
         if (N2<O_uci && N3>O_uci) {
           if (pucch_resource < n_list)
@@ -676,6 +676,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
             pucch_pdu->prb_size = pucchres->format.choice.format2->nrofPRBs;
             pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
             pucch_pdu->dmrs_scrambling_id = id0!= NULL ? *id0 : *scc->physCellId;
+            pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
             break;
           case NR_PUCCH_Resource__format_PR_format3 :
             pucch_pdu->format_type = 3;
@@ -692,6 +693,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
               pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
               pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
             }
+            pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
             break;
           case NR_PUCCH_Resource__format_PR_format4 :
             pucch_pdu->format_type = 4;
@@ -709,6 +711,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
               pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
               pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
             }
+            pucch_pdu->bit_len_csi_part1 = O_uci-O_ack;
             break;
           default :
             AssertFatal(1==0,"Undefined PUCCH format \n");
@@ -1626,6 +1629,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
   // schedule csi measurement reception according to 5.2.1.4 in 38.214
   if ( ((n_slots_frame*frame + slot - offset)%period) == 0) {
+
     curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[slot-slots_per_tdd+ul_slots];
 
     NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
@@ -1672,6 +1676,8 @@ void nr_csi_meas_reporting(int Mod_idP,
       }
     }
     curr_pucch->csi_bits =25; // TODO function to compute CSI meas report bit size
+    curr_pucch->frame = frame;
+    curr_pucch->ul_slot = slot;
   }
 }
 

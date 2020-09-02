@@ -334,7 +334,10 @@ void nr_schedule_pucch(int Mod_idP,
 
   for (int k=0; k<nr_ulmix_slots; k++) {
     curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
-    if ((curr_pucch->dai_c > 0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+    O_ack = curr_pucch->dai_c;
+    O_uci = O_ack + curr_pucch->csi_bits; // for now we are just sending acknacks in pucch
+    if ((O_uci>0 || SR_flag==1) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+
       UL_tti_req->SFN = curr_pucch->frame;
       UL_tti_req->Slot = curr_pucch->ul_slot;
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
@@ -342,10 +345,8 @@ void nr_schedule_pucch(int Mod_idP,
       nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
       memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
       UL_tti_req->n_pdus+=1;
-      O_ack = curr_pucch->dai_c;
-      O_uci = O_ack; // for now we are just sending acknacks in pucch
 
-      LOG_D(MAC, "Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
+      LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
 
       nr_configure_pucch(pucch_pdu,
 			 scc,
@@ -376,7 +377,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
 
-			       
+
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  

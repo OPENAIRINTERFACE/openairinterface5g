@@ -136,8 +136,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   int offset = gNB->CC_id;
   uint8_t ssb_frame_periodicity = 1;  // every how many frames SSB are generated
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
-
-  
   
   if (cfg->ssb_table.ssb_period.value > 1) 
     ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ; 
@@ -488,12 +486,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  (pucch->frame == frame_rx) &&
 	  (pucch->slot == slot_rx) ) {
 
-        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
         uint16_t num_ucis;
-
         switch (pucch_pdu->format_type) {
         case 0:
-
           num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
           gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
           gNB->UL_INFO.uci_ind.sfn = frame_rx;
@@ -511,7 +507,6 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           pucch->active = 0;
 	  break;
         case 2:
-
           num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
           gNB->UL_INFO.uci_ind.uci_list = &gNB->uci_pdu_list[0];
           gNB->UL_INFO.uci_ind.sfn = frame_rx;
@@ -527,6 +522,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
           pucch->active = 0;
+          break;
         default:
 	  AssertFatal(1==0,"Only PUCCH formats 0 and 2 are currently supported\n");
         }
