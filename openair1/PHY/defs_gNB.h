@@ -125,6 +125,13 @@ typedef struct {
 } NR_gNB_UL_PDCCH_t;
 
 typedef struct {
+  int round_trials[8];
+  int total_bytes;
+  int current_Qm;
+  int current_RI;
+} NR_gNB_SCH_STATS_t;
+
+typedef struct {
   /// Pointers to 16 HARQ processes for the DLSCH
   NR_DL_gNB_HARQ_t *harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
@@ -167,7 +174,11 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
+  /// statistics for measurement collection
+  NR_gNB_SCH_STATS_t stats;
 } NR_gNB_DLSCH_t;
+
+
 
 typedef struct {
   int frame;
@@ -345,10 +356,8 @@ typedef struct {
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
   uint8_t last_iteration_cnt;  
-  /// num active cba group
-  uint8_t num_active_cba_groups;
-  /// num active cba group
-  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
+  /// statistics for measurement collection
+  NR_gNB_SCH_STATS_t stats;
 } NR_gNB_ULSCH_t;
 
 typedef struct {
