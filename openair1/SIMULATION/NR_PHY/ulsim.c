@@ -908,7 +908,7 @@ int main(int argc, char **argv)
             }
             /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
             available_bits -= 2 * ptrs_symbols * ((pusch_pdu->rb_size + ptrs_freq_density - 1) /ptrs_freq_density);
-            printf("After PTRS subtraction available_bits are : %d \n", available_bits);
+            printf("After PTRS subtraction available_bits are : %u \n", available_bits);
         }
 
         for (i = 0; i < available_bits; i++) {
