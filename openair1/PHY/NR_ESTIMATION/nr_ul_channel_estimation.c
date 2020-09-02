@@ -559,6 +559,11 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   for (int aarx=0; aarx< frame_parms->nb_antennas_rx; aarx++)
   {
     phase_per_symbol = (int16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
+    /* set the previous estimations to zero at first symbol */
+    if(symbol == rel15_ul->start_symbol_index)
+    {
+      memset(phase_per_symbol,0,sizeof(int32_t)*frame_parms->symbols_per_slot);
+    }
     /* if not PTRS symbol set current ptrs symbol index to zero*/
     gNB->pusch_vars[ulsch_id]->ptrs_symbol_index = 0;
     gNB->pusch_vars[ulsch_id]->ptrs_sc_per_ofdm_symbol = 0;
