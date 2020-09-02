@@ -252,7 +252,6 @@ typedef struct {
 
   ///     Interface module instances
   nr_ue_if_module_t       *if_module;
-  nr_scheduled_response_t scheduled_response;
   nr_phy_config_t         phy_config;
 
   /// BSR report flag management

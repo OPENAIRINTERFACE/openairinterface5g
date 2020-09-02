@@ -137,33 +137,25 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
-  LOG_D(PHY,"DEBUG dl_config %d DL pdus\n",dl_config->number_pdus);
-
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
     // UL indication after reception of DCI or DL PDU
-    //hook up pointers
-    mac->scheduled_response.dl_config = dl_config;
-    mac->scheduled_response.ul_config = ul_config;
-    mac->scheduled_response.module_id = dl_info->module_id;
-    mac->scheduled_response.CC_id = dl_info->cc_id;
-    mac->scheduled_response.frame = dl_info->frame;
-    mac->scheduled_response.slot = dl_info->slot;
-
     if(dl_info->dci_ind != NULL){
       LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
-
+        nr_scheduled_response_t scheduled_response;
         ret_mask |= (handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
                                 dl_info->dci_ind->dci_list+i)<< FAPI_NR_DCI_IND);
 
-        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
-        nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
+        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
+        AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+        fill_scheduled_response(&scheduled_response, dl_config, ul_config, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot);
+        nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
       }
     }
 

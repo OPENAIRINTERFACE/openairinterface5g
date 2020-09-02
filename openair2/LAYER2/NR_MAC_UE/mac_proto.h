@@ -88,6 +88,24 @@ NR_UE_MAC_INST_t *get_mac_inst(
    \param ul_info     UL indication*/
 NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
 
+/**\brief fill nr_scheduled_response struct instance
+   @param nr_scheduled_response_t *    pointer to scheduled_response instance to fill
+   @param fapi_nr_dl_config_request_t* pointer to dl_config,
+   @param fapi_nr_ul_config_request_t* pointer to ul_config,
+   @param fapi_nr_tx_request_t*        pointer to tx_request;
+   @param module_id_t mod_id           module ID
+   @param int cc_id                    CC ID
+   @param frame_t frame                frame number
+   @param int slot                     reference number */
+void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
+                             fapi_nr_dl_config_request_t *dl_config,
+                             fapi_nr_ul_config_request_t *ul_config,
+                             fapi_nr_tx_request_t *tx_request,
+                             module_id_t mod_id,
+                             int cc_id,
+                             frame_t frame,
+                             int slot);
+
 /* \brief Get SR payload (0,1) from UE MAC
 @param Mod_id Instance id of UE in machine
 @param CC_id Component Carrier index

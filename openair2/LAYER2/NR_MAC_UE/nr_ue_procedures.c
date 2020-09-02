@@ -91,6 +91,24 @@ extern void mac_rlc_data_ind     (
 				  num_tb_t                  num_tbP,
 				  crc_t                    *crcs_pP);
 
+void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
+                             fapi_nr_dl_config_request_t *dl_config,
+                             fapi_nr_ul_config_request_t *ul_config,
+                             fapi_nr_tx_request_t *tx_request,
+                             module_id_t mod_id,
+                             int cc_id,
+                             frame_t frame,
+                             int slot){
+
+  scheduled_response->dl_config  = dl_config;
+  scheduled_response->ul_config  = ul_config;
+  scheduled_response->tx_request = tx_request;
+  scheduled_response->module_id  = mod_id;
+  scheduled_response->CC_id      = cc_id;
+  scheduled_response->frame      = frame;
+  scheduled_response->slot       = slot;
+
+}
 
 uint32_t get_ssb_slot(uint32_t ssb_index){
   //  this function now only support f <= 3GHz
@@ -118,7 +136,7 @@ uint8_t table_9_2_2_1[16][8]={
   {1,0, 14,26,0,3,0,0}
 };
 
-
+#if 0 // Not in use. In case of use, please adapt the schedule_response (no longer in MAC)
 int8_t nr_ue_process_dlsch(module_id_t module_id,
 			   int cc_id,
 			   uint8_t gNB_index,
@@ -252,6 +270,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id,
   }
   return 0;
 }
+#endif
 
 int8_t nr_ue_decode_mib(module_id_t module_id,
                         int cc_id,
@@ -719,7 +738,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);
         */
         dl_config->number_pdus = dl_config->number_pdus + 1;
-        mac->scheduled_response.dl_config = dl_config;
+
+        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot);
+        if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+          mac->if_module->scheduled_response(&scheduled_response);
       }
     } else { // we have an scg
 
@@ -731,14 +753,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
 
-      scheduled_response.dl_config  = &dcireq.dl_config_req;
-      scheduled_response.ul_config  = NULL;
-      scheduled_response.tx_request = NULL;
-      scheduled_response.module_id  = mod_id;
-      scheduled_response.CC_id      = cc_id;
-      scheduled_response.frame      = rx_frame;
-      scheduled_response.slot       = rx_slot;
-
+      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -783,6 +798,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
       fapi_nr_tx_request_body_t tx_req_body;
+      fapi_nr_ul_config_request_t *ul_config = &dcireq.ul_config_req;
 
       //--------------------------Temporary configuration-----------------------------//
       uint16_t rnti               = 0x1234;
@@ -876,8 +892,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.frame     = rx_frame;
       dcireq.slot      = rx_slot;
 
-      scheduled_response.dl_config  = NULL;
-      scheduled_response.ul_config  = &dcireq.ul_config_req;
       // Config UL TX PDU
       tx_req.slot = slot_tx;
       tx_req.sfn = frame_tx;
@@ -886,40 +900,35 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       tx_req_body.pdu_length = TBS_bytes;
       tx_req_body.pdu_index = 0;
       tx_req_body.pdu = ulsch_input_buffer;
+      tx_req.tx_request_body = &tx_req_body;
 
-      scheduled_response.tx_request = &tx_req;
-      scheduled_response.tx_request->tx_request_body = &tx_req_body;
-      scheduled_response.module_id  = mod_id;
-      scheduled_response.CC_id      = cc_id;
-      scheduled_response.frame      = rx_frame;
-      scheduled_response.slot       = rx_slot;
-
-      scheduled_response.ul_config->slot = ul_info->slot_tx;
-      scheduled_response.ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = ul_dmrs_symb_pos;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
-      scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+      ul_config->slot = ul_info->slot_tx;
+      ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+      ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
+      ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
+      ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
+      ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
+      ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
+      ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = ul_dmrs_symb_pos;
+      ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
+      ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
+      ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
+      ul_config->ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
+      ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
+      ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t)); // TBR fix this!
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
       if (1 << ptrs_time_density >= nr_of_symbols) {
-        scheduled_response.ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+        ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
       }
 
+      fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, rx_frame, rx_slot);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -937,15 +946,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
-        scheduled_response.ul_config = &mac->ul_config_request;
-        scheduled_response.dl_config = NULL;
-        scheduled_response.ul_config->number_pdus++;
-        uint8_t pdu_index = scheduled_response.ul_config->number_pdus - 1;
-        fapi_nr_ul_config_request_pdu_t *ul_config_list = &scheduled_response.ul_config->ul_config_list[pdu_index];
         fapi_nr_tx_request_t tx_req;
         fapi_nr_tx_request_body_t tx_req_body;
-
-        uint16_t TBS_bytes = scheduled_response.ul_config->ul_config_list[pdu_index].pusch_config_pdu.pusch_data.tb_size;
+        fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+        fapi_nr_ul_config_request_pdu_t *ul_config_list = &ul_config->ul_config_list[ul_config->number_pdus];
+        uint16_t TBS_bytes = ul_config_list->pusch_config_pdu.pusch_data.tb_size;
 
         //if (IS_SOFTMODEM_NOS1){
         //  // Getting IP traffic to be transmitted
@@ -985,16 +990,13 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         tx_req.sfn = ul_info->frame_tx;
         tx_req.number_of_pdus = 1;
         tx_req_body.pdu_length = TBS_bytes;
-        tx_req_body.pdu_index = pdu_index;
+        tx_req_body.pdu_index = 0;
         tx_req_body.pdu = ulsch_input_buffer;
+        tx_req.tx_request_body = &tx_req_body;
         ul_config_list->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-        scheduled_response.tx_request = &tx_req;
-        scheduled_response.tx_request->tx_request_body = &tx_req_body;
-        scheduled_response.module_id  = ul_info->module_id;
-        scheduled_response.CC_id      = ul_info->cc_id;
-        scheduled_response.frame      = ul_info->frame_rx;
-        scheduled_response.slot       = ul_info->slot_rx;
-
+        ul_config->number_pdus++;
+        // scheduled_response
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, ul_info->module_id, ul_info->cc_id, ul_info->frame_rx, ul_info->slot_rx);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -1062,6 +1064,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
+  nr_scheduled_response_t scheduled_response;
 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
@@ -1195,9 +1198,10 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
     } else if (mac->ra_state == RA_SUCCEEDED){
       mac->generate_nr_prach = 2;
     }
-    mac->scheduled_response.ul_config = ul_config;
-    if (mac->ul_config_request.number_pdus > 0)
-      mac->if_module->scheduled_response(&mac->scheduled_response);
+
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP);
+    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+      mac->if_module->scheduled_response(&scheduled_response);
   }
 }
 
