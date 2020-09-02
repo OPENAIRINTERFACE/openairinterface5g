@@ -177,6 +177,10 @@ set(CMAKE_CXX_FLAGS
 	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
 )
 
+#set(SANITIZER "-fsanitize=address")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER}")
+
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################

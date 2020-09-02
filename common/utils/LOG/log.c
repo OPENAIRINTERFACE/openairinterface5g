@@ -478,49 +478,46 @@ char *log_getthreadname(char *threadname,
 }
 
 static int log_header(char *log_buffer,
-		              int buffsize,
-					  int comp,
-					  int level,
-					  const char *format)
+                      int buffsize,
+                      int comp,
+                      int level,
+                      const char *format)
 {
-  char threadname[PR_SET_NAME];
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  struct tm tm;
-  localtime_r(&tv.tv_sec, &tm);
-  return  snprintf(log_buffer, buffsize, "%02d:%02d:%02d.%06ld %s%s[%s]%c %s %s%s",
-                   tm.tm_hour,
-                   tm.tm_min,
-                   tm.tm_sec,
-                   tv.tv_usec,
-                   log_level_highlight_end[level],
-                   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
-                   g_log->log_component[comp].name,
-                   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
-                   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
-                   format,
-                   log_level_highlight_end[level]);
+    char threadname[PR_SET_NAME];
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
+        abort();
+    return snprintf(log_buffer, buffsize, "%lu.%06lu %s%s[%s]%c %s %s%s",
+                    ts.tv_sec,
+                    ts.tv_nsec / 1000,
+                    log_level_highlight_end[level],
+                    ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
+                    g_log->log_component[comp].name,
+                    ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
+                    ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
+                    format,
+                    log_level_highlight_end[level]);
 }
 
 void logRecord_mt(const char *file,
-		          const char *func,
-				  int line,
-				  int comp,
-				  int level,
-				  const char *format,
-				  ... )
+                  const char *func,
+                  int line,
+                  int comp,
+                  int level,
+                  const char *format,
+                  ... )
 {
-  char log_buffer[MAX_LOG_TOTAL]= {0};
-  va_list args;
-  va_start(args,format);
-  if (log_mem_flag == 1) {
-    log_output_memory(file,func,line,comp,level,format,args);
-  } else {
-  log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
-  g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
-  fflush(g_log->log_component[comp].stream);
-  }
-  va_end(args);
+    char log_buffer[MAX_LOG_TOTAL]= {0};
+    va_list args;
+    va_start(args,format);
+    if (log_mem_flag == 1) {
+        log_output_memory(file,func,line,comp,level,format,args);
+    } else {
+        log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
+        g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
+        fflush(g_log->log_component[comp].stream);
+    }
+    va_end(args);
 }
 
 void vlogRecord_mt(const char *file,

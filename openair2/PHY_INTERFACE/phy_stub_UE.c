@@ -164,7 +164,8 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 uint16_t rnti,
                                 nfapi_ul_config_request_t *ul_config_req) {
   pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
-
+  LOG_D(MAC, "fill crc_indication num_crcs: %u\n",
+        UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
            .crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
@@ -261,6 +262,8 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
                                       UL_IND_t *UL_INFO,
                                       uint16_t rnti) {
   pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
+  LOG_D(MAC, "num_cqis: %u in fill_ulsch_cqi_indication_UE_MAC\n",
+        UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis);
   nfapi_cqi_indication_pdu_t *pdu =
       &UL_INFO->cqi_ind.cqi_indication_body
            .cqi_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
@@ -287,13 +290,14 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   pdu->cqi_indication_rel8.timing_advance = 0;
   // pdu->cqi_indication_rel8.number_of_cc_reported = 1;
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
-  pdu->ul_cqi_information.channel = 1; // PUSCH
+  pdu->ul_cqi_information.channel = 1;
 
   // eNB_scheduler_primitives.c:4839: the upper four bits seem to be the CQI
   const int cqi = 15;
   raw_pdu->pdu[0] = cqi << 4;
 
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis++;
+
   pthread_mutex_unlock(&fill_ul_mutex.cqi_mutex);
 }
 
@@ -491,9 +495,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   ul_config_req);
       }
     }
-  }
-
-  else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
+  } else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
     // AssertFatal((UE_id =
     // find_ulsch(ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
     //            "No available UE ULSCH for rnti
@@ -506,7 +508,7 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
     uint16_t rnti = ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
     uint8_t access_mode = SCHEDULED_ACCESS;
     if (buflen > 0) {
-      if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) { // Msg3 case
+      if (UE_mac_inst[Mod_id].first_ULSCH_Tx == 1) {
         fill_crc_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, 0, index, rnti, ul_config_req);
         fill_rx_indication_UE_MAC(Mod_id,
                                   frame,
@@ -534,7 +536,6 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                                   rnti,
                                   index,
                                   ul_config_req);
-        fill_ulsch_cqi_indication_UE_MAC(Mod_id, frame, subframe, UL_INFO, rnti);
       }
     }
     if (ulsch_harq_information != NULL)
@@ -678,12 +679,10 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t *req,
         req->ul_config_request_body.rach_prach_frequency_resources,
         req->ul_config_request_body.srs_present);
 
-  // int sfn = timer_frame; // Needs the ul_config_req sfn_sf
-  // int sf = timer_subframe;
   LOG_D(MAC, "ul_config_req Frame: %d Subframe: %d Proxy Frame: %u Subframe: %u\n",
         NFAPI_SFNSF2SFN(req->sfn_sf), NFAPI_SFNSF2SF(req->sfn_sf),
         timer_frame, timer_subframe);
-  int sfn = NFAPI_SFNSF2SFN(req->sfn_sf); // Needs the ul_config_req sfn_sf
+  int sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
   int sf = NFAPI_SFNSF2SF(req->sfn_sf);
 
   LOG_D(MAC,
@@ -714,8 +713,7 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t *req,
       handle_nfapi_ul_pdu_UE_MAC(
           Mod_id, pdu, sfn, sf, req->ul_config_request_body.srs_present, i, req);
     } else {
-      // NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() PDU:%i UNKNOWN type :%d\n",
-      // __FUNCTION__, i, ul_config_pdu_list[i].pdu_type);
+      LOG_E(MAC, "UNKNOWN UL_CONFIG_REQ PDU_TYPE or RNTI not matching pdu type: %d\n", pdu_type);
     }
   }
 
@@ -1129,7 +1127,6 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
       close(sd);
       return;
     }
-    LOG_I(MAC, "Succeeded Now\n");
     assert(ue_tx_sock_descriptor == -1);
     ue_tx_sock_descriptor = sd;
   }
@@ -1161,7 +1158,6 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
       close(sd);
       return;
     }
-    LOG_I(MAC, "Succeeded Now\n");
     assert(ue_rx_sock_descriptor == -1);
     ue_rx_sock_descriptor = sd;
   }
@@ -1311,35 +1307,37 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     {
     case NFAPI_RACH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+      LOG_I(MAC, "RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
             NFAPI_SFNSF2SFN(UL->rach_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rach_ind.sfn_sf));
       break;
     case NFAPI_CRC_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->crc_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "CRC_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
-            NFAPI_SFNSF2SFN(UL->crc_ind.sfn_sf), NFAPI_SFNSF2SF(UL->crc_ind.sfn_sf));
+      LOG_I(MAC, "CRC_IND sent to Proxy, Size: %d Frame %d Subframe %d num_crcs: %u\n", encoded_size,
+            NFAPI_SFNSF2SFN(UL->crc_ind.sfn_sf), NFAPI_SFNSF2SF(UL->crc_ind.sfn_sf),
+            UL->crc_ind.crc_indication_body.number_of_crcs);
       break;
-    case NFAPI_RX_ULSCH_INDICATION: // is this the right nfapi message_id? Ask Raymond
+    case NFAPI_RX_ULSCH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u vdorext: %p\n",
+      LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\n",
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
-            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.vendor_extension);
+            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus);
       break;
-    case NFAPI_RX_CQI_INDICATION: // is this the right nfapi message_id? Ask Raymond
-      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "CQI_IND sent to Proxy, Size: %d\n", encoded_size);
+    case NFAPI_RX_CQI_INDICATION:
+      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL); // Check pdu->ul_cqi_information.channel = 1
+      LOG_I(MAC, "CQI_IND sent to Proxy, Size: %d num_cqis: %u\n", encoded_size,
+            UL->cqi_ind.cqi_indication_body.number_of_cqis);
       break;
     case NFAPI_HARQ_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->harq_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "HARQ_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+      LOG_I(MAC, "HARQ_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
             NFAPI_SFNSF2SFN(UL->harq_ind.sfn_sf), NFAPI_SFNSF2SF(UL->harq_ind.sfn_sf));
       break;
-    case NFAPI_RX_SR_INDICATION: // is this the right nfapi message_id? Ask Raymond
+    case NFAPI_RX_SR_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->sr_ind, buffer, sizeof(buffer), NULL);
-      LOG_E(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
+      LOG_I(MAC, "SR_IND sent to Proxy, Size: %d\n", encoded_size);
       break;
     default:
-      LOG_E(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
+      LOG_I(MAC, "%s Unknown Message msg_type :: %u\n", __func__, msg_type);
       return;
     }
     if (encoded_size < 0)
@@ -1357,7 +1355,6 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
   void send_standalone_dummy()
   {
     static const uint16_t dummy[] = {0, 0};
-    // LOG_E(MAC, "Dummy sent to Proxy, Size: %zu\n", sizeof(dummy));
     if (send(ue_tx_sock_descriptor, dummy, sizeof(dummy), 0) < 0)
     {
       LOG_E(MAC, "send dummy to OAI UE failed: %s\n", strerror(errno));
@@ -1365,7 +1362,131 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     }
   }
 
-  /* Dummy functions*/
+const char *dl_pdu_type_to_string(uint8_t pdu_type)
+{
+  switch (pdu_type)
+  {
+    case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE:
+      return "DCI_DL_PDU_TYPE";
+    case NFAPI_DL_CONFIG_BCH_PDU_TYPE:
+      return "BCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_MCH_PDU_TYPE:
+      return "MCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_DLSCH_PDU_TYPE:
+      return "DLSCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_PCH_PDU_TYPE:
+      return "PCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_PRS_PDU_TYPE:
+      return "PRS_PDU_TYPE";
+    case NFAPI_DL_CONFIG_CSI_RS_PDU_TYPE:
+      return "CSI_RS_PDU_TYPE";
+    case NFAPI_DL_CONFIG_EPDCCH_DL_PDU_TYPE:
+      return "EPDCCH_DL_PDU_TYPE";
+    case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
+      return "MPDCCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_NBCH_PDU_TYPE:
+      return "NBCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_NPDCCH_PDU_TYPE:
+      return "NPDCCH_PDU_TYPE";
+    case NFAPI_DL_CONFIG_NDLSCH_PDU_TYPE:
+      return "NDLSCH_PDU_TYPE";
+    default:
+      LOG_E(MAC, "%s No corresponding PDU for type: %u\n", __func__, pdu_type);
+      return "UNKNOWN";
+  }
+}
+
+const char *ul_pdu_type_to_string(uint8_t pdu_type)
+{
+  switch (pdu_type)
+  {
+    case NFAPI_UL_CONFIG_ULSCH_PDU_TYPE:
+      return "UL_CONFIG_ULSCH_PDU_TYPE";
+    case NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE:
+      return "UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE";
+    case NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE:
+      return "UL_CONFIG_ULSCH_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE:
+      return "UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE:
+      return "UL_CONFIG_UCI_CQI_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE:
+      return "UCI_SR_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE:
+      return "UCI_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE:
+      return "UCI_SR_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE:
+      return "UCI_CQI_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE:
+      return "UCI_CQI_SR_PDU_TYPE";
+    case NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE:
+      return "UCI_CQI_SR_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_SRS_PDU_TYPE:
+      return "SRS_PDU_TYPE";
+    case NFAPI_UL_CONFIG_HARQ_BUFFER_PDU_TYPE:
+      return "HARQ_BUFFER_PDU_TYPE";
+    case NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE:
+      return "PDU_TYPE";
+    case NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE:
+      return "ULSCH_UCI_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE:
+      return "ULSCH_CSI_UCI_HARQ_PDU_TYPE";
+    case NFAPI_UL_CONFIG_NULSCH_PDU_TYPE:
+      return "NULSCH_PDU_TYPE";
+    case NFAPI_UL_CONFIG_NRACH_PDU_TYPE:
+      return "NRACH_PDU_TYPE";
+    default:
+      LOG_E(MAC, "%s No corresponding PDU for type: %u\n", __func__, pdu_type);
+      return "UNKNOWN";
+  }
+}
+
+char *nfapi_dl_config_req_to_string(nfapi_dl_config_request_t *req)
+{
+    const size_t max_result = 1024;
+    uint16_t num_pdus = req->dl_config_request_body.number_pdu;
+    int subframe = req->sfn_sf & 15;
+    int frame = req->sfn_sf >> 4;
+    char *result = malloc(max_result);
+    snprintf(result, max_result, "num_pdus=%u Frame=%d Subframe=%d",
+        num_pdus, frame, subframe);
+    for (size_t i = 0; i < num_pdus; ++i)
+    {
+        int len = strlen(result);
+        if (len >= max_result - 1)
+        {
+            break;
+        }
+        snprintf(result + len, max_result - len, " pdu_type=%s",
+            dl_pdu_type_to_string(req->dl_config_request_body.dl_config_pdu_list[i].pdu_type));
+    }
+    return result;
+}
+
+char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req)
+{
+    const size_t max_result = 1024;
+    uint16_t num_pdus = req->ul_config_request_body.number_of_pdus;
+    int subframe = req->sfn_sf & 15;
+    int frame = req->sfn_sf >> 4;
+    char *result = malloc(max_result);
+    snprintf(result, max_result, "num_pdus=%u Frame=%d Subframe=%d",
+        num_pdus, frame, subframe);
+    for (size_t i = 0; i < num_pdus; ++i)
+    {
+        int len = strlen(result);
+        if (len >= max_result - 1)
+        {
+            break;
+        }
+        snprintf(result + len, max_result - len, " pdu_type=%s",
+            ul_pdu_type_to_string(req->ul_config_request_body.ul_config_pdu_list[i].pdu_type));
+    }
+    return result;
+}
+
+/* Dummy functions*/
 
   void handle_nfapi_hi_dci0_dci_pdu(
       PHY_VARS_eNB * eNB,

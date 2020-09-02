@@ -147,6 +147,17 @@ void *ue_standalone_pnf_task(void *context);
 void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type);
 void send_standalone_dummy(void);
 
+// Convert downlink nfapi messages to a string.
+// Returned memory is malloc'ed, caller is responsible for freeing.
+char *nfapi_dl_config_req_to_string(nfapi_dl_config_request_t *req);
+char *nfapi_ul_config_req_to_string(nfapi_ul_config_request_t *req);
+
+// Convert downlink nfapi messages to a string.
+// Returned memory is statically allocated.
+const char *dl_pdu_type_to_string(uint8_t pdu_type);
+const char *ul_pdu_type_to_string(uint8_t pdu_type);
+
+
 extern queue_t dl_config_req_queue;
 extern queue_t tx_req_pdu_queue;
 extern queue_t ul_config_req_queue;

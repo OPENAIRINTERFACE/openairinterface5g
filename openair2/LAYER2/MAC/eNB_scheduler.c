@@ -571,9 +571,16 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   UE_sched_ctrl_t     *UE_scheduling_control  = NULL;
   start_meas(&(eNB->eNB_scheduler));
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, VCD_FUNCTION_IN);
+
+  if ((frameP == eNB->frame && subframeP <= eNB->subframe) || (frameP == ((eNB->frame + 1023) & 1023)))
+  {
+    LOG_E(MAC, "Scheduler being called twice for same subframe SF.SFN: %u.%u\n", frameP, subframeP);
+    return;
+  }
   eNB->frame    = frameP;
   eNB->subframe = subframeP;
 
+  LOG_I(MAC, "Entering dlsch_ulsch scheduler Frame: %u Subframe: %u\n", frameP, subframeP);
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     mbsfn_status[CC_id] = 0;
     /* Clear vrb_maps */

@@ -703,15 +703,16 @@ void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
   Sched_Rsp_t  *sched_info = &Sched_INFO[module_id][CC_id];
   IF_Module_t  *ifi        = if_inst[module_id];
   eNB_MAC_INST *mac        = RC.mac[module_id];
-  if (UL_info->subframe == 3)
-  {
-    LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
-          UL_info->frame,UL_info->subframe,
-          module_id,CC_id,
-          UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs,
-          UL_info->cqi_ind.cqi_indication_body.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
-  }
-  if(UL_info->frame==1023&&UL_info->subframe==6) { // dl scheduling (0,0)
+
+  LOG_D(PHY, "Frame:%d Subframe:%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
+    UL_info->frame, UL_info->subframe,
+    module_id, CC_id,
+    UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs,
+    UL_info->crc_ind.crc_indication_body.number_of_crcs,
+    UL_info->cqi_ind.cqi_indication_body.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles,
+    UL_info->sr_ind.sr_indication_body.number_of_srs);
+
+  if (UL_info->frame==1023&&UL_info->subframe==6) { // dl scheduling (0,0)
     frame_cnt= (frame_cnt + 1)%7; // to prevent frame_cnt get too big
     LOG_D(MAC,"current (%d,%d) frame count dl is %d\n",UL_info->frame,UL_info->subframe,frame_cnt);
   }

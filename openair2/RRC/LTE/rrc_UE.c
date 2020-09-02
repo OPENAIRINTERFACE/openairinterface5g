@@ -421,7 +421,7 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
           ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size, eNB_index);
 
     for (i=0; i<UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size; i++) {
-      LOG_T(RRC,"%x.",UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.Payload[i]);
+      LOG_T(RRC,"%x.\n",UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.Payload[i]);
     }
 
     LOG_T(RRC,"\n");

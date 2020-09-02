@@ -2220,20 +2220,20 @@ typedef struct {
 		nfapi_ul_config_ulsch_cqi_ri_pdu		ulsch_cqi_ri_pdu;
 		nfapi_ul_config_ulsch_harq_pdu			ulsch_harq_pdu;
 		nfapi_ul_config_ulsch_cqi_harq_ri_pdu	ulsch_cqi_harq_ri_pdu;
-		nfapi_ul_config_uci_cqi_pdu				uci_cqi_pdu;
+		nfapi_ul_config_uci_cqi_pdu				uci_cqi_pdu; // should never see
 		nfapi_ul_config_uci_sr_pdu				uci_sr_pdu;
 		nfapi_ul_config_uci_harq_pdu			uci_harq_pdu;
-		nfapi_ul_config_uci_sr_harq_pdu			uci_sr_harq_pdu;
-		nfapi_ul_config_uci_cqi_harq_pdu		uci_cqi_harq_pdu;
-		nfapi_ul_config_uci_cqi_sr_pdu			uci_cqi_sr_pdu;
-		nfapi_ul_config_uci_cqi_sr_harq_pdu		uci_cqi_sr_harq_pdu;
-		nfapi_ul_config_srs_pdu					srs_pdu;
-		nfapi_ul_config_harq_buffer_pdu			harq_buffer_pdu;
-		nfapi_ul_config_ulsch_uci_csi_pdu		ulsch_uci_csi_pdu;
-		nfapi_ul_config_ulsch_uci_harq_pdu		ulsch_uci_harq_pdu;
-		nfapi_ul_config_ulsch_csi_uci_harq_pdu	ulsch_csi_uci_harq_pdu;
-		nfapi_ul_config_nulsch_pdu				nulsch_pdu;
-		nfapi_ul_config_nrach_pdu				nrach_pdu;
+		nfapi_ul_config_uci_sr_harq_pdu			uci_sr_harq_pdu;// should only see once in a while
+		nfapi_ul_config_uci_cqi_harq_pdu		uci_cqi_harq_pdu;// should never see
+		nfapi_ul_config_uci_cqi_sr_pdu			uci_cqi_sr_pdu;// should never see
+		nfapi_ul_config_uci_cqi_sr_harq_pdu		uci_cqi_sr_harq_pdu;// should never see
+		nfapi_ul_config_srs_pdu					srs_pdu;// should never see
+		nfapi_ul_config_harq_buffer_pdu			harq_buffer_pdu;// should never see
+		nfapi_ul_config_ulsch_uci_csi_pdu		ulsch_uci_csi_pdu;// should never see
+		nfapi_ul_config_ulsch_uci_harq_pdu		ulsch_uci_harq_pdu;// should never see
+		nfapi_ul_config_ulsch_csi_uci_harq_pdu	ulsch_csi_uci_harq_pdu;// should never see
+		nfapi_ul_config_nulsch_pdu				nulsch_pdu;// should never see
+		nfapi_ul_config_nrach_pdu				nrach_pdu;// should never see
 	};
 } nfapi_ul_config_request_pdu_t;
 
