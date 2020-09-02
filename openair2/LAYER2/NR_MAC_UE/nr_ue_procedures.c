@@ -799,6 +799,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       fapi_nr_tx_request_t tx_req;
       fapi_nr_tx_request_body_t tx_req_body;
       fapi_nr_ul_config_request_t *ul_config = &dcireq.ul_config_req;
+      nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
 
       //--------------------------Temporary configuration-----------------------------//
       uint16_t rnti               = 0x1234;
@@ -825,6 +826,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint16_t number_dmrs_symbols = 0;
       uint16_t ul_dmrs_symb_pos   = l_prime_mask << start_symbol_index;
       //------------------------------------------------------------------------------//
+      // PTRS ports configuration
+      // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
+      ptrs_ports_list.ptrs_re_offset = 0;
+
 
         for (i = start_symbol_index; i < start_symbol_index + nr_of_symbols; i++) {
           if((ul_dmrs_symb_pos >> i) & 0x01)
@@ -921,8 +926,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
       ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
       ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t)); // TBR fix this!
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
 
       if (1 << ptrs_time_density >= nr_of_symbols) {
         ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
