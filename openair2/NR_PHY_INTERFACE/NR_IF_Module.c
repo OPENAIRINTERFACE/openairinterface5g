@@ -132,7 +132,7 @@ uint8_t get_ssb_resources (NR_CSI_MeasConfig_t *csi_MeasConfig,
   return -1;
 }
 
-
+#endif
 void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
                                 nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
                                 NR_UE_sched_ctrl_t *sched_ctrl,
@@ -287,27 +287,29 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
                               ) {
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   //uint8_t bitlen_cri = (log(csi_MeasConfig->csi_ResourceConfigToAddModList->list.count)/log(2));
+  uint8_t idx = 0;
   uint8_t payload_size = ceil(uci_pdu->csi_part1.csi_part1_bit_len/8);
   uint16_t *payload = calloc (1, payload_size);
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
-  uint8_t UE_id = 0;
+  //uint8_t UE_id = 0;
+  NR_UE_list_t *UE_list = &(RC.nrmac[Mod_idP]->UE_list);
+  long periodicity;
   uint8_t csi_report_id = 0;
   memcpy ( payload, uci_pdu->csi_part1.csi_part1_payload, payload_size);
 
   for ( csi_report_id =0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
     //Assuming in periodic reporting for one slot can be configured with only one CSI-ReportConfig
-    if (csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic) {
+ //   if (csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic) {
       //considering 30khz scs and
       //Has to implement according to reportSlotConfig type
-      LOG_I(PHY,"SFN/SF:%d%d \n", frame,slot);
-      if (((NR_SubcarrierSpacing_kHz30 == scs) && 
-		      (0 == ((frame*20) + (slot+1)) % csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320))
-		      ||((NR_SubcarrierSpacing_kHz120 == scs)&&
-			      (0 == ((frame*80) + (slot+1)) % csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320))){
-        reportQuantity_type = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportQuantity.present;
-        LOG_I(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",
-              frame,slot,reportQuantity_type);
-      }
+    periodicity = UE_list->csi_report_template[UE_id][csi_report_id].periodicity;
+    LOG_I(PHY,"SFN/SF:%d%d \n", frame,slot);
+    if (((NR_SubcarrierSpacing_kHz30 == scs) && (((((frame & 0xf)+1)*20 + slot) & periodicity) == periodicity))
+       ||((NR_SubcarrierSpacing_kHz120 == scs)&&(((((frame & 0xf)+1)*80 + slot) & periodicity) == periodicity))) {
+
+      reportQuantity_type = UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
+      LOG_I(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
+	  break;
     }
   }
 
@@ -315,23 +317,23 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
 
   if ( NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type ) {
-    uint8_t nb_ssb_resource_set=0;
-    uint8_t nb_ssb_resources = get_ssb_resources(csi_MeasConfig,
+    uint8_t nb_ssb_resource_set= UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report;
+    //uint8_t nb_ssb_resources = UE_list->csi_report_template[UE_id][csi_report_id].
+	   /* get_ssb_resources(csi_MeasConfig,
                                csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->resourcesForChannelMeasurement,
-			       reportQuantity_type,&nb_ssb_resource_set);//csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[0]->CSI_SSB_ResourceList.list.count;
-    uint8_t idx = 0;
+			       reportQuantity_type,&nb_ssb_resource_set);//csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[0]->CSI_SSB_ResourceList.list.count;*/
     uint8_t ssb_idx = 0;
     uint8_t diff_rsrp_idx = 0;
-    uint8_t bitlen_ssbri = nb_ssb_resources>1 ?log (nb_ssb_resources)/log (2):1;
-    sched_ctrl->nr_of_csi_report[UE_id] = nb_ssb_resource_set;
+    uint8_t bitlen_ssbri = UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen;
+    //sched_ctrl->nr_of_csi_report[UE_id] = nb_ssb_resource_set;
 
-    LOG_I(MAC,"csi_payload = %d, bitlen_ssbri = %d, nb_ssb_resource_set = %d,nb_ssb_resources = %d\n",payload_size, bitlen_ssbri, nb_ssb_resource_set,nb_ssb_resources);
+    LOG_I(MAC,"csi_payload = %d, bitlen_ssbri = %d, nb_ssb_resource_set = %d\n",payload_size, bitlen_ssbri, nb_ssb_resource_set);
     /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report
      * the number of CSI_report will depend on number of CSI resource sets that are configured in CSI-ResourceConfig RRC IE
      * From spec 38.331 from the IE CSI-ResourceConfig for SSB RSRP reporting we can configure only one resource set
      * From spec 38.214 section 5.2.1.2 For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1
      */
-    for (idx = 0; idx < nb_ssb_resource_set; idx++) {
+   // for (idx = 0; idx < nb_ssb_resource_set; idx++) {
       
       /** from 38.214 sec 5.2.1.4.2
       - if the UE is configured with the higher layer parameter groupBasedBeamReporting set to 'disabled', the UE is
@@ -345,30 +347,31 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       multiple simultaneous spatial domain receive filter
       */
 
-      if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
+/*      if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
           csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {
 
         if ((NULL != csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS) && 
 		      *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)) 
           sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.nr_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.choice.disabled->nrofReportedRS);
 
-        else 
-          sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.nr_ssbri_cri = NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
+        else */
+    idx = 0; //Since for SSB RSRP reporting in RRC can configure only one ssb resource set per one report config
+    sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri = UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].nb_ssbri_cri;
 
-        for (ssb_idx = 0; ssb_idx <= sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.nr_ssbri_cri ; ssb_idx++) {
+    for (ssb_idx = 0; ssb_idx < sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri ; ssb_idx++) {
           /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
-          sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.CRI_SSBRI [ssb_idx] = (*payload) & ~(~1<<(bitlen_ssbri-1));
-          *payload >>= bitlen_ssbri;
-        }
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [ssb_idx] = (*payload) & ~(~1<<(bitlen_ssbri-1));
+      *payload >>= bitlen_ssbri;
+    }
 
-        sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.RSRP = (*payload) & 0x7f;
-	*payload >>= 7;
+    sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP = (*payload) & 0x7f;
+    *payload >>= 7;
 
-        for ( diff_rsrp_idx =0; diff_rsrp_idx <= sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.nr_ssbri_cri - 1; diff_rsrp_idx++ ) {
-          sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx] = (*payload) & 0x0f;
-          *payload >>= 4;
-        }
-
+    for ( diff_rsrp_idx =0; diff_rsrp_idx < sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri - 1; diff_rsrp_idx++ ) {
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx] = (*payload) & 0x0f;
+      *payload >>= 4;
+    }
+#if 0
       } else if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled !=
                  csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {
           sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.nr_ssbri_cri = 2;
@@ -384,7 +387,8 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
         sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.diff_RSRP[0] = (*payload) & 0x0f;
         *payload >>= 4;
       }
-    }
+#endif 
+ //   }
   }
 
 #if 0

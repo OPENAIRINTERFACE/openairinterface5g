@@ -245,11 +245,11 @@ void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_c
   //NR_COMMON_channels_t *cc = RC.nrmac[Mod_idP]->common_channels;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_CSI_MeasConfig_t *csi_MeasConfig = UE_list->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  //NR_CSI_MeasConfig_t *csi_MeasConfig = UE_list->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   //bwp indicator
   int n_dl_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
-  uint8_t nb_ssb_resources_inEachSet = sched_ctrl->CSI_report[UE_id][cqi_idx].choice.ssb_cri_report.nr_ssbri_cri;
-  uint8_t nb_resource_sets = sched_ctrl->nr_of_csi_report[UE_id];
+  uint8_t nb_ssb_resources_inEachSet = 0;
+  uint8_t nb_resource_sets = UE_list->csi_report_template[UE_id][cqi_idx].nb_of_csi_ssb_report;
   //uint8_t bitlen_ssbri = log (nb_resource_sets)/log (2);
   //uint8_t max_rsrp_reported = -1;
   int better_rsrp_reported = -140-(-0); /*minimum_measured_RSRP_value - minimum_differntail_RSRP_value*///considering the minimum RSRP value as better RSRP initially
@@ -272,16 +272,17 @@ void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_c
 
   //for all reported SSB
   for (idx = 0; idx < nb_resource_sets; idx++) {
+    nb_ssb_resources_inEachSet = sched_ctrl->CSI_report[idx].choice.ssb_cri_report.nr_ssbri_cri;
     //if group based beam Reporting is disabled
-    if(NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
-        csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {
+    /*if(NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
+        csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {*/
       //extracting the ssb indexes
-      for (ssb_idx = 0; ssb_idx <= nb_ssb_resources_inEachSet; ssb_idx++) {
-        ssb_index[idx * nb_resource_sets + ssb_idx] = sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.CRI_SSBRI[ssb_idx];
+      for (ssb_idx = 0; ssb_idx < nb_ssb_resources_inEachSet; ssb_idx++) {
+        ssb_index[idx * nb_resource_sets + ssb_idx] = sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[ssb_idx];
       }
 
       //if strongest measured RSRP is configured
-      strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.RSRP);
+      strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
       ssb_rsrp[idx * nb_resource_sets] = strongest_ssb_rsrp;
 
       //if current ssb rsrp is greater than better rsrp
@@ -291,7 +292,7 @@ void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_c
       }
 
       for(diff_rsrp_idx =1; diff_rsrp_idx < nb_ssb_resources_inEachSet; diff_rsrp_idx++) {
-        ssb_rsrp[idx * nb_resource_sets + diff_rsrp_idx] = get_diff_rsrp(sched_ctrl->CSI_report[UE_id][idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx], strongest_ssb_rsrp);
+        ssb_rsrp[idx * nb_resource_sets + diff_rsrp_idx] = get_diff_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.diff_RSRP[diff_rsrp_idx], strongest_ssb_rsrp);
 
         //if current reported rsrp is greater than better rsrp
         if(ssb_rsrp[idx * nb_resource_sets + diff_rsrp_idx] > better_rsrp_reported) {
@@ -299,7 +300,8 @@ void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_c
           target_ssb_beam_index = idx * nb_resource_sets + diff_rsrp_idx;
         }
       }
-    }
+#if 0
+      //}
     //if group based beam reporting is enabled
     else if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled !=
              csi_MeasConfig->csi_ReportConfigToAddModList->list.array[0]->groupBasedBeamReporting.present ) {
@@ -324,6 +326,7 @@ void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_c
         target_ssb_beam_index = idx * nb_resource_sets + 1;
       }
     }
+#endif
   }
 
   if(ssb_index[target_ssb_beam_index] != ssb_index[curr_ssb_beam_index] && ssb_rsrp[target_ssb_beam_index] > ssb_rsrp[curr_ssb_beam_index]) {
@@ -435,6 +438,7 @@ void tci_handling(int Mod_idP, int UE_id, int CC_id, NR_UE_sched_ctrl_t *sched_c
     }//tci_presentInDCI
   }//is-triggering_beam_switch
 }//tci handling
+
 void clear_nr_nfapi_information(gNB_MAC_INST *gNB,
                                 int CC_idP,
                                 frame_t frameP,
