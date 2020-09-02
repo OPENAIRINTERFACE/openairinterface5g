@@ -55,7 +55,6 @@
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "openair1/NR_REFSIG/pss_nr.h"
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
@@ -119,7 +118,7 @@ int main(int argc, char **argv)
   double sigma, sigma_dB;
   double snr_step = .2;
   uint8_t snr1set = 0;
-  int slot = 8, frame = 0;
+  int slot = 8, frame = 1;
   FILE *output_fd = NULL;
   double *s_re[2]= {s_re0,s_re1};
   double *s_im[2]= {s_im0,s_im1};
@@ -702,6 +701,7 @@ int main(int argc, char **argv)
     int round_trials[4]={0,0,0,0};
     uint32_t errors_scrambling[4] = {0,0,0,0};
 
+    clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
     uint8_t round = 0;
 
@@ -1040,6 +1040,9 @@ int main(int argc, char **argv)
 	   (double)errors_scrambling[2]/available_bits/round_trials[0],
 	   (double)errors_scrambling[3]/available_bits/round_trials[0],
 	   roundStats[snrRun],effRate,effRate/TBS*100,TBS);
+
+    dump_pusch_stats(gNB);
+
     printf("*****************************************\n");
     printf("\n");
     

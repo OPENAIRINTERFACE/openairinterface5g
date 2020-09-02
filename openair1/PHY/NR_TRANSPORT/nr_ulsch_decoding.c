@@ -363,15 +363,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
-
-    if (R<1024)
-      Coderate = (float) R /(float) 1024;
-    else
-      Coderate = (float) R /(float) 2048;
-
-    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-      p_decParams->BG = 2;
-      if (Coderate < 0.3333) {
+  if (R<1024)
+    Coderate = (float) R /(float) 1024;
+  else
+    Coderate = (float) R /(float) 2048;
+  
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+    p_decParams->BG = 2;
+    if (Coderate < 0.3333) {
       p_decParams->R = 15;
       kc = 52;
     }
@@ -398,8 +397,15 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       kc = 27;
     }
   }
+  
+  ulsch->stats.round_trials[harq_process->round]++;
 
   if (harq_process->round == 0) {
+
+    ulsch->stats.current_Qm = Qm;
+    ulsch->stats.current_RI = n_layers;
+    ulsch->stats.total_bytes_tx += harq_process->TBS;
+    
     // This is a new packet, so compute quantities regarding segmentation
     if (A > 3824)
       harq_process->B = A+24;
@@ -597,6 +603,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
           LOG_I(PHY, "Segment %d CRC OK\n",r);
   #endif
         ret = no_iteration_ldpc;
+	ulsch->stats.total_bytes_rx += harq_process->TBS;
       } else {
   #ifdef PRINT_CRC_CHECK
         //if (prnt_crc_cnt%10 == 0)

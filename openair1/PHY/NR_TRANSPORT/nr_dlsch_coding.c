@@ -355,7 +355,7 @@ int nr_dlsch_encoding(unsigned char *a,
   A = rel15->TBSize[0]<<3;
 
   if (dlsch->harq_processes[harq_pid]->round == 0){
-    dlsch->stats.total_bytes += rel15->TBSize[0];
+    dlsch->stats.total_bytes_tx += rel15->TBSize[0];
     dlsch->stats.current_RI   = rel15->nrOfLayers;
     dlsch->stats.current_Qm   = rel15->qamModOrder[0];
   }

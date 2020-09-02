@@ -340,7 +340,7 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_DLSCH_MAX;i++)
     if (gNB->dlsch[i][0]->harq_mask > 0)
-      LOG_I(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e)/%d(%1.1e)/%d(%1.1e)/%d/%d/%d/%d/%d, current_Qm %d, current_RI %d, total_bytes %d\n",
+      LOG_I(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e)/%d(%1.1e)/%d(%1.1e)/%d/%d/%d/%d/%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
 	    gNB->dlsch[i][0]->rnti,
 	    gNB->dlsch[i][0]->stats.round_trials[0],
 	    (double)gNB->dlsch[i][0]->stats.round_trials[1]/gNB->dlsch[i][0]->stats.round_trials[0],
@@ -355,7 +355,7 @@ void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 	    gNB->dlsch[i][0]->stats.round_trials[7],
 	    gNB->dlsch[i][0]->stats.current_Qm,
 	    gNB->dlsch[i][0]->stats.current_RI,
-	    gNB->dlsch[i][0]->stats.total_bytes);
+	    gNB->dlsch[i][0]->stats.total_bytes_tx);
 
 }
 

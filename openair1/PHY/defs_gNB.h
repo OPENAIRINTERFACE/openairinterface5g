@@ -126,7 +126,8 @@ typedef struct {
 
 typedef struct {
   int round_trials[8];
-  int total_bytes;
+  int total_bytes_tx;
+  int total_bytes_rx;
   int current_Qm;
   int current_RI;
 } NR_gNB_SCH_STATS_t;
