@@ -28,8 +28,9 @@
  010000
  030000
  040000
- 050000
  020000
+ 000001
+ 050000
  070001
  070000
 
@@ -37,7 +38,7 @@
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010000">
-		<class>COTS_UE_Airplane_ON</class>
+		<class>COTS_UE_Airplane</class>
 		<desc>Toggle COTS Airplane mode ON</desc>
 		<cots_id>oppo</cots_id>
 		<cots_run_mode>ON</cots_run_mode>
@@ -63,10 +64,16 @@
 	</testCase>
 
 	<testCase id="020000">
-		<class>COTS_UE_Airplane_OFF</class>
+		<class>COTS_UE_Airplane</class>
 		<desc>Toggle COTS Airplane mode OFF</desc>
 		<cots_id>oppo</cots_id>
 		<cots_run_mode>OFF</cots_run_mode>
+	</testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>100</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="050000">
