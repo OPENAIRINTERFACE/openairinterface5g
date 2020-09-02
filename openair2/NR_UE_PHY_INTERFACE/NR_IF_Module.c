@@ -109,9 +109,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  // clean previous FAPI messages
-  mac->tx_request.number_of_pdus = 0;
-
   if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
 
@@ -150,7 +147,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     //hook up pointers
     mac->scheduled_response.dl_config = dl_config;
     mac->scheduled_response.ul_config = ul_config;
-    mac->scheduled_response.tx_request = &mac->tx_request;
     mac->scheduled_response.module_id = dl_info->module_id;
     mac->scheduled_response.CC_id = dl_info->cc_id;
     mac->scheduled_response.frame = dl_info->frame;

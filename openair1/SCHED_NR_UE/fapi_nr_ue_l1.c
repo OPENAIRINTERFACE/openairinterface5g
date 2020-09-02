@@ -159,13 +159,15 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
             ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 
-            if (scheduled_response->tx_request){
+            if (scheduled_response->tx_request){ // TBR todo here it should loop through the number of tx pdus
               fapi_nr_tx_request_body_t *tx_req_body = scheduled_response->tx_request->tx_request_body;
 
               //harq_process_ul_ue->a = (unsigned char*)calloc(TBS/8, sizeof(unsigned char));
               memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
 
               harq_process_ul_ue->status = ACTIVE;
+
+              scheduled_response->tx_request->number_of_pdus = 0;
             }
 
           } else {
