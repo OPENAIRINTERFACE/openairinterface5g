@@ -830,13 +830,13 @@ int main(int argc, char **argv)
         if (input_fd == NULL ) {
           for (i=0; i<slot_length; i++) {
             for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-              /* Add phase noise if enabled */
-              if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-                phase_noise(ts, &((int16_t*)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)],
-                            &((int16_t*)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1]);
-              }
               ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)])/sqrt(scale)   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
               ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((double)(((int16_t *)&UE->common_vars.txdata[ap][slot_offset])[(i<<1)+1])/sqrt(scale) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+              /* Add phase noise if enabled */
+              if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+                phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(i<<1)],
+                            &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(i<<1)+1]);
+              }
             }
           }
         }
