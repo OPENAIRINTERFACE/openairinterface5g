@@ -57,6 +57,17 @@ class CotsUe:
 		mySSH.close()
 		return status
 
+	#simply check if the device id exists in the dictionary
+	#returns true if it exists, false otherwise
+	def Check_Exists(self,target_id):
+		#load cots commands dictionary
+		with open(self.__cots_cde_dict_file,'r') as file:
+			cots_ue_ctl = yaml.load(file,Loader=yaml.FullLoader)
+		#check if ue id is in the dictionary
+		if target_id in cots_ue_ctl:
+			return True
+		else:
+			return False
 
 	def Set_Airplane(self, target_id, target_state_str):
 		#load cots commands dictionary

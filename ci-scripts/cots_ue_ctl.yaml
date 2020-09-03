@@ -1,20 +1,20 @@
-oppo:
+9283sdfas7: #oppo
   - adb shell input keyevent KEYCODE_POWER
   - adb shell input swipe 300 700 300 0
   - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
   - adb shell input keyevent 20
   - adb shell input tap 968 324
-s10:
+002: #s10
   - adb shell input keyevent KEYCODE_POWER
   - adb shell input swipe 200 900 200 300
   - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
   - adb shell input tap 968 324
-s20:
+003: #s20
   - adb shell input keyevent KEYCODE_POWER
   - adb shell input swipe 200 900 200 300
   - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS
   - adb shell input tap 968 324
-xperia:
+004: #xperia
   - tbd
   - tbd
   - tbd

@@ -285,21 +285,29 @@ class OaiCiTest():
 				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 				SSH.close()
 				return
-			# enable data service
-			SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
 
-			# The following commands are deprecated since we no longer work on Android 7+
-			# SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell settings put global airplane_mode_on 1', '\$', 10)
-			# SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true', '\$', 60)
-			# a dedicated script has to be installed inside the UE
-			# airplane mode on means call /data/local/tmp/off
-			if device_id == '84B7N16418004022':
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
-			else:
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
-			#airplane mode off means call /data/local/tmp/on
-			logging.debug('\u001B[1mUE (' + device_id + ') Initialize Completed\u001B[0m')
-			SSH.close()
+			#RH quick add-on to integrate cots control defined by yaml
+			#if device_id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
+			#otherwise we use the legacy procedure
+			if COTS_UE.Check_Exists(device_id):
+				#switch device to Airplane mode ON (ie Radio OFF) 
+				COTS_UE.Set_Airplane(device_id, 'ON')
+			else
+				# enable data service
+				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
+
+				# The following commands are deprecated since we no longer work on Android 7+
+				# SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell settings put global airplane_mode_on 1', '\$', 10)
+				# SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true', '\$', 60)
+				# a dedicated script has to be installed inside the UE
+				# airplane mode on means call /data/local/tmp/off
+				if device_id == '84B7N16418004022':
+					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
+				else:
+					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
+				#airplane mode off means call /data/local/tmp/on
+				logging.debug('\u001B[1mUE (' + device_id + ') Initialize Completed\u001B[0m')
+				SSH.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -790,7 +798,13 @@ class OaiCiTest():
 		try:
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if self.ADBCentralized:
-				if device_id == '84B7N16418004022':
+				#RH quick add on to integrate cots control defined by yaml
+				#if device Id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
+				#otherwise we use the legacy procedure 
+				if COTS_UE.Check_Exists(device_id):
+					#switch device to Airplane mode OFF (ie Radio ON)
+					COTS_UE.Set_Airplane(device_id, 'OFF')
+				elif device_id == '84B7N16418004022':
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
 				else:
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
@@ -827,7 +841,13 @@ class OaiCiTest():
 				if count == 15 or count == 30:
 					logging.debug('\u001B[1;30;43m Retry UE (' + device_id + ') Flight Mode Off \u001B[0m')
 					if self.ADBCentralized:
-						if device_id == '84B7N16418004022':
+					#RH quick add on to intgrate cots control defined by yaml
+					#if device id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
+					#otherwise we use the legacy procedure
+						if COTS_UE.Check_Exists(device_id):
+							#switch device to Airplane mode ON  (ie Radio OFF)
+							COTS_UE.Set_Airplane(device_id, 'ON')
+						elif device_id == '84B7N16418004022':
 							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
 						else:
 							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
@@ -835,7 +855,13 @@ class OaiCiTest():
 						SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 					time.sleep(0.5)
 					if self.ADBCentralized:
-						if device_id == '84B7N16418004022':
+					#RH quick add on to integrate cots control defined by yaml
+					#if device id exists in yaml dictionary, we execute the new procedre defined incots_ue class
+					#otherwise we use the legacy procedure
+						if COTS_UE.Check_Exists(device_id):
+							#switch device to Airplane mode OFF (ie Radio ON)
+							COTS_UE.Set_Airplane(device_id, 'OFF')
+						elif device_id == '84B7N16418004022':
 							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
 						else:
 							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
@@ -918,7 +944,13 @@ class OaiCiTest():
 		try:
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if self.ADBCentralized:
-				if device_id == '84B7N16418004022':
+				#RH quick add on to  integrate cots control defined by yaml
+				#if device id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
+				#otherwise we use the legacy procedure
+				if COTS_UE.Check_Exists(device_id):
+					#switch device to Airplane mode ON (ie Radio OFF)
+					COTS_UE.Set_Airplane(device_id,'ON')
+				elif device_id == '84B7N16418004022':
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
 				else:
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
@@ -2697,7 +2729,13 @@ class OaiCiTest():
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# back in airplane mode on (ie radio off)
 			if self.ADBCentralized:
-				if device_id == '84B7N16418004022':
+				#RH quick add on to intgrate cots control defined by yaml
+				#if device Id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
+				#otherwise we use the legacy procedure 
+				if COTS_UE.Check_Exists(device_id):
+					#switch device to Airplane mode ON (ie Radio OFF)
+					COTS_UE.Set_Airplane(device_id, 'ON')
+				elif device_id == '84B7N16418004022':
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
 				else:
 					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)

@@ -28,14 +28,36 @@
  010000
  030000
  040000
- 020000
+ 010001
  000001
  050000
  070001
  070000
-
+ 010002
+ 010003
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="010000">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="010003">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="010001">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="010002">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
 
 	<testCase id="010000">
 		<class>COTS_UE_Airplane</class>
