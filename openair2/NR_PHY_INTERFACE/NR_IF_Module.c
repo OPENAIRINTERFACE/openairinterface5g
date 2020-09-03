@@ -83,6 +83,8 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
   int max_harq_rounds = 4; // TODO define macro
   int num_ucis = UL_info->uci_ind.num_ucis;
   nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
+  uint16_t rnti;
+  int UE_id;
 
   for (int i = 0; i < num_ucis; i++) {
     switch (uci_list[i].pdu_type) {
@@ -93,6 +95,9 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
           // handle harq
           int harq_idx_s = 0;
+	  rnti = uci_pdu->rnti;
+	  UE_id = find_nr_UE_id(0,rnti);
+	  sched_ctrl+=UE_id;
           // tpc (power control)
           sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
           // iterate over received harq bits
@@ -137,11 +142,13 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
   UL_info->uci_ind.num_ucis = 0;
 }
 
-void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, nfapi_nr_crc_t crc_pdu) {
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu) {
 
   int max_harq_rounds = 4; // TODO define macro
   uint8_t hrq_id = crc_pdu.harq_id;
   NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
+  int UE_id = find_nr_UE_id(0,crc_pdu.rnti);
+  stats+=UE_id;
   if (cur_harq->state==ACTIVE_SCHED) {
     if (!crc_pdu.tb_crc_status) {
       cur_harq->ndi ^= 1;
@@ -162,9 +169,8 @@ void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, nfapi_nr_c
       cur_harq->ndi ^= 1;
       cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
       cur_harq->round = 0;
-#ifdef UL_HARQ_PRINT
-      printf("[HARQ HANDLER] Ulharq id %d crc failed in all round, freeing it for scheduler\n",hrq_id);
-#endif
+      LOG_D(MAC,"[HARQ HANDLER] RNTI %x: Ulharq id %d crc failed in all round, freeing it for scheduler\n",crc_pdu.rnti,hrq_id);
+      stats->ulsch_errors++;
     }
     return;
   } else
@@ -172,7 +178,7 @@ void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, nfapi_nr_c
 }
 
 
-void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
+void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats) {
   if(nfapi_mode == 1) {
     if (UL_info->crc_ind.number_crcs>0) {
       //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
@@ -199,7 +205,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl) {
               UL_info->rx_ind.pdu_list[i].rnti) {
             LOG_D(PHY, "UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].crc_indication_rel8.crc_flag:%d\n", j, UL_info->crc_ind.crc_list[j].tb_crc_status);
 
-            handle_nr_ul_harq(UL_info->slot, sched_ctrl, UL_info->crc_ind.crc_list[j]);
+            handle_nr_ul_harq(UL_info->slot, sched_ctrl, stats, UL_info->crc_ind.crc_list[j]);
 
             if (UL_info->crc_ind.crc_list[j].tb_crc_status == 1) { // CRC error indication
               LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->slot);
@@ -253,7 +259,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
@@ -274,10 +279,11 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear DL/UL info for new scheduling round
   clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
   handle_nr_rach(UL_info);
+  
   handle_nr_uci(UL_info,&mac->UE_list.UE_sched_ctrl[0],mac->pucch_target_snrx10);
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0]);
+  handle_nr_ulsch(UL_info, &mac->UE_list.UE_sched_ctrl[0],&mac->UE_list.mac_stats[0]);
 
   if (nfapi_mode != 1) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {

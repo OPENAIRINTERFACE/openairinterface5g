@@ -76,6 +76,8 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   //NR_CellGroupConfig_t *config = UE_list->secondaryCellGroup[UE_id];
   ue_sched_ctl = &(UE_list->UE_sched_ctrl[UE_id]);
 
+  NR_mac_stats_t *mac_stats = &(UE_list->mac_stats[UE_id]);
+
   // 1) Compute MAC CE and related subheaders
 
   // DRX command subheader (MAC CE size 0)
@@ -112,6 +114,8 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) ce_ptr, mac_ce_size);
     ce_ptr += mac_ce_size;
     mac_pdu_ptr += (unsigned char) mac_ce_size;
+
+
   }
 
   // Contention resolution fixed subheader and MAC CE
@@ -324,6 +328,8 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
     memcpy((void *) mac_pdu_ptr, (void *) dlsch_buffer_ptr, sdu_lengths[i]);
     dlsch_buffer_ptr += sdu_lengths[i];
     mac_pdu_ptr += sdu_lengths[i];
+
+    mac_stats->lc_bytes_tx[sdu_lcids[i]] += sdu_lengths[i];
   }
 
   // 4) Compute final offset for padding
