@@ -199,6 +199,10 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+
+  //apply the OFDM symbol rotation here
+  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[0][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
@@ -446,7 +450,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   uint8_t symbol;
   unsigned char aa;
 
-  for(symbol = 0; symbol < NR_SYMBOLS_PER_SLOT; symbol++) {
+  for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
     // nr_slot_fep_ul(gNB, symbol, proc->slot_rx, 0, 0);
 
     for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
@@ -458,6 +462,15 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
                      0,
                      0);
     }
+  }
+
+  for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+    apply_nr_rotation_ul(&gNB->frame_parms,
+			 gNB->common_vars.rxdataF[aa],
+			 slot_rx,
+			 0,
+			 gNB->frame_parms.Ncp==EXTENDED?12:14,
+			 gNB->frame_parms.ofdm_symbol_size);
   }
 
 }

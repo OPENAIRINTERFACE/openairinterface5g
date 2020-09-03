@@ -803,38 +803,11 @@ int main(int argc, char **argv)
                          12,
                          frame_parms->nb_prefix_samples,
                          CYCLIC_PREFIX);
-          } else {/*
+          } else {
             nr_normal_prefix_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
                                  &txdata[aa][tx_offset],
                                  14,
                                  frame_parms);
-		  */
-	    PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
-			 (int*)&txdata[aa][tx_offset],
-			 frame_parms->ofdm_symbol_size,
-			 1,
-			 frame_parms->nb_prefix_samples0,
-			 CYCLIC_PREFIX);
-	    	    
-	    apply_nr_rotation(frame_parms,
-			      (int16_t*)&txdata[aa][tx_offset],
-			      slot,
-			      0,
-			      1,
-			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
-	    PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset+frame_parms->ofdm_symbol_size],
-			 (int*)&txdata[aa][tx_offset+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
-			 frame_parms->ofdm_symbol_size,
-			 13,
-			 frame_parms->nb_prefix_samples,
-			 CYCLIC_PREFIX);
-	    apply_nr_rotation(frame_parms,
-			      (int16_t*)&txdata[aa][tx_offset+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
-			      slot,
-			      1,
-			      13,
-			      frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
-	    
           }
         }
        

@@ -490,14 +490,28 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   // clear DC carrier from OFDM symbols
   rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
 
-  int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-  uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
-  ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
-  LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",Ns,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
-  rotate_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
-		    (int16_t*)&rot2,
-		    (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
-		    frame_parms->ofdm_symbol_size,
-		    15);
   return(0);
+}
+
+void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
+			  int32_t *rxdataF,
+			  int slot,
+			  int first_symbol,
+			  int nsymb,
+			  int length) {
+
+			  
+  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+
+  for (int symbol=0;symbol<nsymb;symbol++) {
+    
+    uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation)[symbol+symb_offset];
+    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+    rotate_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+		      (int16_t*)&rot2,
+		      (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+		      length,
+		      15);
+  }
 }
