@@ -79,6 +79,8 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+  NR_BWP_UplinkDedicated_t *ibwp = mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+  NR_PUSCH_Config_t *pusch_Config = ibwp->pusch_Config->choice.setup;
   int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[Msg3_t_alloc]->startSymbolAndLength;
 
   #ifdef DEBUG_MSG3
@@ -132,25 +134,32 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   // TC-RNTI
   pusch_config_pdu->rnti = mac->t_crnti;
 
-  //// Completing PUSCH PDU
-  pusch_config_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
-  pusch_config_pdu->mcs_table = 0;
-  pusch_config_pdu->nrOfLayers = 0;
-  pusch_config_pdu->dmrs_config_type = 0;
-  // no data in dmrs symbols as in 6.2.2 in 38.214
-  pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; // TBR
-  pusch_config_pdu->cyclic_prefix = 0;
-  pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
-  pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  // DM-RS configuration according to 6.2.2 UE DM-RS transmission procedure in 38.214
+  pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
+  pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+  pusch_config_pdu->dmrs_ports = 1;
+  // DMRS sequence initialization [TS 38.211, sec 6.4.1.1.1].
+  // Should match what is sent in DCI 0_1, otherwise set to 0.
+  pusch_config_pdu->scid = 0;
+
+  // Transform precoding according to 6.1.3 UE procedure for applying transform precoding on PUSCH in 38.214
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
     pusch_config_pdu->transform_precoding = 1;
   else
     pusch_config_pdu->transform_precoding = 0;
+
+  // Resource allocation in frequency domain according to 6.1.2.2 in TS 38.214
+  pusch_config_pdu->resource_alloc = pusch_Config->resourceAllocation;
+
+  //// Completing PUSCH PDU
+  pusch_config_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
+  pusch_config_pdu->mcs_table = 0;
+  pusch_config_pdu->nrOfLayers = 1;
+  pusch_config_pdu->cyclic_prefix = 0;
+  pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
   pusch_config_pdu->data_scrambling_id = *scc->physCellId;
-  pusch_config_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
-  pusch_config_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
-  pusch_config_pdu->dmrs_ports = 1;  // 6.2.2 in 38.214 only port 0 to be used
-  pusch_config_pdu->resource_alloc = 1; //type 1
+  pusch_config_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
   pusch_config_pdu->subcarrier_spacing = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
   pusch_config_pdu->vrb_to_prb_mapping = 0;
   pusch_config_pdu->uplink_frequency_shift_7p5khz = 0;
