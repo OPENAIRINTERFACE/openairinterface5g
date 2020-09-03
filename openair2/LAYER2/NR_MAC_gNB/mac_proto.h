@@ -340,4 +340,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, nfapi_nr_crc_t crc_pdu);
+
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int target_snrx10);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
