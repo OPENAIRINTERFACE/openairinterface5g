@@ -1615,92 +1615,156 @@ uint16_t Table_61412[28][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120}
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
     case 0:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51311[Imcs][0]);
     break;
 
     case 1:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_51312[Imcs][0]);
     break;
 
     case 2:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51313[Imcs][0]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
+      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
   }
 }
 
 uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
     case 0:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51311[Imcs][1]);
     break;
 
     case 1:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_51312[Imcs][1]);
     break;
 
     case 2:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51313[Imcs][1]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
+      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,2])\n", table_idx);
   }
 }
 
 uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
     case 0:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51311[Imcs][0]);
     break;
 
     case 1:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_51312[Imcs][0]);
     break;
 
     case 2:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51313[Imcs][0]);
     break;
 
     case 3:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 3 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_61411[Imcs][0]);
     break;
 
     case 4:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 4 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_61412[Imcs][0]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,2])\n", table_idx);
+      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
   }
 }
 
 uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
     case 0:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 0 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51311[Imcs][1]);
     break;
 
     case 1:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 1 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_51312[Imcs][1]);
     break;
 
     case 2:
+      if (Imcs > 28) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 2 (expected range [0,28])\n", Imcs);
+        Imcs = 28;
+      }
       return (Table_51313[Imcs][1]);
     break;
 
     case 3:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 3 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_61411[Imcs][1]);
     break;
 
     case 4:
+      if (Imcs > 27) {
+        LOG_E(MAC, "Invalid MCS index %d for MCS table 4 (expected range [0,27])\n", Imcs);
+        Imcs = 27;
+      }
       return (Table_61412[Imcs][1]);
     break;
 
     default:
-      AssertFatal(0, "Invalid MCS table index %d (expected in range [1,2])\n", table_idx);
+      AssertFatal(0, "Invalid MCS table index %d (expected in range [0,4])\n", table_idx);
   }
 }
 
