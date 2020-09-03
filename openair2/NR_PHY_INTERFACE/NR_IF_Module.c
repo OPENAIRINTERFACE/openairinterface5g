@@ -168,7 +168,7 @@ void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, nfapi_nr_c
     }
     return;
   } else
-    AssertFatal(1,"Incorrect UL HARQ process %d or invalid state %d\n",hrq_id,cur_harq->state);
+    AssertFatal(0,"Incorrect UL HARQ process %d or invalid state %d\n",hrq_id,cur_harq->state);
 }
 
 
