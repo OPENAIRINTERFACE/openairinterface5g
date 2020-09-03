@@ -802,7 +802,7 @@ void vnf_handle_vendor_extension(void* pRecvMsg, int recvMsgLen, nfapi_vnf_confi
 		if(msg)
 		{
 			if(nfapi_p5_message_unpack(pRecvMsg, recvMsgLen, msg, msg_size, &config->codec_config) >= 0)
-			{
+			{ṭ
 				if(config->vendor_ext)
 					config->vendor_ext(config, p5_idx, msg);
 			}

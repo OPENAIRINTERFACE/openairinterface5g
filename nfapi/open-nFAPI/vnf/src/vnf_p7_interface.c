@@ -158,13 +158,13 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 	struct timespec sf_duration;
 	sf_duration.tv_sec = 0;
-	sf_duration.tv_nsec = 1e6; // We want 1ms pause
+	sf_duration.tv_nsec = 0.5e6; // We want 1ms pause //We want 0.5 ms pause for NR 
 
 	struct timespec sf_start;
 	clock_gettime(CLOCK_MONOTONIC, &sf_start);
-	long millisecond = sf_start.tv_nsec / 1e6;
+	long millisecond = sf_start.tv_nsec / 1e6; //Check if we have to change
 	sf_start = timespec_add(sf_start, sf_duration);
-	NFAPI_TRACE(NFAPI_TRACE_INFO, "next subframe will start at %d.%d\n", sf_start.tv_sec, sf_start.tv_nsec);
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "next slot will start at %d.%d\n", sf_start.tv_sec, sf_start.tv_nsec);
 
 	while(vnf_p7->terminate == 0)
 	{
@@ -361,14 +361,28 @@ if (selectRetval==-1 && errno == 22)
 
 			while(curr != 0)
 			{
-				curr->sfn_sf = increment_sfn_sf(curr->sfn_sf);
+			
+				if (curr->slot == 19)
+				{
+					curr->sfn++;
+				}
+				else if(curr->slot > 19)
+				{
+					//error
+				}
+				else
+				{
+				curr->slot++;
+				}
+				//curr->sfn_sf = increment_sfn_sf(curr->sfn_sf);
 				
 				vnf_sync(vnf_p7, curr);
 
 				curr = curr->next;
 			}
 
-			send_mac_subframe_indications(vnf_p7);
+			//send_mac_subframe_indications(vnf_p7);
+			send_mac_slot_indications(vnf_p7);
 
 		}
 		else if(selectRetval > 0)

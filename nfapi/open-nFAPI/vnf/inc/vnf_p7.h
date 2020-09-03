@@ -87,6 +87,8 @@ typedef struct nfapi_vnf_p7_connection_info {
 	int32_t previous_sf_offset_filtered;
 
 	int sfn_sf;
+	int sfn;
+	int slot;
 
 	int socket;
 	struct sockaddr_in local_addr;
@@ -121,6 +123,7 @@ uint32_t vnf_get_current_time_hr(void);
 uint16_t increment_sfn_sf(uint16_t sfn_sf);
 int vnf_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info);
 int send_mac_subframe_indications(vnf_p7_t* config);
+int send_mac_slot_indications(vnf_p7_t* config);
 int vnf_p7_read_dispatch_message(vnf_p7_t* vnf_p7 );
 
 void vnf_p7_connection_info_list_add(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* node);

@@ -2510,19 +2510,33 @@ typedef struct {
 typedef struct {
 	nfapi_p7_message_header_t header;
 	uint32_t last_sfn_sf;
+	uint32_t last_sfn;
+	uint32_t last_slot;
 	uint32_t time_since_last_timing_info;
 	uint32_t dl_config_jitter;
 	uint32_t tx_request_jitter;
 	uint32_t ul_config_jitter;
 	uint32_t hi_dci0_jitter;
+	uint32_t dl_tti_jitter;
+	uint32_t tx_data_request_jitter;
+	uint32_t ul_tti_jitter;
+	uint32_t ul_dci_jitter;
 	int32_t dl_config_latest_delay;
 	int32_t tx_request_latest_delay;
 	int32_t ul_config_latest_delay;
 	int32_t hi_dci0_latest_delay;
+	int32_t dl_tti_latest_delay;
+	int32_t tx_data_request_latest_delay;
+	int32_t ul_tti_latest_delay;
+	int32_t ul_dci_latest_delay;
 	int32_t dl_config_earliest_arrival;
 	int32_t tx_request_earliest_arrival;
 	int32_t ul_config_earliest_arrival;
 	int32_t hi_dci0_earliest_arrival;
+	int32_t dl_tti_earliest_arrival;
+	int32_t tx_data_request_earliest_arrival;
+	int32_t ul_tti_earliest_arrival;
+	int32_t ul_dci_earliest_arrival;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_timing_info_t;
 

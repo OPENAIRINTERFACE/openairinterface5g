@@ -3335,7 +3335,25 @@ static uint8_t pack_ul_node_sync(void *msg, uint8_t **ppWritePackedMsg, uint8_t 
 static uint8_t pack_timing_info(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
 	nfapi_timing_info_t *pNfapiMsg = (nfapi_timing_info_t*)msg;
+    
+	return (push32(pNfapiMsg->last_sfn, ppWritePackedMsg, end) &&
+			push32(pNfapiMsg->last_slot, ppWritePackedMsg, end) &&
+			push32(pNfapiMsg->time_since_last_timing_info, ppWritePackedMsg, end) &&
+			push32(pNfapiMsg->dl_tti_jitter, ppWritePackedMsg, end) &&
+			push32(pNfapiMsg->tx_data_request_jitter, ppWritePackedMsg, end) &&
+			push32(pNfapiMsg->ul_tti_jitter, ppWritePackedMsg, end) &&
+			push32(pNfapiMsg->ul_dci_jitter, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->dl_tti_latest_delay, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->tx_data_request_latest_delay, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->ul_tti_latest_delay, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->ul_dci_latest_delay, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->dl_tti_earliest_arrival, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->tx_data_request_earliest_arrival, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->ul_tti_earliest_arrival, ppWritePackedMsg, end) &&
+			pushs32(pNfapiMsg->ul_dci_earliest_arrival, ppWritePackedMsg, end) &&
+			pack_p7_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
 
+#if LTE
 	return (push32(pNfapiMsg->last_sfn_sf, ppWritePackedMsg, end) &&
 			push32(pNfapiMsg->time_since_last_timing_info, ppWritePackedMsg, end) &&
 			push32(pNfapiMsg->dl_config_jitter, ppWritePackedMsg, end) &&
@@ -3351,6 +3369,7 @@ static uint8_t pack_timing_info(void *msg, uint8_t **ppWritePackedMsg, uint8_t *
 			pushs32(pNfapiMsg->ul_config_earliest_arrival, ppWritePackedMsg, end) &&
 			pushs32(pNfapiMsg->hi_dci0_earliest_arrival, ppWritePackedMsg, end) &&
 			pack_p7_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
+#endif
 }
 
 
@@ -3368,7 +3387,13 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "P7 Pack supplied pointers are null\n");
 		return -1;
 	}
-
+/*
+	printf("\n P7 MESSAGE SENT: \n");
+	for(int i=0; i< packedBufLen; i++){
+		printf("%d", *(uint8_t *)(pMessageBuf + i));
+	}
+	printf("\n");
+*/
 	// process the header
 	if(!(push16(pMessageHeader->phy_id, &pWritePackedMessage, end) &&
 		 push16(pMessageHeader->message_id, &pWritePackedMessage, end) &&
@@ -7475,7 +7500,25 @@ static uint8_t unpack_timing_info(uint8_t **ppReadPackedMsg, uint8_t *end, void 
 	unpack_p7_tlv_t unpack_fns[] =
 	{
 	};
+    
+	return (pull32(ppReadPackedMsg, &pNfapiMsg->last_sfn, end) &&
+			pull32(ppReadPackedMsg, &pNfapiMsg->last_slot, end) &&
+			pull32(ppReadPackedMsg, &pNfapiMsg->time_since_last_timing_info, end) &&
+			pull32(ppReadPackedMsg, &pNfapiMsg->dl_tti_jitter, end) &&
+			pull32(ppReadPackedMsg, &pNfapiMsg->tx_data_request_jitter, end) &&
+			pull32(ppReadPackedMsg, &pNfapiMsg->ul_tti_jitter, end) &&
+			pull32(ppReadPackedMsg, &pNfapiMsg->ul_dci_jitter, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->dl_tti_latest_delay, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->tx_data_request_latest_delay, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->ul_tti_latest_delay, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->ul_dci_latest_delay, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->dl_tti_earliest_arrival, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->tx_data_request_earliest_arrival, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->ul_tti_earliest_arrival, end) &&
+			pulls32(ppReadPackedMsg, &pNfapiMsg->ul_dci_earliest_arrival, end) &&
+			unpack_p7_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
 
+#if LTE
 	return (pull32(ppReadPackedMsg, &pNfapiMsg->last_sfn_sf, end) &&
 			pull32(ppReadPackedMsg, &pNfapiMsg->time_since_last_timing_info, end) &&
 			pull32(ppReadPackedMsg, &pNfapiMsg->dl_config_jitter, end) &&
@@ -7491,6 +7534,7 @@ static uint8_t unpack_timing_info(uint8_t **ppReadPackedMsg, uint8_t *end, void 
 			pulls32(ppReadPackedMsg, &pNfapiMsg->ul_config_earliest_arrival, end) &&
 			pulls32(ppReadPackedMsg, &pNfapiMsg->hi_dci0_earliest_arrival, end) &&
 			unpack_p7_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
+#endif
 }
 
 
@@ -7666,6 +7710,14 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "P7 unpack supplied message buffer is too small %d, %d\n", messageBufLen, unpackedBufLen);
 		return -1;
 	}
+  
+    uint8_t *ptr = pMessageBuf;
+	printf("\n Read P7 message unpack: ");
+	while(ptr < end){
+		printf(" %d ", *ptr);
+		ptr++;
+	}
+	printf("\n");
 
 	// clean the supplied buffer for - tag value blanking
 	(void)memset(pUnpackedBuf, 0, unpackedBufLen);

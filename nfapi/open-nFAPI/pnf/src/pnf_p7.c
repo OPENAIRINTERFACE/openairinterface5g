@@ -648,6 +648,7 @@ void pnf_pack_and_send_timing_info(pnf_p7_t* pnf_p7)
 	timing_info.header.message_id = NFAPI_TIMING_INFO;
 	timing_info.header.phy_id = pnf_p7->_public.phy_id;
 
+	#if 0
 	timing_info.last_sfn_sf = pnf_p7->sfn_sf;
 	timing_info.time_since_last_timing_info = pnf_p7->timing_info_ms_counter;
 
@@ -665,6 +666,26 @@ void pnf_pack_and_send_timing_info(pnf_p7_t* pnf_p7)
 	timing_info.tx_request_earliest_arrival = 0;
 	timing_info.ul_config_earliest_arrival = 0;
 	timing_info.hi_dci0_earliest_arrival = 0;
+	#endif
+
+	timing_info.last_sfn = pnf_p7->sfn;
+	timing_info.last_slot = pnf_p7->slot;
+	timing_info.time_since_last_timing_info = pnf_p7->timing_info_ms_counter;
+
+	timing_info.dl_tti_jitter = pnf_p7->dl_tti_jitter;
+	timing_info.tx_data_request_jitter = pnf_p7->tx_data_jitter;
+	timing_info.ul_tti_jitter = pnf_p7->ul_tti_jitter;
+	timing_info.ul_dci_jitter = pnf_p7->ul_dci_jitter;
+
+	timing_info.dl_tti_latest_delay = 0;
+	timing_info.tx_data_request_latest_delay = 0;
+	timing_info.ul_tti_latest_delay = 0;
+	timing_info.ul_dci_latest_delay = 0;
+
+	timing_info.dl_tti_earliest_arrival = 0;
+	timing_info.tx_data_request_earliest_arrival = 0;
+	timing_info.ul_tti_earliest_arrival = 0;
+	timing_info.ul_dci_earliest_arrival = 0;
 
 
 	pnf_p7_pack_and_send_p7_message(pnf_p7, &(timing_info.header), sizeof(timing_info));

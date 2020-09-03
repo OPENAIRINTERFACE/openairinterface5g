@@ -76,6 +76,13 @@ sudo <oai_codebase>/cmake_targets/ran_build/build/nr-softmodem -O <oai_codebase>
 * Sync with the latest stable commit in `develop` branch [`LOW-PRIORITY`]
     * check deviations
 
+### Task-D
+* Write `send_mac_slot_indications()` which calls the `slot_indication` in `vnf_p7.c` file [x]
+* Change the `vnf_handle_timing_info()` function that calls p7 message unpack fn and initializes the sfn and slot in `vnf_p7.c` file [x]
+* Change pack and unpack functions `pack_timing_info()` and `unpack_timing_info()` [x]
+* Change `nfapi_timing_info_t` structure to support P7 in NR [x]
+* Change packing functions to support NR P7 procedures. [x]
+
 
 ### Testing
 * Test by running VNF on a terminal and PNF in rfsim parallely

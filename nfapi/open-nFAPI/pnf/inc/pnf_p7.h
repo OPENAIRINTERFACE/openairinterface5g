@@ -132,6 +132,12 @@ typedef struct {
 	uint32_t ul_config_jitter;
 	uint32_t hi_dci0_jitter;
 	uint32_t tx_jitter;
+    
+	//P7 NR
+	uint32_t dl_tti_jitter;
+	uint32_t ul_tti_jitter;
+	uint32_t ul_dci_jitter;
+	uint32_t tx_data_jitter;
 
 	uint32_t tick;
 	pnf_p7_stats_t stats;
