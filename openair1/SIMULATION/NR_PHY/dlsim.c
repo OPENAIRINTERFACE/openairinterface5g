@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
   //unsigned char frame_type = 0;
 
-  int frame=0,slot=1;
+  int frame=1,slot=1;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -716,6 +716,8 @@ int main(int argc, char **argv)
     reset_meas(&gNB->tparity);
     reset_meas(&gNB->toutput);  
 
+    clear_pdsch_stats(gNB);
+
     n_errors = 0;
     effRate = 0;
     //n_errors2 = 0;
@@ -956,6 +958,7 @@ int main(int argc, char **argv)
            (float) n_errors / (float) n_trials);
     printf("*****************************************\n");
     printf("\n");
+    dump_pdsch_stats(gNB);
     printf("SNR %f : n_errors (negative CRC) = %d/%d, Avg round %.2f, Channel BER %e, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR, n_errors, n_trials,roundStats[snrRun],(double)errors_scrambling/available_bits/n_trials,effRate,effRate/TBS*100,TBS);
     printf("\n");
 

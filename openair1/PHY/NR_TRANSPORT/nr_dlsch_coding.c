@@ -354,6 +354,13 @@ int nr_dlsch_encoding(unsigned char *a,
 
   A = rel15->TBSize[0]<<3;
 
+  if (dlsch->harq_processes[harq_pid]->round == 0){
+    dlsch->stats.total_bytes_tx += rel15->TBSize[0];
+    dlsch->stats.current_RI   = rel15->nrOfLayers;
+    dlsch->stats.current_Qm   = rel15->qamModOrder[0];
+  }
+  dlsch->stats.round_trials[dlsch->harq_processes[harq_pid]->round]++;
+
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);

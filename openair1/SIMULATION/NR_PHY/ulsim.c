@@ -55,7 +55,6 @@
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
@@ -119,7 +118,7 @@ int main(int argc, char **argv)
   double sigma, sigma_dB;
   double snr_step = .2;
   uint8_t snr1set = 0;
-  int slot = 8, frame = 0;
+  int slot = 8, frame = 1;
   FILE *output_fd = NULL;
   double *s_re[2]= {s_re0,s_re1};
   double *s_im[2]= {s_im0,s_im1};
@@ -460,11 +459,12 @@ int main(int argc, char **argv)
 				DS_TDL,
                                 0, 0, 0);
 
-  UE2gNB->max_Doppler = maxDoppler;
   if (UE2gNB == NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
+
+  UE2gNB->max_Doppler = maxDoppler;
 
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
@@ -690,7 +690,6 @@ int main(int argc, char **argv)
 				   slot_offset,
 				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
 				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
-    fclose(input_fd);
   }
   
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -702,11 +701,13 @@ int main(int argc, char **argv)
     int round_trials[4]={0,0,0,0};
     uint32_t errors_scrambling[4] = {0,0,0,0};
 
+    clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
     uint8_t round = 0;
 
     crc_status = 1;
     errors_decoding    = 0;
+    memset((void*)roundStats,0,50*sizeof(roundStats[0]));
     while (round<max_rounds && crc_status) {
       round_trials[round]++;
       ulsch_ue[0]->harq_processes[harq_pid]->round = round;
@@ -1028,7 +1029,8 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0], round_trials[0],n_errors[1], round_trials[1],n_errors[2], round_trials[2],n_errors[3], round_trials[3], n_false_positive, n_trials, errors_scrambling[0],available_bits*n_trials,errors_scrambling[1],available_bits*n_trials,errors_scrambling[2],available_bits*n_trials,errors_scrambling[3],available_bits*n_trials);
     printf("\n");
-    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", SNR,
+    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", 
+	   SNR,
 	   (double)n_errors[0]/round_trials[0],
 	   (double)n_errors[1]/round_trials[0],
 	   (double)n_errors[2]/round_trials[0],
@@ -1038,6 +1040,9 @@ int main(int argc, char **argv)
 	   (double)errors_scrambling[2]/available_bits/round_trials[0],
 	   (double)errors_scrambling[3]/available_bits/round_trials[0],
 	   roundStats[snrRun],effRate,effRate/TBS*100,TBS);
+
+    dump_pusch_stats(gNB);
+
     printf("*****************************************\n");
     printf("\n");
     
