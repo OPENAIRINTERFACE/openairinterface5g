@@ -437,7 +437,10 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_UE_list_t                               *UE_list = &mac->UE_list;
   int UE_id = 0;
 
-  AssertFatal(ra->state != RA_IDLE, "RA is not active for RA %X\n", ra->rnti);
+  if (ra->state != RA_IDLE) {
+    LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
+    return;
+  }
 
   LOG_D(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 

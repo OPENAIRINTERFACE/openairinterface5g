@@ -434,6 +434,11 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   int (*trx_write_init)(openair0_device *device);
+  /* \brief Get internal parameter
+   * \param id parameter to get
+   * \return a pointer to the parameter
+   */
+  void *(*get_internal_parameter)(char *id);
 };
 
 /* type of device init function, implemented in shared lib */
