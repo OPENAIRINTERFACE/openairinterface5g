@@ -781,7 +781,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t data_existing = 0;
       uint16_t TBS_bytes;
       uint32_t TBS;
-      int i;
+      int i, N_PRB_oh;
 
       module_id_t mod_id    = ul_info->module_id;
       uint32_t gNB_index    = ul_info->gNB_index;
@@ -824,11 +824,16 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, rb_size);
       uint16_t number_dmrs_symbols = 0;
       uint16_t ul_dmrs_symb_pos   = l_prime_mask << start_symbol_index;
-      int N_PRB_oh = 0; // TBR higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
       //------------------------------------------------------------------------------//
       // PTRS ports configuration
       // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
       ptrs_ports_list.ptrs_re_offset = 0;
+
+      // Num PRB Overhead from PUSCH-ServingCellConfig
+      if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead == NULL)
+        N_PRB_oh = 0;
+      else
+        N_PRB_oh = *mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
 
       ul_config->slot = ul_info->slot_tx;
       ul_config->number_pdus = 1;

@@ -76,7 +76,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   int f_alloc, mask, StartSymbolIndex, NrOfSymbols;
   uint8_t nb_dmrs_re_per_rb;
   uint16_t number_dmrs_symbols = 0;
-  int N_PRB_oh = 0; // TBR higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
+  int N_PRB_oh;
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
   nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
@@ -88,6 +88,12 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   #ifdef DEBUG_MSG3
   printf("[DEBUG_MSG3] Configuring 1 Msg3 PDU of %d UL pdus \n", ul_config->number_pdus);
   #endif
+
+  // Num PRB Overhead from PUSCH-ServingCellConfig
+  if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead == NULL)
+    N_PRB_oh = 0;
+  else
+    N_PRB_oh = *mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
 
   // active BWP start
   int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
