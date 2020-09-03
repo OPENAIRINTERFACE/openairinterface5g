@@ -604,7 +604,7 @@ int main(int argc, char **argv){
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  prach_start = subframe*frame_parms->samples_per_subframe-UE->N_TA_offset;
+  prach_start = subframe*frame_parms->samples_per_subframe;
 
   #ifdef NR_PRACH_DEBUG
   LOG_M("txsig0.m", "txs0", &txdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
