@@ -315,7 +315,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int16_t xr[24]  __attribute__((aligned(32)));
   //int16_t xrt[24] __attribute__((aligned(32)));
   int32_t xrtmag=0;
-  int maxpos=0;
+  uint8_t maxpos=0;
   int n2=0;
   uint8_t index=0;
   memset((void*)xr,0,24*sizeof(int16_t));
@@ -339,7 +339,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
     }
   }
-  int32_t corr_re,corr_im,temp;
+  int32_t corr_re,corr_im,temp,no_corr=0;
+  int32_t av_corr=0;
   int seq_index;
 
   for(i=0;i<nr_sequences;i++){
@@ -359,63 +360,81 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_NR_PUCCH_RX
     printf("PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re,corr_im,10*log10(corr_re*corr_re + corr_im*corr_im));
 #endif
-    if ((temp=corr_re*corr_re + corr_im*corr_im)>xrtmag) {
+    temp=corr_re*corr_re + corr_im*corr_im;
+    av_corr+=temp;
+    if (temp>xrtmag) {
       xrtmag=temp;
       maxpos=i;
     }
   }
+  if(nr_sequences>1)
+    no_corr=(av_corr-xrtmag)/(nr_sequences-1);
+  av_corr/=nr_sequences;
 
   uint8_t xrtmag_dB = dB_fixed(xrtmag);
-  
-//#ifdef DEBUG_NR_PUCCH_RX
+ 
+#ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
-//#endif
+#endif
 
   index=maxpos;
 #endif
+
+  // estimate CQI for MAC (from antenna port 0 only)
+  int SNRtimes10 = dB_fixed_times10(signal_energy(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)) - (10*gNB->measurements.n0_power_tot_dB);
+  int cqi;
+  if (SNRtimes10 < -640) cqi=0;
+  else if (SNRtimes10 >  635) cqi=255;
+  else cqi=(640+SNRtimes10)/5;
+
+  bool no_conf=false;
+  if (nr_sequences>1) {
+    if ((xrtmag_dB<(11+dB_fixed(no_corr))) || (dB_fixed(av_corr)<(13+gNB->measurements.n0_power_tot_dB))) //TODO  these are temporary threshold based on measurments with the phone
+      no_conf=true;
+  }
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
-  uci_pdu->ul_cqi = 0xff; // currently not valid
+  uci_pdu->ul_cqi = cqi; // currently not valid
   uci_pdu->timing_advance = 0xffff; // currently not valid
-  uci_pdu->rssi = 0xffff; // currently not valid
-
+  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    if (xrtmag_dB>(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres)) {
+    uci_pdu->sr->sr_confidence_level = (xrtmag_dB<(13+gNB->measurements.n0_power_tot_dB)) ? 1 : 0;
+    if (xrtmag_dB>(gNB->measurements.n0_power_tot_dB)) {
       uci_pdu->sr->sr_indication = 1;
-      uci_pdu->sr->sr_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
     } else {
       uci_pdu->sr->sr_indication = 0;
-      uci_pdu->sr->sr_confidence_level = (gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres)-xrtmag_dB;
     }
   }
   else if (pucch_pdu->bit_len_harq==1) {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
     uci_pdu->harq->num_harq = 1;
-    uci_pdu->harq->harq_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
+    LOG_I(PHY, "HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
+          uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
-      uci_pdu->sr->sr_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+      uci_pdu->sr->sr_confidence_level = (no_conf) ? 1 : 0;
     }
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
     uci_pdu->harq->num_harq = 2;
-    uci_pdu->harq->harq_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+    uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
-
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-
+    LOG_I(PHY, "HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
+          uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
-      uci_pdu->sr->sr_confidence_level = xrtmag_dB-(gNB->measurements.n0_subband_power_tot_dB[pucch_pdu->prb_start]+gNB->pucch0_thres);
+      uci_pdu->sr->sr_confidence_level = (no_conf) ? 1 : 0;
     }
   }
 }
@@ -1047,6 +1066,8 @@ void init_pucch2_luts() {
     bit = (i&0x80) > 0 ? 0 : 1;
    *lut_num_i = _mm_insert_epi16(*lut_num_i,bit,7);
    *lut_den_i = _mm_insert_epi16(*lut_den_i,1-bit,7);
+
+#ifdef DEBUG_NR_PUCCH_RX
    printf("i %d, lut_num (%d,%d,%d,%d,%d,%d,%d,%d)\n",i,
 	  ((int16_t *)lut_num_i)[0],
 	  ((int16_t *)lut_num_i)[1],
@@ -1056,6 +1077,7 @@ void init_pucch2_luts() {
 	  ((int16_t *)lut_num_i)[5],
 	  ((int16_t *)lut_num_i)[6],
 	  ((int16_t *)lut_num_i)[7]);
+#endif
   }
 }
 

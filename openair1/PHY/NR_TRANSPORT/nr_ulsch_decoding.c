@@ -67,7 +67,7 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr,uint8_t N_RB_UL)
   if (ulsch) {
     if (N_RB_UL != 273) {
       a_segments = a_segments*N_RB_UL;
-      a_segments = a_segments/273;
+      a_segments = a_segments/273 +1;
     }  
 
 
@@ -119,11 +119,10 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
 
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }
 
   uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
-
   ulsch = (NR_gNB_ULSCH_t *)malloc16(sizeof(NR_gNB_ULSCH_t));
 
   if (ulsch) {
@@ -209,8 +208,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
     ulsch->Mlimit = 0;
     ulsch->max_ldpc_iterations = 0;
     ulsch->last_iteration_cnt = 0;
-    ulsch->num_active_cba_groups = 0;
-    for (i=0;i<NUM_MAX_CBA_GROUP;i++) ulsch->cba_rnti[i] = 0;
     for (i=0;i<NR_MAX_SLOTS_PER_FRAME;i++) ulsch->harq_process_id[i] = 0;
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
@@ -226,7 +223,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         ulsch->harq_processes[i]->rar_alloc=0;
         ulsch->harq_processes[i]->status=NR_SCH_IDLE;
         ulsch->harq_processes[i]->subframe_scheduling_flag=0;
-        ulsch->harq_processes[i]->subframe_cba_scheduling_flag=0;
         ulsch->harq_processes[i]->phich_active=0;
         ulsch->harq_processes[i]->phich_ACK=0;
         ulsch->harq_processes[i]->previous_first_rb=0;
@@ -360,28 +356,21 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
+  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
 
   A   = (harq_process->TBS)<<3;
   ret = ulsch->max_ldpc_iterations + 1;
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
-  if (harq_process->round == 0) {
-
-    // This is a new packet, so compute quantities regarding segmentation
-    if (A > 3824)
-      harq_process->B = A+24;
-    else
-      harq_process->B = A+16;
-
-    if (R<1024)
-      Coderate = (float) R /(float) 1024;
-    else
-      Coderate = (float) R /(float) 2048;
-
-    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-      p_decParams->BG = 2;
-      if (Coderate < 0.3333) {
+  if (R<1024)
+    Coderate = (float) R /(float) 1024;
+  else
+    Coderate = (float) R /(float) 2048;
+  
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+    p_decParams->BG = 2;
+    if (Coderate < 0.3333) {
       p_decParams->R = 15;
       kc = 52;
     }
@@ -408,6 +397,20 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       kc = 27;
     }
   }
+  
+  ulsch->stats.round_trials[harq_process->round]++;
+
+  if (harq_process->round == 0) {
+
+    ulsch->stats.current_Qm = Qm;
+    ulsch->stats.current_RI = n_layers;
+    ulsch->stats.total_bytes_tx += harq_process->TBS;
+    
+    // This is a new packet, so compute quantities regarding segmentation
+    if (A > 3824)
+      harq_process->B = A+24;
+    else
+      harq_process->B = A+16;
 
   // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
   nr_segmentation(NULL,
@@ -438,7 +441,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }
 
   if (harq_process->C > a_segments) {
@@ -479,8 +482,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     stop_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
 
-#ifdef DEBUG_ULSCH_DECODING
-    LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
+    LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rvidx %d, round %d)...\n",
           harq_pid,r, G,
           Kr*3,
           harq_process->TBS,
@@ -489,7 +491,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
           n_layers,
           pusch_pdu->pusch_data.rv_index,
           harq_process->round);
-#endif
     //////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -573,7 +574,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
       AssertFatal(kc!=255,"");
       j+=(harq_process->F>>3);
-      //      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++) {
       for (i=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++) {
         pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
@@ -603,6 +603,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
           LOG_I(PHY, "Segment %d CRC OK\n",r);
   #endif
         ret = no_iteration_ldpc;
+	ulsch->stats.total_bytes_rx += harq_process->TBS;
       } else {
   #ifdef PRINT_CRC_CHECK
         //if (prnt_crc_cnt%10 == 0)
@@ -683,7 +684,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
     // harq_process->handled  = 0;
-    ulsch->harq_mask  &= ~(1 << harq_pid);
+    ulsch->harq_mask &= ~(1 << harq_pid);
     // harq_process->harq_ack.ack = 1;
     // harq_process->harq_ack.harq_id = harq_pid;
     // harq_process->harq_ack.send_harq_status = 1;
@@ -714,8 +715,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
 #ifdef DEBUG_ULSCH_DECODING
-  LOG_I(PHY, "Decoder output (payload) at SFN/SF: %d/%d \n", frame, nr_tti_rx);
-  for (i = 0; i < harq_process->TBS ; i++) {
+  LOG_I(PHY, "Decoder output (payload) at SFN/SF: %d/%d TBS: %d\n", frame, nr_tti_rx,harq_process->TBS);
+  for (i = 0; i < harq_process->TBS; i++) {
 	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
 	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
 	  printf("%02x ",harq_process->b[i]);

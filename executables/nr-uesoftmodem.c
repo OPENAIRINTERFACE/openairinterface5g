@@ -38,7 +38,7 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_common_vars.h"
@@ -584,7 +584,7 @@ void init_pdcp(void) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
-  nr_ip_over_LTE_DRB_preconfiguration();*/
+  nr_DRB_preconfiguration();*/
   pdcp_module_init(pdcp_initmask);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
@@ -685,10 +685,12 @@ int main( int argc, char **argv ) {
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
-    
+
     // Overwrite DL frequency (for FR2 testing)
     if (downlink_frequency[0][0]!=0)
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 

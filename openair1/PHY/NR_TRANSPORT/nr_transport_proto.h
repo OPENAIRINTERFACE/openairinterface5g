@@ -157,6 +157,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
                                  unsigned char symbol,
                                  uint8_t is_dmrs_symbol,
+				 uint8_t is_ptrs_symbol,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
                                  NR_DL_FRAME_PARMS *frame_parms);
 
@@ -341,6 +342,11 @@ void nr_decode_pucch1(int32_t **rxdataF,
                       uint16_t startingPRB_intraSlotHopping,
                       uint8_t timeDomainOCC,
                       uint8_t nr_bit);
+
+void nr_decode_pucch2(PHY_VARS_gNB *gNB,
+                      int slot,
+                      nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
+                      nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int slot,

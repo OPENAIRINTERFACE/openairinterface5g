@@ -75,7 +75,7 @@ boolean_t pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
                         const sdu_size_t   sdu_buffer_sizeP,
                         mem_block_t *const sdu_buffer_pP) {return(false);}
 
-void nr_ip_over_LTE_DRB_preconfiguration(void){}
+void nr_DRB_preconfiguration(void){}
 void pdcp_layer_init(void) {}
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
@@ -92,6 +92,7 @@ int main(int argc, char **argv){
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
   uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
   uint64_t SSB_positions = 0x01, absoluteFrequencyPointA = 640000;
+  double DS_TDL = .03;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
@@ -557,6 +558,7 @@ int main(int argc, char **argv){
                                 channel_model,
                                 fs,
                                 bw,
+                                DS_TDL,
                                 0.0,
                                 delay,
                                 0);

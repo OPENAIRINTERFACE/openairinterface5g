@@ -230,19 +230,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       return(-1);
     }
   } else if (dlsch0_harq) {
-    if (dlsch0_harq->status == ACTIVE)
+    if (dlsch0_harq->status == ACTIVE) {
       codeword_TB0 = dlsch0_harq->codeword;
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
       #ifdef DEBUG_HARQ
         printf("[DEMOD] I am assuming only TB0 is active\n");
       #endif
+    } else {
+      LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
+      return (-1);
+    }
   } else {
-    LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
-    return (-1);
-  }
-
-  if (dlsch0_harq == NULL) {
     LOG_E(PHY, "Done\n");
     return -1;
   }
@@ -347,9 +346,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        dlsch0_harq->pmi_alloc,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
                                        symbol,
-									   pilots,
-									   start_rb,
-									   nb_rb_pdsch,
+                                       pilots,
+                                       start_rb,
+                                       nb_rb_pdsch,
                                        nr_tti_rx,
                                        ue->high_speed_flag,
                                        frame_parms,
@@ -362,9 +361,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        dlsch0_harq->pmi_alloc,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
                                        symbol,
-									   pilots,
-									   start_rb,
-									   nb_rb_pdsch,
+                                       pilots,
+                                       start_rb,
+                                       nb_rb_pdsch,
                                        nr_tti_rx,
                                        ue->high_speed_flag,
                                        frame_parms,
@@ -524,7 +523,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                (aatx>1) ? pdsch_vars[eNB_id]->rho : NULL,
                                frame_parms,
                                symbol,
-							   pilots,
+                               pilots,
                                first_symbol_flag,
                                dlsch0_harq->Qm,
                                nb_rb,
@@ -1155,7 +1154,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
                                 int **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 unsigned char symbol,
-								uint8_t pilots,
+				uint8_t pilots,
                                 uint8_t first_symbol_flag,
                                 unsigned char mod_order,
                                 unsigned short nb_rb,

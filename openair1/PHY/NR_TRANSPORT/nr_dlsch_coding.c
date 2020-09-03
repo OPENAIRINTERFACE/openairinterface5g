@@ -61,7 +61,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
 
     if (N_RB != 273) {
       a_segments = a_segments*N_RB;
-      a_segments = a_segments/273;
+      a_segments = a_segments/273 +1;
     }  
 
 
@@ -150,7 +150,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   if (N_RB != 273) {
     a_segments = a_segments*N_RB;
-    a_segments = (a_segments + 272) / 273;
+    a_segments = a_segments/273 +1;
   }  
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
@@ -326,7 +326,8 @@ int nr_dlsch_encoding(unsigned char *a,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->pdsch_pdu.pdsch_pdu_rel15;
   uint16_t nb_rb = rel15->rbSize;
   uint8_t nb_symb_sch = rel15->NrOfSymbols;
-  uint32_t A, Z, Kb, F=0;
+  uint32_t A, Kb, F=0;
+  static uint32_t Z = 0;
   uint32_t *Zc = &Z;
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t Kr=0,r;
@@ -347,9 +348,18 @@ int nr_dlsch_encoding(unsigned char *a,
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
+  dlsch->harq_processes[harq_pid]->round = nr_rv_round_map[rel15->rvIndex[0]];
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
+
+  if (dlsch->harq_processes[harq_pid]->round == 0){
+    dlsch->stats.total_bytes_tx += rel15->TBSize[0];
+    dlsch->stats.current_RI   = rel15->nrOfLayers;
+    dlsch->stats.current_Qm   = rel15->qamModOrder[0];
+  }
+  dlsch->stats.round_trials[dlsch->harq_processes[harq_pid]->round]++;
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 

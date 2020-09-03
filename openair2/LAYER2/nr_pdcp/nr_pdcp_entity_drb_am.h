@@ -19,36 +19,20 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __NR_UL_ESTIMATION_DEFS__H__
-#define __NR_UL_ESTIMATION_DEFS__H__
+#ifndef _NR_PDCP_ENTITY_DRB_AM_H_
+#define _NR_PDCP_ENTITY_DRB_AM_H_
 
+#include "nr_pdcp_entity.h"
 
-#include "PHY/defs_gNB.h"
-/** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
- * @{
- */
+typedef struct {
+  nr_pdcp_entity_t common;
+  int rb_id;
+} nr_pdcp_entity_drb_am_t;
 
+void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *entity, char *buffer, int size);
+void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *entity, char *buffer, int size,
+                                    int sdu_id);
+void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *entity, char *key);
+void nr_pdcp_entity_drb_am_delete(nr_pdcp_entity_t *entity);
 
-/*!
-\brief This function performs channel estimation including frequency interpolation
-\param gNB Pointer to gNB PHY variables
-\param Ns slot number (0..19)
-\param p
-\param symbol symbol within slot
-\param bwp_start_subcarrier, first allocated subcarrier
-\param nb_rb_pusch, number of allocated RBs for this UE
-*/
-
-int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
-                                unsigned char Ns,
-                                unsigned short p,
-                                unsigned char symbol,
-                                int ul_id,
-                                unsigned short bwp_start_subcarrier,
-                                nfapi_nr_pusch_pdu_t *pusch_pdu);
-
-void gNB_I0_measurements(PHY_VARS_gNB *gNB);
-
-int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
-
-#endif
+#endif /* _NR_PDCP_ENTITY_DRB_AM_H_ */

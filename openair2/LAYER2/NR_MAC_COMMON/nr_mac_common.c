@@ -1151,8 +1151,9 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
     if (NCS == 0) return nb_preambles;
     else {
       r = L_ra/NCS;
-      printf(" found_sequences %u\n", (nb_preambles/r));
-      return (nb_preambles/r);
+      found_sequences = (nb_preambles/r) + (nb_preambles%r!=0); //ceil(nb_preambles/r) 
+      printf(" found_sequences %u\n", found_sequences);
+      return (found_sequences);
     }
   }
   else{
