@@ -300,5 +300,10 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
                                                       uint16_t riv);
+
+void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
+                     uint8_t *nb_dmrs_re_per_rb,
+                     uint16_t *number_dmrs_symbols);
+
 #endif
 /** @}*/

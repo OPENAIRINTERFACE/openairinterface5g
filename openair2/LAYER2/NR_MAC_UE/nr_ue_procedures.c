@@ -822,34 +822,56 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint16_t pdu_bit_map        = PUSCH_PDU_BITMAP_PUSCH_DATA;
       uint8_t  ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, mcs_index, mcs_table);
       uint8_t  ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, rb_size);
-      uint8_t  no_data_in_dmrs    = 1;
       uint16_t number_dmrs_symbols = 0;
       uint16_t ul_dmrs_symb_pos   = l_prime_mask << start_symbol_index;
+      int N_PRB_oh = 0; // TBR higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
       //------------------------------------------------------------------------------//
       // PTRS ports configuration
       // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
       ptrs_ports_list.ptrs_re_offset = 0;
 
+      ul_config->slot = ul_info->slot_tx;
+      ul_config->number_pdus = 1;
+      ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+      ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
+      ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
+      ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
+      ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
+      ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
+      ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = ul_dmrs_symb_pos;
+      ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
+      ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
+      ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
+      ul_config->ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
+      ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
+      ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
+      ul_config->ul_config_list[0].pusch_config_pdu.target_code_rate = nr_get_code_rate_ul(mcs_index, mcs_table);
+      ul_config->ul_config_list[0].pusch_config_pdu.qam_mod_order = nr_get_Qm_ul(mcs_index, mcs_table);
 
-        for (i = start_symbol_index; i < start_symbol_index + nr_of_symbols; i++) {
-          if((ul_dmrs_symb_pos >> i) & 0x01)
-            number_dmrs_symbols += 1;
-        }
+      if (1 << ptrs_time_density >= nr_of_symbols) {
+        ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+      }
 
-        if(no_data_in_dmrs)
-          nb_dmrs_re_per_rb = 12;
-        else
-          nb_dmrs_re_per_rb = ((dmrs_config_type == pusch_dmrs_type1) ? 6:4);
+      get_num_re_dmrs(&ul_config->ul_config_list[0].pusch_config_pdu,
+                      &nb_dmrs_re_per_rb,
+                      &number_dmrs_symbols);
 
-        TBS = nr_compute_tbs(nr_get_Qm_ul(mcs_index, 0),
-                             nr_get_code_rate_ul(mcs_index, 0),
-                             rb_size,
-                             nr_of_symbols,
-                             nb_dmrs_re_per_rb*number_dmrs_symbols,
-                             0,
-                             0,
-                             nrOfLayers);
-        TBS_bytes = TBS/8;
+      TBS = nr_compute_tbs(ul_config->ul_config_list[0].pusch_config_pdu.qam_mod_order,
+                           ul_config->ul_config_list[0].pusch_config_pdu.target_code_rate,
+                           rb_size,
+                           nr_of_symbols,
+                           nb_dmrs_re_per_rb*number_dmrs_symbols,
+                           N_PRB_oh,
+                           0,
+                           nrOfLayers);
+      TBS_bytes = TBS/8;
+      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS_bytes;
 
         if (IS_SOFTMODEM_NOS1){
           // Getting IP traffic to be transmitted
@@ -906,31 +928,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       tx_req_body.pdu_index = 0;
       tx_req_body.pdu = ulsch_input_buffer;
       tx_req.tx_request_body = &tx_req_body;
-
-      ul_config->slot = ul_info->slot_tx;
-      ul_config->ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-      ul_config->ul_config_list[0].pusch_config_pdu.rnti = rnti;
-      ul_config->ul_config_list[0].pusch_config_pdu.rb_size = rb_size;
-      ul_config->ul_config_list[0].pusch_config_pdu.rb_start = rb_start;
-      ul_config->ul_config_list[0].pusch_config_pdu.nr_of_symbols = nr_of_symbols;
-      ul_config->ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol_index;
-      ul_config->ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = ul_dmrs_symb_pos;
-      ul_config->ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
-      ul_config->ul_config_list[0].pusch_config_pdu.mcs_index = mcs_index;
-      ul_config->ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-      ul_config->ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = 0;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
-      ul_config->ul_config_list[0].pusch_config_pdu.nrOfLayers = nrOfLayers;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_process_id;
-      ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-      ul_config->ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
-
-      if (1 << ptrs_time_density >= nr_of_symbols) {
-        ul_config->ul_config_list[0].pusch_config_pdu.pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
-      }
 
       fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, rx_frame, rx_slot);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){

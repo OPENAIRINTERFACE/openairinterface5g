@@ -101,13 +101,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
   uint32_t available_bits;
-  uint8_t mod_order, cwd_index, l;
+  uint8_t cwd_index, l;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **tx_layers;
   int32_t **txdataF;
   int8_t Wf[2], Wt[2], l_prime[2], delta;
-  uint16_t rnti, code_rate, nb_rb;
-  uint8_t nb_dmrs_re_per_rb,mcs, Nl;
+  uint8_t nb_dmrs_re_per_rb;
   int ap, i;
   int sample_offsetF, N_RE_prime;
 
@@ -124,48 +123,30 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[thread_id][gNB_id][cwd_index];
     NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+    nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
 
-    int      start_symbol      = harq_process_ul_ue->pusch_pdu.start_symbol_index;
-    uint16_t ul_dmrs_symb_pos  = harq_process_ul_ue->pusch_pdu.ul_dmrs_symb_pos;
-    uint8_t  number_of_symbols = harq_process_ul_ue->pusch_pdu.nr_of_symbols;
-    uint8_t  dmrs_type         = harq_process_ul_ue->pusch_pdu.dmrs_config_type;
-    uint16_t start_rb          = harq_process_ul_ue->pusch_pdu.rb_start;
-    uint16_t start_sc          = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
+    int start_symbol          = pusch_pdu->start_symbol_index;
+    uint16_t ul_dmrs_symb_pos = pusch_pdu->ul_dmrs_symb_pos;
+    uint8_t number_of_symbols = pusch_pdu->nr_of_symbols;
+    uint8_t dmrs_type         = pusch_pdu->dmrs_config_type;
+    uint16_t start_rb         = pusch_pdu->rb_start;
+    uint16_t nb_rb            = pusch_pdu->rb_size;
+    uint8_t Nl                = pusch_pdu->nrOfLayers;
+    uint8_t mod_order         = pusch_pdu->qam_mod_order;
+    uint16_t rnti             = pusch_pdu->rnti;
+    uint8_t cdm_grps_no_data  = pusch_pdu->num_dmrs_cdm_grps_no_data;
+    uint16_t start_sc         = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
 
     if (start_sc >= frame_parms->ofdm_symbol_size)
       start_sc -= frame_parms->ofdm_symbol_size;
 
-    for (i = start_symbol; i < start_symbol + number_of_symbols; i++) {
-
-      if((ul_dmrs_symb_pos >> i) & 0x01)
-        number_dmrs_symbols += 1;
-
-    }
-
-    rnti                  = harq_process_ul_ue->pusch_pdu.rnti;
     ulsch_ue->Nid_cell    = Nid_cell;
 
-    nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data;
+    get_num_re_dmrs(pusch_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
 
+    // TbD num_of_mod_symbols is set but never used
     N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
-
-    nb_rb = harq_process_ul_ue->pusch_pdu.rb_size;
-
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*num_of_codewords;
-
-    mcs            = harq_process_ul_ue->pusch_pdu.mcs_index;
-    Nl             = harq_process_ul_ue->pusch_pdu.nrOfLayers;
-    mod_order      = nr_get_Qm_ul(mcs, 0);
-    code_rate      = nr_get_code_rate_ul(mcs, 0);
-
-    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size = nr_compute_tbs(mod_order,
-                                             code_rate,
-                                             nb_rb,
-                                             number_of_symbols,
-                                             nb_dmrs_re_per_rb*number_dmrs_symbols,
-                                             0,
-                                             0,
-                                             harq_process_ul_ue->pusch_pdu.nrOfLayers);
 
     /////////////////////////ULSCH coding/////////////////////////
     ///////////
@@ -224,10 +205,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t L_ptrs, K_ptrs = 0;
   uint16_t beta_ptrs = 1; // temp value until power control is implemented
 
-  if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+  if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-    K_ptrs = (harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density)?4:2;
-    L_ptrs = 1<<harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
+    K_ptrs = (pusch_pdu->pusch_ptrs.ptrs_freq_density)?4:2;
+    L_ptrs = 1<<pusch_pdu->pusch_ptrs.ptrs_time_density;
 
     ulsch_ue->ptrs_symbols = 0;
 
@@ -312,7 +293,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if ((ul_dmrs_symb_pos >> l) & 0x01) {
         is_dmrs_sym = 1;
 
-        if (harq_process_ul_ue->pusch_pdu.transform_precoding == 1){ // if transform precoding is disabled
+        if (pusch_pdu->transform_precoding == 1){ // if transform precoding is disabled
           if (dmrs_type == pusch_dmrs_type1)
             dmrs_idx = start_rb*6;
           else
@@ -323,7 +304,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
-      } else if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+      } else if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
         if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols)) {
           is_ptrs_sym = 1;
@@ -348,7 +329,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                          dmrs_type,
                                          K_ptrs,
                                          nb_rb,
-                                         harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
+                                         pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
                                          start_sc,
                                          frame_parms->ofdm_symbol_size);
         }
@@ -377,7 +358,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
           ptrs_idx++;
 
-        } else if (!is_dmrs_sym || allowed_xlsch_re_in_dmrs_symbol(k,start_sc,harq_process_ul_ue->pusch_pdu.num_dmrs_cdm_grps_no_data,dmrs_type)) {
+        } else if (!is_dmrs_sym || allowed_xlsch_re_in_dmrs_symbol(k, start_sc, cdm_grps_no_data, dmrs_type)) {
 
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) ulsch_ue->y)[m<<1];
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) ulsch_ue->y)[(m<<1) + 1];

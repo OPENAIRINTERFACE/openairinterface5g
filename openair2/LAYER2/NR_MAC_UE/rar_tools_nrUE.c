@@ -74,7 +74,9 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
                         uint8_t freq_hopping){
 
   int f_alloc, mask, StartSymbolIndex, NrOfSymbols;
-  uint16_t TBS_bytes;
+  uint8_t nb_dmrs_re_per_rb;
+  uint16_t number_dmrs_symbols = 0;
+  int N_PRB_oh = 0; // TBR higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
   nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
@@ -138,6 +140,10 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
   pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
   pusch_config_pdu->dmrs_ports = 1;
+  get_num_re_dmrs(pusch_config_pdu,
+                  &nb_dmrs_re_per_rb,
+                  &number_dmrs_symbols);
+
   // DMRS sequence initialization [TS 38.211, sec 6.4.1.1.1].
   // Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_config_pdu->scid = 0;
@@ -168,15 +174,16 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   pusch_config_pdu->pusch_data.harq_process_id = 0;
   pusch_config_pdu->pusch_data.new_data_indicator = 1; // new data
   pusch_config_pdu->pusch_data.num_cb = 0;
-  TBS_bytes = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
-                             pusch_config_pdu->target_code_rate,
-                             pusch_config_pdu->rb_size,
-                             pusch_config_pdu->nr_of_symbols,
-                             12, // TBR compute accordingly - nb dmrs set for no data in dmrs symbol
-                             0, // nb_rb_oh
-                             0, // to verify tb scaling
-                             pusch_config_pdu->nrOfLayers = 1)/8;
-  pusch_config_pdu->pusch_data.tb_size = TBS_bytes;
+
+  // Compute TBS
+  pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
+                                                        pusch_config_pdu->target_code_rate,
+                                                        pusch_config_pdu->rb_size,
+                                                        pusch_config_pdu->nr_of_symbols,
+                                                        nb_dmrs_re_per_rb*number_dmrs_symbols,
+                                                        N_PRB_oh,
+                                                        0, // TBR to verify tb scaling
+                                                        pusch_config_pdu->nrOfLayers);
 
 }
 
