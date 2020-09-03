@@ -2863,7 +2863,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
   memcpy(harq_ack_dest, current_harq_ack, sizeof(nr_harq_status_t));
   }*/
 
-void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
+int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
 
   int nr_tti_rx = proc->nr_tti_rx;
   int m;
@@ -2871,9 +2871,9 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
   int first_symbol_flag=0;
 
   if (!dlsch0)
-    return;
+    return 0;
   if (dlsch0->active == 0)
-    return;
+    return 0;
 
   if (!dlsch1)  {
     int harq_pid = dlsch0->current_harq_pid;
@@ -2918,8 +2918,8 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 #endif
       // process DLSCH received in first slot
       // skip DMRS symbols (will have to check later if PDSCH/DMRS are multiplexed
-      if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) == 0) 
-	nr_rx_pdsch(ue,
+      if (((1<<m)&dlsch0->harq_processes[harq_pid]->dlDmrsSymbPos) == 0) { 
+	if (nr_rx_pdsch(ue,
 		    pdsch,
 		    eNB_id,
 		    eNB_id_i,
@@ -2929,20 +2929,25 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 		    first_symbol_flag,
 		    dual_stream_UE,
 		    i_mod,
-		    dlsch0->current_harq_pid);
+		    dlsch0->current_harq_pid) < 0)
+                      return -1;
+      }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
-	else if (pdsch == PDSCH)    nr_rx_pdsch(ue,
-                                  pdsch,
-                                  eNB_id,
-                                  eNB_id_i,
-                                  proc->frame_rx,
-                                  nr_tti_rx,  // nr_tti_rx,
-                                  m,
-                                  first_symbol_flag,
-                                  dual_stream_UE,
-                                  i_mod,
-                                  dlsch0->current_harq_pid);
+	if      (pdsch == RA_PDSCH) ue->pdsch_vars_ra[eNB_id]->llr_offset[m]=ue->pdsch_vars_ra[eNB_id]->llr_offset[m-1];
+	else if (pdsch == PDSCH) {
+          if (nr_rx_pdsch(ue,
+                    pdsch,
+                    eNB_id,
+                    eNB_id_i,
+                    proc->frame_rx,
+                    nr_tti_rx,  // nr_tti_rx,
+                    m,
+                    first_symbol_flag,
+                    dual_stream_UE,
+                    i_mod,
+                    dlsch0->current_harq_pid) < 0)
+                      return -1;
+        }
 	else AssertFatal(1==0,"not RA_PDSCH or PDSCH\n");
       }
       if (pdsch == PDSCH)  LOG_D(PHY,"Done processing symbol %d : llr_offset %d\n",m,ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]);
@@ -2961,6 +2966,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 	}
     } // CRNTI active
   }
+  return 0;
 }
 
 // WIP fix:
@@ -3978,27 +3984,29 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }
-    AssertFatal(dlsch != NULL, "Unsupported mode\n");
-    uint8_t harq_pid = dlsch->current_harq_pid;
-    NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
-    uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
-    uint16_t start_symb_sch = dlsch0_harq->start_symbol;
-    int symb_dmrs = -1;
 
-    LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-    //to update from pdsch config
+    if (dlsch) {
+      uint8_t harq_pid = dlsch->current_harq_pid;
+      NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
+      uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
+      uint16_t start_symb_sch = dlsch0_harq->start_symbol;
+      int symb_dmrs = -1;
 
-    for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
-    AssertFatal(symb_dmrs>=0,"no dmrs in 0..3\n");
-    LOG_D(PHY,"Initializing dmrs for symb %d DMRS mask %x\n",symb_dmrs,dlsch0_harq->dlDmrsSymbPos);
-    nr_gold_pdsch(ue,symb_dmrs,0, 1);
+      LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+      //to update from pdsch config
+
+      for (int i=0;i<4;i++) if (((1<<i)&dlsch0_harq->dlDmrsSymbPos) > 0) {symb_dmrs=i;break;}
+      AssertFatal(symb_dmrs>=0,"no dmrs in 0..3\n");
+      LOG_D(PHY,"Initializing dmrs for symb %d DMRS mask %x\n",symb_dmrs,dlsch0_harq->dlDmrsSymbPos);
+      nr_gold_pdsch(ue,symb_dmrs,0, 1);
     
-    for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
-      nr_slot_fep(ue,
+      for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
+        nr_slot_fep(ue,
                   m,  //to be updated from higher layer
                   nr_tti_rx,
                   0,
                   0);
+      }
     }
   } else {
     LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: No DCIs found\n", ue->Mod_id, frame_rx, nr_tti_rx);
@@ -4010,9 +4018,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->generic_stat);
 #endif
   // do procedures for C-RNTI
+  int ret_pdsch = 0;
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
-    nr_ue_pdsch_procedures(ue,
+    ret_pdsch = nr_ue_pdsch_procedures(ue,
 			   proc,
 			   eNB_id,
 			   PDSCH,
@@ -4107,7 +4116,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #endif
 
-    nr_ue_dlsch_procedures(ue,
+    if (ret_pdsch >= 0)
+      nr_ue_dlsch_procedures(ue,
 			   proc,
 			   eNB_id,
 			   PDSCH,

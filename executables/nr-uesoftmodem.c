@@ -687,10 +687,10 @@ int main( int argc, char **argv ) {
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
 
     // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0)
+    if (downlink_frequency[0][0]!=0) {
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-
-    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
+      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    }
    
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
