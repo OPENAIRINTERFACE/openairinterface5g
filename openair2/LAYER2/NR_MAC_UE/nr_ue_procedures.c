@@ -3801,9 +3801,8 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
         }
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
-        if (pdu_len < 0) //AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!, mac_pdu_len %d, mac_sdu_len %d, mac_ce_len %d, mac_subheader_len %d\n",
-	  LOG_E(MAC,"nr_ue_process_mac_pdu, residual mac pdu length %d < 0!, mac_pdu_len %d, mac_sdu_len %d, mac_ce_len %d, mac_subheader_len %d\n",
-	    pdu_len,mac_pdu_len,mac_sdu_len,mac_ce_len,mac_sdu_len);
+        if (pdu_len < 0)
+          LOG_E(MAC, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", pdu_len);
     }
 }
 
