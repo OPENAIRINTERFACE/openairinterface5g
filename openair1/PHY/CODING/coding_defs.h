@@ -469,6 +469,9 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int *F,
                      uint8_t BG);
 
+/*!\fn uint32_t nr_compute_tbs
+\brief This function returns the TBS in bits as per 6.1.4.2 of TS 38.214
+*/
 uint32_t nr_compute_tbs(uint16_t Qm,
                         uint16_t R,
 			uint16_t nb_rb,

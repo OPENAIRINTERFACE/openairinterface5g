@@ -1627,8 +1627,7 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           uint8_t eNB_id,
-                           uint8_t do_pdcch_flag,
+                           uint8_t gNB_id,
                            runmode_t mode)
 {
   int frame_rx = proc->frame_rx;
@@ -1679,13 +1678,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
       
       }
-      nr_ue_pbch_procedures(eNB_id,ue,proc,0);
+      nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
       if (ue->no_timing_correction==0) {
         LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
-                           eNB_id,
+                           gNB_id,
                            frame_rx,
                            nr_tti_rx,
                            0,
@@ -1726,19 +1725,19 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
     
     //printf("phy procedure pdcch start measurement l =%d\n",l);
-    //nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx),mode);
+    //nr_ue_measurement_procedures(l,ue,proc,gNB_id,(nr_tti_rx),mode);
       
   }
 
-  dci_cnt = nr_ue_pdcch_procedures(eNB_id, ue, proc);
+  dci_cnt = nr_ue_pdcch_procedures(gNB_id, ue, proc);
 
   if (dci_cnt > 0) {
 
     LOG_D(PHY,"[UE %d] Frame %d, nr_tti_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_tti_rx, dci_cnt);
 
     NR_UE_DLSCH_t *dlsch = NULL;
-    if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1){
-      dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0];
+    if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1){
+      dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0];
     } else if (ue->dlsch_ra[0]->active == 1){
       dlsch = ue->dlsch_ra[0];
     }
@@ -1774,64 +1773,64 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   start_meas(&ue->generic_stat);
 #endif
   // do procedures for C-RNTI
-  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
+  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1) {
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   PDSCH,
-			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
+			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
 			   NULL);
 
     //printf("phy procedure pdsch start measurement\n"); 
-    nr_ue_measurement_procedures(2,ue,proc,eNB_id,nr_tti_rx,mode);
+    nr_ue_measurement_procedures(2,ue,proc,gNB_id,nr_tti_rx,mode);
 
     /*
     write_output("rxF.m","rxF",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],fp->ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates[0][0],fp->ofdm_symbol_size*14,1,1);
-    write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
-    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
-    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
-    write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
+    write_output("rxF_ch.m","rxFch",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->dl_ch_estimates[0][0],fp->ofdm_symbol_size*14,1,1);
+    write_output("rxF_ch_ext.m","rxFche",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->dl_ch_estimates_ext[0][2*50*12],50*12,1,1);
+    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->rxdataF_ext[0][0],50*12*14,1,1);
+    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->rxdataF_comp0[0][0],fp->N_RB_DL*12*14,1,1);
+    write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][gNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
     */
 
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
-  if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
+  if ((ue->dlsch_SI[gNB_id]) && (ue->dlsch_SI[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
                           proc,
-                          eNB_id,
+                          gNB_id,
                           SI_PDSCH,
-                          ue->dlsch_SI[eNB_id],
+                          ue->dlsch_SI[gNB_id],
                           NULL);
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
   // do procedures for SI-RNTI
-  if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
+  if ((ue->dlsch_p[gNB_id]) && (ue->dlsch_p[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
                           proc,
-                          eNB_id,
+                          gNB_id,
                           P_PDSCH,
-                          ue->dlsch_p[eNB_id],
+                          ue->dlsch_p[gNB_id],
                           NULL);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
   // do procedures for RA-RNTI
-  if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
+  if ((ue->dlsch_ra[gNB_id]) && (ue->dlsch_ra[gNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
     nr_ue_pdsch_procedures(ue,
                           proc,
-                          eNB_id,
+                          gNB_id,
                           RA_PDSCH,
-                          ue->dlsch_ra[eNB_id],
+                          ue->dlsch_ra[gNB_id],
                           NULL);
 
     // #if UE_TIMING_TRACE
@@ -1840,11 +1839,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     nr_ue_dlsch_procedures(ue,
                            proc,
-                           eNB_id,
+                           gNB_id,
                            RA_PDSCH,
-                           ue->dlsch_ra[eNB_id],
+                           ue->dlsch_ra[gNB_id],
                            NULL,
-                           &ue->dlsch_ra_errors[eNB_id],
+                           &ue->dlsch_ra_errors[gNB_id],
                            mode);
 
      // #if UE_TIMING_TRACE
@@ -1862,7 +1861,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
     
   // do procedures for C-RNTI
-  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
+  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active == 1) {
 
     LOG_D(PHY, "DLSCH data reception at nr_tti_rx: %d \n \n", nr_tti_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
@@ -1873,11 +1872,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     nr_ue_dlsch_procedures(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   PDSCH,
-			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
-			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][1],
-			   &ue->dlsch_errors[eNB_id],
+			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0],
+			   ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][1],
+			   &ue->dlsch_errors[gNB_id],
 			   mode);
 
 
@@ -1894,7 +1893,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #endif
 
   // deactivate dlsch once dlsch proc is done
-  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
+  ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->active = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
@@ -1905,9 +1904,9 @@ start_meas(&ue->generic_stat);
 
 #if 0
 
-  if(nr_tti_rx==5 &&  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid]->nb_rb > 20){
+  if(nr_tti_rx==5 &&  ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->current_harq_pid]->nb_rb > 20){
        //write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-       //write_output("llr.m","llr",  &ue->pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
+       //write_output("llr.m","llr",  &ue->pdsch_vars[gNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
 
        write_output("rxdataF0_current.m"    , "rxdataF0", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
        //write_output("rxdataF0_previous.m"    , "rxdataF0_prev_sss", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*fp->ofdm_symbol_size,1,1);
@@ -1925,78 +1924,78 @@ start_meas(&ue->generic_stat);
 #endif
 
   // do procedures for SI-RNTI
-  if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
+  if ((ue->dlsch_SI[gNB_id]) && (ue->dlsch_SI[gNB_id]->active == 1)) {
     nr_ue_pdsch_procedures(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   SI_PDSCH,
-			   ue->dlsch_SI[eNB_id],
+			   ue->dlsch_SI[gNB_id],
 			   NULL);
 
     /*ue_dlsch_procedures(ue,
       proc,
-      eNB_id,
+      gNB_id,
       SI_PDSCH,
-      ue->dlsch_SI[eNB_id],
+      ue->dlsch_SI[gNB_id],
       NULL,
-      &ue->dlsch_SI_errors[eNB_id],
+      &ue->dlsch_SI_errors[gNB_id],
       mode,
       abstraction_flag);
-    ue->dlsch_SI[eNB_id]->active = 0;*/
+    ue->dlsch_SI[gNB_id]->active = 0;*/
   }
 
   // do procedures for P-RNTI
-  if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
+  if ((ue->dlsch_p[gNB_id]) && (ue->dlsch_p[gNB_id]->active == 1)) {
     nr_ue_pdsch_procedures(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   P_PDSCH,
-			   ue->dlsch_p[eNB_id],
+			   ue->dlsch_p[gNB_id],
 			   NULL);
 
 
     /*ue_dlsch_procedures(ue,
       proc,
-      eNB_id,
+      gNB_id,
       P_PDSCH,
-      ue->dlsch_p[eNB_id],
+      ue->dlsch_p[gNB_id],
       NULL,
-      &ue->dlsch_p_errors[eNB_id],
+      &ue->dlsch_p_errors[gNB_id],
       mode,
       abstraction_flag);*/
-    ue->dlsch_p[eNB_id]->active = 0;
+    ue->dlsch_p[gNB_id]->active = 0;
   }
   // do procedures for RA-RNTI
-  if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
+  if ((ue->dlsch_ra[gNB_id]) && (ue->dlsch_ra[gNB_id]->active == 1)) {
     nr_ue_pdsch_procedures(ue,
 			   proc,
-			   eNB_id,
+			   gNB_id,
 			   RA_PDSCH,
-			   ue->dlsch_ra[eNB_id],
+			   ue->dlsch_ra[gNB_id],
 			   NULL);
 
     /*ue_dlsch_procedures(ue,
       proc,
-      eNB_id,
+      gNB_id,
       RA_PDSCH,
-      ue->dlsch_ra[eNB_id],
+      ue->dlsch_ra[gNB_id],
       NULL,
-      &ue->dlsch_ra_errors[eNB_id],
+      &ue->dlsch_ra_errors[gNB_id],
       mode,
       abstraction_flag);*/
-    ue->dlsch_ra[eNB_id]->active = 0;
+    ue->dlsch_ra[gNB_id]->active = 0;
   }
 
   // duplicate harq structure
   /*
-  uint8_t          current_harq_pid        = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid;
-  NR_DL_UE_HARQ_t *current_harq_processes = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->harq_processes[current_harq_pid];
-  NR_DL_UE_HARQ_t *harq_processes_dest    = ue->dlsch[next1_thread_id][eNB_id][0]->harq_processes[current_harq_pid];
-  NR_DL_UE_HARQ_t *harq_processes_dest1    = ue->dlsch[next2_thread_id][eNB_id][0]->harq_processes[current_harq_pid];
+  uint8_t          current_harq_pid        = ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->current_harq_pid;
+  NR_DL_UE_HARQ_t *current_harq_processes = ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->harq_processes[current_harq_pid];
+  NR_DL_UE_HARQ_t *harq_processes_dest    = ue->dlsch[next1_thread_id][gNB_id][0]->harq_processes[current_harq_pid];
+  NR_DL_UE_HARQ_t *harq_processes_dest1    = ue->dlsch[next2_thread_id][gNB_id][0]->harq_processes[current_harq_pid];
   */
-  /*nr_harq_status_t *current_harq_ack = &ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->harq_ack[nr_tti_rx];
-  nr_harq_status_t *harq_ack_dest    = &ue->dlsch[next1_thread_id][eNB_id][0]->harq_ack[nr_tti_rx];
-  nr_harq_status_t *harq_ack_dest1    = &ue->dlsch[next2_thread_id][eNB_id][0]->harq_ack[nr_tti_rx];
+  /*nr_harq_status_t *current_harq_ack = &ue->dlsch[ue->current_thread_id[nr_tti_rx]][gNB_id][0]->harq_ack[nr_tti_rx];
+  nr_harq_status_t *harq_ack_dest    = &ue->dlsch[next1_thread_id][gNB_id][0]->harq_ack[nr_tti_rx];
+  nr_harq_status_t *harq_ack_dest1    = &ue->dlsch[next2_thread_id][gNB_id][0]->harq_ack[nr_tti_rx];
 */
 
   //copy_harq_proc_struct(harq_processes_dest, current_harq_processes);
@@ -2007,23 +2006,23 @@ start_meas(&ue->generic_stat);
 
 if (nr_tti_rx==9) {
   if (frame_rx % 10 == 0) {
-    if ((ue->dlsch_received[eNB_id] - ue->dlsch_received_last[eNB_id]) != 0)
-      ue->dlsch_fer[eNB_id] = (100*(ue->dlsch_errors[eNB_id] - ue->dlsch_errors_last[eNB_id]))/(ue->dlsch_received[eNB_id] - ue->dlsch_received_last[eNB_id]);
+    if ((ue->dlsch_received[gNB_id] - ue->dlsch_received_last[gNB_id]) != 0)
+      ue->dlsch_fer[gNB_id] = (100*(ue->dlsch_errors[gNB_id] - ue->dlsch_errors_last[gNB_id]))/(ue->dlsch_received[gNB_id] - ue->dlsch_received_last[gNB_id]);
 
-    ue->dlsch_errors_last[eNB_id] = ue->dlsch_errors[eNB_id];
-    ue->dlsch_received_last[eNB_id] = ue->dlsch_received[eNB_id];
+    ue->dlsch_errors_last[gNB_id] = ue->dlsch_errors[gNB_id];
+    ue->dlsch_received_last[gNB_id] = ue->dlsch_received[gNB_id];
   }
 
 
-  ue->bitrate[eNB_id] = (ue->total_TBS[eNB_id] - ue->total_TBS_last[eNB_id])*100;
-  ue->total_TBS_last[eNB_id] = ue->total_TBS[eNB_id];
+  ue->bitrate[gNB_id] = (ue->total_TBS[gNB_id] - ue->total_TBS_last[gNB_id])*100;
+  ue->total_TBS_last[gNB_id] = ue->total_TBS[gNB_id];
   LOG_D(PHY,"[UE %d] Calculating bitrate Frame %d: total_TBS = %d, total_TBS_last = %d, bitrate %f kbits\n",
-	ue->Mod_id,frame_rx,ue->total_TBS[eNB_id],
-	ue->total_TBS_last[eNB_id],(float) ue->bitrate[eNB_id]/1000.0);
+	ue->Mod_id,frame_rx,ue->total_TBS[gNB_id],
+	ue->total_TBS_last[gNB_id],(float) ue->bitrate[gNB_id]/1000.0);
 
 #if UE_AUTOTEST_TRACE
   if ((frame_rx % 100 == 0)) {
-    LOG_I(PHY,"[UE  %d] AUTOTEST Metric : UE_DLSCH_BITRATE = %5.2f kbps (frame = %d) \n", ue->Mod_id, (float) ue->bitrate[eNB_id]/1000.0, frame_rx);
+    LOG_I(PHY,"[UE  %d] AUTOTEST Metric : UE_DLSCH_BITRATE = %5.2f kbps (frame = %d) \n", ue->Mod_id, (float) ue->bitrate[gNB_id]/1000.0, frame_rx);
   }
 #endif
 
@@ -2035,7 +2034,7 @@ printf("after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.
 #endif
 
 #ifdef EMOS
-phy_procedures_emos_UE_RX(ue,slot,eNB_id);
+phy_procedures_emos_UE_RX(ue,slot,gNB_id);
 #endif
 
 

@@ -191,7 +191,6 @@ int main(int argc, char **argv)
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int run_initial_sync=0;
-  int do_pdcch_flag=1;
 
   int loglvl=OAILOG_INFO;
 
@@ -848,7 +847,6 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               do_pdcch_flag,
                                normal_txrx);
         
         //printf("dlsim round %d ends\n",round);

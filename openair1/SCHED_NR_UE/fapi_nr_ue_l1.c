@@ -57,10 +57,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
     NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
-    //PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
-        
-    //        PUCCH_ConfigCommon_nr_t    *pucch_config_common = PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0];
-    //        PUCCH_Config_t             *pucch_config_dedicated = PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0];
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
@@ -93,7 +89,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           dlsch0->current_harq_pid = current_harq_pid;
           dlsch0->active = 1;
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
-          //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
           dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
           if (dlsch0_harq){
@@ -121,8 +116,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         }
       }
       dl_config->number_pdus = 0;
-    } else {
-      pdcch_vars->nb_search_space = 0;
     }
 
     if (scheduled_response->ul_config != NULL){
@@ -162,7 +155,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             if (scheduled_response->tx_request){ // TBR todo here it should loop through the number of tx pdus
               fapi_nr_tx_request_body_t *tx_req_body = scheduled_response->tx_request->tx_request_body;
 
-              //harq_process_ul_ue->a = (unsigned char*)calloc(TBS/8, sizeof(unsigned char));
               memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
 
               harq_process_ul_ue->status = ACTIVE;
@@ -225,7 +217,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
           // prach config pdu
-          //prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[gNB_id];
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
           PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_Config_enabled = 1;
