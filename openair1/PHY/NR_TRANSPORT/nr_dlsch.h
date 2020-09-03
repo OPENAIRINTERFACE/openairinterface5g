@@ -82,7 +82,8 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
 NR_gNB_SCH_STATS_t *find_nr_dlsch_stats(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
-int nr_dlsch_encoding(unsigned char *a,int frame,
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
+		      unsigned char *a,int frame,
 		      uint8_t slot,
 		      NR_gNB_DLSCH_t *dlsch,
 		      NR_DL_FRAME_PARMS* frame_parms,

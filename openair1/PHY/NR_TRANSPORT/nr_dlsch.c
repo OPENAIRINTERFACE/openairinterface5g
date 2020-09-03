@@ -162,7 +162,8 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
     start_meas(dlsch_encoding_stats);
-    nr_dlsch_encoding(harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
+    nr_dlsch_encoding(gNB,
+		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
 		      dlsch_segmentation_stats);
@@ -338,29 +339,25 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 
 void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<NUMBER_OF_NR_DLSCH_MAX;i++)
-    if (gNB->dlsch[i][0]->harq_mask > 0)
-      LOG_I(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e)/%d(%1.1e)/%d(%1.1e)/%d/%d/%d/%d/%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
-	    gNB->dlsch[i][0]->rnti,
-	    gNB->dlsch[i][0]->stats.round_trials[0],
-	    (double)gNB->dlsch[i][0]->stats.round_trials[1]/gNB->dlsch[i][0]->stats.round_trials[0],
-	    gNB->dlsch[i][0]->stats.round_trials[1],
-	    (double)gNB->dlsch[i][0]->stats.round_trials[2]/gNB->dlsch[i][0]->stats.round_trials[1],
-	    gNB->dlsch[i][0]->stats.round_trials[2],
-	    (double)gNB->dlsch[i][0]->stats.round_trials[3]/gNB->dlsch[i][0]->stats.round_trials[2],
-	    gNB->dlsch[i][0]->stats.round_trials[3],
-	    gNB->dlsch[i][0]->stats.round_trials[4],
-	    gNB->dlsch[i][0]->stats.round_trials[5],
-	    gNB->dlsch[i][0]->stats.round_trials[6],
-	    gNB->dlsch[i][0]->stats.round_trials[7],
-	    gNB->dlsch[i][0]->stats.current_Qm,
-	    gNB->dlsch[i][0]->stats.current_RI,
-	    gNB->dlsch[i][0]->stats.total_bytes_tx);
+  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
+    if (gNB->dlsch_stats[i].rnti > 0)
+      LOG_I(PHY,"DLSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes TX %d\n",
+	    gNB->dlsch_stats[i].rnti,
+	    gNB->dlsch_stats[i].round_trials[0],
+	    (double)gNB->dlsch_stats[i].round_trials[1]/gNB->dlsch_stats[i].round_trials[0],
+	    gNB->dlsch_stats[i].round_trials[1],
+	    (double)gNB->dlsch_stats[i].round_trials[2]/gNB->dlsch_stats[i].round_trials[0],
+	    gNB->dlsch_stats[i].round_trials[2],
+	    (double)gNB->dlsch_stats[i].round_trials[3]/gNB->dlsch_stats[i].round_trials[0],
+	    gNB->dlsch_stats[i].round_trials[3],
+	    gNB->dlsch_stats[i].current_Qm,
+	    gNB->dlsch_stats[i].current_RI,
+	    gNB->dlsch_stats[i].total_bytes_tx);
 
 }
 
 void clear_pdsch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_DLSCH_MAX;i++)
-    memset((void*)&gNB->dlsch[i][0]->stats,0,sizeof(gNB->dlsch[i][0]->stats));
+    memset((void*)&gNB->dlsch_stats[i],0,sizeof(gNB->dlsch_stats[i]));
 }
