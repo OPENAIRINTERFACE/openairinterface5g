@@ -20,12 +20,12 @@
  */
 
 /*! \file PHY/LTE_TRANSPORT/dlsch_coding.c
- * \brief Top-level routines for implementing Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
- * \author R. Knopp
+ * \brief Top-level routines for implementing Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03, V14.1 2017 (includes FeMBMS support)
+ * \author R. Knopp, J. Morgade
  * \date 2011
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr
+ * \email: knopp@eurecom.fr, jaiver.morgade@ieee.org
  * \note
  * \warning
  */
@@ -425,3 +425,108 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return(0);
 }
+
+int dlsch_encoding_fembms_pmch(PHY_VARS_eNB *eNB,
+                   L1_rxtx_proc_t *proc,
+                   unsigned char *a,
+                   uint8_t num_pdcch_symbols,
+                   LTE_eNB_DLSCH_t *dlsch,
+                   int frame,
+                   uint8_t subframe,
+                   time_stats_t *rm_stats,
+                   time_stats_t *te_stats,
+                   time_stats_t *i_stats) {
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
+  if((harq_pid < 0) || (harq_pid >= dlsch->Mdlharq)) {
+    LOG_E(PHY,"dlsch_encoding illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
+    return(-1);
+  }
+
+  LTE_DL_eNB_HARQ_t *hadlsch=dlsch->harq_processes[harq_pid];
+  uint8_t beamforming_mode=0;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+
+  if(hadlsch->mimo_mode == TM7)
+    beamforming_mode = 7;
+  else if(hadlsch->mimo_mode == TM8)
+    beamforming_mode = 8;
+  else if(hadlsch->mimo_mode == TM9_10)
+    beamforming_mode = 9;
+
+  unsigned int G = get_G_khz_1dot25(frame_parms,hadlsch->nb_rb,
+	    hadlsch->rb_alloc,
+	    hadlsch->Qm, // mod order
+	    hadlsch->Nl,
+	    num_pdcch_symbols,
+	    frame,subframe,beamforming_mode);
+
+  proc->nbEncode=0;
+
+  //  if (hadlsch->Ndi == 1) {  // this is a new packet
+  if (hadlsch->round == 0) {  // this is a new packet
+    // Add 24-bit crc (polynomial A) to payload
+    unsigned int A=hadlsch->TBS; //6228;
+    unsigned int crc = crc24a(a,
+                 A)>>8;
+    a[A>>3] = ((uint8_t *)&crc)[2];
+    a[1+(A>>3)] = ((uint8_t *)&crc)[1];
+    a[2+(A>>3)] = ((uint8_t *)&crc)[0];
+    //    printf("CRC %x (A %d)\n",crc,A);
+    hadlsch->B = A+24;
+    //    hadlsch->b = a;
+    memcpy(hadlsch->b,a,(A/8)+4);
+    
+    if (lte_segmentation(hadlsch->b,
+                         hadlsch->c,
+                         hadlsch->B,
+                         &hadlsch->C,
+                         &hadlsch->Cplus,
+                         &hadlsch->Cminus,
+                         &hadlsch->Kplus,
+                         &hadlsch->Kminus,
+                         &hadlsch->F)<0)
+      return(-1);
+  }
+ 
+  for (int r=0, r_offset=0; r<hadlsch->C; r++) {
+    
+    union turboReqUnion id= {.s={dlsch->rnti,frame,subframe,r,0}};
+    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(turboEncode_t), id.p, proc->respEncode, TPencode);
+    turboEncode_t * rdata=(turboEncode_t *) NotifiedFifoData(req);
+    rdata->input=hadlsch->c[r];
+    rdata->Kr_bytes= ( r<hadlsch->Cminus ? hadlsch->Kminus : hadlsch->Kplus) >>3;
+    rdata->filler=(r==0) ? hadlsch->F : 0;
+    rdata->r=r;
+    rdata->harq_pid=harq_pid;
+    rdata->dlsch=dlsch;
+    rdata->rm_stats=rm_stats;
+    rdata->te_stats=te_stats;
+    rdata->i_stats=i_stats;
+    rdata->round=hadlsch->round;
+    rdata->r_offset=r_offset;
+    rdata->G=G;
+    
+    if (  proc->threadPool->activated ) {
+      pushTpool(proc->threadPool,req);
+      proc->nbEncode++;
+    } else {
+      TPencode(rdata);
+      delNotifiedFIFO_elt(req);
+    }
+    
+    int Qm=hadlsch->Qm;
+    int C=hadlsch->C;
+    int Nl=hadlsch->Nl;
+    int Gp = G/Nl/Qm;
+    int GpmodC = Gp%C;
+    if (r < (C-(GpmodC)))
+      r_offset += Nl*Qm * (Gp/C);
+    else
+      r_offset += Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
+  }
+
+  return(0);
+}
+
+

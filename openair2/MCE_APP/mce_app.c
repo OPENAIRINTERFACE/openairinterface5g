@@ -372,7 +372,8 @@ void *MCE_app_task(void *args_p) {
 
  // /* Try to register each MCE with MCE each other */
  if (is_m3ap_MCE_enabled() /*&& !NODE_IS_DU(RC.rrc[0]->node_type)*/) {
-   	///*m3_register_mce_pending =*/ MCE_app_register_m3 (mce_id_start, mce_id_end);
+   	///*m3_register_mce_pending =*/ 
+	MCE_app_register_m3 (mce_id_start, mce_id_end);
    }
 
   do {
@@ -627,7 +628,7 @@ void *MCE_app_task(void *args_p) {
    	//}
 
 
-   	/*m3_register_mce_pending =*/ MCE_app_register_m3 (mce_id_start, mce_id_end);
+   	/*m3_register_mce_pending =*/ //MCE_app_register_m3 (mce_id_start, mce_id_end);
 
 	//MCE_app_send_m2ap_session_start_req(0);
 	break;
