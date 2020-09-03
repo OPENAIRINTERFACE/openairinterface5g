@@ -405,7 +405,7 @@ int main(int argc, char **argv)
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
   rel15_ul->target_code_rate    = code_rate;
-  rel15_ul->pusch_data.tb_size  = TBS>>3;
+  rel15_ul->pusch_data.tb_size  = TBS/8;
   ///////////////////////////////////////////////////
 
   double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
@@ -441,7 +441,7 @@ int main(int argc, char **argv)
     harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
     harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
     harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
-    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS;
+    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
     harq_process_ul_ue->a = &test_input[0];
 
   }

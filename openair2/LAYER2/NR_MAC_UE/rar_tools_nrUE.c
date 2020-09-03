@@ -189,7 +189,7 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
                                                         nb_dmrs_re_per_rb*number_dmrs_symbols,
                                                         N_PRB_oh,
                                                         0, // TBR to verify tb scaling
-                                                        pusch_config_pdu->nrOfLayers);
+                                                        pusch_config_pdu->nrOfLayers)/8;
 
 }
 

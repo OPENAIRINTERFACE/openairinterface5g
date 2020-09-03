@@ -248,7 +248,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   crc = 1;
   harq_process = ulsch->harq_processes[harq_pid];
   nb_rb = harq_process->pusch_pdu.rb_size;
-  A = harq_process->pusch_pdu.pusch_data.tb_size;
+  A = harq_process->pusch_pdu.pusch_data.tb_size*8;
   pz = &Z;
   mod_order = nr_get_Qm_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
   R = nr_get_code_rate_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);

@@ -710,14 +710,14 @@ int main(int argc, char **argv)
 
       available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
       TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
-      pusch_pdu->pusch_data.tb_size = TBS>>3;
-      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
+      pusch_pdu->pusch_data.tb_size = TBS/8;
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS/8;
 
       nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
       int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);// - (int)(800*factor);
       int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
-      for (int i=0;i<(TBS>>3);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
+      for (int i=0;i<(TBS/8);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
       double scale = 1;
 
       if (input_fd == NULL) {
