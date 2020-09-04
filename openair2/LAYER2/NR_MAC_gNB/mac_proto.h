@@ -76,7 +76,10 @@ int nr_generate_dlsch_pdu(module_id_t Mod_idP,
                           unsigned char *ue_cont_res_id,
                           unsigned short post_padding);
 
-void nr_schedule_ue_spec(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_schedule_ue_spec(module_id_t module_id,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int num_slots_per_tdd);
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
