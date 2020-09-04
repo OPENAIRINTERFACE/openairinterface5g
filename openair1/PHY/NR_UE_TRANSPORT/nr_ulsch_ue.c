@@ -448,7 +448,6 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 
-#if 0
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   for(ap = 0; ap < Nl; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
@@ -461,7 +460,6 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
 			15);
     }
   }
-#endif
 
   for (ap = 0; ap < Nl; ap++) {
     if (frame_parms->Ncp == 1) { // extended cyclic prefix
