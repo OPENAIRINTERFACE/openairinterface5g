@@ -7449,7 +7449,7 @@ ShortMAC-I ::=                      BIT STRING (SIZE (16))
 SINR-Range ::=                      INTEGER(0..127)
 
 -- TAG-SINR-RANGE-STOP
--- TAGâ€“SI-REQUESTCONFIG-START
+-- TAG¨CSI-REQUESTCONFIG-START
 
 SI-RequestConfig::=                 SEQUENCE {
     rach-OccasionsSI                    SEQUENCE {
@@ -7466,7 +7466,7 @@ SI-RequestResources ::=             SEQUENCE {
     ra-ssb-OccasionMaskIndex            INTEGER (0..15)                                                     OPTIONAL    -- Need R
 }
 
--- TAGâ€“SI-SCHEDULINGINFO-START
+-- TAG¨CSI-SCHEDULINGINFO-START
 
 SI-SchedulingInfo ::=               SEQUENCE {
     schedulingInfoList                  SEQUENCE (SIZE (1..maxSI-Message)) OF SchedulingInfo,
