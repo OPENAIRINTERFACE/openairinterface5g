@@ -948,7 +948,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
       NR_UE_MAC_INST_t *mac = get_mac_inst(ul_info->module_id);
 
-      if (ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
+      if (mac->RA_active && ul_info->slot_tx == mac->msg3_slot && ul_info->frame_tx == mac->msg3_frame){
 
         uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
@@ -1012,7 +1012,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   return UE_CONNECTION_OK;
 }
 
-// Scheduling the Msg3 transmission according to according to TS 38.213
+// PUSCH Msg3 scheduled by RAR UL grant according to 8.3 of TS 38.213
 // Note: Msg3 tx in the uplink symbols of mixed slot
 void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           frame_t current_frame,
@@ -1201,8 +1201,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
           }
         }
       }
-    } else if (mac->ra_state == RA_SUCCEEDED){
-      mac->generate_nr_prach = 2;
     }
 
     fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP);

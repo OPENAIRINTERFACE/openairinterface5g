@@ -103,19 +103,22 @@ void nr_config_Msg3_pdu(NR_UE_MAC_INST_t *mac,
   int ibwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275);
   int ibwp_size = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275);
 
-  //// Resource assignment from RAR
-  // Frequency domain allocation
-  if (abwp_size < 180)
-    mask = (1 << ((int) ceil(log2((abwp_size*(abwp_size+1))>>1)))) - 1;
-  else
-    mask = (1 << (28 - (int)(ceil(log2((abwp_size*(abwp_size+1))>>1))))) - 1;
-  f_alloc = Msg3_f_alloc & mask;
+  // BWP start selection according to 8.3 of TS 38.213
   pusch_config_pdu->bwp_size = ibwp_size;
   if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
     pusch_config_pdu->bwp_start = abwp_start;
   else
     pusch_config_pdu->bwp_start = ibwp_start;
+
+  //// Resource assignment from RAR
+  // Frequency domain allocation according to 8.3 of TS 38.213
+  if (ibwp_size < 180)
+    mask = (1 << ((int) ceil(log2((ibwp_size*(ibwp_size+1))>>1)))) - 1;
+  else
+    mask = (1 << (28 - (int)(ceil(log2((ibwp_size*(ibwp_size+1))>>1))))) - 1;
+  f_alloc = Msg3_f_alloc & mask;
   nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, ibwp_size, 0, f_alloc);
+
   // virtual resource block to physical resource mapping for Msg3 PUSCH (6.3.1.7 in 38.211)
   pusch_config_pdu->rb_start += ibwp_start - abwp_start;
 
@@ -250,7 +253,7 @@ uint16_t nr_ue_process_rar(module_id_t mod_id,
         LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ue_mac->RA_backoff_indicator);
       }
       if (rarh->RAPID == preamble_index) {
-        LOG_D(PHY, "[UE %d][RAPROC] Found RAR with the intended RAPID %d\n", mod_id, rarh->RAPID);
+        LOG_I(PHY, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
         rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
         ue_mac->RA_RAPID_found = 1;
         break;
