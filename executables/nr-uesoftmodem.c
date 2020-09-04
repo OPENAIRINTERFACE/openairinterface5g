@@ -692,6 +692,7 @@ int main( int argc, char **argv ) {
       frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
     }
    
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     UE[CC_id]->mac_enabled = 1;
