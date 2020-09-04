@@ -1675,7 +1675,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         }
       }
     }
-    curr_pucch->csi_bits =25; // TODO function to compute CSI meas report bit size
+    curr_pucch->csi_bits = 11; // TODO function to compute CSI meas report bit size
     curr_pucch->frame = frame;
     curr_pucch->ul_slot = slot;
   }
