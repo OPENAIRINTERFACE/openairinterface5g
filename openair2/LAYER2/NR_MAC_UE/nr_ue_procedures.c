@@ -3223,6 +3223,32 @@ void nr_ue_send_sdu(module_id_t module_idP,
 
 }
 
+// N_RB configuration according to 7.3.1.0 (DCI size alignment) of TS 38.212
+int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
+
+  int N_RB, start_RB;
+  switch(rnti_type) {
+    case NR_RNTI_RA:
+    case NR_RNTI_TC:
+    case NR_RNTI_P:
+    case NR_RNTI_SI:
+      if (mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->controlResourceSetZero) {
+        uint8_t bwp_id = 1;
+        uint8_t coreset_id = 0; // assuming controlResourceSetId is 0 for controlResourceSetZero
+        NR_ControlResourceSet_t *coreset = mac->coreset[bwp_id - 1][coreset_id];
+        get_coreset_rballoc(coreset->frequencyDomainResources.buf,&N_RB,&start_RB);
+      } else {
+        N_RB = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+      }
+      break;
+    case NR_RNTI_C:
+    N_RB = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, 275);
+    break;
+  }
+  return N_RB;
+
+}
+
 void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 			 int dci_format,
 			 uint8_t dci_size,
@@ -3240,9 +3266,7 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   AssertFatal(rnti_type!=-1,"no identified/handled rnti\n");
   AssertFatal(mac->DLbwp[0] != NULL, "DLbwp[0] shouldn't be null here!\n");
   AssertFatal(mac->ULbwp[0] != NULL, "ULbwp[0] shouldn't be null here!\n");
-  int N_RB = (mac->scg != NULL) ? 
-    NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275) :
-    NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,275);
+  int N_RB = get_n_rb(mac, rnti_type);
   int N_RB_UL = (mac->scg != NULL) ? 
     NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth,275) :
     NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,275);
@@ -3254,7 +3278,6 @@ void nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_DL_DCI_FORMAT_1_0:
     switch(rnti_type) {
     case NR_RNTI_RA:
-      N_RB = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275); // TBR hotfix
       // Freq domain assignment
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos=fsize;
