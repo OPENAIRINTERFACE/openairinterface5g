@@ -1,4 +1,4 @@
-9283sdfas7: #oppo
+9d690a12: #oppo
   - adb shell input keyevent KEYCODE_POWER
   - adb shell input swipe 300 700 300 0
   - adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS

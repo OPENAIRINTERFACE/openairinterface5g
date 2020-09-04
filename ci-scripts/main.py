@@ -292,7 +292,7 @@ class OaiCiTest():
 			if COTS_UE.Check_Exists(device_id):
 				#switch device to Airplane mode ON (ie Radio OFF) 
 				COTS_UE.Set_Airplane(device_id, 'ON')
-			else
+			else:
 				# enable data service
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
 
