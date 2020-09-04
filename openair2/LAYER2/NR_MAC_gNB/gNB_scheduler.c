@@ -485,58 +485,29 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   */
 
   if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
+
   // This schedules MIB
   if((slot == 0) && (frame & 7) == 0){
     schedule_nr_mib(module_idP, frame, slot);
   }
 
-    if (get_softmodem_params()->phy_test == 0)
-      nr_schedule_RA(module_idP, frame, slot);
-    else
-      UE_list->fiveG_connected[UE_id] = true;
+  // This schedule PRACH if we are not in phy_test mode
+  if (get_softmodem_params()->phy_test == 0)
+    schedule_nr_prach(module_idP, frame, slot);
 
-    if (get_softmodem_params()->phy_test == 1) {
-      if (slot == 7){
-	NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[0].ra[0];
-	ra->Msg2_frame = frame;
-	ra->Msg2_slot = slot;
-	ra->state = Msg2;
-	ra->bwp_id = 1;
-	NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-	NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
-	struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-	for (int i=0;i<commonSearchSpaceList->list.count;i++) {
-	  NR_SearchSpace_t *ss=commonSearchSpaceList->list.array[i];
-	  if(ss->searchSpaceId == *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)
-	    ra->ra_ss=ss;
-	}
-	AssertFatal(ra->ra_ss!=NULL,"no search space for RA'n");
+  // This schedule SR
+  // TODO
 
-	nr_generate_Msg2(module_idP, 0/*CC_id*/,
-			 frame,
-			 slot);
-      }
-    }
+  // This schedule CSI
+  // TODO
 
-    // Phytest scheduling
-
-    if (get_softmodem_params()->phy_test) {
-
-      // TbD once RACH is available, start ta_timer when UE is connected
-      if (ue_sched_ctl->ta_timer)
-        ue_sched_ctl->ta_timer--;
-
-      if (ue_sched_ctl->ta_timer == 0) {
-        gNB->ta_command = ue_sched_ctl->ta_update;
-        /* if time is up, then set the timer to not send it for 5 frames
-        // regardless of the TA value */
-        ue_sched_ctl->ta_timer = 100;
-        /* reset ta_update */
-        ue_sched_ctl->ta_update = 31;
-        /* MAC CE flag indicating TA length */
-        gNB->ta_len = 2;
-      }
-    }
+  // This schedule RA procedure if not in phy_test mode
+  // Otherwise already consider 5G already connected
+  if (get_softmodem_params()->phy_test == 0) {
+    nr_schedule_RA(module_idP, frame, slot);
+    nr_schedule_reception_msg3(module_idP, 0, frame, slot);
+  } else
+    UE_list->fiveG_connected[UE_id] = true;
 
   if (get_softmodem_params()->phy_test) {
 
