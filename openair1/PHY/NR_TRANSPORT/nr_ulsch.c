@@ -140,29 +140,25 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 void dump_pusch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
-    if (gNB->ulsch[i][0]->rnti>0) 
-      LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e)/%d(%1.1e)/%d(%1.1e)/%d/%d/%d/%d/%d, current_Qm %d, current_RI %d, total_bytes RX/TX %d/%d\n",
-	    gNB->ulsch[i][0]->rnti,
-	    gNB->ulsch[i][0]->stats.round_trials[0],
-	    (double)gNB->ulsch[i][0]->stats.round_trials[1]/gNB->ulsch[i][0]->stats.round_trials[0],
-	    gNB->ulsch[i][0]->stats.round_trials[1],
-	    (double)gNB->ulsch[i][0]->stats.round_trials[2]/gNB->ulsch[i][0]->stats.round_trials[1],
-	    gNB->ulsch[i][0]->stats.round_trials[2],
-	    (double)gNB->ulsch[i][0]->stats.round_trials[3]/gNB->ulsch[i][0]->stats.round_trials[2],
-	    gNB->ulsch[i][0]->stats.round_trials[3],
-	    gNB->ulsch[i][0]->stats.round_trials[4],
-	    gNB->ulsch[i][0]->stats.round_trials[5],
-	    gNB->ulsch[i][0]->stats.round_trials[6],
-	    gNB->ulsch[i][0]->stats.round_trials[7],
-	    gNB->ulsch[i][0]->stats.current_Qm,
-	    gNB->ulsch[i][0]->stats.current_RI,
-	    gNB->ulsch[i][0]->stats.total_bytes_rx,
-	    gNB->ulsch[i][0]->stats.total_bytes_tx);
+    if (gNB->ulsch_stats[i].rnti>0) 
+      LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
+	    gNB->ulsch_stats[i].rnti,
+	    gNB->ulsch_stats[i].round_trials[0],
+	    (double)gNB->ulsch_stats[i].round_trials[1]/gNB->ulsch_stats[i].round_trials[0],
+	    gNB->ulsch_stats[i].round_trials[1],
+	    (double)gNB->ulsch_stats[i].round_trials[2]/gNB->ulsch_stats[i].round_trials[0],
+	    gNB->ulsch_stats[i].round_trials[2],
+	    (double)gNB->ulsch_stats[i].round_trials[3]/gNB->ulsch_stats[i].round_trials[0],
+	    gNB->ulsch_stats[i].round_trials[3],
+	    gNB->ulsch_stats[i].current_Qm,
+	    gNB->ulsch_stats[i].current_RI,
+	    gNB->ulsch_stats[i].total_bytes_rx,
+	    gNB->ulsch_stats[i].total_bytes_tx);
   
 }
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
-    memset((void*)&gNB->ulsch[i][0]->stats,0,sizeof(gNB->ulsch[i][0]->stats));
+    memset((void*)&gNB->ulsch_stats[i],0,sizeof(gNB->ulsch_stats[i]));
 }
