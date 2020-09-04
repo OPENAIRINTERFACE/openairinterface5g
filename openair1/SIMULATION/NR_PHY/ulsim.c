@@ -1023,7 +1023,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0], round_trials[0],n_errors[1], round_trials[1],n_errors[2], round_trials[2],n_errors[3], round_trials[3], n_false_positive, n_trials, errors_scrambling[0],available_bits*n_trials,errors_scrambling[1],available_bits*n_trials,errors_scrambling[2],available_bits*n_trials,errors_scrambling[3],available_bits*n_trials);
     printf("\n");
-    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", 
+    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", 
 	   SNR,
 	   (double)n_errors[0]/round_trials[0],
 	   (double)n_errors[1]/round_trials[0],

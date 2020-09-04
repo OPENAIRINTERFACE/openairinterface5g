@@ -241,7 +241,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);
   
-  AssertFatal(G>0,"G is 0 : rb_size %d, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
+  AssertFatal(G>0,"G is 0 : rb_size %u, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %u, nrOfLayer %u\n",
 	      pusch_pdu->rb_size,
 	      number_symbols,
 	      nb_re_dmrs,
