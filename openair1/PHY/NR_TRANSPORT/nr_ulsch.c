@@ -111,7 +111,6 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 				 uint32_t n_RNTI) {
   
 #if defined(__x86_64__) || defined(__i386__)
-  uint8_t reset;
   uint32_t x1, x2, s=0;
 
   x2 = (n_RNTI<<15) + Nid;

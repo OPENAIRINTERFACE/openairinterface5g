@@ -432,7 +432,6 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
-  uint8_t Nl = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->pusch_pdu.nrOfLayers; // cw 0
 
   /////////////////////////IFFT///////////////////////
   ///////////

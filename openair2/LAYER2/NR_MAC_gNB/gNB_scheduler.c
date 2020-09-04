@@ -464,15 +464,15 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
     if (get_softmodem_params()->phy_test == 0)
-      nr_schedule_RA(module_idP, frame_txP, slot_txP);
+      nr_schedule_RA(module_idP, frame, slot);
     else
       UE_list->fiveG_connected[UE_id] = true;
 
     if (get_softmodem_params()->phy_test == 1) {
-      if (slot_txP == 7){
+      if (slot == 7){
 	NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[0].ra[0];
-	ra->Msg2_frame = frame_txP;
-	ra->Msg2_slot = slot_txP;
+	ra->Msg2_frame = frame;
+	ra->Msg2_slot = slot;
 	ra->state = Msg2;
 	ra->bwp_id = 1;
 	NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
@@ -486,8 +486,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 	AssertFatal(ra->ra_ss!=NULL,"no search space for RA'n");
 
 	nr_generate_Msg2(module_idP, 0/*CC_id*/,
-			 frame_txP,
-			 slot_txP);
+			 frame,
+			 slot);
       }
     }
 

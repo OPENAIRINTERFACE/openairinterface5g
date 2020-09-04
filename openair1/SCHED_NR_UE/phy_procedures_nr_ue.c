@@ -2933,7 +2933,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
                       return -1;
       }
       else { // This is to adjust the llr offset in the case of skipping over a dmrs symbol (i.e. in case of no PDSCH REs in DMRS)
-	if      (pdsch == RA_PDSCH) ue->pdsch_vars_ra[eNB_id]->llr_offset[m]=ue->pdsch_vars_ra[eNB_id]->llr_offset[m-1];
+	if      (pdsch == RA_PDSCH) ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m]=ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr_offset[m-1];
 	else if (pdsch == PDSCH) {
           if (nr_rx_pdsch(ue,
                     pdsch,
@@ -3892,7 +3892,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   int coreset_nb_rb=0;
   int coreset_start_rb=0;
-  int symbol_offset_in_subframe=0;
 
   if (pdcch_vars->nb_search_space > 0)
     get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
@@ -3903,7 +3902,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if ((ue->decode_MIB == 1) && slot_pbch)
     {
       LOG_I(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-      symbol_offset_in_subframe = (nr_tti_rx % fp->slots_per_subframe)*fp->symbols_per_slot;
       for (int i=1; i<4; i++) {
 
 	nr_slot_fep(ue,

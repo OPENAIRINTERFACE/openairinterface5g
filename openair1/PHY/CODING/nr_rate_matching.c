@@ -236,13 +236,12 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
     }
     */
 
-  int j2=0;
   fp=f;
   switch (Qm) {
   case 2:
     e0=e;
     e1=e0+EQm;
-    for (int j = 0; j< EQm; j++,j2+=2){
+    for (int j = 0, j2 = 0; j< EQm; j++,j2+=2){
       fp=&f[j2];
       fp[0] = e0[j];
       fp[1] = e1[j];
@@ -253,7 +252,7 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
     e1=e0+EQm;
     e2=e1+EQm;
     e3=e2+EQm;
-    for (int j = 0; j< EQm; j++,j2+=4){
+    for (int j = 0, j2 = 0; j< EQm; j++,j2+=4){
       fp=&f[j2];
       fp[0] = e0[j];
       fp[1] = e1[j];
@@ -287,7 +286,7 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
     e5=e4+EQm;
     e6=e5+EQm;
     e7=e6+EQm;
-    for (int j = 0; j< EQm; j++,j2+=8){
+    for (int j = 0, j2 = 0; j< EQm; j++,j2+=8){
       fp=&f[j2];
       fp[0] = e0[j];
       fp[1] = e1[j];
@@ -310,7 +309,6 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 {
 
-  int j2;
   int16_t *e1,*e2,*e3,*e4,*e5,*e6,*e7;
   switch(Qm) {
   case 2:
