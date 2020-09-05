@@ -832,7 +832,8 @@ void dl_config_req_UE_MAC_dci(int sfn,
               &UE_mac_inst[ue_id].crnti, //t-crnti
               UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
               tx_request_pdu_list[pdu_index].segments[0].segment_data);
-          UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
+          // UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
+          LOG_I(MAC, "setting UE_MODE now: %d\n", UE_mac_inst[ue_id].UE_mode[0]);
           // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
           // ULSCH Txon for the UE)
           UE_mac_inst[ue_id].first_ULSCH_Tx = 1;

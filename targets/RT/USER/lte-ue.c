@@ -1166,16 +1166,21 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
         if (UE->mode != loop_through_memory) {
           // We make the start of RA between consecutive UEs differ by 20 frames
           //if ((UE_mac_inst[Mod_id].UE_mode[0] == PRACH  && Mod_id == 0) || (UE_mac_inst[Mod_id].UE_mode[0] == PRACH && Mod_id>0 && rx_frame >= UE_mac_inst[Mod_id-1].ra_frame + 20) ) {
-          if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH && ue_Mod_id == next_Mod_id) {
+          LOG_I(MAC, "UE_mode: %d\n", UE_mac_inst[ue_Mod_id].UE_mode[0]);
+          if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH) { //&& ue_Mod_id == next_Mod_id) {
             next_ra_frame++;
-            if (next_ra_frame > 500) {
+            // if (next_ra_frame > 500) {
               // check if we have PRACH opportunity
+              LOG_I(MAC, "is_prach_subframe(): %d\n",
+                    is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)));
               if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
                 // The one working strangely...
                 //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
                 PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
                 if (prach_resources != NULL) {
-                  UE_mac_inst[ue_Mod_id].ra_frame = rx_frame;
+                  LOG_I(MAC, "preamble_received_tar_power: %d\n",
+                        prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER);
+                  UE_mac_inst[ue_Mod_id].ra_frame = NFAPI_SFNSF2SFN(sfn_sf); // Is this why RACH comes in late to proxy? - Andrew
                   LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
                   fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
                   sent_any = true;
@@ -1188,7 +1193,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
                 //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
               }
-            }
+            // }
           }  // mode is PRACH
 
           // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
