@@ -1439,56 +1439,60 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
       printf("\n");
 #endif
-      // do complex correlation
-      for (int aa=0;aa<Prx;aa++) {
-	prod_re[aa] = _mm256_srai_epi16(_mm256_adds_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp_re[aa][0]),
-							  _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp_im[aa][0])),5);
-	prod_im[aa] = _mm256_srai_epi16(_mm256_subs_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp2_im[aa][0]),
-							  _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp2_re[aa][0])),5);
-#ifdef DEBUG_NR_PUCCH_RX
-	printf("prod_re[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)",aa,
-	       ((int16_t*)&prod_re[aa])[0],((int16_t*)&prod_re[aa])[1],((int16_t*)&prod_re[aa])[2],((int16_t*)&prod_re[aa])[3],
-	       ((int16_t*)&prod_re[aa])[4],((int16_t*)&prod_re[aa])[5],((int16_t*)&prod_re[aa])[6],((int16_t*)&prod_re[aa])[7],
-	       ((int16_t*)&prod_re[aa])[8],((int16_t*)&prod_re[aa])[9],((int16_t*)&prod_re[aa])[10],((int16_t*)&prod_re[aa])[11],
-	       ((int16_t*)&prod_re[aa])[12],((int16_t*)&prod_re[aa])[13],((int16_t*)&prod_re[aa])[14],((int16_t*)&prod_re[aa])[15]);
-	printf("prod_im[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)",aa,
-	       ((int16_t*)&prod_im[aa])[0],((int16_t*)&prod_im[aa])[1],((int16_t*)&prod_im[aa])[2],((int16_t*)&prod_im[aa])[3],
-	       ((int16_t*)&prod_im[aa])[4],((int16_t*)&prod_im[aa])[5],((int16_t*)&prod_im[aa])[6],((int16_t*)&prod_im[aa])[7],
-	       ((int16_t*)&prod_im[aa])[8],((int16_t*)&prod_im[aa])[9],((int16_t*)&prod_im[aa])[10],((int16_t*)&prod_im[aa])[11],
-	       ((int16_t*)&prod_im[aa])[12],((int16_t*)&prod_im[aa])[13],((int16_t*)&prod_im[aa])[14],((int16_t*)&prod_im[aa])[15]);
-
-#endif
-	prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1
-	prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-	prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
-	prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-	prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7
-	prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-	prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15
-	prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-      }
-      int64_t corr_re=0,corr_im=0;
-      
       int64_t corr_tmp = 0;
-      for (int aa=0;aa<Prx;aa++) {
-	LOG_D(PHY,"pucch2 cw %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,aa,
-	      corr32_re[0][aa],corr32_im[0][aa],
-	      ((int16_t*)(&prod_re[aa]))[0],
-	      ((int16_t*)(&prod_im[aa]))[0],
-	      corr32_re[0][aa]+((int16_t*)(&prod_re[0]))[0],
-	      corr32_im[0][aa]+((int16_t*)(&prod_im[0]))[0]);
-	
-	corr_re = ( corr32_re[0][aa]+((int16_t*)(&prod_re[0]))[0]);
-	corr_im = ( corr32_im[0][aa]+((int16_t*)(&prod_im[0]))[0]);
 
-	corr_tmp += corr_re*corr_re + corr_im*corr_im;	
-      }
+      for (int group=0;group<ngroup;group++) {
+	// do complex correlation
+	for (int aa=0;aa<Prx;aa++) {
+	  prod_re[aa] = _mm256_srai_epi16(_mm256_adds_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp_re[aa][group]),
+							    _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp_im[aa][group])),5);
+	  prod_im[aa] = _mm256_srai_epi16(_mm256_subs_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp2_im[aa][group]),
+							    _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp2_re[aa][group])),5);
+#ifdef DEBUG_NR_PUCCH_RX
+	  printf("prod_re[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)",aa,
+		 ((int16_t*)&prod_re[aa])[0],((int16_t*)&prod_re[aa])[1],((int16_t*)&prod_re[aa])[2],((int16_t*)&prod_re[aa])[3],
+		 ((int16_t*)&prod_re[aa])[4],((int16_t*)&prod_re[aa])[5],((int16_t*)&prod_re[aa])[6],((int16_t*)&prod_re[aa])[7],
+		 ((int16_t*)&prod_re[aa])[8],((int16_t*)&prod_re[aa])[9],((int16_t*)&prod_re[aa])[10],((int16_t*)&prod_re[aa])[11],
+		 ((int16_t*)&prod_re[aa])[12],((int16_t*)&prod_re[aa])[13],((int16_t*)&prod_re[aa])[14],((int16_t*)&prod_re[aa])[15]);
+	  printf("prod_im[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)",aa,
+		 ((int16_t*)&prod_im[aa])[0],((int16_t*)&prod_im[aa])[1],((int16_t*)&prod_im[aa])[2],((int16_t*)&prod_im[aa])[3],
+		 ((int16_t*)&prod_im[aa])[4],((int16_t*)&prod_im[aa])[5],((int16_t*)&prod_im[aa])[6],((int16_t*)&prod_im[aa])[7],
+		 ((int16_t*)&prod_im[aa])[8],((int16_t*)&prod_im[aa])[9],((int16_t*)&prod_im[aa])[10],((int16_t*)&prod_im[aa])[11],
+		 ((int16_t*)&prod_im[aa])[12],((int16_t*)&prod_im[aa])[13],((int16_t*)&prod_im[aa])[14],((int16_t*)&prod_im[aa])[15]);
+	  
+#endif
+	  prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1
+	  prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+	  prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
+	  prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+	  prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7
+	  prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+	  prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15
+	  prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+	}
+	int64_t corr_re=0,corr_im=0;
+	
+	
+	for (int aa=0;aa<Prx;aa++) {
+	  LOG_D(PHY,"pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
+		corr32_re[group][aa],corr32_im[0][aa],
+		((int16_t*)(&prod_re[aa]))[0],
+		((int16_t*)(&prod_im[aa]))[0],
+		corr32_re[group][aa]+((int16_t*)(&prod_re[aa]))[0],
+		corr32_im[group][aa]+((int16_t*)(&prod_im[aa]))[0]);
+	  
+	  corr_re = ( corr32_re[group][aa]+((int16_t*)(&prod_re[aa]))[0]);
+	  corr_im = ( corr32_im[group][aa]+((int16_t*)(&prod_im[aa]))[0]);
+	  
+	  corr_tmp += corr_re*corr_re + corr_im*corr_im;	
+	} // aa loop
+      }// group loop
 
       if (corr_tmp > corr) {
 	corr = corr_tmp;
 	cw_ML=cw;
       }
-    }
+    } // cw loop
     corr_dB = dB_fixed64((uint64_t)corr);
     LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
     decodedPayload[0]=(uint64_t)cw_ML;
