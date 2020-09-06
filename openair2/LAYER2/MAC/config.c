@@ -1048,7 +1048,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     while(RC.mac[Mod_idP]->if_inst->PHY_config_req == NULL) {
       // DJP AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
       usleep(100 * 1000);
-      printf("Waiting for PHY_config_req\n");
+      LOG_I(MAC, "Waiting for PHY_config_req\n");
     }
   }
 
