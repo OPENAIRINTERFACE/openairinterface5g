@@ -1182,7 +1182,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
             {
                 uint16_t dl_rnti = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].dlsch_pdu.dlsch_pdu_rel8.rnti;
                 uint16_t numPDUs = dl_config_req->dl_config_request_body.number_pdu;
-                LOG_I(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
+                LOG_A(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
                            " with a RNTI value of: %x and with number of PDUs: %u\n",
                       NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_rnti, numPDUs);
             }
