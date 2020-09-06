@@ -1307,7 +1307,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     {
     case NFAPI_RACH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rach_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+      LOG_A(MAC, "RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
             NFAPI_SFNSF2SFN(UL->rach_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rach_ind.sfn_sf));
       break;
     case NFAPI_CRC_INDICATION:

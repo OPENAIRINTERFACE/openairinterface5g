@@ -505,7 +505,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t *c
   }
 
   size = do_RRCConnectionSetupComplete(ctxt_pP->module_id, buffer, Transaction_id, nas_msg_length, nas_msg);
-  LOG_I(RRC,"[UE %d][RAPROC] Frame %d Subframe %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, eNB %d)\n",
+  LOG_A(RRC,"[UE %d][RAPROC] Frame %d Subframe %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, eNB %d)\n",
         ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, size, eNB_index);
   LOG_D(RLC,
         "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
@@ -606,7 +606,7 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *co
           break;
 
         case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
-          LOG_I(RRC,
+          LOG_A(RRC,
                 "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n",
                 ctxt_pP->module_id,
                 ctxt_pP->frame,
@@ -1618,7 +1618,7 @@ rrc_ue_process_ueCapabilityEnquiry(
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
       }
 
-      LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      LOG_A(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
       rrc_data_req_ue (
         ctxt_pP,
         DCCH,
