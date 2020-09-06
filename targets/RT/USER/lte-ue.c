@@ -1030,6 +1030,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
   int num_pairs = 0;
   int num_lone = 0;
+  int last_sfn_sf = -1;
 
   while (!oai_exit) {
     bool sent_any = false;
@@ -1037,7 +1038,14 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(MAC, "sem_wait() error\n");
       abort();
     }
+
     int sfn_sf = current_sfn_sf;
+    if (sfn_sf == last_sfn_sf)
+    {
+      LOG_W(MAC, "repeated sfn_sf = %d.%d\n",
+            sfn_sf >> 4, sfn_sf & 15);
+    }
+    last_sfn_sf = sfn_sf;
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);

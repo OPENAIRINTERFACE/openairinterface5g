@@ -948,7 +948,7 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
         req->dl_config_request_body.dl_config_pdu_list[i];
   }
 
-  LOG_A(MAC, "dl_config_req in memcpy Frame: %d Subframe: %d",
+  LOG_A(MAC, "dl_config_req in memcpy Frame: %d Subframe: %d\n",
         p->sfn_sf >> 4, p->sfn_sf & 15);
 
   if (!put_queue(&dl_config_req_queue, p)) {
@@ -1217,7 +1217,7 @@ void *ue_standalone_pnf_task(void *context)
         }
         else
         {
-          LOG_A(MAC, "dl_config_req fresh off socket Frame: %d Subframe: %d",
+          LOG_A(MAC, "dl_config_req fresh off socket Frame: %d Subframe: %d\n",
                 dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15);
           // check to see if dl_config_req is null
           memcpy_dl_config_req(NULL, NULL, &dl_config_req);
