@@ -477,6 +477,50 @@ char *log_getthreadname(char *threadname,
   }
 }
 
+#if LOG_MINIMAL
+void logMinimal(int comp, int level, const char *format, ...)
+{
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
+        abort();
+
+    char buf[MAX_LOG_TOTAL];
+    int n = snprintf(buf, sizeof(buf), "%lu.%06lu [%s] %c ",
+                     ts.tv_sec,
+                     ts.tv_nsec / 1000,
+                     g_log->log_component[comp].name,
+                     level);
+    if (n < 0 || n >= sizeof(buf))
+    {
+        fprintf(stderr, "%s: n=%d\n", __func__, n);
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+    int m = vsnprintf(buf + n, sizeof(buf) - n, format, args);
+    va_end(args);
+
+    if (m < 0)
+    {
+        fprintf(stderr, "%s: n=%d m=%d\n", __func__, n, m);
+        return;
+    }
+
+    int len = n + m;
+    if (len > sizeof(buf) - 1)
+    {
+        len = sizeof(buf) - 1;
+    }
+    if (buf[len - 1] != '\n')
+    {
+        buf[len++] = '\n';
+    }
+
+    write(STDOUT_FILENO, buf, len);
+}
+#endif // LOG_MINIMAL
+
 static int log_header(char *log_buffer,
                       int buffsize,
                       int comp,
