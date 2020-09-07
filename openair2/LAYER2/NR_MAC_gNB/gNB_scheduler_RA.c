@@ -681,7 +681,31 @@ void nr_generate_Msg2(module_id_t module_idP,
 	  dci_pdu_rel15[0].mcs,
 	  dci_pdu_rel15[0].tb_scaling);
 
-    nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, RA_rnti, 0, ss, scc, bwp);
+    uint8_t nr_of_candidates, aggregation_level;
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0 /* common */);
+    int CCEIndex = allocate_nr_CCEs(
+        nr_mac,
+        bwp,
+        coreset,
+        aggregation_level,
+        ss->searchSpaceType->present - 1, // 0 common, 1 ue-specific
+        UE_id,
+        0); // m
+
+    if (CCEIndex < 0) {
+      LOG_E(MAC, "%s(): cannot find free CCE for UE %d!\n", __func__, UE_id);
+      return;
+    }
+    nr_configure_pdcch(nr_mac,
+                       pdcch_pdu_rel15,
+                       RA_rnti,
+                       ss,
+                       coreset,
+                       scc,
+                       bwp,
+                       aggregation_level,
+                       CCEIndex);
 
     LOG_I(MAC, "Frame %d: Subframe %d : Adding common DL DCI for RA_RNTI %x\n", frameP, slotP, RA_rnti);
 

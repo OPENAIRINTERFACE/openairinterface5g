@@ -414,18 +414,31 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
   }
   AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
 
-  int ret = nr_configure_pdcch(nr_mac,
-                               pdcch_pdu_rel15,
-                               UE_list->rnti[UE_id],
-		               1, // ue-specific
-		               ss,
-		               scc,
-		               bwp);
-  if (ret < 0) {
-   LOG_I(MAC,"CCE list not empty, couldn't schedule PDSCH\n");
-   free(dci_pdu_rel15);
-   return (0);
+  uint8_t nr_of_candidates, aggregation_level;
+  find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+  NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
+  int CCEIndex = allocate_nr_CCEs(
+      nr_mac,
+      bwp,
+      coreset,
+      aggregation_level,
+      ss->searchSpaceType->present - 1, // 0 common, 1 ue-specific
+      UE_id,
+      0); // m
+  if (CCEIndex < 0) {
+    LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PDSCH\n", __func__);
+    free(dci_pdu_rel15);
+    return 0;
   }
+  nr_configure_pdcch(nr_mac,
+                     pdcch_pdu_rel15,
+                     UE_list->rnti[UE_id],
+                     ss,
+                     coreset,
+                     scc,
+                     bwp,
+                     aggregation_level,
+                     CCEIndex);
 
   int dci_formats[2];
   int rnti_types[2];
@@ -1083,20 +1096,33 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     rnti_types[0]   = NR_RNTI_C;
     LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frameP,slotP);
 
-    int ret = nr_configure_pdcch(nr_mac,
-                                 pdcch_pdu_rel15,
-                                 UE_list->rnti[UE_id],
-                                 1, // ue-specific,
-                                 ss,
-		                 scc,
-		                 bwp);
-
-    if (ret < 0) {
-      LOG_I(MAC,"CCE list not empty, couldn't schedule PUSCH\n");
+    uint8_t nr_of_candidates, aggregation_level;
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
+    int CCEIndex = allocate_nr_CCEs(
+        nr_mac,
+        bwp,
+        coreset,
+        aggregation_level,
+        ss->searchSpaceType->present - 1, // 0 common, 1 ue-specific
+        UE_id,
+        0); // m
+    if (CCEIndex < 0) {
+      LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
       pusch_sched->active = false;
       return;
     }
     else {
+      nr_configure_pdcch(nr_mac,
+                         pdcch_pdu_rel15,
+                         UE_list->rnti[UE_id],
+                         ss,
+                         coreset,
+                         scc,
+                         bwp,
+                         aggregation_level,
+                         CCEIndex);
+
       dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
       config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,UE_list->UE_sched_ctrl[UE_id].tpc0,n_ubwp,bwp_id);
       fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);

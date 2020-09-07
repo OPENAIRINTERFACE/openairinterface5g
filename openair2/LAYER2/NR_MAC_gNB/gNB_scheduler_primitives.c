@@ -127,37 +127,65 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 } 
 
+NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
+                                     NR_SearchSpace_t *ss,
+                                     int ss_type) {
+  NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
+  if (ss_type == 0) { // common search space
+    AssertFatal(coreset_id != 0, "coreset0 currently not supported\n");
+    NR_ControlResourceSet_t *coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    AssertFatal(coreset_id == coreset->controlResourceSetId,
+                "ID of common ss coreset does not correspond to id set in the "
+                "search space\n");
+    return coreset;
+  } else {
+    const int n = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
+    for (int i = 0; i < n; i++) {
+      NR_ControlResourceSet_t *coreset =
+          bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
+      if (coreset_id == coreset->controlResourceSetId) {
+        return coreset;
+      }
+    }
+    AssertFatal(0, "Couldn't find coreset with id %ld\n", coreset_id);
+  }
+}
+
+NR_SearchSpace_t *get_searchspace(
+    NR_BWP_Downlink_t *bwp,
+    NR_SearchSpace__searchSpaceType_PR target_ss) {
+  DevAssert(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList);
+  DevAssert(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0);
+
+  const int n = bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;
+  for (int i=0;i<n;i++) {
+    NR_SearchSpace_t *ss = bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
+    AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
+    AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
+    if (ss->searchSpaceType->present == target_ss) {
+      return ss;
+    }
+  }
+  AssertFatal(0, "Couldn't find an adequate searchspace\n");
+}
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
-		     int bwp_id,
-		     int list_id,
-		     int aggregation,
-		     int search_space, // 0 common, 1 ue-specific
-		     int UE_id,
-		     int m) {
+                     NR_BWP_Downlink_t *bwp,
+                     NR_ControlResourceSet_t *coreset,
+                     int aggregation,
+                     int search_space, // 0 common, 1 ue-specific
+                     int UE_id,
+                     int m) {
   // uncomment these when we allocate for common search space
   //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   NR_UE_list_t *UE_list = &nr_mac->UE_list;
 
-  NR_BWP_Downlink_t *bwp;
-  NR_CellGroupConfig_t *secondaryCellGroup;
-
-  NR_ControlResourceSet_t *coreset;
-
   AssertFatal(UE_list->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
-  secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-  bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-
-  if (search_space == 1) {
-    coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[list_id];
-  }
-  else {
-    coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-  }
 
   int coreset_id = coreset->controlResourceSetId;
-  int *cce_list = nr_mac->cce_list[bwp_id][coreset_id];
+  int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
 
   int n_rb=0;
   for (int i=0;i<6;i++)
@@ -410,6 +438,8 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 void nr_fill_nfapi_dl_pdu(int Mod_idP,
                           int UE_id,
                           int bwp_id,
+                          NR_SearchSpace_t *ss,
+                          NR_ControlResourceSet_t *coreset,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
                           NR_sched_pucch *pucch_sched,
                           int nrOfLayers,
@@ -424,7 +454,9 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
                           uint32_t TBS,
                           int time_domain_assignment,
                           int StartSymbolIndex,
-                          int NrOfSymbols) {
+                          int NrOfSymbols,
+                          uint8_t aggregation_level,
+                          int CCEIndex) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -561,37 +593,15 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         dci_pdu_rel15[0].ndi,
         dci_pdu_rel15[0].rv);
 
-  NR_SearchSpace_t *ss;
-  int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-
-  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,"searchPsacesToAddModList is null\n");
-  AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
-              "searchPsacesToAddModList is empty\n");
-
-  int found=0;
-
-  for (int i=0;i<bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
-    ss=bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
-    AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
-    AssertFatal(ss->searchSpaceType != NULL,"ss->searchSpaceType is null\n");
-    if (ss->searchSpaceType->present == target_ss) {
-      found=1;
-      break;
-    }
-  }
-  AssertFatal(found==1,"Couldn't find an adequate searchspace\n");
-
-  int ret = nr_configure_pdcch(nr_mac,
-                               pdcch_pdu_rel15,
-                               UE_list->rnti[UE_id],
-                               1, // ue-specific
-                               ss,
-                               scc,
-                               bwp);
-  if (ret < 0) {
-   LOG_I(MAC,"CCE list not empty, couldn't schedule PDSCH\n");
-   return 0;
-  }
+  nr_configure_pdcch(nr_mac,
+                     pdcch_pdu_rel15,
+                     UE_list->rnti[UE_id],
+                     ss,
+                     coreset,
+                     scc,
+                     bwp,
+                     aggregation_level,
+                     CCEIndex);
 
   int dci_formats[2];
   int rnti_types[2];
@@ -643,44 +653,16 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
         TBS);
 }
 
-int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                       nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-                       uint16_t rnti,
-                       int ss_type,
-                       NR_SearchSpace_t *ss,
-                       NR_ServingCellConfigCommon_t *scc,
-                       NR_BWP_Downlink_t *bwp){
-
-  int CCEIndex = -1;
-  int cid = 0;
-  NR_ControlResourceSet_t *coreset = NULL;
-
+void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+                        uint16_t rnti,
+                        NR_SearchSpace_t *ss,
+                        NR_ControlResourceSet_t *coreset,
+                        NR_ServingCellConfigCommon_t *scc,
+                        NR_BWP_Downlink_t *bwp,
+                        uint8_t aggregation_level,
+                        int CCEIndex) {
   if (bwp) { // This is not the InitialBWP
-    NR_ControlResourceSet_t *temp_coreset;
-    NR_ControlResourceSetId_t coresetid = *ss->controlResourceSetId;
-    if (ss_type == 0) { // common search space
-      if (coresetid == 0){
-        AssertFatal(1==0,"coreset0 currently not supported\n");
-      }
-      else {
-        coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-        AssertFatal(coresetid==coreset->controlResourceSetId,"ID of common ss coreset does not correspond to id set in the search space\n");
-      }
-    }
-    else {
-      int n_list = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
-      for (int i=0; i<n_list; i++) {
-        temp_coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
-        if (coresetid==temp_coreset->controlResourceSetId) {
-          coreset = temp_coreset;
-          cid = i;
-          break;
-        }
-      }
-      if(coreset==NULL)
-        AssertFatal(1==0,"Couldn't find coreset with id %ld\n",coresetid);
-    }
-    
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
     pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
@@ -743,22 +725,6 @@ int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
       pdcch_pdu->dci_pdu.ScramblingRNTI[pdcch_pdu->numDlDci]=0;
     }
 
-    uint8_t nr_of_candidates,aggregation_level;
-    find_aggregation_candidates(&aggregation_level,
-                               &nr_of_candidates,
-                               ss);
-
-    CCEIndex = allocate_nr_CCEs(nr_mac,
-                                1, // bwp_id
-                                cid,
-                                aggregation_level,
-                                ss->searchSpaceType->present-1, // search_space, 0 common, 1 ue-specific
-                                0, // UE-id
-                                0); // m
-
-    if (CCEIndex<0)
-     return (CCEIndex);
-
     pdcch_pdu->dci_pdu.AggregationLevel[pdcch_pdu->numDlDci] = aggregation_level;
     pdcch_pdu->dci_pdu.CceIndex[pdcch_pdu->numDlDci] = CCEIndex;
 
@@ -767,7 +733,6 @@ int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
 
     pdcch_pdu->dci_pdu.powerControlOffsetSS[pdcch_pdu->numDlDci]=1;
     pdcch_pdu->numDlDci++;
-    return (0);
   }
   else { // this is for InitialBWP
     AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");

@@ -132,6 +132,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 void nr_fill_nfapi_dl_pdu(int Mod_id,
                           int UE_id,
                           int bwp_id,
+                          NR_SearchSpace_t *ss,
+                          NR_ControlResourceSet_t *coreset,
                           nfapi_nr_dl_tti_request_body_t *dl_req,
                           NR_sched_pucch *pucch_sched,
                           int nrOfLayers,
@@ -146,7 +148,9 @@ void nr_fill_nfapi_dl_pdu(int Mod_id,
                           uint32_t tbs,
                           int time_domain_assignment,
                           int StartSymbolIndex,
-                          int NrOfSymbols);
+                          int NrOfSymbols,
+                          uint8_t aggregation_level,
+                          int CCEIndex);
 
 int configure_fapi_dl_pdu_phytest(int Mod_id,
                                   nfapi_nr_dl_tti_request_body_t *dl_req,
@@ -233,13 +237,15 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
-                       nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-                       uint16_t rnti,
-                       int ss_type,
-                       NR_SearchSpace_t *ss,
-                       NR_ServingCellConfigCommon_t *scc,
-                       NR_BWP_Downlink_t *bwp);
+void nr_configure_pdcch(gNB_MAC_INST *nr_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+                        uint16_t rnti,
+                        NR_SearchSpace_t *ss,
+                        NR_ControlResourceSet_t *coreset,
+                        NR_ServingCellConfigCommon_t *scc,
+                        NR_BWP_Downlink_t *bwp,
+                        uint8_t aggregation_level,
+                        int CCEIndex);
 
 void fill_dci_pdu_rel15(NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *secondaryCellGroup,
@@ -254,6 +260,16 @@ void prepare_dci(NR_CellGroupConfig_t *secondaryCellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
+
+/* find coreset within the search space */
+NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
+                                     NR_SearchSpace_t *ss,
+                                     int ss_type);
+
+/* find a search space within a BWP */
+NR_SearchSpace_t *get_searchspace(
+    NR_BWP_Downlink_t *bwp,
+    NR_SearchSpace__searchSpaceType_PR target_ss);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
@@ -288,13 +304,12 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP);
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
-                     int bwp_id,
-                     int coreset_id,
+                     NR_BWP_Downlink_t *bwp,
+                     NR_ControlResourceSet_t *coreset,
                      int aggregation,
                      int search_space, // 0 common, 1 ue-specific
                      int UE_id,
-                     int m
-                     );
+                     int m);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
