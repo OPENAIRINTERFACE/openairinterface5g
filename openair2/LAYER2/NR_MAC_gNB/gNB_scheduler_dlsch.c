@@ -447,18 +447,37 @@ void nr_schedule_ue_spec(module_id_t module_id,
         rlc_status.bytes_in_buffer);
 
   /* PREPROCESSOR */
-  /* Find PUCCH occasion */
-  int pucch_sched;
-  nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
-  NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
-
-  /* BWP and following: for MCS calculation, possibly based on CQI and RLC ind */
+  /* BWP */
   const int bwp_id = 1;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
               "downlinkBWP_ToAddModList has %d BWP!\n",
               secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
+
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  NR_SearchSpace_t *ss = get_searchspace(bwp, target_ss);
+
+  /* Find a free CCE */
+  uint8_t nr_of_candidates, aggregation_level;
+  find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+  NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
+  int CCEIndex = allocate_nr_CCEs(gNB_mac,
+                                  bwp,
+                                  coreset,
+                                  aggregation_level,
+                                  ss->searchSpaceType->present - 1,
+                                  UE_id,
+                                  0); // m
+  if (CCEIndex < 0) {
+    LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
+    return;
+  }
+  /* Find PUCCH occasion */
+  int pucch_sched;
+  nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
+  NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
+
   const uint16_t bwpSize = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   const uint8_t mcs = 9;
@@ -601,6 +620,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
   nr_fill_nfapi_dl_pdu(module_id,
                        UE_id,
                        bwp_id,
+                       ss,
+                       coreset,
                        dl_req,
                        pucch,
                        nrOfLayers,
@@ -615,7 +636,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        TBS,
                        time_domain_assignment,
                        startSymbolIndex,
-                       nrOfSymbols);
+                       nrOfSymbols,
+                       aggregation_level,
+                       CCEIndex);
 
   nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
   configure_fapi_dl_Tx(module_id,
