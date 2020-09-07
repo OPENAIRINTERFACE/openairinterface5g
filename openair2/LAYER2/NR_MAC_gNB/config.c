@@ -334,7 +334,6 @@ void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_li
   uint8_t csi_ssb_idx =0;
   uint16_t period, offset;
   NR_CSI_ReportPeriodicityAndOffset_PR p_and_o;
-  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
   NR_CSI_ResourceConfigId_t csi_ResourceConfigId;
 
   for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
@@ -429,14 +428,16 @@ void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_li
                   *(csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {  ///For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1 for spec 38.212
               
 	      nb_ssb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
-	      if (nb_ssb_resources)
+	      if (nb_ssb_resources) {
 		UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP 
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
-	      else 
+	      }
+	      else { 
 		UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen =0;
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen = 0;  
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =0; 
+	      }
 		 
 	     
 	      LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d",
