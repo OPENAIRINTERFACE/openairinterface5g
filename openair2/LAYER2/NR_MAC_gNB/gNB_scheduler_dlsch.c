@@ -418,17 +418,42 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          sub_frame_t slot,
                          int num_slots_per_tdd) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
+  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
+  if (UE_list->num_UEs == 0)
+    return;
+
   const int ta_len = gNB_mac->ta_len;
   const int UE_id = 0;
   const int CC_id = 0;
+
+  /* Retrieve amount of data to send for this UE */
+  const int lcid = DL_SCH_LCID_DTCH;
+  const uint16_t rnti = UE_list->rnti[UE_id];
+  const mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_id,
+                                                              rnti,
+                                                              module_id,
+                                                              frame,
+                                                              slot,
+                                                              ENB_FLAG_YES,
+                                                              MBMS_FLAG_NO,
+                                                              lcid,
+                                                              0,
+                                                              0);
+  LOG_D(MAC,
+        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
+        frame,
+        slot,
+        lcid,
+        rlc_status.bytes_in_buffer);
+
+  /* PREPROCESSOR */
+  /* Find PUCCH occasion */
+  int pucch_sched;
+  nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
+  NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
+
+  /* BWP and following: for MCS calculation, possibly based on CQI and RLC ind */
   const int bwp_id = 1;
-
-  nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-  nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
-
-  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
-
-  if (UE_list->num_UEs ==0) return;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
               "downlinkBWP_ToAddModList has %d BWP!\n",
@@ -436,20 +461,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
   const uint16_t bwpSize = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
-  unsigned char sdu_lcids[NB_RB_MAX] = {0};
-  uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  const uint16_t rnti = UE_list->rnti[UE_id];
-
-  uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
-
-  LOG_D(MAC, "Scheduling UE specific search space DCI type 1\n");
-
-  int pucch_sched;
-  nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
-  NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
-
-  const int nrOfLayers = 1;
   const uint8_t mcs = 9;
+  const int nrOfLayers = 1;
   const uint8_t numDmrsCdmGrpsNoData = 1;
   const nfapi_nr_dmrs_type_e dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
 
@@ -485,6 +498,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                      0 /* tb_scaling */,
                      nrOfLayers)
       >> 3;
+  AssertFatal(TBS != 0, "TBS is zero but requested %d RBs!\n", rbSize);
   LOG_D(MAC,
         "TBS %d bytes: N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d",
         TBS,
@@ -495,54 +509,25 @@ void nr_schedule_ue_spec(module_id_t module_id,
         Qm,
         table_idx);
 
-  nr_fill_nfapi_dl_pdu(module_id,
-                       UE_id,
-                       bwp_id,
-                       dl_req,
-                       pucch,
-                       nrOfLayers,
-                       mcs,
-                       rbSize,
-                       0 /* bwpStart */,
-                       numDmrsCdmGrpsNoData,
-                       dmrsConfigType,
-                       table_idx,
-                       R,
-                       Qm,
-                       TBS,
-                       time_domain_assignment,
-                       startSymbolIndex,
-                       nrOfSymbols);
-
-  if (TBS == 0)
-   return;
-
-  const int lcid = DL_SCH_LCID_DTCH;
+  /* POST processing */
+  /* Get RLC data TODO: remove random data retrieval */
   int header_length_total = 0;
   int header_length_last = 0;
   int sdu_length_total = 0;
   int num_sdus = 0;
-  LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",
-      module_id, frame, lcid, TBS, TBS - ta_len - header_length_total - sdu_length_total - 3);
-
-  const mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_id,
-                                                              rnti,
-                                                              module_id,
-                                                              frame,
-                                                              slot,
-                                                              ENB_FLAG_YES,
-                                                              MBMS_FLAG_NO,
-                                                              lcid,
-                                                              0,
-                                                              0);
-
+  uint16_t sdu_lengths[NB_RB_MAX] = {0};
+  uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
+  unsigned char sdu_lcids[NB_RB_MAX] = {0};
   if (rlc_status.bytes_in_buffer > 0) {
-
-    LOG_I(MAC, "configure fapi due to data availability \n");
-
-    LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
-        module_id, frame, TBS - ta_len - header_length_total - sdu_length_total - 3,
-        lcid, header_length_total, TBS);
+    LOG_D(MAC,
+          "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
+          "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
+          module_id,
+          frame,
+          TBS - ta_len - header_length_total - sdu_length_total - 3,
+          lcid,
+          header_length_total,
+          TBS);
 
     sdu_lengths[num_sdus] = mac_rlc_data_req(module_id,
         rnti,
@@ -556,7 +541,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
         0,
         0);
 
-    LOG_W(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n", module_id, sdu_lengths[num_sdus], lcid);
+    LOG_I(MAC,
+          "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
+          module_id,
+          sdu_lengths[num_sdus],
+          lcid);
 
     sdu_lcids[num_sdus] = lcid;
     sdu_length_total += sdu_lengths[num_sdus];
@@ -608,6 +597,27 @@ void nr_schedule_ue_spec(module_id_t module_id,
       gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
   }
 
+  nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
+  nr_fill_nfapi_dl_pdu(module_id,
+                       UE_id,
+                       bwp_id,
+                       dl_req,
+                       pucch,
+                       nrOfLayers,
+                       mcs,
+                       rbSize,
+                       0 /* bwpStart */,
+                       numDmrsCdmGrpsNoData,
+                       dmrsConfigType,
+                       table_idx,
+                       R,
+                       Qm,
+                       TBS,
+                       time_domain_assignment,
+                       startSymbolIndex,
+                       nrOfSymbols);
+
+  nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
   configure_fapi_dl_Tx(module_id,
                        frame,
                        slot,
