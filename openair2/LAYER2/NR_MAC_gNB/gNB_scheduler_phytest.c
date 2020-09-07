@@ -909,7 +909,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
       if (get_softmodem_params()->phy_test==1)
         pusch_pdu->rb_size = 50;
       else
-        pusch_pdu->rb_size = 5;
+        pusch_pdu->rb_size = pusch_pdu->bwp_size;
     }
     else
       AssertFatal(1==0,"Only frequency resource allocation type 1 is currently supported\n");
