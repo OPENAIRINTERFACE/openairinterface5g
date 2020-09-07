@@ -410,9 +410,9 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 int nr_fill_nfapi_dl_pdu(int Mod_idP,
                          nfapi_nr_dl_tti_request_body_t *dl_req,
                          NR_sched_pucch *pucch_sched,
-                         uint8_t *mcsIndex,
-                         uint16_t *rbSize,
-                         uint16_t *rbStart) {
+                         uint8_t mcs,
+                         uint16_t rbSize,
+                         uint16_t rbStart) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -464,7 +464,6 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
     pdsch_pdu_rel15->CyclicPrefix = 0;
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
-  int mcs = (mcsIndex!=NULL) ? *mcsIndex : 9;
   int current_harq_pid = UE_list->UE_sched_ctrl[UE_id].current_harq_pid;
   pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcs,0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
@@ -482,8 +481,8 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 1;
   pdsch_pdu_rel15->dmrsPorts = 1;
   pdsch_pdu_rel15->resourceAlloc = 1;
-  pdsch_pdu_rel15->rbStart = (rbStart!=NULL) ? *rbStart : 0;
-  pdsch_pdu_rel15->rbSize = (rbSize!=NULL) ? *rbSize : pdsch_pdu_rel15->BWPSize;
+  pdsch_pdu_rel15->rbStart = rbStart;
+  pdsch_pdu_rel15->rbSize = rbSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
 
   int startSymbolAndLength=0;

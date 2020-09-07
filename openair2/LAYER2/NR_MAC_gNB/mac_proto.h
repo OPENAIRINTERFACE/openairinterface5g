@@ -132,9 +132,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 int nr_fill_nfapi_dl_pdu(int Mod_id,
                          nfapi_nr_dl_tti_request_body_t *dl_req,
                          NR_sched_pucch *pucch_sched,
-                         uint8_t *mcsIndex,
-                         uint16_t *rbSize,
-                         uint16_t *rbStart);
+                         uint8_t mcs,
+                         uint16_t rbSize,
+                         uint16_t rbStart);
 
 int configure_fapi_dl_pdu_phytest(int Mod_id,
                                   nfapi_nr_dl_tti_request_body_t *dl_req,
