@@ -125,6 +125,15 @@ typedef struct {
 } NR_gNB_UL_PDCCH_t;
 
 typedef struct {
+  uint16_t rnti;
+  int round_trials[8];
+  int total_bytes_tx;
+  int total_bytes_rx;
+  int current_Qm;
+  int current_RI;
+} NR_gNB_SCH_STATS_t;
+
+typedef struct {
   /// Pointers to 16 HARQ processes for the DLSCH
   NR_DL_gNB_HARQ_t *harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
@@ -168,6 +177,8 @@ typedef struct {
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
 } NR_gNB_DLSCH_t;
+
+
 
 typedef struct {
   int frame;
@@ -347,10 +358,6 @@ typedef struct {
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
   uint8_t last_iteration_cnt;  
-  /// num active cba group
-  uint8_t num_active_cba_groups;
-  /// num active cba group
-  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
 } NR_gNB_ULSCH_t;
 
 typedef struct {
@@ -705,6 +712,11 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
+  /// statistics for DLSCH measurement collection
+  NR_gNB_SCH_STATS_t dlsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
+  /// statistics for ULSCH measurement collection
+  NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
+
   t_nrPolar_params    *uci_polarParams;
 
   uint8_t pbch_configured;
@@ -798,6 +810,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_channel_estimation_stats;
   time_stats_t ulsch_channel_compensation_stats;
   time_stats_t ulsch_rbs_extraction_stats;
+  time_stats_t ulsch_mrc_stats;
   time_stats_t ulsch_llr_stats;
   /*
   time_stats_t rx_dft_stats;

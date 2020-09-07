@@ -251,6 +251,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
+  bool active;
 } NR_sched_pucch;
 
 typedef struct NR_sched_pusch {
@@ -303,11 +304,25 @@ typedef struct NR_preamble_ue {
   uint8_t *preamble_list;
 } NR_preamble_ue;
 
+typedef struct {
+
+  int lc_bytes_tx[64];
+  int lc_bytes_rx[64];
+  int dlsch_rounds[8];
+  int dlsch_errors;
+  int dlsch_total_bytes;
+  int ulsch_rounds[8];
+  int ulsch_errors;
+  int ulsch_total_bytes_scheduled;
+  int ulsch_total_bytes_rx;
+} NR_mac_stats_t;
+
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
+  NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   int next[MAX_MOBILES_PER_GNB];
   int head;
   int next_ul[MAX_MOBILES_PER_GNB];
@@ -330,10 +345,6 @@ typedef struct gNB_MAC_INST_s {
   eth_params_t                    eth_params_s;
   /// Module
   module_id_t                     Mod_id;
-  /// frame counter
-  frame_t                         frame;
-  /// slot counter
-  int                             slot;
   /// timing advance group
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY

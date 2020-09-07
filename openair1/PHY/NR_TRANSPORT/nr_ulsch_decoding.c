@@ -208,8 +208,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
     ulsch->Mlimit = 0;
     ulsch->max_ldpc_iterations = 0;
     ulsch->last_iteration_cnt = 0;
-    ulsch->num_active_cba_groups = 0;
-    for (i=0;i<NUM_MAX_CBA_GROUP;i++) ulsch->cba_rnti[i] = 0;
     for (i=0;i<NR_MAX_SLOTS_PER_FRAME;i++) ulsch->harq_process_id[i] = 0;
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
@@ -225,7 +223,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         ulsch->harq_processes[i]->rar_alloc=0;
         ulsch->harq_processes[i]->status=NR_SCH_IDLE;
         ulsch->harq_processes[i]->subframe_scheduling_flag=0;
-        ulsch->harq_processes[i]->subframe_cba_scheduling_flag=0;
         ulsch->harq_processes[i]->phich_active=0;
         ulsch->harq_processes[i]->phich_ACK=0;
         ulsch->harq_processes[i]->previous_first_rb=0;
@@ -483,7 +480,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   
   t_nrLDPC_dec_params decParams;
@@ -523,15 +520,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
-
-    if (R<1024)
-      Coderate = (float) R /(float) 1024;
-    else
-      Coderate = (float) R /(float) 2048;
-
-    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-      p_decParams->BG = 2;
-      if (Coderate < 0.3333) {
+  if (R<1024)
+    Coderate = (float) R /(float) 1024;
+  else
+    Coderate = (float) R /(float) 2048;
+  
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+    p_decParams->BG = 2;
+    if (Coderate < 0.3333) {
       p_decParams->R = 15;
       kc = 52;
     }
@@ -558,8 +554,29 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       kc = 27;
     }
   }
-
+  
+  NR_gNB_SCH_STATS_t *stats=NULL;
+  int first_free=-1;
+  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++) {
+    if (gNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
+      first_free = i;
+      stats=&gNB->ulsch_stats[i];
+    }
+    if (gNB->ulsch_stats[i].rnti == ulsch->rnti) {
+      stats=&gNB->ulsch_stats[i];
+      break;
+    }
+  }
+  if (stats) {
+    stats->rnti = ulsch->rnti;
+    stats->round_trials[harq_process->round]++;
+  }
   if (harq_process->round == 0) {
+    if (stats) {
+      stats->current_Qm = Qm;
+      stats->current_RI = n_layers;
+      stats->total_bytes_tx += harq_process->TBS;
+    }
     // This is a new packet, so compute quantities regarding segmentation
     if (A > 3824)
       harq_process->B = A+24;

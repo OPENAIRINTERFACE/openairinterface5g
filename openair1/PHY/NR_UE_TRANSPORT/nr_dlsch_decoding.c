@@ -590,6 +590,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
         LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
+	if (r==0)
+	  for (int i=0;i<10;i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t*)llrProcBuf)[i]);
+
         //Temporary hack
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         ret = no_iteration_ldpc;
@@ -663,9 +666,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     harq_process->harq_ack.harq_id = harq_pid;
     harq_process->harq_ack.send_harq_status = 1;
     harq_process->errors[harq_process->round]++;
-    harq_process->round++; // [hna] uncomment this line when HARQ is implemented
 
-    //    printf("Rate: [UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);
+    //    printf("Rate: [UE %d] DLSCH: Setting NACK for slot %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,nr_tti_rx,harq_pid,harq_process->round);
     if (harq_process->round >= dlsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;

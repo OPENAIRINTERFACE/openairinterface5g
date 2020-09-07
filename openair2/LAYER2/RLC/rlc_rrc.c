@@ -640,7 +640,8 @@ rlc_union_t *rrc_rlc_add_rlc   (
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
     rlc_union_p = calloc(1, sizeof(rlc_union_t));
     h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
-    h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
+    if(MBMS_flagP != TRUE)
+    	h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
 
     if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
       if (MBMS_flagP == TRUE) {

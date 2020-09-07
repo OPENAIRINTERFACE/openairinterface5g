@@ -163,7 +163,7 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms) {
 
-  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
+  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -264,7 +264,7 @@ uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
 	   scrambled_output[6], scrambled_output[7], scrambled_output[8], scrambled_output[9], scrambled_output[10],scrambled_output[11] );
 #endif
     /// QPSK modulation
-    int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
+    int16_t mod_dci[NR_MAX_DCI_SIZE>>1] __attribute__((aligned(16)));
     nr_modulation(scrambled_output, encoded_length, DMRS_MOD_ORDER, mod_dci); //Qm = 2 as DMRS is QPSK modulated
 #ifdef DEBUG_DCI
     

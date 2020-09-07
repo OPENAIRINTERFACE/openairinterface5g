@@ -93,7 +93,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
-                               uint8_t frame,
+                               uint32_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id) {
@@ -218,7 +218,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   n_dmrs = (nb_rb*((dmrs_type == pusch_dmrs_type1) ? 6:4)*number_dmrs_symbols);
-  int16_t mod_dmrs[n_dmrs<<1];
+  int16_t mod_dmrs[n_dmrs<<1] __attribute((aligned(16)));
   ///////////
   ////////////////////////////////////////////////////////////////////////
 

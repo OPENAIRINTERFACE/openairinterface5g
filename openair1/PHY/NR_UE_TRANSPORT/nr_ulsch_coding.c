@@ -424,19 +424,15 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
             }
     }
 
-#ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d)...\n",
-        r,
-        G,
-        Kr*3,
-        mod_order,nb_rb);
-#endif
+
+    LOG_D(PHY,"Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d, rvidx %d)...\n",
+	  r,
+	  G,
+	  Kr*3,
+	  mod_order,nb_rb,
+	  harq_process->pusch_pdu.pusch_data.rv_index);
 
     //start_meas(rm_stats);
-#ifdef DEBUG_DLSCH_CODING
-  printf("rvidx in encoding = %d\n", harq_process->pusch_pdu.pusch_data.rv_index);
-#endif
-
 ///////////////////////// d---->| Rate matching bit selection |---->e /////////////////////////
 ///////////
 

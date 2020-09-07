@@ -33,7 +33,6 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -109,6 +108,9 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);
+
+  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
@@ -553,10 +555,35 @@ int main(int argc, char **argv)
 				     frame_parms->nb_prefix_samples,
 				     CYCLIC_PREFIX);
     		} else {
-    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+		  /*    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
     			                     &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
 			                     14,
-			                     frame_parms);
+			                     frame_parms);*/
+		  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+			       (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+			       frame_parms->ofdm_symbol_size,
+			       1,
+			       frame_parms->nb_prefix_samples0,
+			       CYCLIC_PREFIX);
+		  
+		  apply_nr_rotation(frame_parms,
+				    (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+				    slot,
+				    0,
+				    1,
+				    frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
+		  PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
+			       (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+			       frame_parms->ofdm_symbol_size,
+			       13,
+			       frame_parms->nb_prefix_samples,
+			       CYCLIC_PREFIX);
+		  apply_nr_rotation(frame_parms,
+				    (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+				    slot,
+				    1,
+				    13,
+				    frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
     		}
     	}
     }
