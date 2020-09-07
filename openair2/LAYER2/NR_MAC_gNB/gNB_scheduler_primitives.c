@@ -420,9 +420,9 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
 
-  int TBS;
   int bwp_id=1;
   int UE_id = 0;
+  const int nrOfLayers = 1;
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
 
@@ -471,7 +471,7 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->mcsTable[0] = 0;
   pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
-  pdsch_pdu_rel15->nrOfLayers = 1;
+  pdsch_pdu_rel15->nrOfLayers = nrOfLayers;
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 0; // Point A
   UE_list->mac_stats[UE_id].dlsch_rounds[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round]++;
@@ -612,11 +612,59 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
         pdcch_pdu_rel15->StartSymbolIndex,
         pdcch_pdu_rel15->DurationSymbols);
 
-  int x_Overhead = 0; // should be 0 for initialBWP
-  nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu,x_Overhead,pdsch_pdu_rel15->numDmrsCdmGrpsNoData,0);
+  const uint16_t N_PRB_oh = 0; // overhead should be 0 for initialBWP
+  uint8_t N_PRB_DMRS;
+  if (pdsch_pdu_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData * 6;
+  } else {
+    N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData * 4;
+  }
+  const uint8_t N_sh_symb = pdsch_pdu_rel15->NrOfSymbols;
 
-  // Hardcode it for now
-  TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
+  const uint8_t table_idx = 0;
+  const uint16_t R = nr_get_code_rate_dl(mcs, table_idx);
+  const uint8_t Qm = nr_get_Qm_dl(mcs, table_idx);
+  const uint32_t TBS =
+      nr_compute_tbs(Qm,
+                     R,
+                     rbSize,
+                     N_sh_symb,
+                     N_PRB_DMRS, // FIXME // This should be multiplied by the
+                                 // number of dmrs symbols
+                     N_PRB_oh,
+                     0 /* tb_scaling */,
+                     nrOfLayers)
+      >> 3;
+
+  pdsch_pdu_rel15->targetCodeRate[0] = R;
+  pdsch_pdu_rel15->qamModOrder[0] = Qm;
+  pdsch_pdu_rel15->TBSize[0] = TBS;
+  // I don't know why the following is not needed, but in this case we don't
+  // need additional calculations:
+  const uint16_t N_RE_prime = NR_NB_SC_PER_RB * N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  LOG_D(MAC,
+        "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n",
+        N_RE_prime,
+        N_sh_symb,
+        N_PRB_DMRS,
+        N_PRB_oh);
+  //pdsch_pdu_rel15->nb_mod_symbols = N_RE_prime*pdsch_pdu_rel15->n_prb*pdsch_pdu_rel15->nb_codewords;
+  pdsch_pdu_rel15->mcsTable[0] = table_idx;
+
+  LOG_D(MAC,
+        "TBS %d bytes: N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table "
+        "%d nb_symbols %d\n",
+        TBS,
+        N_PRB_DMRS,
+        N_sh_symb,
+        N_PRB_oh,
+        R,
+        Qm,
+        table_idx,
+        N_RE_prime * pdsch_pdu_rel15->rbSize * pdsch_pdu_rel15->NrOfCodewords);
+
   if (UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round==0)
     UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
