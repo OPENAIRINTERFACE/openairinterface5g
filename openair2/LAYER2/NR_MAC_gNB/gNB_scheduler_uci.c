@@ -415,13 +415,12 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     }
   }
   if ((uci_234->pduBitmap >> 1) & 0x01) {
-    int bwp_id =1;
-    NR_BWP_Uplink_t *ubwp=RC.nrmac[Mod_idP]->UE_list.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
-    NR_SubcarrierSpacing_t scs=ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+
+    NR_SubcarrierSpacing_t scs=*(RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon->ssbSubcarrierSpacing);
     LOG_I(PHY,"SFN/SF:%d%d scs %ld \n",
        UL_info->frame,UL_info->slot,
        scs);
-    //API to parse the csi report and store it into sched_ctrl
+     //API to parse the csi report and store it into sched_ctrl
     extract_pucch_csi_report (csi_MeasConfig, uci_pdu, sched_ctrl,UL_info->frame, UL_info->slot, scs, UE_id, Mod_idP);
   }
 

@@ -422,6 +422,7 @@ typedef struct {
 typedef struct nr_csi_report {
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
   long periodicity;
+  uint16_t offset;
   NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
   uint8_t nb_of_nzp_csi_report;
   uint8_t nb_of_csi_ssb_report;
