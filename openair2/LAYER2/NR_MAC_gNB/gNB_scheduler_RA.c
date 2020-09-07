@@ -437,7 +437,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_UE_list_t                               *UE_list = &mac->UE_list;
   int UE_id = 0;
 
-  if (ra->state != RA_IDLE) {
+  if (ra->state == RA_IDLE) {
     LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
     return;
   }
