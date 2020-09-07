@@ -341,8 +341,6 @@ void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_li
     csi_ResourceConfigId=csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->resourcesForChannelMeasurement;
     reportQuantity_type = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportQuantity.present;
     UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type = reportQuantity_type;
-    p_and_o = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.present;
-
     switch(p_and_o){
       case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
         period = 4;

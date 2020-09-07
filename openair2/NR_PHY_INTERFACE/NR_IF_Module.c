@@ -304,8 +304,9 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       //Has to implement according to reportSlotConfig type
     periodicity = UE_list->csi_report_template[UE_id][csi_report_id].periodicity;
     LOG_I(PHY,"SFN/SF:%d%d \n", frame,slot);
-    if (((NR_SubcarrierSpacing_kHz30 == scs) && (((((frame & 0xf)+1)*20 + slot) & periodicity) == periodicity))
-       ||((NR_SubcarrierSpacing_kHz120 == scs)&&(((((frame & 0xf)+1)*80 + slot) & periodicity) == periodicity))) {
+   /* if (((NR_SubcarrierSpacing_kHz30 == scs) && (((((frame & 0xf)+1)*20 + slot) & periodicity) == periodicity))
+       ||((NR_SubcarrierSpacing_kHz120 == scs)&&(((((frame & 0xf)+1)*80 + slot) & periodicity) == periodicity))) {*/
+    if (((slots_per_frame[scs]*frame + slot -UE_list->csi_report_template[UE_id][csi_report_id].offset)%periodicity)==0) {
 
       reportQuantity_type = UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
       LOG_I(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
