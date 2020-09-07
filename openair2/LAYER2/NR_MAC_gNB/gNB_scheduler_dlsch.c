@@ -439,7 +439,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   int pucch_sched;
   nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
   NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
-  const int TBS_bytes = configure_fapi_dl_pdu(module_id, dl_req, pucch, NULL, NULL, NULL);
+  const int TBS_bytes = nr_fill_nfapi_dl_pdu(module_id, dl_req, pucch, NULL, NULL, NULL);
 
   if (TBS_bytes == 0)
    return;
