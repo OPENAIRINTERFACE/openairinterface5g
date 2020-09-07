@@ -480,7 +480,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   
   t_nrLDPC_dec_params decParams;
@@ -558,12 +558,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;
   for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++) {
-    if (gNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
+    if (phy_vars_gNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
       first_free = i;
-      stats=&gNB->ulsch_stats[i];
+      stats=&phy_vars_gNB->ulsch_stats[i];
     }
-    if (gNB->ulsch_stats[i].rnti == ulsch->rnti) {
-      stats=&gNB->ulsch_stats[i];
+    if (phy_vars_gNB->ulsch_stats[i].rnti == ulsch->rnti) {
+      stats=&phy_vars_gNB->ulsch_stats[i];
       break;
     }
   }
