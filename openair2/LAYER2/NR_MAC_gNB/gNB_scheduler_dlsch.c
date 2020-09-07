@@ -420,6 +420,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const int ta_len = gNB_mac->ta_len;
   const int UE_id = 0;
   const int CC_id = 0;
+  const int bwp_id = 1;
 
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
   nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
@@ -427,6 +428,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_UE_list_t *UE_list = &gNB_mac->UE_list;
 
   if (UE_list->num_UEs ==0) return;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+              "downlinkBWP_ToAddModList has %d BWP!\n",
+              secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
+  const uint16_t bwpSize = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
@@ -439,7 +446,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
   int pucch_sched;
   nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
   NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
-  const int TBS_bytes = nr_fill_nfapi_dl_pdu(module_id, dl_req, pucch, NULL, NULL, NULL);
+  const int TBS_bytes = nr_fill_nfapi_dl_pdu(module_id,
+                                             dl_req,
+                                             pucch,
+                                             9 /* mcs */,
+                                             bwpSize,
+                                             0 /* bwpStart */);
 
   if (TBS_bytes == 0)
    return;
