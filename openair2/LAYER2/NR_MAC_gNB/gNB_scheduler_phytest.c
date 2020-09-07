@@ -252,14 +252,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
-
-int configure_fapi_dl_pdu(int Mod_idP,
-                          nfapi_nr_dl_tti_request_body_t *dl_req,
-                          NR_sched_pucch *pucch_sched,
-                          uint8_t *mcsIndex,
-                          uint16_t *rbSize,
-                          uint16_t *rbStart) {
-
+int configure_fapi_dl_pdu_phytest(int Mod_idP,
+                                  nfapi_nr_dl_tti_request_body_t *dl_req,
+                                  NR_sched_pucch *pucch_sched,
+                                  uint8_t *mcsIndex,
+                                  uint16_t *rbSize,
+                                  uint16_t *rbStart) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -622,12 +620,13 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   ta_len = gNB_mac->ta_len;
 
-  TBS_bytes = configure_fapi_dl_pdu(module_idP,
-                                    dl_req,
-                                    pucch_sched,
-                                    dlsch_config!=NULL ? dlsch_config->mcsIndex : NULL,
-                                    dlsch_config!=NULL ? &dlsch_config->rbSize : NULL,
-                                    dlsch_config!=NULL ? &dlsch_config->rbStart : NULL);
+  TBS_bytes = configure_fapi_dl_pdu_phytest(
+      module_idP,
+      dl_req,
+      pucch_sched,
+      dlsch_config != NULL ? dlsch_config->mcsIndex : NULL,
+      dlsch_config != NULL ? &dlsch_config->rbSize : NULL,
+      dlsch_config != NULL ? &dlsch_config->rbStart : NULL);
 
   if (TBS_bytes == 0)
    return;
