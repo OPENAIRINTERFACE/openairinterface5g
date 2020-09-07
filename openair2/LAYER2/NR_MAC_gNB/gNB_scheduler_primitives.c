@@ -407,17 +407,24 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 }
 
-int nr_fill_nfapi_dl_pdu(int Mod_idP,
-                         int UE_id,
-                         int bwp_id,
-                         nfapi_nr_dl_tti_request_body_t *dl_req,
-                         NR_sched_pucch *pucch_sched,
-                         int nrOfLayers,
-                         uint8_t mcs,
-                         uint16_t rbSize,
-                         uint16_t rbStart,
-                         uint8_t numDmrsCdmGrpsNoData,
-                         nfapi_nr_dmrs_type_e dmrsConfigType) {
+void nr_fill_nfapi_dl_pdu(int Mod_idP,
+                          int UE_id,
+                          int bwp_id,
+                          nfapi_nr_dl_tti_request_body_t *dl_req,
+                          NR_sched_pucch *pucch_sched,
+                          int nrOfLayers,
+                          uint8_t mcs,
+                          uint16_t rbSize,
+                          uint16_t rbStart,
+                          uint8_t numDmrsCdmGrpsNoData,
+                          nfapi_nr_dmrs_type_e dmrsConfigType,
+                          uint8_t table_idx,
+                          uint16_t R,
+                          uint8_t Qm,
+                          uint32_t TBS,
+                          int time_domain_assignment,
+                          int StartSymbolIndex,
+                          int NrOfSymbols) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -485,14 +492,10 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->rbStart = rbStart;
   pdsch_pdu_rel15->rbSize = rbSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 1; // non-interleaved, check if this is ok for initialBWP
-
-  int startSymbolAndLength=0;
-  int time_domain_assignment=2;
-  int StartSymbolIndex,NrOfSymbols;
-
-  AssertFatal(time_domain_assignment<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count,"time_domain_assignment %d>=%d\n",time_domain_assignment,bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
-  startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
-  SLIV2SL(startSymbolAndLength,&StartSymbolIndex,&NrOfSymbols);
+  pdsch_pdu_rel15->targetCodeRate[0] = R;
+  pdsch_pdu_rel15->qamModOrder[0] = Qm;
+  pdsch_pdu_rel15->TBSize[0] = TBS;
+  pdsch_pdu_rel15->mcsTable[0] = table_idx;
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
 
@@ -613,76 +616,31 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
         pdcch_pdu_rel15->StartSymbolIndex,
         pdcch_pdu_rel15->DurationSymbols);
 
-  const uint16_t N_PRB_oh = 0; // overhead should be 0 for initialBWP
-  uint8_t N_PRB_DMRS;
-  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-    // if no data in dmrs cdm group is 1 only even REs have no data
-    // if no data in dmrs cdm group is 2 both odd and even REs have no data
-    N_PRB_DMRS = numDmrsCdmGrpsNoData * 6;
-  } else {
-    N_PRB_DMRS = numDmrsCdmGrpsNoData * 4;
-  }
-  const uint8_t N_sh_symb = NrOfSymbols;
-
-  const uint8_t table_idx = 0;
-  const uint16_t R = nr_get_code_rate_dl(mcs, table_idx);
-  const uint8_t Qm = nr_get_Qm_dl(mcs, table_idx);
-  const uint32_t TBS =
-      nr_compute_tbs(Qm,
-                     R,
-                     rbSize,
-                     N_sh_symb,
-                     N_PRB_DMRS, // FIXME // This should be multiplied by the
-                                 // number of dmrs symbols
-                     N_PRB_oh,
-                     0 /* tb_scaling */,
-                     nrOfLayers)
-      >> 3;
-
-  pdsch_pdu_rel15->targetCodeRate[0] = R;
-  pdsch_pdu_rel15->qamModOrder[0] = Qm;
-  pdsch_pdu_rel15->TBSize[0] = TBS;
   // I don't know why the following is not needed, but in this case we don't
   // need additional calculations:
-  const uint16_t N_RE_prime = NR_NB_SC_PER_RB * N_sh_symb - N_PRB_DMRS - N_PRB_oh;
-  LOG_D(MAC,
-        "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n",
-        N_RE_prime,
-        N_sh_symb,
-        N_PRB_DMRS,
-        N_PRB_oh);
+  //const uint16_t N_RE_prime = NR_NB_SC_PER_RB * N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  //LOG_D(MAC,
+  //      "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n",
+  //      N_RE_prime,
+  //      N_sh_symb,
+  //      N_PRB_DMRS,
+  //      N_PRB_oh);
   //pdsch_pdu_rel15->nb_mod_symbols = N_RE_prime*pdsch_pdu_rel15->n_prb*pdsch_pdu_rel15->nb_codewords;
-  pdsch_pdu_rel15->mcsTable[0] = table_idx;
-
-  LOG_D(MAC,
-        "TBS %d bytes: N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table "
-        "%d nb_symbols %d\n",
-        TBS,
-        N_PRB_DMRS,
-        N_sh_symb,
-        N_PRB_oh,
-        R,
-        Qm,
-        table_idx,
-        N_RE_prime * pdsch_pdu_rel15->rbSize * pdsch_pdu_rel15->NrOfCodewords);
 
   if (UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round==0)
     UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
   LOG_D(MAC,
-        "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol "
-        "%d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
+        "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d "
+        "nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
         pdsch_pdu_rel15->rbStart,
         pdsch_pdu_rel15->rbSize,
-        startSymbolAndLength,
         pdsch_pdu_rel15->StartSymbolIndex,
         pdsch_pdu_rel15->NrOfSymbols,
         pdsch_pdu_rel15->nrOfLayers,
         pdsch_pdu_rel15->NrOfCodewords,
         pdsch_pdu_rel15->mcsIndex[0],
         TBS);
-
-  return TBS; //Return TBS in bytes
 }
 
 int nr_configure_pdcch(gNB_MAC_INST *nr_mac,
