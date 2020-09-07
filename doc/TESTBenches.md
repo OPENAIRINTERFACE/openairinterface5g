@@ -4,8 +4,8 @@
 2.   [Legacy 2 Bench](#legacy-2-bench)
 3.   [Next Bench for DEV](#next-bench-for-dev)
 4.   [Next Bench for CI](#next-bench-for-ci)
-5.   [Outdoor Live Network Bench](#outdoor-live-network-bench)
-6.   [Indoor Live Network Bench](#indoor-live-network-bench)
+5.   [Indoor Live Network Bench](#indoor-live-network-bench)
+6.   [Outdoor Live Network Bench](#outdoor-live-network-bench)
 
 
 ## Legacy 1 Bench
@@ -36,10 +36,10 @@
 
 ![image info](./testbenches_doc_resources/next_ci.jpg)
 
-## Outdoor Live Network Bench
+## Indoor Live Network Bench
 
 ![image info](./testbenches_doc_resources/indoor_live.jpg)
 
-## Indoor Live Network Bench
+## Outdoor Live Network Bench
 
 ![image info](./testbenches_doc_resources/outdoor_live.jpg)
