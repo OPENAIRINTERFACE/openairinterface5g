@@ -408,21 +408,22 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 int nr_fill_nfapi_dl_pdu(int Mod_idP,
+                         int UE_id,
+                         int bwp_id,
                          nfapi_nr_dl_tti_request_body_t *dl_req,
                          NR_sched_pucch *pucch_sched,
+                         int nrOfLayers,
                          uint8_t mcs,
                          uint16_t rbSize,
-                         uint16_t rbStart) {
+                         uint16_t rbStart,
+                         uint8_t numDmrsCdmGrpsNoData,
+                         nfapi_nr_dmrs_type_e dmrsConfigType) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
   nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
-
-  int bwp_id=1;
-  int UE_id = 0;
-  const int nrOfLayers = 1;
 
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
 
@@ -475,10 +476,10 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 0; // Point A
   UE_list->mac_stats[UE_id].dlsch_rounds[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round]++;
-  pdsch_pdu_rel15->dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+  pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
-  pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 1;
+  pdsch_pdu_rel15->numDmrsCdmGrpsNoData = numDmrsCdmGrpsNoData;
   pdsch_pdu_rel15->dmrsPorts = 1;
   pdsch_pdu_rel15->resourceAlloc = 1;
   pdsch_pdu_rel15->rbStart = rbStart;
@@ -523,7 +524,7 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
   // time domain assignment
   dci_pdu_rel15[0].time_domain_assignment.val = time_domain_assignment; // row index used here instead of SLIV;
   // mcs and rv
-  dci_pdu_rel15[0].mcs = pdsch_pdu_rel15->mcsIndex[0];
+  dci_pdu_rel15[0].mcs = mcs;
   dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
   // harq pid and ndi
   dci_pdu_rel15[0].harq_pid = current_harq_pid;
@@ -614,14 +615,14 @@ int nr_fill_nfapi_dl_pdu(int Mod_idP,
 
   const uint16_t N_PRB_oh = 0; // overhead should be 0 for initialBWP
   uint8_t N_PRB_DMRS;
-  if (pdsch_pdu_rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
     // if no data in dmrs cdm group is 1 only even REs have no data
     // if no data in dmrs cdm group is 2 both odd and even REs have no data
-    N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData * 6;
+    N_PRB_DMRS = numDmrsCdmGrpsNoData * 6;
   } else {
-    N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData * 4;
+    N_PRB_DMRS = numDmrsCdmGrpsNoData * 4;
   }
-  const uint8_t N_sh_symb = pdsch_pdu_rel15->NrOfSymbols;
+  const uint8_t N_sh_symb = NrOfSymbols;
 
   const uint8_t table_idx = 0;
   const uint16_t R = nr_get_code_rate_dl(mcs, table_idx);

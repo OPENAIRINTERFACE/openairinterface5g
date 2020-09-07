@@ -446,12 +446,23 @@ void nr_schedule_ue_spec(module_id_t module_id,
   int pucch_sched;
   nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
   NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
+
+  const int nrOfLayers = 1;
+  const uint8_t mcs = 9;
+  const uint8_t numDmrsCdmGrpsNoData = 1;
+  const nfapi_nr_dmrs_type_e dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+
   const int TBS_bytes = nr_fill_nfapi_dl_pdu(module_id,
+                                             UE_id,
+                                             bwp_id,
                                              dl_req,
                                              pucch,
-                                             9 /* mcs */,
+                                             nrOfLayers,
+                                             mcs,
                                              bwpSize,
-                                             0 /* bwpStart */);
+                                             0 /* bwpStart */,
+                                             numDmrsCdmGrpsNoData,
+                                             dmrsConfigType);
 
   if (TBS_bytes == 0)
    return;
