@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _SHARED_BUFFERS_H_
-#define _SHARED_BUFFERS_H_
+#ifndef _BENETEL_4G_SHARED_BUFFERS_H_
+#define _BENETEL_4G_SHARED_BUFFERS_H_
 
 #include <pthread.h>
 #include <stdint.h>
@@ -57,4 +57,4 @@ void unlock_ul_buffer(shared_buffers *s, int subframe);
 void wait_ul_buffer(shared_buffers *s, int subframe);
 void signal_ul_buffer(shared_buffers *s, int subframe);
 
-#endif /* _SHARED_BUFFERS_H_ */
+#endif /* _BENETEL_4G_SHARED_BUFFERS_H_ */

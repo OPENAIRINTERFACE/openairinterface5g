@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _BENETEL_LOW_H_
-#define _BENETEL_LOW_H_
+#ifndef _BENETEL_5G_LOW_H_
+#define _BENETEL_5G_LOW_H_
 
 #include "shared_buffers.h"
 
@@ -45,4 +45,4 @@ void *benetel_start(char *ifname, shared_buffers *buffers, char *dpdk_main_comma
 void store_ul(benetel_t *bs, ul_packet_t *ul);
 void store_prach(benetel_t *bs, int frame, int slot, void *data);
 
-#endif /* _BENETEL_LOW_H_ */
+#endif /* _BENETEL_5G_LOW_H_ */

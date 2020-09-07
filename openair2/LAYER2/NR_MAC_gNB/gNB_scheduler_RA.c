@@ -543,7 +543,7 @@ void nr_generate_Msg2(module_id_t module_idP,
                       sub_frame_t slotP){
 
   int UE_id = 0, dci_formats[2], rnti_types[2], mcsIndex;
-  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment;
+  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[0];
   NR_RA_t                               *ra = &cc->ra[0];
