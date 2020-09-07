@@ -32,6 +32,7 @@
 /*PHY*/
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/defs_nr_common.h"
+#include "common/utils/nr/nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*MAC*/
 #include "NR_MAC_COMMON/nr_mac.h"
@@ -452,19 +453,68 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const uint8_t numDmrsCdmGrpsNoData = 1;
   const nfapi_nr_dmrs_type_e dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
 
-  const int TBS_bytes = nr_fill_nfapi_dl_pdu(module_id,
-                                             UE_id,
-                                             bwp_id,
-                                             dl_req,
-                                             pucch,
-                                             nrOfLayers,
-                                             mcs,
-                                             bwpSize,
-                                             0 /* bwpStart */,
-                                             numDmrsCdmGrpsNoData,
-                                             dmrsConfigType);
+  const int time_domain_assignment = 2;
+  AssertFatal(time_domain_assignment<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count,"time_domain_assignment %d>=%d\n",time_domain_assignment,bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
+  const int startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  if (TBS_bytes == 0)
+  const uint16_t N_PRB_oh = 0; // overhead should be 0 for initialBWP
+  uint8_t N_PRB_DMRS;
+  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    N_PRB_DMRS = numDmrsCdmGrpsNoData * 6;
+  } else {
+    N_PRB_DMRS = numDmrsCdmGrpsNoData * 4;
+  }
+  const uint8_t N_sh_symb = nrOfSymbols;
+
+  const uint16_t rbSize = bwpSize;
+  const uint8_t table_idx = 0;
+  const uint16_t R = nr_get_code_rate_dl(mcs, table_idx);
+  const uint8_t Qm = nr_get_Qm_dl(mcs, table_idx);
+  const uint32_t TBS =
+      nr_compute_tbs(Qm,
+                     R,
+                     rbSize,
+                     N_sh_symb,
+                     N_PRB_DMRS, // FIXME // This should be multiplied by the
+                                 // number of dmrs symbols
+                     N_PRB_oh,
+                     0 /* tb_scaling */,
+                     nrOfLayers)
+      >> 3;
+  LOG_D(MAC,
+        "TBS %d bytes: N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d",
+        TBS,
+        N_PRB_DMRS,
+        N_sh_symb,
+        N_PRB_oh,
+        R,
+        Qm,
+        table_idx);
+
+  nr_fill_nfapi_dl_pdu(module_id,
+                       UE_id,
+                       bwp_id,
+                       dl_req,
+                       pucch,
+                       nrOfLayers,
+                       mcs,
+                       rbSize,
+                       0 /* bwpStart */,
+                       numDmrsCdmGrpsNoData,
+                       dmrsConfigType,
+                       table_idx,
+                       R,
+                       Qm,
+                       TBS,
+                       time_domain_assignment,
+                       startSymbolIndex,
+                       nrOfSymbols);
+
+  if (TBS == 0)
    return;
 
   const int lcid = DL_SCH_LCID_DTCH;
@@ -473,7 +523,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   int sdu_length_total = 0;
   int num_sdus = 0;
   LOG_D(MAC, "[gNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (TBS %d bytes, len %d)\n",
-      module_id, frame, lcid, TBS_bytes, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3);
+      module_id, frame, lcid, TBS, TBS - ta_len - header_length_total - sdu_length_total - 3);
 
   const mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_id,
                                                               rnti,
@@ -490,9 +540,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     LOG_I(MAC, "configure fapi due to data availability \n");
 
-    LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS_bytes: %d \n \n",
-        module_id, frame, TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
-        lcid, header_length_total, TBS_bytes);
+    LOG_I(MAC, "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
+        module_id, frame, TBS - ta_len - header_length_total - sdu_length_total - 3,
+        lcid, header_length_total, TBS);
 
     sdu_lengths[num_sdus] = mac_rlc_data_req(module_id,
         rnti,
@@ -501,7 +551,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         ENB_FLAG_YES,
         MBMS_FLAG_NO,
         lcid,
-        TBS_bytes - ta_len - header_length_total - sdu_length_total - 3,
+        TBS - ta_len - header_length_total - sdu_length_total - 3,
         (char *)&mac_sdus[sdu_length_total],
         0,
         0);
@@ -520,10 +570,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
   else {
     LOG_I(MAC, "Configuring DL_TX in %d.%d: random data\n", frame, slot);
     // fill dlsch_buffer with random data
-    for (int i = 0; i < TBS_bytes; i++)
+    for (int i = 0; i < TBS; i++)
       mac_sdus[i] = (unsigned char) (lrand48()&0xff);
     sdu_lcids[0] = 0x3f; // DRB
-    sdu_lengths[0] = TBS_bytes - ta_len - 3;
+    sdu_lengths[0] = TBS - ta_len - 3;
     header_length_total += 2 + (sdu_lengths[0] >= 128);
     sdu_length_total += sdu_lengths[0];
     num_sdus +=1;
@@ -537,9 +587,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
   }
 
   // Check if there is data from RLC or CE
-  const int post_padding = TBS_bytes >= 2 + header_length_total + sdu_length_total + ta_len;
+  const int post_padding = TBS >= 2 + header_length_total + sdu_length_total + ta_len;
   // padding param currently not in use
-  //padding = TBS_bytes - header_length_total - sdu_length_total - ta_len - 1;
+  //padding = TBS - header_length_total - sdu_length_total - ta_len - 1;
 
   const int offset = nr_generate_dlsch_pdu(
       module_id,
@@ -554,7 +604,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   // Padding: fill remainder of DLSCH with 0
   if (post_padding > 0) {
-    for (int j = 0; j < TBS_bytes - offset; j++)
+    for (int j = 0; j < TBS - offset; j++)
       gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
   }
 
@@ -563,7 +613,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        slot,
                        dl_req,
                        tx_req,
-                       TBS_bytes,
+                       TBS,
                        gNB_mac->pdu_index[CC_id]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
@@ -572,7 +622,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           "%d.%d, first 10 payload bytes, TBS size: %d \n",
           frame,
           slot,
-          TBS_bytes);
+          TBS);
     for(int i = 0; i < 10; i++) {
       LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i]);
     }
