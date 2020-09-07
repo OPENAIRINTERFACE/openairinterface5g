@@ -43,7 +43,7 @@
 
 NR_IF_Module_t *if_inst[MAX_IF_MODULES];
 NR_Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
-
+extern const uint8_t slots_per_frame[5];
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
 extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
@@ -174,8 +174,9 @@ void extract_pucch_csi_report ( NR_CSI_MeasConfig_t *csi_MeasConfig,
       //Has to implement according to reportSlotConfig type
     periodicity = UE_list->csi_report_template[UE_id][csi_report_id].periodicity;
     LOG_I(PHY,"SFN/SF:%d%d \n", frame,slot);
-    if (((NR_SubcarrierSpacing_kHz30 == scs) && (((((frame & 0xf)+1)*20 + slot) & periodicity) == periodicity))
-       ||((NR_SubcarrierSpacing_kHz120 == scs)&&(((((frame & 0xf)+1)*80 + slot) & periodicity) == periodicity))) {
+   /* if (((NR_SubcarrierSpacing_kHz30 == scs) && (((((frame & 0xf)+1)*20 + slot) & periodicity) == periodicity))
+       ||((NR_SubcarrierSpacing_kHz120 == scs)&&(((((frame & 0xf)+1)*80 + slot) & periodicity) == periodicity))) {*/
+    if (((slots_per_frame[scs]*frame + slot -UE_list->csi_report_template[UE_id][csi_report_id].offset)%periodicity)==0) {
 
       reportQuantity_type = UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
       LOG_I(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);

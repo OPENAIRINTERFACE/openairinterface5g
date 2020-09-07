@@ -316,12 +316,62 @@ void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_li
   uint8_t csi_report_id = 0;
   uint8_t csi_resourceidx =0;
   uint8_t csi_ssb_idx =0;
+  uint16_t period, offset;
+  NR_CSI_ReportPeriodicityAndOffset_PR p_and_o;
   NR_CSI_ResourceConfigId_t csi_ResourceConfigId;
+
   for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
     csi_ResourceConfigId=csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->resourcesForChannelMeasurement;
     UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportQuantity.present;
 //    UE_list->csi_report_template[UE_id][idx].
-    UE_list->csi_report_template[UE_id][csi_report_id].periodicity=csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+    p_and_o = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.present;
+
+    switch(p_and_o){
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
+        period = 4;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
+        period = 5;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
+        period = 8;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
+        period = 10;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
+        period = 16;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
+        period = 20;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
+        period = 40;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
+        period = 80;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
+        period = 160;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
+        period = 320;
+        offset = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+        break;
+    default:
+      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
+    }
+    UE_list->csi_report_template[UE_id][csi_report_id].periodicity=period;
+    UE_list->csi_report_template[UE_id][csi_report_id].offset=offset;
 
     for ( csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
       if ( csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx]->csi_ResourceConfigId != csi_ResourceConfigId) 
@@ -358,14 +408,16 @@ void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_li
 		  UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].nb_ssbri_cri= 2;
               
 	      nb_ssb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
-	      if (nb_ssb_resources)
+	      if (nb_ssb_resources) {
 		UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP 
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
-	      else 
+	      }
+	      else { 
 		UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen =0;
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen = 0;  
 	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =0; 
+	      }
 		 
 	     
 	      LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d",
