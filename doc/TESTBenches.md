@@ -11,7 +11,7 @@
 ## Legacy 1 Bench
 
 **Purpose** : FDD Band 7 and Band 13, LTE-M  
-**Note** : Legacy1 and Legacy2 are ducplicated so that they can run in parallel, thus avoiding a CI bottleneck  
+**Note** : Legacy1 and Legacy2 are duplicated so that they can run in parallel, thus avoiding a CI bottleneck  
 **Note** : Faraday Cages 1 and 2 are physically the same cage  
 
 ![image info](./testbenches_doc_resources/legacy1.jpg)
