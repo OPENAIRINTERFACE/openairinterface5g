@@ -2603,7 +2603,7 @@ ue_scheduler(const module_id_t module_idP,
       if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
         // Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
         // PRACH state.
-        LOG_I(MAC, "nfapi_mode3: Setting UE_mode to PRACH 2 \n");
+        LOG_A(MAC, "nfapi_mode3: Setting UE_mode to PRACH 2 \n");
         UE_mac_inst[module_idP].UE_mode[eNB_indexP] = PRACH;
         //ra_failed(module_idP,CC_id,eNB_index);UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 0;
       } else {
