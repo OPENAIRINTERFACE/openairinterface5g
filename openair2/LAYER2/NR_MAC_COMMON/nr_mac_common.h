@@ -47,7 +47,7 @@
 // PRACH occasion details
 typedef struct prach_occasion_info {
   uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
-  uint8_t fdm; // 1, 2, 4 or 8 (possible values of msg1-FDM)
+  uint8_t fdm; // 0-7 (possible values of msg1-FDM: 1, 2, 4 or 8)
   uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
   uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
   uint8_t mapped_ssb_idx[MAX_SSB_PER_RO]; // List of mapped SSBs
@@ -118,7 +118,7 @@ void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
                                                uint16_t *offset);
 
-void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc);
+void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
 int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx, int frame, int slot, prach_occasion_info_t **prach_occasion_info_pp);
 
 int get_nr_prach_info_from_index(uint8_t index,

@@ -1041,6 +1041,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
         prach_config_pdu->phys_cell_id = *scc->physCellId;
         prach_config_pdu->num_prach_ocas = 1;
+        prach_config_pdu->prach_slot = prach_occasion_info_p->slot;
         prach_config_pdu->prach_start_symbol = prach_occasion_info_p->start_symbol;
         prach_config_pdu->num_ra = prach_occasion_info_p->fdm;
 
@@ -1051,6 +1052,13 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         prach_config_pdu->restricted_set = prach_config->restricted_set_config;
 //      prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[n].k1;
         prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].k1;
+
+        // Search which SSB is mapped in the RO (among all the SSBs mapped to this RO)
+        for (prach_config_pdu->ssb_nb_in_ro=0; prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; prach_config_pdu->ssb_nb_in_ro++) {
+          if (prach_occasion_info_p->mapped_ssb_idx[prach_config_pdu->ssb_nb_in_ro] == selected_gnb_ssb_idx)
+            break;
+        }
+        AssertFatal(prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
 
         if (format1 != 0xff) {
           switch(format0) { // dual PRACH format
