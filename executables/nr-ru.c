@@ -747,7 +747,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
       int beam=0;
-      if (slot==0) beam = 11; //3 for boresight & 8 to enable
+      //if (slot==0) beam = 11; //3 for boresight & 8 to enable
       /*
       if (slot==0 || slot==40) beam=0&8;
       if (slot==10 || slot==50) beam=1&8;
