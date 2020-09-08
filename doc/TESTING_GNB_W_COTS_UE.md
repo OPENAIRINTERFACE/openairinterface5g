@@ -1,4 +1,4 @@
-STATUS 2020/07/30 : under continuous improvement ; updated the configuration files links with CI approved reference files
+STATUS 2020/09/04 : document will be soon reworked to match the progresses made on functionality
 
 
 ## Table of Contents ##
@@ -220,16 +220,15 @@ Execute:
 - **gNB** (on the gNB host)
 
 
+**ATTENTION** : for the gNB execution,    
+The **-E** option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
+The **-E** option is **NOT supported** when using a a N300 USRP  
+
 Execute: 
 ```
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** -E | tee **YOUR_LOG_FILE**
 
 ```
-
-**ATTENTION** : for the gNB execution,    
-The -E option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
-The -E opton is not needed when using a a N300 USRP  
-
 
 
 ## Test Case
