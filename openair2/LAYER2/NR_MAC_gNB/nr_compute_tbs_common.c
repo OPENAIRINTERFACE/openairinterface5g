@@ -95,8 +95,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 //tbslbrm calculation according to 5.4.2.1 of 38.212
 uint32_t nr_compute_tbslbrm(uint16_t table,
 			    uint16_t nb_rb,
-		            uint8_t Nl,
-                            uint8_t C)
+		            uint8_t Nl)
 {
 
   uint16_t R, nb_re;
@@ -104,7 +103,7 @@ uint32_t nr_compute_tbslbrm(uint16_t table,
   uint8_t Qm;
   int i;
   uint32_t nr_tbs=0;
-  uint32_t Ninfo, Np_info;
+  uint32_t Ninfo, Np_info, C;
   uint8_t n;
 
   for (i=0; i<7; i++) {
@@ -136,10 +135,12 @@ uint32_t nr_compute_tbslbrm(uint16_t table,
         Np_info = max(3840, (ROUNDIDIV((Ninfo-24),(1<<n)))<<n);
 
         if (R <= 256) { 
+            C = CEILIDIV((Np_info+24),3816);
             nr_tbs = (C<<3)*CEILIDIV((Np_info+24),(C<<3)) - 24;
         }
         else {
             if (Np_info > 8424){
+                C = CEILIDIV((Np_info+24),8424);
                 nr_tbs = (C<<3)*CEILIDIV((Np_info+24),(C<<3)) - 24;
             }
             else {

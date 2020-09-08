@@ -480,8 +480,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 
 uint32_t nr_compute_tbslbrm(uint16_t table,
 			    uint16_t nb_rb,
-		            uint8_t Nl,
-                            uint8_t C);
+		            uint8_t Nl);
 
 void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
 
