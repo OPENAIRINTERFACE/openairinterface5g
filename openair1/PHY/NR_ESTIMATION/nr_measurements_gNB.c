@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_ESTIMATION/nr_adjust_sync_gNB.c
+/*! \file PHY/NR_ESTIMATION/nr_measurements_gNB.c
 * \brief TA estimation for TA updates
 * \author Ahmed Hussein
 * \date 2019
@@ -67,5 +67,39 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
 
 
   return max_pos - sync_pos;
+}
+
+
+void gNB_I0_measurements(PHY_VARS_gNB *gNB) {
+
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  NR_gNB_COMMON *common_vars = &gNB->common_vars;
+  PHY_MEASUREMENTS_gNB *measurements = &gNB->measurements;
+  uint32_t *rb_mask = gNB->rb_mask_ul;
+  int symbol = gNB->ulmask_symb;
+  int rb, offset, nb_rb;
+  uint32_t n0_power_tot, n0_subband_power_temp=0;
+  int32_t *ul_ch;
+
+  if (symbol>-1) {
+    n0_power_tot = 0;
+    for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      nb_rb = 0;
+      for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
+        if ((rb_mask[rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
+          nb_rb++;
+          offset = (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
+          offset += (symbol*frame_parms->ofdm_symbol_size);
+          ul_ch  = &common_vars->rxdataF[aarx][offset];
+          //TODO what about DC?
+          n0_subband_power_temp += signal_energy_nodc(ul_ch,12);
+        }
+      }
+      measurements->n0_power[aarx] = n0_subband_power_temp/nb_rb;
+      measurements->n0_power_dB[aarx] = dB_fixed(measurements->n0_power[aarx]);
+      n0_power_tot += measurements->n0_power[aarx];
+    }
+    measurements->n0_power_tot_dB = dB_fixed(n0_power_tot);
+  }
 }
 

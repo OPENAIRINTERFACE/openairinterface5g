@@ -193,7 +193,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   uint32_t ***pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   uint16_t n_dmrs = (start_rb+nb_rb)*((dmrs_type == pusch_dmrs_type1) ? 6:4);
-  int16_t mod_dmrs[n_dmrs<<1];
+  int16_t mod_dmrs[n_dmrs<<1] __attribute((aligned(16)));
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -396,16 +396,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
 
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
-                                      uint8_t harq_pid,
                                       uint8_t slot,
-                                      uint8_t thread_id,
-                                      uint8_t gNB_id,
-                                      NR_DL_FRAME_PARMS *frame_parms) {
+                                      NR_DL_FRAME_PARMS *frame_parms,
+                                      uint8_t Nl) {
 
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
-  uint8_t Nl = UE->ulsch[thread_id][gNB_id][0]->harq_processes[harq_pid]->pusch_pdu.nrOfLayers; // cw 0
 
   /////////////////////////IFFT///////////////////////
   ///////////
@@ -421,6 +418,19 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
 
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
+
+  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+  for(ap = 0; ap < Nl; ap++) {
+    for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
+      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
+	    s,s+symb_offset,frame_parms->symbol_rotation[2*(s+symb_offset)],frame_parms->symbol_rotation[1+(2*(s+symb_offset))]);
+      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
+			&frame_parms->symbol_rotation[2*(s+symb_offset)],
+			(int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
+			frame_parms->ofdm_symbol_size,
+			15);
+    }
+  }
 
   for (ap = 0; ap < Nl; ap++) {
     if (frame_parms->Ncp == 1) { // extended cyclic prefix

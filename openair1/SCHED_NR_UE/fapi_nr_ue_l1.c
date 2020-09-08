@@ -112,6 +112,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
             dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
             LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+		
           }
         }
       }

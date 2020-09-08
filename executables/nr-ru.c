@@ -180,6 +180,17 @@ int attach_rru(RU_t *ru)
         ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
   AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),
               "RU %d failed send configuration to remote radio\n",ru->idx);
+
+  if ((len = ru->ifdevice.trx_ctlrecv_func(&ru->ifdevice,
+             &rru_config_msg,
+             msg_len))<0) {
+    LOG_I(PHY,"Waiting for RRU %d\n",ru->idx);
+  } else if (rru_config_msg.type == RRU_config_ok) {
+    LOG_I(PHY, "RRU_config_ok received\n");
+  } else {
+    LOG_E(PHY,"Received incorrect message %d from RRU %d\n",rru_config_msg.type,ru->idx);
+  }
+
   return 0;
 }
 
@@ -1442,6 +1453,8 @@ void *ru_thread( void *param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
+  memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
+
   if(emulate_rf) {
     fill_rf_config(ru,ru->rf_config_file);
     nr_init_frame_parms(&ru->config, fp);
@@ -1463,8 +1476,6 @@ void *ru_thread( void *param ) {
 
       AssertFatal(ret==0,"Cannot connect to remote radio\n");
     }
-
-    memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
 
     if (ru->if_south == LOCAL_RF) { // configure RF parameters only
       nr_init_frame_parms(&ru->config, fp);
@@ -1571,7 +1582,8 @@ void *ru_thread( void *param ) {
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
     //if (proc->tti_rx==8) {
 
-      if (ru->feprx) ru->feprx(ru,proc->tti_rx);
+      if (ru->feprx) {
+      ru->feprx(ru,proc->tti_rx);
       //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
 
       LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
@@ -1590,6 +1602,7 @@ void *ru_thread( void *param ) {
 		       ru->prach_list[prach_id].prachStartSymbol,
 		       proc->frame_rx,proc->tti_rx);
 	free_nr_ru_prach_entry(ru,prach_id);
+      }
       }
     }
 
@@ -2131,26 +2144,29 @@ void set_function_spec_param(RU_t *ru) {
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->nr_start_if          = NULL;                    // no if interface
         ru->rfdevice.host_type   = RAU_HOST;
+
+	// FK this here looks messed up. The following lines should be part of the  if (ru->function == gNodeB_3GPP), shouldn't they?
+
+	ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
+	ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
+	ru->start_rf               = start_rf;                            // need to start the local RF interface
+	ru->stop_rf                = stop_rf;
+	ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
+	printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
       }
 
-      ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-      ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-      ru->start_rf               = start_rf;                            // need to start the local RF interface
-      ru->stop_rf                = stop_rf;
-      ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
-      printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
       /*
-          if (ru->function == gNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
-            fill_rf_config(ru,rf_config_file);
-            init_frame_parms(&ru->frame_parms,1);
-            nr_phy_init_RU(ru);
-          }
+	printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
+	fill_rf_config(ru,rf_config_file);
+	init_frame_parms(&ru->frame_parms,1);
+	nr_phy_init_RU(ru);
 
-          ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-          if (setup_RU_buffers(ru)!=0) {
-            printf("Exiting, cannot initialize RU Buffers\n");
-            exit(-1);
-          }*/
+	ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+	if (setup_RU_buffers(ru)!=0) {
+	   printf("Exiting, cannot initialize RU Buffers\n");
+	   exit(-1);
+	}
+      */
       break;
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
@@ -2201,6 +2217,15 @@ void set_function_spec_param(RU_t *ru) {
       if (ret<0) {
         printf("Exiting, cannot initialize transport protocol\n");
         exit(-1);
+      }
+
+      if (ru->ifdevice.get_internal_parameter != NULL) {
+        void *t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_in");
+        if (t != NULL)
+          ru->fh_south_in = t;
+        t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
+        if (t != NULL)
+          ru->fh_south_out = t;
       }
 
       malloc_IF4p5_buffer(ru);

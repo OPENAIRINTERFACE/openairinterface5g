@@ -58,7 +58,7 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
 
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
 
@@ -115,7 +115,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
 
   if (N_RB_UL != 273) {
     a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273;
+    a_segments = a_segments/273 +1;
   }  
 
   uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
@@ -226,8 +226,9 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   unsigned int crc;
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
-  uint32_t A, Z, F;
-  uint32_t *pz; 
+  uint32_t A, F;
+  static uint32_t Z = 0;
+  uint32_t *pz = &Z; 
   uint8_t mod_order; 
   uint16_t Kr,r;
   uint32_t r_offset;
@@ -259,6 +260,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
+  harq_process->round = nr_rv_round_map_ue[harq_process->pusch_pdu.pusch_data.rv_index];
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
@@ -410,6 +412,8 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////////////////////////////////////////////////////////////////////////
 
   }
+  F = harq_process->F;
+  Kr = harq_process->K;
 
   for (r=0; r<harq_process->C; r++) { // looping over C segments
 
@@ -421,19 +425,15 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
             }
     }
 
-#ifdef DEBUG_ULSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d)...\n",
-        r,
-        G,
-        Kr*3,
-        mod_order,nb_rb);
-#endif
+
+    LOG_D(PHY,"Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d, rvidx %d)...\n",
+	  r,
+	  G,
+	  Kr*3,
+	  mod_order,nb_rb,
+	  harq_process->pusch_pdu.pusch_data.rv_index);
 
     //start_meas(rm_stats);
-#ifdef DEBUG_ULSCH_CODING
-  printf("rvidx in encoding = %d\n", harq_process->pusch_pdu.pusch_data.rv_index);
-#endif
-
 ///////////////////////// d---->| Rate matching bit selection |---->e /////////////////////////
 ///////////
 

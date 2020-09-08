@@ -147,15 +147,18 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
         nr_scheduled_response_t scheduled_response;
-        ret_mask |= (handle_dci(dl_info->module_id,
+        int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
-                                dl_info->dci_ind->dci_list+i)<< FAPI_NR_DCI_IND);
+                                dl_info->dci_ind->dci_list+i);
 
-        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
-        AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-        fill_scheduled_response(&scheduled_response, dl_config, ul_config, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot);
-        nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
+        ret_mask |= (ret << FAPI_NR_DCI_IND);
+        if (ret >= 0) {
+          AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
+          AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+          fill_scheduled_response(&scheduled_response, dl_config, ul_config, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot);
+          nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
+        }
       }
     }
 

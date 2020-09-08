@@ -65,14 +65,16 @@ void nr_pdcch_scrambling(uint32_t *in,
 }
 
 
-uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_ul_dci_request_pdus_t *ul_dci_pdu,
+
+uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
+			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
+			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms) {
 
-  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
+  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -91,15 +93,17 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 
 
   if (pdcch_pdu) pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
-  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
+  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu_rel15;
+
+  nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
 
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
   // compute rb_offset and n_prb based on frequency allocation
 
   if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-    cset_start_sc = frame_parms.first_carrier_offset + (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB +
-							rb_offset)*NR_NB_SC_PER_RB;
+    cset_start_sc = frame_parms.first_carrier_offset + 
+      (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + rb_offset)*NR_NB_SC_PER_RB;
   } else
     cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
 
@@ -171,7 +175,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 	   scrambled_output[6], scrambled_output[7], scrambled_output[8], scrambled_output[9], scrambled_output[10],scrambled_output[11] );
 #endif
     /// QPSK modulation
-    int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
+    int16_t mod_dci[NR_MAX_DCI_SIZE>>1] __attribute__((aligned(16)));
     nr_modulation(scrambled_output, encoded_length, DMRS_MOD_ORDER, mod_dci); //Qm = 2 as DMRS is QPSK modulated
 #ifdef DEBUG_DCI
     
@@ -235,6 +239,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 	  k -= frame_parms.ofdm_symbol_size;
       } // m
     } // reg_idx
+    
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
   return 0;
 }

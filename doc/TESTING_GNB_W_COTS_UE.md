@@ -194,7 +194,7 @@ The order to run the different components is important:
 1- first, CN  
 2- then, eNB  
 3- then, gNB  
-4- finally, switch UE from airplane mode OFF to ON  
+4- finally, switch UE from airplane mode ON to OFF (ie Radio from OFF to ON)  
 
 It is recommended to redirect the run commands to the same log file (fur further analysis and debug), using ```| tee **YOUR_LOG_FILE**``` especially for eNB and gNB.  
 It is not very useful for the CN.  

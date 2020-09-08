@@ -2463,7 +2463,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_0,NULL,dci->time_domain_assignment.val) < 0)
-      break;
+      return -1;
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -2537,7 +2537,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,pusch_config_pdu_0_1,NULL,dci->time_domain_assignment.val) < 0)
-      break;
+      return -1;
     /* FREQ_HOPPING_FLAG */
     if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
 	(mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -2868,7 +2868,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0)
-      break;
+      return -1;
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
@@ -2993,7 +2993,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, dc
     nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val);
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val) < 0)
-      break;
+      return -1;
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
@@ -3726,19 +3726,18 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
     //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
     //  F: lenght of L is 0:8 or 1:16 bits wide
     //  R: Reserved bit, set to zero.
-    
     while (!done && pdu_len > 0){
         mac_ce_len = 0x0000;
         mac_subheader_len = 0x0001; //  default to fixed-length subheader = 1-oct
         mac_sdu_len = 0x0000;
         rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
+	  //#ifdef DEBUG_HEADER_PARSING
+              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
+	      //#endif
 
         switch(rx_lcid){
             //  MAC CE
 
-            /*#ifdef DEBUG_HEADER_PARSING
-              LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID, pdu_len);
-            #endif*/
             case DL_SCH_LCID_CCCH:
                 //  MSG4 RRC Connection Setup 38.331
                 //  varialbe length
@@ -3946,7 +3945,8 @@ void nr_ue_process_mac_pdu(module_id_t module_idP,
         }
         pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
-        AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length < 0!\n");
+        if (pdu_len < 0)
+          LOG_E(MAC, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", pdu_len);
     }
 }
 

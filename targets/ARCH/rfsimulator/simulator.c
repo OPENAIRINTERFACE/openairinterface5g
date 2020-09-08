@@ -184,10 +184,12 @@ void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
                                             bridge->channelmod,
                                             bridge->sample_rate,
                                             bridge->tx_bw,
+                                            30e-9,  // TDL delay-spread parameter
                                             bridge->chan_forgetfact, // forgetting_factor
                                             bridge->chan_offset, // maybe used for TA
                                             bridge->chan_pathloss); // path_loss in dB
     set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
+
     random_channel(ptr->channel_model,false);
   }
 }
@@ -330,6 +332,7 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
                                                 channelmod,
                                                 t->sample_rate,
                                                 t->tx_bw,
+                                                30e-9,  // TDL delay-spread parameter
                                                 t->chan_forgetfact, // forgetting_factor
                                                 t->chan_offset, // maybe used for TA
                                                 t->chan_pathloss); // path_loss in dB
@@ -456,7 +459,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
 static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initial) {
   // Process all incoming events on sockets
   // store the data in lists
-  struct epoll_event events[FD_SETSIZE]= {0};
+  struct epoll_event events[FD_SETSIZE]= {{0}};
   int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
 
   if ( nfds==-1 ) {
