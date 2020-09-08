@@ -1185,7 +1185,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
           if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH)
           { //&& ue_Mod_id == next_Mod_id) {
             next_ra_frame++;
-            // if (next_ra_frame > 500) {
+            if (next_ra_frame > 500) {
             // check if we have PRACH opportunity
             if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1)
             {
@@ -1208,7 +1208,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
               }
               //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
             }
-            // }
+            }
           } // mode is PRACH
 
           // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
