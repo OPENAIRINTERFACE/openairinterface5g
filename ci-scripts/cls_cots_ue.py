@@ -102,7 +102,7 @@ class CotsUe:
 					logging.error("ATTENTION : Could not toggle to : "+target_state_str)
 					logging.error("Current state is : "+ str(current_state))
 			else:
-				print("Airplane mode is already "+ target_state_str)
+				logging.info("Airplane mode is already "+ target_state_str)
 			mySSH.command('adb kill-server','\$',5)
 			mySSH.close()
 		#ue id is NOT in the dictionary

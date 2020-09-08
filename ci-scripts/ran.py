@@ -990,5 +990,5 @@ class RANManagement():
 			logging.debug(systemTime)
 			logging.debug(maxPhyMemUsage)
 			logging.debug(nbContextSwitches)
-			self.runtime_stats=runTime + '\n' + userTime + '\n' + systemTime + '\n' + maxPhyMemUsage + '\n' + nbContextSwitches
+			self.runtime_stats='<pre>'+runTime + '\n'+ userTime + '\n' + systemTime + '\n' + maxPhyMemUsage + '\n' + nbContextSwitches+'</pre>'
 		return global_status
