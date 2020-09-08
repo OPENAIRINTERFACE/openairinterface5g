@@ -3174,7 +3174,7 @@ def GetParametersFromXML(action):
 			else:
 				RAN.backgroundBuild=False
 
-	if action == 'WaitEndBuild_eNB':
+	elif action == 'WaitEndBuild_eNB':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -3185,7 +3185,7 @@ def GetParametersFromXML(action):
 		if (RAN.eNB_serverId is None):
 			RAN.eNB_serverId='0'
 
-	if action == 'Initialize_eNB':
+	elif action == 'Initialize_eNB':
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -3205,7 +3205,7 @@ def GetParametersFromXML(action):
 		else :
 			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
-	if action == 'Terminate_eNB':
+	elif action == 'Terminate_eNB':
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
@@ -3224,21 +3224,21 @@ def GetParametersFromXML(action):
 		else :
 			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
-	if action == 'Attach_UE':
+	elif action == 'Attach_UE':
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
 		if (nbMaxUEtoAttach is None):
 			CiTestObj.nbMaxUEtoAttach = -1
 		else:
 			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
 
-	if action == 'CheckStatusUE':
+	elif action == 'CheckStatusUE':
 		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
 		if (expectedNBUE is None):
 			CiTestObj.expectedNbOfConnectedUEs = -1
 		else:
 			CiTestObj.expectedNbOfConnectedUEs = int(expectedNBUE)
 
-	if action == 'Build_OAI_UE':
+	elif action == 'Build_OAI_UE':
 		CiTestObj.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
 		CiTestObj.clean_repository = test.findtext('clean_repository')
 		if (CiTestObj.clean_repository == 'false'):
@@ -3246,7 +3246,7 @@ def GetParametersFromXML(action):
 		else:
 			CiTestObj.clean_repository = True
 
-	if action == 'Initialize_OAI_UE':
+	elif action == 'Initialize_OAI_UE':
 		CiTestObj.Initialize_OAI_UE_args = test.findtext('Initialize_OAI_UE_args')
 		UE_instance = test.findtext('UE_instance')
 		if (UE_instance is None):
@@ -3264,7 +3264,7 @@ def GetParametersFromXML(action):
 			#CiTestObj.air_interface = 'ocp-enb'
 			logging.error('OCP UE -- NOT SUPPORTED')
 
-	if action == 'Terminate_OAI_UE':
+	elif action == 'Terminate_OAI_UE':
 		UE_instance=test.findtext('UE_instance')
 		if (UE_instance is None):
 			CiTestObj.UE_instance = '0'
@@ -3281,11 +3281,11 @@ def GetParametersFromXML(action):
 			#CiTestObj.air_interface = 'ocp-enb'
 			logging.error('OCP UE -- NOT SUPPORTED')
 
-	if action == 'Ping' or action == 'Ping_CatM_module':
+	elif (action == 'Ping') or (action == 'Ping_CatM_module'):
 		CiTestObj.ping_args = test.findtext('ping_args')
 		CiTestObj.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
 
-	if action == 'Iperf':
+	elif action == 'Iperf':
 		CiTestObj.iperf_args = test.findtext('iperf_args')
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
 		CiTestObj.iperf_profile = test.findtext('iperf_profile')
@@ -3303,14 +3303,14 @@ def GetParametersFromXML(action):
 				logging.debug('ERROR: test-case has wrong option ' + CiTestObj.iperf_options)
 				CiTestObj.iperf_options = 'check'
 
-	if action == 'IdleSleep':
+	elif action == 'IdleSleep':
 		string_field = test.findtext('idle_sleep_time_in_sec')
 		if (string_field is None):
 			CiTestObj.idle_sleep_time = 5
 		else:
 			CiTestObj.idle_sleep_time = int(string_field)
 
-	if action == 'Perform_X2_Handover':
+	elif action == 'Perform_X2_Handover':
 		string_field = test.findtext('x2_ho_options')
 		if (string_field is None):
 			CiTestObj.x2_ho_options = 'network'
@@ -3321,7 +3321,7 @@ def GetParametersFromXML(action):
 			else:
 				CiTestObj.x2_ho_options = string_field
 
-	if action == 'Build_PhySim':
+	elif action == 'Build_PhySim':
 		ldpc.buildargs  = test.findtext('physim_build_args')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
 		if (forced_workspace_cleanup is None):
@@ -3332,7 +3332,7 @@ def GetParametersFromXML(action):
 			else:
 				ldpc.forced_workspace_cleanup=False
 
-	if action == 'Run_PhySim':
+	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
 
