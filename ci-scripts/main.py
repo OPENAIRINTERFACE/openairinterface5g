@@ -2847,8 +2847,11 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of eNB'
 			HTML.desc='Automatic Termination of eNB'
 			self.ShowTestID()
-			RAN.eNB_instance=0
-			RAN.TerminateeNB()
+			#Terminate all instances on all servers, eNB, eNB1, eNB2
+			#RAN.eNB_instance=0
+			RAN.TerminateeNB(0)
+			RAN.TerminateeNB(1)
+			RAN.TermintateeNB(2)
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.testCase_id=self.testCase_id
@@ -3332,9 +3335,6 @@ def GetParametersFromXML(action):
 	if action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
-	if action == 'COTS_UE_Airplane':
-		COTS_UE.cots_id = test.findtext('cots_id')
-		COTS_UE.cots_run_mode = test.findtext('cots_run_mode')
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -3734,9 +3734,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if ldpc.exitStatus==1:sys.exit()
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
-				elif action == 'COTS_UE_Airplane':
-					#cots id and cots run mode were read from xml test file
-					COTS_UE.Set_Airplane(COTS_UE.cots_id, COTS_UE.cots_run_mode)
 				else:
 					sys.exit('Invalid class (action) from xml')
 		CiTestObj.FailReportCnt += 1
