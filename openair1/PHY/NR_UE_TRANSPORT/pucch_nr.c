@@ -113,7 +113,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
     // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
     // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
     nr_group_sequence_hopping(pucch_GroupHopping,hoppingId,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-    alpha = nr_cyclic_shift_hopping(ue->pucch_config_common_nr->hoppingId,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
+    alpha = nr_cyclic_shift_hopping(hoppingId,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
 #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
 #endif
@@ -928,7 +928,17 @@ void nr_uci_encoding(uint64_t payload,
   if (A<=11) {
     // procedure in subclause 6.3.1.2.2 (UCI encoded by channel coding of small block lengths -> subclause 6.3.1.3.2)
     // CRC bits are not attached, and coding small block lengths (subclause 5.3.3)
-    b[0] = encodeSmallBlock((uint16_t*)&payload,A);
+    uint64_t b0= encodeSmallBlock((uint16_t*)&payload,A);
+    // repetition for rate-matching up to 16 PRB
+    b[0] = b0 | (b0<<32);
+    b[1] = b[0];
+    b[2] = b[0];
+    b[3] = b[0];
+    b[4] = b[0];
+    b[5] = b[0];
+    b[6] = b[0];
+    b[7] = b[0];
+    AssertFatal(nrofPRB<=16,"Number of PRB >16\n");
   } else if (A>=12) {
     AssertFatal(A<65,"Polar encoding not supported yet for UCI with more than 64 bits\n");
     t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, 

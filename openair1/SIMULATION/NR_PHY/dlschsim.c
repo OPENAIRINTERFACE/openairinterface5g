@@ -58,7 +58,8 @@ double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -113,7 +114,7 @@ int main(int argc, char **argv)
 	uint16_t nb_rb = 50;
 	uint8_t Imcs = 9;
         uint8_t mcs_table = 0;
-
+        double DS_TDL = .03;
 	cpuf = get_cpu_freq_GHz();
 
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
@@ -336,6 +337,7 @@ int main(int argc, char **argv)
 	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
 				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
 				      40e6, //N_RB2channel_bandwidth(N_RB_DL),
+                                      DS_TDL,
 				      0, 0, 0);
 
 	if (gNB2UE == NULL) {
@@ -499,7 +501,7 @@ int main(int argc, char **argv)
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
 	if (input_fd == NULL) {
-		nr_dlsch_encoding(test_input, frame, slot, dlsch, frame_parms,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+		nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
