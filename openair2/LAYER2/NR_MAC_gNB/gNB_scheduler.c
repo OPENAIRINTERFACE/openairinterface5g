@@ -398,7 +398,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
-  uint64_t *ulsch_in_slot_bitmap=NULL;
   const int UE_id = 0;
   const int bwp_id = 1;
 
@@ -434,17 +433,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
-
-  if (!(slot%num_slots_per_tdd)) {
-    if(slot==0) {
-      *ulsch_in_slot_bitmap = 0x100;
-    }
-    else {
-      *ulsch_in_slot_bitmap = 0x00;
-    }
-  }
   const uint64_t dlsch_in_slot_bitmap = (1 << 1);
+  const uint64_t ulsch_in_slot_bitmap = (1 << 8);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
@@ -505,7 +495,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // inside
   if (UE_list->fiveG_connected[UE_id]) {
     int tda = 1; // time domain assignment hardcoded for now
-    schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda);
+    schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda, ulsch_in_slot_bitmap);
     nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
   }
 

@@ -342,7 +342,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
                           int ul_slots,
-                          int time_domain_assignment);
+                          int time_domain_assignment,
+                          uint64_t ulsch_in_slot_bitmap);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,

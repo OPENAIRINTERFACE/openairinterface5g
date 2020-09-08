@@ -811,12 +811,26 @@ int8_t select_ul_harq_pid(NR_UE_sched_ctrl_t *sched_ctrl) {
   return -1;
 }
 
+long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
+  DevAssert(ubwp);
+  const NR_PUSCH_TimeDomainResourceAllocation_t *tda_list = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
+  if (tda_list->k2)
+    return *tda_list->k2;
+  else if (mu < 2)
+    return 1;
+  else if (mu == 2)
+    return 2;
+  else
+    return 3;
+}
+
 void schedule_fapi_ul_pdu(int Mod_idP,
                           frame_t frameP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
                           int ul_slots,
-                          int time_domain_assignment) {
+                          int time_domain_assignment,
+                          uint64_t ulsch_in_slot_bitmap) {
 
   gNB_MAC_INST                      *nr_mac    = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                  *cc    = nr_mac->common_channels;
@@ -840,18 +854,14 @@ void schedule_fapi_ul_pdu(int Mod_idP,
   AssertFatal(time_domain_assignment<ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count,
               "time_domain_assignment %d>=%d\n",time_domain_assignment,ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count);
 
-  int K2;
-  if (ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2 != NULL)
-   K2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]->k2;
-  else {
-    if (mu<2) K2=1;
-    else if(mu==2) K2=2;
-         else K2=3;
-  }
-
-  if (is_xlsch_in_slot(UE_list->UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap,(slotP+K2)%num_slots_per_tdd)) {
-
-    //nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+  int K2 = get_K2(ubwp, time_domain_assignment,mu);
+  /* check if slot is UL, and for phy test verify that it is in first TDD
+   * period, slot 8 (for K2=2, this is at slot 6 in the gNB; because of UE
+   * limitations).  Note that if K2 or the TDD configuration is changed, below
+   * conditions might exclude each other and never be true */
+  const int slot_idx = (slotP + K2) % num_slots_per_tdd;
+  if (is_xlsch_in_slot(ulsch_in_slot_bitmap, slot_idx)
+        && (!get_softmodem_params()->phy_test || slotP == 6)) {
     nfapi_nr_ul_dci_request_t *UL_dci_req = &RC.nrmac[Mod_idP]->UL_dci_req[0];
     UL_dci_req->SFN = frameP;
     UL_dci_req->Slot = slotP;
