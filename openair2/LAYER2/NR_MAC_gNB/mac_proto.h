@@ -282,6 +282,8 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int m
                      );
 
+void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_list, int UE_id);
+
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
 int get_ulscs(nfapi_nr_config_request_t *cfg);

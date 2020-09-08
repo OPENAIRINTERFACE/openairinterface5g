@@ -301,6 +301,80 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, NR_ServingCellConfigComm
 }
 
 
+//!TODO : smae function can be written to handle csi_resources
+void update_csi_bitlen (NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_list_t *UE_list, int UE_id) {
+  uint8_t csi_report_id = 0;
+  uint8_t csi_resourceidx =0;
+  uint8_t csi_ssb_idx =0;
+  NR_CSI_ResourceConfigId_t csi_ResourceConfigId;
+  for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
+    csi_ResourceConfigId=csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->resourcesForChannelMeasurement;
+    UE_list->csi_report_template[UE_id][csi_report_id].reportQuantity_type = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->reportQuantity.present;
+
+    for ( csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
+      if ( csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx]->csi_ResourceConfigId != csi_ResourceConfigId)
+	continue;
+      else {
+      //Finding the CSI_RS or SSB Resources
+        UE_list->csi_report_template[UE_id][csi_report_id].CSI_Resource_type= csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx]->csi_RS_ResourceSetList.present;
+        if (NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB ==UE_list->csi_report_template[UE_id][csi_report_id].CSI_Resource_type){
+          struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList__nzp_CSI_RS_SSB * nzp_CSI_RS_SSB = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB;
+
+          UE_list->csi_report_template[UE_id][csi_report_id].nb_of_nzp_csi_report = nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList!=NULL ? nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.count:0;
+          UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = nzp_CSI_RS_SSB->csi_SSB_ResourceSetList!=NULL ? nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.count:0;
+        }
+
+        if (0 != UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report){
+	  uint8_t nb_ssb_resources =0;
+          for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
+            if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceSetId ==
+                *(csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx]->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])) { ///We can configure only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
+              if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled ==
+                csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->groupBasedBeamReporting.present ) {
+	        if (NULL != csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)
+                  UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].nb_ssbri_cri = *(csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id]->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+                else
+		/*! From Spec 38.331
+		 * nrofReportedRS
+		 * The number (N) of measured RS resources to be reported per report setting in a non-group-based report. N <= N_max, where N_max is either 2 or 4 depending on UE
+		 * capability. FFS: The signaling mechanism for the gNB to select a subset of N beams for the UE to measure and report.
+		 * When the field is absent the UE applies the value 1
+		 */
+	          UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].nb_ssbri_cri= 1;
+	        }else
+		  UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].nb_ssbri_cri= 2;
+
+	      nb_ssb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
+	      if (nb_ssb_resources){
+		UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
+	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP 
+	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
+              }
+	      else{
+		UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen =0;
+	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen = 0;
+	        UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen =0;
+              }
+
+	      LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d",
+			      UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].cri_ssbri_bitlen,
+			      UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].rsrp_bitlen,
+			      UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0].diff_rsrp_bitlen);
+	      break ;
+            }
+	  }
+        }
+	if (0 != UE_list->csi_report_template[UE_id][csi_report_id].nb_of_nzp_csi_report){
+          AssertFatal(1==0,"Currently configuring only SSB beamreporting.");
+	}
+	break;
+      }
+    }
+  }
+}
+
+
+
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
 			   int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
@@ -364,6 +438,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
       LOG_I(PHY,"Modified UE_id %d/%x with secondaryCellGroup\n",UE_id,rnti);
     }
+    update_csi_bitlen (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_list, UE_id);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   

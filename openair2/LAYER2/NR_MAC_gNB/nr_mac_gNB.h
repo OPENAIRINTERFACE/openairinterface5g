@@ -283,6 +283,25 @@ typedef struct NR_UE_ul_harq {
   NR_UL_harq_states_t state;
 } NR_UE_ul_harq_t;
 
+
+typedef struct {
+  uint8_t nb_ssbri_cri;
+  uint8_t cri_ssbri_bitlen;
+  uint8_t rsrp_bitlen;
+  uint8_t diff_rsrp_bitlen;
+}CRI_SSBRI_RSRP_bitlen_t;
+
+
+#define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
+typedef struct nr_csi_report {
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
+  uint8_t nb_of_nzp_csi_report;
+  uint8_t nb_of_csi_ssb_report;
+  CRI_SSBRI_RSRP_bitlen_t CSI_report_bitlen[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
+} nr_csi_report_t;
+
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
@@ -307,9 +326,11 @@ typedef struct NR_preamble_ue {
 } NR_preamble_ue;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
+#define MAX_CSI_REPORTCONFIG 48
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
+  nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   int next[MAX_MOBILES_PER_GNB];
   int head;
