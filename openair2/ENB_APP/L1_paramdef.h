@@ -91,7 +91,7 @@
 {CONFIG_STRING_L1_PRACH_DTX_EMTC3_THRESHOLD,         NULL,      0,         iptr:NULL,           defintval:200,           TYPE_INT,     0},         \
 {CONFIG_STRING_L1_PUCCH1_DTX_EMTC3_THRESHOLD,        NULL,      0,         iptr:NULL,           defintval:0,           TYPE_INT,     0},         \
 {CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC3_THRESHOLD,      NULL,      0,         iptr:NULL,           defintval:4,           TYPE_INT,     0}, \
-{CONFIG_STRING_L1_PUSCH_SIGNAL_THRESHOLD,            NULL,      0,         iptr:NULL,           defintval:330,             TYPE_INT,     0}  \
+{CONFIG_STRING_L1_PUSCH_SIGNAL_THRESHOLD,            NULL,      0,         iptr:NULL,           defintval:635,             TYPE_INT,     0}  \
   }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
