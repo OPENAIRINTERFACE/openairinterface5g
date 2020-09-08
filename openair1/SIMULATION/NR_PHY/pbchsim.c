@@ -59,6 +59,10 @@ uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+
 uint64_t get_softmodem_optmask(void) {return 0;}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
@@ -104,6 +108,9 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);
+
+  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
@@ -467,6 +474,7 @@ int main(int argc, char **argv)
                                 channel_model,
  				fs, 
 				bw, 
+				300e-9,
                                 0,
                                 0,
                                 0);
@@ -547,10 +555,35 @@ int main(int argc, char **argv)
 				     frame_parms->nb_prefix_samples,
 				     CYCLIC_PREFIX);
     		} else {
-    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+		  /*    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
     			                     &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
 			                     14,
-			                     frame_parms);
+			                     frame_parms);*/
+		  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+			       (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+			       frame_parms->ofdm_symbol_size,
+			       1,
+			       frame_parms->nb_prefix_samples0,
+			       CYCLIC_PREFIX);
+		  
+		  apply_nr_rotation(frame_parms,
+				    (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+				    slot,
+				    0,
+				    1,
+				    frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
+		  PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
+			       (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+			       frame_parms->ofdm_symbol_size,
+			       13,
+			       frame_parms->nb_prefix_samples,
+			       CYCLIC_PREFIX);
+		  apply_nr_rotation(frame_parms,
+				    (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+				    slot,
+				    1,
+				    13,
+				    frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
     		}
     	}
     }

@@ -55,6 +55,9 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+
 double cpuf;
 uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
@@ -95,6 +98,8 @@ int main(int argc, char **argv)
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+
+  double DS_TDL = .03;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -315,13 +320,12 @@ int main(int argc, char **argv)
     snr1 = snr0 + 10;
 
   gNB2UE = new_channel_desc_scm(n_tx,
-		                        n_rx,
-								channel_model,
+		                n_rx,
+				channel_model,
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
-                                0,
-								0,
-								0);
+                                DS_TDL,
+                                0,0,0);
 
   if (gNB2UE == NULL) {
     printf("Problem generating channel model. Exiting.\n");
