@@ -283,7 +283,6 @@ typedef struct NR_UE_ul_harq {
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
-  uint64_t dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   uint64_t ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
   NR_sched_pucch *sched_pucch;
   NR_sched_pusch *sched_pusch;
