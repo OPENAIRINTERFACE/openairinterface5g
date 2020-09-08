@@ -92,12 +92,12 @@
 		<ping_packetloss_threshold>0</ping_packetloss_threshold>
 	</testCase>
 
->---<testCase id="050001">$
->--->---<class>Ping</class>$
->--->---<desc>Ping: 5pings in 1sec</desc>$
->--->---<ping_args>-c 5 -i 0.2</ping_args>$
->--->---<ping_packetloss_threshold>0</ping_packetloss_threshold>$
->---</testCase>$
+	<testCase id="050001">
+		<class>Ping</class>
+		<desc>Ping: 5pings in 1sec</desc>
+		<ping_args>-c 5 -i 0.2</ping_args>
+		<ping_packetloss_threshold>0</ping_packetloss_threshold>
+	</testCase>
 
 	<testCase id="070000">
 		<class>Terminate_eNB</class>
