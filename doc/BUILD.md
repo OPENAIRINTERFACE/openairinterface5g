@@ -16,7 +16,7 @@ This page is valid on tags starting from **`2019.w09`**.
 
 # Soft Modem Build Script
 
-oai EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-cn/wiki) , it is not described here.
+The OAI EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-epc-fed/wiki) , it is not described here.
 
 OAI UE and eNodeB sources can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
 
