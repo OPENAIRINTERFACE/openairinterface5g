@@ -180,6 +180,9 @@ static void UE_synch(void *arg) {
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
+    UE->frame_parms.dl_CarrierFreq = downlink_frequency[0][0];
+    UE->frame_parms.ul_CarrierFreq = downlink_frequency[0][0];
+
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu64", UL %"PRIu64" (oai_exit %d, rx_num_channels %d)\n",
            UE->frame_parms.dl_CarrierFreq, UE->frame_parms.ul_CarrierFreq,
            oai_exit, openair0_cfg[0].rx_num_channels);
