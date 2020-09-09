@@ -27,6 +27,9 @@
 #     pexpect
 #---------------------------------------------------------------------
 
+#to use isfile
+import os
+import sys
 #to use logging.info()
 import logging
 #to create a SSH object locally in the methods

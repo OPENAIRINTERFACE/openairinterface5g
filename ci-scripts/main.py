@@ -3656,7 +3656,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				GetParametersFromXML(action)
 				if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
 					if (CiTestObj.ADBIPAddress != 'none'):
-						terminate_ue_flag = False
+						#in these cases, having no devices is critical, GetAllUEDevices function has to manage it as a critical error, reason why terminate_ue_flag is set to True
+						terminate_ue_flag = True 
 						CiTestObj.GetAllUEDevices(terminate_ue_flag)
 				if action == 'Build_eNB':
 					RAN.BuildeNB()
