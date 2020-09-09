@@ -40,6 +40,8 @@
 
 #include "common/utils/LOG/log.h"
 
+#include <dlfcn.h>
+
 /*Array containing the Agent-MAC interfaces*/
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 
@@ -52,6 +54,13 @@ struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 /* Ringbuffer-related to slice configuration */
 struct lfds700_ringbuffer_element *slice_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state slice_config_ringbuffer_state[NUM_MAX_ENB];
+
+/* Ringbuffer related to slice configuration if we need to wait for additional
+ * controller information */
+struct lfds700_ringbuffer_element *store_slice_config_array[NUM_MAX_ENB];
+struct lfds700_ringbuffer_state store_slice_config_ringbuffer_state[NUM_MAX_ENB];
+/* stores the (increasing) xid for messages to prevent double use */
+int xid = 50;
 
 /* Ringbuffer-related to slice configuration */
 struct lfds700_ringbuffer_element *ue_assoc_array[NUM_MAX_ENB];
@@ -1363,6 +1372,19 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
       &scrng,
       NULL);
 
+  struct lfds700_misc_prng_state sscrng;
+  i = posix_memalign((void **) &store_slice_config_array[mod_id],
+                     LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES,
+                     sizeof(struct lfds700_ringbuffer_element) * num_elements);
+  AssertFatal(i == 0,
+              "posix_memalign(): could not allocate aligned memory\n");
+  lfds700_ringbuffer_init_valid_on_current_logical_core(
+      &store_slice_config_ringbuffer_state[mod_id],
+      store_slice_config_array[mod_id],
+      num_elements,
+      &sscrng,
+      NULL);
+
   struct lfds700_misc_prng_state uarng;
   i = posix_memalign((void **) &ue_assoc_array[mod_id],
                      LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES,
@@ -1659,6 +1681,8 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id)
   free(dl_mac_config_array[mod_id]);
   lfds700_ringbuffer_cleanup(&slice_config_ringbuffer_state[mod_id], NULL );
   free(slice_config_array[mod_id]);
+  lfds700_ringbuffer_cleanup(&store_slice_config_ringbuffer_state[mod_id], NULL );
+  free(store_slice_config_array[mod_id]);
   lfds700_ringbuffer_cleanup(&ue_assoc_ringbuffer_state[mod_id], NULL );
   free(ue_assoc_array[mod_id]);
   lfds700_misc_library_cleanup();
@@ -1698,6 +1722,69 @@ void helper_destroy_mac_slice_config(Protocol__FlexSliceConfig *slice_config) {
   flexran_agent_destroy_mac_slice_config(&helper);
 }
 
+int check_scheduler(mid_t mod_id, char *s) {
+  return dlsym(NULL, s) != NULL;
+}
+
+void request_scheduler(mid_t mod_id, char *s, int xid) {
+  LOG_W(FLEXRAN_AGENT,
+        "unknown scheduler %s, requesting controller to send it\n",
+        s);
+  Protocol__FlexControlDelegationRequest *req = malloc(sizeof(Protocol__FlexControlDelegationRequest));
+  DevAssert(req);
+  protocol__flex_control_delegation_request__init(req);
+  Protocol__FlexHeader *header = NULL;
+  int rc = flexran_create_header(
+      xid, PROTOCOL__FLEX_TYPE__FLPT_DELEGATE_REQUEST, &header);
+  AssertFatal(rc == 0, "%s(): cannot create header\n", __func__);
+  req->header = header;
+  req->delegation_type = PROTOCOL__FLEX_CONTROL_DELEGATION_TYPE__FLCDT_MAC_DL_UE_SCHEDULER;
+  req->name = strdup(s);
+
+  Protocol__FlexranMessage *msg = malloc(sizeof(Protocol__FlexranMessage));
+  DevAssert(msg);
+  protocol__flexran_message__init(msg);
+  msg->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_CONTROL_DEL_REQ_MSG;
+  msg->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
+  msg->control_del_req_msg = req;
+
+  int size = 0;
+  void *data = flexran_agent_pack_message(msg, &size);
+  if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_DEFAULT, data, size, 0) < 0)
+    LOG_E(FLEXRAN_AGENT, "%s(): error while sending message\n", __func__);
+}
+
+Protocol__FlexranMessage *request_scheduler_timeout(
+    mid_t mod_id,
+    const Protocol__FlexranMessage *msg) {
+  const Protocol__FlexEnbConfigReply *ecr = msg->enb_config_reply_msg;
+
+  struct lfds700_misc_prng_state ls;
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+
+  Protocol__FlexranMessage *smsg = NULL;
+  struct lfds700_ringbuffer_state *state = &store_slice_config_ringbuffer_state[mod_id];
+  if (lfds700_ringbuffer_read(state, NULL, (void **) &smsg, &ls)) {
+    AssertFatal(msg == smsg,
+                "expected and returned enb_config_reply are not the same\n");
+    AssertFatal(ecr->header->xid == smsg->enb_config_reply_msg->header->xid,
+                "expected and returned enb_config_reply are not the same\n");
+  } else {
+    LOG_E(FLEXRAN_AGENT, "%s(): could not read config from ringbuffer\n", __func__);
+  }
+  /* call the helper so that scheduler names are correctly freed */
+  helper_destroy_mac_slice_config(ecr->cell_config[0]->slice_config);
+  ecr->cell_config[0]->slice_config = NULL;
+  /* we should not call flexran_agent_destroy_enb_config_reply(smsg); since
+   * upon timer removal, this is automatically done */
+  LOG_W(FLEXRAN_AGENT,
+        "remove stored slice config (xid %d) after timeout\n",
+        ecr->header->xid);
+  flexran_agent_destroy_timer(mod_id, ecr->header->xid);
+  return NULL;
+}
+
 void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice_config) {
   if (!*slice_config) return;
   /* just use the memory and set to NULL in original */
@@ -1708,6 +1795,61 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice
   LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
   lfds700_misc_prng_init(&ls);
   enum lfds700_misc_flag overwrite_occurred_flag;
+
+  int put_on_hold = 0;
+  if (sc->dl->scheduler && !check_scheduler(mod_id, sc->dl->scheduler)) {
+    request_scheduler(mod_id, sc->dl->scheduler, xid++);
+    put_on_hold = 1;
+  }
+  for (int i = 0; i < sc->dl->n_slices; ++i) {
+    Protocol__FlexSlice *sl = sc->dl->slices[i];
+    if (sl->scheduler && !check_scheduler(mod_id, sl->scheduler)) {
+      request_scheduler(mod_id, sl->scheduler, xid++);
+      put_on_hold = 1;
+    }
+  }
+  if (put_on_hold) {
+    Protocol__FlexEnbConfigReply *reply = malloc(sizeof(Protocol__FlexEnbConfigReply));
+    DevAssert(reply);
+    protocol__flex_enb_config_reply__init(reply);
+    /* use the last used xid so we can correlate answer and waiting config */
+    int rc = flexran_create_header(
+        xid - 1, PROTOCOL__FLEX_TYPE__FLPT_GET_ENB_CONFIG_REPLY, &reply->header);
+    AssertFatal(rc == 0, "%s(): cannot create header\n", __func__);
+    reply->n_cell_config = 1;
+    reply->cell_config = malloc(sizeof(Protocol__FlexCellConfig *));
+    DevAssert(reply->cell_config);
+    reply->cell_config[0] = malloc(sizeof(Protocol__FlexCellConfig));
+    DevAssert(reply->cell_config[0]);
+    protocol__flex_cell_config__init(reply->cell_config[0]);
+    reply->cell_config[0]->slice_config = sc;
+
+    Protocol__FlexranMessage *msg = malloc(sizeof(Protocol__FlexranMessage));
+    DevAssert(msg);
+    protocol__flexran_message__init(msg);
+    msg->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
+    msg->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__INITIATING_MESSAGE;
+    msg->enb_config_reply_msg = reply;
+
+    Protocol__FlexEnbConfigReply *o;
+    lfds700_ringbuffer_write(&store_slice_config_ringbuffer_state[mod_id],
+                             NULL,
+                             (void *)msg,
+                             &overwrite_occurred_flag,
+                             NULL,
+                             (void **) &o,
+                             &ls);
+    AssertFatal(overwrite_occurred_flag == LFDS700_MISC_FLAG_LOWERED,
+                "unhandled: stored slice config for controller has been overwritten\n");
+
+    flexran_agent_create_timer(mod_id,
+                               3000,
+                               FLEXRAN_AGENT_TIMER_TYPE_PERIODIC,
+                               xid - 1,
+                               request_scheduler_timeout,
+                               msg); /* need reply for xid */
+    return;
+  }
 
   Protocol__FlexSliceConfig *overwritten_sc;
   lfds700_ringbuffer_write(&slice_config_ringbuffer_state[mod_id],
