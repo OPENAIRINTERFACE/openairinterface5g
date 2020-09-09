@@ -31,13 +31,13 @@
 #define NGAP_GNB_H_
 
 typedef struct ngap_gNB_config_s {
-  // MME related params
-  unsigned char mme_enabled;          ///< MME enabled ?
+  // AMF related params
+  unsigned char amf_enabled;          ///< AMF enabled ?
 } ngap_gNB_config_t;
 
 extern ngap_gNB_config_t ngap_config;
 
-#define EPC_MODE_ENABLED       ngap_config.mme_enabled
+#define EPC_MODE_ENABLED       ngap_config.amf_enabled
 
 void *ngap_gNB_process_itti_msg(void*);
 void  ngap_gNB_init(void);

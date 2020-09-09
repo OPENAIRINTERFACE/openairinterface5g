@@ -43,10 +43,10 @@
 
 ngap_gNB_internal_data_t ngap_gNB_internal_data;
 
-RB_GENERATE(ngap_mme_map, ngap_gNB_mme_data_s, entry, ngap_gNB_compare_assoc_id);
+RB_GENERATE(ngap_amf_map, ngap_gNB_amf_data_s, entry, ngap_gNB_compare_assoc_id);
 
 int ngap_gNB_compare_assoc_id(
-  struct ngap_gNB_mme_data_s *p1, struct ngap_gNB_mme_data_s *p2)
+  struct ngap_gNB_amf_data_s *p1, struct ngap_gNB_amf_data_s *p2)
 {
   if (p1->assoc_id == -1) {
     if (p1->cnx_id < p2->cnx_id) {
@@ -89,14 +89,14 @@ void ngap_gNB_insert_new_instance(ngap_gNB_instance_t *new_instance_p)
                      new_instance_p, ngap_gNB_entries);
 }
 
-struct ngap_gNB_mme_data_s *ngap_gNB_get_MME(
+struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF(
   ngap_gNB_instance_t *instance_p,
   int32_t assoc_id, uint16_t cnx_id)
 {
-  struct ngap_gNB_mme_data_s  temp;
-  struct ngap_gNB_mme_data_s *found;
+  struct ngap_gNB_amf_data_s  temp;
+  struct ngap_gNB_amf_data_s *found;
 
-  memset(&temp, 0, sizeof(struct ngap_gNB_mme_data_s));
+  memset(&temp, 0, sizeof(struct ngap_gNB_amf_data_s));
 
   temp.assoc_id = assoc_id;
   temp.cnx_id   = cnx_id;
@@ -104,30 +104,30 @@ struct ngap_gNB_mme_data_s *ngap_gNB_get_MME(
   if (instance_p == NULL) {
     STAILQ_FOREACH(instance_p, &ngap_gNB_internal_data.ngap_gNB_instances_head,
                    ngap_gNB_entries) {
-      found = RB_FIND(ngap_mme_map, &instance_p->ngap_mme_head, &temp);
+      found = RB_FIND(ngap_amf_map, &instance_p->ngap_amf_head, &temp);
 
       if (found != NULL) {
         return found;
       }
     }
   } else {
-    return RB_FIND(ngap_mme_map, &instance_p->ngap_mme_head, &temp);
+    return RB_FIND(ngap_amf_map, &instance_p->ngap_amf_head, &temp);
   }
 
   return NULL;
 }
 
-struct ngap_gNB_mme_data_s *ngap_gNB_get_MME_from_instance(
+struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF_from_instance(
   ngap_gNB_instance_t *instance_p)
 {
  
-  struct ngap_gNB_mme_data_s *mme = NULL;
-  struct ngap_gNB_mme_data_s *mme_next = NULL;
+  struct ngap_gNB_amf_data_s *amf = NULL;
+  struct ngap_gNB_amf_data_s *amf_next = NULL;
 
-  for (mme = RB_MIN(ngap_mme_map, &instance_p->ngap_mme_head); mme!=NULL ; mme = mme_next) {
-    mme_next = RB_NEXT(ngap_mme_map, &instance_p->ngap_mme_head, mme);
-    if (mme->ngap_gNB_instance == instance_p) {
-      return mme;
+  for (amf = RB_MIN(ngap_amf_map, &instance_p->ngap_amf_head); amf!=NULL ; amf = amf_next) {
+    amf_next = RB_NEXT(ngap_amf_map, &instance_p->ngap_amf_head, amf);
+    if (amf->ngap_gNB_instance == instance_p) {
+      return amf;
     }
   }
 
@@ -149,40 +149,40 @@ ngap_gNB_instance_t *ngap_gNB_get_instance(instance_t instance)
   return NULL;
 }
 
-void ngap_gNB_remove_mme_desc(ngap_gNB_instance_t * instance) 
+void ngap_gNB_remove_amf_desc(ngap_gNB_instance_t * instance) 
 {
 
-    struct ngap_gNB_mme_data_s *mme = NULL;
-    struct ngap_gNB_mme_data_s *mmeNext = NULL;
+    struct ngap_gNB_amf_data_s *amf = NULL;
+    struct ngap_gNB_amf_data_s *amfNext = NULL;
     struct plmn_identity_s* plmnInfo;
     struct served_group_id_s* groupInfo;
-    struct served_gummei_s* gummeiInfo;
-    struct mme_code_s* mmeCode;
+    struct served_guami_s* guamInfo;
+    struct amf_code_s* amfCode;
 
-    for (mme = RB_MIN(ngap_mme_map, &instance->ngap_mme_head); mme; mme = mmeNext) {
-      mmeNext = RB_NEXT(ngap_mme_map, &instance->ngap_mme_head, mme);
-      RB_REMOVE(ngap_mme_map, &instance->ngap_mme_head, mme);
-      while (!STAILQ_EMPTY(&mme->served_gummei)) {
-        gummeiInfo = STAILQ_FIRST(&mme->served_gummei);
-        STAILQ_REMOVE_HEAD(&mme->served_gummei, next);
+    for (amf = RB_MIN(ngap_amf_map, &instance->ngap_amf_head); amf; amf = amfNext) {
+      amfNext = RB_NEXT(ngap_amf_map, &instance->ngap_amf_head, amf);
+      RB_REMOVE(ngap_amf_map, &instance->ngap_amf_head, amf);
+      while (!STAILQ_EMPTY(&amf->served_guami)) {
+        guamInfo = STAILQ_FIRST(&amf->served_guami);
+        STAILQ_REMOVE_HEAD(&amf->served_guami, next);
 	
-        while (!STAILQ_EMPTY(&gummeiInfo->served_plmns)) {
-	  plmnInfo = STAILQ_FIRST(&gummeiInfo->served_plmns);
-	  STAILQ_REMOVE_HEAD(&gummeiInfo->served_plmns, next);
+        while (!STAILQ_EMPTY(&guamInfo->served_plmns)) {
+	  plmnInfo = STAILQ_FIRST(&guamInfo->served_plmns);
+	  STAILQ_REMOVE_HEAD(&guamInfo->served_plmns, next);
 	  free(plmnInfo);
         }
-        while (!STAILQ_EMPTY(&gummeiInfo->served_group_ids)) {
-	  groupInfo = STAILQ_FIRST(&gummeiInfo->served_group_ids);
-	  STAILQ_REMOVE_HEAD(&gummeiInfo->served_group_ids, next);
+        while (!STAILQ_EMPTY(&guamInfo->served_group_ids)) {
+	  groupInfo = STAILQ_FIRST(&guamInfo->served_group_ids);
+	  STAILQ_REMOVE_HEAD(&guamInfo->served_group_ids, next);
 	  free(groupInfo);
         }
-        while (!STAILQ_EMPTY(&gummeiInfo->mme_codes)) {
-	  mmeCode = STAILQ_FIRST(&gummeiInfo->mme_codes);
-	  STAILQ_REMOVE_HEAD(&gummeiInfo->mme_codes, next);
-	  free(mmeCode);
+        while (!STAILQ_EMPTY(&guamInfo->amf_codes)) {
+	  amfCode = STAILQ_FIRST(&guamInfo->amf_codes);
+	  STAILQ_REMOVE_HEAD(&guamInfo->amf_codes, next);
+	  free(amfCode);
         }
-        free(gummeiInfo);
+        free(guamInfo);
       }
-      free(mme);
+      free(amf);
     }
 }

@@ -22,7 +22,7 @@
 #ifndef NGAP_GNB_HANDLERS_H_
 #define NGAP_GNB_HANDLERS_H_
 
-void ngap_handle_s1_setup_message(ngap_gNB_mme_data_t *mme_desc_p, int sctp_shutdown);
+void ngap_handle_ng_setup_message(ngap_gNB_amf_data_t *amf_desc_p, int sctp_shutdown);
 
 int ngap_gNB_handle_message(uint32_t assoc_id, int32_t stream,
                             const uint8_t * const data, const uint32_t data_length);

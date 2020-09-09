@@ -47,7 +47,7 @@ int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
                                    uint32_t         stream,
                                    NGAP_NGAP_PDU_t *pdu)
 {
-    ngap_gNB_mme_data_t     *mme_desc_p;
+    ngap_gNB_amf_data_t     *amf_desc_p;
     NGAP_OverloadStart_t    *container;
     NGAP_OverloadStartIEs_t *ie;
 
@@ -65,16 +65,16 @@ int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
     /* Non UE-associated signalling -> stream 0 */
     DevCheck(stream == 0, stream, 0, 0);
 
-    if ((mme_desc_p = ngap_gNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-        /* No MME context associated */
+    if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
+        /* No AMF context associated */
         return -1;
     }
 
-    /* Mark the MME as overloaded and set the overload state according to
+    /* Mark the AMF as overloaded and set the overload state according to
      * the value received.
      */
-    mme_desc_p->state = NGAP_GNB_OVERLOAD;
-    mme_desc_p->overload_state =
+    amf_desc_p->state = NGAP_GNB_OVERLOAD;
+    amf_desc_p->overload_state =
         ie->value.choice.OverloadResponse.choice.overloadAction;
 
     return 0;
@@ -84,23 +84,23 @@ int ngap_gNB_handle_overload_stop(uint32_t         assoc_id,
                                   uint32_t         stream,
                                   NGAP_NGAP_PDU_t *pdu)
 {
-    /* We received Overload stop message, meaning that the MME is no more
+    /* We received Overload stop message, meaning that the AMF is no more
      * overloaded. This is an empty message, with only message header and no
      * Information Element.
      */
     DevAssert(pdu != NULL);
 
-    ngap_gNB_mme_data_t *mme_desc_p;
+    ngap_gNB_amf_data_t *amf_desc_p;
 
     /* Non UE-associated signalling -> stream 0 */
     DevCheck(stream == 0, stream, 0, 0);
 
-    if ((mme_desc_p = ngap_gNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-        /* No MME context associated */
+    if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
+        /* No AMF context associated */
         return -1;
     }
 
-    mme_desc_p->state = NGAP_GNB_STATE_CONNECTED;
-    mme_desc_p->overload_state = NGAP_NO_OVERLOAD;
+    amf_desc_p->state = NGAP_GNB_STATE_CONNECTED;
+    amf_desc_p->overload_state = NGAP_NO_OVERLOAD;
     return 0;
 }

@@ -28,12 +28,12 @@
 #define NGAP_GNB_UE_CONTEXT_H_
 
 // Forward declarations
-struct ngap_gNB_mme_data_s;
+struct ngap_gNB_amf_data_s;
 struct ngap_ue_map;
-struct gNB_mme_desc_s;
+struct gNB_amf_desc_s;
 
 typedef enum {
-  /* UE has not been registered to a MME or UE association has failed. */
+  /* UE has not been registered to a AMF or UE association has failed. */
   NGAP_UE_DECONNECTED = 0x0,
   /* UE ngap state is waiting for initial context setup request message. */
   NGAP_UE_WAITING_CSR = 0x1,
@@ -46,7 +46,7 @@ typedef struct ngap_gNB_ue_context_s {
   /* Tree related data */
   RB_ENTRY(ngap_gNB_ue_context_s) entries;
 
-  /* Uniquely identifies the UE between MME and gNB within the gNB.
+  /* Uniquely identifies the UE between AMF and gNB within the gNB.
    * This id is encoded on 24bits.
    */
   unsigned gNB_ue_ngap_id:24;
@@ -54,8 +54,8 @@ typedef struct ngap_gNB_ue_context_s {
   /* UE id for initial connection to NGAP */
   uint16_t ue_initial_id;
 
-  /* Uniquely identifies the UE within MME. Encoded on 32 bits. */
-  uint32_t mme_ue_ngap_id;
+  /* Uniquely identifies the UE within AMF. Encoded on 32 bits. */
+  uint32_t amf_ue_ngap_id;
 
   /* Stream used for this particular UE */
   int32_t tx_stream;
@@ -64,8 +64,8 @@ typedef struct ngap_gNB_ue_context_s {
   /* Current UE state. */
   ngap_ue_state ue_state;
 
-  /* Reference to MME data this UE is attached to */
-  struct ngap_gNB_mme_data_s *mme_ref;
+  /* Reference to AMF data this UE is attached to */
+  struct ngap_gNB_amf_data_s *amf_ref;
 
   /* Signaled by the UE in RRC Connection Setup Complete and used in NAS Uplink
    * to route NAS messages correctly. 0-based, not 1-based as in TS 36.331

@@ -34,13 +34,13 @@
 typedef enum {
   /* Disconnected state: initial state for any association. */
   NGAP_GNB_STATE_DISCONNECTED = 0x0,
-  /* State waiting for S1 Setup response message if gNB is MME accepted or
-   * S1 Setup failure if MME rejects the gNB.
+  /* State waiting for S1 Setup response message if gNB is AMF accepted or
+   * S1 Setup failure if AMF rejects the gNB.
    */
   NGAP_GNB_STATE_WAITING     = 0x1,
-  /* The gNB is successfully connected to MME, UE contexts can be created. */
+  /* The gNB is successfully connected to AMF, UE contexts can be created. */
   NGAP_GNB_STATE_CONNECTED   = 0x2,
-  /* The MME has sent an overload start message. Once the MME disables the
+  /* The AMF has sent an overload start message. Once the AMF disables the
    * OVERLOAD marker, the state of the association will be
    * NGAP_GNB_STATE_CONNECTED.
    */
@@ -51,18 +51,17 @@ typedef enum {
 
 /* If the Overload Action IE in the OVERLOAD START message is set to
  * - “reject all RRC connection establishments for non-emergency mobile
- *    originated data transfer “ (i.e. reject traffic corresponding to RRC cause
- *    “mo-data “ (TS 36.331 [16])), or
- * - “reject all RRC connection establishments for signalling “ (i.e. reject
- *    traffic corresponding to RRC cause “modata” and “mo-signalling”
- *    (TS 36.331 [16])),or
+ *    originated data transfer  E(i.e. reject traffic corresponding to RRC cause
+ *    “mo-data  E(TS 36.331 [16])), or
+ * - “reject all RRC connection establishments for signalling  E(i.e. reject
+ *    traffic corresponding to RRC cause “modata Eand “mo-signalling E *    (TS 36.331 [16])),or
  * - “only permit RRC connection establishments for emergency sessions and
- *    mobile terminated services” (i.e. only permit traffic corresponding to RRC
- *    cause “emergency” and “mt-Access” (TS 36.331 [16])).
+ *    mobile terminated services E(i.e. only permit traffic corresponding to RRC
+ *    cause “emergency Eand “mt-Access E(TS 36.331 [16])).
  *
  * NOTE: When the Overload Action IE is set to “only permit RRC connection
- * establishments for emergency sessions and mobile terminated services”,
- * emergency calls with RRC cause “highPriorityAcess” from high priority users
+ * establishments for emergency sessions and mobile terminated services E
+ * emergency calls with RRC cause “highPriorityAcess Efrom high priority users
  * are rejected (TS 24.301 [24]).
  */
 typedef enum {
@@ -81,67 +80,106 @@ struct plmn_identity_s {
   STAILQ_ENTRY(plmn_identity_s) next;
 };
 
-/* Served group id element */
-struct served_group_id_s {
-  uint16_t mme_group_id;
-  STAILQ_ENTRY(served_group_id_s) next;
+/* Served amf region id for a particular AMF */
+struct served_region_id_s {
+  uint8_t amf_region_id;
+  STAILQ_ENTRY(served_region_id_s) next;
 };
 
-/* Served mme code for a particular MME */
-struct mme_code_s {
-  uint8_t mme_code;
-  STAILQ_ENTRY(mme_code_s) next;
+/* Served amf set id for a particular AMF */
+struct amf_set_id_s {
+  uint16_t amf_set_id;
+  STAILQ_ENTRY(amf_set_id_s) next;
 };
 
-/* Served gummei element */
-struct served_gummei_s {
-  /* Number of MME served PLMNs */
+/* Served amf pointer for a particular AMF */
+struct amf_pointer_s {
+  uint8_t amf_pointer;
+  STAILQ_ENTRY(amf_pointer_s) next;
+};
+
+
+/* Served guami element */
+struct served_guami_s {
+  /* Number of AMF served PLMNs */
   uint8_t nb_served_plmns;
-  /* List of served PLMNs by MME */
+  /* List of served PLMNs by AMF */
   STAILQ_HEAD(served_plmns_s, plmn_identity_s) served_plmns;
 
-  /* Number of group id in list */
-  uint8_t nb_group_id;
+  /* Number of region id in list */
+  uint8_t nb_region_id;
   /* Served group id list */
-  STAILQ_HEAD(served_group_ids_s, served_group_id_s) served_group_ids;
+  STAILQ_HEAD(served_region_ids_s, served_region_id_s) served_region_ids;
 
-  /* Number of MME code */
-  uint8_t nb_mme_code;
-  /* MME Code to uniquely identify an MME within an MME pool area */
-  STAILQ_HEAD(mme_codes_s, mme_code_s) mme_codes;
+  /* Number of AMF set id */
+  uint8_t nb_amf_set_id;
+  /* AMF Set id to uniquely identify an AMF within an AMF pool area */
+  STAILQ_HEAD(amf_set_ids_s, amf_set_id_s) amf_set_ids;
 
-  /* Next GUMMEI element */
-  STAILQ_ENTRY(served_gummei_s) next;
+  /* Number of AMF pointer */
+  uint8_t nb_amf_pointer;
+  /* AMF pointer to uniquely identify an AMF within an AMF pool area */
+  STAILQ_HEAD(amf_pointers_s, amf_pointer_s) amf_pointers;
+    
+  /* Next GUAMI element */
+  STAILQ_ENTRY(served_guami_s) next;
 };
+
+/* slice support element */
+struct slice_support_s {
+  uint8_t sST;
+  uint8_t sD_flag;
+  uint8_t sD[3];
+};
+
+/* plmn support element */
+struct plmn_support_s {
+  plmn_identity_s plmn_identity;
+
+  /* Number of slice support in list */
+  uint8_t nb_slice_s;
+  /* Served group id list */
+  STAILQ_HEAD(slice_supports_s, slice_support_s) slice_supports;
+
+  /* Next plmn support element */
+  STAILQ_ENTRY(plmn_support_s) next;
+};
+
 
 struct ngap_gNB_instance_s;
 
-/* This structure describes association of a gNB to a MME */
-typedef struct ngap_gNB_mme_data_s {
-  /* MME descriptors tree, ordered by sctp assoc id */
-  RB_ENTRY(ngap_gNB_mme_data_s) entry;
+/* This structure describes association of a gNB to a AMF */
+typedef struct ngap_gNB_amf_data_s {
+  /* AMF descriptors tree, ordered by sctp assoc id */
+  RB_ENTRY(ngap_gNB_amf_data_s) entry;
 
-  /* This is the optional name provided by the MME */
-  char *mme_name;
+  /* This is the optional name provided by the AMF */
+  char *amf_name;
 
-  /* MME NGAP IP address */
-  net_ip_address_t mme_s1_ip;
+  /* AMF NGAP IP address */
+  net_ip_address_t amf_s1_ip;
 
-  /* List of served GUMMEI per MME. There is one GUMMEI per RAT with a max
+  /* List of served GUAMI per AMF. There is one GUAMI per RAT with a max
    * number of 8 RATs but in our case only one is used. The LTE related pool
    * configuration is included on the first place in the list.
    */
-  STAILQ_HEAD(served_gummeis_s, served_gummei_s) served_gummei;
+  STAILQ_HEAD(served_guamis_s, served_guami_s) served_guami;
 
-  /* Relative processing capacity of an MME with respect to the other MMEs
-   * in the pool in order to load-balance MMEs within a pool as defined
+  /* Relative processing capacity of an AMF with respect to the other AMFs
+   * in the pool in order to load-balance AMFs within a pool as defined
    * in TS 23.401.
    */
-  uint8_t relative_mme_capacity;
+  uint8_t relative_amf_capacity;
 
-  /* Current MME overload information (if any). */
+  /*
+   * List of PLMN Support per AMF.
+   *
+   */
+  STAILQ_HEAD(plmn_supports_s, plmn_support_s) plmn_supports;
+
+  /* Current AMF overload information (if any). */
   ngap_overload_state_t overload_state;
-  /* Current gNB->MME NGAP association state */
+  /* Current gNB->AMF NGAP association state */
   ngap_gNB_state_t state;
 
   /* Next usable stream for UE signalling */
@@ -157,14 +195,21 @@ typedef struct ngap_gNB_mme_data_s {
   /* SCTP association id */
   int32_t  assoc_id;
 
-  /* This is served PLMN IDs communicated to the MME via an index over the
+  /* This is served PLMN IDs communicated to the AMF via an index over the
    * MCC/MNC array in ngap_gNB_instance */
   uint8_t  broadcast_plmn_num;
   uint8_t  broadcast_plmn_index[PLMN_LIST_MAX_SIZE];
 
+
   /* Only meaningfull in virtual mode */
   struct ngap_gNB_instance_s *ngap_gNB_instance;
-} ngap_gNB_mme_data_t;
+} ngap_gNB_amf_data_t;
+
+typedef struct ngap_gNB_NSSAI_s{
+  uint8_t sST;
+  uint8_t sD_flag;
+  uint8_t sD[3];
+}ngap_gNB_NSSAI_t;
 
 typedef struct ngap_gNB_instance_s {
   /* Next ngap gNB association.
@@ -172,16 +217,16 @@ typedef struct ngap_gNB_instance_s {
    */
   STAILQ_ENTRY(ngap_gNB_instance_s) ngap_gNB_entries;
 
-  /* Number of MME requested by gNB (tree size) */
-  uint32_t ngap_mme_nb;
-  /* Number of MME for which association is pending */
-  uint32_t ngap_mme_pending_nb;
-  /* Number of MME successfully associated to gNB */
-  uint32_t ngap_mme_associated_nb;
-  /* Tree of NGAP MME associations ordered by association ID */
-  RB_HEAD(ngap_mme_map, ngap_gNB_mme_data_s) ngap_mme_head;
+  /* Number of AMF requested by gNB (tree size) */
+  uint32_t ngap_amf_nb;
+  /* Number of AMF for which association is pending */
+  uint32_t ngap_amf_pending_nb;
+  /* Number of AMF successfully associated to gNB */
+  uint32_t ngap_amf_associated_nb;
+  /* Tree of NGAP AMF associations ordered by association ID */
+  RB_HEAD(ngap_amf_map, ngap_gNB_amf_data_s) ngap_amf_head;
 
-  /* TODO: add a map ordered by relative MME capacity */
+  /* TODO: add a map ordered by relative AMF capacity */
 
   /* Tree of UE ordered by gNB_ue_ngap_id's */
   RB_HEAD(ngap_ue_map, ngap_gNB_ue_context_s) ngap_ue_head;
@@ -214,6 +259,9 @@ typedef struct ngap_gNB_instance_s {
   uint8_t   mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t   num_plmn;
 
+  uint16_t   num_nssai[PLMN_LIST_MAX_SIZE];
+  ngap_gNB_NSSAI_t s_nssai[PLMN_LIST_MAX_SIZE][1024];
+  
   /* Default Paging DRX of the gNB as defined in TS 36.304 */
   paging_drx_t default_drx;
 } ngap_gNB_instance_t;
@@ -231,10 +279,10 @@ typedef struct {
 } ngap_gNB_internal_data_t;
 
 int ngap_gNB_compare_assoc_id(
-  struct ngap_gNB_mme_data_s *p1, struct ngap_gNB_mme_data_s *p2);
+  struct ngap_gNB_amf_data_s *p1, struct ngap_gNB_amf_data_s *p2);
 
 /* Generate the tree management functions */
-RB_PROTOTYPE(ngap_mme_map, ngap_gNB_mme_data_s, entry,
+RB_PROTOTYPE(ngap_amf_map, ngap_gNB_amf_data_s, entry,
              ngap_gNB_compare_assoc_id);
 
 #endif /* NGAP_GNB_DEFS_H_ */

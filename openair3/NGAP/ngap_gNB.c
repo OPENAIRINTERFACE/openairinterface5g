@@ -60,16 +60,16 @@
 
 #include "assertions.h"
 #include "conversions.h"
-#if defined(TEST_S1C_MME)
-  #include "oaisim_mme_test_s1c.h"
+#if defined(TEST_S1C_AMF)
+  #include "oaisim_amf_test_s1c.h"
 #endif
 
 ngap_gNB_config_t ngap_config;
 
-static int ngap_gNB_generate_s1_setup_request(
-  ngap_gNB_instance_t *instance_p, ngap_gNB_mme_data_t *ngap_mme_data_p);
+static int ngap_gNB_generate_ng_setup_request(
+  ngap_gNB_instance_t *instance_p, ngap_gNB_amf_data_t *ngap_amf_data_p);
 
-void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_enb_req_t *ngap_register_gNB);
+void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *ngap_register_gNB);
 
 void ngap_gNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 
@@ -87,8 +87,8 @@ uint32_t ngap_generate_gNB_id(void) {
   return gNB_id;
 }
 
-static void ngap_gNB_register_mme(ngap_gNB_instance_t *instance_p,
-                                  net_ip_address_t    *mme_ip_address,
+static void ngap_gNB_register_amf(ngap_gNB_instance_t *instance_p,
+                                  net_ip_address_t    *amf_ip_address,
                                   net_ip_address_t    *local_ip_addr,
                                   uint16_t             in_streams,
                                   uint16_t             out_streams,
@@ -96,10 +96,10 @@ static void ngap_gNB_register_mme(ngap_gNB_instance_t *instance_p,
                                   uint8_t              broadcast_plmn_index[PLMN_LIST_MAX_SIZE]) {
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
-  ngap_gNB_mme_data_t        *ngap_mme_data_p             = NULL;
-  struct ngap_gNB_mme_data_s *mme                         = NULL;
+  ngap_gNB_amf_data_t        *ngap_amf_data_p             = NULL;
+  struct ngap_gNB_amf_data_s *amf                         = NULL;
   DevAssert(instance_p != NULL);
-  DevAssert(mme_ip_address != NULL);
+  DevAssert(amf_ip_address != NULL);
   message_p = itti_alloc_new_message(TASK_NGAP, SCTP_NEW_ASSOCIATION_REQ);
   sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
   sctp_new_association_req_p->port = NGAP_PORT_NUMBER;
@@ -107,62 +107,62 @@ static void ngap_gNB_register_mme(ngap_gNB_instance_t *instance_p,
   sctp_new_association_req_p->in_streams  = in_streams;
   sctp_new_association_req_p->out_streams = out_streams;
   memcpy(&sctp_new_association_req_p->remote_address,
-         mme_ip_address,
-         sizeof(*mme_ip_address));
+         amf_ip_address,
+         sizeof(*amf_ip_address));
   memcpy(&sctp_new_association_req_p->local_address,
          local_ip_addr,
          sizeof(*local_ip_addr));
-  NGAP_INFO("[gNB %d] check the mme registration state\n",instance_p->instance);
-  mme = NULL;
+  NGAP_INFO("[gNB %d] check the amf registration state\n",instance_p->instance);
+  amf = NULL;
 
-  if ( mme == NULL ) {
-    /* Create new MME descriptor */
-    ngap_mme_data_p = calloc(1, sizeof(*ngap_mme_data_p));
-    DevAssert(ngap_mme_data_p != NULL);
-    ngap_mme_data_p->cnx_id                = ngap_gNB_fetch_add_global_cnx_id();
-    sctp_new_association_req_p->ulp_cnx_id = ngap_mme_data_p->cnx_id;
-    ngap_mme_data_p->assoc_id          = -1;
-    ngap_mme_data_p->broadcast_plmn_num = broadcast_plmn_num;
-    memcpy(&ngap_mme_data_p->mme_s1_ip,
-    	   mme_ip_address,
-    	   sizeof(*mme_ip_address));
+  if ( amf == NULL ) {
+    /* Create new AMF descriptor */
+    ngap_amf_data_p = calloc(1, sizeof(*ngap_amf_data_p));
+    DevAssert(ngap_amf_data_p != NULL);
+    ngap_amf_data_p->cnx_id                = ngap_gNB_fetch_add_global_cnx_id();
+    sctp_new_association_req_p->ulp_cnx_id = ngap_amf_data_p->cnx_id;
+    ngap_amf_data_p->assoc_id          = -1;
+    ngap_amf_data_p->broadcast_plmn_num = broadcast_plmn_num;
+    memcpy(&ngap_amf_data_p->amf_s1_ip,
+    	   amf_ip_address,
+    	   sizeof(*amf_ip_address));
     for (int i = 0; i < broadcast_plmn_num; ++i)
-      ngap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
+      ngap_amf_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
 
-    ngap_mme_data_p->ngap_gNB_instance = instance_p;
-    STAILQ_INIT(&ngap_mme_data_p->served_gummei);
-    /* Insert the new descriptor in list of known MME
+    ngap_amf_data_p->ngap_gNB_instance = instance_p;
+    STAILQ_INIT(&ngap_amf_data_p->served_guami);
+    /* Insert the new descriptor in list of known AMF
      * but not yet associated.
      */
-    RB_INSERT(ngap_mme_map, &instance_p->ngap_mme_head, ngap_mme_data_p);
-    ngap_mme_data_p->state = NGAP_GNB_STATE_WAITING;
-    instance_p->ngap_mme_nb ++;
-    instance_p->ngap_mme_pending_nb ++;
-  } else if (mme->state == NGAP_GNB_STATE_WAITING) {
-    instance_p->ngap_mme_pending_nb ++;
-    sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
-    NGAP_INFO("[gNB %d] MME already registered, retrive the data (state %d, cnx %d, mme_nb %d, mme_pending_nb %d)\n",
+    RB_INSERT(ngap_amf_map, &instance_p->ngap_amf_head, ngap_amf_data_p);
+    ngap_amf_data_p->state = NGAP_GNB_STATE_WAITING;
+    instance_p->ngap_amf_nb ++;
+    instance_p->ngap_amf_pending_nb ++;
+  } else if (amf->state == NGAP_GNB_STATE_WAITING) {
+    instance_p->ngap_amf_pending_nb ++;
+    sctp_new_association_req_p->ulp_cnx_id = amf->cnx_id;
+    NGAP_INFO("[gNB %d] AMF already registered, retrive the data (state %d, cnx %d, amf_nb %d, amf_pending_nb %d)\n",
               instance_p->instance,
-              mme->state, mme->cnx_id,
-              instance_p->ngap_mme_nb, instance_p->ngap_mme_pending_nb);
-    /*ngap_mme_data_p->cnx_id                = mme->cnx_id;
-    sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
+              amf->state, amf->cnx_id,
+              instance_p->ngap_amf_nb, instance_p->ngap_amf_pending_nb);
+    /*ngap_amf_data_p->cnx_id                = amf->cnx_id;
+    sctp_new_association_req_p->ulp_cnx_id = amf->cnx_id;
 
-    ngap_mme_data_p->assoc_id          = -1;
-    ngap_mme_data_p->ngap_gNB_instance = instance_p;
+    ngap_amf_data_p->assoc_id          = -1;
+    ngap_amf_data_p->ngap_gNB_instance = instance_p;
     */
   } else {
-    NGAP_WARN("[gNB %d] MME already registered but not in the waiting state, retrive the data (state %d, cnx %d, mme_nb %d, mme_pending_nb %d)\n",
+    NGAP_WARN("[gNB %d] AMF already registered but not in the waiting state, retrive the data (state %d, cnx %d, amf_nb %d, amf_pending_nb %d)\n",
               instance_p->instance,
-              mme->state, mme->cnx_id,
-              instance_p->ngap_mme_nb, instance_p->ngap_mme_pending_nb);
+              amf->state, amf->cnx_id,
+              instance_p->ngap_amf_nb, instance_p->ngap_amf_pending_nb);
   }
 
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
 
 
-void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_enb_req_t *ngap_register_gNB) {
+void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *ngap_register_gNB) {
   ngap_gNB_instance_t *new_instance;
   uint8_t index;
   DevAssert(ngap_register_gNB != NULL);
@@ -187,7 +187,7 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_enb_req_t *
     new_instance = calloc(1, sizeof(ngap_gNB_instance_t));
     DevAssert(new_instance != NULL);
     RB_INIT(&new_instance->ngap_ue_head);
-    RB_INIT(&new_instance->ngap_mme_head);
+    RB_INIT(&new_instance->ngap_amf_head);
     /* Copy usefull parameters */
     new_instance->instance         = instance;
     new_instance->gNB_name         = ngap_register_gNB->gNB_name;
@@ -196,8 +196,8 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_enb_req_t *
     new_instance->tac              = ngap_register_gNB->tac;
     
     memcpy(&new_instance->gNB_s1_ip,
-	   &ngap_register_gNB->enb_ip_address,
-	   sizeof(ngap_register_gNB->enb_ip_address));
+       &ngap_register_gNB->gnb_ip_address,
+       sizeof(ngap_register_gNB->gnb_ip_address));
 
     for (int i = 0; i < ngap_register_gNB->num_plmn; i++) {
       new_instance->mcc[i]              = ngap_register_gNB->mcc[i];
@@ -215,27 +215,27 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_enb_req_t *
               ngap_register_gNB->gNB_id);
   }
 
-  DevCheck(ngap_register_gNB->nb_mme <= NGAP_MAX_NB_MME_IP_ADDRESS,
-           NGAP_MAX_NB_MME_IP_ADDRESS, ngap_register_gNB->nb_mme, 0);
+  DevCheck(ngap_register_gNB->nb_amf <= NGAP_MAX_NB_AMF_IP_ADDRESS,
+           NGAP_MAX_NB_AMF_IP_ADDRESS, ngap_register_gNB->nb_amf, 0);
 
-  /* Trying to connect to provided list of MME ip address */
-  for (index = 0; index < ngap_register_gNB->nb_mme; index++) {
-    net_ip_address_t *mme_ip = &ngap_register_gNB->mme_ip_address[index];
-    struct ngap_gNB_mme_data_s *mme = NULL;
-    RB_FOREACH(mme, ngap_mme_map, &new_instance->ngap_mme_head) {
+  /* Trying to connect to provided list of AMF ip address */
+  for (index = 0; index < ngap_register_gNB->nb_amf; index++) {
+    net_ip_address_t *amf_ip = &ngap_register_gNB->amf_ip_address[index];
+    struct ngap_gNB_amf_data_s *amf = NULL;
+    RB_FOREACH(amf, ngap_amf_map, &new_instance->ngap_amf_head) {
       /* Compare whether IPv4 and IPv6 information is already present, in which
        * wase we do not register again */
-      if (mme->mme_s1_ip.ipv4 == mme_ip->ipv4 && (!mme_ip->ipv4
-              || strncmp(mme->mme_s1_ip.ipv4_address, mme_ip->ipv4_address, 16) == 0)
-          && mme->mme_s1_ip.ipv6 == mme_ip->ipv6 && (!mme_ip->ipv6
-              || strncmp(mme->mme_s1_ip.ipv6_address, mme_ip->ipv6_address, 46) == 0))
+      if (amf->amf_s1_ip.ipv4 == amf_ip->ipv4 && (!amf_ip->ipv4
+              || strncmp(amf->amf_s1_ip.ipv4_address, amf_ip->ipv4_address, 16) == 0)
+          && amf->amf_s1_ip.ipv6 == amf_ip->ipv6 && (!amf_ip->ipv6
+              || strncmp(amf->amf_s1_ip.ipv6_address, amf_ip->ipv6_address, 46) == 0))
         break;
     }
-    if (mme)
+    if (amf)
       continue;
-    ngap_gNB_register_mme(new_instance,
-                          mme_ip,
-                          &ngap_register_gNB->enb_ip_address,
+    ngap_gNB_register_amf(new_instance,
+                          amf_ip,
+                          &ngap_register_gNB->gnb_ip_address,
                           ngap_register_gNB->sctp_in_streams,
                           ngap_register_gNB->sctp_out_streams,
                           ngap_register_gNB->broadcast_plmn_num[index],
@@ -245,37 +245,37 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_enb_req_t *
 
 void ngap_gNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
   ngap_gNB_instance_t *instance_p;
-  ngap_gNB_mme_data_t *ngap_mme_data_p;
+  ngap_gNB_amf_data_t *ngap_amf_data_p;
   DevAssert(sctp_new_association_resp != NULL);
   instance_p = ngap_gNB_get_instance(instance);
   DevAssert(instance_p != NULL);
-  ngap_mme_data_p = ngap_gNB_get_MME(instance_p, -1,
+  ngap_amf_data_p = ngap_gNB_get_AMF(instance_p, -1,
                                      sctp_new_association_resp->ulp_cnx_id);
-  DevAssert(ngap_mme_data_p != NULL);
+  DevAssert(ngap_amf_data_p != NULL);
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
     NGAP_WARN("Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
-    ngap_handle_s1_setup_message(ngap_mme_data_p, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+    ngap_handle_ng_setup_message(ngap_amf_data_p, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
     return;
   }
 
   /* Update parameters */
-  ngap_mme_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
-  ngap_mme_data_p->in_streams  = sctp_new_association_resp->in_streams;
-  ngap_mme_data_p->out_streams = sctp_new_association_resp->out_streams;
-  /* Prepare new S1 Setup Request */
-  ngap_gNB_generate_s1_setup_request(instance_p, ngap_mme_data_p);
+  ngap_amf_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
+  ngap_amf_data_p->in_streams  = sctp_new_association_resp->in_streams;
+  ngap_amf_data_p->out_streams = sctp_new_association_resp->out_streams;
+  /* Prepare new NG Setup Request */
+  ngap_gNB_generate_ng_setup_request(instance_p, ngap_amf_data_p);
 }
 
 static
 void ngap_gNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
   int result;
   DevAssert(sctp_data_ind != NULL);
-#if defined(TEST_S1C_MME)
-  mme_test_s1_notify_sctp_data_ind(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+#if defined(TEST_S1C_AMF)
+  amf_test_s1_notify_sctp_data_ind(sctp_data_ind->assoc_id, sctp_data_ind->stream,
                                    sctp_data_ind->buffer, sctp_data_ind->buffer_length);
 #else
   ngap_gNB_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
@@ -349,15 +349,15 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
     }
     break;
 
-    case NGAP_E_RAB_SETUP_RESP: {
-      ngap_gNB_e_rab_setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                &NGAP_E_RAB_SETUP_RESP(received_msg));
+    case NGAP_PDUSESSION_SETUP_RESP: {
+      ngap_gNB_pdusession_setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                &NGAP_PDUSESSION_SETUP_RESP(received_msg));
     }
     break;
 
-    case NGAP_E_RAB_MODIFY_RESP: {
-      ngap_gNB_e_rab_modify_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                 &NGAP_E_RAB_MODIFY_RESP(received_msg));
+    case NGAP_PDUSESSION_MODIFY_RESP: {
+      ngap_gNB_pdusession_modify_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                 &NGAP_PDUSESSION_MODIFY_RESP(received_msg));
     }
     break;
 
@@ -373,9 +373,9 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
     }
     break;
 
-    case NGAP_E_RAB_MODIFICATION_IND: {
-    	ngap_gNB_generate_E_RAB_Modification_Indication(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-    	                               &NGAP_E_RAB_MODIFICATION_IND(received_msg));
+    case NGAP_PDUSESSION_MODIFICATION_IND: {
+    	ngap_gNB_generate_PDUSESSION_Modification_Indication(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    	                               &NGAP_PDUSESSION_MODIFICATION_IND(received_msg));
     }
     break;
 
@@ -402,9 +402,9 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
     }
     break;
 
-    case NGAP_E_RAB_RELEASE_RESPONSE: {
-      ngap_gNB_e_rab_release_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                  &NGAP_E_RAB_RELEASE_RESPONSE(received_msg));
+    case NGAP_PDUSESSION_RELEASE_RESPONSE: {
+      ngap_gNB_pdusession_release_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                  &NGAP_PDUSESSION_RELEASE_RESPONSE(received_msg));
     }
     break;
 
@@ -433,97 +433,118 @@ void *ngap_gNB_task(void *arg) {
 
 //-----------------------------------------------------------------------------
 /*
-* gNB generate a S1 setup request towards MME
+* gNB generate a NG setup request towards AMF
 */
-static int ngap_gNB_generate_s1_setup_request(
+static int ngap_gNB_generate_ng_setup_request(
   ngap_gNB_instance_t *instance_p,
-  ngap_gNB_mme_data_t *ngap_mme_data_p)
+  ngap_gNB_amf_data_t *ngap_amf_data_p)
 //-----------------------------------------------------------------------------
 {
   NGAP_NGAP_PDU_t            pdu;
-  NGAP_S1SetupRequest_t     *out = NULL;
-  NGAP_S1SetupRequestIEs_t   *ie = NULL;
-  NGAP_SupportedTAs_Item_t   *ta = NULL;
-  NGAP_PLMNidentity_t      *plmn = NULL;
+  NGAP_NGSetupRequest_t      *out = NULL;
+  NGAP_NGSetupRequestIEs_t   *ie = NULL;
+  NGAP_SupportedTAItem_t     *ta = NULL;
+  NGAP_BroadcastPLMNItem_t   *plmn = NULL;
+  NGAP_SliceSupportItem_t    *ssi = NULL;
   uint8_t  *buffer = NULL;
   uint32_t  len = 0;
   int       ret = 0;
   DevAssert(instance_p != NULL);
-  DevAssert(ngap_mme_data_p != NULL);
-  ngap_mme_data_p->state = NGAP_GNB_STATE_WAITING;
+  DevAssert(ngap_amf_data_p != NULL);
+  ngap_amf_data_p->state = NGAP_GNB_STATE_WAITING;
   /* Prepare the NGAP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_S1Setup;
+  pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_NGSetup;
   pdu.choice.initiatingMessage.criticality = NGAP_Criticality_reject;
-  pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_S1SetupRequest;
-  out = &pdu.choice.initiatingMessage.value.choice.S1SetupRequest;
+  pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_NGSetupRequest;
+  out = &pdu.choice.initiatingMessage.value.choice.NGSetupRequest;
   /* mandatory */
-  ie = (NGAP_S1SetupRequestIEs_t *)calloc(1, sizeof(NGAP_S1SetupRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_Global_GNB_ID;
+  ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
+  ie->id = NGAP_ProtocolIE_ID_id_GlobalRANNodeID;
   ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_S1SetupRequestIEs__value_PR_Global_GNB_ID;
-  MCC_MNC_TO_PLMNID(instance_p->mcc[ngap_mme_data_p->broadcast_plmn_index[0]],
-                    instance_p->mnc[ngap_mme_data_p->broadcast_plmn_index[0]],
-                    instance_p->mnc_digit_length[ngap_mme_data_p->broadcast_plmn_index[0]],
-                    &ie->value.choice.Global_GNB_ID.pLMNidentity);
-  ie->value.choice.Global_GNB_ID.gNB_ID.present = NGAP_GNB_ID_PR_macroGNB_ID;
+  ie->value.present = NGAP_NGSetupRequestIEs__value_PR_GlobalRANNodeID;
+  ie->value.choice.GlobalRANNodeID.present = NGAP_GlobalRANNodeID_PR_globalGNB_ID;
+  MCC_MNC_TO_PLMNID(instance_p->mcc[ngap_amf_data_p->broadcast_plmn_index[0]],
+                    instance_p->mnc[ngap_amf_data_p->broadcast_plmn_index[0]],
+                    instance_p->mnc_digit_length[ngap_amf_data_p->broadcast_plmn_index[0]],
+                    &ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.pLMNIdentity);
+  ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.present = NGAP_GNB_ID_PR_gNB_ID;
   MACRO_GNB_ID_TO_BIT_STRING(instance_p->gNB_id,
-                             &ie->value.choice.Global_GNB_ID.gNB_ID.choice.macroGNB_ID);
+                             &ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID);
   NGAP_INFO("%d -> %02x%02x%02x\n", instance_p->gNB_id,
-            ie->value.choice.Global_GNB_ID.gNB_ID.choice.macroGNB_ID.buf[0],
-            ie->value.choice.Global_GNB_ID.gNB_ID.choice.macroGNB_ID.buf[1],
-            ie->value.choice.Global_GNB_ID.gNB_ID.choice.macroGNB_ID.buf[2]);
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[0],
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[1],
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[2]);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
   if (instance_p->gNB_name) {
-    ie = (NGAP_S1SetupRequestIEs_t *)calloc(1, sizeof(NGAP_S1SetupRequestIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_gNBname;
+    ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
+    ie->id = NGAP_ProtocolIE_ID_id_RANNodeName;
     ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_S1SetupRequestIEs__value_PR_GNBname;
-    OCTET_STRING_fromBuf(&ie->value.choice.GNBname, instance_p->gNB_name,
+    ie->value.present = NGAP_NGSetupRequestIEs__value_PR_RANNodeName;
+    OCTET_STRING_fromBuf(&ie->value.choice.RANNodeName, instance_p->gNB_name,
                          strlen(instance_p->gNB_name));
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
   /* mandatory */
-  ie = (NGAP_S1SetupRequestIEs_t *)calloc(1, sizeof(NGAP_S1SetupRequestIEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_SupportedTAs;
+  ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
+  ie->id = NGAP_ProtocolIE_ID_id_SupportedTAList;
   ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_S1SetupRequestIEs__value_PR_SupportedTAs;
+  ie->value.present = NGAP_NGSetupRequestIEs__value_PR_SupportedTAList;
   {
-    ta = (NGAP_SupportedTAs_Item_t *)calloc(1, sizeof(NGAP_SupportedTAs_Item_t));
+    ta = (NGAP_SupportedTAItem_t *)calloc(1, sizeof(NGAP_SupportedTAItem_t));
     INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
     {
-      for (int i = 0; i < ngap_mme_data_p->broadcast_plmn_num; ++i) {
-        plmn = (NGAP_PLMNidentity_t *)calloc(1, sizeof(NGAP_PLMNidentity_t));
-        MCC_MNC_TO_TBCD(instance_p->mcc[ngap_mme_data_p->broadcast_plmn_index[i]],
-                        instance_p->mnc[ngap_mme_data_p->broadcast_plmn_index[i]],
-                        instance_p->mnc_digit_length[ngap_mme_data_p->broadcast_plmn_index[i]],
-                        plmn);
-        ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+      for (int i = 0; i < ngap_amf_data_p->broadcast_plmn_num; ++i) {
+        plmn = (NGAP_BroadcastPLMNItem_t *)calloc(1, sizeof(NGAP_BroadcastPLMNItem_t));
+        MCC_MNC_TO_TBCD(instance_p->mcc[ngap_amf_data_p->broadcast_plmn_index[i]],
+                        instance_p->mnc[ngap_amf_data_p->broadcast_plmn_index[i]],
+                        instance_p->mnc_digit_length[ngap_amf_data_p->broadcast_plmn_index[i]],
+                        plmn->pLMNIdentity);
+
+        for(int si = 0; si < instance_p->num_nssai[i]; si++) {
+          ssi = (NGAP_SliceSupportItem_t *)calloc(1, sizeof(NGAP_SliceSupportItem_t));
+          INT8_TO_OCTET_STRING(instance_p->s_nssai[i][si].sST, &ssi->s_NSSAI.sST);
+
+          if(instance_p->s_nssai[i].sD_flag) {
+            ssi->s_NSSAI.sD = calloc(1, sizeof(NGAP_SD_t));
+            ssi->s_NSSAI.sD->buf = calloc(3, sizeof(uint8_t));
+            ssi->s_NSSAI.sD->size = 3;
+            ssi->s_NSSAI.sD->buf[0] = instance_p->s_nssai[i][si].sD[0];
+            ssi->s_NSSAI.sD->buf[1] = instance_p->s_nssai[i][si].sD[1];
+            ssi->s_NSSAI.sD->buf[2] = instance_p->s_nssai[i][si].sD[2];
+          }
+          
+
+          ASN_SEQUENCE_ADD(&plmn->tAISliceSupportList.list, ssi);
+        }
+        
+        ASN_SEQUENCE_ADD(&ta->broadcastPLMNList.list, plmn);
       }
     }
-    ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
+    ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAList.list, ta);
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  
   /* mandatory */
-  ie = (NGAP_S1SetupRequestIEs_t *)calloc(1, sizeof(NGAP_S1SetupRequestIEs_t));
+  ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_DefaultPagingDRX;
   ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_S1SetupRequestIEs__value_PR_PagingDRX;
+  ie->value.present = NGAP_NGSetupRequestIEs__value_PR_PagingDRX;
   ie->value.choice.PagingDRX = instance_p->default_drx;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &len) < 0) {
-    NGAP_ERROR("Failed to encode S1 setup request\n");
+    NGAP_ERROR("Failed to encode NG setup request\n");
     return -1;
   }
 
   /* Non UE-Associated signalling -> stream = 0 */
-  ngap_gNB_itti_send_sctp_data_req(instance_p->instance, ngap_mme_data_p->assoc_id, buffer, len, 0);
+  ngap_gNB_itti_send_sctp_data_req(instance_p->instance, ngap_amf_data_p->assoc_id, buffer, len, 0);
   return ret;
 }
 

@@ -62,22 +62,22 @@ static int ngap_gNB_decode_initiating_message(NGAP_NGAP_PDU_t *pdu) {
       free(res.buffer);
       break;
 
-    case NGAP_ProcedureCode_id_E_RABSetup:
+    case NGAP_ProcedureCode_id_PDUSESSIONSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
-      NGAP_INFO("E_RABSetup initiating message\n");
+      NGAP_INFO("PDUSESSIONSetup initiating message\n");
       break;
 
-    case NGAP_ProcedureCode_id_E_RABModify:
+    case NGAP_ProcedureCode_id_PDUSESSIONModify:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
-      NGAP_INFO("E_RABModify initiating message\n");
+      NGAP_INFO("PDUSESSIONModify initiating message\n");
       break;
 
-    case NGAP_ProcedureCode_id_E_RABRelease:
+    case NGAP_ProcedureCode_id_PDUSESSIONRelease:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
-      NGAP_INFO("TODO E_RABRelease initiating message\n");
+      NGAP_INFO("TODO PDUSESSIONRelease initiating message\n");
       break;
 
     case NGAP_ProcedureCode_id_ErrorIndication:
@@ -112,7 +112,7 @@ static int ngap_gNB_decode_successful_outcome(NGAP_NGAP_PDU_t *pdu) {
       free(res.buffer);
       break;
 
-    case NGAP_ProcedureCode_id_E_RABModificationIndication:
+    case NGAP_ProcedureCode_id_PDUSESSIONModificationIndication:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       break;

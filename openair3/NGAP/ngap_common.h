@@ -54,7 +54,7 @@
 #include "NGAP_ProtocolExtensionContainer.h"
 #include "NGAP_asn_constant.h"
 #include "NGAP_SupportedTAs-Item.h"
-#include "NGAP_ServedGUMMEIsItem.h"
+#include "NGAP_ServedGUAMIsItem.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
@@ -82,7 +82,7 @@ extern int asn1_xer_print;
 # define NGAP_INFO(x, args...) LOG_I(NGAP, x, ##args)
 # define NGAP_DEBUG(x, args...) LOG_I(NGAP, x, ##args)
 #else
-# include "mme_default_values.h"
+# include "amf_default_values.h"
 # define NGAP_ERROR(x, args...) do { fprintf(stdout, "[NGAP][E]"x, ##args); } while(0)
 # define NGAP_WARN(x, args...)  do { fprintf(stdout, "[NGAP][W]"x, ##args); } while(0)
 # define NGAP_TRAF(x, args...)  do { fprintf(stdout, "[NGAP][T]"x, ##args); } while(0)

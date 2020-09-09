@@ -62,10 +62,10 @@ void ngap_gNB_generate_trace_failure(struct ngap_gNB_ue_context_s *ue_desc_p,
 
     /* mandatory */
     ie = (NGAP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(NGAP_TraceFailureIndicationIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_MME_UE_NGAP_ID;
+    ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
-    ie->value.present = NGAP_TraceFailureIndicationIEs__value_PR_MME_UE_NGAP_ID;
-    ie->value.choice.MME_UE_NGAP_ID = ue_desc_p->mme_ue_ngap_id;
+    ie->value.present = NGAP_TraceFailureIndicationIEs__value_PR_AMF_UE_NGAP_ID;
+    ie->value.choice.AMF_UE_NGAP_ID = ue_desc_p->amf_ue_ngap_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     /* mandatory */
@@ -96,8 +96,8 @@ void ngap_gNB_generate_trace_failure(struct ngap_gNB_ue_context_s *ue_desc_p,
         return;
     }
 
-    ngap_gNB_itti_send_sctp_data_req(ue_desc_p->mme_ref->ngap_gNB_instance->instance,
-                                     ue_desc_p->mme_ref->assoc_id, buffer,
+    ngap_gNB_itti_send_sctp_data_req(ue_desc_p->amf_ref->ngap_gNB_instance->instance,
+                                     ue_desc_p->amf_ref->assoc_id, buffer,
                                      length, ue_desc_p->tx_stream);
 }
 
@@ -108,7 +108,7 @@ int ngap_gNB_handle_trace_start(uint32_t         assoc_id,
     NGAP_TraceStart_t            *container;
     NGAP_TraceStartIEs_t         *ie;
     struct ngap_gNB_ue_context_s *ue_desc_p = NULL;
-    struct ngap_gNB_mme_data_s   *mme_ref_p;
+    struct ngap_gNB_amf_data_s   *amf_ref_p;
 
     DevAssert(pdu != NULL);
 
@@ -116,10 +116,10 @@ int ngap_gNB_handle_trace_start(uint32_t         assoc_id,
 
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_TraceStartIEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, TRUE);
-    mme_ref_p = ngap_gNB_get_MME(NULL, assoc_id, 0);
-    DevAssert(mme_ref_p != NULL);
+    amf_ref_p = ngap_gNB_get_AMF(NULL, assoc_id, 0);
+    DevAssert(amf_ref_p != NULL);
   if (ie != NULL) {
-    ue_desc_p = ngap_gNB_get_ue_context(mme_ref_p->ngap_gNB_instance,
+    ue_desc_p = ngap_gNB_get_ue_context(amf_ref_p->ngap_gNB_instance,
                                         ie->value.choice.GNB_UE_NGAP_ID);
   }
     if (ue_desc_p == NULL) {

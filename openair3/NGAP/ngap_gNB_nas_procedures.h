@@ -41,19 +41,19 @@ int ngap_gNB_initial_ctxt_resp(
 int ngap_gNB_ue_capabilities(instance_t instance,
                              ngap_ue_cap_info_ind_t *ue_cap_info_ind_p);
 
-int ngap_gNB_e_rab_setup_resp(instance_t instance,
-                              ngap_e_rab_setup_resp_t *e_rab_setup_resp_p);
+int ngap_gNB_pdusession_setup_resp(instance_t instance,
+                              ngap_pdusession_setup_resp_t *pdusession_setup_resp_p);
 
-int ngap_gNB_e_rab_modify_resp(instance_t instance,
-                               ngap_e_rab_modify_resp_t *e_rab_modify_resp_p);
+int ngap_gNB_pdusession_modify_resp(instance_t instance,
+                               ngap_pdusession_modify_resp_t *pdusession_modify_resp_p);
 
-int ngap_gNB_e_rab_release_resp(instance_t instance,
-                                ngap_e_rab_release_resp_t *e_rab_release_resp_p);
+int ngap_gNB_pdusession_release_resp(instance_t instance,
+                                ngap_pdusession_release_resp_t *pdusession_release_resp_p);
 
 int ngap_gNB_path_switch_req(instance_t instance,
                              ngap_path_switch_req_t *path_switch_req_p);
 
-int ngap_gNB_generate_E_RAB_Modification_Indication(
-		instance_t instance, ngap_e_rab_modification_ind_t *e_rab_modification_ind);
+int ngap_gNB_generate_PDUSESSION_Modification_Indication(
+		instance_t instance, ngap_pdusession_modification_ind_t *pdusession_modification_ind);
 
 #endif /* NGAP_GNB_NAS_PROCEDURES_H_ */
