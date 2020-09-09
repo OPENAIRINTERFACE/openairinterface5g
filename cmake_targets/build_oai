@@ -661,9 +661,9 @@ function main() {
         compilations \
           $build_dir rb_tool \
           rb_tool $dbin/rb_tool
-      fi #IS_CONTAINER
 
-      cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+        cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+      fi #IS_CONTAINER
     fi
 
   fi
@@ -671,9 +671,16 @@ function main() {
   if [ "$UE" = 1 ] ; then
 
     echo_info "Compiling UE specific part"
-    compilations \
-      $build_dir ue_ip \
-      CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      echo_info "Building ue_ip module"
+      compilations \
+        $build_dir ue_ip \
+        CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+    else
+      echo_info "Bypassing ue_ip build"
+    fi #IS_CONTAINER
 
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build

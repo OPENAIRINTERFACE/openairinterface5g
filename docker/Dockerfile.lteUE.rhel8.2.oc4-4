@@ -38,8 +38,8 @@ RUN /bin/sh oaienv && \
 
 # debug
 RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15
-RUN ls /oai-ran/targets/bin
-RUN ls /oai-ran/cmake_targets/ran_build/build/*.so
+RUN ls -lst /oai-ran/targets/bin
+RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-lte-ue
@@ -48,11 +48,18 @@ RUN yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
         lksctp-tools \
         nettle \
+        atlas \
         libyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
 
 WORKDIR /opt/oai-lte-ue/bin
 COPY --from=lte-ue-build /oai-ran/targets/bin/lte-uesoftmodem.Rel15 .
+COPY --from=lte-ue-build /oai-ran/targets/bin/conf2uedata .
+COPY --from=lte-ue-build /oai-ran/targets/bin/nvram .
+COPY --from=lte-ue-build /oai-ran/targets/bin/usim .
+COPY --from=lte-ue-build /oai-ran/targets/bin/.ue_emm.nvram0 .
+COPY --from=lte-ue-build /oai-ran/targets/bin/.ue.nvram0 .
+COPY --from=lte-ue-build /oai-ran/targets/bin/.usim.nvram0 .
 
 WORKDIR /usr/local/lib/
 COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
@@ -61,14 +68,17 @@ COPY --from=lte-ue-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
 #COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/libcoding.so .
 COPY --from=lte-ue-build /oai-ran/targets/bin/libparams_libconfig.so .
-#COPY --from=lte-ue-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
+COPY --from=lte-ue-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
 COPY --from=lte-ue-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-COPY --from=lte-ue-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
 #RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
 RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
 
 COPY --from=lte-ue-build /usr/local/lib/libprotobuf-c.so.1 .
+
+COPY --from=lte-ue-build /lib64/libblas.so.3 /lib64
+COPY --from=lte-ue-build /lib64/liblapack.so.3 /lib64
+COPY --from=lte-ue-build /lib64/liblapacke.so.3 /lib64
 
 RUN ldconfig -v && ldd /opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15
 
