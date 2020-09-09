@@ -47,7 +47,7 @@ Note that the IP addresses are indicative and need to be adapted to your environ
 
 Create the environment for the EPC and register all **USIM** information into the **HSS** database.
 
-If you are using OAI-EPC ([see on GitHub](https://github.com/OPENAIRINTERFACE/openair-cn)), build **HSS/MME/SPGW** and create config files.
+If you are using OAI-EPC ([see on GitHub](https://github.com/OPENAIRINTERFACE)), build **HSS/MME/SPGW** and create config files.
 
 # 3. Retrieve the OAI eNB-UE source code #
 
