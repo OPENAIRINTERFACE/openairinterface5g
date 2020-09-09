@@ -2847,11 +2847,8 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of eNB'
 			HTML.desc='Automatic Termination of eNB'
 			self.ShowTestID()
-			#Terminate all instances on all servers, eNB, eNB1, eNB2
-			#RAN.eNB_instance=0
-			RAN.TerminateeNB(0)
-			RAN.TerminateeNB(1)
-			RAN.TermintateeNB(2)
+			RAN.eNB_instance=0
+			RAN.TerminateeNB()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
 			self.testCase_id = 'AUTO-KILL-flexran-ctl'
 			HTML.testCase_id=self.testCase_id

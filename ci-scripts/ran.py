@@ -546,27 +546,25 @@ class RANManagement():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def TerminateeNB(self,eNB_serverId):
-		if eNB_serverId == '0':
+	def TerminateeNB(self):
+		if self.eNB_serverId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
 			lPassWord = self.eNBPassword
 			lSourcePath = self.eNBSourceCodePath
-		elif eNB_serverId == '1':
+		elif self.eNB_serverId == '1':
 			lIpAddr = self.eNB1IPAddress
 			lUserName = self.eNB1UserName
 			lPassWord = self.eNB1Password
 			lSourcePath = self.eNB1SourceCodePath
-		elif eNB_serverId == '2':
+		elif self.eNB_serverId == '2':
 			lIpAddr = self.eNB2IPAddress
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
 			lSourcePath = self.eNB2SourceCodePath
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
-			#HELP.GenericHelp(CONST.Version)
-			#sys.exit('Insufficient Parameter')
-			logging.debug('ATTENTION Cannot clean eNB_serverID='+eNB_serverID+' '+'@'+lIpAddr+' path:'+lSourcePath+' : No parameters')
-			return
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
