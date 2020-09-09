@@ -478,6 +478,15 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
       LOG_E(FLEXRAN_AGENT, "cannot remove file %s: %s\n", target, strerror(errno));
   }
 
+  if (control_delegation_msg->has_delegation_type
+      && control_delegation_msg->delegation_type == PROTOCOL__FLEX_CONTROL_DELEGATION_TYPE__FLCDT_MAC_DL_UE_SCHEDULER
+      && control_delegation_msg->header
+      && control_delegation_msg->header->has_xid) {
+    /* Inform the MAC subsystem that a control delegation for it has arrived */
+    /* TODO this should be triggered by an agent reconfiguration? */
+    flexran_agent_mac_inform_delegation(mod_id, control_delegation_msg);
+  }
+
   return 0;
 }
 
@@ -957,7 +966,9 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (enb_config->n_cell_config > 0) {
     if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
-      prepare_update_slice_config(mod_id, &enb_config->cell_config[0]->slice_config);
+      prepare_update_slice_config(mod_id,
+                                  &enb_config->cell_config[0]->slice_config,
+                                  1 /* request objects if necessary */);
     }
     if (enb_config->cell_config[0]->has_eutra_band
         && enb_config->cell_config[0]->has_dl_freq

@@ -1785,7 +1785,9 @@ Protocol__FlexranMessage *request_scheduler_timeout(
   return NULL;
 }
 
-void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice_config) {
+void prepare_update_slice_config(mid_t mod_id,
+                                 Protocol__FlexSliceConfig **slice_config,
+                                 int request_objects) {
   if (!*slice_config) return;
   /* just use the memory and set to NULL in original */
   Protocol__FlexSliceConfig *sc = *slice_config;
@@ -1797,11 +1799,13 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig **slice
   enum lfds700_misc_flag overwrite_occurred_flag;
 
   int put_on_hold = 0;
-  if (sc->dl->scheduler && !check_scheduler(mod_id, sc->dl->scheduler)) {
+  if (request_objects
+      && sc->dl->scheduler
+      && !check_scheduler(mod_id, sc->dl->scheduler)) {
     request_scheduler(mod_id, sc->dl->scheduler, xid++);
     put_on_hold = 1;
   }
-  for (int i = 0; i < sc->dl->n_slices; ++i) {
+  for (int i = 0; request_objects && i < sc->dl->n_slices; ++i) {
     Protocol__FlexSlice *sl = sc->dl->slices[i];
     if (sl->scheduler && !check_scheduler(mod_id, sl->scheduler)) {
       request_scheduler(mod_id, sl->scheduler, xid++);
@@ -1906,4 +1910,72 @@ void flexran_agent_slice_update(mid_t mod_id) {
     apply_ue_slice_assoc_update(mod_id, ue_config);
     free(ue_config);
   }
+}
+
+void flexran_agent_mac_inform_delegation(mid_t mod_id,
+                                         Protocol__FlexControlDelegation *cdm) {
+  LOG_W(FLEXRAN_AGENT,
+        "received FlexControlDelegation message for object '%s' xid %d\n",
+        cdm->name,
+        cdm->header->xid);
+  if (cdm->header->xid < xid - 1) {
+    LOG_I(FLEXRAN_AGENT,
+          "waiting for %d more messages (up to xid %d)\n",
+          xid - 1 - cdm->header->xid,
+          xid - 1);
+    return;
+  }
+  /* should receive up to xid - 1, otherwise it means there was no request */
+  AssertFatal(xid > cdm->header->xid,
+              "received control delegation with xid %d that we never requested "
+              "(last request %d)\n",
+              cdm->header->xid,
+              xid - 1);
+
+  /* Load the library so the user plane can search it */
+  char s[512];
+  int rc = flexran_agent_map_name_to_delegated_object(mod_id, cdm->name, s, 512);
+  if (rc < 0) {
+    LOG_E(FLEXRAN_AGENT, "cannot map name %s\n", cdm->name);
+    return;
+  }
+  /* TODO where to unload/save handle?? */
+  void *h = dlopen(s, RTLD_NOW);
+  if (!h) {
+    LOG_E(FLEXRAN_AGENT, "dlopen(): %s\n", dlerror());
+    return;
+  }
+  LOG_I(FLEXRAN_AGENT, "library handle %p\n", h);
+
+  struct lfds700_misc_prng_state ls;
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+
+  Protocol__FlexranMessage *msg = NULL;
+  struct lfds700_ringbuffer_state *state = &store_slice_config_ringbuffer_state[mod_id];
+  if (lfds700_ringbuffer_read(state, NULL, (void **) &msg, &ls) == 0) {
+    LOG_E(FLEXRAN_AGENT, "%s(): could not read config from ringbuffer\n", __func__);
+    return;
+  }
+  AssertFatal(cdm->header->xid == msg->enb_config_reply_msg->header->xid,
+              "expected and retrieved xid of stored slice configuration does "
+              "not match (expected %d, retrieved %d)\n",
+              cdm->header->xid,
+              msg->enb_config_reply_msg->header->xid);
+
+  /* Since we recover, stop the timeout */
+  rc = flexran_agent_destroy_timer(mod_id, cdm->header->xid);
+
+  prepare_update_slice_config(
+      mod_id,
+      &msg->enb_config_reply_msg->cell_config[0]->slice_config,
+      0 /* don't do a request */);
+  /* we should not call flexran_agent_destroy_enb_config_reply(smsg); since
+   * upon timer removal, this is automatically done.
+   * prepare_update_slice_config() takes ownership of the slice config, it is
+   * freed inside */
+
+
+  /* TODO save dlhandle in list with name. If it has been installed and nothing
+   * references it after a reconfiguration, free and remove */
 }
