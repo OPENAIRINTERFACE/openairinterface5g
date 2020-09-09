@@ -142,6 +142,9 @@ int flexran_agent_map_name_to_delegated_object(mid_t mod_id, const char *name,
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg);
 
+/* Policy reconfiguration request message destructor */
+int flexran_agent_destroy_control_delegation_request(Protocol__FlexranMessage *msg);
+
 /* rrc triggering measurement message constructor and destructor */
 int flexran_agent_rrc_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_rrc_reconfiguration(Protocol__FlexranMessage *msg);

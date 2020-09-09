@@ -81,6 +81,11 @@ flexran_agent_message_destruction_callback message_destruction_callback[] = {
   flexran_agent_destroy_ue_state_change,
   flexran_agent_destroy_control_delegation,
   flexran_agent_destroy_agent_reconfiguration,
+  NULL, /* flex_rrc_triggering */
+  NULL, /* flex_ul_mac_config */
+  NULL, /* flex_disconnect */
+  NULL, /* flex_ho_command */
+  flexran_agent_destroy_control_delegation_request,
 };
 
 /* static const char *flexran_agent_direction2String[] = { */

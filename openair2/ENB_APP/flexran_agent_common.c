@@ -533,6 +533,15 @@ int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg) {
   return 0;
 }
 
+int flexran_agent_destroy_control_delegation_request(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_CONTROL_DEL_REQ_MSG)
+    return -1;
+
+  free(msg->control_del_req_msg->header);
+  free(msg->control_del_req_msg->name);
+  free(msg);
+  return 0;
+}
 
 int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   xid_t xid;
