@@ -46,6 +46,7 @@ class CotsUe:
 		self.__cots_cde_dict_file = 'cots_ue_ctl.yaml'
 		self.__SetAirplaneRetry = 3
 
+
 #-----------------$
 #PUBLIC Methods$
 #-----------------$
@@ -61,7 +62,16 @@ class CotsUe:
 	#returns true if it exists, false otherwise
 	def Check_Exists(self,target_id):
 		#load cots commands dictionary
-		with open(self.__cots_cde_dict_file,'r') as file:
+		if (os.path.isfile(self.__cots_cde_dict_file)):
+			yaml_file=self.__cots_cde_dict_file
+		elif (os.path.isfile('ci-scripts/'+self.__cots_cde_dict_file)):
+			yaml_file='ci-scripts/'+self.__cots_cde_dict_file
+		else:
+			logging.error("COTS UE dictionary yaml file cannot be found")
+			sys.exit("COTS UE dictionary yaml file cannot be found")
+		
+		#load cots commands dictionary
+		with open(yaml_file,'r') as file:
 			cots_ue_ctl = yaml.load(file,Loader=yaml.FullLoader)
 		#check if ue id is in the dictionary
 		if target_id in cots_ue_ctl:
@@ -70,8 +80,18 @@ class CotsUe:
 			return False
 
 	def Set_Airplane(self, target_id, target_state_str):
+		#loading cots commands dictionary
+
+		if (os.path.isfile(self.__cots_cde_dict_file)):
+			yaml_file=self.__cots_cde_dict_file
+		elif (os.path.isfile('ci-scripts/'+self.__cots_cde_dict_file)):
+			yaml_file='ci-scripts/'+self.__cots_cde_dict_file
+		else:
+			logging.error("COTS UE dictionary yaml file cannot be found")
+			sys.exit("COTS UE dictionary yaml file cannot be found")
+		
 		#load cots commands dictionary
-		with open(self.__cots_cde_dict_file,'r') as file:
+		with open(yaml_file,'r') as file:
 			cots_ue_ctl = yaml.load(file,Loader=yaml.FullLoader)
 		#check if ue id is in the dictionary
 		if target_id in cots_ue_ctl:
