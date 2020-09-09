@@ -34,7 +34,7 @@ WORKDIR /oai-ran
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --UE --ninja
+    ./build_oai --nrUE --ninja
 
 # debug
 RUN ldconfig -v && ldd /oai-ran/targets/bin/nr-uesoftmodem.Rel15
