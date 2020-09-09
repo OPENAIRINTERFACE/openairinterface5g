@@ -1271,8 +1271,8 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
     {
       continue;
     }
-    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u\n",
-          num_pdus, i, pdu_type);
+    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
+          num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
     for (int j = i + 1; j < num_pdus; j++)
     {
       uint8_t pdu_type2 = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].pdu_type;
