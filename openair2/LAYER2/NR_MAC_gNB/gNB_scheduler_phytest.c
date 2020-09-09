@@ -912,7 +912,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
       pusch_pdu->resource_alloc = 1; //type 1
       pusch_pdu->rb_start = 0;
       if (get_softmodem_params()->phy_test==1)
-        pusch_pdu->rb_size = 50;
+        pusch_pdu->rb_size = 5;
       else
         pusch_pdu->rb_size = 5;
     }
