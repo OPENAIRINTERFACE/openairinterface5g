@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-ran:tmp-rhel8-latest AS enb-build 
+FROM image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-ran:tmp-rhel8-latest AS nr-ue-build 
 
 
 WORKDIR /oai-ran
@@ -34,15 +34,15 @@ WORKDIR /oai-ran
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --eNB --ninja
+    ./build_oai --UE --ninja
 
 # debug
-RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15
+RUN ldconfig -v && ldd /oai-ran/targets/bin/nr-uesoftmodem.Rel15
 RUN ls /oai-ran/targets/bin
 RUN ls /oai-ran/cmake_targets/ran_build/build/*.so
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-enb
+FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-ue
 
 RUN yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
@@ -51,42 +51,31 @@ RUN yum update -y && \
         libyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
 
-WORKDIR /opt/oai-enb/bin
-COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
+WORKDIR /opt/oai-nr-ue/bin
+COPY --from=nr-ue-build /oai-ran/targets/bin/nr-uesoftmodem.Rel15 .
 
 WORKDIR /usr/local/lib/
-COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-#COPY --from=enb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/libcoding.so .
-COPY --from=enb-build /oai-ran/targets/bin/libparams_libconfig.so .
-#COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
-COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
+COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
+COPY --from=nr-ue-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
+COPY --from=nr-ue-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
+#COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
+COPY --from=nr-ue-build /oai-ran/targets/bin/libcoding.so .
+COPY --from=nr-ue-build /oai-ran/targets/bin/libparams_libconfig.so .
+#COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libSIMU.so .
+COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
+COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
 #RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
 RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
 
-COPY --from=enb-build /usr/local/lib/libprotobuf-c.so.1 .
+COPY --from=nr-ue-build /usr/local/lib/libprotobuf-c.so.1 .
 
-RUN ldconfig -v && ldd /opt/oai-enb/bin/lte-softmodem.Rel15
+RUN ldconfig -v && ldd /opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15
 
 # Copy the relevant configuration files for eNB
-WORKDIR /opt/oai-enb/etc
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/enb.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rcc.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/cu.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/du.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rru.* .
+WORKDIR /opt/oai-nr-ue/etc
+COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
 
-#EXPOSE 2152/udp  # S1U, GTP/UDP
-#EXPOSE 22100/tcp # ?
-#EXPOSE 36412/udp # S1C, SCTP/UDP
-#EXPOSE 36422/udp # X2C, SCTP/UDP
-#EXPOSE 50000/udp # IF5 / ORI (control)
-#EXPOSE 50001/udp # IF5 / ECPRI (data)
-
-#CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
-#ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+#CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/enb.conf"]
+#ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]
 
