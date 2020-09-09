@@ -238,13 +238,13 @@ err_code_t flexran_agent_create_timer(mid_t    mod_id,
     return TIMER_SETUP_FAILED;
   }
   /* TODO check that xid does not exist? */
-  t->next = sync->current + 1;
+  t->next = sync->current + sf;
   if (sync->next <= sync->current || t->next < sync->next)
     sync->next = t->next;
   sync->timer[sync->timer_num] = t;
   sync->timer_num++;
   pthread_mutex_unlock(&sync->mutex_timer);
-  LOG_D(FLEXRAN_AGENT, "added new timer xid %d for agent %d\n", xid, mod_id);
+  LOG_I(FLEXRAN_AGENT, "added new timer xid %d for agent %d\n", xid, mod_id);
   return 0;
 }
 
