@@ -790,6 +790,7 @@ typedef struct eNB_RRC_INST_s {
   int num_neigh_cells;
   int num_neigh_cells_cc[MAX_NUM_CCs];
   uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+  uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
   // other RAN parameters
   int srb1_timer_poll_retransmit;

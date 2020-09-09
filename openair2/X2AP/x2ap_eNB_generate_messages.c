@@ -1317,7 +1317,7 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
             freq_band = calloc(1, sizeof(X2AP_FreqBandNrItem_t));
             if (freq_band == NULL)
                exit(1);
-            freq_band->freqBandIndicatorNr = 1; /* TODO: put correct value */
+            freq_band->freqBandIndicatorNr = instance_p->eutra_band[0];
 
             SULFreqBandItem = calloc(1, sizeof(X2AP_SupportedSULFreqBandItem_t));
             SULFreqBandItem->freqBandIndicatorNr=80; /* TODO: put correct value */

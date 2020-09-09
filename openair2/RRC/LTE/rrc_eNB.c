@@ -1279,6 +1279,8 @@ rrc_eNB_generate_UECapabilityEnquiry(
   uint8_t                             size;
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -9023,6 +9025,27 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
 }
 
+void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m) {
+  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
+    LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+    return;
+  }
+
+  if (m->num_cc > MAX_NUM_CCs) {
+    LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+    return;
+  }
+
+  RC.rrc[mod_id]->num_neigh_cells++;
+  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+
+  for (int i=0; i<m->num_cc; i++) {
+    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
+    RC.rrc[mod_id]->nr_neigh_freq_band[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->servedNrCell_band[i];
+  }
+
+}
+
 void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
   NR_CG_Config_t *CG_Config = NULL;
   {
@@ -9407,6 +9430,10 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
       break;
     }
+
+    case X2AP_ENDC_SETUP_REQ:
+      rrc_eNB_process_ENDC_x2_setup_request(instance, &X2AP_ENDC_SETUP_REQ(msg_p));
+      break;
 
     case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
       rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
