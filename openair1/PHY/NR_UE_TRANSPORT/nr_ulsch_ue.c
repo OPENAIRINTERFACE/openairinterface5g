@@ -201,14 +201,16 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////PTRS parameters' initialization/////////////////////////
   ///////////
 
-  int16_t mod_ptrs[nb_rb]; // assume maximum number of PTRS per pusch allocation
+  int16_t mod_ptrs[nb_rb] __attribute((aligned(16))); // assume maximum number of PTRS per pusch allocation
   uint8_t L_ptrs, K_ptrs = 0;
   uint16_t beta_ptrs = 1; // temp value until power control is implemented
 
   if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-    K_ptrs = (pusch_pdu->pusch_ptrs.ptrs_freq_density)?4:2;
-    L_ptrs = 1<<pusch_pdu->pusch_ptrs.ptrs_time_density;
+    K_ptrs = harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density;
+    L_ptrs = 1<<harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
+
+    beta_ptrs = 1; // temp value until power control is implemented
 
     ulsch_ue->ptrs_symbols = 0;
 
