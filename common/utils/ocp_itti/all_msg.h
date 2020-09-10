@@ -16,3 +16,4 @@
 #include "openair2/COMMON/gtpv1_u_messages_def.h"
 #include "openair2/COMMON/flexran_messages_def.h"
 #include "openair2/COMMON/f1ap_messages_def.h"
+#include "openair2/COMMON/ngap_messages_def.h"

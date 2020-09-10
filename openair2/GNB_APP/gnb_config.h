@@ -39,6 +39,7 @@
 #include "platform_constants.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
+#include "ngap_messages_types.h"
 
 #ifdef CMAKER
 #include "rrc_messages_types.h"

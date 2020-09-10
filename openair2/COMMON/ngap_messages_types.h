@@ -74,83 +74,78 @@
 #define NGAP_MAX_NB_AMF_IP_ADDRESS 10
 #define NGAP_IMSI_LENGTH           16
 
-#define QOSFLOW_MAX_VALUE           64;
+#define QOSFLOW_MAX_VALUE           64
 
 /* Security key length used within gNB
  * Even if only 16 bytes will be effectively used,
  * the key length is 32 bytes (256 bits)
  */
 #define SECURITY_KEY_LENGTH 32
-typedef enum cell_type_e {
-  CELL_MACRO_ENB,
-  CELL_HOME_ENB,
-  CELL_MACRO_GNB
-} cell_type_t;
 
-typedef enum paging_drx_e {
-  PAGING_DRX_32  = 0x0,
-  PAGING_DRX_64  = 0x1,
-  PAGING_DRX_128 = 0x2,
-  PAGING_DRX_256 = 0x3
-} paging_drx_t;
+typedef enum ngap_paging_drx_e {
+  NGAP_PAGING_DRX_32  = 0x0,
+  NGAP_PAGING_DRX_64  = 0x1,
+  NGAP_PAGING_DRX_128 = 0x2,
+  NGAP_PAGING_DRX_256 = 0x3
+} ngap_paging_drx_t;
 
 /* Lower value codepoint
  * indicates higher priority.
  */
-typedef enum paging_priority_s {
-  PAGING_PRIO_LEVEL1  = 0,
-  PAGING_PRIO_LEVEL2  = 1,
-  PAGING_PRIO_LEVEL3  = 2,
-  PAGING_PRIO_LEVEL4  = 3,
-  PAGING_PRIO_LEVEL5  = 4,
-  PAGING_PRIO_LEVEL6  = 5,
-  PAGING_PRIO_LEVEL7  = 6,
-  PAGING_PRIO_LEVEL8  = 7
-} paging_priority_t;
+typedef enum ngap_paging_priority_s {
+  NGAP_PAGING_PRIO_LEVEL1  = 0,
+  NGAP_PAGING_PRIO_LEVEL2  = 1,
+  NGAP_PAGING_PRIO_LEVEL3  = 2,
+  NGAP_PAGING_PRIO_LEVEL4  = 3,
+  NGAP_PAGING_PRIO_LEVEL5  = 4,
+  NGAP_PAGING_PRIO_LEVEL6  = 5,
+  NGAP_PAGING_PRIO_LEVEL7  = 6,
+  NGAP_PAGING_PRIO_LEVEL8  = 7
+} ngap_paging_priority_t;
 
-typedef enum cn_domain_s {
-  CN_DOMAIN_PS = 1,
-  CN_DOMAIN_CS = 2
-} cn_domain_t;
+typedef enum ngap_cn_domain_s {
+  NGAP_CN_DOMAIN_PS = 1,
+  NGAP_CN_DOMAIN_CS = 2
+} ngap_cn_domain_t;
 
-typedef struct net_ip_address_s {
+typedef struct ngap_net_ip_address_s {
   unsigned ipv4:1;
   unsigned ipv6:1;
   char ipv4_address[16];
   char ipv6_address[46];
-} net_ip_address_t;
+} ngap_net_ip_address_t;
 
 typedef uint64_t bitrate_t;
 
-typedef struct ambr_s {
+typedef struct ngap_ambr_s {
   bitrate_t br_ul;
   bitrate_t br_dl;
-} ambr_t;
+} ngap_ambr_t;
 
-typedef enum priority_level_s {
-  PRIORITY_LEVEL_SPARE       = 0,
-  PRIORITY_LEVEL_HIGHEST     = 1,
-  PRIORITY_LEVEL_LOWEST      = 14,
-  PRIORITY_LEVEL_NO_PRIORITY = 15
-} priority_level_t;
+typedef enum ngap_priority_level_s {
+  NGAP_PRIORITY_LEVEL_SPARE       = 0,
+  NGAP_PRIORITY_LEVEL_HIGHEST     = 1,
+  NGAP_PRIORITY_LEVEL_LOWEST      = 14,
+  NGAP_PRIORITY_LEVEL_NO_PRIORITY = 15
+} ngap_priority_level_t;
 
-typedef enum pre_emp_capability_e {
-  PRE_EMPTION_CAPABILITY_ENABLED  = 0,
-  PRE_EMPTION_CAPABILITY_DISABLED = 1,
-  PRE_EMPTION_CAPABILITY_MAX,
-} pre_emp_capability_t;
+typedef enum ngap_pre_emp_capability_e {
+  NGAP_PRE_EMPTION_CAPABILITY_ENABLED  = 0,
+  NGAP_PRE_EMPTION_CAPABILITY_DISABLED = 1,
+  NGAP_PRE_EMPTION_CAPABILITY_MAX,
+} ngap_pre_emp_capability_t;
 
-typedef enum pre_emp_vulnerability_e {
-  PRE_EMPTION_VULNERABILITY_ENABLED  = 0,
-  PRE_EMPTION_VULNERABILITY_DISABLED = 1,
-  PRE_EMPTION_VULNERABILITY_MAX,
-} pre_emp_vulnerability_t;
+typedef enum ngap_pre_emp_vulnerability_e {
+  NGAP_PRE_EMPTION_VULNERABILITY_ENABLED  = 0,
+  NGAP_PRE_EMPTION_VULNERABILITY_DISABLED = 1,
+  NGAP_PRE_EMPTION_VULNERABILITY_MAX,
+} ngap_pre_emp_vulnerability_t;
 
-typedef struct allocation_retention_priority_s {
-  priority_level_t        priority_level;
-  pre_emp_capability_t    pre_emp_capability;
-  pre_emp_vulnerability_t pre_emp_vulnerability;
-} allocation_retention_priority_t;
+typedef struct ngap_allocation_retention_priority_s {
+  ngap_priority_level_t        priority_level;
+  ngap_pre_emp_capability_t    pre_emp_capability;
+  ngap_pre_emp_vulnerability_t pre_emp_vulnerability;
+} ngap_allocation_retention_priority_t;
 
 typedef struct nr_security_capabilities_s {
   uint16_t nRencryption_algorithms;
@@ -164,17 +159,17 @@ typedef struct nr_security_capabilities_s {
  * concerns AC11..AC15, ‘mt Estands for ‘Mobile Terminating Eand ‘mo Efor
  * 'Mobile Originating'. Defined in TS 36.331.
  */
-typedef enum rrc_establishment_cause_e {
-  RRC_CAUSE_EMERGENCY             = 0x0,
-  RRC_CAUSE_HIGH_PRIO_ACCESS      = 0x1,
-  RRC_CAUSE_MT_ACCESS             = 0x2,
-  RRC_CAUSE_MO_SIGNALLING         = 0x3,
-  RRC_CAUSE_MO_DATA               = 0x4,
+typedef enum ngap_rrc_establishment_cause_e {
+  NGAP_RRC_CAUSE_EMERGENCY             = 0x0,
+  NGAP_RRC_CAUSE_HIGH_PRIO_ACCESS      = 0x1,
+  NGAP_RRC_CAUSE_MT_ACCESS             = 0x2,
+  NGAP_RRC_CAUSE_MO_SIGNALLING         = 0x3,
+  NGAP_RRC_CAUSE_MO_DATA               = 0x4,
 #if defined(UPDATE_RELEASE_10)
-  RRC_CAUSE_DELAY_TOLERANT_ACCESS = 0x5,
+  NGAP_RRC_CAUSE_DELAY_TOLERANT_ACCESS = 0x5,
 #endif
-  RRC_CAUSE_LAST
-} rrc_establishment_cause_t;
+  NGAP_RRC_CAUSE_LAST
+} ngap_rrc_establishment_cause_t;
 
 typedef struct ngap_guami_s {
   uint16_t mcc;
@@ -197,43 +192,43 @@ typedef struct ngap_imsi_s {
   uint8_t  length;
 } ngap_imsi_t;
 
-typedef struct s_tmsi_s {
+typedef struct ngap_s_tmsi_s {
   uint8_t  amf_code;
   uint32_t m_tmsi;
-} s_tmsi_t;
+} ngap_s_tmsi_t;
 
-typedef enum ue_paging_identity_presenceMask_e {
-  UE_PAGING_IDENTITY_NONE   = 0,
-  UE_PAGING_IDENTITY_imsi   = (1 << 1),
-  UE_PAGING_IDENTITY_s_tmsi = (1 << 2),
-} ue_paging_identity_presenceMask_t;
+typedef enum ngap_ue_paging_identity_presenceMask_e {
+  NGAP_UE_PAGING_IDENTITY_NONE   = 0,
+  NGAP_UE_PAGING_IDENTITY_imsi   = (1 << 1),
+  NGAP_UE_PAGING_IDENTITY_s_tmsi = (1 << 2),
+} ngap_ue_paging_identity_presenceMask_t;
 
-typedef struct ue_paging_identity_s {
-  ue_paging_identity_presenceMask_t presenceMask;
+typedef struct ngap_ue_paging_identity_s {
+  ngap_ue_paging_identity_presenceMask_t presenceMask;
   union {
     ngap_imsi_t  imsi;
-    s_tmsi_t s_tmsi;
+    ngap_s_tmsi_t s_tmsi;
   } choice;
-} ue_paging_identity_t;
+} ngap_ue_paging_identity_t;
 
-typedef enum ue_identities_presenceMask_e {
-  UE_IDENTITIES_NONE   = 0,
-  UE_IDENTITIES_s_tmsi = 1 << 1,
-  UE_IDENTITIES_guami = 1 << 2,
-} ue_identities_presenceMask_t;
+typedef enum ngap_ue_identities_presenceMask_e {
+  NGAP_UE_IDENTITIES_NONE   = 0,
+  NGAP_UE_IDENTITIES_s_tmsi = 1 << 1,
+  NGAP_UE_IDENTITIES_guami = 1 << 2,
+} ngap_ue_identities_presenceMask_t;
 
-typedef struct nrue_identity_s {
-  ue_identities_presenceMask_t presenceMask;
-  s_tmsi_t s_tmsi;
+typedef struct ngap_nrue_identity_s {
+  ngap_ue_identities_presenceMask_t presenceMask;
+  ngap_s_tmsi_t s_tmsi;
   ngap_guami_t guami;
 } nrue_identity_t;
 
-typedef struct nas_pdu_s {
+typedef struct ngap_nas_pdu_s {
   /* Octet string data */
   uint8_t  *buffer;
   /* Length of the octet string */
   uint32_t  length;
-} nas_pdu_t, ue_radio_cap_t;
+} ngap_nas_pdu_t, ngap_ue_radio_cap_t;
 
 typedef enum pdu_session_type_e {
   PDUSessionType_ipv4 = 0,
@@ -243,7 +238,7 @@ typedef enum pdu_session_type_e {
   PDUSessionType_unstructured = 4
 }pdu_session_type_t;
 
-typedef struct transport_layer_addr_s {
+typedef struct ngap_transport_layer_addr_s {
   /* Length of the transport layer address buffer in bits. NGAP layer received a
    * bit string<1..160> containing one of the following addresses: ipv4,
    * ipv6, or ipv4 and ipv6. The layer doesn't interpret the buffer but
@@ -252,7 +247,7 @@ typedef struct transport_layer_addr_s {
   uint8_t pdu_session_type;
   uint8_t length;
   uint8_t buffer[20]; // in network byte order
-} transport_layer_addr_t;
+} ngap_transport_layer_addr_t;
 
 #define TRANSPORT_LAYER_ADDR_COPY(dEST,sOURCE)        \
   do {                                                \
@@ -275,9 +270,9 @@ typedef struct pdusession_s {
   /* Quality of service for this pdusession */
   pdusession_level_qos_parameter_t qos[QOSFLOW_MAX_VALUE];
   /* The NAS PDU should be forwarded by the RRC layer to the NAS layer */
-  nas_pdu_t                   nas_pdu;
+  ngap_nas_pdu_t                   nas_pdu;
   /* The transport layer address for the IP packets */
-  transport_layer_addr_t      upf_addr;
+  ngap_transport_layer_addr_t      upf_addr;
   /* S-GW Tunnel endpoint identifier */
   uint32_t                    gtp_teid;
 } pdusession_t;
@@ -339,7 +334,7 @@ typedef struct pdusession_modify_s {
   uint8_t pdusession_id;
 } pdusession_modify_t;
 
-typedef enum S1ap_Cause_e {
+typedef enum ngap_Cause_e {
   NGAP_CAUSE_NOTHING,  /* No components present */
   NGAP_CAUSE_RADIO_NETWORK,
   NGAP_CAUSE_TRANSPORT,
@@ -400,7 +395,7 @@ typedef struct ngap_register_gnb_req_s {
   uint8_t  num_plmn;
 
   /* Default Paging DRX of the gNB as defined in TS 36.304 */
-  paging_drx_t default_drx;
+  ngap_paging_drx_t default_drx;
 
   /* The gNB IP address to bind */
   net_ip_address_t gnb_ip_address;
@@ -446,7 +441,7 @@ typedef struct ngap_nas_first_req_s {
   int selected_plmn_identity;
 
   /* Establishment cause as sent by UE */
-  rrc_establishment_cause_t establishment_cause;
+  ngap_rrc_establishment_cause_t establishment_cause;
 
   /* NAS PDU */
   nas_pdu_t nas_pdu;
@@ -508,7 +503,7 @@ typedef struct ngap_ue_ctxt_modification_req_s {
   uint8_t security_key[SECURITY_KEY_LENGTH];
 
   /* UE aggregate maximum bitrate */
-  ambr_t ue_ambr;
+  ngap_ambr_t ue_ambr;
 
   /* NR Security capabilities */
   nr_security_capabilities_t security_capabilities;
@@ -569,11 +564,11 @@ typedef struct ngap_initial_context_setup_req_s {
   pdusession_t  pdusession_param[NGAP_MAX_PDUSESSION];
 } ngap_initial_context_setup_req_t;
 
-typedef struct tai_plmn_identity_s {
+typedef struct ngap_tai_plmn_identity_s {
   uint16_t mcc;
   uint16_t mnc;
   uint8_t  mnc_digit_length;
-} plmn_identity_t;
+} ngap_plmn_identity_t;
 
 typedef struct ngap_paging_ind_s {
   /* UE identity index value.
@@ -582,13 +577,13 @@ typedef struct ngap_paging_ind_s {
   unsigned ue_index_value:10;
 
   /* UE paging identity */
-  ue_paging_identity_t ue_paging_identity;
+  ngap_ue_paging_identity_t ue_paging_identity;
 
   /* Indicates origin of paging */
-  cn_domain_t cn_domain;
+  ngap_cn_domain_t cn_domain;
 
   /* PLMN_identity in TAI of Paging*/
-  plmn_identity_t plmn_identity[256];
+  ngap_plmn_identity_t plmn_identity[256];
 
   /* TAC in TAIList of Paging*/
   int16_t tac[256];
@@ -597,9 +592,9 @@ typedef struct ngap_paging_ind_s {
   int16_t tai_size;
 
   /* Optional fields */
-  paging_drx_t paging_drx;
+  ngap_paging_drx_t paging_drx;
 
-  paging_priority_t paging_priority;
+  ngap_paging_priority_t paging_priority;
 } ngap_paging_ind_t;
 
 typedef struct ngap_pdusession_setup_req_s {

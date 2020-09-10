@@ -30,15 +30,6 @@
 #ifndef NGAP_GNB_H_
 #define NGAP_GNB_H_
 
-typedef struct ngap_gNB_config_s {
-  // AMF related params
-  unsigned char amf_enabled;          ///< AMF enabled ?
-} ngap_gNB_config_t;
-
-extern ngap_gNB_config_t ngap_config;
-
-#define EPC_MODE_ENABLED       ngap_config.amf_enabled
-
 void *ngap_gNB_process_itti_msg(void*);
 void  ngap_gNB_init(void);
 void *ngap_gNB_task(void *arg);

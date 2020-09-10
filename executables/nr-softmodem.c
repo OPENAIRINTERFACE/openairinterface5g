@@ -83,6 +83,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 #include "NB_IoT_interface.h"
 #include "x2ap_eNB.h"
+#include "ngap_gNB.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -408,10 +409,12 @@ int create_gNB_tasks(uint32_t gnb_nb) {
         return -1;
       }
       */
+      /* 
       if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
         LOG_E(S1AP, "Create task for NGAP failed\n");
         return -1;
       }
+      */
 
 
       if(!emulate_rf){
