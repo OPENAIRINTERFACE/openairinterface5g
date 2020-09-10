@@ -24,22 +24,22 @@
 
 struct ngap_gNB_amf_data_s *
 ngap_gNB_nnsf_select_amf(ngap_gNB_instance_t       *instance_p,
-                         rrc_establishment_cause_t  cause);
+                         ngap_rrc_establishment_cause_t  cause);
 
 struct ngap_gNB_amf_data_s *
 ngap_gNB_nnsf_select_amf_by_plmn_id(ngap_gNB_instance_t       *instance_p,
-                                    rrc_establishment_cause_t  cause,
+                                    ngap_rrc_establishment_cause_t  cause,
                                     int                        selected_plmn_identity);
 
 struct ngap_gNB_amf_data_s*
-ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
-                                     rrc_establishment_cause_t  cause,
+ngap_gNB_nnsf_select_amf_by_amf_setid(ngap_gNB_instance_t       *instance_p,
+                                     ngap_rrc_establishment_cause_t  cause,
                                      int                        selected_plmn_identity,
-                                     uint8_t                    amf_code);
+                                     uint8_t                    amf_setid);
 
 struct ngap_gNB_amf_data_s*
 ngap_gNB_nnsf_select_amf_by_guami(ngap_gNB_instance_t       *instance_p,
-                                   rrc_establishment_cause_t  cause,
+                                   ngap_rrc_establishment_cause_t  cause,
                                    ngap_guami_t                   guami);
 
 struct ngap_gNB_amf_data_s*

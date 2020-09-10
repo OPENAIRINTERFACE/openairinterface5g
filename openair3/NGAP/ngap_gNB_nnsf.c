@@ -38,7 +38,7 @@
 
 struct ngap_gNB_amf_data_s *
 ngap_gNB_nnsf_select_amf(ngap_gNB_instance_t       *instance_p,
-                         rrc_establishment_cause_t  cause)
+                         ngap_rrc_establishment_cause_t  cause)
 {
   struct ngap_gNB_amf_data_s *amf_data_p = NULL;
   struct ngap_gNB_amf_data_s *amf_highest_capacity_p = NULL;
@@ -54,19 +54,19 @@ ngap_gNB_nnsf_select_amf(ngap_gNB_instance_t       *instance_p,
          * cause and take decision to the select this AMF depending on
          * the overload state.
          */
-        if ((cause == RRC_CAUSE_MO_DATA)
+        if ((cause == NGAP_RRC_CAUSE_MO_DATA)
             && (amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_MO_DATA)) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_ALL_SIGNALLING)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA))) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_ONLY_EMERGENCY_AND_MT)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA)
-                || (cause == RRC_CAUSE_HIGH_PRIO_ACCESS))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA)
+                || (cause == NGAP_RRC_CAUSE_HIGH_PRIO_ACCESS))) {
           continue;
         }
 
@@ -91,7 +91,7 @@ ngap_gNB_nnsf_select_amf(ngap_gNB_instance_t       *instance_p,
 
 struct ngap_gNB_amf_data_s *
 ngap_gNB_nnsf_select_amf_by_plmn_id(ngap_gNB_instance_t       *instance_p,
-                                    rrc_establishment_cause_t  cause,
+                                    ngap_rrc_establishment_cause_t  cause,
                                     int                        selected_plmn_identity)
 {
   struct ngap_gNB_amf_data_s *amf_data_p = NULL;
@@ -110,19 +110,19 @@ ngap_gNB_nnsf_select_amf_by_plmn_id(ngap_gNB_instance_t       *instance_p,
          * cause and take decision to the select this AMF depending on
          * the overload state.
          */
-        if ((cause == RRC_CAUSE_MO_DATA)
+        if ((cause == NGAP_RRC_CAUSE_MO_DATA)
             && (amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_MO_DATA)) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_ALL_SIGNALLING)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA))) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_ONLY_EMERGENCY_AND_MT)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA)
-                || (cause == RRC_CAUSE_HIGH_PRIO_ACCESS))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA)
+                || (cause == NGAP_RRC_CAUSE_HIGH_PRIO_ACCESS))) {
           continue;
         }
 
@@ -160,10 +160,10 @@ ngap_gNB_nnsf_select_amf_by_plmn_id(ngap_gNB_instance_t       *instance_p,
 }
 
 struct ngap_gNB_amf_data_s *
-ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
-                                     rrc_establishment_cause_t  cause,
+ngap_gNB_nnsf_select_amf_by_amf_setid(ngap_gNB_instance_t       *instance_p,
+                                     ngap_rrc_establishment_cause_t  cause,
                                      int                        selected_plmn_identity,
-                                     uint8_t                    amf_code)
+                                     uint8_t                    amf_setid)
 {
   struct ngap_gNB_amf_data_s *amf_data_p = NULL;
 
@@ -179,19 +179,19 @@ ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
          * cause and take decision to the select this AMF depending on
          * the overload state.
          */
-        if ((cause == RRC_CAUSE_MO_DATA)
+        if ((cause == NGAP_RRC_CAUSE_MO_DATA)
             && (amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_MO_DATA)) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_ALL_SIGNALLING)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA))) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_ONLY_EMERGENCY_AND_MT)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA)
-                || (cause == RRC_CAUSE_HIGH_PRIO_ACCESS))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA)
+                || (cause == NGAP_RRC_CAUSE_HIGH_PRIO_ACCESS))) {
           continue;
         }
 
@@ -206,7 +206,7 @@ ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
 
     /* Looking for AMF code matching the one provided by NAS */
     STAILQ_FOREACH(guami_p, &amf_data_p->served_guami, next) {
-      struct amf_code_s *amf_code_p = NULL;
+      struct amf_set_id_s      *amf_setid_p = NULL;
       struct plmn_identity_s   *served_plmn_p = NULL;
 
       STAILQ_FOREACH(served_plmn_p, &guami_p->served_plmns, next) {
@@ -215,8 +215,8 @@ ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
           break;
         }
       }
-      STAILQ_FOREACH(amf_code_p, &guami_p->amf_codes, next) {
-        if (amf_code_p->amf_code == amf_code) {
+      STAILQ_FOREACH(amf_setid_p, &guami_p->amf_set_ids, next) {
+        if (amf_setid_p->amf_set_id == amf_setid) {
           break;
         }
       }
@@ -225,7 +225,7 @@ ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
       * the AMF is knwown and the association is ready.
       * Return the reference to the AMF to use it for this UE.
       */
-      if (amf_code_p && served_plmn_p) {
+      if (amf_setid_p && served_plmn_p) {
         return amf_data_p;
       }
     }
@@ -239,7 +239,7 @@ ngap_gNB_nnsf_select_amf_by_amf_code(ngap_gNB_instance_t       *instance_p,
 
 struct ngap_gNB_amf_data_s *
 ngap_gNB_nnsf_select_amf_by_guami(ngap_gNB_instance_t       *instance_p,
-                                   rrc_establishment_cause_t  cause,
+                                   ngap_rrc_establishment_cause_t  cause,
                                    ngap_guami_t                   guami)
 {
   struct ngap_gNB_amf_data_s *amf_data_p             = NULL;
@@ -256,19 +256,19 @@ ngap_gNB_nnsf_select_amf_by_guami(ngap_gNB_instance_t       *instance_p,
          * cause and take decision to the select this AMF depending on
          * the overload state.
          */
-        if ((cause == RRC_CAUSE_MO_DATA)
+        if ((cause == NGAP_RRC_CAUSE_MO_DATA)
             && (amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_MO_DATA)) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_REJECT_ALL_SIGNALLING)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA))) {
           continue;
         }
 
         if ((amf_data_p->overload_state == NGAP_OVERLOAD_ONLY_EMERGENCY_AND_MT)
-            && ((cause == RRC_CAUSE_MO_SIGNALLING) || (cause == RRC_CAUSE_MO_DATA)
-                || (cause == RRC_CAUSE_HIGH_PRIO_ACCESS))) {
+            && ((cause == NGAP_RRC_CAUSE_MO_SIGNALLING) || (cause == NGAP_RRC_CAUSE_MO_DATA)
+                || (cause == NGAP_RRC_CAUSE_HIGH_PRIO_ACCESS))) {
           continue;
         }
 
@@ -283,8 +283,9 @@ ngap_gNB_nnsf_select_amf_by_guami(ngap_gNB_instance_t       *instance_p,
 
     /* Looking for AMF guami matching the one provided by NAS */
     STAILQ_FOREACH(guami_p, &amf_data_p->served_guami, next) {
-      struct served_group_id_s *group_id_p = NULL;
-      struct amf_code_s        *amf_code_p = NULL;
+      struct served_region_id_s *region_id_p = NULL;
+      struct amf_set_id_s       *amf_set_id_p = NULL;
+      struct amf_pointer_s      *pointer_p = NULL;
       struct plmn_identity_s   *served_plmn_p = NULL;
 
       STAILQ_FOREACH(served_plmn_p, &guami_p->served_plmns, next) {
@@ -293,13 +294,19 @@ ngap_gNB_nnsf_select_amf_by_guami(ngap_gNB_instance_t       *instance_p,
           break;
         }
       }
-      STAILQ_FOREACH(amf_code_p, &guami_p->amf_codes, next) {
-        if (amf_code_p->amf_code == guami.amf_code) {
+      
+      STAILQ_FOREACH(region_id_p, &guami_p->served_region_ids, next) {
+        if (region_id_p->amf_region_id == guami.amf_region_id) {
           break;
         }
       }
-      STAILQ_FOREACH(group_id_p, &guami_p->served_group_ids, next) {
-        if (group_id_p->amf_group_id == guami.amf_group_id) {
+      STAILQ_FOREACH(amf_set_id_p, &guami_p->amf_set_ids, next) {
+        if (amf_set_id_p->amf_set_id == guami.amf_set_id) {
+          break;
+        }
+      }
+      STAILQ_FOREACH(pointer_p, &guami_p->amf_pointers, next) {
+        if (pointer_p->amf_pointer == guami.amf_pointer) {
           break;
         }
       }
@@ -308,8 +315,9 @@ ngap_gNB_nnsf_select_amf_by_guami(ngap_gNB_instance_t       *instance_p,
       * the AMF is knwown and the association is ready.
       * Return the reference to the AMF to use it for this UE.
       */
-      if ((group_id_p != NULL) &&
-          (amf_code_p != NULL) &&
+      if ((region_id_p != NULL) &&
+          (amf_set_id_p != NULL) &&
+          (pointer_p != NULL) &&
           (served_plmn_p != NULL)) {
         return amf_data_p;
       }

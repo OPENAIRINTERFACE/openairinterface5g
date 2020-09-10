@@ -194,7 +194,7 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *
     new_instance->cell_type        = ngap_register_gNB->cell_type;
     new_instance->tac              = ngap_register_gNB->tac;
     
-    memcpy(&new_instance->gNB_s1_ip,
+    memcpy(&new_instance->gNB_ng_ip,
        &ngap_register_gNB->gnb_ip_address,
        sizeof(ngap_register_gNB->gnb_ip_address));
 

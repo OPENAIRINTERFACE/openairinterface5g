@@ -343,7 +343,8 @@ void RCconfig_nr_flexran()
     if (!GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr) {
       // Calculate a default gNB ID
     if (EPC_MODE_ENABLED) 
-      gnb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
+      //gnb_id = i + (ngap_generate_gNB_id () & 0xFFFF8);
+	  gnb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
     else
       gnb_id = i;
     } else {
@@ -570,7 +571,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     // Calculate a default gNB ID
       if (EPC_MODE_ENABLED) { 
         uint32_t hash;
-        hash = s1ap_generate_eNB_id ();
+        //hash = ngap_generate_gNB_id ();
+		hash = s1ap_generate_eNB_id ();
         gnb_id = i + (hash & 0xFFFF8);
       } else {
         gnb_id = i;
@@ -787,7 +789,8 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
           if (EPC_MODE_ENABLED) {
             uint32_t hash;
           
-          hash = s1ap_generate_eNB_id ();
+          //hash = ngap_generate_gNB_id ();
+		  hash = s1ap_generate_eNB_id ();
           gnb_id = k + (hash & 0xFFFF8);
           } else {
             gnb_id = k;
@@ -1036,7 +1039,8 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
           // Calculate a default eNB ID
           if (EPC_MODE_ENABLED) {
             uint32_t hash;
-            hash = s1ap_generate_eNB_id ();
+            //hash = ngap_generate_gNB_id ();
+			hash = s1ap_generate_eNB_id ();
             gnb_id = k + (hash & 0xFFFF8);
           } else {
             gnb_id = k;

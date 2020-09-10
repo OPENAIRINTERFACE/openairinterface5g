@@ -54,7 +54,7 @@ typedef enum {
  *    originated data transfer  E(i.e. reject traffic corresponding to RRC cause
  *    “mo-data  E(TS 36.331 [16])), or
  * - “reject all RRC connection establishments for signalling  E(i.e. reject
- *    traffic corresponding to RRC cause “modata Eand “mo-signalling E *    (TS 36.331 [16])),or
+ *    traffic corresponding to RRC cause “modata Eand “mo-signalling E *    (TS 38.331 [16])),or
  * - “only permit RRC connection establishments for emergency sessions and
  *    mobile terminated services E(i.e. only permit traffic corresponding to RRC
  *    cause “emergency Eand “mt-Access E(TS 36.331 [16])).
@@ -125,12 +125,13 @@ struct served_guami_s {
   STAILQ_ENTRY(served_guami_s) next;
 };
 
-/* slice support element */
-struct slice_support_s {
+/* NSSAI element */
+typedef struct ngap_gNB_NSSAI_s{
   uint8_t sST;
   uint8_t sD_flag;
   uint8_t sD[3];
-};
+}ngap_gNB_NSSAI_t, slice_support_s;
+
 
 /* plmn support element */
 struct plmn_support_s {
@@ -205,12 +206,6 @@ typedef struct ngap_gNB_amf_data_s {
   struct ngap_gNB_instance_s *ngap_gNB_instance;
 } ngap_gNB_amf_data_t;
 
-typedef struct ngap_gNB_NSSAI_s{
-  uint8_t sST;
-  uint8_t sD_flag;
-  uint8_t sD[3];
-}ngap_gNB_NSSAI_t;
-
 typedef struct ngap_gNB_instance_s {
   /* Next ngap gNB association.
    * Only used for virtual mode.
@@ -239,17 +234,17 @@ typedef struct ngap_gNB_instance_s {
 
   /* Unique gNB_id to identify the gNB within EPC.
    * In our case the gNB is a macro gNB so the id will be 20 bits long.
-   * For Home gNB id, this field should be 28 bits long.
+   * For Home gNB id, this field should be 36 bits long.
    */
-  uint32_t gNB_id;
+  uint64_t gNB_id;
   /* The type of the cell */
   enum cell_type_e cell_type;
 
   /* Tracking area code */
-  uint16_t tac;
+  uint32_t tac;
 
   /* gNB NGAP IP address */
-  net_ip_address_t gNB_s1_ip;
+  net_ip_address_t gNB_ng_ip;
   
   /* Mobile Country Code
    * Mobile Network Code
@@ -263,7 +258,7 @@ typedef struct ngap_gNB_instance_s {
   ngap_gNB_NSSAI_t s_nssai[PLMN_LIST_MAX_SIZE][1024];
   
   /* Default Paging DRX of the gNB as defined in TS 36.304 */
-  paging_drx_t default_drx;
+  ngap_paging_drx_t default_drx;
 } ngap_gNB_instance_t;
 
 typedef struct {
