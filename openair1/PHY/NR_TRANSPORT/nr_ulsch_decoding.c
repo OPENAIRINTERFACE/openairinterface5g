@@ -486,8 +486,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams    = &decParams;
 
-  int Kr = harq_process->K;
-  int Kr_bytes = Kr>>3;
+  int Kr;
+  int Kr_bytes;
     
   phy_vars_gNB->nbDecode = 0;
   harq_process->processedSegments = 0;
@@ -623,6 +623,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #ifdef DEBUG_ULSCH_DECODING
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
+  Kr = harq_process->K;
+  Kr_bytes = Kr>>3;
+  offset = 0;
 
   for (r=0; r<harq_process->C; r++) {
 
