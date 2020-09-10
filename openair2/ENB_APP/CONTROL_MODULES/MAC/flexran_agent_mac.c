@@ -66,6 +66,9 @@ int xid = 50;
 struct lfds700_ringbuffer_element *ue_assoc_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ue_assoc_ringbuffer_state[NUM_MAX_ENB];
 
+/* a list of shared objects that are loaded into the user plane */
+SLIST_HEAD(flexran_so_handle, flexran_agent_so_handle_s) flexran_handles[NUM_MAX_ENB];
+
 int flexran_agent_mac_stats_reply_ue(mid_t mod_id,
                                     Protocol__FlexUeStatsReport **ue_report,
                                     int      n_ue,
@@ -1404,6 +1407,8 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
         RC.mac[mod_id]->UE_info.eNB_UE_stats[UE_PCCID(mod_id,i)][i].harq_pid = 0;
     }
   }
+
+  SLIST_INIT(&flexran_handles[mod_id]);
 }
 
 /***********************************************
@@ -1902,6 +1907,69 @@ void flexran_agent_slice_update(mid_t mod_id) {
     apply_update_dl_slice_config(mod_id, sc->dl);
     apply_update_ul_slice_config(mod_id, sc->ul);
     helper_destroy_mac_slice_config(sc);
+
+    flexran_agent_so_handle_t *so = NULL;
+    flexran_agent_so_handle_t *prev = NULL; // the previous to current element, if we delete in order to go back
+    //SLIST_FOREACH(so, &flexran_handles[mod_id], entries)
+    for(so = flexran_handles[mod_id].slh_first; so;) {
+      char *name = so->name;
+      int in_use = strcmp(flexran_get_dl_scheduler_name(mod_id), name) == 0
+                   || strcmp(flexran_get_ul_scheduler_name(mod_id), name) == 0;
+      Protocol__FlexSliceAlgorithm dl_algo = flexran_get_dl_slice_algo(mod_id);
+      if (!in_use && dl_algo != PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+        int n = flexran_get_num_dl_slices(mod_id);
+        for (int i = 0; i < n; ++i) {
+          Protocol__FlexSlice s;
+          /* NONE so it won't do any allocations */
+          flexran_get_dl_slice(mod_id, i, &s, PROTOCOL__FLEX_SLICE_ALGORITHM__None);
+          if (strcmp(s.scheduler, name) == 0) {
+            in_use = 1;
+            break;
+          }
+        }
+      }
+      Protocol__FlexSliceAlgorithm ul_algo = flexran_get_ul_slice_algo(mod_id);
+      if (!in_use && ul_algo != PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+        int n = flexran_get_num_ul_slices(mod_id);
+        for (int i = 0; i < n; ++i) {
+          Protocol__FlexSlice s;
+          /* NONE so it won't do any allocations */
+          flexran_get_ul_slice(mod_id, i, &s, PROTOCOL__FLEX_SLICE_ALGORITHM__None);
+          if (strcmp(s.scheduler, name) == 0) {
+            in_use = 1;
+            break;
+          }
+        }
+      }
+      if (!in_use) {
+        char s[512];
+        int rc = flexran_agent_map_name_to_delegated_object(mod_id, so->name, s, 512);
+        LOG_W(FLEXRAN_AGENT,
+              "removing %s (library handle %p) since it is not used in the user "
+              "plane anymore\n",
+              s,
+              so->dl_handle);
+        dlclose(so->dl_handle);
+        if (rc < 0) {
+          LOG_E(FLEXRAN_AGENT, "cannot map name %s\n", so->name);
+        } else {
+          int rc = remove(s);
+          if (rc < 0)
+            LOG_E(FLEXRAN_AGENT, "cannot remove file %s: %s\n", s, strerror(errno));
+        }
+        free (so->name);
+        if (!prev) { //it's the head, start over
+          SLIST_REMOVE_HEAD(&flexran_handles[mod_id], entries);
+          so = flexran_handles[mod_id].slh_first;
+        } else {
+          SLIST_REMOVE(&flexran_handles[mod_id], so, flexran_agent_so_handle_s, entries);
+          so = prev->entries.sle_next;
+        }
+      } else {
+        prev = so;
+        so = so->entries.sle_next;
+      }
+    }
   }
 
   Protocol__FlexUeConfig *ue_config = NULL;
@@ -1975,7 +2043,10 @@ void flexran_agent_mac_inform_delegation(mid_t mod_id,
    * prepare_update_slice_config() takes ownership of the slice config, it is
    * freed inside */
 
-
-  /* TODO save dlhandle in list with name. If it has been installed and nothing
-   * references it after a reconfiguration, free and remove */
+  flexran_agent_so_handle_t *so = malloc(sizeof(flexran_agent_so_handle_t));
+  DevAssert(so);
+  so->name = strdup(cdm->name);
+  DevAssert(so->name);
+  so->dl_handle = h;
+  SLIST_INSERT_HEAD(&flexran_handles[mod_id], so, entries);
 }

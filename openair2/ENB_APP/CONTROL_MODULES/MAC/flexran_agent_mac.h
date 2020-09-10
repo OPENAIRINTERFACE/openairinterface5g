@@ -39,6 +39,12 @@
 // for flexran_agent_get_mac_xface()
 #include "flexran_agent_extern.h"
 
+/* Type for a list of shared objects used in the user plane (schedulers) */
+typedef struct flexran_agent_so_handle_s {
+  char *name; // name of the object
+  void *dl_handle; // handle of associated objects
+  SLIST_ENTRY (flexran_agent_so_handle_s) entries;
+} flexran_agent_so_handle_t;
 
 /* Initialization function for the agent structures etc */
 void flexran_agent_init_mac_agent(mid_t mod_id);
