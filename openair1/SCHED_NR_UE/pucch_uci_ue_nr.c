@@ -506,15 +506,15 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
     /* TS 38.212 6.3.1.2  Code block segmentation and CRC attachment */
     /* crc attachment can be done depending of payload size */
-    if (N_UCI < 11) {
-      O_CRC = 0;  /* no additional crc bits */
-    }
-    else if ((N_UCI >= 12) && (N_UCI <= 19)) {
-      O_CRC = 6;  /* number of additional crc bits */
-    }
-    else if (N_UCI >= 20) {
-      O_CRC = 11; /* number of additional crc bits */
-    }
+//    if (N_UCI < 11) {
+//      O_CRC = 0;  /* no additional crc bits */
+//    }
+//    else if ((N_UCI >= 12) && (N_UCI <= 19)) {
+//      O_CRC = 6;  /* number of additional crc bits */
+//    }
+//   else if (N_UCI >= 20) {
+//      O_CRC = 11; /* number of additional crc bits */
+//    }
 
     N_UCI = N_UCI + O_CRC;
 
@@ -1306,7 +1306,7 @@ int get_csi_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint32_t *csi_payload)
   float rsrp_db[7];
   int nElem = 98;
   int rsrp_offset = 17;
-  int csi_status = 12;
+  int csi_status = 11;
   
   rsrp_db[0] = get_nr_RSRP(0,0,0);
 
