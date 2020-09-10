@@ -1561,23 +1561,72 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 
 
 uint16_t get_csi_bitlen(int Mod_idP,
-                        int UE_id) {
+                        int UE_id,
+                        uint8_t csi_report_id) {
 
-  uint8_t csi_report_id =0;
   uint16_t csi_bitlen =0;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  CRI_SSBRI_RSRP_bitlen_t * CSI_report_bitlen = NULL; //This might need to be modified for Aperiodic CSI-RS measurements
+  CRI_SSBRI_RSRP_bitlen_t * CSI_report_bitlen = NULL;
 
-  NR_CSI_MeasConfig_t *csi_MeasConfig = UE_list->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-  for (csi_report_id = 0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
-    CSI_report_bitlen = &(UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0]); //This might need to be moodif for Aperiodic CSI-RS measurements
-    csi_bitlen+= ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
-	               CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
-		       (CSI_report_bitlen->nb_ssbri_cri -1 )) *UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report);
-  }
+  CSI_report_bitlen = &(UE_list->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen[0]);
+  csi_bitlen = ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
+               CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
+               (CSI_report_bitlen->nb_ssbri_cri -1 )) *UE_list->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report);
+
   return csi_bitlen;
 }
 
+
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       int *period, int *offset) {
+
+    NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
+
+    switch(p_and_o){
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
+        *period = 4;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
+        *period = 5;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
+        *period = 8;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
+        *period = 10;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
+        *period = 16;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
+        *period = 20;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
+        *period = 40;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
+        *period = 80;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
+        *period = 160;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
+        *period = 320;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+        break;
+    default:
+      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
+    }
+}
 
 void nr_csi_meas_reporting(int Mod_idP,
                            int UE_id,
@@ -1587,118 +1636,77 @@ void nr_csi_meas_reporting(int Mod_idP,
                            int ul_slots,
                            int n_slots_frame) {
 
-
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   NR_sched_pucch *curr_pucch;
   NR_PUCCH_ResourceSet_t *pucchresset;
+  NR_CSI_ReportConfig_t *csirep;
   NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
   NR_CSI_MeasConfig_t *csi_measconfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
   NR_PUCCH_Config_t *pucch_Config = ubwp->bwp_Dedicated->pucch_Config->choice.setup;
 
   AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count>0,"NO CSI report configuration available");
-  // TODO for now we assume only one csi report config available
-  NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[0];
 
-  AssertFatal(csirep->reportConfigType.choice.periodic!=NULL,"Only periodic CSI reporting is implemented currently");
-  int period, offset;
-  NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
+  for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
 
-  switch(p_and_o){
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
-      period = 4;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
-      period = 5;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
-      period = 8;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
-      period = 10;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
-      period = 16;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
-      period = 20;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
-      period = 40;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
-      period = 80;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
-      period = 160;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
-      break;
-    case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
-      period = 320;
-      offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
-      break;
-  default:
-    AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
-  }
-  // schedule csi measurement reception according to 5.2.1.4 in 38.214
-  if ( ((n_slots_frame*frame + slot - offset)%period) == 0) {
+    csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
 
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[slot-slots_per_tdd+ul_slots];
+    AssertFatal(csirep->reportConfigType.choice.periodic!=NULL,"Only periodic CSI reporting is implemented currently");
+    int period, offset;
+    csi_period_offset(csirep,&period,&offset);
 
-    NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+    // schedule csi measurement reception according to 5.2.1.4 in 38.214
+    if ( ((n_slots_frame*frame + slot - offset)%period) == 0) {
 
-    int found = -1;
-    pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
-    int n_list = pucchresset->resourceList.list.count;
-    for (int i=0; i<n_list; i++) {
-      if (*pucchresset->resourceList.list.array[i] == pucchcsires->pucch_Resource)
-        found = i;
-    }
-    AssertFatal(found>-1,"CSI resource not found among PUCCH resources");
+      curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[slot-slots_per_tdd+ul_slots];
 
-    curr_pucch->resource_indicator = found;
+      NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
 
-    n_list = pucch_Config->resourceToAddModList->list.count;
+      int found = -1;
+      pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
+      int n_list = pucchresset->resourceList.list.count;
+      for (int i=0; i<n_list; i++) {
+        if (*pucchresset->resourceList.list.array[i] == pucchcsires->pucch_Resource)
+          found = i;
+      }
+      AssertFatal(found>-1,"CSI resource not found among PUCCH resources");
 
-    // going through the list of PUCCH resources to find the one indexed by resource_id
-    for (int i=0; i<n_list; i++) {
-      NR_PUCCH_Resource_t *pucchres = pucch_Config->resourceToAddModList->list.array[i];
-      if (pucchres->pucch_ResourceId == *pucchresset->resourceList.list.array[found]) {
-        switch(pucchres->format.present){
-          case NR_PUCCH_Resource__format_PR_format2:
-            if (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
-              curr_pucch->simultaneous_harqcsi = false;
-            else
-              curr_pucch->simultaneous_harqcsi = true;
-            break;
-          case NR_PUCCH_Resource__format_PR_format3:
-            if (pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
-              curr_pucch->simultaneous_harqcsi = false;
-            else
-              curr_pucch->simultaneous_harqcsi = true;
-            break;
-          case NR_PUCCH_Resource__format_PR_format4:
-            if (pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
-              curr_pucch->simultaneous_harqcsi = false;
-            else
-              curr_pucch->simultaneous_harqcsi = true;
-            break;
-        default:
-          AssertFatal(1==0,"Invalid PUCCH format type");
+      curr_pucch->resource_indicator = found;
+
+      n_list = pucch_Config->resourceToAddModList->list.count;
+
+      // going through the list of PUCCH resources to find the one indexed by resource_id
+      for (int i=0; i<n_list; i++) {
+        NR_PUCCH_Resource_t *pucchres = pucch_Config->resourceToAddModList->list.array[i];
+        if (pucchres->pucch_ResourceId == *pucchresset->resourceList.list.array[found]) {
+          switch(pucchres->format.present){
+            case NR_PUCCH_Resource__format_PR_format2:
+              if (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
+                curr_pucch->simultaneous_harqcsi = false;
+              else
+                curr_pucch->simultaneous_harqcsi = true;
+              break;
+            case NR_PUCCH_Resource__format_PR_format3:
+              if (pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
+                curr_pucch->simultaneous_harqcsi = false;
+              else
+                curr_pucch->simultaneous_harqcsi = true;
+              break;
+            case NR_PUCCH_Resource__format_PR_format4:
+              if (pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI == NULL)
+                curr_pucch->simultaneous_harqcsi = false;
+              else
+                curr_pucch->simultaneous_harqcsi = true;
+              break;
+          default:
+            AssertFatal(1==0,"Invalid PUCCH format type");
+          }
         }
       }
+      curr_pucch->csi_bits += get_csi_bitlen(Mod_idP,UE_id,csi_report_id); // TODO function to compute CSI meas report bit size
+      curr_pucch->frame = frame;
+      curr_pucch->ul_slot = slot;
     }
-    curr_pucch->csi_bits = get_csi_bitlen(Mod_idP,UE_id); // TODO function to compute CSI meas report bit size
-    curr_pucch->frame = frame;
-    curr_pucch->ul_slot = slot;
   }
 }
 
