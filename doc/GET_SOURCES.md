@@ -33,12 +33,8 @@ holds the source code for (eNB RAN + UE RAN).
 For legal issues (licenses), the core network (EPC) source code is now moved away from
 the above openairinterface5g git repository.
 
-*  A very old version of the EPC is located under the same GitLab Eurecom server (splitted into 2 Git repos):
-   *  [openair-cn](https://gitlab.eurecom.fr/oai/openair-cn.git) with apache license
-   *  [xtables-addons-oai](https://gitlab.eurecom.fr/oai/xtables-addons-oai.git) with GPL license
-   *  **These repositories are no more maintained.**
 *  A more recent version is available under our GitHub domain:
-   *  [OAI GitHub openair-cn](https://github.com/OPENAIRINTERFACE/openair-cn)
+   *  [OAI GitHub openair-cn domain](https://github.com/OPENAIRINTERFACE)
    *  Check its wiki pages for more details
 
 Configure git with your name/email address (only important if you are developer and want to contribute/push code to Git Repository):
@@ -80,8 +76,6 @@ you do not have account on gitlab.eurecom.fr, please register yourself to gitlab
    * `git clone git@gitlab.eurecom.fr:oai/openairinterface5g.git`
 * Clone with user name/password prompt:
    * `git clone https://YOUR_USERNAME@gitlab.eurecom.fr/oai/openairinterface5g.git`
-   * `git clone https://YOUR_USERNAME@gitlab.eurecom.fr/oai/openair-cn.git`
-   * `git clone https://YOUR_USERNAME@gitlab.eurecom.fr/oai/xtables-addons-oai.git` (optional, openair-cn build script can do it for you)
 
 # Which branch to checkout?
 
