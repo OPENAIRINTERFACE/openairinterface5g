@@ -389,14 +389,14 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
       printf("%d \n",  harq_process->d[0][cnt]);
       }
       printf("\n");*/
-    encoder_implemparams_t impp;
-    impp.n_segments=harq_process->C;
-    impp.macro_num=0;
-    impp.tinput  = NULL;
-    impp.tprep   = NULL;
-    impp.tparity = NULL;
-    impp.toutput = NULL;
-
+    encoder_implemparams_t impp = {
+      .n_segments=harq_process->C,
+      .macro_num=0,
+      .tinput  = NULL,
+      .tprep   = NULL,
+      .tparity = NULL,
+      .toutput = NULL};
+    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
     
     nrLDPC_encoder(harq_process->c,harq_process->d,*pz,Kb,Kr,BG,&impp);
