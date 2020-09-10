@@ -7449,7 +7449,7 @@ ShortMAC-I ::=                      BIT STRING (SIZE (16))
 SINR-Range ::=                      INTEGER(0..127)
 
 -- TAG-SINR-RANGE-STOP
--- TAG¨CSI-REQUESTCONFIG-START
+-- TAG-SI-REQUESTCONFIG-START
 
 SI-RequestConfig::=                 SEQUENCE {
     rach-OccasionsSI                    SEQUENCE {
@@ -7466,7 +7466,7 @@ SI-RequestResources ::=             SEQUENCE {
     ra-ssb-OccasionMaskIndex            INTEGER (0..15)                                                     OPTIONAL    -- Need R
 }
 
--- TAG¨CSI-SCHEDULINGINFO-START
+-- TAG-SI-SCHEDULINGINFO-START
 
 SI-SchedulingInfo ::=               SEQUENCE {
     schedulingInfoList                  SEQUENCE (SIZE (1..maxSI-Message)) OF SchedulingInfo,
@@ -11978,9 +11978,70 @@ maxNrofServingCellsTCI-r16              INTEGER ::= 32      -- Maximum number of
 
 END
 
+-- NR-UE-VARIABLES-START
+
 NR-UE-Variables DEFINITIONS AUTOMATIC TAGS ::=
  
 BEGIN
+
+IMPORTS
+    ARFCN-ValueNR,
+    CellIdentity,
+    EUTRA-PhysCellId,
+    MeasId,
+    MeasIdToAddModList,
+    MeasIdleCarrierEUTRA-r16,
+    MeasIdleCarrierNR-r16,
+    MeasResultIdleEUTRA-r16,
+    MeasResultIdleNR-r16,
+    MeasObjectToAddModList,
+    PhysCellId,
+    RNTI-Value,
+    ReportConfigToAddModList,
+    RSRP-Range,
+    SL-MeasId-r16,
+    SL-MeasIdList-r16,
+    SL-MeasObjectList-r16,
+    SL-ReportConfigList-r16,
+    SL-QuantityConfig-r16,
+    Tx-PoolMeasList-r16,
+    QuantityConfig,
+    maxNrofCellMeas,
+    maxNrofMeasId,
+    maxFreqIdle-r16,
+    PhysCellIdUTRA-FDD-r16,
+    ValidityAreaList-r16,
+    CondReconfigToAddModList-r16,
+    ConnEstFailReport-r16,
+    LoggingDuration-r16,
+    LoggingInterval-r16,
+    LogMeasInfoList-r16,
+    LogMeasInfo-r16,
+    RA-Report-r16,
+    RLF-Report-r16,
+    TraceReference-r16,
+    WLAN-Identifiers-r16,
+    WLAN-NameList-r16,
+    BT-NameList-r16,
+    PLMN-Identity,
+    maxPLMN,
+    RA-ReportList-r16,
+    VisitedCellInfoList-r16,
+    AbsoluteTimeInfo-r16,
+    LoggedEventTriggerConfig-r16,
+    LoggedPeriodicalReportConfig-r16,
+    Sensor-NameList-r16,
+    PLMN-IdentityList2-r16,
+    AreaConfiguration-r16,
+    maxNrofSL-MeasId-r16,
+    maxNrofFreqSL-r16,
+    maxNrofCLI-RSSI-Resources-r16,
+    maxNrofCLI-SRS-Resources-r16,
+    RSSI-ResourceId-r16,
+    SRS-ResourceId
+FROM NR-RRC-Definitions;
+
+-- NR-UE-VARIABLES-STOP
 
 -- TAG-VARCONDITIONALRECONFIG-START
 
@@ -12169,9 +12230,67 @@ VarShortMAC-Input   ::=                 SEQUENCE {
 
 END
 
+-- TAG-NR-INTER-NODE-DEFINITIONS-START
+
 NR-InterNodeDefinitions DEFINITIONS AUTOMATIC TAGS ::=
- 
+
 BEGIN
+
+IMPORTS
+    ARFCN-ValueNR,
+    ARFCN-ValueEUTRA,
+    CellIdentity,
+    CGI-InfoEUTRA,
+    CGI-InfoNR,
+    CSI-RS-Index,
+    CSI-RS-CellMobility,
+    DRX-Config,
+    EUTRA-PhysCellId,
+    FreqBandIndicatorNR,
+    GapConfig,
+    maxBandComb,
+    maxBands,
+    maxCellSFTD,
+    maxFeatureSetsPerBand,
+    maxFreqIDC-MRDC,
+    maxNrofCombIDC,
+    maxNrofSCells,
+    maxNrofServingCells,
+    maxNrofServingCells-1,
+    maxNrofServingCellsEUTRA,
+    maxNrofIndexesToReport,
+    maxSimultaneousBands,
+    MeasQuantityResults,
+    MeasResultCellListSFTD-EUTRA,
+    MeasResultCellListSFTD-NR,
+    MeasResultList2NR,
+    MeasResultSCG-Failure,
+    MeasResultServFreqListEUTRA-SCG,
+    NeedForGapsInfoNR-r16,
+    OverheatingAssistance,
+    P-Max,
+    PhysCellId,
+    RadioBearerConfig,
+    RAN-NotificationAreaInfo,
+    RRCReconfiguration,
+    ServCellIndex,
+    SetupRelease,
+    SSB-Index,
+    SSB-MTC,
+    SSB-ToMeasure,
+    SS-RSSI-Measurement,
+    ShortMAC-I,
+    SubcarrierSpacing,
+    UEAssistanceInformation,
+    UE-CapabilityRAT-ContainerList,
+    maxNrofCLI-RSSI-Resources-r16,
+    maxNrofCLI-SRS-Resources-r16,
+    RSSI-ResourceId-r16,
+    SidelinkUEInformationNR-r16,
+    SRS-ResourceId
+FROM NR-RRC-Definitions;
+
+-- TAG-NR-INTER-NODE-DEFINITIONS-STOP
 
 -- TAG-HANDOVER-COMMAND-START
 
@@ -12754,7 +12873,9 @@ maxMeasIdentitiesMN         INTEGER ::= 62  -- Maximum number of measurement ide
 maxCellPrep                 INTEGER ::= 32  -- Maximum number of cells prepared for handover
 
 -- TAG-NR-MULTIPLICITY-AND-CONSTRAINTS-STOP
+
 -- TAG-NR-INTER-NODE-DEFINITIONS-END-START
 
 END
 
+-- TAG-NR-INTER-NODE-DEFINITIONS-END-STOP
