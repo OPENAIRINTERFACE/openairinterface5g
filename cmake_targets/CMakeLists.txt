@@ -473,21 +473,21 @@ add_dependencies(NGAP_LIB rrc_flag ngap_flag)
 include_directories ("${NGAP_C_DIR}")
 include_directories ("${NGAP_DIR}")
 
-#add_library(NGAP_GNB
-#  ${NGAP_DIR}/ngap_gNB.c
-#  ${NGAP_DIR}/ngap_gNB_context_management_procedures.c
-#  ${NGAP_DIR}/ngap_gNB_decoder.c
-#  ${NGAP_DIR}/ngap_gNB_encoder.c
-#  ${NGAP_DIR}/ngap_gNB_handlers.c
-#  ${NGAP_DIR}/ngap_gNB_itti_messaging.c
-#  ${NGAP_DIR}/ngap_gNB_management_procedures.c
-#  ${NGAP_DIR}/ngap_gNB_nas_procedures.c
-#  ${NGAP_DIR}/ngap_gNB_nnsf.c
-#  ${NGAP_DIR}/ngap_gNB_overload.c
-#  ${NGAP_DIR}/ngap_gNB_trace.c
-#  ${NGAP_DIR}/ngap_gNB_ue_context.c
-#  )
-#add_dependencies(NGAP_GNB rrc_flag ngap_flag)
+add_library(NGAP_GNB
+  ${NGAP_DIR}/ngap_gNB.c
+  ${NGAP_DIR}/ngap_gNB_context_management_procedures.c
+  ${NGAP_DIR}/ngap_gNB_decoder.c
+  ${NGAP_DIR}/ngap_gNB_encoder.c
+  ${NGAP_DIR}/ngap_gNB_handlers.c
+  ${NGAP_DIR}/ngap_gNB_itti_messaging.c
+  ${NGAP_DIR}/ngap_gNB_management_procedures.c
+  ${NGAP_DIR}/ngap_gNB_nas_procedures.c
+  ${NGAP_DIR}/ngap_gNB_nnsf.c
+  ${NGAP_DIR}/ngap_gNB_overload.c
+  ${NGAP_DIR}/ngap_gNB_trace.c
+  ${NGAP_DIR}/ngap_gNB_ue_context.c
+  )
+add_dependencies(NGAP_GNB rrc_flag ngap_flag)
 
 #M2AP
 # Same limitation as described in RRC/S1AP: unknown generated file list
@@ -2800,7 +2800,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS NR_GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB 
-  NGAP_LIB S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2 L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${PROTO_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
 

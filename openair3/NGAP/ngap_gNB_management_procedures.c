@@ -152,6 +152,7 @@ ngap_gNB_instance_t *ngap_gNB_get_instance(instance_t instance)
 void ngap_gNB_remove_amf_desc(ngap_gNB_instance_t * instance) 
 {
 
+#if 0
     struct ngap_gNB_amf_data_s *amf = NULL;
     struct ngap_gNB_amf_data_s *amfNext = NULL;
     struct plmn_identity_s* plmnInfo;
@@ -185,4 +186,5 @@ void ngap_gNB_remove_amf_desc(ngap_gNB_instance_t * instance)
       }
       free(amf);
     }
+#endif
 }

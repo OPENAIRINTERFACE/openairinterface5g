@@ -53,8 +53,11 @@
 #include "NGAP_ProtocolExtensionField.h"
 #include "NGAP_ProtocolExtensionContainer.h"
 #include "NGAP_asn_constant.h"
-#include "NGAP_SupportedTAs-Item.h"
-#include "NGAP_ServedGUAMIsItem.h"
+#include "NGAP_SupportedTAItem.h"
+#include "NGAP_ServedGUAMIItem.h"
+#include "NGAP_BroadcastPLMNItem.h"
+#include "NGAP_SliceSupportItem.h"
+#include "NGAP_PLMNSupportItem.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
@@ -75,7 +78,7 @@ extern int asn1_xer_print;
 
 #if defined(ENB_MODE)
 # include "common/utils/LOG/log.h"
-# include "ngap_eNB_default_values.h"
+# include "ngap_gNB_default_values.h"
 # define NGAP_ERROR(x, args...) LOG_E(NGAP, x, ##args)
 # define NGAP_WARN(x, args...)  LOG_W(NGAP, x, ##args)
 # define NGAP_TRAF(x, args...)  LOG_I(NGAP, x, ##args)

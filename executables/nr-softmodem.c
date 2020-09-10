@@ -409,12 +409,11 @@ int create_gNB_tasks(uint32_t gnb_nb) {
         return -1;
       }
       */
-      /* 
+ 
       if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
         LOG_E(S1AP, "Create task for NGAP failed\n");
         return -1;
       }
-      */
 
 
       if(!emulate_rf){

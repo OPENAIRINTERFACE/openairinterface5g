@@ -502,13 +502,13 @@ static int ngap_gNB_generate_ng_setup_request(
         MCC_MNC_TO_TBCD(instance_p->mcc[ngap_amf_data_p->broadcast_plmn_index[i]],
                         instance_p->mnc[ngap_amf_data_p->broadcast_plmn_index[i]],
                         instance_p->mnc_digit_length[ngap_amf_data_p->broadcast_plmn_index[i]],
-                        plmn->pLMNIdentity);
+                        &plmn->pLMNIdentity);
 
         for(int si = 0; si < instance_p->num_nssai[i]; si++) {
           ssi = (NGAP_SliceSupportItem_t *)calloc(1, sizeof(NGAP_SliceSupportItem_t));
           INT8_TO_OCTET_STRING(instance_p->s_nssai[i][si].sST, &ssi->s_NSSAI.sST);
 
-          if(instance_p->s_nssai[i].sD_flag) {
+          if(instance_p->s_nssai[i]->sD_flag) {
             ssi->s_NSSAI.sD = calloc(1, sizeof(NGAP_SD_t));
             ssi->s_NSSAI.sD->buf = calloc(3, sizeof(uint8_t));
             ssi->s_NSSAI.sD->size = 3;

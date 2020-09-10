@@ -110,7 +110,7 @@ int ngap_gNB_handle_ng_ENDC_pdusession_modification_confirm(uint32_t            
     NGAP_NGAP_PDU_t       *pdu);
 
 /* Handlers matrix. Only gNB related procedure present here */
-ngap_message_decoded_callback messages_callback[][3] = {
+ngap_message_decoded_callback ngap_messages_callback[][3] = {
   { 0, 0, 0 }, /* AMFConfigurationUpdate */
   { 0, 0, 0 }, /* AMFStatusIndication */
   { 0, 0, 0 }, /* CellTrafficTrace */
@@ -229,7 +229,7 @@ int ngap_gNB_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage.procedureCode >= sizeof(messages_callback) / (3 * sizeof(
+  if (pdu.choice.initiatingMessage.procedureCode >= sizeof(ngap_messages_callback) / (3 * sizeof(
         ngap_message_decoded_callback))
       || (pdu.present > NGAP_NGAP_PDU_PR_unsuccessfulOutcome)) {
     NGAP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
@@ -241,7 +241,7 @@ int ngap_gNB_handle_message(uint32_t assoc_id, int32_t stream,
   /* No handler present.
    * This can mean not implemented or no procedure for gNB (wrong direction).
    */
-  if (messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
+  if (ngap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
     NGAP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
                assoc_id, pdu.choice.initiatingMessage.procedureCode,
                ngap_direction2String(pdu.present - 1));
@@ -250,7 +250,7 @@ int ngap_gNB_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Calling the right handler */
-  ret = (*messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
+  ret = (*ngap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
         (assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
   return ret;
@@ -297,6 +297,7 @@ static
 int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
                                       uint32_t               stream,
                                       NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   NGAP_NGSetupResponse_t    *container;
   NGAP_NGSetupResponseIEs_t *ie;
   ngap_gNB_amf_data_t       *amf_desc_p;
@@ -386,10 +387,10 @@ int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
 
   if (ie) {
     amf_desc_p->amf_name = calloc(ie->value.choice.AMFName.size + 1, sizeof(char));
-    memcpy(amf_desc_p->amf_name, ie->value.choice.AMFname.buf,
-           ie->value.choice.AMFname.size);
+    memcpy(amf_desc_p->amf_name, ie->value.choice.AMFName.buf,
+           ie->value.choice.AMFName.size);
     /* Convert the amf name to a printable string */
-    amf_desc_p->amf_name[ie->value.choice.AMFname.size] = '\0';
+    amf_desc_p->amf_name[ie->value.choice.AMFName.size] = '\0';
   }
 
   
@@ -446,6 +447,7 @@ int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
   amf_desc_p->state = NGAP_GNB_STATE_CONNECTED;
   amf_desc_p->ngap_gNB_instance->ngap_amf_associated_nb ++;
   ngap_handle_ng_setup_message(amf_desc_p, 0);
+#endif
   return 0;
 }
 
@@ -454,6 +456,7 @@ static
 int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
                                      uint32_t         stream,
                                      NGAP_NGAP_PDU_t *pdu) {
+#if 0
   NGAP_ErrorIndication_t    *container;
   NGAP_ErrorIndicationIEs_t *ie;
   ngap_gNB_amf_data_t        *amf_desc_p;
@@ -781,6 +784,7 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
     // TODO continue
   }
 
+#endif
   // TODO continue
   return 0;
 }
@@ -790,6 +794,7 @@ static
 int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   int i;
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
@@ -1070,7 +1075,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   } else {/* ie != NULL */
     return -1;
   }
-
+#endif
   return 0;
 }
 
@@ -1079,6 +1084,7 @@ static
 int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
   MessageDef            *message_p        = NULL;
@@ -1158,12 +1164,15 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_UEContextReleaseCommand_IEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_Cause, true);
   /* TBD */
+#endif
+  return 0;
 }
 
 static
 int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
                                         uint32_t         stream,
                                         NGAP_NGAP_PDU_t *pdu) {
+#if 0
   int i;
   NGAP_AMF_UE_NGAP_ID_t         amf_ue_ngap_id;
   NGAP_GNB_UE_NGAP_ID_t         enb_ue_ngap_id;
@@ -1278,7 +1287,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   } else {
     return -1;
   }
-
+#endif
   return 0;
 }
 
@@ -1286,6 +1295,7 @@ static
 int ngap_gNB_handle_paging(uint32_t               assoc_id,
                            uint32_t               stream,
                            NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   ngap_gNB_amf_data_t   *amf_desc_p        = NULL;
   ngap_gNB_instance_t   *ngap_gNB_instance = NULL;
   MessageDef            *message_p         = NULL;
@@ -1449,6 +1459,7 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
              NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[4], NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[5]);
   /* send message to RRC */
   itti_send_msg_to_task(TASK_RRC_GNB, ngap_gNB_instance->instance, message_p);
+#endif
   return 0;
 }
 
@@ -1456,6 +1467,7 @@ static
 int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   int i, nb_of_pdusessions_failed;
   ngap_gNB_amf_data_t           *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t         *ue_desc_p        = NULL;
@@ -1582,7 +1594,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   } else { /* of if (ie != NULL)*/
     return -1;
   }
-
+#endif
   return 0;
 }
 // handle e-rab release command and send it to rrc_end
@@ -1590,6 +1602,7 @@ static
 int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   int i;
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
@@ -1687,6 +1700,7 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
   }
 
   itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
+#endif
   return 0;
 }
 
@@ -1694,6 +1708,7 @@ static
 int ngap_gNB_handle_ng_path_switch_request_ack(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
   MessageDef            *message_p        = NULL;
@@ -1851,6 +1866,7 @@ int ngap_gNB_handle_ng_path_switch_request_ack(uint32_t               assoc_id,
 
   // TODO continue
   itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
+#endif
   return 0;
 }
 
@@ -1858,6 +1874,7 @@ static
 int ngap_gNB_handle_ng_path_switch_request_failure(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
+#if 0
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   NGAP_PathSwitchRequestFailure_t    *pathSwitchRequestFailure;
   NGAP_PathSwitchRequestFailureIEs_t *ie;
@@ -1917,7 +1934,7 @@ int ngap_gNB_handle_ng_path_switch_request_failure(uint32_t               assoc_
   if(!ie) {
     NGAP_WARN("Critical Diagnostic not supported\n");
   }
-
+#endif
   // TODO continue
   return 0;
 }

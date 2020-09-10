@@ -41,7 +41,7 @@ static int ngap_gNB_decode_initiating_message(NGAP_NGAP_PDU_t *pdu) {
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.initiatingMessage.procedureCode) {
-    case NGAP_ProcedureCode_id_downlinkNASTransport:
+    case NGAP_ProcedureCode_id_DownlinkNASTransport:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       break;
@@ -62,19 +62,19 @@ static int ngap_gNB_decode_initiating_message(NGAP_NGAP_PDU_t *pdu) {
       free(res.buffer);
       break;
 
-    case NGAP_ProcedureCode_id_PDUSESSIONSetup:
+    case NGAP_ProcedureCode_id_PDUSessionResourceSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       NGAP_INFO("PDUSESSIONSetup initiating message\n");
       break;
 
-    case NGAP_ProcedureCode_id_PDUSESSIONModify:
+    case NGAP_ProcedureCode_id_PDUSessionResourceModify:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       NGAP_INFO("PDUSESSIONModify initiating message\n");
       break;
 
-    case NGAP_ProcedureCode_id_PDUSESSIONRelease:
+    case NGAP_ProcedureCode_id_PDUSessionResourceRelease:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       NGAP_INFO("TODO PDUSESSIONRelease initiating message\n");
@@ -102,7 +102,7 @@ static int ngap_gNB_decode_successful_outcome(NGAP_NGAP_PDU_t *pdu) {
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.successfulOutcome.procedureCode) {
-    case NGAP_ProcedureCode_id_S1Setup:
+    case NGAP_ProcedureCode_id_NGSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       break;
@@ -112,7 +112,7 @@ static int ngap_gNB_decode_successful_outcome(NGAP_NGAP_PDU_t *pdu) {
       free(res.buffer);
       break;
 
-    case NGAP_ProcedureCode_id_PDUSESSIONModificationIndication:
+    case NGAP_ProcedureCode_id_PDUSessionResourceModifyIndication:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       break;
@@ -132,7 +132,7 @@ static int ngap_gNB_decode_unsuccessful_outcome(NGAP_NGAP_PDU_t *pdu) {
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.unsuccessfulOutcome.procedureCode) {
-    case NGAP_ProcedureCode_id_S1Setup:
+    case NGAP_ProcedureCode_id_NGSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_NGAP_NGAP_PDU, pdu);
       free(res.buffer);
       break;

@@ -53,6 +53,7 @@ int ngap_gNB_handle_nas_first_req(
     instance_t instance, ngap_nas_first_req_t *ngap_nas_first_req_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_instance_t          *instance_p = NULL;
     struct ngap_gNB_amf_data_s   *amf_desc_p = NULL;
     struct ngap_gNB_ue_context_s *ue_desc_p  = NULL;
@@ -314,6 +315,7 @@ int ngap_gNB_handle_nas_first_req(
     /* Send encoded message over sctp */
     ngap_gNB_itti_send_sctp_data_req(instance_p->instance, amf_desc_p->assoc_id,
                                      buffer, length, ue_desc_p->tx_stream);
+#endif
     return 0;
 }
 
@@ -323,6 +325,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
                                  NGAP_NGAP_PDU_t *pdu)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_amf_data_t             *amf_desc_p        = NULL;
     ngap_gNB_ue_context_t           *ue_desc_p         = NULL;
     ngap_gNB_instance_t             *ngap_gNB_instance = NULL;
@@ -415,6 +418,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
                                         ue_desc_p->gNB_ue_ngap_id,
                                         ie->value.choice.NAS_PDU.buf,
                                         ie->value.choice.NAS_PDU.size);
+#endif
     return 0;
 }
 
@@ -422,6 +426,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
 int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     struct ngap_gNB_ue_context_s  *ue_context_p;
     ngap_gNB_instance_t           *ngap_gNB_instance_p;
     NGAP_NGAP_PDU_t                pdu;
@@ -530,6 +535,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
+#endif
     return 0;
 }
 
@@ -539,6 +545,7 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
                                   ngap_nas_non_delivery_ind_t *ngap_nas_non_delivery_ind)
 //------------------------------------------------------------------------------
 {
+#if 0
     struct ngap_gNB_ue_context_s        *ue_context_p;
     ngap_gNB_instance_t                 *ngap_gNB_instance_p;
     NGAP_NGAP_PDU_t                      pdu;
@@ -623,6 +630,7 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
+#endif
     return 0;
 }
 
@@ -631,6 +639,7 @@ int ngap_gNB_initial_ctxt_resp(
     instance_t instance, ngap_initial_context_setup_resp_t *initial_ctxt_resp_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_instance_t                   *ngap_gNB_instance_p = NULL;
     struct ngap_gNB_ue_context_s          *ue_context_p        = NULL;
     NGAP_NGAP_PDU_t                        pdu;
@@ -796,6 +805,7 @@ int ngap_gNB_initial_ctxt_resp(
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
+#endif
     return 0;
 }
 
@@ -804,6 +814,7 @@ int ngap_gNB_ue_capabilities(instance_t instance,
                              ngap_ue_cap_info_ind_t *ue_cap_info_ind_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_instance_t          *ngap_gNB_instance_p;
     struct ngap_gNB_ue_context_s *ue_context_p;
     NGAP_NGAP_PDU_t                       pdu;
@@ -885,6 +896,7 @@ int ngap_gNB_ue_capabilities(instance_t instance,
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
+#endif
     return 0;
 }
 
@@ -893,6 +905,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
                               ngap_pdusession_setup_resp_t *pdusession_setup_resp_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_instance_t          *ngap_gNB_instance_p = NULL;
     struct ngap_gNB_ue_context_s *ue_context_p        = NULL;
     NGAP_NGAP_PDU_t               pdu;
@@ -1069,6 +1082,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
+#endif
     return 0;
 }
 
@@ -1077,6 +1091,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
                                ngap_pdusession_modify_resp_t *pdusession_modify_resp_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_instance_t           *ngap_gNB_instance_p = NULL;
     struct ngap_gNB_ue_context_s  *ue_context_p        = NULL;
     NGAP_NGAP_PDU_t                pdu;
@@ -1232,6 +1247,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
+#endif
     return 0;
 }
 //------------------------------------------------------------------------------
@@ -1239,6 +1255,7 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
                                 ngap_pdusession_release_resp_t *pdusession_release_resp_p)
 //------------------------------------------------------------------------------
 {
+#if 0
     ngap_gNB_instance_t            *ngap_gNB_instance_p = NULL;
     struct ngap_gNB_ue_context_s   *ue_context_p        = NULL;
     NGAP_NGAP_PDU_t                 pdu;
@@ -1374,6 +1391,7 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
                                      length, ue_context_p->tx_stream);
     NGAP_INFO("pdusession_release_response sended gNB_UE_NGAP_ID %d  amf_ue_ngap_id %d nb_of_pdusessions_released %d nb_of_pdusessions_failed %d\n",
               pdusession_release_resp_p->gNB_ue_ngap_id, ue_context_p->amf_ue_ngap_id,pdusession_release_resp_p->nb_of_pdusessions_released,pdusession_release_resp_p->nb_of_pdusessions_failed);
+#endif
     return 0;
 }
 
@@ -1381,6 +1399,7 @@ int ngap_gNB_path_switch_req(instance_t instance,
                              ngap_path_switch_req_t *path_switch_req_p)
 //------------------------------------------------------------------------------
 {
+#if 0
   ngap_gNB_instance_t          *ngap_gNB_instance_p = NULL;
   struct ngap_gNB_ue_context_s *ue_context_p        = NULL;
   struct ngap_gNB_amf_data_s   *amf_desc_p = NULL;
@@ -1610,8 +1629,9 @@ int ngap_gNB_path_switch_req(instance_t instance,
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    amf_desc_p->assoc_id, buffer,
                                    length, ue_context_p->tx_stream);
+#endif
 
-  return ret;
+  return 0;
 }
 
 
@@ -1777,6 +1797,7 @@ int ngap_gNB_generate_PDUSESSION_Modification_Indication(
   ngap_pdusession_modification_ind_t *pdusession_modification_ind)
 //-----------------------------------------------------------------------------
 {
+#if 0
   struct ngap_gNB_ue_context_s        *ue_context_p        = NULL;
   NGAP_NGAP_PDU_t            pdu;
   NGAP_PDUSESSIONModificationIndication_t     *out = NULL;
@@ -1925,7 +1946,8 @@ int ngap_gNB_generate_PDUSESSION_Modification_Indication(
                                        len, ue_context_p->tx_stream);  
 
 //ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance, ue_context_p->amf_ref->assoc_id, buffer, len, 0);
-  return ret;
+#endif
+  return 0;
 }
 
 

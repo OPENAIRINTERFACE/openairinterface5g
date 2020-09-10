@@ -53,6 +53,7 @@
 int ngap_ue_context_release_complete(instance_t instance,
                                      ngap_ue_release_complete_t *ue_release_complete_p)
 {
+#if 0
   ngap_gNB_instance_t                 *ngap_gNB_instance_p = NULL;
   struct ngap_gNB_ue_context_s        *ue_context_p        = NULL;
   NGAP_NGAP_PDU_t                      pdu;
@@ -145,7 +146,7 @@ int ngap_ue_context_release_complete(instance_t instance,
         ue_context_p->gNB_ue_ngap_id, ue_context_p->amf_ue_ngap_id,
         ue_context_p->ue_state);
   }*/
-
+#endif
   return 0;
 }
 
@@ -153,6 +154,7 @@ int ngap_ue_context_release_complete(instance_t instance,
 int ngap_ue_context_release_req(instance_t instance,
                                 ngap_ue_release_req_t *ue_release_req_p)
 {
+#if 0
   ngap_gNB_instance_t                *ngap_gNB_instance_p           = NULL;
   struct ngap_gNB_ue_context_s       *ue_context_p                  = NULL;
   NGAP_NGAP_PDU_t                     pdu;
@@ -260,7 +262,7 @@ int ngap_ue_context_release_req(instance_t instance,
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
                                    length, ue_context_p->tx_stream);
-
+#endif
   return 0;
 }
 

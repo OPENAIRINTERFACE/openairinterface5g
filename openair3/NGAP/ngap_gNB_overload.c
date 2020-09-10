@@ -47,6 +47,7 @@ int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
                                    uint32_t         stream,
                                    NGAP_NGAP_PDU_t *pdu)
 {
+#if 0
     ngap_gNB_amf_data_t     *amf_desc_p;
     NGAP_OverloadStart_t    *container;
     NGAP_OverloadStartIEs_t *ie;
@@ -77,6 +78,7 @@ int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
     amf_desc_p->overload_state =
         ie->value.choice.OverloadResponse.choice.overloadAction;
 
+#endif
     return 0;
 }
 

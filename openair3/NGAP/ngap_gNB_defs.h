@@ -135,7 +135,7 @@ typedef struct ngap_gNB_NSSAI_s{
 
 /* plmn support element */
 struct plmn_support_s {
-  plmn_identity_s plmn_identity;
+  struct plmn_identity_s plmn_identity;
 
   /* Number of slice support in list */
   uint8_t nb_slice_s;

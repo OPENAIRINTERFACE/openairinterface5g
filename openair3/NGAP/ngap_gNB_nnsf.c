@@ -339,6 +339,7 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
   struct ngap_gNB_amf_data_s *amf_highest_capacity_p = NULL;
   uint8_t                     current_capacity       = 0;
 
+#if 0
   RB_FOREACH(amf_data_p, ngap_amf_map, &instance_p->ngap_amf_head) {
     struct served_guami_s *guami_p = NULL;
 
@@ -403,5 +404,6 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
    * In case the list of known AMF is empty, simply return NULL, that way the RRC
    * layer should know about it and reject RRC connectivity.
    */
+#endif
   return amf_highest_capacity_p;
 }
