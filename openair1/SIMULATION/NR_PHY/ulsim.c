@@ -165,6 +165,13 @@ int main(int argc, char **argv)
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
 
+  int enable_ptrs = 0;
+  int modify_dmrs = 0;
+  /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
+  int ptrs_arg[2] = {-1,-1};// Invalid values
+  /* DMRS TYPE = dmrs_arg[0], Add Pos = dmrs_arg[1] */
+  int dmrs_arg[2] = {-1,-1};// Invalid values
+
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
   int file_offset = 0;
@@ -181,7 +188,7 @@ int main(int argc, char **argv)
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:M:N:PR:S:L:G:H:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -359,7 +366,15 @@ int main(int argc, char **argv)
       }
       
       break;
-      
+
+    case 'G':
+      file_offset = atoi(optarg);
+      break;
+
+    case 'H':
+      slot = atoi(optarg);
+      break;
+
     case 'M':
      // SSB_positions = atoi(optarg);
       break;
@@ -388,14 +403,20 @@ int main(int argc, char **argv)
       loglvl = atoi(optarg);
       break;
 
-    case 'G':
-      file_offset = atoi(optarg);
+   case 'T':
+      enable_ptrs=1;
+      for(i=0; i < atoi(optarg); i++){
+        ptrs_arg[i] = atoi(argv[optind++]);
+      }
       break;
 
-    case 'H':
-      slot = atoi(optarg);
+    case 'U':
+      modify_dmrs = 1;
+      for(i=0; i < atoi(optarg); i++){
+        dmrs_arg[i] = atoi(argv[optind++]);
+      }
       break;
-  
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
@@ -425,6 +446,8 @@ int main(int argc, char **argv)
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
+      printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
       exit(-1);
       break;
 
@@ -469,7 +492,7 @@ int main(int argc, char **argv)
   UE2gNB->max_Doppler = maxDoppler;
 
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
@@ -513,7 +536,7 @@ int main(int argc, char **argv)
 				  0);
   fix_scc(scc,ssb_bitmap);
 
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
+  // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
 
@@ -607,13 +630,9 @@ int main(int argc, char **argv)
 
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
+  fapi_nr_tx_request_t tx_req;
+  fapi_nr_tx_request_body_t tx_req_body;
 
-  unsigned int TBS;
-  uint16_t number_dmrs_symbols = 0;
-  unsigned int available_bits;
-  uint8_t nb_re_dmrs;
-  unsigned char mod_order;
-  uint16_t code_rate;
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
   uint8_t ptrs_mcs3 = 10;
@@ -624,22 +643,73 @@ int main(int argc, char **argv)
   uint8_t max_rounds = 4;
   uint8_t crc_status = 0;
 
-  uint8_t length_dmrs = pusch_len1; // [hna] remove dmrs struct
-  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, typeB, pusch_dmrs_pos0, length_dmrs);  // [hna] remove dmrs struct
+  unsigned char mod_order = nr_get_Qm_ul(Imcs, 0);
+  uint16_t      code_rate = nr_get_code_rate_ul(Imcs, 0);
+
+  uint8_t mapping_type = typeB; // Default Values
+  pusch_dmrs_type_t dmrs_config_type = pusch_dmrs_type1; // Default Values
+  pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos0; // Default Values
+
+  /* validate parameters othwerwise default values are used */
+  /* -U flag can be used to set DMRS parameters*/
+  if(modify_dmrs)
+  {
+    if(dmrs_arg[0] == 0)
+    {
+      mapping_type = typeA;
+    }
+    else if (dmrs_arg[0] == 1)
+    {
+      mapping_type = typeB;
+    }
+    /* Additional DMRS positions */
+    if(dmrs_arg[1] >= 0 && dmrs_arg[1] <=3 )
+    {
+      add_pos = dmrs_arg[1];
+    }
+    printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
+  }
+
+  uint8_t  length_dmrs         = pusch_len1;
+  uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs);
+  uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
+  uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
+  unsigned int available_bits  = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
+  unsigned int TBS             = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
+
+  uint8_t ulsch_input_buffer[TBS/8];
+
+  ulsch_input_buffer[0] = 0x31;
+  for (i = 1; i < TBS/8; i++) {
+    ulsch_input_buffer[i] = (unsigned char) rand();
+  }
+
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
+  int     ptrs_symbols      = 0; // to calculate total PTRS RE's in a slot
+
+  double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size);
+
+  /* -T option enable PTRS */
+  if(enable_ptrs)
+  {
+    /* validate parameters othwerwise default values are used */
+    if(ptrs_arg[0] == 0 || ptrs_arg[0] == 1 || ptrs_arg[0] == 2 )
+    {
+      ptrs_time_density = ptrs_arg[0];
+    }
+    if(ptrs_arg[1] == 2 || ptrs_arg[1] == 4 )
+    {
+      ptrs_freq_density = ptrs_arg[1];
+    }
+    pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
+    printf("NOTE: PTRS Enabled with L %d, K %d \n", ptrs_time_density, ptrs_freq_density );
+  }
 
   if (input_fd != NULL) max_rounds=1;
 
   if(1<<ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
-
-  for (i = 0; i < nb_symb_sch; i++) {
-    number_dmrs_symbols += (l_prime_mask >> i) & 0x01;
-  }
-
-  mod_order      = nr_get_Qm_ul(Imcs, 0);
-  code_rate      = nr_get_code_rate_ul(Imcs, 0);
 
   printf("\n");
 
@@ -715,6 +785,7 @@ int main(int argc, char **argv)
       reset_meas(&gNB->ulsch_ldpc_decoding_stats);
       reset_meas(&gNB->ulsch_unscrambling_stats);
       reset_meas(&gNB->ulsch_channel_estimation_stats);
+      reset_meas(&gNB->ulsch_ptrs_processing_stats);
       reset_meas(&gNB->ulsch_llr_stats);
       reset_meas(&gNB->ulsch_mrc_stats);
       reset_meas(&gNB->ulsch_channel_compensation_stats);
@@ -722,23 +793,6 @@ int main(int argc, char **argv)
 
       UE_proc.nr_tti_tx = slot;
       UE_proc.frame_tx = frame;
-
-      // --------- setting parameters for gNB --------
-      /*
-      rel15_ul->rnti                           = n_rnti;
-      rel15_ul->ulsch_pdu_rel15.start_rb       = start_rb;
-      rel15_ul->ulsch_pdu_rel15.number_rbs     = nb_rb;
-      rel15_ul->ulsch_pdu_rel15.start_symbol   = start_symbol;
-      rel15_ul->ulsch_pdu_rel15.number_symbols = nb_symb_sch;
-      rel15_ul->ulsch_pdu_rel15.length_dmrs    = length_dmrs;
-      rel15_ul->ulsch_pdu_rel15.Qm             = mod_order;
-      rel15_ul->ulsch_pdu_rel15.mcs            = Imcs;
-      rel15_ul->ulsch_pdu_rel15.rv             = 0;
-      rel15_ul->ulsch_pdu_rel15.ndi            = 0;
-      rel15_ul->ulsch_pdu_rel15.n_layers       = precod_nbr_layers;
-      rel15_ul->ulsch_pdu_rel15.R              = code_rate; 
-      ///////////////////////////////////////////////////
-      */
 
       UL_tti_req->SFN = frame;
       UL_tti_req->Slot = slot;
@@ -766,6 +820,7 @@ int main(int argc, char **argv)
 	pusch_pdu->bwp_size = abwp_size;
       }
 
+      pusch_pdu->pusch_data.tb_size = TBS/8;
       pusch_pdu->pdu_bit_map = pdu_bit_map;
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
@@ -776,7 +831,7 @@ int main(int argc, char **argv)
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = 1;
       pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol;
-      pusch_pdu->dmrs_config_type = 0;
+      pusch_pdu->dmrs_config_type = dmrs_config_type;
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
       pusch_pdu->dmrs_ports = 1;
@@ -809,8 +864,17 @@ int main(int argc, char **argv)
       scheduled_response.slot = slot;
       scheduled_response.dl_config = NULL;
       scheduled_response.ul_config = &ul_config;
-      scheduled_response.tx_request = (fapi_nr_tx_request_t *) malloc(sizeof(fapi_nr_tx_request_t));
-      scheduled_response.tx_request->tx_request_body = (fapi_nr_tx_request_body_t *) malloc(sizeof(fapi_nr_tx_request_body_t));
+      scheduled_response.tx_request = &tx_req;
+      scheduled_response.tx_request->tx_request_body = &tx_req_body;
+
+      // Config UL TX PDU
+      tx_req.slot = slot;
+      tx_req.sfn = frame;
+      // tx_req->tx_config // TbD
+      tx_req.number_of_pdus = 1;
+      tx_req_body.pdu_length = TBS/8;
+      tx_req_body.pdu_index = 0;
+      tx_req_body.pdu = &ulsch_input_buffer[0];
 
       ul_config.slot = slot;
       ul_config.number_pdus = 1;
@@ -822,27 +886,22 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
       ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
       ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask << start_symbol;
-      ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = 0;
+      ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = 1;
+      ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = msg3_flag == 0 ? 1 : 2;
+      ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
+      ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
+
+      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = trial & 0x1;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
-      ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
+
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
-      //there are plenty of other parameters that we don't seem to be using for now. e.g.
-      ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
-
-      nb_re_dmrs = ((ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type == pusch_dmrs_type1) ? 6 : 4);
-
-      available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, 1);
-      TBS            = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
-      pusch_pdu->pusch_data.tb_size = TBS>>3;
-      ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS;
 
       nr_fill_ulsch(gNB,frame,slot,pusch_pdu);
 
@@ -905,10 +964,15 @@ int main(int argc, char **argv)
 	  for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
 	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) + (delay*2)]   = (int16_t)((tx_gain*r_re[ap][i])   + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
 	    ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)]   = (int16_t)((tx_gain*r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+            /* Add phase noise if enabled */
+            if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+              phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
+                          &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1]);
+            }
 	  }
 	}
-	
-	}
+
+      }
 
 	////////////////////////////////////////////////////////////
 	
@@ -963,6 +1027,20 @@ int main(int argc, char **argv)
 	}
 	if(n_trials==1) printf("end of round %d rv_index %d\n",round, rv_index);
 
+        //----------------------------------------------------------
+        //----------------- count and print errors -----------------
+        //----------------------------------------------------------
+
+        if ((pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) && (SNR==snr0) && (trial==0) && (round==0)) {
+            ptrs_symbols = 0;
+            for (int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++){
+               ptrs_symbols += ((gNB->pusch_vars[UE_id]->ptrs_symbols) >> i) & 1;
+            }
+            /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
+            available_bits -= 2 * ptrs_symbols * ((nb_rb + ptrs_freq_density - 1) /ptrs_freq_density);
+            printf("After PTRS subtraction available_bits are : %u \n", available_bits);
+        }
+
 	for (i = 0; i < available_bits; i++) {
 	  
 	  if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
@@ -976,12 +1054,6 @@ int main(int argc, char **argv)
 	round++;
 
     } // round
-    
-        //----------------------------------------------------------
-        //----------------- count and print errors -----------------
-        //----------------------------------------------------------
-
-
     
     if (n_trials == 1 && errors_scrambling[0] > 0) {
       printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling[0]);
@@ -1044,6 +1116,7 @@ int main(int argc, char **argv)
       printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
       printStatIndent(&gNB->rx_pusch_stats,"RX PUSCH time");
       printStatIndent2(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
+      printStatIndent2(&gNB->ulsch_ptrs_processing_stats,"ULSCH PTRS Processing time");
       printStatIndent2(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
       printStatIndent2(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
       printStatIndent2(&gNB->ulsch_mrc_stats,"ULSCH mrc computation");
@@ -1055,17 +1128,17 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
       printf("\n");
     }
-    
+
     if(n_trials==1)
       break;
-    
+
     if ((float)n_errors[0]/(float)n_trials <= target_error_rate) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
       break;
     }
-      
+
     snrRun++;
     n_errs = n_errors[0];
   } // SNR loop
