@@ -205,7 +205,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint8_t mu,N_dur,N_t_slot,start_symbol = 0,temp_start_symbol = 0,N_RA_slot;
+  uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
   uint16_t RA_sfn_index = -1;
 	uint8_t config_period = 1;
   uint16_t format;
@@ -237,30 +237,23 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
 
     if (N_RA_slot > 1) { //more than 1 PRACH slot in a subframe
       if (slotP%2 == 1){
-        N_RA_slot = 1; //Even PRACH slot
 	      slot_index = 1;
       }	
       else {
 	      slot_index = 0;
-        N_RA_slot = 0; //Odd PRACH slot
 			}	
     }else if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
-       N_RA_slot = 0;
        slot_index = 0;
-       if((mu == 1) || (mu == 3))
-         N_RA_slot = 1;  //For scs = 30khz and 120khz
     }
 
-//  start_symbol = start_symbol_from_configuration + N_t_slot * N_dur + 14 * N_RA_slot;
-    for (int index=0; index<N_t_slot; index++) {
-    temp_start_symbol = (start_symbol + index * N_dur + 14 * N_RA_slot) % 14;
 
     UL_tti_req->SFN = frameP;
     UL_tti_req->Slot = slotP;
-    for (int n=0; n < fdm; n++) { // one structure per frequency domain occasion
+    for (int fdm_index=0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
+    for (int td_index=0; td_index<N_t_slot; td_index++) {
 
-      prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period) * cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + index * fdm + n;
-			if(prach_occasion_id < cc->total_prach_occasions){  
+      prach_occasion_id = (((frameP % (cc->max_association_period * config_period))/config_period) * cc->total_prach_occasions_per_config_period) + (RA_sfn_index + slot_index) * N_t_slot * fdm + td_index * fdm + fdm_index;
+			if((prach_occasion_id < cc->total_prach_occasions) && (td_index == 0)){  
 
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
@@ -271,8 +264,8 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       // filling the prach fapi structure
       prach_pdu->phys_cell_id = *scc->physCellId;
       prach_pdu->num_prach_ocas = N_t_slot;
-      prach_pdu->prach_start_symbol = temp_start_symbol;
-      prach_pdu->num_ra = n;
+      prach_pdu->prach_start_symbol = start_symbol;
+      prach_pdu->num_ra = fdm_index;
       prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
                                   format0,
                                   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);

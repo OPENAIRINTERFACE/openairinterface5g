@@ -321,6 +321,7 @@ typedef enum {
 #define NFAPI_NR_CONFIG_PRACH_SUB_C_SPACING_TAG 0x1012
 #define NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG 0x1013
 #define NFAPI_NR_CONFIG_NUM_PRACH_FD_OCCASIONS_TAG 0x1014
+#define NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG 0x1029
 #define NFAPI_NR_CONFIG_PRACH_ROOT_SEQUENCE_INDEX_TAG 0x1015
 #define NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG 0x1016
 #define NFAPI_NR_CONFIG_K1_TAG 0x1017
@@ -400,6 +401,7 @@ typedef struct
   nfapi_uint8_tlv_t prach_sub_c_spacing;//Subcarrier spacing of PRACH. [38.211 sec 4.2] Value:0->4
   nfapi_uint8_tlv_t restricted_set_config;//PRACH restricted set config Value: 0: unrestricted 1: restricted set type A 2: restricted set type B
   nfapi_uint8_tlv_t num_prach_fd_occasions;//Corresponds to the parameter 𝑀 in [38.211, sec 6.3.3.2] which equals the higher layer parameter msg1FDM Value: 1,2,4,8
+	nfapi_uint8_tlv_t prach_ConfigurationIndex;//PRACH configuration index. Value:0->255
   nfapi_nr_num_prach_fd_occasions_t* num_prach_fd_occasions_list;
   nfapi_uint8_tlv_t ssb_per_rach;//SSB-per-RACH-occasion Value: 0: 1/8 1:1/4, 2:1/2 3:1 4:2 5:4, 6:8 7:16
   nfapi_uint8_tlv_t prach_multiple_carriers_in_a_band;//0 = disabled 1 = enabled

@@ -140,6 +140,7 @@ void nr_fill_prach_ru(RU_t *ru,
   ru->prach_list[prach_id].fmt                = prach_pdu->prach_format;
   ru->prach_list[prach_id].numRA              = prach_pdu->num_ra;
   ru->prach_list[prach_id].prachStartSymbol   = prach_pdu->prach_start_symbol;
+	ru->prach_list[prach_id].num_prach_ocas     = prach_pdu->num_prach_ocas;
   pthread_mutex_unlock(&ru->prach_list_mutex);  
 
 }

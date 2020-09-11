@@ -1586,11 +1586,13 @@ void *ru_thread( void *param ) {
     for(i = 0;i < NUMBER_OF_NR_RU_PRACH_MAX; i++) {
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       if (prach_id>=0) {
+      for(int td_index = 0;td_index < ru->prach_list[prach_id].num_prach_ocas; td_index++) {
 	rx_nr_prach_ru(ru,
 		       ru->prach_list[prach_id].fmt,
 		       ru->prach_list[prach_id].numRA,
-		       ru->prach_list[prach_id].prachStartSymbol,
+		       ru->prach_list[prach_id].prachStartSymbol + td_index * 4,/*TODO Change the start symbol as needed for each RO*/
 		       proc->frame_rx,proc->tti_rx);
+	    }
 	free_nr_ru_prach_entry(ru,prach_id);
       }
     }

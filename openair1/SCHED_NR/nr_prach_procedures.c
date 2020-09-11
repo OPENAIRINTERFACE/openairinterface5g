@@ -81,6 +81,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
     int prach_id=find_nr_prach(gNB,frame,slot,SEARCH_EXIST);
     if (prach_id>=0) {
 		prach_pdu = &gNB->prach_vars.list[prach_id].pdu;
+	  for(int td_index = 0; td_index < prach_pdu->num_prach_ocas; td_index++) {
 		
   rx_nr_prach(gNB,
 	      prach_pdu,
@@ -119,7 +120,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
     gNB->UL_INFO.rach_ind.number_of_pdus  += 1;
     
     gNB->prach_pdu_indication_list[pdu_index].phy_cell_id  = gNB->gNB_config.cell_config.phy_cell_id.value;
-    gNB->prach_pdu_indication_list[pdu_index].symbol_index = prach_pdu->prach_start_symbol; 
+    gNB->prach_pdu_indication_list[pdu_index].symbol_index = prach_pdu->prach_start_symbol + td_index * 4;/*TODO Need to add duration based on prach config index*/ 
     gNB->prach_pdu_indication_list[pdu_index].slot_index   = slot;
     gNB->prach_pdu_indication_list[pdu_index].freq_index   = prach_pdu->num_ra;
     gNB->prach_pdu_indication_list[pdu_index].avg_rssi     = (max_preamble_energy[0]<631) ? (128+(max_preamble_energy[0]/5)) : 254;
@@ -136,6 +137,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
   if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",gNB->measurements.prach_I0/10,gNB->measurements.prach_I0%10);
   if (gNB->prach_energy_counter < 100) gNB->prach_energy_counter++;
  } 
+ }
  }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
 }
