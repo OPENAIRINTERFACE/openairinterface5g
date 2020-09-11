@@ -47,15 +47,15 @@ typedef struct ngap_gNB_ue_context_s {
   RB_ENTRY(ngap_gNB_ue_context_s) entries;
 
   /* Uniquely identifies the UE between AMF and gNB within the gNB.
-   * This id is encoded on 24bits.
+   * This id is encoded on 32bits.
    */
-  unsigned gNB_ue_ngap_id:24;
+  uint32_t gNB_ue_ngap_id;
 
   /* UE id for initial connection to NGAP */
   uint16_t ue_initial_id;
 
   /* Uniquely identifies the UE within AMF. Encoded on 32 bits. */
-  uint32_t amf_ue_ngap_id;
+  uint64_t amf_ue_ngap_id:40;
 
   /* Stream used for this particular UE */
   int32_t tx_stream;

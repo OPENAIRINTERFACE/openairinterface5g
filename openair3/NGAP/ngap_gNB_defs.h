@@ -126,11 +126,14 @@ struct served_guami_s {
 };
 
 /* NSSAI element */
-typedef struct ngap_gNB_NSSAI_s{
+struct slice_support_s{
   uint8_t sST;
   uint8_t sD_flag;
   uint8_t sD[3];
-}ngap_gNB_NSSAI_t, slice_support_s;
+  
+  /* Next slice element */
+  STAILQ_ENTRY(slice_support_s) next;
+};
 
 
 /* plmn support element */
@@ -205,6 +208,12 @@ typedef struct ngap_gNB_amf_data_s {
   /* Only meaningfull in virtual mode */
   struct ngap_gNB_instance_s *ngap_gNB_instance;
 } ngap_gNB_amf_data_t;
+
+typedef struct ngap_gNB_NSSAI_s{
+  uint8_t sST;
+  uint8_t sD_flag;
+  uint8_t sD[3];
+}ngap_gNB_NSSAI_t;
 
 typedef struct ngap_gNB_instance_s {
   /* Next ngap gNB association.

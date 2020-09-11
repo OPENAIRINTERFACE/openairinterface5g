@@ -195,6 +195,12 @@ typedef struct fiveg_s_tmsi_s {
   uint32_t m_tmsi;
 } fiveg_s_tmsi_t;
 
+typedef struct ngap_tai_plmn_identity_s {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+} ngap_plmn_identity_t;
+
 typedef struct ngap_ue_paging_identity_s {
   fiveg_s_tmsi_t s_tmsi;
 } ngap_ue_paging_identity_t;
@@ -217,6 +223,10 @@ typedef struct ngap_nas_pdu_s {
   /* Length of the octet string */
   uint32_t  length;
 } ngap_nas_pdu_t, ngap_ue_radio_cap_t;
+
+typedef struct ngap_mobility_restriction_s{
+  ngap_plmn_identity_t serving_plmn;
+}ngap_mobility_restriction_t;
 
 typedef enum pdu_session_type_e {
   PDUSessionType_ipv4 = 0,
@@ -550,13 +560,16 @@ typedef struct ngap_initial_context_setup_req_s {
   uint8_t  nb_of_pdusessions;
   /* list of pdusession to be setup by RRC layers */
   pdusession_t  pdusession_param[NGAP_MAX_PDUSESSION];
+
+  /* Mobility Restriction List */
+  uint8_t                        mobility_restriction_flag;
+  ngap_mobility_restriction_t    mobility_restriction;
+
+  /* Nas Pdu */
+  uint8_t                        nas_pdu_flag;
+  ngap_nas_pdu_t                 nas_pdu;
 } ngap_initial_context_setup_req_t;
 
-typedef struct ngap_tai_plmn_identity_s {
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
-} ngap_plmn_identity_t;
 
 typedef struct ngap_paging_ind_s {
   /* UE identity index value.

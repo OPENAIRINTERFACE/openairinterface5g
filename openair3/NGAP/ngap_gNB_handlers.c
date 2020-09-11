@@ -49,6 +49,10 @@
 #include "assertions.h"
 #include "conversions.h"
 #include "msc.h"
+#include "NGAP_PDUSessionResourceSetupRequestTransfer.h"
+#include "NGAP_PDUSessionResourceSetupItemCxtReq.h"
+#include "NGAP_QosFlowSetupRequestItem.h"
+#include "NGAP_AllowedNSSAI-Item.h"
 
 static
 int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
@@ -297,7 +301,6 @@ static
 int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
                                       uint32_t               stream,
                                       NGAP_NGAP_PDU_t       *pdu) {
-#if 0
   NGAP_NGSetupResponse_t    *container;
   NGAP_NGSetupResponseIEs_t *ie;
   ngap_gNB_amf_data_t       *amf_desc_p;
@@ -447,7 +450,7 @@ int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
   amf_desc_p->state = NGAP_GNB_STATE_CONNECTED;
   amf_desc_p->ngap_gNB_instance->ngap_amf_associated_nb ++;
   ngap_handle_ng_setup_message(amf_desc_p, 0);
-#endif
+
   return 0;
 }
 
@@ -794,7 +797,7 @@ static
 int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
-#if 0
+
   int i;
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
@@ -802,7 +805,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   NGAP_InitialContextSetupRequest_t    *container;
   NGAP_InitialContextSetupRequestIEs_t *ie;
   NGAP_RAN_UE_NGAP_ID_t    ran_ue_ngap_id;
-  NGAP_AMF_UE_NGAP_ID_t    amf_ue_ngap_id;
+  uint64_t                 amf_ue_ngap_id;
   DevAssert(pdu != NULL);
   container = &pdu->choice.initiatingMessage.value.choice.InitialContextSetupRequest;
 
@@ -817,7 +820,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                              NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    amf_ue_ngap_id = ie->value.choice.AMF_UE_NGAP_ID;
+    asn_INTEGER2ulong(&(ie->value.choice.AMF_UE_NGAP_ID), &amf_ue_ngap_id);
   } else {
     return -1;
   }
@@ -849,6 +852,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
 
   ue_desc_p->rx_stream = stream;
   ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
+  
   message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_INITIAL_CONTEXT_SETUP_REQ);
   NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
@@ -873,10 +877,6 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                              NGAP_ProtocolIE_ID_id_GUAMI, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    ie->value.choice.GUAMI.pLMNIdentity
-    ie->value.choice.GUAMI.aMFRegionID 
-    ie->value.choice.GUAMI.aMFSetID
-    ie->value.choice.GUAMI.aMFPointer
     TBCD_TO_MCC_MNC(&ie->value.choice.GUAMI.pLMNIdentity, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.mcc,
                     NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.mnc, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.mnc_len);
     
@@ -1065,17 +1065,50 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     return -1;
   }
 
+  /* id-MobilityRestrictionList */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_SecurityKey, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     memcpy(&NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_key,
            ie->value.choice.SecurityKey.buf, ie->value.choice.SecurityKey.size);
-    itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
+    
   } else {/* ie != NULL */
     return -1;
   }
-#endif
+
+  /* id-NAS-PDU */
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
+                               NGAP_ProtocolIE_ID_id_MobilityRestrictionList, false);
+  
+  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
+    NGAP_MobilityRestrictionList_t *mobility_rest_list_p = NULL;
+    mobility_rest_list_p = &ie->value.choice.MobilityRestrictionList;
+
+    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction_flag   = 1;
+    TBCD_TO_MCC_MNC(&mobility_rest_list_p->servingPLMN, 
+                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction.serving_plmn.mcc,
+                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction.serving_plmn.mnc, 
+                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction.serving_plmn.mnc_digit_length);
+  } 
+
+
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
+                                 NGAP_ProtocolIE_ID_id_NAS_PDU, false);
+    
+  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
+    if(ie->value.choice.NAS_PDU.size > 0) {
+      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu_flag   = 1;
+      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.length = ie->value.choice.NAS_PDU.size;
+      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.buffer = malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
+      memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.buffer,
+             ie->value.choice.NAS_PDU.buf, ie->value.choice.NAS_PDU.size);
+    }
+      
+  } 
+
+  itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
+
   return 0;
 }
 

@@ -53,7 +53,6 @@ int ngap_gNB_handle_nas_first_req(
     instance_t instance, ngap_nas_first_req_t *ngap_nas_first_req_p)
 //------------------------------------------------------------------------------
 {
-#if 0
     ngap_gNB_instance_t          *instance_p = NULL;
     struct ngap_gNB_amf_data_s   *amf_desc_p = NULL;
     struct ngap_gNB_ue_context_s *ue_desc_p  = NULL;
@@ -315,7 +314,7 @@ int ngap_gNB_handle_nas_first_req(
     /* Send encoded message over sctp */
     ngap_gNB_itti_send_sctp_data_req(instance_p->instance, amf_desc_p->assoc_id,
                                      buffer, length, ue_desc_p->tx_stream);
-#endif
+
     return 0;
 }
 
@@ -656,7 +655,7 @@ int ngap_gNB_initial_ctxt_resp(
     if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
                         initial_ctxt_resp_p->gNB_ue_ngap_id)) == NULL) {
         /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-        NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%06x\n",
+        NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%08x\n",
                   initial_ctxt_resp_p->gNB_ue_ngap_id);
         return -1;
     }
@@ -688,10 +687,10 @@ int ngap_gNB_initial_ctxt_resp(
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
     ie = (NGAP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(NGAP_InitialContextSetupResponseIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_GNB_UE_NGAP_ID;
-    ie->value.choice.GNB_UE_NGAP_ID = initial_ctxt_resp_p->gNB_ue_ngap_id;
+    ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = initial_ctxt_resp_p->gNB_ue_ngap_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
     ie = (NGAP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(NGAP_InitialContextSetupResponseIEs_t));

@@ -339,7 +339,7 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
   struct ngap_gNB_amf_data_s *amf_highest_capacity_p = NULL;
   uint8_t                     current_capacity       = 0;
 
-#if 0
+
   RB_FOREACH(amf_data_p, ngap_amf_map, &instance_p->ngap_amf_head) {
     struct served_guami_s *guami_p = NULL;
 
@@ -366,9 +366,9 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
 
     /* Looking for AMF guami matching the one provided by NAS */
     STAILQ_FOREACH(guami_p, &amf_data_p->served_guami, next) {
-      struct served_group_id_s *group_id_p = NULL;
-      struct amf_code_s        *amf_code_p = NULL;
-      struct plmn_identity_s   *served_plmn_p = NULL;
+      struct served_region_id_s *region_id_p = NULL;
+      struct amf_set_id_s       *amf_set_id_p = NULL;
+      struct plmn_identity_s    *served_plmn_p = NULL;
 
       STAILQ_FOREACH(served_plmn_p, &guami_p->served_plmns, next) {
         if ((served_plmn_p->mcc == guami.mcc) &&
@@ -376,13 +376,13 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
           break;
         }
       }
-      STAILQ_FOREACH(amf_code_p, &guami_p->amf_codes, next) {
-        if (amf_code_p->amf_code == guami.amf_code) {
+      STAILQ_FOREACH(amf_set_id_p, &guami_p->amf_set_ids, next) {
+        if (amf_set_id_p->amf_set_id == guami.amf_set_id) {
           break;
         }
       }
-      STAILQ_FOREACH(group_id_p, &guami_p->served_group_ids, next) {
-        if (group_id_p->amf_group_id == guami.amf_group_id) {
+      STAILQ_FOREACH(region_id_p, &guami_p->served_region_ids, next) {
+        if (region_id_p->amf_region_id == guami.amf_region_id) {
           break;
         }
       }
@@ -391,8 +391,8 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
       * the AMF is knwown and the association is ready.
       * Return the reference to the AMF to use it for this UE.
       */
-      if ((group_id_p != NULL) &&
-          (amf_code_p != NULL) &&
+      if ((region_id_p != NULL) &&
+          (amf_set_id_p != NULL) &&
           (served_plmn_p != NULL)) {
         return amf_data_p;
       }
@@ -404,6 +404,6 @@ ngap_gNB_nnsf_select_amf_by_guami_no_cause(ngap_gNB_instance_t       *instance_p
    * In case the list of known AMF is empty, simply return NULL, that way the RRC
    * layer should know about it and reject RRC connectivity.
    */
-#endif
+
   return amf_highest_capacity_p;
 }
