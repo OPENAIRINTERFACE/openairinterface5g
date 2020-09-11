@@ -3247,19 +3247,17 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
   nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
-  NR_FreqBandInformationEUTRA_t *bandInformationEUTRA = nsa_band->choice.bandInformationEUTRA;
-  bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
-  bandInformationEUTRA->bandEUTRA = eutra_band;
+  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+  nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
   ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
   nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
   nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
-  NR_FreqBandInformationNR_t *bandInformationNR = nsa_band->choice.bandInformationNR;
-  bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
   if(nr_band > 0)
-    bandInformationNR->bandNR = nr_band;
+    nsa_band->choice.bandInformationNR->bandNR = nr_band;
   else
-    bandInformationNR->bandNR = 78;
+    nsa_band->choice.bandInformationNR->bandNR = 78;
   ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
   OCTET_STRING_t req_freq;
@@ -3372,11 +3370,13 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
   nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
   nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
   ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
   nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
   nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
   if(nr_band > 0)
     nsa_band->choice.bandInformationNR->bandNR = nr_band;
   else
