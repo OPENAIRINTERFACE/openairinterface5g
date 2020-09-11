@@ -459,7 +459,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
 static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initial) {
   // Process all incoming events on sockets
   // store the data in lists
-  struct epoll_event events[FD_SETSIZE]= {0};
+  struct epoll_event events[FD_SETSIZE]= {{0}};
   int nfds = epoll_wait(t->epollfd, events, FD_SETSIZE, timeout);
 
   if ( nfds==-1 ) {

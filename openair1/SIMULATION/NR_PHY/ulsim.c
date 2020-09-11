@@ -164,12 +164,12 @@ int main(int argc, char **argv)
   int rv_index = 0;
   float roundStats[50];
   float effRate; 
-  float eff_tp_check = 0.7;
+  //float eff_tp_check = 0.7;
   uint8_t snrRun;
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
-  int file_offset;
+  int file_offset = 0;
 
   double DS_TDL = .03;
   int pusch_tgt_snrx10 = 200;
@@ -312,10 +312,12 @@ int main(int argc, char **argv)
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
       break;
-      
+
+/*
     case 't':
       eff_tp_check = (float)atoi(optarg)/100;
       break;
+*/
       /*
 	case 'r':
 	ricean_factor = pow(10,-.1*atof(optarg));
@@ -650,15 +652,9 @@ int main(int argc, char **argv)
 
   //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   snrRun = 0;
-  int n_errs;
+  int n_errs = 0;
 
-  double factor = 1;
-  if (openair0_cfg[0].threequarter_fs== 1) factor =.75;
-  int ta_offset=1600;
-  if (N_RB_DL <217) ta_offset=800;
-  else if (N_RB_DL < 106) ta_offset = 400;
-
-  int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);// - (int)(800*factor);
+  int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
   int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
   if (input_fd != NULL)	{
@@ -666,8 +662,6 @@ int main(int argc, char **argv)
     // 800 samples is N_TA_OFFSET for FR1 @ 30.72 Ms/s,
     AssertFatal(frame_parms->subcarrier_spacing==30000,"only 30 kHz for file input for now (%d)\n",frame_parms->subcarrier_spacing);
   
-    //    slot_offset -= (int)(800*factor);
-
     fseek(input_fd,file_offset*((slot_length<<2)+4000+16),SEEK_SET);
     fread((void*)&n_rnti,sizeof(int16_t),1,input_fd);
     printf("rnti %x\n",n_rnti);
@@ -996,7 +990,7 @@ int main(int argc, char **argv)
 
     
     if (n_trials == 1 && errors_scrambling[0] > 0) {
-      printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling);
+      printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling[0]);
     }
     
     for (i = 0; i < TBS; i++) {
@@ -1035,7 +1029,7 @@ int main(int argc, char **argv)
     printf("*****************************************\n");
     printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0], round_trials[0],n_errors[1], round_trials[1],n_errors[2], round_trials[2],n_errors[3], round_trials[3], n_false_positive, n_trials, errors_scrambling[0],available_bits*n_trials,errors_scrambling[1],available_bits*n_trials,errors_scrambling[2],available_bits*n_trials,errors_scrambling[3],available_bits*n_trials);
     printf("\n");
-    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %d bits/slot\n", 
+    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", 
 	   SNR,
 	   (double)n_errors[0]/round_trials[0],
 	   (double)n_errors[1]/round_trials[0],

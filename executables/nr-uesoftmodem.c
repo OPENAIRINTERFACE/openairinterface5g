@@ -687,11 +687,12 @@ int main( int argc, char **argv ) {
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
 
     // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0)
+    if (downlink_frequency[0][0]!=0) {
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-
-    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
+      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    }
    
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     UE[CC_id]->mac_enabled = 1;
@@ -768,13 +769,7 @@ int main( int argc, char **argv ) {
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-#if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
-    PHY_vars_UE_g[0][CC_id]->hw_timing_advance = timing_advance;
     PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
-#else
-    PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
-#endif
-
   }
 
   init_NR_UE_threads(1);

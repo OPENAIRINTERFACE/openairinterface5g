@@ -19,16 +19,31 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _OPENAIR2_LAYER2_NR_RLC_ASN1_UTILS_H_
-#define _OPENAIR2_LAYER2_NR_RLC_ASN1_UTILS_H_
+#ifndef _BENETEL_4G_LOW_H_
+#define _BENETEL_4G_LOW_H_
 
-int decode_t_reassembly(int v);
-int decode_t_status_prohibit(int v);
-int decode_t_poll_retransmit(int v);
-int decode_poll_pdu(int v);
-int decode_poll_byte(int v);
-int decode_max_retx_threshold(int v);
-int decode_sn_field_length_um(int v);
-int decode_sn_field_length_am(int v);
+#include "shared_buffers.h"
 
-#endif /* _OPENAIR2_LAYER2_NR_RLC_ASN1_UTILS_H_ */
+typedef struct {
+  shared_buffers *buffers;
+  int            next_subframe;
+  int            next_symbol;
+  int            expected_benetel_frame;
+  char           *dpdk_main_command_line;
+} benetel_t;
+
+typedef struct {
+  int frame;
+  int subframe;
+  int slot;
+  int symbol;
+  int antenna;
+  unsigned char iq[4800];
+} ul_packet_t;
+
+void *benetel_start(char *ifname, shared_buffers *buffers, char *dpdk_main_command_line);
+
+void store_ul(benetel_t *bs, ul_packet_t *ul);
+void store_prach(benetel_t *bs, int frame, int subframe, void *data);
+
+#endif /* _BENETEL_4G_LOW_H_ */

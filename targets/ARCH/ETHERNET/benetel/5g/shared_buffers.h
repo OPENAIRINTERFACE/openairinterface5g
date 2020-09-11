@@ -19,16 +19,42 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _OPENAIR2_LAYER2_NR_RLC_ASN1_UTILS_H_
-#define _OPENAIR2_LAYER2_NR_RLC_ASN1_UTILS_H_
+#ifndef _BENETEL_5G_SHARED_BUFFERS_H_
+#define _BENETEL_5G_SHARED_BUFFERS_H_
 
-int decode_t_reassembly(int v);
-int decode_t_status_prohibit(int v);
-int decode_t_poll_retransmit(int v);
-int decode_poll_pdu(int v);
-int decode_poll_byte(int v);
-int decode_max_retx_threshold(int v);
-int decode_sn_field_length_um(int v);
-int decode_sn_field_length_am(int v);
+#include <pthread.h>
+#include <stdint.h>
 
-#endif /* _OPENAIR2_LAYER2_NR_RLC_ASN1_UTILS_H_ */
+typedef struct {
+  unsigned char dl[20][14*1272*4];
+  unsigned char ul[20][14*1272*4];
+  uint16_t dl_busy[20];
+  uint16_t ul_busy[20];
+
+  pthread_mutex_t m_ul[20];
+  pthread_cond_t  c_ul[20];
+
+  pthread_mutex_t m_dl[20];
+  pthread_cond_t  c_dl[20];
+
+  unsigned char prach[20][849*4];
+  unsigned char prach_busy[20];
+
+  /* statistics/error counting */
+  int ul_overflow;
+  int dl_underflow;
+} shared_buffers;
+
+void init_buffers(shared_buffers *s);
+
+void lock_dl_buffer(shared_buffers *s, int slot);
+void unlock_dl_buffer(shared_buffers *s, int slot);
+void wait_dl_buffer(shared_buffers *s, int slot);
+void signal_dl_buffer(shared_buffers *s, int slot);
+
+void lock_ul_buffer(shared_buffers *s, int slot);
+void unlock_ul_buffer(shared_buffers *s, int slot);
+void wait_ul_buffer(shared_buffers *s, int slot);
+void signal_ul_buffer(shared_buffers *s, int slot);
+
+#endif /* _BENETEL_5G_SHARED_BUFFERS_H_ */

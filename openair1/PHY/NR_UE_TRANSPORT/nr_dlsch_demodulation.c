@@ -159,19 +159,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   switch (type) {
   case SI_PDSCH:
-    pdsch_vars = ue->pdsch_vars_SI;
+    pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = &ue->dlsch_SI[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     break;
 
   case RA_PDSCH:
-    pdsch_vars = ue->pdsch_vars_ra;
+    pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = &ue->dlsch_ra[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
-    // WIP TBR Hotfix
-    memcpy((void*)&pdsch_vars[eNB_id]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], (void*)&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], ue->frame_parms.ofdm_symbol_size*sizeof(int32_t));
 
     break;
 
@@ -189,7 +186,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     break;
   }
 
-  if (dlsch1_harq){
+  if (dlsch0_harq && dlsch1_harq){
 
     //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
