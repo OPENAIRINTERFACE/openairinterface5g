@@ -1149,8 +1149,11 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     if (ru->if_frequency == 0) {
       cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
       cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
-    }
-    else {
+    } else if (ru->if_freq_offset){
+      cfg->tx_freq[i] = (double)(ru->if_frequency);
+      cfg->rx_freq[i] = (double)(ru->if_frequency + ru->if_freq_offset);
+      LOG_I(PHY, "Setting IF TX frequency to %lu Hz with IF RX frequency offset %d Hz\n", ru->if_frequency, ru->if_freq_offset);
+    } else {
       cfg->tx_freq[i] = (double)ru->if_frequency;
       cfg->rx_freq[i] = (double)(ru->if_frequency+fp->ul_CarrierFreq-fp->dl_CarrierFreq);
     }
@@ -2494,6 +2497,7 @@ void RCconfig_RU(void)
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
+      RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;
