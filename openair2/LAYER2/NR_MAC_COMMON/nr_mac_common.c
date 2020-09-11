@@ -1940,9 +1940,9 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     LOG_I(PHY,"PUSH PT-RS is not present.\n");
     return -1;
   } else if (N_RB >= nrb0 && N_RB < nrb1)
-    return 0;
+    return 2;
   else
-    return 1;
+    return 4;
 }
 
 uint16_t nr_dci_size(NR_ServingCellConfigCommon_t *scc,
