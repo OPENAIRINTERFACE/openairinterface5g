@@ -881,6 +881,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
       ul_config.ul_config_list[0].pusch_config_pdu.rnti = n_rnti;
       ul_config.ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
+      ul_config.ul_config_list[0].pusch_config_pdu.qam_mod_order = mod_order;
       ul_config.ul_config_list[0].pusch_config_pdu.rb_size = nb_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
