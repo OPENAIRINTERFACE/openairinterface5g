@@ -245,7 +245,7 @@ typedef struct ngap_gNB_instance_s {
    * In our case the gNB is a macro gNB so the id will be 20 bits long.
    * For Home gNB id, this field should be 36 bits long.
    */
-  uint64_t gNB_id;
+  uint32_t gNB_id;
   /* The type of the cell */
   enum cell_type_e cell_type;
 

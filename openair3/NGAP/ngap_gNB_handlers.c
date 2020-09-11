@@ -334,7 +334,7 @@ int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
   for (i = 0; i < ie->value.choice.ServedGUAMIList.list.count; i++) {
     NGAP_ServedGUAMIItem_t  *guami_item_p;
     struct served_guami_s   *new_guami_p;
-    int j;
+
     guami_item_p = ie->value.choice.ServedGUAMIList.list.array[i];
     new_guami_p = calloc(1, sizeof(struct served_guami_s));
     STAILQ_INIT(&new_guami_p->served_plmns);
@@ -1008,7 +1008,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
             break;
             
           default:
-            NGAP_ERROR("could not found protocolIEs id %d\n", pdusessionTransfer_ies->id);
+            NGAP_ERROR("could not found protocolIEs id %ld\n", pdusessionTransfer_ies->id);
             return -1;
         }
       }

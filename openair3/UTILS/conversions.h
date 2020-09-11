@@ -508,9 +508,9 @@ do {                                                    \
 do {                                                    \
     (bITsTRING)->buf = calloc(4, sizeof(uint8_t));      \
     (bITsTRING)->buf[0] = ((mACRO) >> 20);              \
-    (bITsTRING)->buf[1] = (mACRO) >> 12;                 \
-    (bITsTRING)->buf[3] = (mACRO) >> 4;                 \	
-    (bITsTRING)->buf[4] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->buf[1] = (mACRO) >> 12;                \
+    (bITsTRING)->buf[2] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[3] = ((mACRO) & 0x0f) << 4;        \
     (bITsTRING)->size = 4;                              \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)

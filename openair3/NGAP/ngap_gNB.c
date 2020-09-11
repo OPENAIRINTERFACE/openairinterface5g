@@ -471,10 +471,11 @@ static int ngap_gNB_generate_ng_setup_request(
   ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.present = NGAP_GNB_ID_PR_gNB_ID;
   MACRO_GNB_ID_TO_BIT_STRING(instance_p->gNB_id,
                              &ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID);
-  NGAP_INFO("%d -> %02x%02x%02x\n", instance_p->gNB_id,
+  NGAP_INFO("%u -> %02x%02x%02x%02x\n", instance_p->gNB_id,
             ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[0],
             ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[1],
-            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[2]);
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[2],
+            ie->value.choice.GlobalRANNodeID.choice.globalGNB_ID.gNB_ID.choice.gNB_ID.buf[3]);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
