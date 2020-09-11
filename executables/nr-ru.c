@@ -1583,19 +1583,35 @@ void *ru_thread( void *param ) {
 
       // Do PRACH RU processing
 
-    for(i = 0;i < NUMBER_OF_NR_RU_PRACH_MAX; i++) {
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
+      int prachStartSymbol;
+      uint16_t format,RA_sfn_index;
+      uint8_t start_symbol,N_t_slot,N_dur,N_RA_slot,config_period;
       if (prach_id>=0) {
-      for(int td_index = 0;td_index < ru->prach_list[prach_id].num_prach_ocas; td_index++) {
-	rx_nr_prach_ru(ru,
-		       ru->prach_list[prach_id].fmt,
-		       ru->prach_list[prach_id].numRA,
-		       ru->prach_list[prach_id].prachStartSymbol + td_index * 4,/*TODO Change the start symbol as needed for each RO*/
-		       proc->frame_rx,proc->tti_rx);
-	    }
+	get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,
+				     proc->frame_rx,proc->tti_rx,
+				     ru->config.carrier_config.dl_frequency.value,
+				     fp->numerology_index,
+				     fp->frame_type,
+				     &format,
+				     &start_symbol,
+				     &N_t_slot,
+				     &N_dur,
+				     &RA_sfn_index,
+				     &N_RA_slot,
+				     &config_period);
+				     
+	for (int prach_oc = 0; prach_oc<ru->prach_list[prach_id].num_prach_ocas; prach_oc++) {
+	  prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur+14*N_RA_slot;
+	  rx_nr_prach_ru(ru,
+			 ru->prach_list[prach_id].fmt, //could also use format
+			 ru->prach_list[prach_id].numRA,
+			 prachStartSymbol,
+			 prach_oc,
+			 proc->frame_rx,proc->tti_rx);
+	}
 	free_nr_ru_prach_entry(ru,prach_id);
       }
-    }
     }
 
     // At this point, all information for subframe has been received on FH interface

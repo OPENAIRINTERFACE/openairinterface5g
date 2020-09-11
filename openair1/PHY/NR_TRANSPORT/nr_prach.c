@@ -140,7 +140,7 @@ void nr_fill_prach_ru(RU_t *ru,
   ru->prach_list[prach_id].fmt                = prach_pdu->prach_format;
   ru->prach_list[prach_id].numRA              = prach_pdu->num_ra;
   ru->prach_list[prach_id].prachStartSymbol   = prach_pdu->prach_start_symbol;
-	ru->prach_list[prach_id].num_prach_ocas     = prach_pdu->num_prach_ocas;
+  ru->prach_list[prach_id].num_prach_ocas     = prach_pdu->num_prach_ocas;
   pthread_mutex_unlock(&ru->prach_list_mutex);  
 
 }
@@ -160,6 +160,7 @@ void rx_nr_prach_ru(RU_t *ru,
 		    int prachFormat,
 		    int numRA,
 		    int prachStartSymbol,
+		    int prachOccasion,
 		    int frame,
 		    int slot) {
 
@@ -174,7 +175,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
   int msg1_frequencystart   = ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
 
-  rxsigF            = ru->prach_rxsigF;
+  rxsigF            = ru->prach_rxsigF[prachOccasion];
 
   AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
 
@@ -541,6 +542,7 @@ void rx_nr_prach_ru(RU_t *ru,
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
 		 nfapi_nr_prach_pdu_t *prach_pdu,
+		 int prachOccasion,
 		 int frame,
 		 int subframe,
 		 uint16_t *max_preamble,
