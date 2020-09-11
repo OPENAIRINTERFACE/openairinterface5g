@@ -117,13 +117,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra){
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
-    if (mac->generate_nr_prach){
-      //uint16_t monitoring_slot_period, monitoring_offset;
-      uint16_t rach_frame = mac->scheduled_response.ul_config->sfn;
-      uint16_t rx_rach_frame = (rach_frame + mac->RA_offset) % MAX_FRAME_NUMBER; // compensate 2 frames offset delay at gNB side
-      uint16_t rach_slot  = mac->scheduled_response.ul_config->slot;
-      nr_ue_msg2_scheduler(module_id, rx_rach_frame, rach_slot, &mac->msg2_rx_frame, &mac->msg2_rx_slot);
-    }
   }
 
   switch(ret){
@@ -154,7 +147,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
 
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
-    // UL indication to schedule reception DCI reception
+    // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
     // UL indication after reception of DCI or DL PDU
@@ -174,13 +167,16 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
 
-        ret_mask |= (handle_dci(dl_info->module_id,
+        int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
-                                dl_info->dci_ind->dci_list+i)<< FAPI_NR_DCI_IND);
+                                dl_info->dci_ind->dci_list+i);
 
-        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
-        nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
+        ret_mask |= (ret << FAPI_NR_DCI_IND);
+        if (ret >= 0) {
+          AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
+          nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
+        }
       }
     }
 

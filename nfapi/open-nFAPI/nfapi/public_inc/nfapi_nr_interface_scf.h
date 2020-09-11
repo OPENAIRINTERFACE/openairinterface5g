@@ -364,7 +364,7 @@ typedef struct
 //table 3-22
 typedef struct 
 {
-  nfapi_uint8_tlv_t phy_cell_id;//Physical Cell ID, 𝑁_{𝐼𝐷}^{𝑐𝑒𝑙𝑙} [38.211, sec 7.4.2.1] Value: 0 ->1007
+  nfapi_uint16_tlv_t phy_cell_id;//Physical Cell ID, 𝑁_{𝐼𝐷}^{𝑐𝑒𝑙𝑙} [38.211, sec 7.4.2.1] Value: 0 ->1007
   nfapi_uint8_tlv_t frame_duplex_type;//Frame duplex type Value: 0 = FDD 1 = TDD
 
 } nfapi_nr_cell_config_t;
@@ -1120,6 +1120,7 @@ typedef struct
   uint16_t  ul_dmrs_symb_pos;
   uint8_t  dmrs_config_type;
   uint16_t ul_dmrs_scrambling_id;
+  uint16_t pusch_identity;
   uint8_t  scid;
   uint8_t  num_dmrs_cdm_grps_no_data;
   uint16_t dmrs_ports;//DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used

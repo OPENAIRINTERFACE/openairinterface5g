@@ -114,7 +114,9 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
   int              ret=0;
   while ((sdu_p = pollNotifiedFIFO(&pdcp_sdu_list)) != NULL ) {
     pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(sdu_p);
-    AssertFatal(pdcpHead->inst==ctxt_pP->module_id, "To implement correctly multi module id\n");
+
+    /* Note: we ignore the instance ID in the context and use the one in the
+     * PDCP packet to pick the right socket below */
 
     int rb_id = pdcpHead->rb_id;
     int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
@@ -130,19 +132,19 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
                    sizeof(sidelink_pc5s_element), 0, (struct sockaddr *)&prose_pdcp_addr,sizeof(prose_pdcp_addr) );
 
     } else if (UE_NAS_USE_TUN) {
-      //ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+      //ret = write(nas_sock_fd[pdcpHead->inst], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        if(rb_id == mbms_rab_id){
        ret = write(nas_sock_mbms_fd, pdcpData,sizeToWrite );
        LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d sizeToWrite %d\n",
-	     ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
+	     ret,rb_id,nas_sock_fd[pdcpHead->inst],sizeToWrite);
         }
        else
        {
 	 if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
 	   log_dump(PDCP, pdcpData, sizeToWrite, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
-	 ret = write(nas_sock_fd[ctxt_pP->module_id], pdcpData,sizeToWrite );
+	 ret = write(nas_sock_fd[pdcpHead->inst], pdcpData,sizeToWrite );
 	 LOG_T(PDCP,"[UE PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",
-	       ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
+	       ret,rb_id,nas_sock_fd[pdcpHead->inst],sizeToWrite);
        }
     } else if (ENB_NAS_USE_TUN) {
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
@@ -308,7 +310,7 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
           ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
 
     if (h_rc == HASH_TABLE_OK) {
-      LOG_I(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %ld \n",
+      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %ld \n",
             ctxt.frame, ctxt.instance, len, rab_id);
       LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,

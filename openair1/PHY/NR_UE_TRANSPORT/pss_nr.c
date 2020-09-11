@@ -270,7 +270,6 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   if (k>= fp->ofdm_symbol_size) k-=fp->ofdm_symbol_size;
 
 
-
   for (int i=0; i < LENGTH_PSS_NR; i++) {
     synchroF_tmp[2*k] = primary_synchro[2*i];
     synchroF_tmp[2*k+1] = primary_synchro[2*i+1];

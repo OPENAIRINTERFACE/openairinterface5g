@@ -39,6 +39,7 @@
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -642,10 +643,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   // create shortcuts
   NR_DL_FRAME_PARMS *const fp            = &ue->frame_parms;
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
-  NR_UE_PDSCH **const pdsch_vars_SI      = ue->pdsch_vars_SI;
-  NR_UE_PDSCH **const pdsch_vars_ra      = ue->pdsch_vars_ra;
-  NR_UE_PDSCH **const pdsch_vars_p       = ue->pdsch_vars_p;
-  NR_UE_PDSCH **const pdsch_vars_mch     = ue->pdsch_vars_MCH;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
   int i,j,k,l,slot,symb,q;
@@ -681,6 +678,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->bitrate[eNB_id] = 0;
     ue->total_received_bits[eNB_id] = 0;
   }
+  // init NR modulation lookup tables
+  nr_generate_modulation_table();
 
   /////////////////////////PUSCH init/////////////////////////
   ///////////
@@ -796,10 +795,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       ue->pdcch_vars[th_id][eNB_id] = (NR_UE_PDCCH *)malloc16_clear(sizeof(NR_UE_PDCCH));
     }
 
-    pdsch_vars_SI[eNB_id]  = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
-    pdsch_vars_ra[eNB_id]  = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
-    pdsch_vars_p[eNB_id]   = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
-    pdsch_vars_mch[eNB_id] = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
     prach_vars[eNB_id]     = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[eNB_id]      = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
 
@@ -860,11 +855,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
             }
         }
       }
-
-      phy_init_nr_ue__PDSCH( pdsch_vars_SI[eNB_id], fp );
-      phy_init_nr_ue__PDSCH( pdsch_vars_ra[eNB_id], fp );
-      phy_init_nr_ue__PDSCH( pdsch_vars_p[eNB_id], fp );
-      phy_init_nr_ue__PDSCH( pdsch_vars_mch[eNB_id], fp );
 
       // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
@@ -928,10 +918,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
     ue->pdsch_vars[th_id][eNB_id]     = (NR_UE_PDSCH *)malloc16_clear( sizeof(NR_UE_PDSCH) );
   }
-
-  pdsch_vars_SI[eNB_id]  = (NR_UE_PDSCH *)malloc16_clear( sizeof(NR_UE_PDSCH) );
-  pdsch_vars_ra[eNB_id]  = (NR_UE_PDSCH *)malloc16_clear( sizeof(NR_UE_PDSCH) );
-  pdsch_vars_p[eNB_id]   = (NR_UE_PDSCH *)malloc16_clear( sizeof(NR_UE_PDSCH) );
 
   if (abstraction_flag == 0) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {

@@ -1,4 +1,5 @@
-STATUS 2020/06/26 : information is up to date, but under continuous improvement
+STATUS 2020/09/10 : updated the status of interop (end to end UL/DL traffic)  
+
 
 ## Table of Contents ##
 
@@ -78,16 +79,16 @@ https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/do
 Each component (EPC, eNB, gNB) has its own configuration file.  
 These config files are passed as arguments of the run command line, using the option -O \<conf file\>
 
-Some config examples can be found in the following folder:  
-https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/develop/targets/PROJECTS/GENERIC-LTE-EPC/CONF
-
-Also base config files can be found here:  
-[enb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/enb.conf)  
-[gnb conf file](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/rh_doc_update_3/doc/testing_gnb_w_cots_ue_resources/gnb.conf)
-
-TO DO : attach base confif files
+The **REFERENCE** files for eNB and gNB, **used by the CI**, can be found here:  
+[enb conf file](../ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf)
+[gnb conf file](../ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf)
 
 These files have to be updated manually to set the IP addresses and frequency.  
+
+
+**ATTENTION** : an **EXTERNAL** clock is used to sync the eNB and gNB,  
+whether the clock is internal or external is defined in the configuration files (!! details needed !!)   
+
 
 1- In the **eNB configuration file** :
 - look for MME IP address, and update the **ipv4 field** with the IP address of the **EPC** server
@@ -128,7 +129,7 @@ These files have to be updated manually to set the IP addresses and frequency.
                             }
                           );
 ```
-- look for X2 IP address, and update the **4 fields** with the IP address of the **eNB** server (notice : even if -in principle- S1 MME is not required for gNB setting)
+- look for X2 IP address, and update the **4 fields** with the IP address of the **eNB** server / **gNB** server as below  (notice : even if -in principle- S1 MME is not required for gNB setting)
 ```
 
     ///X2
@@ -146,11 +147,11 @@ These files have to be updated manually to set the IP addresses and frequency.
     {
 
         GNB_INTERFACE_NAME_FOR_S1_MME            = "eth0";
-        GNB_IPV4_ADDRESS_FOR_S1_MME              = "**YOUR_ENB_IP_ADDR**";
+        GNB_IPV4_ADDRESS_FOR_S1_MME              = "**YOUR_GNB_IP_ADDR**";
         GNB_INTERFACE_NAME_FOR_S1U               = "eth0";
-        GNB_IPV4_ADDRESS_FOR_S1U                 = "**YOUR_ENB_IP_ADDR**";
+        GNB_IPV4_ADDRESS_FOR_S1U                 = "**YOUR_GNB_IP_ADDR**";
         GNB_PORT_FOR_S1U                         = 2152; # Spec 2152
-        GNB_IPV4_ADDRESS_FOR_X2C                 = "**YOUR_ENB_IP_ADDR**";
+        GNB_IPV4_ADDRESS_FOR_X2C                 = "**YOUR_GNB_IP_ADDR**";
         GNB_PORT_FOR_X2C                         = 36422; # Spec 36422
     };
 
@@ -193,7 +194,7 @@ The order to run the different components is important:
 1- first, CN  
 2- then, eNB  
 3- then, gNB  
-4- finally, switch UE from airplane mode OFF to ON  
+4- finally, switch UE from airplane mode ON to OFF (ie Radio from OFF to ON)  
 
 It is recommended to redirect the run commands to the same log file (fur further analysis and debug), using ```| tee **YOUR_LOG_FILE**``` especially for eNB and gNB.  
 It is not very useful for the CN.  
@@ -215,26 +216,20 @@ Execute:
 
 ```
 
-For example:
-```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf | tee mylogfile.log
-```
-
-
 
 - **gNB** (on the gNB host)
 
 
 Execute: 
 ```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** | tee **YOUR_LOG_FILE**
+~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** -E | tee **YOUR_LOG_FILE**
 
 ```
 
-For example:
-```
-~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf | tee mylogfile.log
-```
+**ATTENTION** : for the gNB execution,    
+The -E option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
+The -E opton is not needed when using a a N300 USRP  
+
 
 
 ## Test Case
@@ -382,13 +377,11 @@ The following parts have been validated with FR1 COTS UE:
     PDCCH DCI format 1_1 and correponding PDSCH are decoded correctlyby the phone  
     ACK/NACK (PUCCH format 0) are successfully received at gNB  
 
-- On going:  
-    validation of HARQ procedures  
-    Integration with higher layers to replace dummy data with real traffic  
+- **End-to end UL / DL traffic with HARQ procedures validated (ping, iperf)** 
     
-- Known limitations as of May 2020:  
-    only dummy DL traffic  
-    no UL traffic  
-    no end-to-end traffic possible  
+- Known limitations as of September 2020:  
+    DL traffic : 3Mbps  
+    UL traffic : 1Mbps  
+    some packet losses might still occur even in ideal channel conditions  
 
 

@@ -142,6 +142,22 @@ void m2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
               sctp_new_association_resp->ulp_cnx_id);
     //m2ap_handle_m2_setup_message(instance_p, m2ap_enb_data_p,
     //                             sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+
+	  sleep(4);
+	  int index;
+	  /* Trying to connect to the provided list of eNB ip address */
+	  for (index = 0; index < instance_p->nb_m2; index++) {
+	    //M2AP_INFO("eNB[%d] eNB id %u acting as an initiator (client)\n",
+	     //         instance_id, instance->eNB_id);
+	    m2ap_eNB_register_eNB(instance_p,
+				  &instance_p->target_mce_m2_ip_address[index],
+				  &instance_p->enb_m2_ip_address,
+				  instance_p->sctp_in_streams,
+				  instance_p->sctp_out_streams,
+				  instance_p->enb_port_for_M2C,
+				  instance_p->multi_sd);
+	  }
+
     return;
   }
 
@@ -304,6 +320,8 @@ void m2ap_eNB_handle_register_eNB(instance_t instance,
     DevCheck(new_instance->mcc == m2ap_register_eNB->mcc, new_instance->mcc, m2ap_register_eNB->mcc, 0);
     DevCheck(new_instance->mnc == m2ap_register_eNB->mnc, new_instance->mnc, m2ap_register_eNB->mnc, 0);
     M2AP_WARN("eNB[%d] already registered\n", instance);
+
+     
   } else {
     new_instance = calloc(1, sizeof(m2ap_eNB_instance_t));
     DevAssert(new_instance != NULL);

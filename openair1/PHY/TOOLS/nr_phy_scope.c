@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "nr_phy_scope.h"
 #include "executables/nr-softmodem-common.h"
+#include "executables/softmodem-common.h"
 #include <forms.h>
 
 #define TPUT_WINDOW_LENGTH 100
@@ -400,7 +401,8 @@ static void *scope_thread_gNB(void *arg) {
   //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
   //#endif
   size_t stksize=0;
-  pthread_attr_t atr= {0};
+  pthread_attr_t atr;
+  pthread_attr_init(&atr);
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
   sleep(3); // no clean interthread barriers
@@ -523,32 +525,25 @@ static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
     return;
 
-  NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
-  uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
-  scopeSample_t **chest_f = (scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
-  int ind = 0;
-  float chest_f_abs[frame_parms->ofdm_symbol_size];
-  float freq[frame_parms->ofdm_symbol_size];
+  int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
+  int Qm = 2;
+  int coded_bits_per_codeword = num_re*Qm;
+  localBuff(llr,coded_bits_per_codeword*RX_NB_TH_MAX);
+  localBuff(bit,coded_bits_per_codeword*RX_NB_TH_MAX);
+  int base=0;
 
-  for (int atx=0; atx<nb_antennas_tx; atx++) {
-    for (int arx=0; arx<nb_antennas_rx; arx++) {
-      if (chest_f[(atx<<1)+arx] != NULL) {
-        for (int k=0; k<frame_parms->ofdm_symbol_size; k++) {
-          freq[ind] = (float)ind;
-          chest_f_abs[ind] = (short)10*log10(1.0+SquaredNorm(chest_f[(atx<<1)+arx][6144+k]));
-          ind++;
-        }
-      }
+  for (int thr=0 ; thr < RX_NB_TH_MAX ; thr ++ ) {
+    int16_t *pdcch_llr = (int16_t *) phy_vars_ue->pdcch_vars[thr][eNB_id]->llr;
+
+    for (int i=0; i<coded_bits_per_codeword; i++) {
+      llr[base+i] = (float) pdcch_llr[i];
+      bit[base+i] = (float) base+i;
     }
+
+    base+=coded_bits_per_codeword;
   }
 
-  // tx antenna 0
-  //fl_set_xyplot_xbounds(form->chest_f,0,nb_antennas_rx*nb_antennas_tx*nsymb_ce);
-  //fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*frame_parms->symbols_per_tti,2);
-  //        fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*2,2);
-  //fl_set_xyplot_xgrid(form->chest_f,FL_GRID_MAJOR);
-  oai_xygraph(graph,freq,chest_f_abs,frame_parms->ofdm_symbol_size,0,10);
+  oai_xygraph(graph,bit,llr,base,0,10);
 }
 
 static void uePcchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
@@ -768,6 +763,15 @@ void nrUEinitScope(PHY_VARS_NR_UE *ue) {
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
 
+
+void nrscope_autoinit(void *dataptr) {
+  AssertFatal( (IS_SOFTMODEM_GNB_BIT||IS_SOFTMODEM_5GUE_BIT),"Scope cannot find NRUE or GNB context");
+  
+  if (IS_SOFTMODEM_GNB_BIT)
+  	 gNBinitScope(dataptr);
+  else
+     nrUEinitScope(dataptr);
+}
 // Kept to put back the functionality soon
 #if 0
 //FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
@@ -794,6 +798,8 @@ static void reset_stats_gNB(FL_OBJECT *button,
     }
   }
 }
+
+
 
 static FD_stats_form *create_form_stats_form(int ID) {
   FL_OBJECT *obj;
