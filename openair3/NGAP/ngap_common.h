@@ -58,6 +58,16 @@
 #include "NGAP_BroadcastPLMNItem.h"
 #include "NGAP_SliceSupportItem.h"
 #include "NGAP_PLMNSupportItem.h"
+#include "NGAP_PDUSessionResourceSetupResponseTransfer.h"
+#include "NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.h"
+#include "NGAP_PDUSessionResourceSetupItemCxtRes.h"
+#include "NGAP_PDUSessionResourceFailedToSetupItemCxtRes.h"
+#include "NGAP_AssociatedQosFlowItem.h"
+#include "NGAP_PDUSessionResourceSetupRequestTransfer.h"
+#include "NGAP_PDUSessionResourceSetupItemCxtReq.h"
+#include "NGAP_QosFlowSetupRequestItem.h"
+#include "NGAP_AllowedNSSAI-Item.h"
+
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)

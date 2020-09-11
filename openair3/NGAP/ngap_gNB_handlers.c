@@ -49,10 +49,6 @@
 #include "assertions.h"
 #include "conversions.h"
 #include "msc.h"
-#include "NGAP_PDUSessionResourceSetupRequestTransfer.h"
-#include "NGAP_PDUSessionResourceSetupItemCxtReq.h"
-#include "NGAP_QosFlowSetupRequestItem.h"
-#include "NGAP_AllowedNSSAI-Item.h"
 
 static
 int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,

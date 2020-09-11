@@ -837,7 +837,6 @@ void nr_schedule_uss_ulsch_phytest(int Mod_idP,
     else if(mu==2) K2=2;
          else K2=3;
   }
-  LOG_D(MAC,"nr_schedule_uss_ulsch_phytest K2 %d\n", K2);
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = rnti;

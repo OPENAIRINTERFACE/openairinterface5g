@@ -47,11 +47,6 @@
 #include "ngap_gNB_nas_procedures.h"
 #include "ngap_gNB_management_procedures.h"
 #include "msc.h"
-#include "NGAP_PDUSessionResourceSetupResponseTransfer.h"
-#include "NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.h"
-#include "NGAP_PDUSessionResourceSetupItemCxtRes.h"
-#include "NGAP_PDUSessionResourceFailedToSetupItemCxtRes.h"
-#include "NGAP_AssociatedQosFlowItem.h"
 
 //------------------------------------------------------------------------------
 int ngap_gNB_handle_nas_first_req(
@@ -430,12 +425,12 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
 int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_p)
 //------------------------------------------------------------------------------
 {
-#if 0
     struct ngap_gNB_ue_context_s  *ue_context_p;
     ngap_gNB_instance_t           *ngap_gNB_instance_p;
     NGAP_NGAP_PDU_t                pdu;
     NGAP_UplinkNASTransport_t     *out;
     NGAP_UplinkNASTransport_IEs_t *ie;
+    NGAP_UserLocationInformationNR_t *userinfo_nr_p = NULL;
     uint8_t  *buffer;
     uint32_t  length;
     DevAssert(ngap_uplink_nas_p != NULL);
@@ -445,7 +440,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
 
     if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p, ngap_uplink_nas_p->gNB_ue_ngap_id)) == NULL) {
         /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-        NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %06x\n",
+        NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %08x\n",
                   ngap_uplink_nas_p->gNB_ue_ngap_id);
         return -1;
     }
@@ -464,7 +459,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_uplinkNASTransport;
+    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_UplinkNASTransport;
     pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
     pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_UplinkNASTransport;
     out = &pdu.choice.initiatingMessage.value.choice.UplinkNASTransport;
@@ -473,14 +468,15 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
     ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_AMF_UE_NGAP_ID;
-    ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    //ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
     ie = (NGAP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(NGAP_UplinkNASTransport_IEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
-    ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_GNB_UE_NGAP_ID;
-    ie->value.choice.GNB_UE_NGAP_ID = ue_context_p->gNB_ue_ngap_id;
+    ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = ue_context_p->gNB_ue_ngap_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
     ie = (NGAP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(NGAP_UplinkNASTransport_IEs_t));
@@ -492,33 +488,31 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
     ie = (NGAP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(NGAP_UplinkNASTransport_IEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_EUTRAN_CGI;
+    ie->id = NGAP_ProtocolIE_ID_id_UserLocationInformation;
     ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_EUTRAN_CGI;
-    MCC_MNC_TO_PLMNID(
-        ngap_gNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-        ngap_gNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-        ngap_gNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
-        &ie->value.choice.EUTRAN_CGI.pLMNidentity);
-    //#warning "TODO get cell id from RRC"
-    MACRO_GNB_ID_TO_CELL_IDENTITY(ngap_gNB_instance_p->gNB_id,
-                                  0,
-                                  &ie->value.choice.EUTRAN_CGI.cell_ID);
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-    /* mandatory */
-    ie = (NGAP_UplinkNASTransport_IEs_t *)calloc(1, sizeof(NGAP_UplinkNASTransport_IEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_TAI;
-    ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_TAI;
-    MCC_MNC_TO_PLMNID(
-        ngap_gNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-        ngap_gNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-        ngap_gNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
-        &ie->value.choice.TAI.pLMNidentity);
-    TAC_TO_ASN1(ngap_gNB_instance_p->tac, &ie->value.choice.TAI.tAC);
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-    /* optional */
+    ie->value.present = NGAP_UplinkNASTransport_IEs__value_PR_UserLocationInformation;
 
+    ie->value.choice.UserLocationInformation.present = NGAP_UserLocationInformation_PR_userLocationInformationNR;
+    userinfo_nr_p = &ie->value.choice.UserLocationInformation.choice.userLocationInformationNR;
+
+    /* Set nRCellIdentity. default userLocationInformationNR */
+    MACRO_GNB_ID_TO_CELL_IDENTITY(ngap_gNB_instance_p->gNB_id,
+                                      0, // Cell ID
+                                      &userinfo_nr_p->nR_CGI.nRCellIdentity);
+    MCC_MNC_TO_TBCD(ngap_gNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
+                    ngap_gNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
+                    ngap_gNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+                    &userinfo_nr_p->nR_CGI.pLMNIdentity);
+
+    /* Set TAI */
+    INT24_TO_OCTET_STRING(ngap_gNB_instance_p->tac, &userinfo_nr_p->tAI.tAC);
+    MCC_MNC_TO_PLMNID(ngap_gNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
+                      ngap_gNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
+                      ngap_gNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+                      &userinfo_nr_p->tAI.pLMNIdentity);
+
+
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
         NGAP_ERROR("Failed to encode uplink NAS transport\n");
@@ -539,7 +533,7 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
-#endif
+
     return 0;
 }
 
