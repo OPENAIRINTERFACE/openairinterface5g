@@ -275,6 +275,18 @@ typedef struct pdusession_s {
   uint32_t                         gtp_teid;
 } pdusession_t;
 
+
+typedef enum pdusession_qosflow_mapping_ind_e{
+  QOSFLOW_MAPPING_INDICATION_UL = 0,
+  QOSFLOW_MAPPING_INDICATION_DL = 1,
+  QOSFLOW_MAPPING_INDICATION_NON = 0xFF
+}pdusession_qosflow_mapping_ind_t;
+
+typedef struct pdusession_associate_qosflow_s{
+  uint8_t                           qci;
+  pdusession_qosflow_mapping_ind_t  qos_flow_mapping_ind;
+}pdusession_associate_qosflow_t;
+
 typedef struct pdusession_setup_s {
   /* Unique pdusession_id for the UE. */
   uint8_t pdusession_id;
@@ -282,8 +294,14 @@ typedef struct pdusession_setup_s {
   /* The transport layer address for the IP packets */
   ngap_transport_layer_addr_t gNB_addr;
 
-  /* S-GW Tunnel endpoint identifier */
+  /* UPF Tunnel endpoint identifier */
   uint32_t gtp_teid;
+
+  /* qos flow list number */
+  uint8_t  nb_of_qos_flow;
+  
+  /* qos flow list(1 ~ 64) */
+  pdusession_associate_qosflow_t associated_qos_flows[QOSFLOW_MAX_VALUE];
 } pdusession_setup_t;
 
 typedef struct pdusession_tobe_added_s {

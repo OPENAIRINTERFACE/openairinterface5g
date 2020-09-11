@@ -814,7 +814,7 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
             paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
             paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
             char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-	    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, k);
+            sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, k);
             
             NGAP_REGISTER_GNB_REQ (msg_p).gNB_id = gnb_id;
             
