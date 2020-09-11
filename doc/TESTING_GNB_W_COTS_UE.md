@@ -1,4 +1,4 @@
-STATUS 2020/07/30 : under continuous improvement ; updated the configuration files links with CI approved reference files
+STATUS 2020/09/10 : updated the status of interop (end to end UL/DL traffic)  
 
 
 ## Table of Contents ##
@@ -377,13 +377,11 @@ The following parts have been validated with FR1 COTS UE:
     PDCCH DCI format 1_1 and correponding PDSCH are decoded correctlyby the phone  
     ACK/NACK (PUCCH format 0) are successfully received at gNB  
 
-- On going:  
-    validation of HARQ procedures  
-    Integration with higher layers to replace dummy data with real traffic  
+- **End-to end UL / DL traffic with HARQ procedures validated (ping, iperf)** 
     
-- Known limitations as of May 2020:  
-    only dummy DL traffic  
-    no UL traffic  
-    no end-to-end traffic possible  
+- Known limitations as of September 2020:  
+    DL traffic : 3Mbps  
+    UL traffic : 1Mbps  
+    some packet losses might still occur even in ideal channel conditions  
 
 

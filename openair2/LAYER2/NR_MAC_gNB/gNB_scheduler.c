@@ -62,6 +62,32 @@
 const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
+void clear_mac_stats(gNB_MAC_INST *gNB) {
+  memset((void*)gNB->UE_list.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
+}
+
+void dump_mac_stats(gNB_MAC_INST *gNB) {
+
+  NR_UE_list_t *UE_list = &gNB->UE_list;
+  NR_mac_stats_t *stats;
+  int lc_id;
+
+  for (int UE_id=0;UE_id<MAX_MOBILES_PER_GNB;UE_id++) {
+    if (UE_list->active[UE_id] == TRUE) {
+      LOG_I(MAC,"UE %x\n",UE_list->rnti[UE_id]);
+      stats = &UE_list->mac_stats[UE_id];
+      LOG_I(MAC,"dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",stats->dlsch_rounds[0],stats->dlsch_rounds[1],stats->dlsch_rounds[2],stats->dlsch_rounds[3],stats->dlsch_errors);
+      LOG_I(MAC,"dlsch_total_bytes %d\n",stats->dlsch_total_bytes);
+      LOG_I(MAC,"ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",stats->ulsch_rounds[0],stats->ulsch_rounds[1],stats->ulsch_rounds[2],stats->ulsch_rounds[3],stats->ulsch_errors);
+      LOG_I(MAC,"ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",stats->ulsch_total_bytes_scheduled,stats->ulsch_total_bytes_rx);
+      for (lc_id=0;lc_id<63;lc_id++) {
+	if (stats->lc_bytes_tx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes TX\n",lc_id,stats->lc_bytes_tx[lc_id]);
+	if (stats->lc_bytes_rx[lc_id]>0) LOG_I(MAC,"LCID %d : %d bytes RX\n",lc_id,stats->lc_bytes_rx[lc_id]);
+      }
+    }
+  }
+}
+
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
                                 frame_t frameP,
@@ -288,8 +314,33 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 }
 */
 
+void nr_schedule_pusch(int Mod_idP,
+                       int UE_id,
+                       int num_slots_per_tdd,
+                       int ul_slots,
+                       frame_t frameP,
+                       sub_frame_t slotP) {
+
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
+  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  int k = slotP + ul_slots - num_slots_per_tdd;
+  NR_sched_pusch *pusch = &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k];
+  if ((pusch->active == true) && (frameP == pusch->frame) && (slotP == pusch->slot)) {
+    UL_tti_req->SFN = pusch->frame;
+    UL_tti_req->Slot = pusch->slot;
+    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+    UL_tti_req->pdus_list[UL_tti_req->n_pdus].pusch_pdu = pusch->pusch_pdu;
+    UL_tti_req->n_pdus+=1;
+    memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
+           0, sizeof(NR_sched_pusch));
+  }
+}
+
+
 void nr_schedule_pucch(int Mod_idP,
                        int UE_id,
+                       int nr_ulmix_slots,
                        frame_t frameP,
                        sub_frame_t slotP) {
 
@@ -306,15 +357,12 @@ void nr_schedule_pucch(int Mod_idP,
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[Mod_idP]->UL_tti_req[0];
 
   NR_sched_pucch *curr_pucch;
-  int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
-    nr_ulmix_slots++;
 
   for (int k=0; k<nr_ulmix_slots; k++) {
     curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
     if ((curr_pucch->dai_c > 0) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
-      UL_tti_req->SFN = frameP;
-      UL_tti_req->Slot = slotP;
+      UL_tti_req->SFN = curr_pucch->frame;
+      UL_tti_req->Slot = curr_pucch->ul_slot;
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
       UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
       nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
@@ -323,7 +371,7 @@ void nr_schedule_pucch(int Mod_idP,
       O_ack = curr_pucch->dai_c;
       O_uci = O_ack; // for now we are just sending acknacks in pucch
 
-      LOG_I(MAC, "Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
+      LOG_D(MAC, "Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
 
       nr_configure_pucch(pucch_pdu,
 			 scc,
@@ -333,10 +381,14 @@ void nr_schedule_pucch(int Mod_idP,
                          O_ack,
                          SR_flag);
 
-      curr_pucch->dai_c = 0;
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
+             0,
+             sizeof(NR_sched_pucch));
     }
   }
 }
+
+
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot){
 
@@ -347,15 +399,12 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot){
 }
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
-                               frame_t frame_rxP,
-                               sub_frame_t slot_rxP,
-                               frame_t frame_txP,
-                               sub_frame_t slot_txP){
+                               frame_t frame,
+                               sub_frame_t slot){
 
-  //printf("gNB_dlsch_ulsch_scheduler frameRX %d slotRX %d frameTX %d slotTX %d\n",frame_rxP,slot_rxP,frame_txP,slot_txP);
 			       
   protocol_ctxt_t   ctxt;
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame_txP, slot_txP,module_idP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
   int CC_id;
   int UE_id;
@@ -377,11 +426,14 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
 
-  if (slot_txP== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
+  if (slot== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
     for (int k=0; k<nr_ulmix_slots; k++) {
       memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
              sizeof(NR_sched_pucch));
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
+             0,
+             sizeof(NR_sched_pusch));
     }
   }
 
@@ -391,117 +443,112 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   pdcp_run(&ctxt);
   //rrc_rx_tx(&ctxt, CC_id);
 
-  RC.nrmac[module_idP]->frame    = frame_rxP;
-  RC.nrmac[module_idP]->slot     = slot_rxP;
-
   dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
 
   // hardcoding dlsch to be in slot 1
-  if (!(slot_txP%num_slots_per_tdd)) {
-    if(slot_txP==0)
+  if (!(slot%num_slots_per_tdd)) {
+    if(slot==0) {
       *dlsch_in_slot_bitmap = 0x02;
-    else
-      *dlsch_in_slot_bitmap = 0x00;
-  }
-
-  // hardcoding ulsch to be in slot 8
-  if (!(slot_rxP%num_slots_per_tdd)) {
-    if(slot_rxP==0)
       *ulsch_in_slot_bitmap = 0x100;
-    else
+    }
+    else {
+      *dlsch_in_slot_bitmap = 0x00;
       *ulsch_in_slot_bitmap = 0x00;
+    }
   }
 
-  // Check if there are downlink symbols in the slot, 
-  if (is_nr_DL_slot(cc->ServingCellConfigCommon,slot_txP)) {
-    memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
-    memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      //mbsfn_status[CC_id] = 0;
+  memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
+  memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    //mbsfn_status[CC_id] = 0;
 
-      // clear vrb_maps
-      memset(cc[CC_id].vrb_map, 0, 100);
-      memset(cc[CC_id].vrb_map_UL, 0, 100);
+    // clear vrb_maps
+    memset(cc[CC_id].vrb_map, 0, 100);
+    memset(cc[CC_id].vrb_map_UL, 0, 100);
 
-      clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame_txP, slot_txP);
-    }
+    clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
+  }
 
-    // refresh UE list based on UEs dropped by PHY in previous subframe
-    /*
-    for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-      if (UE_list->active[i]) {
+  // refresh UE list based on UEs dropped by PHY in previous subframe
+  /*
+  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    if (UE_list->active[i]) {
 
-        nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];      
+      nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];      
       
-        rnti = 0;//UE_RNTI(module_idP, i);
-        CC_id = 0;//UE_PCCID(module_idP, i);
+      rnti = 0;//UE_RNTI(module_idP, i);
+      CC_id = 0;//UE_PCCID(module_idP, i);
 
-      } //END if (UE_list->active[i])
-    } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
-    */
+    } //END if (UE_list->active[i])
+  } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
+  */
 
-    // This schedules MIB
-    if((slot_txP == 0) && (frame_txP & 7) == 0){
-      schedule_nr_mib(module_idP, frame_txP, slot_txP);
+  if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
+
+  // This schedules MIB
+  if((slot == 0) && (frame & 7) == 0){
+    schedule_nr_mib(module_idP, frame, slot);
+  }
+
+  // This schedule PRACH if we are not in phy_test mode
+  if (get_softmodem_params()->phy_test == 0)
+    schedule_nr_prach(module_idP, frame, slot);
+
+  // This schedule SR
+  // TODO
+
+  // This schedule CSI
+  // TODO
+
+  // This schedule RA procedure if not in phy_test mode
+  // Otherwise already consider 5G already connected
+  if (get_softmodem_params()->phy_test == 0) {
+    nr_schedule_RA(module_idP, frame, slot);
+    nr_schedule_reception_msg3(module_idP, 0, frame, slot);
+  } else
+    UE_list->fiveG_connected[UE_id] = true;
+
+  if (get_softmodem_params()->phy_test) {
+
+    // TbD once RACH is available, start ta_timer when UE is connected
+    if (ue_sched_ctl->ta_timer)
+      ue_sched_ctl->ta_timer--;
+    if (ue_sched_ctl->ta_timer == 0) {
+      gNB->ta_command = ue_sched_ctl->ta_update;
+      /* if time is up, then set the timer to not send it for 5 frames
+      // regardless of the TA value */
+      ue_sched_ctl->ta_timer = 100;
+      /* reset ta_update */
+      ue_sched_ctl->ta_update = 31;
+      /* MAC CE flag indicating TA length */
+      gNB->ta_len = 2;
     }
+  }
 
-    if (get_softmodem_params()->phy_test == 0)
-      nr_schedule_RA(module_idP, frame_txP, slot_txP);
-    else
-      UE_list->fiveG_connected[UE_id] = true;
+  // This schedules the DCI for Uplink and subsequently PUSCH
+  if (UE_list->fiveG_connected[UE_id]) {
+    int tda = 1; // time domain assignment hardcoded for now
+    schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda);
+    nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
+  }
 
-    // Phytest scheduling
+  if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot%num_slots_per_tdd))) {
+    ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
+    nr_update_pucch_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
+    nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
+    // resetting ta flag
+    gNB->ta_len = 0;
+  }
 
-    if (get_softmodem_params()->phy_test) {
-
-      // TbD once RACH is available, start ta_timer when UE is connected
-      if (ue_sched_ctl->ta_timer)
-        ue_sched_ctl->ta_timer--;
-
-      if (ue_sched_ctl->ta_timer == 0) {
-        gNB->ta_command = ue_sched_ctl->ta_update;
-        /* if time is up, then set the timer to not send it for 5 frames
-        // regardless of the TA value */
-        ue_sched_ctl->ta_timer = 100;
-        /* reset ta_update */
-        ue_sched_ctl->ta_update = 31;
-        /* MAC CE flag indicating TA length */
-        gNB->ta_len = 2;
-      }
-    }
-
-    if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot_txP%num_slots_per_tdd))) {
-      ue_sched_ctl->current_harq_pid = slot_txP % num_slots_per_tdd;
-      nr_update_pucch_scheduling(module_idP, UE_id, frame_txP, slot_txP, num_slots_per_tdd,&pucch_sched);
-      nr_schedule_uss_dlsch_phytest(module_idP, frame_txP, slot_txP, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
-      // resetting ta flag
-      gNB->ta_len = 0;
-    }
+  if (UE_list->fiveG_connected[UE_id])
+    nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
 
     /*
     // Allocate CCEs for good after scheduling is done
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
       allocate_CCEs(module_idP, CC_id, subframeP, 0);
     */
-
-  } //is_nr_DL_slot
-
-  if (is_nr_UL_slot(cc->ServingCellConfigCommon,slot_rxP)) { 
-
-    if (get_softmodem_params()->phy_test == 0) {
-      if (UE_list->fiveG_connected[UE_id])
-        nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
-      schedule_nr_prach(module_idP, (frame_rxP+1)&1023, slot_rxP);
-      nr_schedule_reception_msg3(module_idP, 0, frame_rxP, slot_rxP);
-    }
-    if (get_softmodem_params()->phy_test){
-      nr_schedule_pucch(module_idP, UE_id, frame_rxP, slot_rxP);
-      if (is_xlsch_in_slot(*ulsch_in_slot_bitmap,slot_rxP%num_slots_per_tdd)){
-        nr_schedule_uss_ulsch_phytest(module_idP, frame_rxP, slot_rxP);
-      }
-    }
-  }
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

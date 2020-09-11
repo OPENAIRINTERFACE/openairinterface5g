@@ -525,32 +525,25 @@ static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
     return;
 
-  NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
-  uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
-  scopeSample_t **chest_f = (scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates;
-  int ind = 0;
-  float chest_f_abs[frame_parms->ofdm_symbol_size];
-  float freq[frame_parms->ofdm_symbol_size];
+  int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
+  int Qm = 2;
+  int coded_bits_per_codeword = num_re*Qm;
+  localBuff(llr,coded_bits_per_codeword*RX_NB_TH_MAX);
+  localBuff(bit,coded_bits_per_codeword*RX_NB_TH_MAX);
+  int base=0;
 
-  for (int atx=0; atx<nb_antennas_tx; atx++) {
-    for (int arx=0; arx<nb_antennas_rx; arx++) {
-      if (chest_f[(atx<<1)+arx] != NULL) {
-        for (int k=0; k<frame_parms->ofdm_symbol_size; k++) {
-          freq[ind] = (float)ind;
-          chest_f_abs[ind] = (short)10*log10(1.0+SquaredNorm(chest_f[(atx<<1)+arx][6144+k]));
-          ind++;
-        }
-      }
+  for (int thr=0 ; thr < RX_NB_TH_MAX ; thr ++ ) {
+    int16_t *pdcch_llr = (int16_t *) phy_vars_ue->pdcch_vars[thr][eNB_id]->llr;
+
+    for (int i=0; i<coded_bits_per_codeword; i++) {
+      llr[base+i] = (float) pdcch_llr[i];
+      bit[base+i] = (float) base+i;
     }
+
+    base+=coded_bits_per_codeword;
   }
 
-  // tx antenna 0
-  //fl_set_xyplot_xbounds(form->chest_f,0,nb_antennas_rx*nb_antennas_tx*nsymb_ce);
-  //fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*frame_parms->symbols_per_tti,2);
-  //        fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*2,2);
-  //fl_set_xyplot_xgrid(form->chest_f,FL_GRID_MAJOR);
-  oai_xygraph(graph,freq,chest_f_abs,frame_parms->ofdm_symbol_size,0,10);
+  oai_xygraph(graph,bit,llr,base,0,10);
 }
 
 static void uePcchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
