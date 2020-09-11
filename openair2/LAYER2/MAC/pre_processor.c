@@ -212,11 +212,12 @@ int rr_dl_run(module_id_t Mod_id,
   cur_UE = &UE_sched.head;
   while (*cur_UE >= 0 && max_num_ue > 0) {
     const int UE_id = *cur_UE;
-    cur_UE = &UE_sched.next[UE_id]; // go to next
     const uint8_t cqi = UE_info->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
     const int idx = CCE_try_allocate_dlsch(Mod_id, CC_id, subframe, UE_id, cqi);
     if (idx < 0) {
       LOG_D(MAC, "cannot allocate CCE for UE %d, skipping\n", UE_id);
+      // SKIP this UE in the list by marking the next as the current
+      *cur_UE = UE_sched.next[UE_id];
       continue;
     }
     UE_info->UE_sched_ctrl[UE_id].pre_dci_dl_pdu_idx = idx;
@@ -225,6 +226,7 @@ int rr_dl_run(module_id_t Mod_id,
     const uint32_t B = UE_info->UE_template[CC_id][UE_id].dl_buffer_total;
     rb_required[UE_id] = find_nb_rb_DL(mcs, B, n_rbg_sched * RBGsize, RBGsize);
     max_num_ue--;
+    cur_UE = &UE_sched.next[UE_id]; // go to next
   }
   *cur_UE = -1; // not all UEs might be allocated, mark end
 
