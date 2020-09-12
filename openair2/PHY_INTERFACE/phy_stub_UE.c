@@ -95,9 +95,11 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   pdu->rx_indication_rel9.tl.tag = NFAPI_RX_INDICATION_REL9_TAG;
   pdu->rx_indication_rel9.timing_advance_r9 = 0;
 
+  // What is this? - Andrew
   // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
+  LOG_I(MAC, "buflen of rx_ind pdu_data = %u\n", buflen);
   // estimate timing advance for MAC
   timing_advance_update = 0; // Don't know what to put here
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
