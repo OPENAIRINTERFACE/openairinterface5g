@@ -2059,3 +2059,21 @@ void flexran_agent_mac_inform_delegation(mid_t mod_id,
   so->dl_handle = h;
   SLIST_INSERT_HEAD(&flexran_handles[mod_id], so, entries);
 }
+
+void flexran_agent_mac_fill_loaded_mac_objects(
+    mid_t mod_id,
+    Protocol__FlexEnbConfigReply *reply) {
+  int n = 0;
+  flexran_agent_so_handle_t *so = NULL;
+  SLIST_FOREACH(so, &flexran_handles[mod_id], entries)
+    ++n;
+  reply->n_loadedmacobjects = n;
+  reply->loadedmacobjects = calloc(n, sizeof(char *));
+  if (!reply->loadedmacobjects) {
+    reply->n_loadedmacobjects = 0;
+    return;
+  }
+  n = 0;
+  SLIST_FOREACH(so, &flexran_handles[mod_id], entries)
+    reply->loadedmacobjects[n++] = so->name;
+}

@@ -188,3 +188,20 @@ void flexran_agent_handle_apps(
     }
   }
 }
+
+void flexran_agent_fill_loaded_apps(mid_t mod_id,
+                                    Protocol__FlexEnbConfigReply *reply) {
+  int n = 0;
+  flexran_agent_app_internal_t *so = NULL;
+  SLIST_FOREACH(so, &flexran_apps[mod_id], entries)
+    ++n;
+  reply->n_loadedapps = n;
+  reply->loadedapps = calloc(n, sizeof(char *));
+  if (!reply->loadedapps) {
+    reply->n_loadedapps = 0;
+    return;
+  }
+  n = 0;
+  SLIST_FOREACH(so, &flexran_apps[mod_id], entries)
+    reply->loadedapps[n++] = so->name;
+}

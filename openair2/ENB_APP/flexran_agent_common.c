@@ -330,6 +330,12 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
   if (reply->s1ap)
     flexran_agent_free_s1ap_cell_config(&reply->s1ap);
 
+  if (reply->loadedapps)
+    free(reply->loadedapps);
+
+  if (reply->loadedmacobjects)
+    free(reply->loadedmacobjects);
+
   free(reply->cell_config);
   free(reply);
   free(msg);
@@ -835,6 +841,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
   
   if (flexran_agent_get_s1ap_xface(mod_id))
     flexran_agent_fill_s1ap_cell_config(mod_id, &enb_config_reply_msg->s1ap);
+
+  flexran_agent_fill_loaded_apps(mod_id, enb_config_reply_msg);
+
+  flexran_agent_mac_fill_loaded_mac_objects(mod_id, enb_config_reply_msg);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 

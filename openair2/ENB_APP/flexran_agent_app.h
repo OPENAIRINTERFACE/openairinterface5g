@@ -67,4 +67,8 @@ void flexran_agent_handle_apps(
     Protocol__FlexAgentReconfigurationSubsystem **subs,
     int n_subs);
 
+/* Fills the enb_config_reply with the currently loaded (started) apps */
+void flexran_agent_fill_loaded_apps(mid_t mod_id,
+                                    Protocol__FlexEnbConfigReply *reply);
+
 #endif

@@ -139,4 +139,9 @@ void flexran_agent_destroy_mac_slice_config(Protocol__FlexCellConfig *conf);
 void flexran_agent_mac_inform_delegation(mid_t mod_id,
                                          Protocol__FlexControlDelegation *cdm);
 
+/* fill the enb_config_reply with the shared objects in use by the MAC sublayer */
+void flexran_agent_mac_fill_loaded_mac_objects(
+    mid_t mod_id,
+    Protocol__FlexEnbConfigReply *reply);
+
 #endif

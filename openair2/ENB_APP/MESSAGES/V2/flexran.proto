@@ -159,6 +159,8 @@ message flex_enb_config_reply {
 	repeated flex_cell_config cell_config = 3;
         optional uint32 device_spec = 4;
         optional flex_s1ap_config s1ap = 5;
+        repeated string loadedApps = 6;
+        repeated string loadedMacObjects = 7;
 }
 
 message flex_ue_config_request {
