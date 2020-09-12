@@ -54,6 +54,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_PLMN-IdentityInfo.h"
 #include "NR_MCC-MNC-Digit.h"
+#include "NR_NG-5G-S-TMSI.h"
 //#include "MCCH-Message.h"
 //#include "MBSFNAreaConfiguration-r9.h"
 //#include "SCellToAddMod-r10.h"
@@ -290,8 +291,8 @@ typedef struct gNB_RRC_UE_s {
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
-  /* Information from UE RRC ConnectionRequest */
-  UE_S_TMSI                          Initialue_identity_s_TMSI;
+  /* Information from UE RRC Setup Request */
+  uint64_t                           Initialue_identity_5g_s_TMSI;
   NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */

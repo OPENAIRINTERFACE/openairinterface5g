@@ -42,7 +42,10 @@
 
 #include "asn1_msg.h"
 #include "RRC/NR/nr_rrc_extern.h"
-#if defined(NR_Rel15)
+#include "NR_DL-CCCH-Message.h"
+#include "NR_RRCReject.h"
+#include "NR_RejectWaitTime.h"
+#if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
   #include "NR_FrequencyInfoUL.h"
@@ -578,3 +581,41 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
   spconfig->reconfigurationWithSync = CALLOC(1,sizeof(struct NR_ReconfigurationWithSync));
 }
 
+//------------------------------------------------------------------------------
+uint8_t do_RRCReject(uint8_t Mod_id,
+                  uint8_t *const buffer)
+//------------------------------------------------------------------------------
+{
+    asn_enc_rval_t                                   enc_rval;;
+    NR_DL_CCCH_Message_t                             dl_ccch_msg;
+    NR_RRCReject_t                                   *rrcReject;
+    NR_RejectWaitTime_t                              waitTime = 1;
+
+    memset((void *)&dl_ccch_msg, 0, sizeof(NR_DL_CCCH_Message_t));
+    dl_ccch_msg.message.present = NR_DL_CCCH_MessageType_PR_c1;
+    dl_ccch_msg.message.choice.c1->present = NR_RRCReject__criticalExtensions_PR_rrcReject;
+
+    rrcReject = dl_ccch_msg.message.choice.c1->choice.rrcReject;
+    rrcReject->criticalExtensions.present = NR_RRCReject__criticalExtensions_PR_rrcReject;
+    rrcReject->criticalExtensions.choice.rrcReject->waitTime = &waitTime;
+
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+        xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
+    }
+
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message,
+                                    NULL,
+                                    (void *)&dl_ccch_msg,
+                                    buffer,
+                                    100);
+
+    if(enc_rval.encoded == -1) {
+        LOG_E(RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+            enc_rval.failed_type->name, enc_rval.encoded);
+        return -1;
+    }
+
+    LOG_D(RRC,"RRCReject Encoded %zd bits (%zd bytes)\n",
+            enc_rval.encoded,(enc_rval.encoded+7)/8);
+    return((enc_rval.encoded+7)/8);
+}

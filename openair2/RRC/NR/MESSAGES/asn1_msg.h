@@ -82,3 +82,6 @@ void do_PHYSICALCELLGROUP(uint8_t Mod_id,
 
 void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);
+
+uint8_t do_RRCReject(uint8_t Mod_id,
+                     uint8_t *const buffer);

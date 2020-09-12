@@ -45,6 +45,7 @@
 #define RRC_MAC_CCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_req
 #define RRC_MAC_CCCH_DATA_CNF(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_cnf
 #define RRC_MAC_CCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_ind
+#define NR_RRC_MAC_CCCH_DATA_IND(mSGpTR)        (mSGpTR)->ittiMsg.nr_rrc_mac_ccch_data_ind
 
 #define RRC_MAC_MCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_req
 #define RRC_MAC_MCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_ind
@@ -125,6 +126,16 @@ typedef struct RrcMacCcchDataInd_s {
   uint8_t   enb_index;
   int       CC_id;
 } RrcMacCcchDataInd;
+
+typedef struct NR_RrcMacCcchDataInd_s {
+  uint32_t  frame;
+  uint8_t   sub_frame;
+  uint16_t  rnti;
+  uint32_t  sdu_size;
+  uint8_t   sdu[CCCH_SDU_SIZE];
+  uint8_t   gnb_index;
+  int       CC_id;
+} NR_RrcMacCcchDataInd;
 
 typedef struct RrcMacMcchDataReq_s {
   uint32_t  frame;

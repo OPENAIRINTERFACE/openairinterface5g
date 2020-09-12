@@ -624,7 +624,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
           AssertFatal(1==0,"Couldn't fine pucch resource indicator %d in PUCCH resource set %d for %d UCI bits",pucch_resource,i,O_uci);
       }
       else {
-        N3 = pucchresset->maxPayloadMinus1!= NULL ?  *pucchresset->maxPayloadMinus1 : 1706;
+        N3 = pucchresset->maxPayloadSize!= NULL ?  *pucchresset->maxPayloadSize : 1706;
         if (N2<O_uci && N3>O_uci) {
           if (pucch_resource < n_list)
             resource_id = pucchresset->resourceList.list.array[pucch_resource];
