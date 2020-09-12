@@ -29,8 +29,8 @@
 #define GNB_NAME        "Eurecom GNB"
 #define GNB_NAME_FORMAT (GNB_NAME" %u")
 
-#define NGAP_PORT_NUMBER        (36412)
-#define NGAP_SCTP_PPID          (18)
+#define NGAP_PORT_NUMBER        (38412)
+#define NGAP_SCTP_PPID          (60)
 
 #define X2AP_PORT_NUMBER        (36422)
 #define X2AP_SCTP_PPID          (27)

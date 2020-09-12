@@ -489,6 +489,7 @@ static int ngap_gNB_generate_ng_setup_request(
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
+#if 0
   /* mandatory */
   ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_SupportedTAList;
@@ -529,6 +530,7 @@ static int ngap_gNB_generate_ng_setup_request(
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   
+#endif
   /* mandatory */
   ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_DefaultPagingDRX;

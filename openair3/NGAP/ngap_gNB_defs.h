@@ -24,8 +24,6 @@
 #include "queue.h"
 #include "tree.h"
 
-#include "sctp_gNB_defs.h"
-
 #ifndef NGAP_GNB_DEFS_H_
 #define NGAP_GNB_DEFS_H_
 
@@ -250,7 +248,7 @@ typedef struct ngap_gNB_instance_s {
   enum cell_type_e cell_type;
 
   /* Tracking area code */
-  uint32_t tac;
+  uint16_t tac;
 
   /* gNB NGAP IP address */
   net_ip_address_t gNB_ng_ip;
