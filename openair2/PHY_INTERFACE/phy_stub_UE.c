@@ -99,7 +99,8 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
-  LOG_I(MAC, "buflen of rx_ind pdu_data = %u\n", buflen);
+  LOG_I(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
+        frame, subframe);
   // estimate timing advance for MAC
   timing_advance_update = 0; // Don't know what to put here
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
