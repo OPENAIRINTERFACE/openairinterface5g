@@ -1728,7 +1728,16 @@ void helper_destroy_mac_slice_config(Protocol__FlexSliceConfig *slice_config) {
 }
 
 int check_scheduler(mid_t mod_id, char *s) {
-  return dlsym(NULL, s) != NULL;
+  if (!s)
+    return 1;
+  if (dlsym(NULL, s))
+    return 1;
+  flexran_agent_so_handle_t *so = NULL;
+  SLIST_FOREACH(so, &flexran_handles[mod_id], entries) {
+    if (strcmp(so->name, s) == 0)
+      return 1;
+  }
+  return 0;
 }
 
 void request_scheduler(mid_t mod_id, char *s, int xid) {

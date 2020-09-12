@@ -1029,6 +1029,10 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
 }
 
 void *search_so(mid_t mod_id, char *name) {
+  if (!name) // no name -> nothing to return, so use NULL for executable
+    return NULL;
+  if (dlsym(NULL, name)) // found it in executable
+    return NULL;
   flexran_agent_so_handle_t *so = NULL;
   SLIST_FOREACH(so, &flexran_handles[mod_id], entries) {
     if (strcmp(so->name, name) == 0)
