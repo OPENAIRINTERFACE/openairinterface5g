@@ -12,6 +12,7 @@ STATUS 2020/09/10 : updated the status of interop (end to end UL/DL traffic)
 7.   [Log file monitoring](#log-file-monitoring)
 6.   [Required tools for debug](#required-tools-for-debug)
 7.   [Status of interoperability](#status-of-interoperability) 
+8.   [CI integration](#ci-integration)  
 
 ## Configuration Overview
 
@@ -384,3 +385,13 @@ The following parts have been validated with FR1 COTS UE:
     some packet losses might still occur even in ideal channel conditions  
 
 
+## CI integration  
+The automation scripts are available on ILIADE.  
+The end-to-end test is integrated in the CI flow in a semi-automated manner, comprising 3 steps:  
+- update a YAML file comprising the IT resources definition, branch and commit number the test has to run on   
+- run the python script that generates the test from the YAML file  
+- run the test  
+
+At the date of writing, the test comprises the deployment of the components (epc, eNB, gNB, cots ue) and the execution of 2 pings procedures (20 pings in 20sec, then 5 pings in 1sec)  
+
+This automation is run for every integration branch to be merged into develop.
