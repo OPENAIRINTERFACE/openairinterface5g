@@ -49,6 +49,7 @@ typedef enum {
   MSC_RLC_ENB,
   MSC_PDCP_ENB,
   MSC_RRC_ENB,
+  MSC_RRC_GNB,
   MSC_IP_ENB,
   MSC_S1AP_ENB,
   MSC_NGAP_GNB,

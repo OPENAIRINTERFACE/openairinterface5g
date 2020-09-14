@@ -1113,12 +1113,12 @@ static
 int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
-#if 0
+
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
   MessageDef            *message_p        = NULL;
-  NGAP_AMF_UE_NGAP_ID_t  amf_ue_ngap_id;
-  NGAP_GNB_UE_NGAP_ID_t  enb_ue_ngap_id;
+  uint64_t                            amf_ue_ngap_id;
+  NGAP_RAN_UE_NGAP_ID_t               gnb_ue_ngap_id;
   NGAP_UEContextReleaseCommand_t     *container;
   NGAP_UEContextReleaseCommand_IEs_t *ie;
   DevAssert(pdu != NULL);
@@ -1136,23 +1136,23 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     switch (ie->value.choice.UE_NGAP_IDs.present) {
       case NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair:
-        enb_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.gNB_UE_NGAP_ID;
-        amf_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.mME_UE_NGAP_ID;
+        gnb_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.rAN_UE_NGAP_ID;
+        asn_INTEGER2ulong(&(ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.aMF_UE_NGAP_ID), &amf_ue_ngap_id);
         MSC_LOG_RX_MESSAGE(
           MSC_NGAP_GNB,
           MSC_NGAP_AMF,
           NULL,0,
           "0 UEContextRelease/%s gNB_ue_ngap_id "NGAP_UE_ID_FMT" amf_ue_ngap_id "NGAP_UE_ID_FMT" len %u",
           ngap_direction2String(pdu->present - 1),
-          enb_ue_ngap_id,
+          gnb_ue_ngap_id,
           amf_ue_ngap_id);
 
         if ((ue_desc_p = ngap_gNB_get_ue_context(amf_desc_p->ngap_gNB_instance,
-                         enb_ue_ngap_id)) == NULL) {
+                         gnb_ue_ngap_id)) == NULL) {
           NGAP_ERROR("[SCTP %d] Received UE context release command for non "
                      "existing UE context 0x%06lx\n",
                      assoc_id,
-                     enb_ue_ngap_id);
+                     gnb_ue_ngap_id);
           return -1;
         } else {
           MSC_LOG_TX_MESSAGE(
@@ -1160,25 +1160,25 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
             MSC_RRC_GNB,
             NULL,0,
             "0 NGAP_UE_CONTEXT_RELEASE_COMMAND/%d gNB_ue_ngap_id "NGAP_UE_ID_FMT" ",
-            enb_ue_ngap_id);
+            gnb_ue_ngap_id);
           message_p    = itti_alloc_new_message(TASK_NGAP, NGAP_UE_CONTEXT_RELEASE_COMMAND);
 
           if (ue_desc_p->amf_ue_ngap_id == 0) { // case of Detach Request and switch off from RRC_IDLE mode
             ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
           }
 
-          NGAP_UE_CONTEXT_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = enb_ue_ngap_id;
+          NGAP_UE_CONTEXT_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
           itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
           return 0;
         }
 
         break;
 
-      //#warning "TODO mapping amf_ue_ngap_id  enb_ue_ngap_id?"
+      //#warning "TODO mapping amf_ue_ngap_id  gnb_ue_ngap_id?"
 
-      case NGAP_UE_NGAP_IDs_PR_mME_UE_NGAP_ID:
-        amf_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair.mME_UE_NGAP_ID;
-        NGAP_ERROR("TO DO mapping amf_ue_ngap_id  enb_ue_ngap_id");
+      case NGAP_UE_NGAP_IDs_PR_aMF_UE_NGAP_ID:
+        asn_INTEGER2ulong(&(ie->value.choice.UE_NGAP_IDs.choice.aMF_UE_NGAP_ID), &amf_ue_ngap_id);
+        NGAP_ERROR("TO DO mapping amf_ue_ngap_id  gnb_ue_ngap_id");
         (void)amf_ue_ngap_id; /* TODO: remove - it's to remove gcc warning about unused var */
 
       case NGAP_UE_NGAP_IDs_PR_NOTHING:
@@ -1193,7 +1193,7 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_UEContextReleaseCommand_IEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_Cause, true);
   /* TBD */
-#endif
+
   return 0;
 }
 
