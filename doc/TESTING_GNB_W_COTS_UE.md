@@ -204,7 +204,7 @@ The test takes typically a few seconds, max 10-15 seconds. If it takes more than
 - **EPC** (on EPC host):
 
 for reference:
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
+https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
 
 
 
