@@ -262,9 +262,9 @@ typedef struct ngap_gNB_instance_s {
   uint8_t   num_plmn;
 
   uint16_t   num_nssai[PLMN_LIST_MAX_SIZE];
-  ngap_gNB_NSSAI_t s_nssai[PLMN_LIST_MAX_SIZE][1024];
+  ngap_gNB_NSSAI_t s_nssai[PLMN_LIST_MAX_SIZE][8];
   
-  /* Default Paging DRX of the gNB as defined in TS 36.304 */
+  /* Default Paging DRX of the gNB as defined in TS 38.304 */
   ngap_paging_drx_t default_drx;
 } ngap_gNB_instance_t;
 

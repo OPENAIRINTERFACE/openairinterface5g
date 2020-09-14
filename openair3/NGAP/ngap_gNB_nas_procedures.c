@@ -324,14 +324,14 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
                                  NGAP_NGAP_PDU_t *pdu)
 //------------------------------------------------------------------------------
 {
-#if 0
+
     ngap_gNB_amf_data_t             *amf_desc_p        = NULL;
     ngap_gNB_ue_context_t           *ue_desc_p         = NULL;
     ngap_gNB_instance_t             *ngap_gNB_instance = NULL;
     NGAP_DownlinkNASTransport_t     *container;
     NGAP_DownlinkNASTransport_IEs_t *ie;
-    NGAP_GNB_UE_NGAP_ID_t            enb_ue_ngap_id;
-    NGAP_AMF_UE_NGAP_ID_t            amf_ue_ngap_id;
+    NGAP_RAN_UE_NGAP_ID_t            gnb_ue_ngap_id;
+    uint64_t                         amf_ue_ngap_id;
     DevAssert(pdu != NULL);
 
     /* UE-related procedure -> stream != 0 */
@@ -353,25 +353,26 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
     container = &pdu->choice.initiatingMessage.value.choice.DownlinkNASTransport;
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_DownlinkNASTransport_IEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, true);
-    amf_ue_ngap_id = ie->value.choice.AMF_UE_NGAP_ID;
+    asn_INTEGER2ulong(&(ie->value.choice.AMF_UE_NGAP_ID), &amf_ue_ngap_id);
+
 
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_DownlinkNASTransport_IEs_t, ie, container,
-                               NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, true);
-    enb_ue_ngap_id = ie->value.choice.GNB_UE_NGAP_ID;
+                               NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID, true);
+    gnb_ue_ngap_id = ie->value.choice.RAN_UE_NGAP_ID;
 
     if ((ue_desc_p = ngap_gNB_get_ue_context(ngap_gNB_instance,
-                     enb_ue_ngap_id)) == NULL) {
+                     gnb_ue_ngap_id)) == NULL) {
         MSC_LOG_RX_DISCARDED_MESSAGE(
             MSC_NGAP_GNB,
             MSC_NGAP_AMF,
             NULL,
             0,
             MSC_AS_TIME_FMT" downlinkNASTransport  gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-            enb_ue_ngap_id,
+            gnb_ue_ngap_id,
             amf_ue_ngap_id);
         NGAP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context gNB_UE_NGAP_ID: 0x%lx\n",
                    assoc_id,
-                   enb_ue_ngap_id);
+                   gnb_ue_ngap_id);
         return -1;
     }
 
@@ -391,10 +392,10 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
     } else {
         /* We already have a amf ue ngap id check the received is the same */
         if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
-            NGAP_ERROR("[SCTP %d] Mismatch in AMF UE NGAP ID (0x%lx != 0x%"PRIx32"\n",
+            NGAP_ERROR("[SCTP %d] Mismatch in AMF UE NGAP ID (0x%lx != 0x%"PRIx64"\n",
                        assoc_id,
                        amf_ue_ngap_id,
-                       ue_desc_p->amf_ue_ngap_id
+                       (uint64_t)ue_desc_p->amf_ue_ngap_id
                       );
             return -1;
         }
@@ -411,13 +412,13 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
 
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_DownlinkNASTransport_IEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_NAS_PDU, true);
-    /* Forward the NAS PDU to RRC */
+    /* Forward the NAS PDU to NR-RRC */
     ngap_gNB_itti_send_nas_downlink_ind(ngap_gNB_instance->instance,
                                         ue_desc_p->ue_initial_id,
                                         ue_desc_p->gNB_ue_ngap_id,
                                         ie->value.choice.NAS_PDU.buf,
                                         ie->value.choice.NAS_PDU.size);
-#endif
+
     return 0;
 }
 

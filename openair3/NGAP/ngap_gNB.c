@@ -202,10 +202,25 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *
       new_instance->mcc[i]              = ngap_register_gNB->mcc[i];
       new_instance->mnc[i]              = ngap_register_gNB->mnc[i];
       new_instance->mnc_digit_length[i] = ngap_register_gNB->mnc_digit_length[i];
+      
+      new_instance->num_nssai[i]        = ngap_register_gNB->num_nssai[i];
     }
 
     new_instance->num_plmn         = ngap_register_gNB->num_plmn;
     new_instance->default_drx      = ngap_register_gNB->default_drx;
+
+    memcpy(new_instance->s_nssai, ngap_register_gNB->s_nssai, sizeof(ngap_register_gNB->s_nssai));
+
+    // config add? TBD
+    if(1) {
+      new_instance->num_nssai[0] = 1;
+      new_instance->s_nssai[0][0].sST = 1;
+      new_instance->s_nssai[0][0].sD_flag = 1;
+      new_instance->s_nssai[0][0].sD[0] = 1;
+      new_instance->s_nssai[0][0].sD[1] = 2;
+      new_instance->s_nssai[0][0].sD[2] = 3;
+    }
+    
     /* Add the new instance to the list of gNB (meaningfull in virtual mode) */
     ngap_gNB_insert_new_instance(new_instance);
     NGAP_INFO("Registered new gNB[%d] and %s gNB id %u\n",
@@ -489,7 +504,6 @@ static int ngap_gNB_generate_ng_setup_request(
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
-#if 0
   /* mandatory */
   ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_SupportedTAList;
@@ -497,7 +511,7 @@ static int ngap_gNB_generate_ng_setup_request(
   ie->value.present = NGAP_NGSetupRequestIEs__value_PR_SupportedTAList;
   {
     ta = (NGAP_SupportedTAItem_t *)calloc(1, sizeof(NGAP_SupportedTAItem_t));
-    INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
+    INT24_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
     {
       for (int i = 0; i < ngap_amf_data_p->broadcast_plmn_num; ++i) {
         plmn = (NGAP_BroadcastPLMNItem_t *)calloc(1, sizeof(NGAP_BroadcastPLMNItem_t));
@@ -530,7 +544,6 @@ static int ngap_gNB_generate_ng_setup_request(
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   
-#endif
   /* mandatory */
   ie = (NGAP_NGSetupRequestIEs_t *)calloc(1, sizeof(NGAP_NGSetupRequestIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_DefaultPagingDRX;
