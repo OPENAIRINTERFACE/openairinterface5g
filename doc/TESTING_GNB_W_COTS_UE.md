@@ -70,7 +70,7 @@ cd cmake_targets/
 - **EPC**
 
 for reference:
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
+https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
 
 
 
