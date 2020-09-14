@@ -92,12 +92,13 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 				 &N_RA_slot,
 				 &config_period);
     
-    for(int prach_oc = 0; prach_oc < NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX; prach_oc++) {
+    for(int prach_oc = 0; prach_oc < prach_pdu->num_prach_ocas; prach_oc++) {
       for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
 	gNB->prach_vars.rxsigF[aa] = ru->prach_rxsigF[prach_oc][ru_aa];
       }
 
-      prachStartSymbol = prach_pdu->prach_start_symbol+prach_oc*N_dur+14*N_RA_slot;
+      prachStartSymbol = prach_pdu->prach_start_symbol+prach_oc*N_dur;
+      //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}. 
      
       rx_nr_prach(gNB,
 		  prach_pdu,
@@ -127,7 +128,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 	      max_preamble_energy[0]/10,
 	      max_preamble_energy[0]%10,
 	      max_preamble_delay[0],
-	      prach_pdu->prach_start_symbol,
+	      prachStartSymbol,
 	      prach_pdu->num_ra);
 	
 	T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(gNB->Mod_id), T_INT(frame), T_INT(slot),

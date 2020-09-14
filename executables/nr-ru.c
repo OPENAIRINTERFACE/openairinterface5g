@@ -1602,7 +1602,9 @@ void *ru_thread( void *param ) {
 				     &config_period);
 				     
 	for (int prach_oc = 0; prach_oc<ru->prach_list[prach_id].num_prach_ocas; prach_oc++) {
-	  prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur+14*N_RA_slot;
+	  prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur;
+	  //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}. 
+
 	  rx_nr_prach_ru(ru,
 			 ru->prach_list[prach_id].fmt, //could also use format
 			 ru->prach_list[prach_id].numRA,

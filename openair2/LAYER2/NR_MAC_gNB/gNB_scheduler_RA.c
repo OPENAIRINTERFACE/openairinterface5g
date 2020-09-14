@@ -467,11 +467,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   if (ra->state == RA_IDLE) {
 
     uint8_t index = ssb_index_from_prach(module_idP,
-		                                     frameP,
-																				 slotP,
-																				 preamble_index,
-																				 freq_index,
-																				 symbol);
+					 frameP,
+					 slotP,
+					 preamble_index,
+					 freq_index,
+					 symbol);
 
     NR_SSB_list_t *SSB_list = &nr_mac->SSB_list[index];
     int loop = 0;
