@@ -371,7 +371,6 @@ int configure_fapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].ndi = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].ndi;
   // DAI
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
-
   // TPC for PUCCH
   dci_pdu_rel15[0].tpc = UE_list->UE_sched_ctrl[UE_id].tpc1; // table 7.2.1-1 in 38.213
   // PUCCH resource indicator

@@ -1471,12 +1471,16 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
            0,
            sizeof(NR_UE_sched_ctrl_t));
     UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
-    UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+    UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch **)malloc(num_slots_ul*sizeof(NR_sched_pucch *));
+    for (int s=0; s<num_slots_ul;s++)
+      UE_list->UE_sched_ctrl[UE_id].sched_pucch[s] = (NR_sched_pucch *)malloc(2*sizeof(NR_sched_pucch));
     UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
     for (int k=0; k<num_slots_ul; k++) {
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));
+      for (int l=0; l<2; l++)
+        memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l],
+               0,
+               sizeof(NR_sched_pucch));
+
       memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
              0,
              sizeof(NR_sched_pusch));
@@ -1652,13 +1656,15 @@ void nr_csi_meas_reporting(int Mod_idP,
     csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
 
     AssertFatal(csirep->reportConfigType.choice.periodic!=NULL,"Only periodic CSI reporting is implemented currently");
-    int period, offset;
+    int period, offset, sched_slot;
     csi_period_offset(csirep,&period,&offset);
+    sched_slot = (period+offset)%n_slots_frame;
+    // prepare to schedule csi measurement reception according to 5.2.1.4 in 38.214
+    // preparation is done in first slot of tdd period
+    if ( (frame%(period/n_slots_frame)==(offset/n_slots_frame)) && (slot==((sched_slot/slots_per_tdd)*slots_per_tdd))) {
 
-    // schedule csi measurement reception according to 5.2.1.4 in 38.214
-    if ( ((n_slots_frame*frame + slot - offset)%period) == 0) {
-
-      curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[slot-slots_per_tdd+ul_slots];
+      // we are scheduling pucch for csi in the first pucch occasion (this comes before ack/nack)
+      curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[sched_slot-slots_per_tdd+ul_slots][0];
 
       NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
 
@@ -1705,7 +1711,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       }
       curr_pucch->csi_bits += get_csi_bitlen(Mod_idP,UE_id,csi_report_id); // TODO function to compute CSI meas report bit size
       curr_pucch->frame = frame;
-      curr_pucch->ul_slot = slot;
+      curr_pucch->ul_slot = sched_slot;
     }
   }
 }
@@ -1717,12 +1723,13 @@ void nr_acknack_scheduling(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP,
                            int slots_per_tdd,
-                           int *pucch_id) {
+                           int *pucch_id,
+                           int *pucch_occ) {
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
   NR_sched_pucch *curr_pucch;
-  int first_ul_slot_tdd,k,i;
+  int pucch_res,first_ul_slot_tdd,k,i,l;
   uint8_t pdsch_to_harq_feedback[8];
   int found = 0;
   int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
@@ -1735,28 +1742,34 @@ void nr_acknack_scheduling(int Mod_idP,
 
   // for each possible ul or mixed slot
   for (k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
-    //if it is possible to schedule acknack in current pucch (no exclusive csi pucch)
-    if ((curr_pucch->csi_bits == 0) || (curr_pucch->simultaneous_harqcsi==true)) {
-      // if there is free room in current pucch structure
-      if (curr_pucch->dai_c<MAX_ACK_BITS) {
-        curr_pucch->frame = frameP;
-        curr_pucch->dai_c++;
-        curr_pucch->resource_indicator = 0; // in phytest with only 1 UE we are using just the 1st resource
-        // first pucch occasion in first UL or MIXED slot
-        first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-        i = 0;
-        while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
-          if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
-            found = 1;
-          if (found == 0) i++;
-        }
-        if (found == 1) {
-          // computing slot in which pucch is scheduled
-          curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
-          curr_pucch->timing_indicator = i; // index in the list of timing indicators
-          *pucch_id = k;
-          return;
+    for (l=0; l<2; l++) {
+      curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l];
+      //if it is possible to schedule acknack in current pucch (no exclusive csi pucch)
+      if ((curr_pucch->csi_bits == 0) || (curr_pucch->simultaneous_harqcsi==true)) {
+        // if there is free room in current pucch structure
+        if (curr_pucch->dai_c<MAX_ACK_BITS) {
+          pucch_res = get_pucch_resource(UE_list,UE_id,k,l);
+          if (pucch_res>-1){
+            curr_pucch->resource_indicator = pucch_res;
+            curr_pucch->frame = frameP;
+            curr_pucch->dai_c++;
+            // first pucch occasion in first UL or MIXED slot
+            first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+            i = 0;
+            while (i<8 && found == 0)  {  // look if timing indicator is among allowed values
+              if (pdsch_to_harq_feedback[i]==(first_ul_slot_tdd+k)-(slotP % slots_per_tdd))
+                found = 1;
+              if (found == 0) i++;
+            }
+            if (found == 1) {
+              // computing slot in which pucch is scheduled
+              curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
+              curr_pucch->timing_indicator = i; // index in the list of timing indicators
+              *pucch_id = k;
+              *pucch_occ = l;
+              return;
+            }
+          }
         }
       }
     }
@@ -1764,6 +1777,18 @@ void nr_acknack_scheduling(int Mod_idP,
   AssertFatal(1==0,"No Uplink slot available in accordance to allowed timing indicator\n");
 }
 
+
+int get_pucch_resource(NR_UE_list_t *UE_list,int UE_id,int k,int l) {
+
+  // to be updated later
+  // for now we are just using resource 0 for acknack pucch
+  // use the second allocation just in case there is csi in the first
+  if (l==1 && UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits==0)
+    return -1;
+  else
+    return 0;
+
+}
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,

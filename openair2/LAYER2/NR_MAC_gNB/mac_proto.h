@@ -181,7 +181,10 @@ void nr_acknack_scheduling(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP,
                            int slots_per_tdd,
-                           int *pucch_id);
+                           int *pucch_id,
+                           int *pucch_occ);
+
+int get_pucch_resource(NR_UE_list_t *UE_list,int UE_id,int k,int l);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,

@@ -333,33 +333,36 @@ void nr_schedule_pucch(int Mod_idP,
   NR_sched_pucch *curr_pucch;
 
   for (int k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
-    O_ack = curr_pucch->dai_c;
-    O_uci = O_ack + curr_pucch->csi_bits; // for now we are just sending acknacks in pucch
-    if ((O_uci>0 || SR_flag==1) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
+    for (int l=0; l<2; l++) {
+      curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l];
+      O_ack = curr_pucch->dai_c;
+      O_uci = O_ack + curr_pucch->csi_bits; // for now we are just sending acknacks in pucch
+      if ((O_uci>0 || SR_flag==1) && (frameP == curr_pucch->frame) && (slotP == curr_pucch->ul_slot)) {
 
-      UL_tti_req->SFN = curr_pucch->frame;
-      UL_tti_req->Slot = curr_pucch->ul_slot;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
-      nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
-      memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
-      UL_tti_req->n_pdus+=1;
+        UL_tti_req->SFN = curr_pucch->frame;
+        UL_tti_req->Slot = curr_pucch->ul_slot;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].pucch_pdu;
+        memset(pucch_pdu,0,sizeof(nfapi_nr_pucch_pdu_t));
+        UL_tti_req->n_pdus+=1;
 
-      LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d\n", frameP, slotP);
+        LOG_I(MAC,"Scheduling pucch reception for frame %d slot %d with SR flag %d and (%d, %d) (ACK, CSI) bits\n",
+              frameP,slotP,SR_flag,O_ack,curr_pucch->csi_bits);
 
-      nr_configure_pucch(pucch_pdu,
-			 scc,
-			 ubwp,
-                         UE_list->rnti[UE_id],
-                         curr_pucch->resource_indicator,
-                         O_uci,
-                         O_ack,
-                         SR_flag);
+        nr_configure_pucch(pucch_pdu,
+                           scc,
+                           ubwp,
+                           UE_list->rnti[UE_id],
+                           curr_pucch->resource_indicator,
+                           O_uci,
+                           O_ack,
+                           SR_flag);
 
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));
+        memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][l],
+               0,
+               sizeof(NR_sched_pucch));
+      }
     }
   }
 }
@@ -386,7 +389,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   int UE_id;
   uint64_t *dlsch_in_slot_bitmap=NULL;
   uint64_t *ulsch_in_slot_bitmap=NULL;
-  int pucch_sched;
+  int pucch_sched, pucch_occ;
 
   UE_id=0;
   int bwp_id = 1;
@@ -401,17 +404,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   int nr_ulmix_slots = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0)
     nr_ulmix_slots++;
-
-  if (slot== 0 && (UE_list->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
-    for (int k=0; k<nr_ulmix_slots; k++) {
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
-             0,
-             sizeof(NR_sched_pucch));
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
-             0,
-             sizeof(NR_sched_pusch));
-    }
-  }
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -511,8 +503,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if (UE_list->fiveG_connected[UE_id] && (is_xlsch_in_slot(*dlsch_in_slot_bitmap,slot%num_slots_per_tdd))) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
-    nr_acknack_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched);
-    nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched], NULL);
+    nr_acknack_scheduling(module_idP, UE_id, frame, slot, num_slots_per_tdd,&pucch_sched,&pucch_occ);
+    nr_schedule_uss_dlsch_phytest(module_idP, frame, slot, &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched][pucch_occ], NULL);
     // resetting ta flag
     gNB->ta_len = 0;
   }
