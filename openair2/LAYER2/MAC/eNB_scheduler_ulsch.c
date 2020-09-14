@@ -1492,7 +1492,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
      * This is the normalized RX snr and this should be constant (regardless
      * of mcs) Is not in dBm, unit from nfapi, converting to dBm
      */
-    const int32_t snr = (5 * UE_sched_ctrl_ptr->pusch_snr[CC_id] - 640) / 10;
+    const int32_t snr = UE_sched_ctrl_ptr->pusch_snr[CC_id];
     const int32_t target_snr = mac->puSch10xSnr / 10;
 
     /*
@@ -2073,7 +2073,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           cqi_req = 0;
           /* Power control: compute the expected ULSCH RX snr (for the stats) */
           /* This is the normalized snr and this should be constant (regardless of mcs) */
-          snr = UE_sched_ctrl->pusch_snr_avg[CC_id];
+          snr = UE_sched_ctrl->pusch_snr[CC_id];
           target_snr = eNB->puSch10xSnr / 10; /* TODO: target_rx_power was 178, what to put? */
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
