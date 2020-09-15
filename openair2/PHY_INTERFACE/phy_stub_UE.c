@@ -1374,6 +1374,7 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
         LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n", encoded_size);
         abort();
       }
+      print_rx_ind(&test_ind);
       char test_buffer[1024];
       int encoded_size2 = nfapi_p7_message_pack(&test_ind, test_buffer, sizeof(test_buffer), NULL);
       if (encoded_size2 < 0)
