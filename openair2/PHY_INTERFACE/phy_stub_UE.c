@@ -1330,6 +1330,12 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\n",
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
             UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus);
+      nfapi_rx_indication_t test_ind;
+      if (nfapi_p7_message_unpack(buffer, encoded_size, &test_ind, sizeof(test_ind), NULL) < 0)
+      {
+        LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n" encoded_size);
+        abort();
+      }
       break;
     case NFAPI_RX_CQI_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL); // Check pdu->ul_cqi_information.channel = 1

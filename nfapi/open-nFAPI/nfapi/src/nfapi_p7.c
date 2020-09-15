@@ -37,6 +37,31 @@
 #include <nfapi.h>
 #include <debug.h>
 
+static const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len)
+{
+    char *p = out;
+    char *endp = out + out_len;
+    const uint8_t *q = data;
+    snprintf(p, endp - p, "[%zu]", data_len);
+    p += strlen(p);
+    for (size_t i = 0; i < data_len; ++i)
+    {
+        if (p >= endp)
+        {
+            static const char ellipses[] = "...";
+            char *s = endp - sizeof(ellipses);
+            if (s >= p)
+            {
+                strcpy(s, ellipses);
+            }
+            break;
+        }
+        snprintf(p, endp - p, " %02X", *q++);
+        p += strlen(p);
+    }
+    return out;
+}
+
 extern int nfapi_unpack_p7_vendor_extension(nfapi_p7_message_header_t* header, uint8_t **ppReadPackedMsg, void* user_data);
 extern int nfapi_pack_p7_vendor_extension(nfapi_p7_message_header_t* header, uint8_t **ppWritePackedMsg, void* user_data);
 
@@ -6109,6 +6134,8 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 	nfapi_p7_message_header_t *pMessageHeader = (nfapi_p7_message_header_t*)pUnpackedBuf;
 	uint8_t *pReadPackedMessage = pMessageBuf;
 	uint8_t *end = pMessageBuf + messageBufLen;
+	uint8_t *end_unpacked_buf = pUnpackedBuf + unpackedBufLen;
+	uint8_t *start_unpacked_buf = pUnpackedBuf;
 
 	if (pMessageBuf == NULL || pUnpackedBuf == NULL)
 	{
@@ -6315,6 +6342,13 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 				NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s NFAPI Unknown message ID %d\n", __FUNCTION__, pMessageHeader->message_id);
 			}
 			break;
+	}
+
+	if (pMessageHeader->message_id == NFAPI_RX_ULSCH_INDICATION)
+	{
+		char foobar[1024];
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "Biden %s:%d: %s\n", __FUNCTION__,
+					__LINE__, hexdump(pUnpackedBuf, end_unpacked_buf - start_unpacked_buf, foobar, sizeof(foobar)));
 	}
 
 	if(result == 0)
