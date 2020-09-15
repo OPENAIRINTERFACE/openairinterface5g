@@ -434,35 +434,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   NR_DL_FRAME_PARMS *fp = &RC.gNB[Mod_id]->frame_parms;
   nfapi_nr_config_request_scf_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
 
-  /*
-  gNB_config->cell_config.phy_cell_id.value             = phy_config->cfg->cell_config.phy_cell_id.value;
-  gNB_config->carrier_config.dl_frequency.value         = phy_config->cfg->carrier_config.dl_frequency.value;
-  gNB_config->carrier_config.uplink_frequency.value     = phy_config->cfg->carrier_config.uplink_frequency.value;
-  gNB_config->ssb_config.scs_common.value               = phy_config->cfg->ssb_config.scs_common.value;
-  gNB_config->carrier_config.dl_bandwidth.value         = phy_config->cfg->carrier_config.dl_bandwidth.value;
-  gNB_config->carrier_config.uplink_bandwidth.value     = phy_config->cfg->carrier_config.uplink_bandwidth.value;
-  gNB_config->ssb_table.ssb_subcarrier_offset.value     = phy_config->cfg->ssb_table.ssb_subcarrier_offset.value;
-  gNB_config->ssb_table.ssb_offset_point_a.value        = phy_config->cfg->ssb_table.ssb_offset_point_a.value;
-  gNB_config->ssb_table.ssb_mask_list[0].ssb_mask.value = phy_config->cfg->ssb_table.ssb_mask_list[0].ssb_mask.value;
-  gNB_config->ssb_table.ssb_mask_list[1].ssb_mask.value = phy_config->cfg->ssb_table.ssb_mask_list[1].ssb_mask.value;
-  gNB_config->ssb_table.ssb_period.value		= phy_config->cfg->ssb_table.ssb_period.value;
-  for (int i=0; i<5; i++) {
-    gNB_config->carrier_config.dl_grid_size[i].value    = phy_config->cfg->carrier_config.dl_grid_size[i].value;
-    gNB_config->carrier_config.ul_grid_size[i].value    = phy_config->cfg->carrier_config.ul_grid_size[i].value;
-    gNB_config->carrier_config.dl_k0[i].value           = phy_config->cfg->carrier_config.dl_k0[i].value;
-    gNB_config->carrier_config.ul_k0[i].value           = phy_config->cfg->carrier_config.ul_k0[i].value;
-  }
-
-
-  if (phy_config->cfg->cell_config.frame_duplex_type.value == 0) {
-    gNB_config->cell_config.frame_duplex_type.value = FDD;
-  } else {
-    gNB_config->cell_config.frame_duplex_type.value = TDD;
-  }
-
-  memcpy((void*)&gNB_config->prach_config,(void*)&phy_config->cfg->prach_config,sizeof(phy_config->cfg->prach_config));
-  memcpy((void*)&gNB_config->tdd_table,(void*)&phy_config->cfg->tdd_table,sizeof(phy_config->cfg->tdd_table));
-  */
   memcpy((void*)gNB_config,phy_config->cfg,sizeof(*phy_config->cfg));
   RC.gNB[Mod_id]->mac_enabled     = 1;
 
