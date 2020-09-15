@@ -906,7 +906,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres1);
 
  pucchres2->pucch_ResourceId=3;
- pucchres2->startingPRB=32;
+ pucchres2->startingPRB=40;
  pucchres2->intraSlotFrequencyHopping=NULL;
  pucchres2->secondHopPRB=NULL;
  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
@@ -917,7 +917,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
 
  pucchres3->pucch_ResourceId=4;
- pucchres3->startingPRB=32;
+ pucchres3->startingPRB=40;
  pucchres3->intraSlotFrequencyHopping=NULL;
  pucchres3->secondHopPRB=NULL;
  pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;

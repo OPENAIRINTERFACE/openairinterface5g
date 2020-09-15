@@ -1780,11 +1780,15 @@ void nr_acknack_scheduling(int Mod_idP,
 
 int get_pucch_resource(NR_UE_list_t *UE_list,int UE_id,int k,int l) {
 
-  // to be updated later
-  // for now we are just using resource 0 for acknack pucch
+  // to be updated later, for now simple implementation
   // use the second allocation just in case there is csi in the first
-  if (l==1 && UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits==0)
-    return -1;
+  // in that case use second resource (for a different symbol) see 9.2 in 38.213
+  if (l==1) {
+    if (UE_list->UE_sched_ctrl[UE_id].sched_pucch[k][0].csi_bits==0)
+      return -1;
+    else
+      return 1;
+  }
   else
     return 0;
 
