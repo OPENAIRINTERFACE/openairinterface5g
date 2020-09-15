@@ -430,9 +430,9 @@ int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
 
       if(slice_support_item_p->s_NSSAI.sD != NULL) {
         new_slice_support_p->sD_flag = 1;
-        OCTET_STRING_TO_INT8(&slice_support_item_p->s_NSSAI.sD[0], new_slice_support_p->sD[0]);
-        OCTET_STRING_TO_INT8(&slice_support_item_p->s_NSSAI.sD[1], new_slice_support_p->sD[1]);
-        OCTET_STRING_TO_INT8(&slice_support_item_p->s_NSSAI.sD[2], new_slice_support_p->sD[2]);
+        new_slice_support_p->sD[0] = slice_support_item_p->s_NSSAI.sD->buf[0];
+        new_slice_support_p->sD[1] = slice_support_item_p->s_NSSAI.sD->buf[1];
+        new_slice_support_p->sD[2] = slice_support_item_p->s_NSSAI.sD->buf[2];
       }
       STAILQ_INSERT_TAIL(&new_plmn_support_p->slice_supports, new_slice_support_p, next);
     }
@@ -1034,9 +1034,9 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
 
       if(allow_nssai_item_p->s_NSSAI.sD != NULL) {
         NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD_flag = 1;
-        OCTET_STRING_TO_INT8(&allow_nssai_item_p->s_NSSAI.sD[0], NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[0]);
-        OCTET_STRING_TO_INT8(&allow_nssai_item_p->s_NSSAI.sD[1], NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[1]);
-        OCTET_STRING_TO_INT8(&allow_nssai_item_p->s_NSSAI.sD[2], NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[2]);
+        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[0] = allow_nssai_item_p->s_NSSAI.sD->buf[0];
+        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[1] = allow_nssai_item_p->s_NSSAI.sD->buf[1];
+        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[2] = allow_nssai_item_p->s_NSSAI.sD->buf[2];
       }
     }
   } else {/* ie != NULL */
