@@ -399,7 +399,7 @@ typedef struct ngap_register_gnb_req_s {
   char *gNB_name;
 
   /* Tracking area code */
-  uint16_t tac;
+  uint32_t tac;
 
 #define PLMN_LIST_MAX_SIZE 6
   /* Mobile Country Code
