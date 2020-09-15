@@ -1333,7 +1333,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       nfapi_rx_indication_t test_ind;
       if (nfapi_p7_message_unpack(buffer, encoded_size, &test_ind, sizeof(test_ind), NULL) < 0)
       {
-        LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n" encoded_size);
+        LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n", encoded_size);
         abort();
       }
       break;
