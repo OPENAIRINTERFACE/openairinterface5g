@@ -861,12 +861,11 @@ int ngap_gNB_ue_capabilities(instance_t instance,
                              ngap_ue_cap_info_ind_t *ue_cap_info_ind_p)
 //------------------------------------------------------------------------------
 {
-#if 0
     ngap_gNB_instance_t          *ngap_gNB_instance_p;
     struct ngap_gNB_ue_context_s *ue_context_p;
     NGAP_NGAP_PDU_t                       pdu;
-    NGAP_UECapabilityInfoIndication_t    *out;
-    NGAP_UECapabilityInfoIndicationIEs_t *ie;
+    NGAP_UERadioCapabilityInfoIndication_t    *out;
+    NGAP_UERadioCapabilityInfoIndicationIEs_t *ie;
     uint8_t  *buffer;
     uint32_t length;
     /* Retrieve the NGAP gNB instance associated with Mod_id */
@@ -882,7 +881,7 @@ int ngap_gNB_ue_capabilities(instance_t instance,
         return -1;
     }
 
-    /* UE capabilities message can occur either during an ngap connected state
+    /* UE radio capabilities message can occur either during an ngap connected state
      * or during initial attach (for example: NAS authentication).
      */
     if (!(ue_context_p->ue_state == NGAP_UE_CONNECTED ||
@@ -896,37 +895,38 @@ int ngap_gNB_ue_capabilities(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_UECapabilityInfoIndication;
+    pdu.choice.initiatingMessage.procedureCode = NGAP_ProcedureCode_id_UERadioCapabilityInfoIndication;
     pdu.choice.initiatingMessage.criticality = NGAP_Criticality_ignore;
-    pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_UECapabilityInfoIndication;
-    out = &pdu.choice.initiatingMessage.value.choice.UECapabilityInfoIndication;
+    pdu.choice.initiatingMessage.value.present = NGAP_InitiatingMessage__value_PR_UERadioCapabilityInfoIndication;
+    out = &pdu.choice.initiatingMessage.value.choice.UERadioCapabilityInfoIndication;
     /* mandatory */
-    ie = (NGAP_UECapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UECapabilityInfoIndicationIEs_t));
+    ie = (NGAP_UERadioCapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UERadioCapabilityInfoIndicationIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
-    ie->value.present = NGAP_UECapabilityInfoIndicationIEs__value_PR_AMF_UE_NGAP_ID;
-    ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    ie->value.present = NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_AMF_UE_NGAP_ID;
+    //ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
-    ie = (NGAP_UECapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UECapabilityInfoIndicationIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
+    ie = (NGAP_UERadioCapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UERadioCapabilityInfoIndicationIEs_t));
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
-    ie->value.present = NGAP_UECapabilityInfoIndicationIEs__value_PR_GNB_UE_NGAP_ID;
-    ie->value.choice.GNB_UE_NGAP_ID = ue_cap_info_ind_p->gNB_ue_ngap_id;
+    ie->value.present = NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = ue_cap_info_ind_p->gNB_ue_ngap_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
-    ie = (NGAP_UECapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UECapabilityInfoIndicationIEs_t));
+    ie = (NGAP_UERadioCapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UERadioCapabilityInfoIndicationIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_UERadioCapability;
     ie->criticality = NGAP_Criticality_reject;
-    ie->value.present = NGAP_UECapabilityInfoIndicationIEs__value_PR_UERadioCapability;
+    ie->value.present = NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_UERadioCapability;
     ie->value.choice.UERadioCapability.buf = ue_cap_info_ind_p->ue_radio_cap.buffer;
     ie->value.choice.UERadioCapability.size = ue_cap_info_ind_p->ue_radio_cap.length;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* optional */
-
+    //NGAP_UERadioCapabilityForPaging TBD
     if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
         /* Encode procedure has failed... */
-        NGAP_ERROR("Failed to encode UE capabilities indication\n");
+        NGAP_ERROR("Failed to encode UE radio capabilities indication\n");
         return -1;
     }
 
@@ -943,7 +943,6 @@ int ngap_gNB_ue_capabilities(instance_t instance,
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
-#endif
     return 0;
 }
 
