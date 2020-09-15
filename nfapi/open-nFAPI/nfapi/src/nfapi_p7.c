@@ -4971,7 +4971,9 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 		// pdu end is past buffer end
 		return 0;
 	}
-
+	char foo[1024];
+	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+				__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 	if(pull16(ppReadPackedMsg, &value->number_of_pdus, end) == 0)
 		return 0;
 
@@ -4999,6 +5001,8 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 	nfapi_rx_indication_pdu_t* pdu = 0;
 	while((uint8_t*)(*ppReadPackedMsg) < rxBodyEnd && (uint8_t*)(*ppReadPackedMsg) < rxPduEnd)
 	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+				__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 		nfapi_tl_t generic_tl;
 		if( unpack_tl(ppReadPackedMsg, &generic_tl, end) == 0)
 			return 0;
@@ -5009,6 +5013,8 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 				{
 					pdu = &(value->rx_pdu_list[i++]);
 					pdu->rx_ue_information.tl = generic_tl;
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+								__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 					if(unpack_rx_ue_information_value(&pdu->rx_ue_information, ppReadPackedMsg, end) == 0)
 						return 0;
 				}
@@ -5018,6 +5024,8 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 					if(pdu != 0)
 					{
 						pdu->rx_indication_rel8.tl = generic_tl;
+						NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+									__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 						if(unpack_rx_indication_rel8_value(&pdu->rx_indication_rel8, ppReadPackedMsg, end) == 0)
 							return 0;
 		
@@ -5051,6 +5059,8 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 					if(pdu != 0)
 					{
 						pdu->rx_indication_rel9.tl = generic_tl;
+						NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+									__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 						if(unpack_rx_indication_rel9_value(&pdu->rx_indication_rel9, ppReadPackedMsg, end) == 0)
 							return 0;
 					}
@@ -5071,10 +5081,14 @@ static uint8_t unpack_rx_indication_body_value(void* tlv, uint8_t **ppReadPacked
 		{
 			uint32_t length = value->rx_pdu_list[idx].rx_indication_rel8.length;
 			value->rx_pdu_list[idx].data = nfapi_p7_allocate(length, config);
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+				__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 			if(pullarray8(ppReadPackedMsg, value->rx_pdu_list[idx].data, length, length, end) == 0)
 			{
 				return 0;
 			}
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
+				__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 		}
 	}
 
