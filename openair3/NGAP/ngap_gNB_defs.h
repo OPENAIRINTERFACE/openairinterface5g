@@ -248,7 +248,7 @@ typedef struct ngap_gNB_instance_s {
   enum cell_type_e cell_type;
 
   /* Tracking area code */
-  uint16_t tac;
+  uint32_t tac;
 
   /* gNB NGAP IP address */
   net_ip_address_t gNB_ng_ip;
