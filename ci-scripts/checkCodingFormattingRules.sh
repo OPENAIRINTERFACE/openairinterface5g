@@ -77,7 +77,7 @@ then
        IS_NFAPI=`echo $FILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext"`
        IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FILE`
        IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence" $FILE`
-       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h"`
+       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_"`
        if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
        then
            if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
@@ -194,7 +194,7 @@ do
             IS_NFAPI=`echo $FULLFILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext"`
             IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FULLFILE`
             IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence" $FULLFILE`
-            IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h"`
+            IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_"`
             if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
             then
                 if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
