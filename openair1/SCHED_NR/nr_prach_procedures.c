@@ -110,12 +110,12 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 		  &max_preamble_delay[0]
 		  );
       free_nr_prach_entry(gNB,prach_id);
-      LOG_I(PHY,"[RAPROC] Frame %d, slot %d : Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d)\n",
-        frame,slot,
-        max_preamble[0],
-        max_preamble_energy[0]/10,
-        max_preamble_delay[0],
-	gNB->prach_energy_counter);
+      LOG_I(PHY,"[RAPROC] Frame %d, slot %d, occasion %d (prachStartSymbol %d) : Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d)\n",
+	    frame,slot,prach_oc,prachStartSymbol,
+	    max_preamble[0],
+	    max_preamble_energy[0]/10,
+	    max_preamble_delay[0],
+	    gNB->prach_energy_counter);
 
       if ((gNB->prach_energy_counter == 100) && 
 	  (max_preamble_energy[0] > gNB->measurements.prach_I0+100)) {
