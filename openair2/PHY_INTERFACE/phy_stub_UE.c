@@ -1336,6 +1336,12 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
         LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n", encoded_size);
         abort();
       }
+      char test_buffer[1024];
+      int encoded_size2 = nfapi_p7_message_pack(&test_ind, test_buffer, sizeof(test_buffer), NULL);
+      if (encoded_size2 < 0)
+      {
+        LOG_E(MAC, "could not pack rx_ind right after unpacking encoded_size2: %d\n", encoded_size2);
+      }
       break;
     case NFAPI_RX_CQI_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL); // Check pdu->ul_cqi_information.channel = 1
