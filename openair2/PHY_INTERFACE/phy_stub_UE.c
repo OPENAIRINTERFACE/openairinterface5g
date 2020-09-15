@@ -1312,6 +1312,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
   {
     int encoded_size = -1;
     char buffer[1024];
+    char dump[1024];
     switch (msg_type)
     {
     case NFAPI_RACH_INDICATION:
@@ -1327,9 +1328,10 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
       break;
     case NFAPI_RX_ULSCH_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\n",
+      LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\nHexDUMP %s\n",
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
-            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus);
+            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus,
+            hexdump(buffer, encoded_size, dump, sizeof(dump)));
       nfapi_rx_indication_t test_ind;
       if (nfapi_p7_message_unpack(buffer, encoded_size, &test_ind, sizeof(test_ind), NULL) < 0)
       {
