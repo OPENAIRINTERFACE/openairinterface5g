@@ -53,7 +53,7 @@
 int ngap_ue_context_release_complete(instance_t instance,
                                      ngap_ue_release_complete_t *ue_release_complete_p)
 {
-#if 0
+
   ngap_gNB_instance_t                 *ngap_gNB_instance_p = NULL;
   struct ngap_gNB_ue_context_s        *ue_context_p        = NULL;
   NGAP_NGAP_PDU_t                      pdu;
@@ -94,15 +94,15 @@ int ngap_ue_context_release_complete(instance_t instance,
   ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
   ie->criticality = NGAP_Criticality_ignore;
   ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_AMF_UE_NGAP_ID;
-  ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+  asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (NGAP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseComplete_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
+  ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
   ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_GNB_UE_NGAP_ID;
-  ie->value.choice.GNB_UE_NGAP_ID = ue_release_complete_p->gNB_ue_ngap_id;
+  ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_RAN_UE_NGAP_ID;
+  ie->value.choice.RAN_UE_NGAP_ID = ue_release_complete_p->gNB_ue_ngap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
@@ -117,7 +117,7 @@ int ngap_ue_context_release_complete(instance_t instance,
     MSC_NGAP_AMF,
     buffer,
     length,
-    MSC_AS_TIME_FMT" UEContextRelease successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
+    MSC_AS_TIME_FMT" UEContextRelease successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %lu",
     0,0, //MSC_AS_TIME_ARGS(ctxt_pP),
     ue_release_complete_p->gNB_ue_ngap_id,
     ue_context_p->amf_ue_ngap_id);
@@ -146,7 +146,7 @@ int ngap_ue_context_release_complete(instance_t instance,
         ue_context_p->gNB_ue_ngap_id, ue_context_p->amf_ue_ngap_id,
         ue_context_p->ue_state);
   }*/
-#endif
+
   return 0;
 }
 
@@ -154,7 +154,6 @@ int ngap_ue_context_release_complete(instance_t instance,
 int ngap_ue_context_release_req(instance_t instance,
                                 ngap_ue_release_req_t *ue_release_req_p)
 {
-#if 0
   ngap_gNB_instance_t                *ngap_gNB_instance_p           = NULL;
   struct ngap_gNB_ue_context_s       *ue_context_p                  = NULL;
   NGAP_NGAP_PDU_t                     pdu;
@@ -189,15 +188,15 @@ int ngap_ue_context_release_req(instance_t instance,
   ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
   ie->criticality = NGAP_Criticality_reject;
   ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_AMF_UE_NGAP_ID;
-  ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+  asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
+  ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
   ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_GNB_UE_NGAP_ID;
-  ie->value.choice.GNB_UE_NGAP_ID = ue_release_req_p->gNB_ue_ngap_id;
+  ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_RAN_UE_NGAP_ID;
+  ie->value.choice.RAN_UE_NGAP_ID = ue_release_req_p->gNB_ue_ngap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -253,7 +252,7 @@ int ngap_ue_context_release_req(instance_t instance,
     MSC_NGAP_AMF,
     buffer,
     length,
-    MSC_AS_TIME_FMT" UEContextReleaseRequest initiatingMessage gNB_ue_ngap_id %u amf_ue_ngap_id %u",
+    MSC_AS_TIME_FMT" UEContextReleaseRequest initiatingMessage gNB_ue_ngap_id %u amf_ue_ngap_id %lu",
     0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
     ue_release_req_p->gNB_ue_ngap_id,
     ue_context_p->amf_ue_ngap_id);
@@ -262,7 +261,7 @@ int ngap_ue_context_release_req(instance_t instance,
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
                                    length, ue_context_p->tx_stream);
-#endif
+
   return 0;
 }
 
