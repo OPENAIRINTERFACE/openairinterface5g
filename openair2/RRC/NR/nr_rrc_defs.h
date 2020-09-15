@@ -90,10 +90,10 @@ typedef struct nr_uid_linear_allocator_s {
     
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
-#define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_CTXT_ARGS(CTXT_Pp)
+#define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
 #define PROTOCOL_NR_RRC_CTXT_FMT                   PROTOCOL_CTXT_FMT
-#define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_CTXT_ARGS(CTXT_Pp)
+#define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
 
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!

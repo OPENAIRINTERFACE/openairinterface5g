@@ -85,3 +85,10 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 
 uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
+
+uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
+                    rrc_eNB_ue_context_t         *const ue_context_pP,
+                    int                          CC_id,
+                    uint8_t                      *const buffer,
+                    const uint8_t                transaction_id,
+                    NR_SRB_ToAddModList_t        *SRB_configList);

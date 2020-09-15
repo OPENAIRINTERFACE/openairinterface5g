@@ -91,6 +91,12 @@ rrc_gNB_ue_context_random_exist(
 );
 
 struct rrc_gNB_ue_context_s *
+rrc_gNB_ue_context_5g_s_tmsi_exist(
+    gNB_RRC_INST                *rrc_instance_pP,
+    const uint64_t              s_TMSI
+);
+
+struct rrc_gNB_ue_context_s *
 rrc_gNB_get_next_free_ue_context(
   const protocol_ctxt_t       *const ctxt_pP,
   gNB_RRC_INST                *rrc_instance_pP,

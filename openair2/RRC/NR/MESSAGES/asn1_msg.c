@@ -45,6 +45,15 @@
 #include "NR_DL-CCCH-Message.h"
 #include "NR_RRCReject.h"
 #include "NR_RejectWaitTime.h"
+#include "NR_RRCSetup.h"
+#include "NR_RRCSetup-IEs.h"
+#include "NR_SRB-ToAddModList.h"
+#include "NR_CellGroupConfig.h"
+#include "NR_RLC-BearerConfig.h"
+#include "NR_RLC-Config.h"
+#include "NR_LogicalChannelConfig.h"
+#include "NR_PDCP-Config.h"
+#include "NR_MAC-CellGroupConfig.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -616,6 +625,147 @@ uint8_t do_RRCReject(uint8_t Mod_id,
     }
 
     LOG_D(RRC,"RRCReject Encoded %zd bits (%zd bytes)\n",
+            enc_rval.encoded,(enc_rval.encoded+7)/8);
+    return((enc_rval.encoded+7)/8);
+}
+
+//------------------------------------------------------------------------------
+uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
+                    rrc_eNB_ue_context_t         *const ue_context_pP,
+                    int                          CC_id,
+                    uint8_t                      *const buffer,
+                    const uint8_t                transaction_id,
+                    NR_SRB_ToAddModList_t        *SRB_configList)
+//------------------------------------------------------------------------------
+{
+    asn_enc_rval_t                                   enc_rval;;
+    NR_DL_CCCH_Message_t                             dl_ccch_msg;
+    NR_RRCSetup_t                                    *rrcSetup;
+    NR_RRCSetup_IEs_t                                *ie;
+    NR_SRB_ToAddMod_t                                *SRB1_config          = NULL;
+    NR_PDCP_Config_t                                 *pdcp_Config          = NULL;
+    NR_CellGroupConfig_t                             *cellGroupConfig      = NULL;
+    NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
+    NR_RLC_Config_t                                  *rlc_Config           = NULL;
+    NR_LogicalChannelConfig_t                        *logicalChannelConfig = NULL;
+    NR_MAC_CellGroupConfig_t                         *mac_CellGroupConfig  = NULL;
+
+    char masterCellGroup_buf[1000];
+    int size = 0;
+    long *logicalChannelGroup = NULL;
+
+    memset((void *)&dl_ccch_msg, 0, sizeof(NR_DL_CCCH_Message_t));
+    dl_ccch_msg.message.present            = NR_DL_CCCH_MessageType_PR_c1;
+    dl_ccch_msg.message.choice.c1->present = NR_DL_CCCH_MessageType__c1_PR_rrcSetup;
+
+    rrcSetup = dl_ccch_msg.message.choice.c1->choice.rrcSetup;
+    rrcSetup->criticalExtensions.present = NR_RRCSetup__criticalExtensions_PR_rrcSetup;
+    rrcSetup->rrc_TransactionIdentifier  = transaction_id;
+    ie = rrcSetup->criticalExtensions.choice.rrcSetup;
+
+    /****************************** radioBearerConfig ******************************/
+    /* Configure SRB1 */
+    if (SRB_configList) {
+        free(SRB_configList);
+    }
+
+    SRB_configList = calloc(1, sizeof(NR_SRB_ToAddModList_t));
+    // SRB1
+    /* TODO */
+    SRB1_config = calloc(1, sizeof(NR_SRB_ToAddMod_t));
+    SRB1_config->srb_Identity = 1;
+    // pdcp_Config->t_Reordering
+    SRB1_config->pdcp_Config = pdcp_Config;
+    ie->radioBearerConfig.srb_ToAddModList = SRB_configList;
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB1_config);
+
+    ie->radioBearerConfig.srb3_ToRelease    = NULL;
+    ie->radioBearerConfig.drb_ToAddModList  = NULL;
+    ie->radioBearerConfig.drb_ToReleaseList = NULL;
+    ie->radioBearerConfig.securityConfig    = NULL;
+
+    /****************************** masterCellGroup ******************************/
+    /* TODO */
+    cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+    cellGroupConfig->cellGroupId = 0;
+
+    /* Rlc Bearer Config */
+    /* TS38.331 9.2.1	Default SRB configurations */
+    cellGroupConfig->rlc_BearerToAddModList                          = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+    rlc_BearerConfig                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
+    rlc_BearerConfig->logicalChannelIdentity                         = 1;
+    rlc_BearerConfig->servedRadioBearer->present                     = NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
+    rlc_BearerConfig->servedRadioBearer->choice.srb_Identity         = 1;
+    rlc_BearerConfig->reestablishRLC                                 = NULL;
+    rlc_Config->present                                              = NR_RLC_Config_PR_am;
+    rlc_Config->choice.am                                            = calloc(1, sizeof(*rlc_Config->choice.am));
+    *(rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
+    rlc_Config->choice.am->dl_AM_RLC.t_Reassembly                    = NR_T_Reassembly_ms35;
+    rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit                = NR_T_StatusProhibit_ms0;
+    *(rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
+    rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit                = NR_T_PollRetransmit_ms45;
+    rlc_Config->choice.am->ul_AM_RLC.pollPDU                         = NR_PollPDU_infinity;
+    rlc_Config->choice.am->ul_AM_RLC.pollByte                        = NR_PollByte_infinity;
+    rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
+    rlc_BearerConfig->rlc_Config                                     = rlc_Config;
+    logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+    logicalChannelConfig->ul_SpecificParameters->priority            = 1;
+    logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+    logicalChannelGroup                                              = CALLOC(1, sizeof(long));
+    *logicalChannelGroup                                             = 0;
+    logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
+    rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
+    ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+
+    /* mac CellGroup Config */
+    mac_CellGroupConfig                                                     = calloc(1, sizeof(NR_MAC_CellGroupConfig_t));
+    mac_CellGroupConfig->bsr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
+    mac_CellGroupConfig->bsr_Config->periodicBSR_Timer                      = NR_BSR_Config__periodicBSR_Timer_sf10;
+    mac_CellGroupConfig->bsr_Config->retxBSR_Timer                          = NR_BSR_Config__retxBSR_Timer_sf80;
+    mac_CellGroupConfig->phr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config));
+    mac_CellGroupConfig->phr_Config->present                                = NR_SetupRelease_PHR_Config_PR_setup;
+    mac_CellGroupConfig->phr_Config->choice.setup                           = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config->choice.setup));
+    mac_CellGroupConfig->phr_Config->choice.setup->phr_PeriodicTimer        = NR_PHR_Config__phr_PeriodicTimer_sf10;
+    mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer        = NR_PHR_Config__phr_ProhibitTimer_sf10;
+    mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB1;
+    cellGroupConfig->mac_CellGroupConfig                                     = mac_CellGroupConfig;
+
+    // cellGroupConfig.physicalCellGroupConfig;
+
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                    NULL,
+                                    (void *)cellGroupConfig,
+                                    masterCellGroup_buf,
+                                    100);
+
+    if(enc_rval.encoded == -1) {
+        LOG_E(RRC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
+            enc_rval.failed_type->name, enc_rval.encoded);
+        return -1;
+    }
+
+    if (OCTET_STRING_fromBuf(&ie->masterCellGroup, masterCellGroup_buf, (enc_rval.encoded+7)/8) == -1) {
+        LOG_E(RRC, "fatal: OCTET_STRING_fromBuf failed\n");
+        return -1;
+    }
+
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+        xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
+    }
+
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message,
+                                    NULL,
+                                    (void *)&dl_ccch_msg,
+                                    buffer,
+                                    100);
+
+    if(enc_rval.encoded == -1) {
+        LOG_E(RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+            enc_rval.failed_type->name, enc_rval.encoded);
+        return -1;
+    }
+
+    LOG_D(RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
     return((enc_rval.encoded+7)/8);
 }
