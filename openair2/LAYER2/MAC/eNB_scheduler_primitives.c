@@ -4946,6 +4946,7 @@ cqi_indication(module_id_t mod_idP,
 {
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  uint64_t pdu_val = *(uint64_t *) pdu;
 
   if (UE_id == -1) {
     LOG_W(MAC, "cqi_indication: UE %x not found\n", rntiP);
@@ -4985,10 +4986,10 @@ cqi_indication(module_id_t mod_idP,
                         subframeP,
                         pdu,
                         rel9->length);
-      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",
+      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d pdu 0x%016"PRIx64"\n",
             frameP,
             subframeP,
-            sched_ctl->dl_cqi[CC_idP]);
+            sched_ctl->dl_cqi[CC_idP],pdu_val);
       sched_ctl->cqi_req_flag &= (~(1 << subframeP));
       sched_ctl->cqi_received = 1;
     }
