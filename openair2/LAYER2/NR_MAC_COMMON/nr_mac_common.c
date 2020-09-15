@@ -49,6 +49,7 @@ uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,8
 uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
+const char *duplex_mode[]={"FDD","TDD"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
@@ -1443,7 +1444,12 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   }
 }
 
-
+// Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
+// Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
+// Notes:
+// - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
+// - Frequencies are expressed in KHz
+// - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
 nr_bandentry_t nr_bandtable[] = {
   {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
   {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
@@ -1452,17 +1458,27 @@ nr_bandentry_t nr_bandtable[] = {
   {7,   2500000, 2570000, 2620000, 2690000, 20, 524000, 100},
   {8,    880000,  915000,  925000,  960000, 20, 185000, 100},
   {12,   698000,  716000,  728000,  746000, 20, 145800, 100},
+  {14,   788000,  798000,  758000,  768000, 20, 151600, 100},
+  {18,   815000,  830000,  860000,  875000, 20, 172000, 100},
   {20,   832000,  862000,  791000,  821000, 20, 158200, 100},
   {25,  1850000, 1915000, 1930000, 1995000, 20, 386000, 100},
+  {26,   814000,  849000,  859000,  894000, 20, 171800, 100},
   {28,   703000,  758000,  758000,  813000, 20, 151600, 100},
+  {29,      000,     000,  717000,  728000, 20, 143400, 100},
+  {30,  2305000, 2315000, 2350000, 2360000, 20, 470000, 100},
   {34,  2010000, 2025000, 2010000, 2025000, 20, 402000, 100},
   {38,  2570000, 2620000, 2570000, 2630000, 20, 514000, 100},
   {39,  1880000, 1920000, 1880000, 1920000, 20, 376000, 100},
   {40,  2300000, 2400000, 2300000, 2400000, 20, 460000, 100},
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
+  {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
+  {48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  {48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
+  {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
+  {65,  1920000, 2010000, 2110000, 2200000, 20, 422000, 100},
   {66,  1710000, 1780000, 2110000, 2200000, 20, 422000, 100},
   {70,  1695000, 1710000, 1995000, 2020000, 20, 399000, 100},
   {71,   663000,  698000,  617000,  652000, 20, 123400, 100},
@@ -1480,7 +1496,16 @@ nr_bandentry_t nr_bandtable[] = {
   {82,   832000,  862000,     000,     000, 20, 166400, 100},
   {83,   703000,  748000,     000,     000, 20, 140600, 100},
   {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
-  {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
+  {86,  1710000, 1780000,     000,     000, 20, 342000, 100},
+  {89,   824000,  849000,     000,     000, 20, 342000, 100},
+  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
+  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
+  {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
+  {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
+  {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
+  {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
+  {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
+  {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
   {257,26500000,29500000,26500000,29500000,  1,2054166,  60},
   {257,26500000,29500000,26500000,29500000,  2,2054167, 120},
   {258,24250000,27500000,24250000,27500000,  1,2016667,  60},
@@ -1534,7 +1559,44 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 
 #define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
 
+// Computes the duplex spacing (either positive or negative) in KHz
+void get_delta_duplex(int nr_table_idx, int32_t *delta_duplex){
+
+  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
+  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
+
+  for(int i = 0; i < s; i++){
+    if (nr_table_idx == supplementary_bands[i])
+      AssertFatal(0 == 1, "Band %d is a supplementary band. This is not supported yet.\n", nr_table_idx);
+  }
+
+  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+
+  LOG_D(PHY, "NR band duplex spacing %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+
+}
+
+// Returns the corresponding row index of the NR table
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
+
+  int scs_khz = 15 << scs_index;
+  int i;
+
+  AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
+  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
+
+  // selection of correct Deltaf raster according to SCS
+  if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
+    i++;
+
+  LOG_D(PHY, "NR band table index %d (Band %d)\n", i, nr_bandtable[i].band);
+
+  return i;
+
+}
+
 void get_band(uint64_t downlink_frequency,
+              uint64_t ul_frequency,
               uint16_t *current_band,
               int32_t *current_offset,
               lte_frame_type_t *current_type)
@@ -1543,6 +1605,7 @@ void get_band(uint64_t downlink_frequency,
     uint64_t center_frequency_khz;
     uint64_t center_freq_diff_khz;
     uint64_t dl_freq_khz = downlink_frequency/1000;
+    uint64_t ul_freq_khz = ul_frequency/1000;
 
     center_freq_diff_khz = 999999999999999999; // 2^64
     *current_band = 0;
@@ -1553,27 +1616,26 @@ void get_band(uint64_t downlink_frequency,
 
       LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
 
-      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
+      if (nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz && nr_bandtable[ind].ul_min <= ul_freq_khz && nr_bandtable[ind].ul_max >= ul_freq_khz) {
 
         center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
         if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
           *current_band = nr_bandtable[ind].band;
-	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
+          get_delta_duplex(ind, current_offset);
+          *current_offset *= 1000;
           center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-
-	  if (*current_offset == 0)
-	    *current_type = TDD;
-	  else
-	    *current_type = FDD;
+          if (*current_offset == 0)
+            *current_type = TDD;
+          else
+            *current_type = FDD;
         }
       }
     }
 
-    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
-         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
+    LOG_I(PHY, "DL frequency %"PRIu64" Hz, UL frequency %"PRIu64" Hz: band %d, uldl offset %d Hz, duplex mode %s\n", downlink_frequency, ul_frequency, *current_band, *current_offset, duplex_mode[*current_type]);
 
-    AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
+    AssertFatal(*current_band != 0, "Can't find NR band for frequency %lu\n", downlink_frequency);
+
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1696,17 +1758,10 @@ uint32_t to_nrarfcn(int nr_bandP,
 {
   uint64_t dl_CarrierFreq_by_1k = dl_CarrierFreq / 1000;
   int bw_kHz = bw / 1000;
-  int scs_khz = 15<<scs_index;
-  int i;
   uint32_t nrarfcn, delta_arfcn;
+  int i = get_nr_table_idx(nr_bandP, scs_index);
 
   LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
-  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-
-  // selection of correct Deltaf raster according to SCS
-  if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-   i++;
 
   AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
@@ -1735,54 +1790,62 @@ uint32_t to_nrarfcn(int nr_bandP,
 }
 
 
+// this function applies to both DL and UL
 uint64_t from_nrarfcn(int nr_bandP,
                       uint8_t scs_index,
-                      uint32_t dl_nrarfcn)
+                      uint32_t nrarfcn)
 {
-  int i;
   int deltaFglobal = 5;
-  int scs_khz = 15<<scs_index;
   uint32_t delta_arfcn;
+  int32_t delta_duplex;
+  uint64_t N_OFFs, frequency, freq_min;
+  int i = get_nr_table_idx(nr_bandP, scs_index);
 
-  if (dl_nrarfcn > 599999 && dl_nrarfcn < 2016667)
-    deltaFglobal = 15; 
-  if (dl_nrarfcn > 2016666 && dl_nrarfcn < 3279166)
-    deltaFglobal = 60; 
-  
-  AssertFatal(nr_bandP <= 261, "nr_band %d > 260\n", nr_bandP);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL[%d] %llu\n",dl_nrarfcn, nr_bandtable[i].band,(long long unsigned int)nr_bandtable[i].N_OFFs_DL);
- 
-  // selection of correct Deltaf raster according to SCS
-  if ( (nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-   i++;
+  if (nrarfcn > 599999 && nrarfcn < 2016667)
+    deltaFglobal = 15;
+  if (nrarfcn > 2016666 && nrarfcn < 3279166)
+    deltaFglobal = 60;
 
-  delta_arfcn = dl_nrarfcn - nr_bandtable[i].N_OFFs_DL;
+  get_delta_duplex(i, &delta_duplex);
+
+  if (delta_duplex <= 0){ // DL band >= UL band
+    if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL;
+      freq_min = nr_bandtable[i].dl_min;
+    } else {// is FDD UL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal;
+      freq_min = nr_bandtable[i].ul_min;
+    }
+  } else { // UL band > DL band
+    if (nrarfcn >= nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal){ // is FDD UL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL + delta_duplex/deltaFglobal;
+      freq_min = nr_bandtable[i].ul_min;
+    } else { // is FDD DL
+      N_OFFs = nr_bandtable[i].N_OFFs_DL;
+      freq_min = nr_bandtable[i].dl_min;
+    }
+  }
+
+  LOG_D(PHY, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
+
+  AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
+
+  delta_arfcn = nrarfcn - N_OFFs;
   if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0,"dl_nrarfcn %u is not on the raster for step size %lu",dl_nrarfcn,nr_bandtable[i].step_size);
+    AssertFatal(1 == 0, "nrarfcn %u is not on the raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
 
-  LOG_I(PHY,"Computing dl_frequency (pointA %llu => %llu (dlmin %llu, nr_bandtable[%d].N_OFFs_DL %llu))\n",
-	(unsigned long long)dl_nrarfcn,
-	(unsigned long long)(1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal)),
-	(unsigned long long)nr_bandtable[i].dl_min,
-	i,
-	(unsigned long long)nr_bandtable[i].N_OFFs_DL); 
+  frequency = 1000*(freq_min + (nrarfcn - N_OFFs) * deltaFglobal);
 
-  return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
+  LOG_I(PHY, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
+    (unsigned long long)nrarfcn,
+    (unsigned long long)frequency/1000,
+    (unsigned long long)freq_min,
+    nr_bandP,
+    (unsigned long long)N_OFFs);
+
+  return frequency;
+
 }
-
-
-int32_t get_nr_uldl_offset(int nr_bandP)
-{
-  int i;
-
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
-
-  AssertFatal(i < NR_BANDTABLE_SIZE, "i %d >= BANDTABLE_SIZE %ld\n", i, NR_BANDTABLE_SIZE);
-
-  return (nr_bandtable[i].dl_min - nr_bandtable[i].ul_min);
-}
-
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,

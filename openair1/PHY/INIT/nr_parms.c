@@ -331,10 +331,10 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   int32_t uplink_frequency_offset = 0;
 
-  get_band(fp->dl_CarrierFreq, &fp->nr_band, &uplink_frequency_offset, &fp->frame_type);
+  get_band(fp->dl_CarrierFreq, fp->ul_CarrierFreq, &fp->nr_band, &uplink_frequency_offset, &fp->frame_type);
 
   AssertFatal(fp->frame_type==config->cell_config.frame_duplex_type, "Invalid duplex type in config request file for band %d\n", fp->nr_band);
-  AssertFatal(fp->ul_CarrierFreq==(fp->dl_CarrierFreq+uplink_frequency_offset), "Disagreement in uplink frequency for band %d\n", fp->nr_band);
+  AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + uplink_frequency_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + uplink_frequency_offset);
 
 #if DISABLE_LOG_X
   printf("Initializing UE frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);

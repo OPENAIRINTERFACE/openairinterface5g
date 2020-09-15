@@ -205,6 +205,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   int32_t offset;
 
   get_band((cfg->carrier_config.dl_frequency)*1000,
+           (cfg->carrier_config.uplink_frequency)*1000,
            &band,
            &offset,
            &frame_type);
