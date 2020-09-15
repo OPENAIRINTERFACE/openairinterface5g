@@ -1308,6 +1308,41 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     return out;
 }
 
+static void print_rx_ind(nfapi_rx_indication_t *p)
+{
+  printf("Printing RX_IND fields\n");
+  printf("header.message_id: %u\n", p->header.message_id);
+  printf("header.phy_id: %u\n", p->header.phy_id);
+  printf("header.message_id: %u\n", p->header.message_id);
+  printf("header.m_segment_sequence: %u\n", p->header.m_segment_sequence);
+  printf("header.checksum: %u\n", p->header.checksum);
+  printf("header.transmit_timestamp: %u\n", p->header.transmit_timestamp);
+  printf("sfn_sf: %u\n", p->sfn_sf);
+  printf("rx_indication_body.tl.tag: 0x%x\n", p->rx_indication_body.tl.tag);
+  printf("rx_indication_body.tl.length: %u\n", p->rx_indication_body.tl.length);
+  printf("rx_indication_body.number_of_pdus: %u\n", p->rx_indication_body.number_of_pdus);
+
+  nfapi_rx_indication_pdu_t *pdu = p->rx_indication_body.rx_pdu_list;
+  for (int i = 0; i < p->rx_indication_body.number_of_pdus; i++)
+  {
+    printf("pdu %d nfapi_rx_ue_information.tl.tag: 0x%x\n", i, pdu->rx_ue_information.tl.tag);
+    printf("pdu %d nfapi_rx_ue_information.tl.length: %u\n", i, pdu->rx_ue_information.tl.length);
+    printf("pdu %d nfapi_rx_ue_information.handle: %u\n", i, pdu->rx_ue_information.handle);
+    printf("pdu %d nfapi_rx_ue_information.rnti: %u\n", i, pdu->rx_ue_information.rnti);
+    printf("pdu %d nfapi_rx_indication_rel8.tl.tag: 0x%x\n", i, pdu->rx_indication_rel8.tl.tag);
+    printf("pdu %d nfapi_rx_indication_rel8.tl.length: %u\n", i, pdu->rx_indication_rel8.tl.length);
+    printf("pdu %d nfapi_rx_indication_rel8.length: %u\n", i, pdu->rx_indication_rel8.length);
+    printf("pdu %d nfapi_rx_indication_rel8.offset: %u\n", i, pdu->rx_indication_rel8.offset);
+    printf("pdu %d nfapi_rx_indication_rel8.ul_cqi: %u\n", i, pdu->rx_indication_rel8.ul_cqi);
+    printf("pdu %d nfapi_rx_indication_rel8.timing_advance: %u\n", i, pdu->rx_indication_rel8.timing_advance);
+    printf("pdu %d nfapi_rx_indication_rel9.tl.tag: 0x%x\n", i, pdu->rx_indication_rel9.tl.tag);
+    printf("pdu %d nfapi_rx_indication_rel9.tl.length: %u\n", i, pdu->rx_indication_rel9.tl.length);
+    printf("pdu %d nfapi_rx_indication_rel9.timing_advance_r9: %u\n", i, pdu->rx_indication_rel9.timing_advance_r9);
+  }
+
+  fflush(stdout);
+}
+
   void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
   {
     int encoded_size = -1;
@@ -1327,6 +1362,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
             UL->crc_ind.crc_indication_body.number_of_crcs);
       break;
     case NFAPI_RX_ULSCH_INDICATION:
+      print_rx_ind(&UL->rx_ind);
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
       LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\nHexDUMP %s\n",
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
