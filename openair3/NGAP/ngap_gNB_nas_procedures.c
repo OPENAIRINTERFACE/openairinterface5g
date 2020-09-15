@@ -951,15 +951,16 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
                               ngap_pdusession_setup_resp_t *pdusession_setup_resp_p)
 //------------------------------------------------------------------------------
 {
-#if 0
     ngap_gNB_instance_t          *ngap_gNB_instance_p = NULL;
     struct ngap_gNB_ue_context_s *ue_context_p        = NULL;
     NGAP_NGAP_PDU_t               pdu;
-    NGAP_PDUSESSIONSetupResponse_t    *out;
-    NGAP_PDUSESSIONSetupResponseIEs_t *ie;
+    NGAP_PDUSessionResourceSetupResponse_t    *out;
+    NGAP_PDUSessionResourceSetupResponseIEs_t *ie;
     uint8_t  *buffer  = NULL;
     uint32_t length;
     int      i;
+    asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
+
     /* Retrieve the NGAP gNB instance associated with Mod_id */
     ngap_gNB_instance_p = ngap_gNB_get_instance(instance);
     DevAssert(pdusession_setup_resp_p != NULL);
@@ -987,105 +988,150 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     /* Prepare the NGAP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_PDUSESSIONModify;
+    pdu.choice.successfulOutcome.procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceSetup;
     pdu.choice.successfulOutcome.criticality = NGAP_Criticality_reject;
-    pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_PDUSESSIONSetupResponse;
-    out = &pdu.choice.successfulOutcome.value.choice.PDUSESSIONSetupResponse;
+    pdu.choice.successfulOutcome.value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse;
+    out = &pdu.choice.successfulOutcome.value.choice.PDUSessionResourceSetupResponse;
     /* mandatory */
-    ie = (NGAP_PDUSESSIONSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONSetupResponseIEs_t));
+    ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_PDUSESSIONSetupResponseIEs__value_PR_AMF_UE_NGAP_ID;
-    ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_AMF_UE_NGAP_ID;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
+    //ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
-    ie = (NGAP_PDUSESSIONSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONSetupResponseIEs_t));
-    ie->id = NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID;
+    ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_ignore;
-    ie->value.present = NGAP_PDUSESSIONSetupResponseIEs__value_PR_GNB_UE_NGAP_ID;
-    ie->value.choice.GNB_UE_NGAP_ID = pdusession_setup_resp_p->gNB_ue_ngap_id;
+    ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = pdusession_setup_resp_p->gNB_ue_ngap_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     /* optional */
     if (pdusession_setup_resp_p->nb_of_pdusessions > 0) {
-        ie = (NGAP_PDUSESSIONSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONSetupResponseIEs_t));
-        ie->id = NGAP_ProtocolIE_ID_id_PDUSESSIONSetupListBearerSURes;
+        ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+        ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListSURes;
         ie->criticality = NGAP_Criticality_ignore;
-        ie->value.present = NGAP_PDUSESSIONSetupResponseIEs__value_PR_PDUSESSIONSetupListBearerSURes;
+        ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_PDUSessionResourceSetupListSURes;
 
         for (i = 0; i < pdusession_setup_resp_p->nb_of_pdusessions; i++) {
-            NGAP_PDUSESSIONSetupItemBearerSUResIEs_t *item;
-            /* mandatory */
-            item = (NGAP_PDUSESSIONSetupItemBearerSUResIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONSetupItemBearerSUResIEs_t));
-            item->id = NGAP_ProtocolIE_ID_id_PDUSESSIONSetupItemBearerSURes;
-            item->criticality = NGAP_Criticality_ignore;
-            item->value.present = NGAP_PDUSESSIONSetupItemBearerSUResIEs__value_PR_PDUSESSIONSetupItemBearerSURes;
-            item->value.choice.PDUSESSIONSetupItemBearerSURes.e_RAB_ID = pdusession_setup_resp_p->pdusessions[i].pdusession_id;
-            GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &item->value.choice.PDUSESSIONSetupItemBearerSURes.gTP_TEID);
-            item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.buf = malloc(pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
-            memcpy(item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.buf,
-                   pdusession_setup_resp_p->pdusessions[i].gNB_addr.buffer,
-                   pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
-            item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.size = pdusession_setup_resp_p->pdusessions[i].gNB_addr.length;
-            item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.bits_unused = 0;
-            NGAP_DEBUG("pdusession_setup_resp: pdusession ID %ld, teid %u, enb_addr %d.%d.%d.%d, SIZE %ld\n",
-                       item->value.choice.PDUSESSIONSetupItemBearerSURes.e_RAB_ID,
-                       pdusession_setup_resp_p->pdusessions[i].gtp_teid,
-                       item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.buf[0],
-                       item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.buf[1],
-                       item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.buf[2],
-                       item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.buf[3],
-                       item->value.choice.PDUSESSIONSetupItemBearerSURes.transportLayerAddress.size);
-            ASN_SEQUENCE_ADD(&ie->value.choice.PDUSESSIONSetupListBearerSURes.list, item);
-        }
+        	NGAP_PDUSessionResourceSetupItemSURes_t *item;
+            NGAP_PDUSessionResourceSetupResponseTransfer_t     *pdusessionTransfer_p = NULL;
 
+            /* mandatory */
+            item = (NGAP_PDUSessionResourceSetupItemSURes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupItemSURes_t));
+
+            /* pDUSessionID */
+            item->pDUSessionID = pdusession_setup_resp_p->pdusessions[i].pdusession_id;
+
+            /* dLQosFlowPerTNLInformation */
+            pdusessionTransfer_p = (NGAP_PDUSessionResourceSetupResponseTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseTransfer_t));
+
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
+
+            GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.gTP_TEID);
+
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf = malloc(pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
+
+            memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf,
+            	   pdusession_setup_resp_p->pdusessions[i].gNB_addr.buffer,
+            	   pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.size = pdusession_setup_resp_p->pdusessions[i].gNB_addr.length;
+            pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.bits_unused = 0;
+
+            NGAP_DEBUG("pdusession_setup_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
+                       item->pDUSessionID,
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[0],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[1],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[2],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.buf[3],
+                       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel.transportLayerAddress.size);
+
+            /* associatedQosFlowList. number of 1? */
+            for(int j=0; j < pdusession_setup_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
+              NGAP_AssociatedQosFlowItem_t *ass_qos_item_p;
+              ass_qos_item_p = (NGAP_AssociatedQosFlowItem_t *)calloc(1, sizeof(NGAP_AssociatedQosFlowItem_t));
+
+              /* qosFlowIdentifier */
+              ass_qos_item_p->qosFlowIdentifier = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qci;
+
+              /* qosFlowMappingIndication */
+              if(pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
+                ass_qos_item_p->qosFlowMappingIndication = malloc(sizeof(*ass_qos_item_p->qosFlowMappingIndication));
+                *ass_qos_item_p->qosFlowMappingIndication = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind;
+              }
+              ASN_SEQUENCE_ADD(&pdusessionTransfer_p->dLQosFlowPerTNLInformation.associatedQosFlowList.list, ass_qos_item_p);
+            }
+
+            memset(&res, 0, sizeof(res));
+            res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+            item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
+            item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
+
+            ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+
+            ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceSetupListSURes.list, item);
+        }
         ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     }
 
     /* optional */
     if (pdusession_setup_resp_p->nb_of_pdusessions_failed > 0) {
-        ie = (NGAP_PDUSESSIONSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONSetupResponseIEs_t));
-        ie->id = NGAP_ProtocolIE_ID_id_PDUSESSIONFailedToSetupListBearerSURes;
+        ie = (NGAP_PDUSessionResourceFailedToSetupListSURes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceFailedToSetupListSURes_t));
+        ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceFailedToSetupListSURes;
         ie->criticality = NGAP_Criticality_ignore;
-        ie->value.present = NGAP_PDUSESSIONSetupResponseIEs__value_PR_PDUSESSIONList;
+        ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_PDUSessionResourceFailedToSetupListSURes;
 
         for (i = 0; i < pdusession_setup_resp_p->nb_of_pdusessions_failed; i++) {
-            NGAP_PDUSESSIONItemIEs_t *item;
-            item = (NGAP_PDUSESSIONItemIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONItemIEs_t));
-            item->id = NGAP_ProtocolIE_ID_id_PDUSESSIONItem;
-            item->criticality = NGAP_Criticality_ignore;
-            item->value.present = NGAP_PDUSESSIONItemIEs__value_PR_PDUSESSIONItem;
-            item->value.choice.PDUSESSIONItem.e_RAB_ID = pdusession_setup_resp_p->pdusessions_failed[i].pdusession_id;
-            item->value.choice.PDUSESSIONItem.cause.present = pdusession_setup_resp_p->pdusessions_failed[i].cause;
+        	NGAP_PDUSessionResourceFailedToSetupItemSURes_t *item;
+            NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = NULL;
 
-            switch(item->value.choice.PDUSESSIONItem.cause.present) {
-            case NGAP_Cause_PR_radioNetwork:
-                item->value.choice.PDUSESSIONItem.cause.choice.radioNetwork = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-                break;
+            /* mandatory */
+            item = (NGAP_PDUSessionResourceFailedToSetupItemSURes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceFailedToSetupItemSURes_t));
+            /* pDUSessionID */
+            item->pDUSessionID = pdusession_setup_resp_p->pdusessions_failed[i].pdusession_id;
 
-            case NGAP_Cause_PR_transport:
-                item->value.choice.PDUSESSIONItem.cause.choice.transport = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-                break;
+            /* cause */
+            pdusessionUnTransfer_p = (NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t));
+            pdusessionUnTransfer_p->cause.present = pdusession_setup_resp_p->pdusessions_failed[i].cause;
+            switch(pdusessionUnTransfer_p->cause.present) {
+              case NGAP_Cause_PR_radioNetwork:
+                  pdusessionUnTransfer_p->cause.choice.radioNetwork = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+                  break;
 
-            case NGAP_Cause_PR_nas:
-                item->value.choice.PDUSESSIONItem.cause.choice.nas = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-                break;
+              case NGAP_Cause_PR_transport:
+                  pdusessionUnTransfer_p->cause.choice.transport = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+                  break;
 
-            case NGAP_Cause_PR_protocol:
-                item->value.choice.PDUSESSIONItem.cause.choice.protocol = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-                break;
+              case NGAP_Cause_PR_nas:
+                  pdusessionUnTransfer_p->cause.choice.nas = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+                  break;
 
-            case NGAP_Cause_PR_misc:
-                item->value.choice.PDUSESSIONItem.cause.choice.misc = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-                break;
+              case NGAP_Cause_PR_protocol:
+                  pdusessionUnTransfer_p->cause.choice.protocol = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+                  break;
 
-            case NGAP_Cause_PR_NOTHING:
-            default:
-                break;
+              case NGAP_Cause_PR_misc:
+                  pdusessionUnTransfer_p->cause.choice.misc = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+                  break;
+
+              case NGAP_Cause_PR_NOTHING:
+              default:
+                  break;
             }
 
-            NGAP_DEBUG("pdusession_modify_resp: failed pdusession ID %ld\n", item->value.choice.PDUSESSIONItem.e_RAB_ID);
-            ASN_SEQUENCE_ADD(&ie->value.choice.PDUSESSIONList.list, item);
+            NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
+
+            memset(&res, 0, sizeof(res));
+            res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
+            item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
+            item->pDUSessionResourceSetupUnsuccessfulTransfer.size = res.result.encoded;
+
+            ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
+
+            ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceFailedToSetupListSURes.list, item);
         }
 
         ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
@@ -1093,10 +1139,10 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
     /* optional */
     if (0) {
-        ie = (NGAP_PDUSESSIONSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSESSIONSetupResponseIEs_t));
+        ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
         ie->id = NGAP_ProtocolIE_ID_id_CriticalityDiagnostics;
         ie->criticality = NGAP_Criticality_ignore;
-        ie->value.present = NGAP_PDUSESSIONSetupResponseIEs__value_PR_CriticalityDiagnostics;
+        ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_CriticalityDiagnostics;
         // ie->value.choice.CriticalityDiagnostics = ;
         ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     }
@@ -1128,7 +1174,6 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                      ue_context_p->amf_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
-#endif
     return 0;
 }
 
