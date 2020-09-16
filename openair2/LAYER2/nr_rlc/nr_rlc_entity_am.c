@@ -109,7 +109,8 @@ static void consider_retransmission(nr_rlc_entity_am_t *entity,
    * upper layers should deal with this condition, internally it's better
    * for the RLC code to keep going with this segment (we only remove
    * a segment that was ACKed)
-   */
+   */ 
+  LOG_D(RLC, "RLC segment to be added at the ReTx list \n"); 
   nr_rlc_sdu_segment_list_append(&entity->retransmit_list,
                                  &entity->retransmit_end,
                                  cur);
@@ -1587,6 +1588,8 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   entity->tx_size += size;
 
   sdu = nr_rlc_new_sdu(buffer, size, sdu_id);
+
+  LOG_D(RLC, "Created new RLC SDU and append it to the RLC list \n");
 
   nr_rlc_sdu_segment_list_append(&entity->tx_list, &entity->tx_end, sdu);
 }

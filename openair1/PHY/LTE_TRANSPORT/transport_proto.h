@@ -123,6 +123,42 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
 
+/** \fn dlsch_encoding(PHY_VARS_eNB *eNB,
+    uint8_t *input_buffer,
+    LTE_DL_FRAME_PARMS *frame_parms,
+    uint8_t num_pdcch_symbols,
+    LTE_eNB_DLSCH_t *dlsch,
+    int frame,
+    uint8_t subframe)
+    \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
+    - CRC computation and addition
+    - Code block segmentation and sub-block CRC addition
+    - Channel coding (Turbo coding)
+    - Rate matching (sub-block interleaving, bit collection, selection and transmission
+    - Code block concatenation
+    @param eNB Pointer to eNB PHY context
+    @param input_buffer Pointer to input buffer for sub-frame
+    @param frame_parms Pointer to frame descriptor structure
+    @param num_pdcch_symbols Number of PDCCH symbols in this subframe
+    @param dlsch Pointer to dlsch to be encoded
+    @param frame Frame number
+    @param subframe Subframe number
+    @param rm_stats Time statistics for rate-matching
+    @param te_stats Time statistics for turbo-encoding
+    @param i_stats Time statistics for interleaving
+    @returns status
+*/
+int32_t dlsch_encoding_fembms_pmch(PHY_VARS_eNB *eNB,
+                       L1_rxtx_proc_t *proc,
+                       uint8_t *a,
+                       uint8_t num_pdcch_symbols,
+                       LTE_eNB_DLSCH_t *dlsch,
+                       int frame,
+                       uint8_t subframe,
+                       time_stats_t *rm_stats,
+                       time_stats_t *te_stats,
+                       time_stats_t *i_stats);
+
 
 
 
@@ -269,6 +305,30 @@ int mch_modulation(int32_t **txdataF,
                    LTE_DL_FRAME_PARMS *frame_parms,
                    LTE_eNB_DLSCH_t *dlsch);
 
+/*
+  \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for MCH.
+  @param txdataF Table of pointers for frequency-domain TX signals
+  @param amp Amplitude of signal
+  @param subframe_offset Offset of this subframe in units of subframes (usually 0)
+  @param frame_parms Pointer to frame descriptor
+  @param dlsch Pointer to DLSCH descriptor for this allocation
+*/
+int mch_modulation_khz_1dot25(int32_t **txdataF,
+                   int16_t amp,
+                   uint32_t subframe_offset,
+                   LTE_DL_FRAME_PARMS *frame_parms,
+                   LTE_eNB_DLSCH_t *dlsch);
+
+
+/** \brief Top-level generation function for eNB TX of MBSFN
+    @param phy_vars_eNB Pointer to eNB variables
+    @param a Pointer to transport block
+    @param abstraction_flag
+
+*/
+void generate_mch_khz_1dot25(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,uint8_t *a);
+
+
 /** \brief Top-level generation function for eNB TX of MBSFN
     @param phy_vars_eNB Pointer to eNB variables
     @param a Pointer to transport block
@@ -318,6 +378,12 @@ int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
                              uint16_t slot,
                              int first_pilot_only);
 
+int32_t generate_mbsfn_pilot_khz_1dot25(PHY_VARS_eNB *phy_vars_eNB,
+                             L1_rxtx_proc_t *proc,
+                             int32_t **txdataF,
+                             int16_t amp);
+
+
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
                              L1_rxtx_proc_t *proc,
                              int32_t **txdataF,
@@ -349,6 +415,13 @@ int32_t generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                       LTE_DL_FRAME_PARMS *frame_parms,
                       uint8_t *pbch_pdu,
                       uint8_t frame_mod4);
+
+int32_t generate_pbch_fembms(LTE_eNB_PBCH *eNB_pbch,
+                      int32_t **txdataF,
+                      int32_t amp,
+                      LTE_DL_FRAME_PARMS *frame_parms,
+                      uint8_t *pbch_pdu,
+                      uint8_t frame_mod16);
 
 
 

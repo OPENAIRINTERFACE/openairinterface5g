@@ -1465,8 +1465,17 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
     memset((void *) &UE_list->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
+    UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
     UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
-    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(sizeof(NR_sched_pusch));
+    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
+    for (int k=0; k<num_slots_ul; k++) {
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
+             0,
+             sizeof(NR_sched_pucch));
+      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
+             0,
+             sizeof(NR_sched_pusch));
+    }
     LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,

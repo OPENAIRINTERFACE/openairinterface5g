@@ -93,7 +93,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
-                               uint8_t frame,
+                               uint32_t frame,
                                uint8_t slot,
                                uint8_t thread_id,
                                int gNB_id) {
@@ -218,7 +218,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   n_dmrs = (nb_rb*((dmrs_type == pusch_dmrs_type1) ? 6:4)*number_dmrs_symbols);
-  int16_t mod_dmrs[n_dmrs<<1];
+  int16_t mod_dmrs[n_dmrs<<1] __attribute((aligned(16)));
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -226,12 +226,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////PTRS parameters' initialization/////////////////////////
   ///////////
 
-  int16_t mod_ptrs[(nb_rb/2)*(NR_SYMBOLS_PER_SLOT-1)*2]; // assume maximum number of PTRS per pusch allocation
+  int16_t mod_ptrs[nb_rb] __attribute((aligned(16))); // assume maximum number of PTRS per pusch allocation
   K_ptrs = 0; // just to avoid a warning
 
   if (harq_process_ul_ue->pusch_pdu.pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-    K_ptrs = (harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density)?4:2;
+    K_ptrs = harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density;
     L_ptrs = 1<<harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
 
     beta_ptrs = 1; // temp value until power control is implemented
@@ -322,7 +322,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     uint16_t m=0, n=0, dmrs_idx=0, ptrs_idx = 0;
 
     for (l=start_symbol; l<start_symbol+number_of_symbols; l++) {
-
+      ptrs_idx = 0; // every PTRS symbol has a new gold sequence
       k = start_sc;
       n = 0;
       dmrs_idx = 0;
@@ -432,21 +432,11 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int tx_offset, ap;
   int32_t **txdata;
   int32_t **txdataF;
-  int timing_advance;
 
   /////////////////////////IFFT///////////////////////
   ///////////
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)  || defined(OAI_ADRV9371_ZC706)
-  timing_advance = UE->timing_advance;
-#else
-  timing_advance = 0;
-#endif
-
-  tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0) - timing_advance;
-
-  if (tx_offset < 0)
-    tx_offset += frame_parms->samples_per_frame;
+  tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
 
   // clear the transmit data array for the current subframe
   /*for (int aa=0; aa<UE->frame_parms.nb_antennas_tx; aa++) {
@@ -458,49 +448,32 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   txdata = UE->common_vars.txdata;
   txdataF = UE->common_vars.txdataF;
 
-  if(UE->N_TA_offset > tx_offset) {
-    int32_t *tmp_idft_out = (int32_t*)malloc16(frame_parms->get_samples_per_slot(slot, frame_parms) * sizeof(int32_t));
-
-    for(ap = 0; ap < Nl; ap++) {
-      if (frame_parms->Ncp == 1) { // extended cyclic prefix
-        PHY_ofdm_mod(txdataF[ap],
-                     tmp_idft_out,
-                     frame_parms->ofdm_symbol_size,
-                     12,
-                     frame_parms->nb_prefix_samples,
-                     CYCLIC_PREFIX);
-      } else { // normal cyclic prefix
-        nr_normal_prefix_mod(txdataF[ap],
-                             tmp_idft_out,
-                             14,
-                             frame_parms);
-      }
-
-      memcpy((void *) &txdata[ap][frame_parms->samples_per_frame - UE->N_TA_offset + tx_offset],
-             (void *) tmp_idft_out,
-             (UE->N_TA_offset - tx_offset) * sizeof(int32_t));
-
-      memcpy((void *) &txdata[ap][0],
-             (void *) &tmp_idft_out[UE->N_TA_offset - tx_offset],
-             (frame_parms->get_samples_per_slot(slot, frame_parms) - UE->N_TA_offset + tx_offset) * sizeof(int32_t));
+  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
+  for(ap = 0; ap < Nl; ap++) {
+    for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
+      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
+	    s,s+symb_offset,frame_parms->symbol_rotation[2*(s+symb_offset)],frame_parms->symbol_rotation[1+(2*(s+symb_offset))]);
+      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
+			&frame_parms->symbol_rotation[2*(s+symb_offset)],
+			(int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size*s],
+			frame_parms->ofdm_symbol_size,
+			15);
     }
+  }
 
-    free(tmp_idft_out);
-  } else { // UE->N_TA_offset <= tx_offset
-    for (ap = 0; ap < Nl; ap++) {
-      if (frame_parms->Ncp == 1) { // extended cyclic prefix
-        PHY_ofdm_mod(txdataF[ap],
-                     &txdata[ap][tx_offset-UE->N_TA_offset],
-                     frame_parms->ofdm_symbol_size,
-                     12,
-                     frame_parms->nb_prefix_samples,
-                     CYCLIC_PREFIX);
-      } else { // normal cyclic prefix
-        nr_normal_prefix_mod(txdataF[ap],
-                             &txdata[ap][tx_offset-UE->N_TA_offset],
-                             14,
-                             frame_parms);
-      }
+  for (ap = 0; ap < Nl; ap++) {
+    if (frame_parms->Ncp == 1) { // extended cyclic prefix
+      PHY_ofdm_mod(txdataF[ap],
+                   &txdata[ap][tx_offset],
+                   frame_parms->ofdm_symbol_size,
+                   12,
+                   frame_parms->nb_prefix_samples,
+                   CYCLIC_PREFIX);
+    } else { // normal cyclic prefix
+      nr_normal_prefix_mod(txdataF[ap],
+                           &txdata[ap][tx_offset],
+                           14,
+                           frame_parms);
     }
   }
 

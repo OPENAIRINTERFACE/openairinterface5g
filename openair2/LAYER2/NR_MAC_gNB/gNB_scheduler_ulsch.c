@@ -36,6 +36,7 @@
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
+    rnti_t rnti,
     uint8_t CC_id,
     frame_t frameP,
     uint8_t *pduP,
@@ -210,7 +211,8 @@ void nr_process_mac_pdu(
                 }
 
                 LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
-
+		int UE_id = find_nr_UE_id(module_idP, rnti);
+		RC.nrmac[module_idP]->UE_list.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
@@ -219,25 +221,33 @@ void nr_process_mac_pdu(
 
                     LOG_T(MAC, "\n");
                 #endif
-
-                if (IS_SOFTMODEM_NOS1){
-                  if (rx_lcid < NB_RB_MAX && rx_lcid >= UL_SCH_LCID_DTCH) {
-
-                    mac_rlc_data_ind(module_idP,
-                                     0x1234,
-                                     module_idP,
-                                     frameP,
-                                     ENB_FLAG_YES,
-                                     MBMS_FLAG_NO,
-                                     rx_lcid,
-                                     (char *) (pdu_ptr + mac_subheader_len),
-                                     mac_sdu_len,
-                                     1,
-                                     NULL);
-                  } else {
-                    LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, module_idP);
-                  }
+                if(IS_SOFTMODEM_NOS1){
+                  mac_rlc_data_ind(module_idP,
+                      0x1234,
+                      module_idP,
+                      frameP,
+                      ENB_FLAG_YES,
+                      MBMS_FLAG_NO,
+                      rx_lcid,
+                      (char *) (pdu_ptr + mac_subheader_len),
+                      mac_sdu_len,
+                      1,
+                      NULL);
                 }
+                else{
+                  mac_rlc_data_ind(module_idP,
+                      rnti,
+                      module_idP,
+                      frameP,
+                      ENB_FLAG_YES,
+                      MBMS_FLAG_NO,
+                      rx_lcid,
+                      (char *) (pdu_ptr + mac_subheader_len),
+                      mac_sdu_len,
+                      1,
+                      NULL);
+                }
+
 
             break;
 
@@ -255,6 +265,39 @@ void nr_process_mac_pdu(
     }
 }
 
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu) {
+
+  int max_harq_rounds = 4; // TODO define macro
+  uint8_t hrq_id = crc_pdu.harq_id;
+  NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[hrq_id];
+  if (cur_harq->state==ACTIVE_SCHED) {
+    if (!crc_pdu.tb_crc_status) {
+      cur_harq->ndi ^= 1;
+      cur_harq->round = 0;
+      cur_harq->state = INACTIVE; // passed -> make inactive. can be used by scheduder for next grant
+#ifdef UL_HARQ_PRINT
+      printf("[HARQ HANDLER] Ulharq id %d crc passed, freeing it for scheduler\n",hrq_id);
+#endif
+    } else {
+      cur_harq->round++;
+      cur_harq->state = ACTIVE_NOT_SCHED;
+#ifdef UL_HARQ_PRINT
+      printf("[HARQ HANDLER] Ulharq id %d crc failed, requesting retransmission\n",hrq_id);
+#endif
+    }
+
+    if (!(cur_harq->round<max_harq_rounds)) {
+      cur_harq->ndi ^= 1;
+      cur_harq->state = INACTIVE; // failed after 4 rounds -> make inactive
+      cur_harq->round = 0;
+      LOG_D(MAC,"[HARQ HANDLER] RNTI %x: Ulharq id %d crc failed in all round, freeing it for scheduler\n",crc_pdu.rnti,hrq_id);
+      stats->ulsch_errors++;
+    }
+    return;
+  } else
+    LOG_E(MAC,"Incorrect ULSCH HARQ process %d or invalid state %d\n",hrq_id,cur_harq->state);
+}
+
 /*
 * When data are received on PHY and transmitted to MAC
 */
@@ -266,7 +309,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                uint8_t *sduP,
                const uint16_t sdu_lenP,
                const uint16_t timing_advance,
-               const uint8_t ul_cqi){
+               const uint8_t ul_cqi,
+               const uint16_t rssi){
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
   NR_UE_list_t *UE_list = NULL;
@@ -281,6 +325,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   if (UE_id != -1) {
     UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
 
+    UE_list->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
     LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
@@ -290,6 +335,17 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           current_rnti,
           UE_id,
           ul_cqi);
+
+    // if not missed detection (10dB threshold for now)
+    if (UE_scheduling_control->ul_rssi < (100+rssi)) {
+      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
+      UE_scheduling_control->ta_update = timing_advance;
+      UE_scheduling_control->ul_rssi = rssi;
+      LOG_D(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+    }
+    else{
+      UE_scheduling_control->tpc0 = 1;
+    }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
     LOG_I(MAC, "Printing received UL MAC payload at gNB side: %d \n");
@@ -302,11 +358,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
-      UE_scheduling_control->ta_update = timing_advance;
-      LOG_I(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
       LOG_D(MAC, "Received PDU at MAC gNB \n");
-      nr_process_mac_pdu(gnb_mod_idP, CC_idP, frameP, sduP, sdu_lenP);
+      nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
+    }
+    else {
+
     }
   }
   else {

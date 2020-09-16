@@ -309,7 +309,8 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-int nr_dlsch_encoding(unsigned char *a,
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
+		      unsigned char *a,
                       int frame,
                       uint8_t slot,
                       NR_gNB_DLSCH_t *dlsch,
@@ -354,6 +355,28 @@ int nr_dlsch_encoding(unsigned char *a,
 
   A = rel15->TBSize[0]<<3;
 
+  NR_gNB_SCH_STATS_t *stats=NULL;
+  int first_free=-1;
+  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++) {
+    if (gNB->dlsch_stats[i].rnti == 0 && first_free == -1) {
+      first_free = i;
+      stats=&gNB->dlsch_stats[i];
+    }
+    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+      stats=&gNB->dlsch_stats[i];
+      break;
+    }
+  }
+
+  if (stats) {
+    stats->round_trials[dlsch->harq_processes[harq_pid]->round]++;
+    stats->rnti = dlsch->rnti;
+    if (dlsch->harq_processes[harq_pid]->round == 0){
+      stats->total_bytes_tx += rel15->TBSize[0];
+      stats->current_RI   = rel15->nrOfLayers;
+      stats->current_Qm   = rel15->qamModOrder[0];
+    }
+  }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);

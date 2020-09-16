@@ -33,7 +33,6 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
@@ -480,14 +479,17 @@ int main(int argc, char **argv)
   uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
   //t_nrPolar_params *currentPtr;
 
+  int shift = 0;
+
   if(format==0){
-  // for now we are not considering SR just HARQ-ACK
+    if (sr_flag)
+      shift = 1<<nr_bit;
     if (nr_bit ==0) 
       mcs=table1_mcs[0];
     else if(nr_bit==1)
-      mcs=table1_mcs[actual_payload];
+      mcs=table1_mcs[actual_payload+shift];
     else if(nr_bit==2)
-      mcs=table2_mcs[actual_payload];
+      mcs=table2_mcs[actual_payload+shift];
     else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n", nr_bit, sr_flag);
   }
   else if (format == 2 && nr_bit > 11) gNB->uci_polarParams = nr_polar_params(2, nr_bit, nrofPRB, 1, NULL);

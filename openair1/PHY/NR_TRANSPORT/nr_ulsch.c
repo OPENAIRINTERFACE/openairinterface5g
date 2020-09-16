@@ -111,7 +111,6 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 				 uint32_t n_RNTI) {
   
 #if defined(__x86_64__) || defined(__i386__)
-  uint8_t reset;
   uint32_t x1, x2, s=0;
 
   x2 = (n_RNTI<<15) + Nid;
@@ -136,4 +135,30 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
                           Nid,
                           n_RNTI);
 #endif
+}
+
+void dump_pusch_stats(PHY_VARS_gNB *gNB) {
+
+  for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
+    if (gNB->ulsch_stats[i].rnti>0) 
+      LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
+	    gNB->ulsch_stats[i].rnti,
+	    gNB->ulsch_stats[i].round_trials[0],
+	    (double)gNB->ulsch_stats[i].round_trials[1]/gNB->ulsch_stats[i].round_trials[0],
+	    gNB->ulsch_stats[i].round_trials[1],
+	    (double)gNB->ulsch_stats[i].round_trials[2]/gNB->ulsch_stats[i].round_trials[0],
+	    gNB->ulsch_stats[i].round_trials[2],
+	    (double)gNB->ulsch_stats[i].round_trials[3]/gNB->ulsch_stats[i].round_trials[0],
+	    gNB->ulsch_stats[i].round_trials[3],
+	    gNB->ulsch_stats[i].current_Qm,
+	    gNB->ulsch_stats[i].current_RI,
+	    gNB->ulsch_stats[i].total_bytes_rx,
+	    gNB->ulsch_stats[i].total_bytes_tx);
+  
+}
+
+void clear_pusch_stats(PHY_VARS_gNB *gNB) {
+
+  for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
+    memset((void*)&gNB->ulsch_stats[i],0,sizeof(gNB->ulsch_stats[i]));
 }

@@ -1087,7 +1087,7 @@ int main(int argc, char **argv) {
           if (awgn_flag == 0) {
             if (UE2eNB->max_Doppler == 0) {
               multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                eNB->frame_parms.samples_per_tti,hold_channel);
+                                eNB->frame_parms.samples_per_tti,hold_channel,0);
             } else {
               multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
                                    2*eNB->frame_parms.samples_per_tti,hold_channel);

@@ -64,7 +64,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 sub_frame_t subframeP);
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
-			       frame_t frame_txP, sub_frame_t slot_txP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
 int nr_generate_dlsch_pdu(module_id_t Mod_idP,
@@ -158,8 +157,16 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
 void nr_schedule_pusch(int Mod_idP,
                        int UE_id,
+                       int num_slots_per_tdd,
+                       int ul_slots,
                        frame_t       frameP,
                        sub_frame_t   slotP);
+
+void nr_schedule_pucch(int Mod_idP,
+                       int UE_id,
+                       int nr_ulmix_slots,
+                       frame_t frameP,
+                       sub_frame_t slotP);
 
 void nr_update_pucch_scheduling(int Mod_idP,
                                 int UE_id,
@@ -297,10 +304,12 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                           frame_t frameP,
                           sub_frame_t slotP,
                           int num_slots_per_tdd,
+                          int ul_slots,
                           int time_domain_assignment);
 
 void nr_process_mac_pdu(
     module_id_t module_idP,
+    rnti_t rnti,
     uint8_t CC_id,
     frame_t frameP,
     uint8_t *pduP,
@@ -327,6 +336,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const rnti_t rntiP,
                uint8_t * sduP,
                const uint16_t sdu_lenP,
-               const uint16_t timing_advance, const uint8_t ul_cqi);
+               const uint16_t timing_advance,
+               const uint8_t ul_cqi,
+               const uint16_t rssi);
 
+void handle_nr_ul_harq(uint16_t slot, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, nfapi_nr_crc_t crc_pdu);
+
+void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_stats_t *stats, int target_snrx10);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
