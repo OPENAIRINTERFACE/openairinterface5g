@@ -51,7 +51,7 @@ logging.basicConfig(
 #import our libs
 import helpreadme as HELP
 import constants as CONST
-import sshconnection as SSH
+import sshconnection
 
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
@@ -112,7 +112,7 @@ class OaiCiTest():
 		if self.UEIPAddress == '' or self.ranRepository == '' or self.ranBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		result = re.search('--nrUE', self.Build_OAI_UE_args)
 		if result is not None:
@@ -215,7 +215,7 @@ class OaiCiTest():
 	def CheckFlexranCtrlInstallation(self,RAN,EPC):
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			return
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
 		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
@@ -230,7 +230,7 @@ class OaiCiTest():
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('cd /opt/flexran_rtc', '\$', 5)
 		SSH.command('echo ' + EPC.Password + ' | sudo -S rm -f log/*.log', '\$', 5)
@@ -247,7 +247,7 @@ class OaiCiTest():
 	
 	def InitializeUE_common(self, device_id, idx,COTS_UE):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if not self.ADBCentralized:
 				# Reboot UE
@@ -327,7 +327,7 @@ class OaiCiTest():
 			UE_prefix = ''
 		else:
 			UE_prefix = 'NR '
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
 		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 60)
@@ -535,7 +535,7 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB()
 
 	def checkDevTTYisUnlocked(self):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		count = 0
 		while count < 5:
@@ -552,7 +552,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
@@ -592,7 +592,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
@@ -614,7 +614,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.enablePicocomClosure()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
@@ -699,7 +699,7 @@ class OaiCiTest():
 		try:
 			statusQueue = SimpleQueue()
 			lock = Lock()
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 			SSH.command('cd scripts', '\$', 5)
@@ -785,7 +785,7 @@ class OaiCiTest():
 
 	def AttachUE_common(self, device_id, statusQueue, lock, idx,COTS_UE):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if self.ADBCentralized:
 				#RH quick add on to integrate cots control defined by yaml
@@ -932,7 +932,7 @@ class OaiCiTest():
 
 	def DetachUE_common(self, device_id, idx,COTS_UE):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if self.ADBCentralized:
 				#RH quick add on to  integrate cots control defined by yaml
@@ -986,7 +986,7 @@ class OaiCiTest():
 
 	def RebootUE_common(self, device_id):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			previousmDataConnectionStates = []
 			# Save mDataConnectionState
@@ -1047,7 +1047,7 @@ class OaiCiTest():
 
 	def DataDisableUE_common(self, device_id, idx):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# disable data service
 			if self.ADBCentralized:
@@ -1077,7 +1077,7 @@ class OaiCiTest():
 
 	def DataEnableUE_common(self, device_id, idx):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# enable data service
 			if self.ADBCentralized:
@@ -1109,7 +1109,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
 			SSH.command('adb devices', '\$', 15)
@@ -1153,7 +1153,7 @@ class OaiCiTest():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
 			SSH.command('lsusb | egrep "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
@@ -1175,7 +1175,7 @@ class OaiCiTest():
 
 	def CheckUEStatus_common(self, lock, device_id, statusQueue, idx):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			if self.ADBCentralized:
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry"', '\$', 15)
@@ -1247,7 +1247,7 @@ class OaiCiTest():
 		for job in multi_jobs:
 			job.join()
 		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('cd /opt/flexran_rtc', '\$', 5)
 			SSH.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
@@ -1298,7 +1298,7 @@ class OaiCiTest():
 			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 				HELP.GenericHelp(CONST.Version)
 				sys.exit('Insufficient Parameter')
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('ifconfig oaitun_ue1', '\$', 4)
 			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', SSH.getBefore())
@@ -1358,7 +1358,7 @@ class OaiCiTest():
 
 	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 			# But for OAI-Rel14-CUPS, we launch from python executor
 			launchFromEpc = True
@@ -1450,7 +1450,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
 
 	def PingNoS1(self,HTML,RAN,EPC):
-		SSH=SSH.SSHConnection()
+		SSH=sshconnection.SSHConnection()
 		check_eNB = True
 		check_OAI_UE = True
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
@@ -1633,7 +1633,7 @@ class OaiCiTest():
 		return result
 
 	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		SSH.command('awk -f /tmp/tcp_iperf_stats.awk ' + EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', SSH.getBefore())
@@ -1882,7 +1882,7 @@ class OaiCiTest():
 		lock.release()
 
 	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		udpIperf = True
 		result = re.search('-u', str(self.iperf_args))
 		if result is None:
@@ -1990,7 +1990,7 @@ class OaiCiTest():
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			# Single-UE profile -- iperf only on one UE
 			if self.iperf_profile == 'single-ue' and idx != 0:
 				return
@@ -2179,7 +2179,7 @@ class OaiCiTest():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def IperfNoS1(self,HTML,RAN,EPC):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -2450,7 +2450,7 @@ class OaiCiTest():
 
 	def CheckOAIUEProcess(self, status_queue):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface + ' | grep -v grep', '\$', 5)
 			result = re.search(self.air_interface, SSH.getBefore())
@@ -2723,7 +2723,7 @@ class OaiCiTest():
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('echo ' + EPC.Password + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
 		time.sleep(1)
@@ -2735,7 +2735,7 @@ class OaiCiTest():
 
 	def TerminateUE_common(self, device_id, idx,COTS_UE):
 		try:
-			SSH = SSH.SSHConnection()
+			SSH = sshconnection.SSHConnection()
 			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# back in airplane mode on (ie radio off)
 			if self.ADBCentralized:
@@ -2983,7 +2983,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', CONST.ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self,RAN):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		if (RAN.eNBIPAddress != '' and RAN.eNBUserName != '' and RAN.eNBPassword != ''):
 			IPAddress = RAN.eNBIPAddress
 			UserName = RAN.eNBUserName
@@ -3004,7 +3004,7 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectPing(self,EPC):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
@@ -3014,7 +3014,7 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectIperf(self,EPC):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
@@ -3024,7 +3024,7 @@ class OaiCiTest():
 		SSH.close()
 	
 	def LogCollectOAIUE(self):
-		SSH = SSH.SSHConnection()
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
@@ -3059,8 +3059,8 @@ class OaiCiTest():
 				idx = 1
 			else:
 				return -1
-				
-		SSH = SSH.SSHConnection()
+
+		SSH = sshconnection.SSHConnection()
 		SSH.open(IPAddress, UserName, Password)
 		SSH.command('lsb_release -a', '\$', 5)
 		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
