@@ -330,7 +330,8 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   fp->tdd_config           = tdd_cfg;
   fp->Nid_cell             = Nid_cell;
   fp->nr_band              = nr_band;
-  LOG_I(PHY, "Initializing frame parms: set nb_rx_antenna %d , nb_tx_antenna %d nb_antenna_ports_gNB %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->nb_antenna_ports_gNB);
+
+  LOG_I(PHY, "Initializing frame parms: set nb_antenna_ports_gNB %d, tdd_config, %d, Nid_cell %d\n", fp->nb_antenna_ports_gNB, fp->tdd_config, fp->Nid_cell);
 
   uint64_t dl_bw_khz = (12*config->carrier_config.dl_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + config->carrier_config.dl_frequency)*1000 ;
@@ -347,7 +348,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
   get_frame_type(fp->nr_band, fp->numerology_index, &fp->frame_type);
   uplink_frequency_offset *= 1000;
 
-  LOG_I(PHY, "DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, uplink_frequency_offset);
+  LOG_I(PHY, "Initializing frame parms: DL frequency %lu Hz, UL frequency %lu Hz: band %d, uldl offset %d Hz\n", fp->dl_CarrierFreq, fp->ul_CarrierFreq, fp->nr_band, uplink_frequency_offset);
 
   AssertFatal(fp->frame_type==config->cell_config.frame_duplex_type, "Invalid duplex type in config request file for band %d\n", fp->nr_band);
 

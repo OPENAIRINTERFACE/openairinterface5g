@@ -1401,7 +1401,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
     else {
       r = L_ra/NCS;
       found_sequences = (nb_preambles/r) + (nb_preambles%r!=0); //ceil(nb_preambles/r)
-      printf(" found_sequences %u\n", found_sequences);
+      LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
       return (found_sequences);
     }
   }
@@ -1439,7 +1439,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
         AssertFatal(1==0,"Procedure to find nb of sequences for restricted type B not implemented yet");
       }
     }
-    printf(" found_sequences %u\n", found_sequences);
+    LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
     return found_sequences;
   }
 }
@@ -1801,7 +1801,7 @@ uint64_t from_nrarfcn(int nr_bandP,
     }
   }
 
-  LOG_D(PHY, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
+  LOG_D(MAC, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
 
   AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
 
@@ -1811,7 +1811,7 @@ uint64_t from_nrarfcn(int nr_bandP,
 
   frequency = 1000*(freq_min + (nrarfcn - N_OFFs) * deltaFglobal);
 
-  LOG_I(PHY, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
+  LOG_I(MAC, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
     (unsigned long long)nrarfcn,
     (unsigned long long)frequency/1000,
     (unsigned long long)freq_min,

@@ -320,7 +320,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
     LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   }
 
-  LOG_I(PHY, "Set UE nb_rx_antenna %d , nb_tx_antenna %d, threequarter_fs %d\n", nb_antenna_rx, nb_antenna_tx, threequarter_fs);
+  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", nb_antenna_rx, nb_antenna_tx, threequarter_fs);
 
 }
 
