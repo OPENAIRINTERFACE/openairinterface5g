@@ -394,13 +394,13 @@ elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML)
+	CiTestObj.TerminateUE(HTML,COTS_UE)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML)
+	CiTestObj.TerminateOAIUE(HTML,RAN)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -628,7 +628,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Initialize_UE':
 					CiTestObj.InitializeUE(HTML,COTS_UE)
 				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML)
+					CiTestObj.TerminateUE(HTML,COTS_UE)
 				elif action == 'Attach_UE':
 					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE)
 				elif action == 'Detach_UE':
@@ -644,7 +644,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Initialize_OAI_UE':
 					CiTestObj.InitializeOAIUE(HTML,RAN,EPC)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML)
+					CiTestObj.TerminateOAIUE(HTML,RAN)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM()
 				elif action == 'Terminate_CatM_module':
