@@ -51,9 +51,10 @@
 #include "NR_MAC_UE/mac_extern.h"
 #include "common/utils/nr/nr_common.h"
 
-/* PHY UE */
+/* PHY */
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 /*Openair Packet Tracer */
 #include "UTIL/OPT/opt.h"
@@ -3226,7 +3227,7 @@ void nr_ue_send_sdu(module_id_t module_idP,
 // N_RB configuration according to 7.3.1.0 (DCI size alignment) of TS 38.212
 int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 
-  int N_RB, start_RB;
+  int N_RB = 0, start_RB;
   switch(rnti_type) {
     case NR_RNTI_RA:
     case NR_RNTI_TC:
