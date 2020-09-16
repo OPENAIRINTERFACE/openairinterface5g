@@ -48,8 +48,10 @@ logging.basicConfig(
 	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
 )
 
-
-
+#import our libs
+import helpreadme as HELP
+import constants as CONST
+import sshconnection
 
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
@@ -2261,7 +2263,7 @@ class OaiCiTest():
 	def Iperf(self,HTML,RAN,EPC):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
-			self.HTML,RAN,EPC)
+			self.IperfNoS1(HTML,RAN,EPC)
 			return
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
