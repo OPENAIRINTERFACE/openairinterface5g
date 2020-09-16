@@ -1752,7 +1752,6 @@ void nr_acknack_scheduling(int Mod_idP,
           if (pucch_res>-1){
             curr_pucch->resource_indicator = pucch_res;
             curr_pucch->frame = frameP;
-            curr_pucch->dai_c++;
             // first pucch occasion in first UL or MIXED slot
             first_ul_slot_tdd = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
             i = 0;
@@ -1763,6 +1762,7 @@ void nr_acknack_scheduling(int Mod_idP,
             }
             if (found == 1) {
               // computing slot in which pucch is scheduled
+              curr_pucch->dai_c++;
               curr_pucch->ul_slot = first_ul_slot_tdd + k + (slotP - (slotP % slots_per_tdd));
               curr_pucch->timing_indicator = i; // index in the list of timing indicators
               *pucch_id = k;
