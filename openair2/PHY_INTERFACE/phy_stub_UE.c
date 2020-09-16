@@ -1368,19 +1368,19 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
             UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus,
             hexdump(buffer, encoded_size, dump, sizeof(dump)));
-      nfapi_rx_indication_t test_ind;
-      if (nfapi_p7_message_unpack(buffer, encoded_size, &test_ind, sizeof(test_ind), NULL) < 0)
-      {
-        LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n", encoded_size);
-        abort();
-      }
-      print_rx_ind(&test_ind);
-      char test_buffer[1024];
-      int encoded_size2 = nfapi_p7_message_pack(&test_ind, test_buffer, sizeof(test_buffer), NULL);
-      if (encoded_size2 < 0)
-      {
-        LOG_E(MAC, "could not pack rx_ind right after unpacking encoded_size2: %d\n", encoded_size2);
-      }
+      // nfapi_rx_indication_t test_ind;
+      // if (nfapi_p7_message_unpack(buffer, encoded_size, &test_ind, sizeof(test_ind), NULL) < 0)
+      // {
+      //   LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n", encoded_size);
+      //   abort();
+      // }
+      // print_rx_ind(&test_ind);
+      // char test_buffer[1024];
+      // int encoded_size2 = nfapi_p7_message_pack(&test_ind, test_buffer, sizeof(test_buffer), NULL);
+      // if (encoded_size2 < 0)
+      // {
+      //   LOG_E(MAC, "could not pack rx_ind right after unpacking encoded_size2: %d\n", encoded_size2);
+      // }
       break;
     case NFAPI_RX_CQI_INDICATION:
       encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL); // Check pdu->ul_cqi_information.channel = 1
