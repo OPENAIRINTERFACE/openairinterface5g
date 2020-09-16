@@ -399,8 +399,6 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **rxdataF_ext2;
-  /// \brief Offset for calculating the index of rxdataF_ext for the current symbol
-  uint32_t rxdataF_ext_offset;
   /// \brief Hold the channel estimates in time domain based on DRS.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..4*ofdm_symbol_size[
@@ -468,6 +466,13 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS subcarriers per OFDM symbol
   uint16_t ptrs_sc_per_ofdm_symbol;
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_phase_per_slot;
+  /// \brief Total RE count after DMRS/PTRS RE's are extracted from respective symbol.
+  /// - first index: ? [0...14] smybol per slot
+  int16_t *ul_valid_re_per_slot;
   /// flag to verify if channel level computation is done
   uint8_t cl_done;
 } NR_gNB_PUSCH;
@@ -808,10 +813,12 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_deinterleaving_stats;
   time_stats_t ulsch_unscrambling_stats;
   time_stats_t ulsch_channel_estimation_stats;
+  time_stats_t ulsch_ptrs_processing_stats;
   time_stats_t ulsch_channel_compensation_stats;
   time_stats_t ulsch_rbs_extraction_stats;
   time_stats_t ulsch_mrc_stats;
   time_stats_t ulsch_llr_stats;
+
   /*
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
