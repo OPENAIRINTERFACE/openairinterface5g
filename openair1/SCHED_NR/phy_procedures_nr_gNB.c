@@ -213,7 +213,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
 */
 
-void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
+int nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req, bool do_fill_ind) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
   NR_gNB_ULSCH_t *ulsch = rdata->ulsch;
@@ -241,12 +241,14 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
 		  ulsch_harq->processedSegments, nb, rdata->nbSegments);
       ulsch_harq->processedSegments=rdata->nbSegments;
+      if (!do_fill_ind) return 1;
     }
   }
 
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
+      if (!do_fill_ind) return 0;
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for nr_tti_rx %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
@@ -256,6 +258,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
     } else {
+      if (!do_fill_ind) return 1;
       LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
             rdata->harq_pid,ulsch_harq->status, ulsch_harq->round,ulsch_harq->TBS,r);
@@ -345,7 +348,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 
   while (gNB->nbDecode > 0) {
     notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
-    nr_postDecode(gNB, req);
+    nr_postDecode(gNB, req, 1);
     delNotifiedFIFO_elt(req);
   }
   stop_meas(&gNB->ulsch_decoding_stats);

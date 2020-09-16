@@ -45,6 +45,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "common/utils/threadPool/thread-pool.h"
 
 //#define DEBUG_NR_ULSCHSIM
 
@@ -338,6 +339,11 @@ int main(int argc, char **argv)
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
+  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  char tp_param[] = "n";
+  initTpool(tp_param, gNB->threadPool, true);
+  initNotifiedFIFO(gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -531,10 +537,15 @@ int main(int argc, char **argv)
                            rel15_ul->qam_mod_order,
                            rel15_ul->nrOfLayers);
 
-      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
+      nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
                               frame, subframe, harq_pid, G);
+      while (gNB->nbDecode > 0) {
+        notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
+        ret = nr_postDecode(gNB, req, 0);
+        delNotifiedFIFO_elt(req);
+      }
 
-      if (ret > ulsch_gNB->max_ldpc_iterations)
+      if (ret)
         n_errors++;
 
       //count errors
