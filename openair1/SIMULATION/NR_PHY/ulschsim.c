@@ -68,6 +68,43 @@ PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
+  ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
+  NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
+  NR_gNB_ULSCH_t *ulsch = rdata->ulsch;
+  int r = rdata->segment_r;
+
+  bool decodeSuccess = (rdata->decodeIterations <= rdata->decoderParms.numMaxIter);
+  ulsch_harq->processedSegments++;
+  gNB->nbDecode--;
+
+  if (decodeSuccess) {
+    memcpy(ulsch_harq->b+rdata->offset,
+           ulsch_harq->c[r],
+           rdata->Kr_bytes- - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
+  } else {
+    if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
+      int nb=abortTpool(gNB->threadPool, req->key);
+      nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
+      gNB->nbDecode-=nb;
+      AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
+      ulsch_harq->processedSegments, nb, rdata->nbSegments);
+      ulsch_harq->processedSegments=rdata->nbSegments;
+      return 1;
+    }
+  }
+
+  // if all segments are done 
+  if (rdata->nbSegments == ulsch_harq->processedSegments) {
+    if (decodeSuccess) {
+      return 0;
+    } else {
+      return 1;
+      }
+
+    }
+    ulsch->last_iteration_cnt = rdata->decodeIterations;
+}
 int main(int argc, char **argv)
 {
   char c;
@@ -541,7 +578,7 @@ int main(int argc, char **argv)
                               frame, subframe, harq_pid, G);
       while (gNB->nbDecode > 0) {
         notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
-        ret = nr_postDecode(gNB, req, 0);
+        ret = nr_postDecode_sim(gNB, req);
         delNotifiedFIFO_elt(req);
       }
 
