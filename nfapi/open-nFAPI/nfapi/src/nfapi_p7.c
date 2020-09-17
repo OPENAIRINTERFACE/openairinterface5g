@@ -5091,6 +5091,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 		if (pdu->rx_indication_rel8.tl.tag == NFAPI_RX_INDICATION_REL8_TAG)
 		{
 			uint32_t length = pdu->rx_indication_rel8.length;
+			value->rx_pdu_list[i].data = nfapi_p7_allocate(length, config);
 			// NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s:%d: %s\n", __FUNCTION__,
 			// 			__LINE__, hexdump(*ppReadPackedMsg, end - *ppReadPackedMsg, foo, sizeof(foo)));
 			if (pullarray8(ppReadPackedMsg, pdu->data, length, length, end) == 0)
