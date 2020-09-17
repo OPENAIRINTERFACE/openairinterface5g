@@ -108,6 +108,7 @@ class OaiCiTest():
 		self.air_interface=''
 		self.expectedNbOfConnectedUEs = 0
 
+
 	def BuildOAIUE(self,HTML):
 		if self.UEIPAddress == '' or self.ranRepository == '' or self.ranBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
