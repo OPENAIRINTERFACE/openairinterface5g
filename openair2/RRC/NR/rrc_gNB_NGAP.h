@@ -19,18 +19,33 @@
  *      contact@openairinterface.org
  */
 
-/*
- * pdcp_messages_def.h
- *
- *  Created on: Oct 24, 2013
- *      Author: winckel and Navid Nikaein
- */
+#ifndef RRC_GNB_NGAP_H_
+#define RRC_GNB_NGAP_H_
 
-//-------------------------------------------------------------------------------------------//
-// Messages between RRC and PDCP layers
-MESSAGE_DEF(RRC_DCCH_DATA_REQ,          MESSAGE_PRIORITY_MED_PLUS, RrcDcchDataReq,              rrc_dcch_data_req)
-MESSAGE_DEF(RRC_DCCH_DATA_IND,          MESSAGE_PRIORITY_MED_PLUS, RrcDcchDataInd,              rrc_dcch_data_ind)
-MESSAGE_DEF(RRC_PCCH_DATA_REQ,          MESSAGE_PRIORITY_MED_PLUS, RrcPcchDataReq,              rrc_pcch_data_req)
+#include "rrc_gNB_UE_context.h"
+#include "nr_rrc_defs.h"
+#include "nr_rrc_extern.h"
 
-// gNB
-MESSAGE_DEF(NR_RRC_DCCH_DATA_IND,       MESSAGE_PRIORITY_MED_PLUS, NRRrcDcchDataInd,           nr_rrc_dcch_data_ind)
+#include "NR_RRCSetupComplete-IEs.h"
+#include "NR_RegisteredAMF.h"
+
+typedef struct rrc_ue_ngap_ids_s {
+  /* Tree related data */
+  RB_ENTRY(rrc_ue_ngap_ids_s) entries;
+
+  // keys
+  uint16_t ue_initial_id;
+  uint32_t gNB_ue_ngap_id;
+
+  // value
+  rnti_t   ue_rnti;
+} rrc_ue_ngap_ids_t;
+
+void
+rrc_gNB_send_NGAP_NAS_FIRST_REQ(
+    const protocol_ctxt_t     *const ctxt_pP,
+    rrc_gNB_ue_context_t      *ue_context_pP,
+    NR_RRCSetupComplete_IEs_t *rrcSetupComplete
+);
+
+#endif

@@ -127,7 +127,7 @@ typedef struct RrcMacCcchDataInd_s {
   int       CC_id;
 } RrcMacCcchDataInd;
 
-typedef struct NR_RrcMacCcchDataInd_s {
+typedef struct NRRrcMacCcchDataInd_s {
   uint32_t  frame;
   uint8_t   sub_frame;
   uint16_t  rnti;
@@ -135,7 +135,7 @@ typedef struct NR_RrcMacCcchDataInd_s {
   uint8_t   sdu[CCCH_SDU_SIZE];
   uint8_t   gnb_index;
   int       CC_id;
-} NR_RrcMacCcchDataInd;
+} NRRrcMacCcchDataInd;
 
 typedef struct RrcMacMcchDataReq_s {
   uint32_t  frame;

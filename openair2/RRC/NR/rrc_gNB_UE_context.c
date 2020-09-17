@@ -251,7 +251,7 @@ rrc_gNB_ue_context_5g_s_tmsi_exist(
         LOG_I(NR_RRC,"checking for UE 5G S-TMSI %x: rnti %x \n",
               s_TMSI, ue_context_p->ue_context.rnti);
 
-        if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI == s_TMSI) {
+        if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 == s_TMSI) {
             return ue_context_p;
         }
     }
