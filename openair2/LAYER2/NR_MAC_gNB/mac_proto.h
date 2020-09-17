@@ -150,7 +150,10 @@ void nr_fill_nfapi_dl_pdu(int Mod_id,
                           int StartSymbolIndex,
                           int NrOfSymbols,
                           uint8_t aggregation_level,
-                          int CCEIndex);
+                          int CCEIndex,
+                          int harq_pid,
+                          int ndi,
+                          int round);
 
 int configure_fapi_dl_pdu_phytest(int Mod_id,
                                   nfapi_nr_dl_tti_request_body_t *dl_req,

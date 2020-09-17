@@ -621,6 +621,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
       gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
   }
 
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+  const int current_harq_pid = sched_ctrl->current_harq_pid;
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+  harq->feedback_slot = pucch->ul_slot;
+  harq->is_waiting = 1;
+  UE_list->mac_stats[UE_id].dlsch_rounds[harq->round]++;
+  if (harq->round == 0)
+    UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
+
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
   nr_fill_nfapi_dl_pdu(module_id,
                        UE_id,
@@ -643,7 +652,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        startSymbolIndex,
                        nrOfSymbols,
                        aggregation_level,
-                       CCEIndex);
+                       CCEIndex,
+                       current_harq_pid,
+                       harq->ndi,
+                       harq->round);
 
   nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[gNB_mac->TX_req[CC_id].Number_of_PDUs];
   configure_fapi_dl_Tx(module_id,
