@@ -456,7 +456,10 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
                           int StartSymbolIndex,
                           int NrOfSymbols,
                           uint8_t aggregation_level,
-                          int CCEIndex) {
+                          int CCEIndex,
+                          int harq_pid,
+                          int ndi,
+                          int round) {
   gNB_MAC_INST                        *nr_mac  = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -504,17 +507,15 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
     pdsch_pdu_rel15->CyclicPrefix = 0;
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
-  int current_harq_pid = UE_list->UE_sched_ctrl[UE_id].current_harq_pid;
   pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcs,0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
+  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[round];
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = nrOfLayers;
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 0; // Point A
-  UE_list->mac_stats[UE_id].dlsch_rounds[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round]++;
   pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
@@ -562,8 +563,8 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].mcs = mcs;
   dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
   // harq pid and ndi
-  dci_pdu_rel15[0].harq_pid = current_harq_pid;
-  dci_pdu_rel15[0].ndi = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].ndi;
+  dci_pdu_rel15[0].harq_pid = harq_pid;
+  dci_pdu_rel15[0].ndi = ndi;
   // DAI
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
 
@@ -573,8 +574,6 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
   // PDSCH to HARQ TI
   dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = pucch_sched->timing_indicator;
-  UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].feedback_slot = pucch_sched->ul_slot;
-  UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].is_waiting = 1;
   // antenna ports
   dci_pdu_rel15[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
   // dmrs sequence initialization
@@ -636,9 +635,6 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   //      N_PRB_DMRS,
   //      N_PRB_oh);
   //pdsch_pdu_rel15->nb_mod_symbols = N_RE_prime*pdsch_pdu_rel15->n_prb*pdsch_pdu_rel15->nb_codewords;
-
-  if (UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round==0)
-    UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
   LOG_D(MAC,
         "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d "
