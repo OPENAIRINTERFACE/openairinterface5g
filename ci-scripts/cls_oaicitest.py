@@ -308,7 +308,7 @@ class OaiCiTest():
 		multi_jobs = []
 		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.InitializeUE_common, args = (device_id,i,COTS_UE))
+			p = Process(target = self.InitializeUE_common, args = (device_id,i,COTS_UE,))
 
 	def InitializeOAIUE(self,HTML,RAN,EPC):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -889,7 +889,7 @@ class OaiCiTest():
 		for device_id in self.UEDevices:
 			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
 				self.UEDevicesStatus[nb_ue_to_connect] = CONST.UE_STATUS_ATTACHING
-				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,COTS_UE))
+				p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,COTS_UE,))
 				p.daemon = True
 				p.start()
 				multi_jobs.append(p)
@@ -967,7 +967,7 @@ class OaiCiTest():
 		cnt = 0
 		for device_id in self.UEDevices:
 			self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHING
-			p = Process(target = self.DetachUE_common, args = (device_id,cnt,COTS_UE))
+			p = Process(target = self.DetachUE_common, args = (device_id,cnt,COTS_UE,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -1037,7 +1037,7 @@ class OaiCiTest():
 			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
-			p = Process(target = self.RebootUE_common, args = (device_id))
+			p = Process(target = self.RebootUE_common, args = (device_id,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -1096,7 +1096,7 @@ class OaiCiTest():
 		multi_jobs = []
 		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.DataEnableUE_common, args = (device_id,i))
+			p = Process(target = self.DataEnableUE_common, args = (device_id,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -1239,7 +1239,7 @@ class OaiCiTest():
 		status_queue = SimpleQueue()
 		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,i))
+			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,i,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -1571,7 +1571,7 @@ class OaiCiTest():
 		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC))
+			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2331,7 +2331,7 @@ class OaiCiTest():
 		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = self.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,EPC))
+			p = Process(target = self.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,EPC,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2372,15 +2372,15 @@ class OaiCiTest():
 		# in gNB also currently no need to check
 		result = re.search('noS1|band78', str(RAN.Initialize_eNB_args))
 		if result is None:
-			p = Process(target = EPC.CheckHSSProcess, args = (status_queue))
+			p = Process(target = EPC.CheckHSSProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
-			p = Process(target = EPC.CheckMMEProcess, args = (status_queue))
+			p = Process(target = EPC.CheckMMEProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
-			p = Process(target = EPC.CheckSPGWProcess, args = (status_queue))
+			p = Process(target = EPC.CheckSPGWProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2388,12 +2388,12 @@ class OaiCiTest():
 			if (check_eNB == False) and (check_OAI_UE == False):
 				return 0
 		if check_eNB:
-			p = Process(target = RAN.CheckeNBProcess, args = (status_queue))
+			p = Process(target = RAN.CheckeNBProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 		if check_OAI_UE:
-			p = Process(target = self.CheckOAIUEProcess, args = (status_queue))
+			p = Process(target = self.CheckOAIUEProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2424,7 +2424,7 @@ class OaiCiTest():
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		if initialize_OAI_UE_flag == False:
-			p = Process(target = self.CheckOAIUEProcess, args = (status_queue))
+			p = Process(target = self.CheckOAIUEProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2774,7 +2774,7 @@ class OaiCiTest():
 		multi_jobs = []
 		i = 0
 		for device_id in self.UEDevices:
-			p = Process(target= self.TerminateUE_common, args = (device_id,i,COTS_UE))
+			p = Process(target= self.TerminateUE_common, args = (device_id,i,COTS_UE,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2784,6 +2784,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def TerminateOAIUE(self,HTML,RAN):
+		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
 		SSH.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
