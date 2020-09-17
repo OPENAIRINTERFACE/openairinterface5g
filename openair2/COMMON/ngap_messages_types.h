@@ -638,7 +638,7 @@ typedef struct ngap_pdusession_setup_req_s {
 } ngap_pdusession_setup_req_t;
 
 typedef struct ngap_pdusession_setup_resp_s {
-  uint32_t      gNB_ue_ngap_id:24;
+  uint32_t      gNB_ue_ngap_id;
 
   /* Number of pdusession setup-ed in the list */
   uint8_t       nb_of_pdusessions;

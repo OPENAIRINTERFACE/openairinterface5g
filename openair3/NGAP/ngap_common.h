@@ -70,7 +70,10 @@
 #include "NGAP_PDUSessionResourceSetupItemCxtReq.h"
 #include "NGAP_QosFlowSetupRequestItem.h"
 #include "NGAP_AllowedNSSAI-Item.h"
-
+#include "NGAP_PDUSessionResourceModifyItemModRes.h"
+#include "NGAP_PDUSessionResourceFailedToModifyItemModRes.h"
+#include "NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.h"
+#include "NGAP_PDUSessionResourceReleasedItemRelRes.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
