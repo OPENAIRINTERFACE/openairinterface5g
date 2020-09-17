@@ -596,7 +596,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   LOG_D(MAC, "In nr_schedule_uss_dlsch_phytest frame %d slot %d\n",frameP,slotP);
 
-  int post_padding = 0, ta_len = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
+  int post_padding = 0, header_length_total = 0, sdu_length_total = 0, num_sdus = 0;
   int lcid, offset, i, header_length_last, TBS_bytes = 0;
   int UE_id = 0, CC_id = 0;
 
@@ -615,12 +615,13 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   uint16_t rnti = UE_list->rnti[UE_id];
+  NR_UE_sched_ctrl_t *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
   uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
   
   LOG_D(MAC, "Scheduling UE specific search space DCI type 1\n");
 
-  ta_len = gNB_mac->ta_len;
+  int ta_len = (ue_sched_ctl->ta_apply)?2:0;
 
   TBS_bytes = configure_fapi_dl_pdu(module_idP,
                                     dl_req,
