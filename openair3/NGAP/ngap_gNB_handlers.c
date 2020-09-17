@@ -1254,18 +1254,17 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   }
 
   ue_desc_p->rx_stream = stream;
-  ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
 
   if ( ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
-    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%d != %ld)",
+    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%lu != %lu)",
               ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
   }
 
   message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_SETUP_REQ);
   NGAP_PDUSESSION_SETUP_REQ(message_p).ue_initial_id   = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
-  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
-  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
+  NGAP_PDUSESSION_SETUP_REQ(message_p).gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
+  NGAP_PDUSESSION_SETUP_REQ(message_p).amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
 
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceSetupRequestIEs_t, ie, container,
 		                     NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListSUReq, true);
@@ -1322,10 +1321,10 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
             	NGAP_GTPTunnel_t  *gTPTunnel_p;
                 gTPTunnel_p = &pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
                 /* The transport layer address for the IP packets */
-                OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].gtp_teid);
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.length =
+                OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].gtp_teid);
+                NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.length =
                 		gTPTunnel_p->transportLayerAddress.size * 8 - gTPTunnel_p->transportLayerAddress.bits_unused;
-                memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.buffer ,
+                memcpy(NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.buffer ,
                 		gTPTunnel_p->transportLayerAddress.buf, gTPTunnel_p->transportLayerAddress.size);
             }
               break;
@@ -1340,7 +1339,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
 
             /* mandatory PDUSessionType */
             case NGAP_ProtocolIE_ID_id_PDUSessionType:
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
+            	NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
               break;
 
             /* optional SecurityIndication */
@@ -1360,19 +1359,19 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
                 DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count > 0);
                 DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count <= NGAP_maxnoofQosFlows);
 
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count;
+                NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count;
 
                 for(int qosIdx = 0; qosIdx < pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count; qosIdx++){
                   qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.array[qosIdx];
 
                   /* Set the QOS informations */
-                  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].qci = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                  NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].qci = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
 
-                  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.priority_level =
+                  NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                     qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.priorityLevelARP;
-                  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
+                  NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
                     qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.pre_emptionCapability;
-                  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
+                  NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
                     qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.pre_emptionVulnerability;
                 }
             }

@@ -669,7 +669,7 @@ int ngap_gNB_initial_ctxt_resp(
     if (!(ue_context_p->ue_state == NGAP_UE_CONNECTED ||
             ue_context_p->ue_state == NGAP_UE_WAITING_CSR)) {
         NGAP_WARN("You are attempting to send NAS data over non-connected "
-                  "gNB ue ngap id: %06x, current state: %d\n",
+                  "gNB ue ngap id: %08x, current state: %d\n",
                   initial_ctxt_resp_p->gNB_ue_ngap_id, ue_context_p->ue_state);
         return -1;
     }
@@ -969,7 +969,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
                         pdusession_setup_resp_p->gNB_ue_ngap_id)) == NULL) {
         /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-        NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%06x\n",
+        NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%08x\n",
                   pdusession_setup_resp_p->gNB_ue_ngap_id);
         return -1;
     }
@@ -980,7 +980,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     if (!(ue_context_p->ue_state == NGAP_UE_CONNECTED ||
             ue_context_p->ue_state == NGAP_UE_WAITING_CSR)) {
         NGAP_WARN("You are attempting to send NAS data over non-connected "
-                  "gNB ue ngap id: %06x, current state: %d\n",
+                  "gNB ue ngap id: %08x, current state: %d\n",
                   pdusession_setup_resp_p->gNB_ue_ngap_id, ue_context_p->ue_state);
         return -1;
     }
@@ -997,8 +997,6 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_ignore;
     ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_AMF_UE_NGAP_ID;
-    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
-    //ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
     asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
     /* mandatory */
