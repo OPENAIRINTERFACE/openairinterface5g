@@ -686,6 +686,7 @@ int main( int argc, char **argv ) {
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
     
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     UE[CC_id]->mac_enabled = 1;
@@ -751,7 +752,6 @@ int main( int argc, char **argv ) {
       if (frame_parms[CC_id]->frame_type == TDD)
       frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
     }
-    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
   }
   //  printf("tx_max_power = %d -> amp %d\n",tx_max_power[0],get_tx_amp(tx_max_poHwer,tx_max_power));
   init_openair0();
