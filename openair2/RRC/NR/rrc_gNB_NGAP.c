@@ -69,6 +69,45 @@ get_next_ue_initial_id(
 
 //------------------------------------------------------------------------------
 /*
+* Get the UE NG struct containing hashtables NG_id/UE_id.
+* Is also used to set the NG_id of the UE, depending on inputs.
+*/
+struct rrc_ue_ngap_ids_s *
+rrc_gNB_NGAP_get_ue_ids(
+    gNB_RRC_INST   *const rrc_instance_pP,
+    const uint16_t ue_initial_id,
+    const uint32_t gNB_ue_ngap_idP
+)
+//------------------------------------------------------------------------------
+{
+    rrc_ue_ngap_ids_t *result = NULL;
+
+    /* TODO */
+
+    return result;
+}
+
+//------------------------------------------------------------------------------
+static struct rrc_gNB_ue_context_s *
+rrc_gNB_get_ue_context_from_ngap_ids(
+    const instance_t  instanceP,
+    const uint16_t    ue_initial_idP,
+    const uint32_t    gNB_ue_ngap_idP
+) 
+//------------------------------------------------------------------------------
+{
+    rrc_ue_ngap_ids_t *temp = NULL;
+    temp = rrc_gNB_NGAP_get_ue_ids(RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instanceP)], ue_initial_idP, gNB_ue_ngap_idP);
+
+    if (temp != NULL) {
+        return rrc_gNB_get_ue_context(RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instanceP)], temp->ue_rnti);
+    }
+
+    return NULL;
+}
+
+//------------------------------------------------------------------------------
+/*
 * Initial UE NAS message on S1AP.
 */
 void
@@ -184,4 +223,72 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
     }
 
     itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, message_p);
+}
+
+//------------------------------------------------------------------------------
+int
+rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
+    MessageDef *msg_p,
+    const char *msg_name,
+    instance_t instance
+)
+//------------------------------------------------------------------------------
+{
+    uint16_t                        ue_initial_id;
+    uint32_t                        gNB_ue_ngap_id;
+    rrc_gNB_ue_context_t            *ue_context_p = NULL;
+    protocol_ctxt_t                 ctxt;
+
+    ue_initial_id  = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).ue_initial_id;
+    gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).gNB_ue_ngap_id;
+
+    ue_context_p   = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
+    LOG_I(NR_RRC, "[gNB %d] Received %s: ue_initial_id %d, gNB_ue_ngap_id %d \n",
+        instance, msg_name, ue_initial_id, gNB_ue_ngap_id);
+
+    if (ue_context_p == NULL) {
+        /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
+        MessageDef *msg_fail_p = NULL;
+        LOG_W(NR_RRC, "[gNB %d] In NGAP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, gNB_ue_ngap_id);
+        msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_INITIAL_CONTEXT_SETUP_FAIL);
+        NGAP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
+        // TODO add failure cause when defined!
+        itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
+        return (-1);
+    } else {
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+        ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).gNB_ue_ngap_id;
+        ue_context_p->ue_context.amf_ue_ngap_id = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).amf_ue_ngap_id;
+        
+        /* TODO security */
+        uint8_t send_security_mode_command = TRUE;
+
+        /* TODO rrc_pdcp_config_security */
+        // rrc_pdcp_config_security(
+        //     &ctxt,
+        //     ue_context_p,
+        //     send_security_mode_command);
+
+        if (send_security_mode_command) {
+            rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
+            send_security_mode_command = FALSE;
+
+            /* TODO rrc_pdcp_config_security */
+            // rrc_pdcp_config_security(
+            //     &ctxt,
+            //     ue_context_p,
+            //     send_security_mode_command);
+        } else {
+            /* TODO rrc_gNB_generate_UECapabilityEnquiry */
+            // rrc_gNB_generate_UECapabilityEnquiry (&ctxt, ue_context_p);
+        }
+
+        // in case, send the S1SP initial context response if it is not sent with the attach complete message
+        if (ue_context_p->ue_context.Status == NR_RRC_RECONFIGURED) {
+            LOG_I(NR_RRC, "Sending rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);
+            // rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
+        }
+
+        return 0;
+    }
 }

@@ -314,6 +314,8 @@ typedef struct gNB_RRC_UE_s {
 
   /* Information from S1AP initial_context_setup_req */
   uint32_t                           gNB_ue_s1ap_id :24;
+  uint32_t                           gNB_ue_ngap_id;
+  uint64_t                           amf_ue_ngap_id:40;
   nr_rrc_guami_t                     ue_guami;
 
   security_capabilities_t            security_capabilities;

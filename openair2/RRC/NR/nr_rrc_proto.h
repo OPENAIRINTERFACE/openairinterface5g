@@ -91,7 +91,11 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m);
 
-
+void
+rrc_gNB_generate_SecurityModeCommand(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t          *const ue_context_pP
+);
 
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */

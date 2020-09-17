@@ -48,4 +48,11 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
     NR_RRCSetupComplete_IEs_t *rrcSetupComplete
 );
 
+int
+rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
+    MessageDef *msg_p,
+    const char *msg_name,
+    instance_t instance
+);
+
 #endif
