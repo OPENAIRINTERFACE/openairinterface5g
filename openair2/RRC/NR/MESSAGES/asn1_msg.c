@@ -43,6 +43,7 @@
 #include "asn1_msg.h"
 #include "RRC/NR/nr_rrc_extern.h"
 #include "NR_DL-CCCH-Message.h"
+#include "NR_DL-DCCH-Message.h"
 #include "NR_RRCReject.h"
 #include "NR_RejectWaitTime.h"
 #include "NR_RRCSetup.h"
@@ -54,6 +55,8 @@
 #include "NR_LogicalChannelConfig.h"
 #include "NR_PDCP-Config.h"
 #include "NR_MAC-CellGroupConfig.h"
+#include "NR_SecurityModeCommand.h"
+#include "NR_CipheringAlgorithm.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -768,4 +771,61 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
     LOG_D(RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
     return((enc_rval.encoded+7)/8);
+}
+
+uint8_t do_NR_SecurityModeCommand(
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t *const buffer,
+  const uint8_t Transaction_id,
+  const uint8_t cipheringAlgorithm,
+  NR_IntegrityProtAlgorithm_t *integrityProtAlgorithm
+)
+//------------------------------------------------------------------------------
+{
+  NR_DL_DCCH_Message_t dl_dcch_msg;
+  asn_enc_rval_t enc_rval;
+  memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
+  dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
+  dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_securityModeCommand;
+  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->rrc_TransactionIdentifier = Transaction_id;
+  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.present = NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand;
+
+  // the two following information could be based on the mod_id
+  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
+    = (NR_CipheringAlgorithm_t)cipheringAlgorithm;
+  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
+    = integrityProtAlgorithm;
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
+                                   NULL,
+                                   (void *)&dl_dcch_msg,
+                                   buffer,
+                                   100);
+
+  if(enc_rval.encoded == -1) {
+    LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+          enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
+
+  LOG_D(NR_RRC,"[gNB %d] securityModeCommand for UE %x Encoded %zd bits (%zd bytes)\n",
+        ctxt_pP->module_id,
+        ctxt_pP->rnti,
+        enc_rval.encoded,
+        (enc_rval.encoded+7)/8);
+
+  if (enc_rval.encoded==-1) {
+    LOG_E(NR_RRC,"[gNB %d] ASN1 : securityModeCommand encoding failed for UE %x\n",
+          ctxt_pP->module_id,
+          ctxt_pP->rnti);
+    return(-1);
+  }
+
+  //  rrc_ue_process_ueCapabilityEnquiry(0,1000,&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry,0);
+  //  exit(-1);
+  return((enc_rval.encoded+7)/8);
 }

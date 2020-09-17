@@ -92,3 +92,9 @@ uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
                     NR_SRB_ToAddModList_t        *SRB_configList);
+uint8_t do_NR_SecurityModeCommand(
+                    const protocol_ctxt_t *const ctxt_pP,
+                    uint8_t *const buffer,
+                    const uint8_t Transaction_id,
+                    const uint8_t cipheringAlgorithm,
+                    NR_IntegrityProtAlgorithm_t *integrityProtAlgorithm);
