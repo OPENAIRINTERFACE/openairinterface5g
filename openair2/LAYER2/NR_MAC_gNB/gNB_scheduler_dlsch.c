@@ -565,7 +565,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         0,
         0);
 
-    LOG_I(MAC,
+    LOG_D(MAC,
           "[gNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
           module_id,
           sdu_lengths[num_sdus],
