@@ -1290,6 +1290,7 @@ class OaiCiTest():
 				self.AutoTerminateUEandeNB()
 
 	def GetAllUEIPAddresses(self):
+		SSH = sshconnection.SSHConnection()
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -1299,7 +1300,7 @@ class OaiCiTest():
 			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 				HELP.GenericHelp(CONST.Version)
 				sys.exit('Insufficient Parameter')
-			SSH = sshconnection.SSHConnection()
+
 			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			SSH.command('ifconfig oaitun_ue1', '\$', 4)
 			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', SSH.getBefore())
