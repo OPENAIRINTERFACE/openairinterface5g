@@ -425,8 +425,32 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   const int UE_id = 0;
   const int CC_id = 0;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+
   // TODO: reset per UE-info
 
+  /* Retrieve amount of data to send for this UE */
+  sched_ctrl->num_total_bytes = 0;
+  const int lcid = DL_SCH_LCID_DTCH;
+  const uint16_t rnti = UE_list->rnti[UE_id];
+  sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
+                                                    rnti,
+                                                    module_id,
+                                                    frame,
+                                                    slot,
+                                                    ENB_FLAG_YES,
+                                                    MBMS_FLAG_NO,
+                                                    lcid,
+                                                    0,
+                                                    0);
+  sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+  if (sched_ctrl->num_total_bytes == 0 && !get_softmodem_params()->phy_test)
+    return;
+  LOG_D(MAC,
+        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
+        frame,
+        slot,
+        lcid,
+        sched_ctrl->rlc_status[lcid].bytes_in_buffer);
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
@@ -441,36 +465,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
   if (UE_list->num_UEs == 0)
     return;
 
+  /* PREPROCESSOR */
+  nr_simple_dlsch_preprocessor(module_id, frame, slot, num_slots_per_tdd);
+
   const int ta_len = gNB_mac->ta_len;
   const int UE_id = 0;
   const int CC_id = 0;
 
-  /* Retrieve amount of data to send for this UE */
-  const int lcid = DL_SCH_LCID_DTCH;
-  const uint16_t rnti = UE_list->rnti[UE_id];
-  const mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_id,
-                                                              rnti,
-                                                              module_id,
-                                                              frame,
-                                                              slot,
-                                                              ENB_FLAG_YES,
-                                                              MBMS_FLAG_NO,
-                                                              lcid,
-                                                              0,
-                                                              0);
-  if (rlc_status.bytes_in_buffer == 0 && !get_softmodem_params()->phy_test)
-    return;
-  LOG_D(MAC,
-        "%d.%d, DTCH%d->DLSCH, RLC status %d bytes\n",
-        frame,
-        slot,
-        lcid,
-        rlc_status.bytes_in_buffer);
-
-  /* PREPROCESSOR */
-  nr_simple_dlsch_preprocessor(module_id, frame, slot, num_slots_per_tdd);
-
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+  if (sched_ctrl->num_total_bytes == 0 && !get_softmodem_params()->phy_test)
+    return;
+
   //if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
   //  return;
 
@@ -556,7 +561,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
-  if (rlc_status.bytes_in_buffer > 0) {
+  const rnti_t rnti = UE_list->rnti[UE_id];
+  const int lcid = DL_SCH_LCID_DTCH;
+  if (sched_ctrl->num_total_bytes > 0) {
     LOG_D(MAC,
           "[gNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting "
           "%d bytes from RLC (lcid %d total hdr len %d), TBS: %d \n \n",
