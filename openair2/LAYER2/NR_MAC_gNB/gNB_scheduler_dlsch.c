@@ -427,6 +427,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
   // TODO: reset per UE-info
+  sched_ctrl->rbSize = 0;
 
   /* Retrieve amount of data to send for this UE */
   sched_ctrl->num_total_bytes = 0;
@@ -480,6 +481,11 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
 
   // Time-domain allocation
   sched_ctrl->time_domain_allocation = 2;
+
+  // Freq-demain allocation
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  sched_ctrl->rbSize = bwpSize;
+  sched_ctrl->rbStart = 0;
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
@@ -499,13 +505,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const int CC_id = 0;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
-  if (sched_ctrl->num_total_bytes == 0 && !get_softmodem_params()->phy_test)
+  if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
     return;
-
-  //if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
-  //  return;
-
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   const uint8_t mcs = 9;
   const int nrOfLayers = 1;
@@ -535,14 +536,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
   }
   const uint8_t N_sh_symb = nrOfSymbols;
 
-  const uint16_t rbSize = bwpSize;
   const uint8_t table_idx = 0;
   const uint16_t R = nr_get_code_rate_dl(mcs, table_idx);
   const uint8_t Qm = nr_get_Qm_dl(mcs, table_idx);
   const uint32_t TBS =
       nr_compute_tbs(Qm,
                      R,
-                     rbSize,
+                     sched_ctrl->rbSize,
                      N_sh_symb,
                      N_PRB_DMRS, // FIXME // This should be multiplied by the
                                  // number of dmrs symbols
@@ -550,7 +550,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                      0 /* tb_scaling */,
                      nrOfLayers)
       >> 3;
-  AssertFatal(TBS != 0, "TBS is zero but requested %d RBs!\n", rbSize);
+  AssertFatal(TBS != 0, "TBS is zero but requested %d RBs!\n", sched_ctrl->rbSize);
   LOG_D(MAC,
         "TBS %d bytes: N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d",
         TBS,
@@ -670,8 +670,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        pucch,
                        nrOfLayers,
                        mcs,
-                       rbSize,
-                       0 /* bwpStart */,
+                       sched_ctrl->rbSize,
+                       sched_ctrl->rbStart,
                        numDmrsCdmGrpsNoData,
                        dmrsConfigType,
                        table_idx,
