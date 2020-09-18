@@ -1057,7 +1057,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
           NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
     if (dl_config_req != NULL) {
       uint16_t dl_num_pdus = dl_config_req->dl_config_request_body.number_pdu;
-      LOG_I(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
+      LOG_A(MAC, "(OAI UE) Received dl_config_req from proxy at Frame: %d, Subframe: %d,"
             " with number of PDUs: %u\n",
             NFAPI_SFNSF2SFN(dl_config_req->sfn_sf), NFAPI_SFNSF2SF(dl_config_req->sfn_sf),
             dl_num_pdus);

@@ -1065,14 +1065,14 @@ void init_pdcp(void) {
 }
 
 static  void wait_nfapi_init(char *thread_name) {
-  printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
+  LOG_I(ENB_APP, "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
   pthread_mutex_lock( &nfapi_sync_mutex );
 
   while (nfapi_sync_var<0)
     pthread_cond_wait( &nfapi_sync_cond, &nfapi_sync_mutex );
 
   pthread_mutex_unlock(&nfapi_sync_mutex);
-  printf( "NFAPI: got sync (%s)\n", thread_name);
+  LOG_I(ENB_APP, "NFAPI: got sync (%s)\n", thread_name);
 }
 
 void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {
