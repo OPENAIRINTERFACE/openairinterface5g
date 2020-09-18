@@ -351,6 +351,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (add_ue == 1) {
       UE_id = add_new_nr_ue(Mod_idP,rnti);
       UE_list->secondaryCellGroup[UE_id] = secondaryCellGroup;
+      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList =
+          secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+      AssertFatal(bwpList->list.count == 1,
+                  "downlinkBWP_ToAddModList has %d BWP!\n",
+                  bwpList->list.count);
+      const int bwp_id = 1;
+      UE_list->UE_sched_ctrl[UE_id].active_bwp = bwpList->list.array[bwp_id - 1];
       uint8_t num_preamble = secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra->resources.choice.ssb->ssb_ResourceList.list.count;
       UE_list->preambles[UE_id].num_preambles = num_preamble;
       UE_list->preambles[UE_id].preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));

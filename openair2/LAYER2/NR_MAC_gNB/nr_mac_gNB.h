@@ -283,8 +283,14 @@ typedef struct NR_UE_ul_harq {
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
+  /// the currently active BWP in DL
+  NR_BWP_Downlink_t *active_bwp;
   NR_sched_pucch *sched_pucch;
   NR_sched_pusch *sched_pusch;
+
+  /// CCE index and aggregation, should be coherent with cce_list
+  NR_SearchSpace_t *search_space;
+
   uint16_t ta_timer;
   int16_t ta_update;
   bool ta_apply;

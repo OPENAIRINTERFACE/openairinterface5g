@@ -416,6 +416,22 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_
   UL_info->uci_ind.num_ucis = 0;
 }
 
+void nr_simple_dlsch_preprocessor(module_id_t module_id,
+                                  frame_t frame,
+                                  sub_frame_t slot,
+                                  int num_slots_per_tdd) {
+  NR_UE_list_t *UE_list = &RC.nrmac[module_id]->UE_list;
+
+  const int UE_id = 0;
+  const int CC_id = 0;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+  // TODO: reset per UE-info
+
+
+  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+}
+
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot,
@@ -452,26 +468,24 @@ void nr_schedule_ue_spec(module_id_t module_id,
         rlc_status.bytes_in_buffer);
 
   /* PREPROCESSOR */
-  /* BWP */
-  const int bwp_id = 1;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
-  AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-              "downlinkBWP_ToAddModList has %d BWP!\n",
-              secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id - 1];
+  nr_simple_dlsch_preprocessor(module_id, frame, slot, num_slots_per_tdd);
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  NR_SearchSpace_t *ss = get_searchspace(bwp, target_ss);
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+  //if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
+  //  return;
 
   /* Find a free CCE */
   uint8_t nr_of_candidates, aggregation_level;
-  find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
-  NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 1 /* dedicated */);
+  find_aggregation_candidates(&aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  NR_ControlResourceSet_t *coreset =
+      get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   int CCEIndex = allocate_nr_CCEs(gNB_mac,
-                                  bwp,
+                                  sched_ctrl->active_bwp,
                                   coreset,
                                   aggregation_level,
-                                  ss->searchSpaceType->present - 1,
+                                  sched_ctrl->search_space->searchSpaceType->present - 1,
                                   UE_id,
                                   0); // m
   if (CCEIndex < 0) {
@@ -483,16 +497,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
   nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
   NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
 
-  const uint16_t bwpSize = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
+  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   const uint8_t mcs = 9;
   const int nrOfLayers = 1;
   const uint8_t numDmrsCdmGrpsNoData = 1;
-  const nfapi_nr_dmrs_type_e dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+  const nfapi_nr_dmrs_type_e dmrsConfigType = sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
 
   const int time_domain_assignment = 2;
-  AssertFatal(time_domain_assignment<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count,"time_domain_assignment %d>=%d\n",time_domain_assignment,bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
-  const int startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+  AssertFatal(time_domain_assignment<sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count,"time_domain_assignment %d>=%d\n",time_domain_assignment,sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
+  const int startSymbolAndLength = sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
@@ -621,7 +635,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
       gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
   }
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
   const int current_harq_pid = sched_ctrl->current_harq_pid;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
   harq->feedback_slot = pucch->ul_slot;
@@ -633,8 +646,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
   nr_fill_nfapi_dl_pdu(module_id,
                        UE_id,
-                       bwp_id,
-                       ss,
+                       sched_ctrl->active_bwp->bwp_Id,
+                       sched_ctrl->search_space,
                        coreset,
                        dl_req,
                        pucch,
