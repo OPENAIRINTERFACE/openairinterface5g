@@ -1707,17 +1707,17 @@ static
 int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
-#if 0
+
   int i;
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
   MessageDef            *message_p        = NULL;
-  NGAP_PDUSESSIONReleaseCommand_t     *container;
-  NGAP_PDUSESSIONReleaseCommandIEs_t  *ie;
-  NGAP_GNB_UE_NGAP_ID_t           enb_ue_ngap_id;
-  NGAP_AMF_UE_NGAP_ID_t           amf_ue_ngap_id;
+  NGAP_PDUSessionResourceReleaseCommand_t     *container;
+  NGAP_PDUSessionResourceReleaseCommandIEs_t  *ie;
+  NGAP_RAN_UE_NGAP_ID_t           gnb_ue_ngap_id;
+  uint64_t                        amf_ue_ngap_id;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.PDUSESSIONReleaseCommand;
+  container = &pdu->choice.initiatingMessage.value.choice.PDUSessionResourceReleaseCommand;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
     NGAP_ERROR("[SCTP %d] Received E-RAB release command for non existing AMF context\n", assoc_id);
@@ -1726,29 +1726,29 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
 
 
   /* id-AMF-UE-NGAP-ID */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONReleaseCommandIEs_t, ie, container,
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceReleaseCommandIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    amf_ue_ngap_id = ie->value.choice.AMF_UE_NGAP_ID;
+    asn_INTEGER2ulong(&(ie->value.choice.AMF_UE_NGAP_ID), &amf_ue_ngap_id);
   } else {
     return -1;
   }
 
-  /* id-gNB-UE-NGAP-ID */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONReleaseCommandIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, true);
+  /* id-RAN-UE-NGAP-ID */
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceReleaseCommandIEs_t, ie, container,
+                             NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    enb_ue_ngap_id = ie->value.choice.GNB_UE_NGAP_ID;
+    gnb_ue_ngap_id = ie->value.choice.RAN_UE_NGAP_ID;
   } else {
     return -1;
   }
 
   if ((ue_desc_p = ngap_gNB_get_ue_context(amf_desc_p->ngap_gNB_instance,
-                   enb_ue_ngap_id)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received E-RAB release command for non existing UE context 0x%06lx\n", assoc_id,
-               ie->value.choice.GNB_UE_NGAP_ID);
+                   gnb_ue_ngap_id)) == NULL) {
+    NGAP_ERROR("[SCTP %d] Received PDUSession Resource release command for non existing UE context 0x%08lx\n", assoc_id,
+               ie->value.choice.RAN_UE_NGAP_ID);
     return -1;
   }
 
@@ -1762,23 +1762,22 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
   ue_desc_p->rx_stream = stream;
 
   if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
-    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%d != %ld)",
-              ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
+    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%lu != %lu)",
+              (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
   }
 
-  NGAP_DEBUG("[SCTP %d] Received E-RAB release command for gNB_UE_NGAP_ID %ld amf_ue_ngap_id %ld\n",
-             assoc_id, enb_ue_ngap_id, amf_ue_ngap_id);
+  NGAP_DEBUG("[SCTP %d] Received E-RAB release command for gNB_UE_NGAP_ID %lu amf_ue_ngap_id %lu\n",
+             assoc_id, gnb_ue_ngap_id, amf_ue_ngap_id);
   message_p = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_RELEASE_COMMAND);
-  NGAP_PDUSESSION_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = enb_ue_ngap_id;
+  NGAP_PDUSESSION_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
   NGAP_PDUSESSION_RELEASE_COMMAND(message_p).amf_ue_ngap_id = amf_ue_ngap_id;
   /* id-NAS-PDU */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONReleaseCommandIEs_t, ie, container,
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceReleaseCommandIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_NAS_PDU, false);
 
   if(ie && ie->value.choice.NAS_PDU.size > 0) {
     NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.length = ie->value.choice.NAS_PDU.size;
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer =
-      malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
+    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer = malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
     memcpy(NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer,
            ie->value.choice.NAS_PDU.buf,
            ie->value.choice.NAS_PDU.size);
@@ -1787,25 +1786,26 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
     NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer = NULL;
   }
 
-  /* id-E-RABToBeReleasedList */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONReleaseCommandIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_PDUSESSIONToBeReleasedList, true);
+  /* id-PDUSessionResourceToReleaseListRelCmd */
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceReleaseCommandIEs_t, ie, container,
+                             NGAP_ProtocolIE_ID_id_PDUSessionResourceToReleaseListRelCmd, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nb_pdusessions_torelease = ie->value.choice.PDUSESSIONList.list.count;
+    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nb_pdusessions_torelease = ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.count;
 
-    for (i = 0; i < ie->value.choice.PDUSESSIONList.list.count; i++) {
-      NGAP_PDUSESSIONItem_t *item_p;
-      item_p = &(((NGAP_PDUSESSIONItemIEs_t *)ie->value.choice.PDUSESSIONList.list.array[i])->value.choice.PDUSESSIONItem);
-      NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].pdusession_id = item_p->e_RAB_ID;
-      NGAP_DEBUG("[SCTP] Received E-RAB release command for e-rab id %ld\n", item_p->e_RAB_ID);
+    for (i = 0; i < ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.count; i++) {
+      NGAP_PDUSessionResourceToReleaseItemRelCmd_t *item_p;
+      item_p = (NGAP_PDUSessionResourceToReleaseItemRelCmd_t *)ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.array[i];
+    
+      NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].pdusession_id = item_p->pDUSessionID;
+      NGAP_DEBUG("[SCTP] Received E-RAB release command for pDUSessionID id %ld\n", item_p->pDUSessionID);
     }
   } else {
     return -1;
   }
 
   itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
-#endif
+
   return 0;
 }
 
