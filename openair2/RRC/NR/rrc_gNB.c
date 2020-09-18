@@ -773,6 +773,28 @@ rrc_gNB_decode_dcch(
 
                 ue_context_p->ue_context.ue_release_timer = 0;
                 break;
+            case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
+                // to avoid segmentation fault
+                if(!ue_context_p) {
+                  LOG_I(NR_RRC, "Processing securityModeComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+                  break;
+                }
+
+                LOG_I(NR_RRC,
+                      PROTOCOL_NR_RRC_CTXT_UE_FMT" received securityModeComplete on UL-DCCH %d from UE\n",
+                      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                      DCCH);
+                LOG_D(NR_RRC,
+                      PROTOCOL_NR_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
+                      "(securityModeComplete) ---> RRC_eNB\n",
+                      PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
+                      DCCH,
+                      sdu_sizeP);
+
+                if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+                  xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+                }
+                break;
 
             case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
                 break;
@@ -934,6 +956,9 @@ void *rrc_gnb_task(void *args_p) {
 
       case X2AP_ENDC_SGNB_RECONF_COMPLETE:
         LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
+        break;
+      case NGAP_INITIAL_CONTEXT_SETUP_REQ:
+        rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p, msg_name_p, instance);
         break;
 
       default:

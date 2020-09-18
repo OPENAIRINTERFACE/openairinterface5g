@@ -292,3 +292,105 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         return 0;
     }
 }
+
+//------------------------------------------------------------------------------
+void
+rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t          *const ue_context_pP
+)
+//------------------------------------------------------------------------------
+{
+  MessageDef      *msg_p         = NULL;
+  int e_rab;
+  int e_rabs_done = 0;
+  int e_rabs_failed = 0;
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, NGAP_INITIAL_CONTEXT_SETUP_RESP);
+  NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
+
+  for (e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {
+    if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+      e_rabs_done++;
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].pdusession_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+      // TODO add other information from S1-U when it will be integrated
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].gtp_teid = ue_context_pP->ue_context.gnb_gtp_teid[e_rab];
+      memcpy(NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].gNB_addr.buffer , ue_context_pP->ue_context.gnb_gtp_addrs[e_rab].buffer, 20);
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions[e_rab].gNB_addr.length = 4;
+      ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+    } else {
+      e_rabs_failed++;
+      ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[e_rab].pdusession_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+      // TODO add cause when it will be integrated
+    }
+  }
+
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_GNB,
+    MSC_S1AP_ENB,
+    (const char *)&NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p),
+    sizeof(ngap_initial_context_setup_resp_t),
+    MSC_AS_TIME_FMT" INITIAL_CONTEXT_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_id_rnti,
+    NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).gNB_ue_ngap_id,
+    e_rabs_done, e_rabs_failed);
+  NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_pdusessions = e_rabs_done;
+  NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_pdusessions_failed = e_rabs_failed;
+  itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
+}
+
+static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(uint16_t algorithms) {
+  //#warning "Forced   return NR_CipheringAlgorithm_nea0, to be deleted in future"
+  return NR_CipheringAlgorithm_nea0;
+}
+
+static e_NR_IntegrityProtAlgorithm rrc_gNB_select_integrity(uint16_t algorithms) {
+
+  // to be continue
+  return NR_IntegrityProtAlgorithm_nia0;
+}
+
+int
+rrc_gNB_process_security(
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_gNB_ue_context_t *const ue_context_pP,
+  security_capabilities_t *security_capabilities_pP
+) {
+  boolean_t                                             changed = FALSE;
+  NR_CipheringAlgorithm_t                               cipheringAlgorithm;
+  e_NR_IntegrityProtAlgorithm                           integrityProtAlgorithm;
+  /* Save security parameters */
+  ue_context_pP->ue_context.security_capabilities = *security_capabilities_pP;
+  // translation
+  LOG_D(NR_RRC,
+        "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
+        ctxt_pP->module_id,
+        ue_context_pP->ue_context.security_capabilities.encryption_algorithms,
+        (unsigned long)ue_context_pP->ue_context.ciphering_algorithm,
+        ue_context_pP->ue_context.security_capabilities.integrity_algorithms,
+        ue_context_pP->ue_context.integrity_algorithm);
+  /* Select relevant algorithms */
+  cipheringAlgorithm = rrc_gNB_select_ciphering (ue_context_pP->ue_context.security_capabilities.encryption_algorithms);
+
+  if (ue_context_pP->ue_context.ciphering_algorithm != cipheringAlgorithm) {
+    ue_context_pP->ue_context.ciphering_algorithm = cipheringAlgorithm;
+    changed = TRUE;
+  }
+
+  integrityProtAlgorithm = rrc_gNB_select_integrity (ue_context_pP->ue_context.security_capabilities.integrity_algorithms);
+
+  if (ue_context_pP->ue_context.integrity_algorithm != integrityProtAlgorithm) {
+    ue_context_pP->ue_context.integrity_algorithm = integrityProtAlgorithm;
+    changed = TRUE;
+  }
+
+  LOG_I (NR_RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
+         ctxt_pP->module_id,
+         ue_context_pP->ue_context.rnti,
+         security_capabilities_pP,
+         (unsigned long)cipheringAlgorithm,
+         integrityProtAlgorithm,
+         changed ? "changed" : "same");
+  return changed;
+}
