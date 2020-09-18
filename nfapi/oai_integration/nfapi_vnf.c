@@ -760,7 +760,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
             NFAPI_SFNSF2SF(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
     }
 
-    // analyze_cqi_pdus_for_duplicates(ind);
+    analyze_cqi_pdus_for_duplicates(ind);
 
     for (int i=0; i < ind->cqi_indication_body.number_of_cqis; i++) {
       nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
@@ -1262,14 +1262,7 @@ static bool remove_ul_config_req_pdu(uint16_t index, nfapi_ul_config_request_t *
   {
     return false;
   }
-  // last element of the list
-  if (index == ul_config_req->ul_config_request_body.number_of_pdus)
-  {
-    ul_config_req->ul_config_request_body.number_of_pdus--;
-    return true;
-  }
 
-  // All other element locations
   for(int i = index; i < num_pdus; i++)
   {
     pdu_list[i] = pdu_list[i + 1];
