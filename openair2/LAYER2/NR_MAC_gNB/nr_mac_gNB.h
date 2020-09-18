@@ -295,6 +295,9 @@ typedef struct {
 
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
+  NR_ControlResourceSet_t *coreset;
+  int cce_index;
+  uint8_t aggregation_level;
 
   uint16_t ta_timer;
   int16_t ta_update;

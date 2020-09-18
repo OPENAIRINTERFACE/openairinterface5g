@@ -452,8 +452,26 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
         lcid,
         sched_ctrl->rlc_status[lcid].bytes_in_buffer);
 
+  /* Find a free CCE */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  uint8_t nr_of_candidates;
+  find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                              &nr_of_candidates,
+                              sched_ctrl->search_space);
+  sched_ctrl->coreset = get_coreset(
+      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
+                                  sched_ctrl->active_bwp,
+                                  sched_ctrl->coreset,
+                                  sched_ctrl->aggregation_level,
+                                  sched_ctrl->search_space->searchSpaceType->present - 1,
+                                  UE_id,
+                                  0); // m
+  if (sched_ctrl->cce_index < 0) {
+    LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
+    return;
+  }
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
@@ -479,24 +497,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   //if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
   //  return;
 
-  /* Find a free CCE */
-  uint8_t nr_of_candidates, aggregation_level;
-  find_aggregation_candidates(&aggregation_level,
-                              &nr_of_candidates,
-                              sched_ctrl->search_space);
-  NR_ControlResourceSet_t *coreset =
-      get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
-  int CCEIndex = allocate_nr_CCEs(gNB_mac,
-                                  sched_ctrl->active_bwp,
-                                  coreset,
-                                  aggregation_level,
-                                  sched_ctrl->search_space->searchSpaceType->present - 1,
-                                  UE_id,
-                                  0); // m
-  if (CCEIndex < 0) {
-    LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
-    return;
-  }
   /* Find PUCCH occasion */
   int pucch_sched;
   nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
@@ -655,7 +655,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        UE_id,
                        sched_ctrl->active_bwp->bwp_Id,
                        sched_ctrl->search_space,
-                       coreset,
+                       sched_ctrl->coreset,
                        dl_req,
                        pucch,
                        nrOfLayers,
@@ -671,8 +671,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        time_domain_assignment,
                        startSymbolIndex,
                        nrOfSymbols,
-                       aggregation_level,
-                       CCEIndex,
+                       sched_ctrl->aggregation_level,
+                       sched_ctrl->cce_index,
                        current_harq_pid,
                        harq->ndi,
                        harq->round);
