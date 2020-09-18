@@ -17,12 +17,12 @@
 #include "NwEvt.h"
 #include "NwLog.h"
 
+#ifndef __NW_MINI_UDP_ENTITY_H__
+#define __NW_MINI_UDP_ENTITY_H__
+
 #ifndef NW_ASSERT
 #define NW_ASSERT assert
 #endif
-
-#ifndef __NW_MINI_UDP_ENTITY_H__
-#define __NW_MINI_UDP_ENTITY_H__
 
 typedef struct {
   uint32_t        hSocket;
