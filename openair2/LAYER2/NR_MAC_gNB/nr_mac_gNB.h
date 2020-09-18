@@ -291,6 +291,8 @@ typedef struct {
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
   NR_sched_pucch *sched_pucch;
+  /// selected PUCCH index, if scheduled
+  int pucch_sched_idx;
   NR_sched_pusch *sched_pusch;
 
   /// CCE index and aggregation, should be coherent with cce_list

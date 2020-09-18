@@ -472,6 +472,12 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
     LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);
     return;
   }
+
+  /* Find PUCCH occasion */
+  nr_update_pucch_scheduling(
+      module_id, UE_id, frame, slot, num_slots_per_tdd, &sched_ctrl->pucch_sched_idx);
+  AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
+
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
@@ -496,11 +502,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   //if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
   //  return;
-
-  /* Find PUCCH occasion */
-  int pucch_sched;
-  nr_update_pucch_scheduling(module_id, UE_id, frame, slot, num_slots_per_tdd, &pucch_sched);
-  NR_sched_pucch *pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[pucch_sched];
 
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
@@ -644,6 +645,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   const int current_harq_pid = sched_ctrl->current_harq_pid;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+  NR_sched_pucch *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx];
   harq->feedback_slot = pucch->ul_slot;
   harq->is_waiting = 1;
   UE_list->mac_stats[UE_id].dlsch_rounds[harq->round]++;
