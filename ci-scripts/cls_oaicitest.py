@@ -2134,7 +2134,7 @@ class OaiCiTest():
 					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 					return
-				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options, EPC)
 			SSH.close()
 
 			# Kill the IPERF server that runs in background
@@ -2241,7 +2241,7 @@ class OaiCiTest():
 				status_queue.put('10.0.1.2')
 				status_queue.put('Sink Test : no check')
 			else:
-				clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options)
+				clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options, EPC)
 		SSH.close()
 
 		# Stopping the iperf server
