@@ -84,7 +84,10 @@
       #define MAX_eNB                      2
       #define MAX_gNB                      2
     #else
-      #define MAX_MOBILES_PER_ENB         20 // This was maxed at 4 Why? -Andrew
+    // TODO: Change after gaining stability on 20 UES or less
+    // Make sure when changing these two fields to also change
+    // "NUMBER_OF_UE_MAX" constant in targets/COMMON/openairinterface5g_limits.h - Andrew
+      #define MAX_MOBILES_PER_ENB         20
       #define MAX_MOBILES_PER_ENB_NB_IoT  20
       #define MAX_MOBILES_PER_GNB         2//16
       #define MAX_eNB                      2

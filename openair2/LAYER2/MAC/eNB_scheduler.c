@@ -583,7 +583,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
   // If we ever see a difference this big something is very wrong
   // This threshold is arbitrary
-  if (delta > 8500 || delta == 0) // 900 frames
+  if (delta > 8500 || delta == 0) // 850 frames
   {
     LOG_I(MAC, "scheduler ignoring outerspace %d.%d -> %d.%d = %d\n",
           eNB->frame, eNB->subframe, frameP, subframeP, delta);

@@ -1280,7 +1280,7 @@ static bool remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_co
   return true;
 }
 
-#define MAX_DROPPED_INDICIES 10
+#define MAX_DROPPED_INDICIES 500
 
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;

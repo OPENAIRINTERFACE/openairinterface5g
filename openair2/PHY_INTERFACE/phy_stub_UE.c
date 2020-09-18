@@ -95,8 +95,6 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   pdu->rx_indication_rel9.tl.tag = NFAPI_RX_INDICATION_REL9_TAG;
   pdu->rx_indication_rel9.timing_advance_r9 = 0;
 
-  // What is this? - Andrew
-  // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
   LOG_I(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
@@ -951,9 +949,6 @@ int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
         req->dl_config_request_body.dl_config_pdu_list[i];
   }
 
-  LOG_I(MAC, "dl_config_req in memcpy Frame: %d Subframe: %d\n",
-        p->sfn_sf >> 4, p->sfn_sf & 15);
-
   if (!put_queue(&dl_config_req_queue, p)) {
     free(p);
   }
@@ -1220,8 +1215,6 @@ void *ue_standalone_pnf_task(void *context)
         }
         else
         {
-          LOG_I(MAC, "dl_config_req fresh off socket Frame: %d Subframe: %d\n",
-                dl_config_req.sfn_sf >> 4, dl_config_req.sfn_sf & 15);
           // check to see if dl_config_req is null
           memcpy_dl_config_req(NULL, NULL, &dl_config_req);
         }
@@ -1347,7 +1340,7 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
   {
     int encoded_size = -1;
     char buffer[1024];
-    char dump[1024];
+
     switch (msg_type)
     {
     case NFAPI_RACH_INDICATION:
@@ -1362,28 +1355,13 @@ static void print_rx_ind(nfapi_rx_indication_t *p)
             UL->crc_ind.crc_indication_body.number_of_crcs);
       break;
     case NFAPI_RX_ULSCH_INDICATION:
-      print_rx_ind(&UL->rx_ind);
       encoded_size = nfapi_p7_message_pack(&UL->rx_ind, buffer, sizeof(buffer), NULL);
-      LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\nHexDUMP %s\n",
+      LOG_I(MAC, "RX_IND sent to Proxy, Size: %d Frame %d Subframe %d rx_ind.tl.length: %u num_pdus: %u\n",
             encoded_size, NFAPI_SFNSF2SFN(UL->rx_ind.sfn_sf), NFAPI_SFNSF2SF(UL->rx_ind.sfn_sf),
-            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus,
-            hexdump(buffer, encoded_size, dump, sizeof(dump)));
-      // nfapi_rx_indication_t test_ind;
-      // if (nfapi_p7_message_unpack(buffer, encoded_size, &test_ind, sizeof(test_ind), NULL) < 0)
-      // {
-      //   LOG_E(MAC, "could not unpack rx_ind right after packing encoded_size: %d\n", encoded_size);
-      //   abort();
-      // }
-      // print_rx_ind(&test_ind);
-      // char test_buffer[1024];
-      // int encoded_size2 = nfapi_p7_message_pack(&test_ind, test_buffer, sizeof(test_buffer), NULL);
-      // if (encoded_size2 < 0)
-      // {
-      //   LOG_E(MAC, "could not pack rx_ind right after unpacking encoded_size2: %d\n", encoded_size2);
-      // }
+            UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus);
       break;
     case NFAPI_RX_CQI_INDICATION:
-      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL); // Check pdu->ul_cqi_information.channel = 1
+      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
       LOG_I(MAC, "CQI_IND sent to Proxy, Size: %d num_cqis: %u\n", encoded_size,
             UL->cqi_ind.cqi_indication_body.number_of_cqis);
       break;
