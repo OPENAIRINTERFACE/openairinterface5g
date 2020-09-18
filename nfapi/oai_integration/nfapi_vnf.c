@@ -760,7 +760,7 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
             NFAPI_SFNSF2SF(ind->sfn_sf), ind->cqi_indication_body.number_of_cqis);
     }
 
-    analyze_cqi_pdus_for_duplicates(ind);
+    // analyze_cqi_pdus_for_duplicates(ind);
 
     for (int i=0; i < ind->cqi_indication_body.number_of_cqis; i++) {
       nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
@@ -1263,32 +1263,32 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
       ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
   int retval = nfapi_vnf_p7_ul_config_req(p7_config, ul_config_req);
 
-  uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
-  for (int i = 0; i < num_pdus; i++)
-  {
-    uint8_t pdu_type = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type;
-    if (pdu_type != 1)
-    {
-      continue;
-    }
-    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
-          num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
-    for (int j = i + 1; j < num_pdus; j++)
-    {
-      uint8_t pdu_type2 = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].pdu_type;
-      if (pdu_type == pdu_type2)
-      {
-        uint16_t rnti_i = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
-        uint16_t rnti_j = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
-        if (is_ue_same(rnti_i, rnti_j))
-        {
-          LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x\n",
-                rnti_i);
-          abort();
-        }
-      }
-    }
-  }
+  // uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  // for (int i = 0; i < num_pdus; i++)
+  // {
+  //   uint8_t pdu_type = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type;
+  //   if (pdu_type != 1)
+  //   {
+  //     continue;
+  //   }
+  //   LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
+  //         num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
+  //   for (int j = i + 1; j < num_pdus; j++)
+  //   {
+  //     uint8_t pdu_type2 = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].pdu_type;
+  //     if (pdu_type == pdu_type2)
+  //     {
+  //       uint16_t rnti_i = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+  //       uint16_t rnti_j = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+  //       if (is_ue_same(rnti_i, rnti_j))
+  //       {
+  //         LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x\n",
+  //               rnti_i);
+  //         abort();
+  //       }
+  //     }
+  //   }
+  // }
 
   if (retval!=0) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
