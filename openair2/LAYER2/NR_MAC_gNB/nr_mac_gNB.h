@@ -301,6 +301,9 @@ typedef struct {
   int cce_index;
   uint8_t aggregation_level;
 
+  // time-domain allocation for scheduled RBs
+  int time_domain_allocation;
+
   uint16_t ta_timer;
   int16_t ta_update;
   bool ta_apply;
