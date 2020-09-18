@@ -1253,7 +1253,7 @@ int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   return retval;
 }
 
-static bool remove_ul_config_req_pdu(uint16_t index, nfapi_ul_config_request_t *ul_config_req)
+static bool remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_config_req)
 {
   uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
   nfapi_ul_config_request_pdu_t *pdu_list = ul_config_req->ul_config_request_body.ul_config_pdu_list;
@@ -1262,7 +1262,14 @@ static bool remove_ul_config_req_pdu(uint16_t index, nfapi_ul_config_request_t *
   {
     return false;
   }
+  // last element of the list
+  if (index == num_pdus)
+  {
+    ul_config_req->ul_config_request_body.number_of_pdus--;
+    return true;
+  }
 
+  // All other element locations
   for(int i = index; i < num_pdus; i++)
   {
     pdu_list[i] = pdu_list[i + 1];
@@ -1285,7 +1292,7 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
       ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
 
   uint16_t num_dropped_indicies = 0;
-  uint16_t *dropped_indicies = malloc(MAX_DROPPED_INDICIES * sizeof(uint16_t));
+  int dropped_indicies[MAX_DROPPED_INDICIES];
   uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
   for (int i = 0; i < num_pdus; i++)
   {
@@ -1305,7 +1312,8 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
         uint16_t rnti_j = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
         if (is_ue_same(rnti_i, rnti_j))
         {
-          dropped_indicies[i] = j;
+          assert (num_dropped_indicies < MAX_DROPPED_INDICIES);
+          dropped_indicies[num_dropped_indicies] = j;
           num_dropped_indicies++;
           LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x dropping one\n",
                 rnti_i);
@@ -1322,7 +1330,6 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
       abort();
     }
   }
-  free(dropped_indicies);
 
   int retval = nfapi_vnf_p7_ul_config_req(p7_config, ul_config_req);
 
