@@ -478,6 +478,8 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
       module_id, UE_id, frame, slot, num_slots_per_tdd, &sched_ctrl->pucch_sched_idx);
   AssertFatal(sched_ctrl->pucch_sched_idx >= 0, "no uplink slot for PUCCH found!\n");
 
+  // Time-domain allocation
+  sched_ctrl->time_domain_allocation = 2;
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
@@ -510,9 +512,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const uint8_t numDmrsCdmGrpsNoData = 1;
   const nfapi_nr_dmrs_type_e dmrsConfigType = sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
 
-  const int time_domain_assignment = 2;
-  AssertFatal(time_domain_assignment<sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count,"time_domain_assignment %d>=%d\n",time_domain_assignment,sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
-  const int startSymbolAndLength = sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+  struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+    sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(sched_ctrl->time_domain_allocation < tdaList->list.count,
+              "time_domain_allocation %d>=%d\n",
+              sched_ctrl->time_domain_allocation,
+              tdaList->list.count);
+
+  const int startSymbolAndLength =
+    tdaList->list.array[sched_ctrl->time_domain_allocation]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
@@ -670,7 +678,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        R,
                        Qm,
                        TBS,
-                       time_domain_assignment,
+                       sched_ctrl->time_domain_allocation,
                        startSymbolIndex,
                        nrOfSymbols,
                        sched_ctrl->aggregation_level,
