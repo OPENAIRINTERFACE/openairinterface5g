@@ -1539,7 +1539,7 @@ typedef struct
 }nfapi_nr_uci_pucch_pdu_format_2_3_4_t;
 
 typedef enum {
-  NFAPI_NR_UCI_PDCCH_PDU_TYPE  = 0,
+  NFAPI_NR_UCI_PUSCH_PDU_TYPE  = 0,
   NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE  = 1,
   NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE = 2,
 } nfapi_nr_uci_pdu_type_e;

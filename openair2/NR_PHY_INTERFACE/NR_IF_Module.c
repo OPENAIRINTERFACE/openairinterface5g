@@ -86,51 +86,76 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, int tar
 
   for (int i = 0; i < num_ucis; i++) {
     switch (uci_list[i].pdu_type) {
-      case NFAPI_NR_UCI_PDCCH_PDU_TYPE: break;
-
+      case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
+        break;
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        //if (get_softmodem_params()->phy_test == 0) {
-          nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
-          // handle harq
-          int harq_idx_s = 0;
-          // tpc (power control)
-          sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
-          // iterate over received harq bits
-          for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
-            // search for the right harq process
-            for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
-              // if the gNB received ack with a good confidence or if the max harq rounds was reached
-              if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
-                if (((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) &&
-                    (uci_pdu->harq->harq_confidence_level == 0)) ||
-                    (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
-                  // toggle NDI and reset round
-                  sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-                  sched_ctrl->harq_processes[harq_idx].round = 0;
-                }
-                else
-                  sched_ctrl->harq_processes[harq_idx].round++;
-                sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
-                harq_idx_s = harq_idx + 1;
-                break;
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
+        // handle harq
+        int harq_idx_s = 0;
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+        // iterate over received harq bits
+        for (int harq_bit = 0; harq_bit < uci_pdu->harq->num_harq; harq_bit++) {
+          // search for the right harq process
+          for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+            // if the gNB received ack with a good confidence or if the max harq rounds was reached
+            if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+              if (((uci_pdu->harq->harq_list[harq_bit].harq_value == 1) &&
+                  (uci_pdu->harq->harq_confidence_level == 0)) ||
+                  (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                // toggle NDI and reset round
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
               }
-              // if gNB fails to receive a ACK/NACK
-              else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
-                      (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+              else
                 sched_ctrl->harq_processes[harq_idx].round++;
-                if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
-                  sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
-                  sched_ctrl->harq_processes[harq_idx].round = 0;
-                }
-                sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+              harq_idx_s = harq_idx + 1;
+              break;
+            }
+            // if gNB fails to receive a ACK/NACK
+            else if (((UL_info->slot-1) > sched_ctrl->harq_processes[harq_idx].feedback_slot) &&
+                    (sched_ctrl->harq_processes[harq_idx].is_waiting)) {
+              sched_ctrl->harq_processes[harq_idx].round++;
+              if (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds) {
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
               }
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
             }
           }
-        //}
+        }
         break;
       }
-
-      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: break;
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
+        int harq_idx_s = 0;
+        int acknack;
+        // tpc (power control)
+        sched_ctrl->tpc1 = nr_get_tpc(target_snrx10,uci_pdu->ul_cqi,30);
+        // iterate over received harq bits
+        for (int harq_bit = 0; harq_bit < uci_pdu->harq.harq_bit_len; harq_bit++) {
+          acknack = ((uci_pdu->harq.harq_payload[harq_bit>>3])>>harq_bit)&0x01;
+          for (int harq_idx = harq_idx_s; harq_idx < NR_MAX_NB_HARQ_PROCESSES-1; harq_idx++) {
+            // if the gNB received ack with a good confidence or if the max harq rounds was reached
+            if ((UL_info->slot-1) == sched_ctrl->harq_processes[harq_idx].feedback_slot) {
+              // TODO add some confidence level for when there is no CRC
+              if (((uci_pdu->harq.harq_crc != 1) && acknack) ||
+                  (sched_ctrl->harq_processes[harq_idx].round == max_harq_rounds)) {
+                // toggle NDI and reset round
+                sched_ctrl->harq_processes[harq_idx].ndi ^= 1;
+                sched_ctrl->harq_processes[harq_idx].round = 0;
+              }
+              else
+                sched_ctrl->harq_processes[harq_idx].round++;
+              sched_ctrl->harq_processes[harq_idx].is_waiting = 0;
+              harq_idx_s = harq_idx + 1;
+              break;
+            }
+          }
+        }
+        break;
+      }
     }
   }
 
