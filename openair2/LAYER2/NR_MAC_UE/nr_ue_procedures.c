@@ -940,9 +940,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
-//  uint8_t config_index, mu, N_dur, N_t_slot, start_symbol;
   uint16_t format, format0, format1, ncs;
-//  int msg1_FDM, is_nr_prach_slot, fdm;
   int is_nr_prach_slot;
   prach_occasion_info_t *prach_occasion_info_p;
 
@@ -955,32 +953,15 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-//  NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
-//  config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
   mac->RA_offset = 2; // to compensate the rx frame offset at the gNB
   mac->generate_nr_prach = 0; // Reset flag for PRACH generation
 
   if (is_nr_UL_slot(scc, slotP)) {
 
-//    if (setup->msg1_SubcarrierSpacing)
-//      mu = *setup->msg1_SubcarrierSpacing;
-//    else
-//      mu = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-
-//    is_nr_prach_slot = get_nr_prach_info_from_index(config_index,
-//                                                    (int)frameP,
-//                                                    (int)slotP,
-//                                                    frequencyInfoDL->absoluteFrequencyPointA,
-//                                                    mu,
-//                                                    cfg->cell_config.frame_duplex_type,
-//                                                    &format,
-//                                                    &start_symbol,
-//                                                    &N_t_slot,
-//                                                    &N_dur);
-
     // WIP-IDCC Need to get the proper selected ssb_idx
+    //          Initial beam selection functionality is not available yet
     uint8_t selected_gnb_ssb_idx = 0;
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index
@@ -990,23 +971,9 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                         &prach_occasion_info_p);
 
     if (is_nr_prach_slot && mac->ra_state == RA_UE_IDLE) {
-
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
       mac->generate_nr_prach = 1;
-
-//      fdm = rach_ConfigGeneric->msg1_FDM;
-//
-//      switch (fdm){
-//        case 0:
-//        case 1:
-//        case 2:
-//        case 3:
-//          msg1_FDM = 1 << fdm;
-//          break;
-//        default:
-//          AssertFatal(1 == 0, "Unknown msg1_FDM from rach_ConfigGeneric %d\n", fdm);
-//      }
 
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
@@ -1015,102 +982,94 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       ul_config->sfn = frameP;
       ul_config->slot = slotP;
 
-//      for (int n = 0; n < msg1_FDM; n++) { // one structure per frequency domain occasion
+      ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PRACH;
+      prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
+      memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
+      ul_config->number_pdus += 1;
 
-        ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PRACH;
-        prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-        memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
-        ul_config->number_pdus += 1;
+      ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
 
-        ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
+      prach_config_pdu->phys_cell_id = *scc->physCellId;
+      prach_config_pdu->num_prach_ocas = 1;
+      prach_config_pdu->prach_slot = prach_occasion_info_p->slot;
+      prach_config_pdu->prach_start_symbol = prach_occasion_info_p->start_symbol;
+      prach_config_pdu->num_ra = prach_occasion_info_p->fdm;
 
-        // filling PRACH PDU for FAPI config request
-//      prach_config_pdu->phys_cell_id = *scc->physCellId;
-//      prach_config_pdu->num_prach_ocas = N_t_slot;
-//      prach_config_pdu->prach_start_symbol = start_symbol;
-//      prach_config_pdu->num_ra = n;
+      prach_config_pdu->num_cs = ncs;
+      prach_config_pdu->root_seq_id = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].prach_root_sequence_index;
 
-        prach_config_pdu->phys_cell_id = *scc->physCellId;
-        prach_config_pdu->num_prach_ocas = 1;
-        prach_config_pdu->prach_slot = prach_occasion_info_p->slot;
-        prach_config_pdu->prach_start_symbol = prach_occasion_info_p->start_symbol;
-        prach_config_pdu->num_ra = prach_occasion_info_p->fdm;
+      prach_config_pdu->restricted_set = prach_config->restricted_set_config;
+      prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].k1;
 
-        prach_config_pdu->num_cs = ncs;
-//      prach_config_pdu->root_seq_id = prach_config->num_prach_fd_occasions_list[n].prach_root_sequence_index;
-        prach_config_pdu->root_seq_id = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].prach_root_sequence_index;
+      LOG_D(MAC,"Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n", frameP, prach_config_pdu->prach_slot, prach_config_pdu->prach_start_symbol, prach_config_pdu->num_ra);
 
-        prach_config_pdu->restricted_set = prach_config->restricted_set_config;
-//      prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[n].k1;
-        prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].k1;
+      // Search which SSB is mapped in the RO (among all the SSBs mapped to this RO)
+      for (prach_config_pdu->ssb_nb_in_ro=0; prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; prach_config_pdu->ssb_nb_in_ro++) {
+        if (prach_occasion_info_p->mapped_ssb_idx[prach_config_pdu->ssb_nb_in_ro] == selected_gnb_ssb_idx)
+          break;
+      }
+      AssertFatal(prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
 
-        // Search which SSB is mapped in the RO (among all the SSBs mapped to this RO)
-        for (prach_config_pdu->ssb_nb_in_ro=0; prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; prach_config_pdu->ssb_nb_in_ro++) {
-          if (prach_occasion_info_p->mapped_ssb_idx[prach_config_pdu->ssb_nb_in_ro] == selected_gnb_ssb_idx)
+      if (format1 != 0xff) {
+        switch(format0) { // dual PRACH format
+          case 0xa1:
+            prach_config_pdu->prach_format = 9;
             break;
+          case 0xa2:
+            prach_config_pdu->prach_format = 10;
+            break;
+          case 0xa3:
+            prach_config_pdu->prach_format = 11;
+            break;
+        default:
+          AssertFatal(1 == 0, "Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
         }
-        AssertFatal(prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
-
-        if (format1 != 0xff) {
-          switch(format0) { // dual PRACH format
-            case 0xa1:
-              prach_config_pdu->prach_format = 9;
-              break;
-            case 0xa2:
-              prach_config_pdu->prach_format = 10;
-              break;
-            case 0xa3:
-              prach_config_pdu->prach_format = 11;
-              break;
+      } else {
+        switch(format0) { // single PRACH format
+          case 0xa1:
+            prach_config_pdu->prach_format = 0;
+            break;
+          case 0xa2:
+            prach_config_pdu->prach_format = 1;
+            break;
+          case 0xa3:
+            prach_config_pdu->prach_format = 2;
+            break;
+          case 0xb1:
+            prach_config_pdu->prach_format = 3;
+            break;
+          case 0xb2:
+            prach_config_pdu->prach_format = 4;
+            break;
+          case 0xb3:
+            prach_config_pdu->prach_format = 5;
+            break;
+          case 0xb4:
+            prach_config_pdu->prach_format = 6;
+            break;
+          case 0xc0:
+            prach_config_pdu->prach_format = 7;
+            break;
+          case 0xc2:
+            prach_config_pdu->prach_format = 8;
+            break;
+          case 0:
+            // long formats are handled @ PHY
+            break;
+          case 1:
+            // long formats are handled @ PHY
+            break;
+          case 2:
+            // long formats are handled @ PHY
+            break;
+          case 3:
+            // long formats are handled @ PHY
+            break;
           default:
-            AssertFatal(1 == 0, "Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
-          }
-        } else {
-          switch(format0) { // single PRACH format
-            case 0xa1:
-              prach_config_pdu->prach_format = 0;
-              break;
-            case 0xa2:
-              prach_config_pdu->prach_format = 1;
-              break;
-            case 0xa3:
-              prach_config_pdu->prach_format = 2;
-              break;
-            case 0xb1:
-              prach_config_pdu->prach_format = 3;
-              break;
-            case 0xb2:
-              prach_config_pdu->prach_format = 4;
-              break;
-            case 0xb3:
-              prach_config_pdu->prach_format = 5;
-              break;
-            case 0xb4:
-              prach_config_pdu->prach_format = 6;
-              break;
-            case 0xc0:
-              prach_config_pdu->prach_format = 7;
-              break;
-            case 0xc2:
-              prach_config_pdu->prach_format = 8;
-              break;
-            case 0:
-              // long formats are handled @ PHY
-              break;
-            case 1:
-              // long formats are handled @ PHY
-              break;
-            case 2:
-              // long formats are handled @ PHY
-              break;
-            case 3:
-              // long formats are handled @ PHY
-              break;
-            default:
-              AssertFatal(1 == 0, "Invalid PRACH format");
-          }
-        } // if format1
-//      } for n
+            AssertFatal(1 == 0, "Invalid PRACH format");
+        }
+      } // if format1
+
     } else if (mac->ra_state == RA_SUCCEEDED){
       mac->generate_nr_prach = 2;
     } // if-else is_nr_prach_slot

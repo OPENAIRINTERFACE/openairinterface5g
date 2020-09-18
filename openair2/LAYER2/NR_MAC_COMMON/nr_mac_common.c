@@ -1048,10 +1048,6 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
 
   config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
 
-  // WIP-IDCC Force config index to 44 for debug
-//  LOG_D(MAC,"Change PRACH config index from %d to 44 for debug\n", config_index);
-//  config_index = 44;
-
   if (setup->msg1_SubcarrierSpacing)
     mu = *setup->msg1_SubcarrierSpacing;
   else
@@ -1074,8 +1070,6 @@ static void build_ro_list(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired) {
   // Create the PRACH occasions map
   // ==============================
   // WIP-IDCC: For now assume no rejected PRACH occasions because of conflict with SSB or TDD_UL_DL_ConfigurationCommon schedule
-  // WIP-IDCC: Only FR2 is implemented
-  // WIP-IDCC: RACH preambles are not mapped yet (assumptions: ssb_per_rach is <= 1, totalNumberOfRA = CB-preamblesPerSSB - see NR_MAC_UE/nr_ra_procedures.c->nr_get_prach_resources)
 
   // Identify the proper PRACH Configuration Index table according to the operating frequency
   LOG_D(MAC,"Pointa %u, mu = %u, PRACH config index  = %u, unpaired = %u\n", pointa, mu, config_index, unpaired);
@@ -1334,7 +1328,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
   // ==============================================================================================================
   // WIP-IDCC: Assumption for now is that all the PRACH configuration periods within a maximum association pattern period have the same number of PRACH occasions
   //      (No PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule)
-  //      There is only one possible association period
+  //      There is only one possible association period which can contain up to 16 PRACH configuration periods
   LOG_D(MAC,"Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period\n");
   if (true == multiple_ssb_per_ro) {
     required_nb_of_prach_occasion = ((ssb_list.nb_tx_ssb-1) + ssb_rach_ratio) / ssb_rach_ratio;
@@ -1389,7 +1383,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
     uint8_t ro_in_freq=0;
 
     // Set the starting PRACH Configuration period index in the association_pattern map for this particular association period
-    prach_configuration_period_idx = 0;  // WIP-IDCC: only one possible association period
+    prach_configuration_period_idx = 0;  // WIP-IDCC: only one possible association period so the starting PRACH configuration period is automatically 0
 
     // Check if we need to map multiple SSBs per RO or multiple ROs per SSB
     if (true == multiple_ssb_per_ro) {
@@ -1400,6 +1394,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
       // --------------------
 
       // WIP-IDCC: For the moment, only map each SSB idx once per association period if configuration is multiple SSBs per RO
+      //           this is true if no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
       ssb_idx = 0;
 
       // Go through the list of PRACH config periods within this association period
@@ -1417,6 +1412,7 @@ static void map_ssb_to_ro(NR_ServingCellConfigCommon_t *scc) {
 
                 // Go through the list of transmitted SSBs and map the required amount of SSBs to this RO
                 // WIP-IDCC: For the moment, only map each SSB idx once per association period if configuration is multiple SSBs per RO
+                //           this is true if no PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule
                 for (; ssb_idx<MAX_NB_SSB; ssb_idx++) {
                   // Map only the transmitted ssb_idx
                   if (true == ssb_list.tx_ssb[ssb_idx].transmitted) {
@@ -1596,15 +1592,43 @@ int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx,
   // If there is a matching RO slot in the SSB_to_RO map
   if (NULL != prach_occasion_slot_p)
   {
-    // Go through all the ROs in the slot and find the first that is mapped to the selected SSB index
-    // WIP-IDCC: A random RO mapped to the SSB index should be selected in the slot instead
+    // A random RO mapped to the SSB index should be selected in the slot
+
+    // First count the number of times the SSB index is found in that RO
+    uint8_t nb_mapped_ssb = 0;
+
     for (int ro_in_time=0; ro_in_time < prach_occasion_slot_p->nb_of_prach_occasion_in_time; ro_in_time++) {
       for (int ro_in_freq=0; ro_in_freq < prach_occasion_slot_p->nb_of_prach_occasion_in_freq; ro_in_freq++) {
         prach_occasion_info_t *prach_occasion_info_p = &prach_occasion_slot_p->prach_occasion[ro_in_time][ro_in_freq];
+
         for (uint8_t ssb_nb=0; ssb_nb<prach_occasion_info_p->nb_mapped_ssb; ssb_nb++) {
           if (prach_occasion_info_p->mapped_ssb_idx[ssb_nb] == ssb_idx) {
-            *prach_occasion_info_pp = prach_occasion_info_p;
-            return 1;
+            nb_mapped_ssb++;
+          }
+        }
+      }
+    }
+
+    // Choose a random SSB nb
+    uint8_t random_ssb_nb = 0;
+
+    random_ssb_nb = ((taus()) % nb_mapped_ssb);
+
+    // Select the RO according to the chosen random SSB nb
+    nb_mapped_ssb=0;
+    for (int ro_in_time=0; ro_in_time < prach_occasion_slot_p->nb_of_prach_occasion_in_time; ro_in_time++) {
+      for (int ro_in_freq=0; ro_in_freq < prach_occasion_slot_p->nb_of_prach_occasion_in_freq; ro_in_freq++) {
+        prach_occasion_info_t *prach_occasion_info_p = &prach_occasion_slot_p->prach_occasion[ro_in_time][ro_in_freq];
+
+        for (uint8_t ssb_nb=0; ssb_nb<prach_occasion_info_p->nb_mapped_ssb; ssb_nb++) {
+          if (prach_occasion_info_p->mapped_ssb_idx[ssb_nb] == ssb_idx) {
+            if (nb_mapped_ssb == random_ssb_nb) {
+              *prach_occasion_info_pp = prach_occasion_info_p;
+              return 1;
+            }
+            else {
+              nb_mapped_ssb++;
+            }
           }
         }
       }
@@ -1612,138 +1636,6 @@ int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx,
   }
 
   return 0;
-}
-
-int get_nr_prach_info_from_index(uint8_t index,
-                                 int frame,
-                                 int slot,
-                                 uint32_t pointa,
-                                 uint8_t mu,
-                                 uint8_t unpaired,
-                                 uint16_t *format,
-                                 uint8_t *start_symbol,
-                                 uint8_t *N_t_slot,
-                                 uint8_t *N_dur) {
-
-  int x,y;
-  int64_t s_map;
-  uint8_t format2 = 0xff;
-
-  if (pointa > 2016666) { //FR2
-    int y2;
-    uint8_t slot_60khz;
-    x = table_6_3_3_2_4_prachConfig_Index[index][2];
-    y = table_6_3_3_2_4_prachConfig_Index[index][3];
-    y2 = table_6_3_3_2_4_prachConfig_Index[index][4];
-    // checking n_sfn mod x = y
-    if ( (frame%x)==y || (frame%x)==y2 ) {
-      slot_60khz = slot >> (mu-2); // in table slots are numbered wrt 60kHz
-      s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
-      if ( ((s_map>>slot_60khz)&0x01) ) {
-        if (mu == 3) {
-          if ( (table_6_3_3_2_4_prachConfig_Index[index][7] == 1) && (slot%2 == 0) )
-            return 0; // no prach in even slots @ 120kHz for 1 prach per 60khz slot
-        }
-        if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
-          *start_symbol = table_6_3_3_2_4_prachConfig_Index[index][6];
-          *N_t_slot = table_6_3_3_2_4_prachConfig_Index[index][8];
-          *N_dur = table_6_3_3_2_4_prachConfig_Index[index][9];
-          if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
-            format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
-          *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
-          LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-            slot,
-            index,
-            pointa,
-            mu,
-            unpaired,
-            *start_symbol,
-            *N_t_slot,
-            *N_dur);
-        }
-        return 1;
-      }
-      else
-        return 0; // no prach in current slot
-    }
-    else
-      return 0; // no prach in current frame
-  }
-  else {
-    uint8_t subframe;
-    if (unpaired) {
-      x = table_6_3_3_2_3_prachConfig_Index[index][2];
-      y = table_6_3_3_2_3_prachConfig_Index[index][3];
-      if ( (frame%x)==y ) {
-        subframe = slot >> mu;
-        s_map = table_6_3_3_2_3_prachConfig_Index[index][4];
-        if ( (s_map>>subframe)&0x01 ) {
-          if (mu == 1) {
-            if ( (table_6_3_3_2_3_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
-              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
-          }
-          if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
-            *start_symbol = table_6_3_3_2_3_prachConfig_Index[index][5];
-            *N_t_slot = table_6_3_3_2_3_prachConfig_Index[index][7];
-            *N_dur = table_6_3_3_2_3_prachConfig_Index[index][8];
-            if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
-              format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
-            *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %ld) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-              slot,
-              index, table_6_3_3_2_3_prachConfig_Index[index][6],
-              pointa,
-              mu,
-              unpaired,
-              *start_symbol,
-              *N_t_slot,
-              *N_dur);
-          }
-          return 1;
-        }
-        else
-          return 0; // no prach in current slot
-      }
-      else
-        return 0; // no prach in current frame
-    }
-    else { // FDD
-      x = table_6_3_3_2_2_prachConfig_Index[index][2];
-      y = table_6_3_3_2_2_prachConfig_Index[index][3];
-      if ( (frame%x)==y ) {
-        subframe = slot >> mu;
-        s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
-        if ( (s_map>>subframe)&0x01 ) {
-          if (mu == 1) {
-            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
-              return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
-          }
-          if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
-            *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
-            *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
-            *N_dur = table_6_3_3_2_2_prachConfig_Index[index][8];
-            if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
-              format2 = (uint8_t) table_6_3_3_2_2_prachConfig_Index[index][1];
-            *format = ((uint8_t) table_6_3_3_2_2_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u \n", frame,
-              slot,
-              index,
-              pointa,
-              mu,
-              unpaired,
-              *start_symbol,
-              *N_t_slot,
-              *N_dur);
-          }
-          return 1;
-        }
-        else
-          return 0; // no prach in current slot
-      }
-      else
-        return 0; // no prach in current frame
-    }
-  }
 }
 
 //Table 6.3.3.1-3: Mapping from logical index i to sequence number u for preamble formats with L_RA = 839
