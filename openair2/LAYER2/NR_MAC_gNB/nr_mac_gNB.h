@@ -283,6 +283,11 @@ typedef struct NR_UE_ul_harq {
 
 /*! \brief scheduling control information set through an API */
 typedef struct {
+  /// total amount of data awaiting for this UE
+  uint32_t num_total_bytes;
+  /// per-LC status data
+  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
+
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
   NR_sched_pucch *sched_pucch;
