@@ -155,7 +155,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     ul_config->number_pdus = 0;
     //hook up pointers
     mac->scheduled_response.dl_config = dl_config;
-    mac->scheduled_response.ul_config = ul_config;
+    mac->scheduled_response.ul_config = NULL;
     mac->scheduled_response.tx_request = &mac->tx_request;
     mac->scheduled_response.module_id = dl_info->module_id;
     mac->scheduled_response.CC_id = dl_info->cc_id;
