@@ -48,8 +48,7 @@ uint16_t NCS_restricted_TypeB_delta_f_RA_5[14]   = {36,57,60,63,65,68,71,77,81,8
 // Table 6.3.3.1-7 (38.211) NCS for preamble formats with delta_f_RA = 15 * 2mu KHz where mu = {0,1,2,3}
 uint16_t NCS_unrestricted_delta_f_RA_15[16] = {0,2,4,6,8,10,12,13,15,17,19,23,27,34,46,69};
 
-const char *prachfmt[]={"A1","A2","A3","B1","B2","B3","B4","C0","C2"};
-const char *prachfmt03[]={"0","1","2","3"};
+const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
@@ -1118,6 +1117,61 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
       return 1;
     }
   }
+}
+
+
+uint8_t get_nr_prach_duration(uint8_t prach_format){
+
+switch(prach_format){
+
+      case 0:  // format 0
+         return 0;
+
+      case 1:  // format 1
+         return 0;
+
+      case 2:  // format 2
+         return 0;
+
+      case 3:  // format 3
+         return 0;
+
+      case 4:  // format A1
+         return 2;
+
+      case 5:  // format A2
+         return 4;
+
+      case 6:  // format A3
+         return 6;
+
+      case 7:  // format B1
+         return 2;
+
+      case 8:  // format B4
+         return 12;
+
+      case 9:  // format C0
+         return 2;
+
+      case 10:  // format C2
+         return 6;
+
+      case 11:  // format A1/B1
+         return 2;
+
+      case 12:  // format A2/B2
+         return 4;
+
+      case 13:  // format A3/B3
+         return 6;
+
+      default :
+         AssertFatal(1==0,"Invalid Prach format\n");
+         break;
+
+}
+
 }
 
 int get_nr_prach_info_from_index(uint8_t index,

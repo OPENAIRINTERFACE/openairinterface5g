@@ -75,10 +75,13 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
   
   if (prach_id>=0) {
     nfapi_nr_prach_pdu_t *prach_pdu = &gNB->prach_vars.list[prach_id].pdu;
-    int prachStartSymbol;
+    uint8_t prachStartSymbol;
+    uint8_t N_dur = get_nr_prach_duration(prach_pdu->prach_format);
+    
+    /*
     uint16_t format,RA_sfn_index;
     uint8_t start_symbol,N_t_slot,N_dur,N_RA_slot,config_period;
-    
+
     get_nr_prach_info_from_index(gNB->gNB_config.prach_config.prach_ConfigurationIndex.value,
 				 frame,slot,
 				 gNB->gNB_config.carrier_config.dl_frequency.value,
@@ -91,6 +94,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 				 &RA_sfn_index,
 				 &N_RA_slot,
 				 &config_period);
+    */
     
     for(int prach_oc = 0; prach_oc < prach_pdu->num_prach_ocas; prach_oc++) {
       for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {

@@ -952,6 +952,9 @@ void nr_ue_msg2_scheduler(module_id_t mod_id,
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
   uint8_t config_index, mu, N_dur, N_t_slot, start_symbol;
+  uint16_t RA_sfn_index;
+  uint8_t N_RA_slot;
+  uint8_t config_period;
   uint16_t format, format0, format1, ncs;
   int msg1_FDM, is_nr_prach_slot, fdm;
 
@@ -986,7 +989,10 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                     &format,
                                                     &start_symbol,
                                                     &N_t_slot,
-                                                    &N_dur);
+                                                    &N_dur,
+						    &RA_sfn_index,
+						    &N_RA_slot,
+						    &config_period);
 
     if (is_nr_prach_slot && mac->ra_state == RA_UE_IDLE) {
 
@@ -1033,57 +1039,51 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         if (format1 != 0xff) {
           switch(format0) { // dual PRACH format
             case 0xa1:
-              prach_config_pdu->prach_format = 9;
+              prach_config_pdu->prach_format = 11;
               break;
             case 0xa2:
-              prach_config_pdu->prach_format = 10;
+              prach_config_pdu->prach_format = 12;
               break;
             case 0xa3:
-              prach_config_pdu->prach_format = 11;
+              prach_config_pdu->prach_format = 13;
               break;
           default:
             AssertFatal(1 == 0, "Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
           }
         } else {
           switch(format0) { // single PRACH format
-            case 0xa1:
+            case 0:
               prach_config_pdu->prach_format = 0;
               break;
-            case 0xa2:
+            case 1:
               prach_config_pdu->prach_format = 1;
               break;
-            case 0xa3:
+            case 2:
               prach_config_pdu->prach_format = 2;
               break;
-            case 0xb1:
+            case 3:
               prach_config_pdu->prach_format = 3;
               break;
-            case 0xb2:
+            case 0xa1:
               prach_config_pdu->prach_format = 4;
               break;
-            case 0xb3:
+            case 0xa2:
               prach_config_pdu->prach_format = 5;
               break;
-            case 0xb4:
+            case 0xa3:
               prach_config_pdu->prach_format = 6;
               break;
-            case 0xc0:
+            case 0xb1:
               prach_config_pdu->prach_format = 7;
               break;
-            case 0xc2:
+            case 0xb4:
               prach_config_pdu->prach_format = 8;
               break;
-            case 0:
-              // long formats are handled @ PHY
+            case 0xc0:
+              prach_config_pdu->prach_format = 9;
               break;
-            case 1:
-              // long formats are handled @ PHY
-              break;
-            case 2:
-              // long formats are handled @ PHY
-              break;
-            case 3:
-              // long formats are handled @ PHY
+            case 0xc2:
+              prach_config_pdu->prach_format = 10;
               break;
             default:
               AssertFatal(1 == 0, "Invalid PRACH format");

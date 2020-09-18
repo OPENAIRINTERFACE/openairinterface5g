@@ -115,6 +115,8 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
                                  uint16_t *N_RA_sfn,
                                  uint8_t *max_association_period);
 
+uint8_t get_nr_prach_duration(uint8_t prach_format);
+
 uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t nb_preambles,
                             uint8_t unpaired);

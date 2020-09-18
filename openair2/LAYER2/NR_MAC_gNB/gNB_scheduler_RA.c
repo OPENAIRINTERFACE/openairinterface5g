@@ -269,23 +269,24 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
                                   format0,
                                   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
-
-      LOG_I(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n", frameP, slotP,
-			                                                                                                          prach_occasion_id, prach_pdu->num_ra,
-																																								                                        prach_pdu->prach_start_symbol,
-																																																												   slot_index, RA_sfn_index);
+      
+      LOG_I(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
+	    frameP, slotP,
+	    prach_occasion_id, prach_pdu->num_ra,
+	    prach_pdu->prach_start_symbol,
+	    slot_index, RA_sfn_index);
       // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
       // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
       if (format1!=0xff) {
         switch(format0) {
           case 0xa1:
-            prach_pdu->prach_format = 9;
+            prach_pdu->prach_format = 11;
             break;
           case 0xa2:
-            prach_pdu->prach_format = 10;
+            prach_pdu->prach_format = 12;
             break;
           case 0xa3:
-            prach_pdu->prach_format = 11;
+            prach_pdu->prach_format = 13;
             break;
         default:
           AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
@@ -293,44 +294,38 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       }
       else{
         switch(format0) {
-          case 0xa1:
+          case 0:
             prach_pdu->prach_format = 0;
             break;
-          case 0xa2:
+          case 1:
             prach_pdu->prach_format = 1;
             break;
-          case 0xa3:
+          case 2:
             prach_pdu->prach_format = 2;
             break;
-          case 0xb1:
+          case 3:
             prach_pdu->prach_format = 3;
             break;
-          case 0xb2:
+          case 0xa1:
             prach_pdu->prach_format = 4;
             break;
-          case 0xb3:
+          case 0xa2:
             prach_pdu->prach_format = 5;
             break;
-          case 0xb4:
+          case 0xa3:
             prach_pdu->prach_format = 6;
             break;
-          case 0xc0:
+          case 0xb1:
             prach_pdu->prach_format = 7;
             break;
-          case 0xc2:
+          case 0xb4:
             prach_pdu->prach_format = 8;
             break;
-          case 0:
-            // long formats are handled @ PHY
+          case 0xc0:
+            prach_pdu->prach_format = 9;
             break;
-          case 1:
-            // long formats are handled @ PHY
-            break;
-          case 2:
-            // long formats are handled @ PHY
-            break;
-          case 3:
-            // long formats are handled @ PHY
+          case 0xc2:
+            prach_pdu->prach_format = 10;
             break;
         default:
           AssertFatal(1==0,"Invalid PRACH format");

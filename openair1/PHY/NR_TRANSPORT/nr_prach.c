@@ -223,22 +223,24 @@ void rx_nr_prach_ru(RU_t *ru,
 	  ru->idx,frame,slot,prachfmt[prachFormat],msg1_frequencystart,prachStartSymbol);
 
     switch (prachFormat) {
-    case 0: //A1
+    case 4: //A1
       Ncp = 288/(1<<mu);
       break;
       
-    case 1: //A2
+    case 5: //A2
       Ncp = 576/(1<<mu);
       break;
       
-    case 2: //A3
+    case 6: //A3
       Ncp = 864/(1<<mu);
       break;
       
-    case 3: //B1
+    case 7: //B1
       Ncp = 216/(1<<mu);
     break;
     
+    /*
+    // B2 and B3 do not exist in FAPI
     case 4: //B2
       Ncp = 360/(1<<mu);
       break;
@@ -246,16 +248,16 @@ void rx_nr_prach_ru(RU_t *ru,
     case 5: //B3
       Ncp = 504/(1<<mu);
       break;
-      
-    case 6: //B4
+    */
+    case 8: //B4
       Ncp = 936/(1<<mu);
       break;
       
-    case 7: //C0
+    case 9: //C0
       Ncp = 1240/(1<<mu);
       break;
       
-    case 8: //C2
+    case 10: //C2
       Ncp = 2048/(1<<mu);
       break;
       
@@ -334,21 +336,21 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
             dftlen=2048;
             dft(DFT_2048,prach2,rxsigF[aa],1);
-	    if (prachFormat != 7) { // !=C0
+	    if (prachFormat != 9/*C0*/) { 
 	      dft(DFT_2048,prach2+4096,rxsigF[aa]+4096,1);
 	      reps++;
 	    }
-	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
               dft(DFT_2048,prach2+4096*2,rxsigF[aa]+4096*2,1);
               dft(DFT_2048,prach2+4096*3,rxsigF[aa]+4096*3,1);
 	      reps+=2;
 	    }
-	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
               dft(DFT_2048,prach2+4096*4,rxsigF[aa]+4096*4,1);
               dft(DFT_2048,prach2+4096*5,rxsigF[aa]+4096*5,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 6) {
+	    if (prachFormat == 8/*B4*/) {
 	      for (int i=6;i<12;i++) dft(DFT_2048,prach2+(4096*i),rxsigF[aa]+(4096*i),1);
 	      reps+=6;
 	    }
@@ -389,22 +391,22 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
 	    dftlen=1536;
 	    dft(DFT_1536,prach2,rxsigF[aa],1);
-	    if (prachFormat != 7) {
+	    if (prachFormat != 9/*C0*/) {
 	      dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
 	      reps++;
 	    }
 	    
-	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
 	      dft(DFT_1536,prach2+3072*2,rxsigF[aa]+3072*2,1);
 	      dft(DFT_1536,prach2+3072*3,rxsigF[aa]+3072*3,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
 	      dft(DFT_1536,prach2+3072*4,rxsigF[aa]+3072*4,1);
 	      dft(DFT_1536,prach2+3072*5,rxsigF[aa]+3072*5,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 6) {
+	    if (prachFormat == 8/*B4*/) {
 	      for (int i=6;i<12;i++) dft(DFT_1536,prach2+(3072*i),rxsigF[aa]+(3072*i),1);
 	      reps+=6;
 	    }
@@ -449,22 +451,22 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
 	    dftlen=4096;
 	    dft(DFT_4096,prach2,rxsigF[aa],1);
-	    if (prachFormat != 7) { //!=C0 
+	    if (prachFormat != 9/*C0*/) { 
 	      dft(DFT_4096,prach2+8192,rxsigF[aa]+8192,1);
 	      reps++;
 	    }
 	    
-	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
               dft(DFT_4096,prach2+8192*2,rxsigF[aa]+8192*2,1);
               dft(DFT_4096,prach2+8192*3,rxsigF[aa]+8192*3,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
               dft(DFT_4096,prach2+8192*4,rxsigF[aa]+8192*4,1);
               dft(DFT_4096,prach2+8192*5,rxsigF[aa]+8192*5,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 6) {
+	    if (prachFormat == 8/*B4*/) {
 	      for (int i=6;i<12;i++) dft(DFT_4096,prach2+(8192*i),rxsigF[aa]+(8192*i),1);
 	      reps+=6;
 	    }
@@ -501,22 +503,22 @@ void rx_nr_prach_ru(RU_t *ru,
 	  else if (mu==1) {
 	    dftlen=3072;
 	    dft(DFT_3072,prach2,rxsigF[aa],1);
-	    if (prachFormat != 7) { //!=C0
+	    if (prachFormat != 9/*C0*/) {
 	      dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
 	      reps++;
 	    }
 	    
-	    if (prachFormat == 1 || prachFormat == 2 || prachFormat == 4 || prachFormat == 5 || prachFormat == 6 || prachFormat == 8) {     
+	    if (prachFormat == 5/*A2*/ || prachFormat == 6/*A3*/|| prachFormat == 8/*B4*/ || prachFormat == 10/*C2*/) {     
               dft(DFT_3072,prach2+6144*2,rxsigF[aa]+6144*2,1);
               dft(DFT_3072,prach2+6144*3,rxsigF[aa]+6144*3,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 2 || prachFormat == 5 || prachFormat == 6) {     
+	    if (prachFormat == 6/*A3*/ || prachFormat == 8/*B4*/) {     
               dft(DFT_3072,prach2+6144*4,rxsigF[aa]+6144*4,1);
               dft(DFT_3072,prach2+6144*5,rxsigF[aa]+6144*5,1);
 	      reps+=2;
 	    } 
-	    if (prachFormat == 6) {
+	    if (prachFormat == 8/*B4*/) {
 	      for (int i=6;i<12;i++) dft(DFT_3072,prach2+(6144*i),rxsigF[aa]+(6144*i),1);
 	      reps+=6;
 	    }
@@ -609,7 +611,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint8_t prach_fmt = prach_pdu->prach_format;
   uint16_t N_ZC = (prach_sequence_length==0)?839:139;
 
-  LOG_D(PHY,"L1 PRACH RX: rooSequenceIndex %d, numRootSeqeuences %d, NCS %d, N_ZC %d \n",rootSequenceIndex,numrootSequenceIndex,NCS,N_ZC);
+  LOG_D(PHY,"L1 PRACH RX: rooSequenceIndex %d, numRootSeqeuences %d, NCS %d, N_ZC %d, format %d \n",rootSequenceIndex,numrootSequenceIndex,NCS,N_ZC,prach_fmt);
 
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;
