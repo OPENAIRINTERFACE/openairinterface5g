@@ -416,6 +416,35 @@ void handle_nr_uci(NR_UL_IND_t *UL_info, NR_UE_sched_ctrl_t *sched_ctrl, NR_mac_
   UL_info->uci_ind.num_ucis = 0;
 }
 
+int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda) {
+  struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count,
+              "time_domain_allocation %d>=%d\n",
+              tda,
+              tdaList->list.count);
+
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  return nrOfSymbols;
+}
+
+nfapi_nr_dmrs_type_e getDmrsConfigType(NR_BWP_Downlink_t *bwp) {
+  return bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+}
+
+uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData) {
+  const nfapi_nr_dmrs_type_e dmrsConfigType = getDmrsConfigType(bwp);
+  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+    // if no data in dmrs cdm group is 1 only even REs have no data
+    // if no data in dmrs cdm group is 2 both odd and even REs have no data
+    return numDmrsCdmGrpsNoData * 6;
+  } else {
+    return numDmrsCdmGrpsNoData * 4;
+  }
+}
+
 void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
@@ -486,6 +515,28 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
   sched_ctrl->rbSize = bwpSize;
   sched_ctrl->rbStart = 0;
+
+  // modulation scheme
+  sched_ctrl->mcsTableIdx = 0;
+  sched_ctrl->mcs = 9;
+  sched_ctrl->numDmrsCdmGrpsNoData = 1;
+
+  uint8_t N_PRB_DMRS =
+      getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
+  int nrOfSymbols = getNrOfSymbols(sched_ctrl->active_bwp,
+                                   sched_ctrl->time_domain_allocation);
+  const uint32_t TBS =
+      nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                     nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                     sched_ctrl->rbSize,
+                     nrOfSymbols,
+                     N_PRB_DMRS, // FIXME // This should be multiplied by the
+                                 // number of dmrs symbols
+                     0 /* N_PRB_oh, 0 for initialBWP */,
+                     0 /* tb_scaling */,
+                     1 /* nrOfLayers */)
+      >> 3;
+  AssertFatal(TBS != 0, "TBS is zero but requested %d RBs!\n", sched_ctrl->rbSize);
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
@@ -508,11 +559,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
     return;
 
-  const uint8_t mcs = 9;
-  const int nrOfLayers = 1;
-  const uint8_t numDmrsCdmGrpsNoData = 1;
-  const nfapi_nr_dmrs_type_e dmrsConfigType = sched_ctrl->active_bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
-
+  /* POST processing */
   struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(sched_ctrl->time_domain_allocation < tdaList->list.count,
@@ -525,43 +572,20 @@ void nr_schedule_ue_spec(module_id_t module_id,
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  const uint16_t N_PRB_oh = 0; // overhead should be 0 for initialBWP
-  uint8_t N_PRB_DMRS;
-  if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-    // if no data in dmrs cdm group is 1 only even REs have no data
-    // if no data in dmrs cdm group is 2 both odd and even REs have no data
-    N_PRB_DMRS = numDmrsCdmGrpsNoData * 6;
-  } else {
-    N_PRB_DMRS = numDmrsCdmGrpsNoData * 4;
-  }
-  const uint8_t N_sh_symb = nrOfSymbols;
-
-  const uint8_t table_idx = 0;
-  const uint16_t R = nr_get_code_rate_dl(mcs, table_idx);
-  const uint8_t Qm = nr_get_Qm_dl(mcs, table_idx);
+  uint8_t N_PRB_DMRS =
+      getN_PRB_DMRS(sched_ctrl->active_bwp, sched_ctrl->numDmrsCdmGrpsNoData);
   const uint32_t TBS =
-      nr_compute_tbs(Qm,
-                     R,
+      nr_compute_tbs(nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                     nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                      sched_ctrl->rbSize,
-                     N_sh_symb,
+                     nrOfSymbols,
                      N_PRB_DMRS, // FIXME // This should be multiplied by the
                                  // number of dmrs symbols
-                     N_PRB_oh,
+                     0 /* N_PRB_oh, 0 for initialBWP */,
                      0 /* tb_scaling */,
-                     nrOfLayers)
+                     1 /* nrOfLayers */)
       >> 3;
-  AssertFatal(TBS != 0, "TBS is zero but requested %d RBs!\n", sched_ctrl->rbSize);
-  LOG_D(MAC,
-        "TBS %d bytes: N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d R %d Qm %d table %d",
-        TBS,
-        N_PRB_DMRS,
-        N_sh_symb,
-        N_PRB_oh,
-        R,
-        Qm,
-        table_idx);
 
-  /* POST processing */
   /* Get RLC data TODO: remove random data retrieval */
   int header_length_total = 0;
   int header_length_last = 0;
@@ -668,15 +692,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        sched_ctrl->coreset,
                        dl_req,
                        pucch,
-                       nrOfLayers,
-                       mcs,
+                       1 /* nrOfLayers */,
+                       sched_ctrl->mcs,
                        sched_ctrl->rbSize,
                        sched_ctrl->rbStart,
-                       numDmrsCdmGrpsNoData,
-                       dmrsConfigType,
-                       table_idx,
-                       R,
-                       Qm,
+                       sched_ctrl->numDmrsCdmGrpsNoData,
+                       getDmrsConfigType(sched_ctrl->active_bwp),
+                       sched_ctrl->mcsTableIdx,
+                       nr_get_code_rate_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
+                       nr_get_Qm_dl(sched_ctrl->mcs, sched_ctrl->mcsTableIdx),
                        TBS,
                        sched_ctrl->time_domain_allocation,
                        startSymbolIndex,

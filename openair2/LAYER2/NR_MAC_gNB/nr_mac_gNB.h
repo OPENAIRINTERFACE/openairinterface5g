@@ -308,6 +308,11 @@ typedef struct {
   // time-domain allocation for scheduled RBs
   int time_domain_allocation;
 
+  /// MCS-related infos
+  uint8_t mcsTableIdx;
+  uint8_t mcs;
+  uint8_t numDmrsCdmGrpsNoData;
+
   uint16_t ta_timer;
   int16_t ta_update;
   uint8_t tpc0;
