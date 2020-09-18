@@ -74,6 +74,7 @@
 #include "NGAP_PDUSessionResourceFailedToModifyItemModRes.h"
 #include "NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.h"
 #include "NGAP_PDUSessionResourceReleasedItemRelRes.h"
+#include "NGAP_PDUSessionResourceToReleaseItemRelCmd.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
