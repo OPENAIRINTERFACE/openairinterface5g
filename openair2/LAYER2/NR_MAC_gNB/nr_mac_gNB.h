@@ -301,6 +301,10 @@ typedef struct {
   int cce_index;
   uint8_t aggregation_level;
 
+  /// RB allocation within active BWP
+  uint16_t rbSize;
+  uint16_t rbStart;
+
   // time-domain allocation for scheduled RBs
   int time_domain_allocation;
 
