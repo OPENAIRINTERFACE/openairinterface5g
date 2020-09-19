@@ -95,9 +95,10 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
   pdu->rx_indication_rel9.tl.tag = NFAPI_RX_INDICATION_REL9_TAG;
   pdu->rx_indication_rel9.timing_advance_r9 = 0;
 
-  // ulsch_buffer is necessary to keep its value.
   pdu->data = malloc(buflen);
   memcpy(pdu->data, ulsch_buffer, buflen);
+  LOG_I(MAC, "buflen of rx_ind pdu_data = %u SFN.SF: %d.%d\n", buflen,
+        frame, subframe);
   // estimate timing advance for MAC
   timing_advance_update = 0; // Don't know what to put here
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
@@ -832,7 +833,8 @@ void dl_config_req_UE_MAC_dci(int sfn,
               &UE_mac_inst[ue_id].crnti, //t-crnti
               UE_mac_inst[ue_id].RA_prach_resources.ra_PreambleIndex,
               tx_request_pdu_list[pdu_index].segments[0].segment_data);
-          UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
+          // UE_mac_inst[ue_id].UE_mode[0] = RA_RESPONSE;
+          LOG_I(MAC, "setting UE_MODE now: %d\n", UE_mac_inst[ue_id].UE_mode[0]);
           // Expecting an UL_CONFIG_ULSCH_PDU to enable Msg3 Txon (first
           // ULSCH Txon for the UE)
           UE_mac_inst[ue_id].first_ULSCH_Tx = 1;
@@ -920,7 +922,7 @@ void hi_dci0_req_UE_MAC(int sfn,
 
 // The following set of memcpy functions should be getting called as callback
 // functions from pnf_p7_subframe_ind.
-int memcpy_dl_config_req(L1_rxtx_proc_t *proc, 
+int memcpy_dl_config_req(L1_rxtx_proc_t *proc,
 			nfapi_pnf_p7_config_t *pnf_p7,
                          nfapi_dl_config_request_t *req) {
 
@@ -1299,10 +1301,46 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
     return out;
 }
 
+static void print_rx_ind(nfapi_rx_indication_t *p)
+{
+  printf("Printing RX_IND fields\n");
+  printf("header.message_id: %u\n", p->header.message_id);
+  printf("header.phy_id: %u\n", p->header.phy_id);
+  printf("header.message_id: %u\n", p->header.message_id);
+  printf("header.m_segment_sequence: %u\n", p->header.m_segment_sequence);
+  printf("header.checksum: %u\n", p->header.checksum);
+  printf("header.transmit_timestamp: %u\n", p->header.transmit_timestamp);
+  printf("sfn_sf: %u\n", p->sfn_sf);
+  printf("rx_indication_body.tl.tag: 0x%x\n", p->rx_indication_body.tl.tag);
+  printf("rx_indication_body.tl.length: %u\n", p->rx_indication_body.tl.length);
+  printf("rx_indication_body.number_of_pdus: %u\n", p->rx_indication_body.number_of_pdus);
+
+  nfapi_rx_indication_pdu_t *pdu = p->rx_indication_body.rx_pdu_list;
+  for (int i = 0; i < p->rx_indication_body.number_of_pdus; i++)
+  {
+    printf("pdu %d nfapi_rx_ue_information.tl.tag: 0x%x\n", i, pdu->rx_ue_information.tl.tag);
+    printf("pdu %d nfapi_rx_ue_information.tl.length: %u\n", i, pdu->rx_ue_information.tl.length);
+    printf("pdu %d nfapi_rx_ue_information.handle: %u\n", i, pdu->rx_ue_information.handle);
+    printf("pdu %d nfapi_rx_ue_information.rnti: %u\n", i, pdu->rx_ue_information.rnti);
+    printf("pdu %d nfapi_rx_indication_rel8.tl.tag: 0x%x\n", i, pdu->rx_indication_rel8.tl.tag);
+    printf("pdu %d nfapi_rx_indication_rel8.tl.length: %u\n", i, pdu->rx_indication_rel8.tl.length);
+    printf("pdu %d nfapi_rx_indication_rel8.length: %u\n", i, pdu->rx_indication_rel8.length);
+    printf("pdu %d nfapi_rx_indication_rel8.offset: %u\n", i, pdu->rx_indication_rel8.offset);
+    printf("pdu %d nfapi_rx_indication_rel8.ul_cqi: %u\n", i, pdu->rx_indication_rel8.ul_cqi);
+    printf("pdu %d nfapi_rx_indication_rel8.timing_advance: %u\n", i, pdu->rx_indication_rel8.timing_advance);
+    printf("pdu %d nfapi_rx_indication_rel9.tl.tag: 0x%x\n", i, pdu->rx_indication_rel9.tl.tag);
+    printf("pdu %d nfapi_rx_indication_rel9.tl.length: %u\n", i, pdu->rx_indication_rel9.tl.length);
+    printf("pdu %d nfapi_rx_indication_rel9.timing_advance_r9: %u\n", i, pdu->rx_indication_rel9.timing_advance_r9);
+  }
+
+  fflush(stdout);
+}
+
   void send_standalone_msg(UL_IND_t *UL, nfapi_message_id_e msg_type)
   {
     int encoded_size = -1;
     char buffer[1024];
+
     switch (msg_type)
     {
     case NFAPI_RACH_INDICATION:
@@ -1323,7 +1361,7 @@ const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len
             UL->rx_ind.rx_indication_body.tl.length, UL->rx_ind.rx_indication_body.number_of_pdus);
       break;
     case NFAPI_RX_CQI_INDICATION:
-      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL); // Check pdu->ul_cqi_information.channel = 1
+      encoded_size = nfapi_p7_message_pack(&UL->cqi_ind, buffer, sizeof(buffer), NULL);
       LOG_I(MAC, "CQI_IND sent to Proxy, Size: %d num_cqis: %u\n", encoded_size,
             UL->cqi_ind.cqi_indication_body.number_of_cqis);
       break;

@@ -1030,6 +1030,7 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
 
   int num_pairs = 0;
   int num_lone = 0;
+  int last_sfn_sf = -1;
 
   while (!oai_exit) {
     bool sent_any = false;
@@ -1037,7 +1038,15 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(MAC, "sem_wait() error\n");
       abort();
     }
+
     int sfn_sf = current_sfn_sf;
+    if (sfn_sf == last_sfn_sf)
+    {
+      LOG_W(MAC, "repeated sfn_sf = %d.%d\n",
+            sfn_sf >> 4, sfn_sf & 15);
+      continue;
+    }
+    last_sfn_sf = sfn_sf;
 
     nfapi_dl_config_request_t *dl_config_req = get_queue(&dl_config_req_queue);
     nfapi_tx_request_pdu_t *tx_request_pdu_list = get_queue(&tx_req_pdu_queue);
@@ -1163,33 +1172,44 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       // Prepare the future Tx data
       if ((subframe_select(&UE->frame_parms, NFAPI_SFNSF2SF(sfn_sf)) == SF_UL) ||
           (UE->frame_parms.frame_type == FDD))
-        if (UE->mode != loop_through_memory) {
+        if (UE->mode != loop_through_memory)
+        {
           // We make the start of RA between consecutive UEs differ by 20 frames
           //if ((UE_mac_inst[Mod_id].UE_mode[0] == PRACH  && Mod_id == 0) || (UE_mac_inst[Mod_id].UE_mode[0] == PRACH && Mod_id>0 && rx_frame >= UE_mac_inst[Mod_id-1].ra_frame + 20) ) {
-          if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH && ue_Mod_id == next_Mod_id) {
+          if (UE_mac_inst[ue_Mod_id].UE_mode[0] == RA_RESPONSE &&
+              is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)))
+          {
+            UE_mac_inst[ue_Mod_id].UE_mode[0] = PRACH;
+          }
+          LOG_I(MAC, "UE_mode: %d\n", UE_mac_inst[ue_Mod_id].UE_mode[0]);
+          if (UE_mac_inst[ue_Mod_id].UE_mode[0] == PRACH)
+          { //&& ue_Mod_id == next_Mod_id) {
             next_ra_frame++;
             if (next_ra_frame > 500) {
-              // check if we have PRACH opportunity
-              if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1) {
-                // The one working strangely...
-                //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
-                PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
-                if (prach_resources != NULL) {
-                  UE_mac_inst[ue_Mod_id].ra_frame = rx_frame;
-                  LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
-                  fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
-                  sent_any = true;
-                  Msg1_transmitted(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0);
-                  UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
-                  next_Mod_id = ue_Mod_id + 1;
-                  //next_ra_frame = (rx_frame + 20)%1000;
-                  next_ra_frame = 0;
-                }
-
-                //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
+            // check if we have PRACH opportunity
+            if (is_prach_subframe(&UE->frame_parms, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf)) && UE_mac_inst[ue_Mod_id].SI_Decoded == 1)
+            {
+              // The one working strangely...
+              //if (is_prach_subframe(&UE->frame_parms,NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf) && Mod_id == (module_id_t) init_ra_UE) ) {
+              PRACH_RESOURCES_t *prach_resources = ue_get_rach(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0, NFAPI_SFNSF2SF(sfn_sf));
+              if (prach_resources != NULL)
+              {
+                LOG_I(MAC, "preamble_received_tar_power: %d\n",
+                      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER);
+                UE_mac_inst[ue_Mod_id].ra_frame = NFAPI_SFNSF2SFN(sfn_sf); // Is this why RACH comes in late to proxy? - Andrew
+                LOG_D(MAC, "UE_phy_stub_thread_rxn_txnp4 before RACH, Mod_id: %d frame %d subframe %d\n", ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
+                fill_rach_indication_UE_MAC(ue_Mod_id, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), UL_INFO, prach_resources->ra_PreambleIndex, prach_resources->ra_RNTI);
+                sent_any = true;
+                Msg1_transmitted(ue_Mod_id, 0, NFAPI_SFNSF2SFN(sfn_sf), 0);
+                UE_mac_inst[ue_Mod_id].UE_mode[0] = RA_RESPONSE;
+                next_Mod_id = ue_Mod_id + 1;
+                //next_ra_frame = (rx_frame + 20)%1000;
+                next_ra_frame = 0;
               }
+              //ue_prach_procedures(ue,proc,eNB_id,abstraction_flag,mode);
             }
-          }  // mode is PRACH
+            }
+          } // mode is PRACH
 
           // Substitute call to phy_procedures Tx with call to phy_stub functions in order to trigger
           // UE Tx procedures directly at the MAC layer, based on the received ul_config requests from the vnf (eNB).
