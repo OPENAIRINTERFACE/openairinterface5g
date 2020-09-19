@@ -1263,7 +1263,6 @@ static bool remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_co
     return false;
   }
 
-  // All other element locations
   for(int i = index; i < num_pdus; i++)
   {
     pdu_list[i] = pdu_list[i + 1];
