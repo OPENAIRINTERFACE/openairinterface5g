@@ -710,13 +710,9 @@ int phy_sr_indication(struct nfapi_vnf_p7_config *config, nfapi_sr_indication_t 
   return 1;
 }
 
-static bool is_ue_same(int ue_id_1, int ue_id_2)
+static bool is_ue_same(uint16_t ue_id_1, uint16_t ue_id_2)
 {
-  if (ue_id_1 == ue_id_2)
-  {
-    return true;
-  }
-  return false;
+  return (ue_id_1 == ue_id_2);
 }
 
 static void analyze_cqi_pdus_for_duplicates(nfapi_cqi_indication_t *ind)
@@ -731,8 +727,8 @@ static void analyze_cqi_pdus_for_duplicates(nfapi_cqi_indication_t *ind)
 
     for (int j = i + 1; j < num_cqis; j++)
     {
-      int rnti_i = ind->cqi_indication_body.cqi_pdu_list[i].rx_ue_information.rnti;
-      int rnti_j = ind->cqi_indication_body.cqi_pdu_list[j].rx_ue_information.rnti;
+      uint16_t rnti_i = ind->cqi_indication_body.cqi_pdu_list[i].rx_ue_information.rnti;
+      uint16_t rnti_j = ind->cqi_indication_body.cqi_pdu_list[j].rx_ue_information.rnti;
       if (is_ue_same(rnti_i, rnti_j))
       {
         LOG_E(MAC, "Problem, two cqis received from a single UE for rnti %x\n",
@@ -1253,27 +1249,24 @@ int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   return retval;
 }
 
-static bool remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_config_req)
+static void remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_config_req)
 {
-  uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  int num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
   nfapi_ul_config_request_pdu_t *pdu_list = ul_config_req->ul_config_request_body.ul_config_pdu_list;
 
-  if (index > num_pdus)
+  if (index >= num_pdus || index < 0)
   {
-    return false;
+    LOG_E(MAC, "%s() Unable to drop bad ul_config_req PDU\n", __FUNCTION__);
+    abort();
   }
 
-  for(int i = index; i < num_pdus; i++)
+  for(int i = index; i + 1 < num_pdus; i++)
   {
     pdu_list[i] = pdu_list[i + 1];
   }
 
   ul_config_req->ul_config_request_body.number_of_pdus--;
-
-  return true;
 }
-
-#define MAX_DROPPED_INDICIES 10
 
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
@@ -1284,43 +1277,39 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
       __FUNCTION__, NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf), ul_config_req->ul_config_request_body.number_of_pdus,
       ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
 
-  uint16_t num_dropped_indicies = 0;
-  int dropped_indicies[MAX_DROPPED_INDICIES];
-  uint8_t num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  int num_pdus = ul_config_req->ul_config_request_body.number_of_pdus;
+  nfapi_ul_config_request_pdu_t *pdu_list = ul_config_req->ul_config_request_body.ul_config_pdu_list;
   for (int i = 0; i < num_pdus; i++)
   {
-    uint8_t pdu_type = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].pdu_type;
-    if (pdu_type != 1)
+    uint8_t pdu_type = pdu_list[i].pdu_type;
+    if (pdu_type != NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)
     {
       continue;
     }
+
     LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
           num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
+
     for (int j = i + 1; j < num_pdus; j++)
     {
-      uint8_t pdu_type2 = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].pdu_type;
-      if (pdu_type == pdu_type2)
+      uint8_t pdu_type2 = pdu_list[j].pdu_type;
+      if (pdu_type != pdu_type2)
       {
-        uint16_t rnti_i = ul_config_req->ul_config_request_body.ul_config_pdu_list[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
-        uint16_t rnti_j = ul_config_req->ul_config_request_body.ul_config_pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
-        if (is_ue_same(rnti_i, rnti_j))
-        {
-          assert (num_dropped_indicies < MAX_DROPPED_INDICIES);
-          dropped_indicies[num_dropped_indicies] = j;
-          num_dropped_indicies++;
-          LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x dropping one\n",
-                rnti_i);
-        }
+        continue;
       }
-    }
-  }
 
-  for (int i = 0; i < num_dropped_indicies; i++)
-  {
-    if (!remove_ul_config_req_pdu(dropped_indicies[i], ul_config_req))
-    {
-      LOG_E(MAC, "%s() Unable to drop bad ul_config_req PDU\n", __FUNCTION__);
-      abort();
+      uint16_t rnti_i = pdu_list[i].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+      uint16_t rnti_j = pdu_list[j].ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti;
+      if (!is_ue_same(rnti_i, rnti_j))
+      {
+        continue;
+      }
+      remove_ul_config_req_pdu(j, ul_config_req);
+      j--;
+      num_pdus--;
+
+      LOG_E(MAC, "Problem, two cqis being sent to a single UE for rnti %x dropping one\n",
+            rnti_i);
     }
   }
 

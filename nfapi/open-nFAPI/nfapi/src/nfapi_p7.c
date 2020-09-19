@@ -6144,8 +6144,6 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 	nfapi_p7_message_header_t *pMessageHeader = (nfapi_p7_message_header_t*)pUnpackedBuf;
 	uint8_t *pReadPackedMessage = pMessageBuf;
 	uint8_t *end = pMessageBuf + messageBufLen;
-	uint8_t *end_unpacked_buf = pUnpackedBuf + unpackedBufLen;
-	uint8_t *start_unpacked_buf = pUnpackedBuf;
 
 	if (pMessageBuf == NULL || pUnpackedBuf == NULL)
 	{
@@ -6354,16 +6352,9 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			break;
 	}
 
-	if (pMessageHeader->message_id == NFAPI_RX_ULSCH_INDICATION)
-	{
-		char foobar[1024];
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "Biden %s:%d: %s\n", __FUNCTION__,
-					__LINE__, hexdump(pUnpackedBuf, end_unpacked_buf - start_unpacked_buf, foobar, sizeof(foobar)));
-	}
-
 	if(result == 0)
 		return -1;
-	else 
+	else
 		return 0;
 }
 
