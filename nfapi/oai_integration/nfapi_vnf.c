@@ -1262,12 +1262,6 @@ static bool remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_co
   {
     return false;
   }
-  // last element of the list
-  if (index == num_pdus)
-  {
-    ul_config_req->ul_config_request_body.number_of_pdus--;
-    return true;
-  }
 
   // All other element locations
   for(int i = index; i < num_pdus; i++)
@@ -1280,7 +1274,7 @@ static bool remove_ul_config_req_pdu(int index, nfapi_ul_config_request_t *ul_co
   return true;
 }
 
-#define MAX_DROPPED_INDICIES 500
+#define MAX_DROPPED_INDICIES 10
 
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
