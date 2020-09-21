@@ -1664,9 +1664,13 @@ class OaiCiTest():
 		return 0
 
 	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC):
+		SSH = sshconnection.SSHConnection()
 		result = re.search('-u', str(iperf_real_options))
 		if result is None:
-			return self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC)
+			logging.debug('Into Iperf_analyzeV2TCPOutput client)
+			response = self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC)
+			logging.debug('Iperf_analyzeV2TCPOutput response returned value = ' + str(response))
+			return response
 
 		result = re.search('Server Report:', SSH.getBefore())
 		if result is None:
@@ -1845,6 +1849,7 @@ class OaiCiTest():
 
 
 	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue):
+		SSH = sshconnection.SSHConnection()
 		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', SSH.getBefore())
 		if result is None:
 			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', SSH.getBefore())
@@ -2134,7 +2139,9 @@ class OaiCiTest():
 					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 					return
+				logging.debug('Into Iperf_analyzeV2Output client)
 				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options, EPC)
+				logging.debug('Iperf_analyzeV2Output clientStatus returned value = ' + str(clientStatus))
 			SSH.close()
 
 			# Kill the IPERF server that runs in background
