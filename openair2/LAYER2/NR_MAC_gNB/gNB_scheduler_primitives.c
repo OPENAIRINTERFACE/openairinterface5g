@@ -173,16 +173,11 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
                      int aggregation,
-                     int search_space, // 0 common, 1 ue-specific
-                     int UE_id,
+                     uint16_t n_RNTI,
                      int m) {
   // uncomment these when we allocate for common search space
   //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-
-  NR_UE_info_t *UE_info = &nr_mac->UE_info;
-
-  AssertFatal(UE_info->active[UE_id],"UE_id %d is not active\n",UE_id);
 
   int coreset_id = coreset->controlResourceSetId;
   int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -195,17 +190,14 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   n_rb*=6;
 
   uint16_t N_reg = n_rb * coreset->duration;
-  uint16_t Y=0, N_cce, M_s_max, n_CI=0;
-  uint16_t n_RNTI = search_space == 1 ? UE_info->rnti[UE_id]:0;
-  uint32_t A[3]={39827,39829,39839};
+  uint16_t n_CI=0;
+  const uint32_t A[3]={39827,39829,39839};
+  /* if n_RNTI is zero, this results in zero, too! */
+  uint16_t Y = (A[0]*n_RNTI)%65537; // Candidate 0, antenna port 0
 
-  N_cce = N_reg / NR_NB_REG_PER_CCE;
+  uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
 
-  M_s_max = (aggregation==4)?4:(aggregation==8)?2:1;
-
-  if (search_space == 1) {
-    Y = (A[0]*n_RNTI)%65537; // Candidate 0, antenna port 0
-  }
+  uint16_t M_s_max = (aggregation==4)?4:(aggregation==8)?2:1;
   int first_cce = aggregation * (( Y + (m*N_cce)/(aggregation*M_s_max) + n_CI ) % CEILIDIV(N_cce,aggregation));
 
   for (int i=0;i<aggregation;i++)
