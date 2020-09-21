@@ -1,46 +1,11 @@
-#include <openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
-#include <openair3/NAS/NR_UE/nr_user_def.h>
-#include <openair3/NAS/COMMON/milenage.h>
+#include <openair3/NAS/COMMON/NR_NAS_defs.h>
+#include <openair3/SECU/secu_defs.h>
 
-void servingNetworkName(uint8_t * msg,nr_user_nas_t *UE) {
-  //SNN-network-identifier in TS 24.501
-  // TS 24.501: If the MNC of the serving PLMN has two digits, then a zero is added at the beginning.
-  const char * format="5G:mnc000.mcc000.3gppnetwork.org";
-  memcpy(msg,format, strlen(format));
-  if (UE->uicc->nmc_size == 2) 
-    memcpy(msg+7, UE->uicc->imsiStr+3, 2);
-  else 
-    memcpy(msg+6, UE->uicc->imsiStr+3, 3);
-  memcpy(msg+13, UE->uicc->imsiStr, 3);
-}
-
-xresToxresStar(uint8_t * msg),nr_user_nas_t *UE {
-  // TS 33.220  annex B.2 => FC=0x6B in TS 33.501 annex A.4
-  //input S to KDF
-  uint8_t S[64]={0};
-  S[0]=0x6B;
-  servingNetworkName(S+1, UE);
-  *(uint16_t*)(msg+strlen(msg))=htons(strlen(msg));
-  msg+=strlen(msg)+sizeof(uint16_t);
-  // add rand
-  memcpy(msg, UE->uicc->rand, sizeof(UE->uicc->rand) ) ;
-  *(uint16_t*)(msg+sizeof(UE->uicc->rand))=htons(sizeof(UE->uicc->rand));
-  msg+=sizeof(UE->uicc->rand)+sizeof(uint16_t);
-  msg+=strlen(msg)+sizeof(uint16_t);
-  // add xres
-  memcpy(msg, UE->uicc->xres, sizeof(UE->uicc->xres) ) ;
-  *(uint16_t*)(msg+sizeof(UE->uicc->xres))=htons(sizeof(UE->uicc->xres));
-  msg+=sizeof(UE->uicc->xres)+sizeof(uint16_t);
-  // S is done
-
-  
-  
-}
 
 void SGSabortNet(void *msg, nr_user_nas_t *UE) {
 }
 
-void nas_schedule(void) {
+void ue_nas_schedule(void) {
 }
 
 /*
@@ -54,7 +19,7 @@ void SGSauthenticationReq(void *msg, nr_user_nas_t *UE) {
   // AUTHENTICATION REQUEST message that contains a valid ngKSI, SQN and MAC is received
   // TBD verify ngKSI (we set it as '2', see gNB code)
   // SQN and MAC are tested in auth resp processing
-  nas_schedule();
+  ue_nas_schedule();
 }
 
 void SGSidentityReq(void *msg, nr_user_nas_t *UE) {
@@ -62,7 +27,7 @@ void SGSidentityReq(void *msg, nr_user_nas_t *UE) {
 
   if (idmsg->it == SUCI ) {
     LOG_I(NAS,"Received Identity request, scheduling answer\n");
-    nas_schedule();
+    ue_nas_schedule();
   } else
     LOG_E(NAS,"Not developped: identity request for %d\n", idmsg->it);
 }
@@ -79,6 +44,8 @@ void UEprocessNAS(void *msg,nr_user_nas_t *UE) {
   else {
     switch  (header->epd) {
       case SGSmobilitymanagementmessages:
+        LOG_I(NAS,"Received message: %s\n", idStr(message_text_info, header->mt));
+
         switch (header->mt) {
           case Authenticationrequest:
             SGSauthenticationReq(msg, UE);
@@ -154,7 +121,7 @@ int authenticationResponse(void **msg,nr_user_nas_t *UE) {
   if (UE->uicc == NULL)
     // config file section hardcoded as "uicc", nevertheless it opens to manage several UEs or a multi SIM UE
     UE->uicc=init_uicc("uicc");
-  
+
   myCalloc(resp, authenticationresponse_t);
   resp->epd=SGSmobilitymanagementmessages;
   resp->sh=0;
@@ -162,17 +129,20 @@ int authenticationResponse(void **msg,nr_user_nas_t *UE) {
   resp->iei=IEI_AuthenticationResponse;
   resp->RESlen=sizeof(resp->RES); // always 16 see TS 24.501 Table 8.2.2.1.1
   // Verify the AUTN
-  uint8_t ik[16], ck[16], res[8], AUTN[16];
-  milenage_generate(UE->uicc->opc, UE->uicc->amf, UE->uicc->key,
-                    UE->uicc->sqn, UE->uicc->rand, AUTN, ik, ck, res);
+  // a full implementation need to test several SQN
+  // as the last 5bits can be any value
+  // and the value can also be greater and accepted (if it is in the accepted window)
+  uint8_t AUTN[16];
+  uicc_milenage_generate(AUTN, UE->uicc);
 
-  
-  if ( memcmp(UE->uicc->autn, AUTN, sizeof(AUTN))  ) {
+  if ( memcmp(UE->uicc->autn, AUTN, sizeof(AUTN)) == 0 ) {
     // prepare and send good answer
-    
+    resToresStar(resp->RES,UE->uicc);
   } else {
-    // prepare and send autn is not compatible with us
+    // prepare and send autn is not compatible with our data
+    abort();
   }
+
   *msg=resp;
   return sizeof(authenticationresponse_t);
 }

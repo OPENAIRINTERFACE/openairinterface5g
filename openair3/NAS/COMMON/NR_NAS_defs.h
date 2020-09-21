@@ -1,3 +1,9 @@
+#ifndef NR_NAS_DEFS_H
+#define NR_NAS_DEFS_H
+
+#include <common/utils/LOG/log.h>
+#include <openair3/UICC/usim_interface.h>
+#include <openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
 
 /* TS 24.007 possible L3 formats:
    Table 11.1: Formats of information elements
@@ -11,61 +17,87 @@
    TLV-E Type, Length and Value yes yes yes
 */
 
+/* Map task id to printable name. */
+typedef struct {
+  int id;
+  char text[256];
+} text_info_t;
+
+static inline const char * idToText(const text_info_t* table, int size, int id) {
+  for(int i=0; i<size; i++)
+    if (table[i].id==id)
+      return table[i].text;
+  LOG_E(NAS,"impossible id %x\n", id);
+  return "IMPOSSIBLE";
+}
+#define idStr(TaBle, iD) idToText(TaBle, sizeof(TaBle)/sizeof(text_info_t), iD)
+
+#define TO_TEXT(LabEl, nUmID) {nUmID, #LabEl},
+#define TO_ENUM(LabEl, nUmID ) LabEl = nUmID,
+
 //TS 24.501, chap 9.2 => TS 24.007
 typedef enum {
   SGSsessionmanagementmessages=0x2e, //LTEbox: 0xC0 ???
   SGSmobilitymanagementmessages=0x7e,
 } Extendedprotocoldiscriminator_t;
 
+#define FOREACH_TYPE(TYPE_DEF) \
+  TYPE_DEF(  Registrationrequest,0x41 )\
+TYPE_DEF(  Registrationaccept,0x42 )\
+TYPE_DEF(  Registrationcomplete,0x43 )\
+TYPE_DEF(  Registrationreject,0x44 )\
+TYPE_DEF(  DeregistrationrequestUEoriginating,0x45 )\
+TYPE_DEF(  DeregistrationacceptUEoriginating,0x46 )\
+TYPE_DEF(  DeregistrationrequestUEterminated,0x47 )\
+TYPE_DEF(  DeregistrationacceptUEterminated,0x48 )\
+TYPE_DEF(  Servicerequest,0x4c )\
+TYPE_DEF(  Servicereject,0x4d )\
+TYPE_DEF(  Serviceaccept,0x4e )\
+TYPE_DEF(  Controlplaneservicerequest,0x4f )\
+TYPE_DEF(  Networkslicespecificauthenticationcommand,0x50 )\
+TYPE_DEF(  Networkslicespecificauthenticationcomplete,0x51 )\
+TYPE_DEF(  Networkslicespecificauthenticationresult,0x52 )\
+TYPE_DEF(  Configurationupdatecommand,0x54 )\
+TYPE_DEF(  Configurationupdatecomplete,0x55 )\
+TYPE_DEF(  Authenticationrequest,0x56 )\
+TYPE_DEF(  Authenticationresponse,0x57 )\
+TYPE_DEF(  Authenticationreject,0x58 )\
+TYPE_DEF(  Authenticationfailure,0x59 )\
+TYPE_DEF(  Authenticationresult,0x5a )\
+TYPE_DEF(  Identityrequest,0x5b )\
+TYPE_DEF(  Identityresponse,0x5c )\
+TYPE_DEF(  Securitymodecommand,0x5d )\
+TYPE_DEF(  Securitymodecomplete,0x5e )\
+TYPE_DEF(  Securitymodereject,0x5f )\
+TYPE_DEF(  SGMMstatus,0x64 )\
+TYPE_DEF(  Notification,0x65 )\
+TYPE_DEF(  Notificationresponse,0x66 )\
+TYPE_DEF(  ULNAStransport,0x67 )\
+TYPE_DEF(  DLNAStransport,0x68 )\
+TYPE_DEF(  PDUsessionestablishmentrequest,0xc1 )\
+TYPE_DEF(  PDUsessionestablishmentaccept,0xc2 )\
+TYPE_DEF(  PDUsessionestablishmentreject,0xc3 )\
+TYPE_DEF(  PDUsessionauthenticationcommand,0xc5 )\
+TYPE_DEF(  PDUsessionauthenticationcomplete,0xc6 )\
+TYPE_DEF(  PDUsessionauthenticationresult,0xc7 )\
+TYPE_DEF(  PDUsessionmodificationrequest,0xc9 )\
+TYPE_DEF(  PDUsessionmodificationreject,0xca )\
+TYPE_DEF(  PDUsessionmodificationcommand,0xcb )\
+TYPE_DEF(  PDUsessionmodificationcomplete,0xcc )\
+TYPE_DEF(  PDUsessionmodificationcommandreject,0xcd )\
+TYPE_DEF(  PDUsessionreleaserequest,0xd1 )\
+TYPE_DEF(  PDUsessionreleasereject,0xd2 )\
+TYPE_DEF(  PDUsessionreleasecommand,0xd3 )\
+TYPE_DEF(  PDUsessionreleasecomplete,0xd4 )\
+TYPE_DEF(  SGSMstatus,0xd6 )\
+
+static const text_info_t message_text_info[] = {
+  FOREACH_TYPE(TO_TEXT)
+};
+
+//! Tasks id of each task
 typedef enum {
-  Registrationrequest=0x41,
-  Registrationaccept=0x42,
-  Registrationcomplete=0x43,
-  Registrationreject=0x44,
-  DeregistrationrequestUEoriginating=0x45,
-  DeregistrationacceptUEoriginating=0x46,
-  DeregistrationrequestUEterminated=0x47,
-  DeregistrationacceptUEterminated=0x48,
-  Servicerequest=0x4c,
-  Servicereject=0x4d,
-  Serviceaccept=0x4e,
-  Controlplaneservicerequest=0x4f,
-  Networkslicespecificauthenticationcommand=0x50,
-  Networkslicespecificauthenticationcomplete=0x51,
-  Networkslicespecificauthenticationresult=0x52,
-  Configurationupdatecommand=0x54,
-  Configurationupdatecomplete=0x55,
-  Authenticationrequest=0x56,
-  Authenticationresponse=0x57,
-  Authenticationreject=0x58,
-  Authenticationfailure=0x59,
-  Authenticationresult=0x5a,
-  Identityrequest=0x5b,
-  Identityresponse=0x5c,
-  Securitymodecommand=0x5d,
-  Securitymodecomplete=0x5e,
-  Securitymodereject=0x5f,
-  SGMMstatus=0x64,
-  Notification=0x65,
-  Notificationresponse=0x66,
-  ULNAStransport=0x67,
-  DLNAStransport=0x68,
-  PDUsessionestablishmentrequest=0xc1,
-  PDUsessionestablishmentaccept=0xc2,
-  PDUsessionestablishmentreject=0xc3,
-  PDUsessionauthenticationcommand=0xc5,
-  PDUsessionauthenticationcomplete=0xc6,
-  PDUsessionauthenticationresult=0xc7,
-  PDUsessionmodificationrequest=0xc9,
-  PDUsessionmodificationreject=0xca,
-  PDUsessionmodificationcommand=0xcb,
-  PDUsessionmodificationcomplete=0xcc,
-  PDUsessionmodificationcommandreject=0xcd,
-  PDUsessionreleaserequest=0xd1,
-  PDUsessionreleasereject=0xd2,
-  PDUsessionreleasecommand=0xd3,
-  PDUsessionreleasecomplete=0xd4,
-  SGSMstatus=0xd6,
+  FOREACH_TYPE(TO_ENUM)
 } SGSmobilitymanagementmessages_t;
 
 // TS 24.501
@@ -134,23 +166,18 @@ typedef enum {
   CAUSE_DEF(Protocol_error_unspecified,0x67 )
 
 /* Map task id to printable name. */
-typedef struct {
-  int id;
-  char text[256];
-} cause_text_info_t;
+
 #define CAUSE_TEXT(LabEl, nUmID) {nUmID, #LabEl},
 
-static const cause_text_info_t cause_text_info[] = {
-  FOREACH_CAUSE(CAUSE_TEXT)
+static const text_info_t cause_text_info[] = {
+  FOREACH_CAUSE(TO_TEXT)
 };
 
 #define CAUSE_ENUM(LabEl, nUmID ) LabEl = nUmID,
 //! Tasks id of each task
 typedef enum {
-  FOREACH_CAUSE(CAUSE_ENUM)
+  FOREACH_CAUSE(TO_ENUM)
 } cause_id_t;
-
-
 
 //_table_9.11.4.2.1:_5GSM_cause_information_element
 #define FOREACH_CAUSE_SECU(CAUSE_SECU_DEF) \
@@ -198,21 +225,20 @@ typedef enum {
   CAUSE_SECU_DEF(Security_Message_not_compatible_with_the_protocol_state,0x65 )\
   CAUSE_SECU_DEF(Security_Protocol_error_unspecified,0x6f )
 
-static const cause_text_info_t cause_secu_text_info[] = {
-  FOREACH_CAUSE_SECU(CAUSE_TEXT)
+static const text_info_t cause_secu_text_info[] = {
+  FOREACH_CAUSE_SECU(TO_TEXT)
 };
-
+								
+//! Tasks id of each task
+typedef enum {
+  FOREACH_CAUSE_SECU(TO_ENUM)
+} cause_secu_id_t;
+								
 // IEI (information element identifier) are spread in each message definition
 #define IEI_RAND 0x21
 #define IEI_AUTN 0x20
 #define IEI_EAP  0x78
 #define IEI_AuthenticationResponse 0x2d
-
-#define CAUSE_ENUM(LabEl, nUmID ) LabEl = nUmID,
-//! Tasks id of each task
-typedef enum {
-  FOREACH_CAUSE_SECU(CAUSE_ENUM)
-} cause_secu_id_t;
 
 //TS 24.501 sub layer states for UE
 // for network side, only 5GMMderegistered, 5GMMderegistered_initiated, 5GMMregistered,  5GMMservice_request_initiated are valid
@@ -250,20 +276,20 @@ Identityresponse_t;
 typedef struct __attribute__((packed)) {
   Identityresponse_t common;
   identitytype_t mi:8;
-  int supiFormat:4;
-  int identityType:4;
-  int mcc1:4;
-  int mcc2:4;
-  int mcc3:4;
-  int mnc3:4;
-  int mnc2:4;
-  int mnc1:4;
-  int routing1:4;
-  int routing2:4;
-  int routing3:4;
-  int routing4:4;
-  int protectScheme:4;
-  int spare:4;
+  unsigned int supiFormat:4;
+  unsigned int identityType:4;
+  unsigned int mcc1:4;
+  unsigned int mcc2:4;
+  unsigned int mcc3:4;
+  unsigned int mnc3:4;
+  unsigned int mnc1:4;
+  unsigned int mnc2:4;
+  unsigned int routing1:4;
+  unsigned int routing2:4;
+  unsigned int routing3:4;
+  unsigned int routing4:4;
+  unsigned int protectScheme:4;
+  unsigned int spare:4;
   uint8_t hplmnId;
 }
 IdentityresponseIMSI_t;
@@ -272,10 +298,10 @@ typedef struct  __attribute__((packed)) {
   Extendedprotocoldiscriminator_t epd:8;
   Security_header_t sh:8;
   SGSmobilitymanagementmessages_t mt:8;
-  int ngKSI:4;
-  int spare:4;
-  int ABBALen:8;
-  int ABBA:16;
+  unsigned int ngKSI:4;
+  unsigned int spare:4;
+  unsigned int ABBALen:8;
+  unsigned int ABBA:16;
   uint8_t ieiRAND;
   uint8_t RAND[16];
   uint8_t ieiAUTN;
@@ -293,6 +319,31 @@ typedef struct {
   uint8_t RES[16];
 } authenticationresponse_t;
 
-
-
 //AUTHENTICATION RESULT
+
+
+typedef struct {
+  uicc_t *uicc;
+} nr_user_nas_t;
+
+#define STATIC_ASSERT(test_for_true) _Static_assert((test_for_true), "(" #test_for_true ") failed")
+#define myCalloc(var, type) type * var=(type*)calloc(sizeof(type),1);
+#define arrayCpy(tO, FroM)  STATIC_ASSERT(sizeof(tO) == sizeof(FroM)) ; memcpy(tO, FroM, sizeof(tO))
+int resToresStar(uint8_t *msg, uicc_t* uicc);
+
+int identityResponse(void **msg, nr_user_nas_t *UE);
+int authenticationResponse(void **msg, nr_user_nas_t *UE);
+void UEprocessNAS(void *msg,nr_user_nas_t *UE);
+void SGSabortUE(void *msg, NRUEcontext_t *UE) ;
+void SGSregistrationReq(void *msg, NRUEcontext_t *UE);
+void SGSderegistrationUEReq(void *msg, NRUEcontext_t *UE);
+void SGSauthenticationResp(void *msg, NRUEcontext_t *UE);
+void SGSidentityResp(void *msg, NRUEcontext_t *UE);
+void SGSsecurityModeComplete(void *msg, NRUEcontext_t *UE);
+void SGSregistrationComplete(void *msg, NRUEcontext_t *UE);
+void processNAS(void *msg, NRUEcontext_t *UE);
+int identityRequest(void **msg, NRUEcontext_t *UE);
+int authenticationRequest(void **msg, NRUEcontext_t *UE);
+int securityModeCommand(void **msg, NRUEcontext_t *UE);
+
+#endif

@@ -1,11 +1,9 @@
-#include <openair3/NAS/NR_UE/nr_user_def.h>
-#include <openair3/NAS/COMMON/milenage.h>
-#include <openair3/NAS/gNB/network_process_nas.h>
+#include <openair3/NAS/COMMON/NR_NAS_defs.h>
 
 void SGSabortUE(void *msg, NRUEcontext_t *UE) {
 }
-
-
+void nas_schedule(void) {
+}
 /*
  *Message reception
  */
@@ -16,10 +14,48 @@ void SGSregistrationReq(void *msg, NRUEcontext_t *UE) {
 void SGSderegistrationUEReq(void *msg, NRUEcontext_t *UE) {
 }
 
-void SGSauthenticationResp(void *msg, NRUEcontext_t *UE) {
+void SGSidentityResp(void *msg, NRUEcontext_t *UE) {
+  // use the UE SUPI to load the USIM
+  IdentityresponseIMSI_t *resp=(IdentityresponseIMSI_t *)msg;
+  char configName[100]={0};
+  char * ptr= stpcpy(configName,"uicc");
+  *ptr++=resp->mcc1+'0';
+  *ptr++=resp->mcc2+'0';
+  *ptr++=resp->mcc3+'0';
+  *ptr++=resp->mnc1+'0';
+  *ptr++=resp->mnc2+'0';
+  if ( resp->mnc3 != 0xF )
+    *ptr++=resp->mnc3 +'0';
+  int respSize=ntohs(resp->common.len);
+  int msinByteSize=respSize-sizeof(IdentityresponseIMSI_t);
+  uint8_t * msin=(uint8_t *) (resp+1);
+  for(int i=3 ; i<msinByteSize; i++) {
+    char digit1=(msin[i] >> 4) ;
+    *ptr++=(msin[i] & 0xf) +'0';
+    if (digit1 != 0xf)
+      *ptr++=digit1 +'0';
+  }
+  *ptr=0;
+  if (UE->uicc == NULL)
+    // config file section hardcoded as "uicc", nevertheless it opens to manage several UEs or a multi SIM UE
+    UE->uicc=init_uicc(configName);
+  //We schedule Authentication request
+  nas_schedule();
 }
 
-void SGSidentityResp(void *msg, NRUEcontext_t *UE) {
+void SGSauthenticationResp(void *msg, NRUEcontext_t *UE) {
+  // Let's check the answer
+  authenticationresponse_t* resp=(authenticationresponse_t*) msg;
+  uint8_t resStarLocal[16];
+  resToresStar(resStarLocal,UE->uicc);
+  if ( memcmp(resStarLocal, resp->RES, sizeof(resStarLocal)) == 0 ) {
+    LOG_I(NAS,"UE answer to authentication resquest is correct\n");
+    // we will send securityModeCommand
+    nas_schedule();
+  } else {
+    LOG_E(NAS,"UE authentication response not good\n");
+    // To be implemented ?
+  }
 }
 
 void SGSsecurityModeComplete(void *msg, NRUEcontext_t *UE) {
@@ -36,6 +72,8 @@ void processNAS(void *msg, NRUEcontext_t *UE) {
   else {
     switch  (header->epd) {
       case SGSmobilitymanagementmessages:
+        LOG_I(NAS,"Received message: %s\n", idStr(message_text_info, header->mt));
+
         switch (header->mt) {
           case Registrationrequest:
             SGSregistrationReq(msg, UE);
@@ -92,9 +130,6 @@ int identityRequest(void **msg, NRUEcontext_t *UE) {
 }
 
 int authenticationRequest(void **msg, NRUEcontext_t *UE) {
-  if (UE->uicc == NULL)
-    // config file section hardcoded as "uicc", nevertheless it opens to manage several UEs or a multi SIM UE
-    UE->uicc=init_uicc("uicc");
 
   myCalloc(req, authenticationrequestHeader_t);
   req->epd=SGSmobilitymanagementmessages;
@@ -123,12 +158,11 @@ int authenticationRequest(void **msg, NRUEcontext_t *UE) {
     LOG_E(NAS, "can't read /dev/random\n");
 
   fclose(h);
+  memcpy(UE->uicc->rand, req->RAND, sizeof(UE->uicc->rand));
   // challenge/AUTN (TLV)
   req->ieiAUTN=IEI_AUTN;
   req->AUTNlen=sizeof(req->AUTN);
-  uint8_t ik[16], ck[16], res[8];
-  milenage_generate(UE->uicc->opc, UE->uicc->amf, UE->uicc->key,
-                    UE->uicc->sqn, req->RAND, req->AUTN, ik, ck, res);
+  uicc_milenage_generate( req->AUTN, UE->uicc);
   // EAP message (TLV-E)
   // not developped
   *msg=req;

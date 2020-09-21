@@ -35,6 +35,14 @@
 #include <common/config/config_userapi.h>
 #include "common_lib.h"
 
+/* 3GPP glossary
+RES	RESponse
+XRES	eXpected RESponse
+HRES	Hash RESponse
+HXRES	Hash eXpected RESponse
+So, RES can be either milenage res, or received response, so hash of milenage res
+*/
+
 typedef struct {
   char *imsiStr;
   char *keyStr;
@@ -48,10 +56,16 @@ typedef struct {
   int nmc_size;
   uint8_t rand[16];
   uint8_t autn[16];
+  uint8_t ak[6]; 
+  uint8_t akstar[6]; 
+  uint8_t ck[16]; 
+  uint8_t ik[16]; 
+  uint8_t milenage_res[8];
 } uicc_t;
 
 /*
  * Read the configuration file, section name variable to be able to manage several UICC
  */
 uicc_t *init_uicc(char *sectionName);
+void uicc_milenage_generate(uint8_t * autn, uicc_t *uicc);
 #endif
