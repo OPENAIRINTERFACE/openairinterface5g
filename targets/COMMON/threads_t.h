@@ -1,5 +1,5 @@
-#ifndef _THREADS_T_H_
-#define _THREADS_T_H_
+#ifndef _TARGETS_COMMON_THREADS_T_H_
+#define _TARGETS_COMMON_THREADS_T_H_
 
 typedef struct threads_s {
   int main;
@@ -18,4 +18,4 @@ typedef struct threads_s {
   //int dlsch_td1_three;
 } threads_t;
 
-#endif /* _THREADS_T_H_ */
+#endif /* _TARGETS_COMMON_THREADS_T_H_ */
