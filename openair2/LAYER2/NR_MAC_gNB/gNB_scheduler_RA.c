@@ -253,8 +253,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
-  NR_UE_list_t *UE_list = &nr_mac->UE_list;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_RA_t *ra = &cc->ra[0];
@@ -262,14 +262,14 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   // if the preamble received correspond to one of the listed
   // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
   int pr_found=0;
-  for (int i=0;i<UE_list->preambles[UE_id].num_preambles;i++) {
-    if (preamble_index == UE_list->preambles[UE_id].preamble_list[i]) {
+  for (int i=0;i<UE_info->preambles[UE_id].num_preambles;i++) {
+    if (preamble_index == UE_info->preambles[UE_id].preamble_list[i]) {
       pr_found=1;
       break;
     }
   }
   if (pr_found)
-    UE_list->fiveG_connected[UE_id] = false;
+    UE_info->fiveG_connected[UE_id] = false;
   else {
     LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated for UE_id %d\n",
           module_idP, preamble_index, UE_id);
@@ -325,7 +325,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
-    UE_list->tc_rnti[UE_id] = ra->rnti;
+    UE_info->tc_rnti[UE_id] = ra->rnti;
 
     LOG_I(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x\n",
       module_idP,
@@ -434,7 +434,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_COMMON_channels_t                            *cc = &mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t                   *scc = cc->ServingCellConfigCommon;
   NR_RA_t                                         *ra = &cc->ra[0];
-  NR_UE_list_t                               *UE_list = &mac->UE_list;
+  NR_UE_info_t                               *UE_info = &mac->UE_info;
   int UE_id = 0;
 
   if (ra->state == RA_IDLE) {
@@ -448,9 +448,9 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
 
 
-  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n", UE_id);
+  AssertFatal(UE_info->active[UE_id] >=0,"Cannot find UE_id %d is not active\n", UE_id);
 
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
     "downlinkBWP_ToAddModList has %d BWP!\n", secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
@@ -547,7 +547,7 @@ void nr_generate_Msg2(module_id_t module_idP,
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[0];
   NR_RA_t                               *ra = &cc->ra[0];
-  NR_UE_list_t                     *UE_list = &nr_mac->UE_list;
+  NR_UE_info_t                     *UE_info = &nr_mac->UE_info;
   NR_SearchSpace_t *ss = ra->ra_ss;
 
   uint16_t RA_rnti = ra->RA_rnti;
@@ -597,7 +597,7 @@ void nr_generate_Msg2(module_id_t module_idP,
     // This code from this point on will not work on initialBWP or CORESET0
     AssertFatal(ra->bwp_id>0,"cannot work on initialBWP for now\n");
 
-    NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+    NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
     AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
       "downlinkBWP_ToAddModList has %d BWP!\n", secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
     NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];

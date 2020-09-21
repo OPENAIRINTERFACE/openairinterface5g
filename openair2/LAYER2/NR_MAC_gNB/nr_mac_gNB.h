@@ -362,7 +362,7 @@ typedef struct {
   rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
   NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
-} NR_UE_list_t;
+} NR_UE_info_t;
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -396,7 +396,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
 
-  NR_UE_list_t UE_list;
+  NR_UE_info_t UE_info;
 
   /// UL handle
   uint32_t ul_handle;

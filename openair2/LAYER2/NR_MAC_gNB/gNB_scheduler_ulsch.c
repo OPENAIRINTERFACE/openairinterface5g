@@ -212,7 +212,7 @@ void nr_process_mac_pdu(
 
                 LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
 		int UE_id = find_nr_UE_id(module_idP, rnti);
-		RC.nrmac[module_idP]->UE_list.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
+		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
@@ -313,19 +313,19 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t rssi){
   int current_rnti = 0, UE_id = -1, harq_pid = 0;
   gNB_MAC_INST *gNB_mac = NULL;
-  NR_UE_list_t *UE_list = NULL;
+  NR_UE_info_t *UE_info = NULL;
   NR_UE_sched_ctrl_t *UE_scheduling_control = NULL;
 
   current_rnti = rntiP;
   UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
   gNB_mac = RC.nrmac[gnb_mod_idP];
-  UE_list = &gNB_mac->UE_list;
+  UE_info = &gNB_mac->UE_info;
   int target_snrx10 = gNB_mac->pusch_target_snrx10;
 
   if (UE_id != -1) {
-    UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
+    UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
-    UE_list->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
+    UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
     LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
           gnb_mod_idP,
           harq_pid,
@@ -370,10 +370,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     // random access pusch with TC-RNTI
     if (sduP != NULL) { // if the CRC passed
       for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-        if (UE_list->active[i] == TRUE) {
-          if (UE_list->tc_rnti[i] == current_rnti) {
+        if (UE_info->active[i]) {
+          if (UE_info->tc_rnti[i] == current_rnti) {
             // for now the only thing we are doing is set the UE as 5G connected
-            UE_list->fiveG_connected[i] = true;
+            UE_info->fiveG_connected[i] = true;
             LOG_I(MAC, "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly and UE_id %d is now 5G connected\n",
                   gnb_mod_idP, current_rnti, i);
           }

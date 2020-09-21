@@ -180,9 +180,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   //  NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   //  NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
-  NR_UE_list_t *UE_list = &nr_mac->UE_list;
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
 
-  AssertFatal(UE_list->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
+  AssertFatal(UE_info->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
 
   int coreset_id = coreset->controlResourceSetId;
   int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -196,7 +196,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
   uint16_t N_reg = n_rb * coreset->duration;
   uint16_t Y=0, N_cce, M_s_max, n_CI=0;
-  uint16_t n_RNTI = search_space == 1 ? UE_list->rnti[UE_id]:0;
+  uint16_t n_RNTI = search_space == 1 ? UE_info->rnti[UE_id]:0;
   uint32_t A[3]={39827,39829,39839};
 
   N_cce = N_reg / NR_NB_REG_PER_CCE;
@@ -464,12 +464,9 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   NR_COMMON_channels_t                *cc      = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
-  nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdcch_pdu;
-  nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu;
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
 
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
@@ -479,12 +476,12 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
               "searchPsacesToAddModList is empty\n");
 
-  dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdcch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
 
-  dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
+  nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs+1];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
   dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
@@ -494,7 +491,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
 
 
   pdsch_pdu_rel15->pduBitmap = 0;
-  pdsch_pdu_rel15->rnti = UE_list->rnti[UE_id];
+  pdsch_pdu_rel15->rnti = UE_info->rnti[UE_id];
   pdsch_pdu_rel15->pduIndex = 0;
 
   // BWP
@@ -569,7 +566,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
 
   // TPC for PUCCH
-  dci_pdu_rel15[0].tpc = UE_list->UE_sched_ctrl[UE_id].tpc1; // table 7.2.1-1 in 38.213
+  dci_pdu_rel15[0].tpc = UE_info->UE_sched_ctrl[UE_id].tpc1; // table 7.2.1-1 in 38.213
   // PUCCH resource indicator
   dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
   // PDSCH to HARQ TI
@@ -594,7 +591,7 @@ void nr_fill_nfapi_dl_pdu(int Mod_idP,
 
   nr_configure_pdcch(nr_mac,
                      pdcch_pdu_rel15,
-                     UE_list->rnti[UE_id],
+                     UE_info->rnti[UE_id],
                      ss,
                      coreset,
                      scc,
@@ -1593,10 +1590,10 @@ int extract_length(int startSymbolAndLength) {
 }
 
 /*
- * Dump the UL or DL UE_list into LOG_T(MAC)
+ * Dump the UL or DL UE_info into LOG_T(MAC)
  */
 void
-dump_nr_ue_list(NR_UE_list_t *listP,
+dump_nr_ue_list(NR_UE_info_t *listP,
              int ul_flag)
 //------------------------------------------------------------------------------
 {
@@ -1621,11 +1618,11 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
   int UE_id;
-  NR_UE_list_t *UE_list = &RC.nrmac[mod_idP]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
 
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
-    if (UE_list->active[UE_id] == TRUE) {
-      if (UE_list->rnti[UE_id] == rntiP) {
+    if (UE_info->active[UE_id]) {
+      if (UE_info->rnti[UE_id] == rntiP) {
         return UE_id;
       }
     }
@@ -1638,7 +1635,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
   int UE_id;
   int i;
-  NR_UE_list_t *UE_list = &RC.nrmac[mod_idP]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
   NR_COMMON_channels_t *cc = RC.nrmac[mod_idP]->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   int num_slots_ul = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
@@ -1647,31 +1644,31 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
   LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
         mod_idP,
         rntiP,
-        UE_list->avail,
-        UE_list->num_UEs);
-  dump_nr_ue_list(UE_list, 0);
+        UE_info->avail,
+        UE_info->num_UEs);
+  dump_nr_ue_list(UE_info, 0);
 
-  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_list->active[i] == TRUE)
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (UE_info->active[i])
       continue;
 
     UE_id = i;
-    UE_list->num_UEs++;
-    UE_list->active[UE_id] = TRUE;
-    UE_list->rnti[UE_id] = rntiP;
-    memset((void *) &UE_list->UE_sched_ctrl[UE_id],
+    UE_info->num_UEs++;
+    UE_info->active[UE_id] = TRUE;
+    UE_info->rnti[UE_id] = rntiP;
+    memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
-    UE_list->UE_sched_ctrl[UE_id].ta_timer = 100;
-    UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
-    UE_list->UE_sched_ctrl[UE_id].ul_rssi = 0;
-    UE_list->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
-    UE_list->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
+    UE_info->UE_sched_ctrl[UE_id].ta_timer = 100;
+    UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
+    UE_info->UE_sched_ctrl[UE_id].ul_rssi = 0;
+    UE_info->UE_sched_ctrl[UE_id].sched_pucch = (NR_sched_pucch *)malloc(num_slots_ul*sizeof(NR_sched_pucch));
+    UE_info->UE_sched_ctrl[UE_id].sched_pusch = (NR_sched_pusch *)malloc(num_slots_ul*sizeof(NR_sched_pusch));
     for (int k=0; k<num_slots_ul; k++) {
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k],
+      memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
              sizeof(NR_sched_pucch));
-      memset((void *) &UE_list->UE_sched_ctrl[UE_id].sched_pusch[k],
+      memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
              0,
              sizeof(NR_sched_pusch));
     }
@@ -1679,14 +1676,14 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
           mod_idP,
           UE_id,
           rntiP);
-    dump_nr_ue_list(UE_list,
+    dump_nr_ue_list(UE_info,
 		    0);
     return (UE_id);
   }
 
   // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
-  LOG_E(MAC, "error in add_new_ue(), could not find space in UE_list, Dumping UE list\n");
-  dump_nr_ue_list(UE_list,
+  LOG_E(MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
+  dump_nr_ue_list(UE_info,
 		  0);
   return -1;
 }
@@ -1700,23 +1697,23 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 {
   int UE_id;
   int i;
-  NR_UE_list_t *UE_list = &RC.nrmac[mod_id]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_list->active[i] != TRUE)
+    if (!UE_info->active[i])
       continue;
-    if (UE_list->rnti[i] != rnti)
+    if (UE_info->rnti[i] != rnti)
       continue;
 
     /* UE found, remove it */
     UE_id = i;
-    UE_list->num_UEs--;
+    UE_info->num_UEs--;
     UE_list->fiveG_connected[UE_id] = FALSE;
-    UE_list->active[UE_id] = FALSE;
-    UE_list->rnti[UE_id] = 0;
-    free(UE_list->UE_sched_ctrl[UE_id].sched_pucch);
-    free(UE_list->UE_sched_ctrl[UE_id].sched_pusch);
-    memset((void *) &UE_list->UE_sched_ctrl[UE_id],
+    UE_info->active[UE_id] = FALSE;
+    UE_info->rnti[UE_id] = 0;
+    free(UE_info->UE_sched_ctrl[UE_id].sched_pucch);
+    free(UE_info->UE_sched_ctrl[UE_id].sched_pusch);
+    memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
     LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
@@ -1751,8 +1748,8 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
                                 uint8_t *pdsch_to_harq_feedback) {
 
   int bwp_id=1;
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
 
@@ -1804,7 +1801,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
                                 int *pucch_id) {
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_sched_pucch *curr_pucch;
   int first_ul_slot_tdd,k,i;
   uint8_t pdsch_to_harq_feedback[8];
@@ -1819,7 +1816,7 @@ void nr_update_pucch_scheduling(int Mod_idP,
 
   // for each possible ul or mixed slot
   for (k=0; k<nr_ulmix_slots; k++) {
-    curr_pucch = &UE_list->UE_sched_ctrl[UE_id].sched_pucch[k];
+    curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k];
     // if there is free room in current pucch structure
     if (curr_pucch->dai_c<MAX_ACK_BITS) {
       curr_pucch->frame = frameP;
