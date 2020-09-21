@@ -349,7 +349,7 @@ void nr_schedule_pucch(int Mod_idP,
   uint8_t SR_flag = 0; // no SR in PUCCH implemented for now
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  AssertFatal(UE_info->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+  AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   int bwp_id=1;

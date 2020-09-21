@@ -840,7 +840,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
   int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   int UE_id = 0;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  AssertFatal(UE_info->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+  AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n",UE_id);
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,

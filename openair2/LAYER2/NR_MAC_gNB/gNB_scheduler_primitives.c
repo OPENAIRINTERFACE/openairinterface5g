@@ -182,7 +182,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
   NR_UE_info_t *UE_info = &nr_mac->UE_info;
 
-  AssertFatal(UE_info->active[UE_id] >=0,"UE_id %d is not active\n",UE_id);
+  AssertFatal(UE_info->active[UE_id],"UE_id %d is not active\n",UE_id);
 
   int coreset_id = coreset->controlResourceSetId;
   int *cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -1646,7 +1646,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
     int UE_id = i;
     UE_info->num_UEs++;
-    UE_info->active[UE_id] = TRUE;
+    UE_info->active[UE_id] = true;
     UE_info->rnti[UE_id] = rntiP;
     add_nr_ue_list(&UE_info->list, UE_id);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
