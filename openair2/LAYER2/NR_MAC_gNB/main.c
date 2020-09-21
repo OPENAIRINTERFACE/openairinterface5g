@@ -106,13 +106,9 @@ void mac_top_init_gNB(void)
     
     UE_info = &nrmac->UE_info;
     UE_info->num_UEs = 0;
-    UE_info->head = -1;
-    UE_info->head_ul = -1;
-    UE_info->avail = 0;
-
-    for (list_el = 0; list_el < MAX_MOBILES_PER_GNB - 1; list_el++) {
-       UE_info->next[list_el] = list_el + 1;
-      UE_info->next_ul[list_el] = list_el + 1;
+    UE_info->list.head = -1;
+    for (list_el = 0; list_el < MAX_MOBILES_PER_GNB; list_el++) {
+      UE_info->list.next[list_el] = -1;
       UE_info->active[list_el] = FALSE;
       for (int list_harq = 0; list_harq < NR_MAX_NB_HARQ_PROCESSES; list_harq++) {
         UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
@@ -123,10 +119,6 @@ void mac_top_init_gNB(void)
         UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].state = 0;
       }
     }
-
-    UE_info->next[list_el] = -1;
-    UE_info->next_ul[list_el] = -1;
-    UE_info->active[list_el] = FALSE;
   }
 
   srand48(0);

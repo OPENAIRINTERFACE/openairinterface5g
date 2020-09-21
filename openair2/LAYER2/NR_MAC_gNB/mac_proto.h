@@ -300,7 +300,7 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB);
 
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 
-void dump_nr_ue_list(NR_UE_info_t *listP, int ul_flag);
+void dump_nr_ue_list(NR_UE_list_t *listP);
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
 
