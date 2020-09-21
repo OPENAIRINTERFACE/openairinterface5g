@@ -1667,7 +1667,7 @@ class OaiCiTest():
 		SSH = sshconnection.SSHConnection()
 		result = re.search('-u', str(iperf_real_options))
 		if result is None:
-			logging.debug('Into Iperf_analyzeV2TCPOutput client)
+			logging.debug('Into Iperf_analyzeV2TCPOutput client')
 			response = self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC)
 			logging.debug('Iperf_analyzeV2TCPOutput response returned value = ' + str(response))
 			return response
@@ -2139,7 +2139,7 @@ class OaiCiTest():
 					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
 					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 					return
-				logging.debug('Into Iperf_analyzeV2Output client)
+				logging.debug('Into Iperf_analyzeV2Output client')
 				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options, EPC)
 				logging.debug('Iperf_analyzeV2Output clientStatus returned value = ' + str(clientStatus))
 			SSH.close()
