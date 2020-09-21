@@ -394,6 +394,8 @@ typedef struct {
   NR_BCCH_BCH_Message_t                     mib;
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
+  int pusch_TargetSNRx10;
+  int pucch_TargetSNRx10;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];

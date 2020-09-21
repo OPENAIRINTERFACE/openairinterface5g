@@ -71,7 +71,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
 
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
-  int32_t Xu_re, Xu_im, samp_count;
+  int32_t Xu_re, Xu_im;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k;
   //int restricted_Type;
 
@@ -103,22 +103,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
                        nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index,
                        ue->X_u);
 
-  if (mu == 0)
-    samp_count = fp->samples_per_subframe;
-  else
-    samp_count = (slot%(fp->slots_per_subframe/2)) ? fp->samples_per_slotN0 : fp->samples_per_slot0;
-
-  #ifdef OAI_USRP
-    prach_start = (ue->rx_offset + slot*samp_count - ue->hw_timing_advance - ue->N_TA_offset);
-  #else //normal case (simulation)
-    prach_start = slot*samp_count - ue->N_TA_offset;
-  #endif
-
-  if (prach_start<0)
-    prach_start += (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
-
-  if (prach_start >= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME))
-    prach_start -= (fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
+  prach_start = fp->get_samples_slot_timestamp(slot, fp, 0);
 
   // First compute physical root sequence
   /************************************************************************
@@ -796,40 +781,16 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   }
 
   #ifdef NR_PRACH_DEBUG
-    LOG_I(PHY, "PRACH [UE %d] N_RB_UL %d prach_start %d, prach_len %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", Mod_id,
+    LOG_I(PHY, "PRACH [UE %d] N_RB_UL %d prach_start %d, prach_len %d\n", Mod_id,
       fp->N_RB_UL,
       prach_start,
-      prach_len,
-      ue->rx_offset,
-      ue->hw_timing_advance,
-      ue->N_TA_offset);
+      prach_len);
   #endif
 
-  #if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-    int j, overflow = prach_start + prach_len - NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe;
-
-    #ifdef NR_PRACH_DEBUG
-      LOG_I( PHY, "PRACH [UE %d] overflow = %d\n", Mod_id, overflow);
-    #endif
-
-    // prach_start=414.730, overflow=-39470 prach_len=6600 fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME 460.800 prach_start+prach_len 421.330 fp->samples_per_subframe 46080
-
-    // from prach_start=414.730 to prach_start+prach_len 421.330
-    for (i = prach_start, j = 0; i < min(fp->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME, prach_start + prach_len); i++, j++) {
-      ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
-      ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
-    }
-
-    for (i = 0; i < overflow; i++,j++) {
-      ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
-      ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
-    }
-  #else // simulators
-    for (i=0; i<prach_len; i++) {
-      ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
-      ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
-    }
-  #endif
+  for (i=0; i<prach_len; i++) {
+    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
+    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
+  }
 
   //printf("----------------------\n");
   //for(int ii = prach_start; ii<2*(prach_start + prach_len); ii++){

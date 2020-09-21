@@ -113,6 +113,11 @@ typedef enum {
 #define GNB_CONFIG_STRING_REMOTE_S_PORTC                "remote_s_portc"
 #define GNB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
 #define GNB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
+#define GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET           "ssb_SubcarrierOffset"
+#define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
+#define GNB_CONFIG_STRING_PUSCHTARGETPOWX10             "pusch_TargetSNRx10"
+#define GNB_CONFIG_STRING_PUCCHTARGETPOWX10             "pucch_TargetSNRx10"
+
 
 typedef struct ccparams_nr_x2 {
   char             *frame_type;
@@ -156,7 +161,12 @@ typedef struct ccparams_nr_x2 {
 {GNB_CONFIG_STRING_REMOTE_S_PORTC,               NULL,   0,            uptr:NULL,   defuintval:50000,            TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_LOCAL_S_PORTD,                NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
+{GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,          NULL,   0,            iptr:NULL,   defintval:31,                TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_PDSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_PUSCHTARGETPOWX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_PUCCHTARGETPOWX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
 }															     	
+
 #define GNB_GNB_ID_IDX                  0
 #define GNB_CELL_TYPE_IDX               1
 #define GNB_GNB_NAME_IDX                2
@@ -171,6 +181,10 @@ typedef struct ccparams_nr_x2 {
 #define GNB_REMOTE_S_PORTC_IDX          11
 #define GNB_LOCAL_S_PORTD_IDX           12
 #define GNB_REMOTE_S_PORTD_IDX          13
+#define GNB_SSB_SUBCARRIEROFFSET_IDX    14
+#define GNB_PDSCH_ANTENNAPORTS_IDX      15
+#define GNB_PUSCH_TARGETPOW_X10_IDX     16
+#define GNB_PUCCH_TARGETPOW_X10_IDX     17
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \

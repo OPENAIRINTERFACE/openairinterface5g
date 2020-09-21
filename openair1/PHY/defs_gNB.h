@@ -112,6 +112,26 @@ typedef struct {
   uint32_t F;
 } NR_DL_gNB_HARQ_t;
 
+typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
+} NR_gNB_PDCCH_t;
+
+typedef struct {
+  int frame;
+  int slot;
+  nfapi_nr_ul_dci_request_pdus_t pdcch_pdu;
+} NR_gNB_UL_PDCCH_t;
+
+typedef struct {
+  uint16_t rnti;
+  int round_trials[8];
+  int total_bytes_tx;
+  int total_bytes_rx;
+  int current_Qm;
+  int current_RI;
+} NR_gNB_SCH_STATS_t;
 
 typedef struct {
   /// Pointers to 16 HARQ processes for the DLSCH
@@ -157,6 +177,8 @@ typedef struct {
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
 } NR_gNB_DLSCH_t;
+
+
 
 typedef struct {
   int frame;
@@ -334,10 +356,6 @@ typedef struct {
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
   uint8_t last_iteration_cnt;  
-  /// num active cba group
-  uint8_t num_active_cba_groups;
-  /// num active cba group
-  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
 } NR_gNB_ULSCH_t;
 
 typedef struct {
@@ -365,6 +383,8 @@ typedef struct {
   /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
   /// - third index: sample [0..]
   int32_t **txdataF;
+  int32_t *debugBuff;
+  int32_t debugBuff_sample_offset;
 } NR_gNB_COMMON;
 
 
@@ -377,8 +397,6 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **rxdataF_ext2;
-  /// \brief Offset for calculating the index of rxdataF_ext for the current symbol
-  uint32_t rxdataF_ext_offset;
   /// \brief Hold the channel estimates in time domain based on DRS.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..4*ofdm_symbol_size[
@@ -446,6 +464,13 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS subcarriers per OFDM symbol
   uint16_t ptrs_sc_per_ofdm_symbol;
+  /// \brief Estimated phase error based upon PTRS on each symbol .
+  /// - first index: ? [0..7] Number of Antenna
+  /// - second index: ? [0...14] smybol per slot
+  int32_t **ptrs_phase_per_slot;
+  /// \brief Total RE count after DMRS/PTRS RE's are extracted from respective symbol.
+  /// - first index: ? [0...14] smybol per slot
+  int16_t *ul_valid_re_per_slot;
   /// flag to verify if channel level computation is done
   uint8_t cl_done;
 } NR_gNB_PUSCH;
@@ -674,21 +699,28 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_nr_ul_tti_request_t     UL_tti_req;
   nfapi_nr_uci_indication_t uci_indication;
   
-  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
-  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
+  //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
+  //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   nfapi_nr_dl_tti_ssb_pdu      ssb_pdu;
 
-  int num_pdsch_rnti;
+  uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH         pbch;
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
+  NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
+  NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
+  /// statistics for DLSCH measurement collection
+  NR_gNB_SCH_STATS_t dlsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
+  /// statistics for ULSCH measurement collection
+  NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
+
   t_nrPolar_params    *uci_polarParams;
 
   uint8_t pbch_configured;
@@ -714,6 +746,10 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PUSCH DMRS
   uint32_t ****nr_gold_pusch_dmrs;
+
+  // Mask of occupied RBs
+  uint32_t rb_mask_ul[9];
+  int ulmask_symb;
 
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
@@ -769,15 +805,19 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_interleaving_stats;
   time_stats_t dlsch_segmentation_stats;
 
+  time_stats_t rx_pusch_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;
   time_stats_t ulsch_deinterleaving_stats;
   time_stats_t ulsch_unscrambling_stats;
   time_stats_t ulsch_channel_estimation_stats;
+  time_stats_t ulsch_ptrs_processing_stats;
   time_stats_t ulsch_channel_compensation_stats;
   time_stats_t ulsch_rbs_extraction_stats;
+  time_stats_t ulsch_mrc_stats;
   time_stats_t ulsch_llr_stats;
+
   /*
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
