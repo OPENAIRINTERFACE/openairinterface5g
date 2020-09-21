@@ -360,7 +360,6 @@ typedef struct {
   NR_UE_list_t list;
   int num_UEs;
   bool active[MAX_MOBILES_PER_GNB];
-  boolean_t fiveG_connected[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   rnti_t tc_rnti[MAX_MOBILES_PER_GNB];
   NR_preamble_ue preambles[MAX_MOBILES_PER_GNB];

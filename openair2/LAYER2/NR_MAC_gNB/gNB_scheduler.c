@@ -411,14 +411,16 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   const int num_slots_per_tdd = slots_per_frame[*scc->ssbSubcarrierSpacing] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
   const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
-  if (slot== 0 && (UE_info->fiveG_connected[UE_id] || get_softmodem_params()->phy_test)) {
+  if (slot == 0 && UE_info->active[UE_id]) {
     for (int k=0; k<nr_ulmix_slots; k++) {
-      memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
+      /* Seems to be covered 384? */
+      /*memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pucch[k],
              0,
-             sizeof(NR_sched_pucch));
-      memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
+             sizeof(NR_sched_pucch));*/
+      /* Seems to be covered in line 335? */
+      /*memset((void *) &UE_info->UE_sched_ctrl[UE_id].sched_pusch[k],
              0,
-             sizeof(NR_sched_pusch));
+             sizeof(NR_sched_pusch));*/
     }
   }
 
@@ -470,8 +472,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
     nr_schedule_reception_msg3(module_idP, 0, frame, slot);
-  } else
-    UE_info->fiveG_connected[UE_id] = true;
+  }
 
   if (get_softmodem_params()->phy_test) {
 
@@ -493,13 +494,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This schedules the DCI for Uplink and subsequently PUSCH
   // The decision about whether to schedule is done for each UE independently
   // inside
-  if (UE_info->fiveG_connected[UE_id]) {
+  if (UE_info->active[UE_id]) {
     int tda = 1; // time domain assignment hardcoded for now
     schedule_fapi_ul_pdu(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, tda, ulsch_in_slot_bitmap);
     nr_schedule_pusch(module_idP, UE_id, num_slots_per_tdd, nr_ulmix_slots, frame, slot);
   }
 
-  if (UE_info->fiveG_connected[UE_id]
+  if (UE_info->active[UE_id]
       && (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot % num_slots_per_tdd))
       && (!get_softmodem_params()->phy_test || slot == 1)) {
     ue_sched_ctl->current_harq_pid = slot % num_slots_per_tdd;
@@ -511,7 +512,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     gNB->ta_len = 0;
   }
 
-  if (UE_info->fiveG_connected[UE_id])
+  if (UE_info->active[UE_id])
     nr_schedule_pucch(module_idP, UE_id, nr_ulmix_slots, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);

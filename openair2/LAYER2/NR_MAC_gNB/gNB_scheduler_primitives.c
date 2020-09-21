@@ -1626,7 +1626,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
   int num_slots_ul = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0)
     num_slots_ul++;
-  LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
+  LOG_W(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
         rntiP,
         UE_info->num_UEs);
@@ -1638,7 +1638,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
     int UE_id = i;
     UE_info->num_UEs++;
-    UE_info->active[UE_id] = true;
+    UE_info->active[UE_id] = false; /* not yet active, we wait for RA! */
     UE_info->rnti[UE_id] = rntiP;
     add_nr_ue_list(&UE_info->list, UE_id);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],

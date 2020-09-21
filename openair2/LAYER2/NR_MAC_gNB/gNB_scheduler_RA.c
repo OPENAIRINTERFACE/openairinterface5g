@@ -268,9 +268,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       break;
     }
   }
-  if (pr_found)
-    UE_info->fiveG_connected[UE_id] = false;
-  else {
+  if (!pr_found) {
     LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated for UE_id %d\n",
           module_idP, preamble_index, UE_id);
     return; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
@@ -448,7 +446,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
 
 
-  AssertFatal(UE_info->active[UE_id],"Cannot find UE_id %d is not active\n", UE_id);
+  AssertFatal(!UE_info->active[UE_id], "UE_id %d is already active\n", UE_id);
 
   NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
