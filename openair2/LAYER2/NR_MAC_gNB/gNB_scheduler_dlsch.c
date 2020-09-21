@@ -76,12 +76,12 @@ int nr_generate_dlsch_pdu(module_id_t module_idP,
   ce_ptr = &mac_header_control_elements[0];
   uint16_t UE_id = 0; //TODO need to get as a function parameter or need to invoke api to UE_id using module Id and RNTI
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
-  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
+  NR_UE_info_t *UE_info = &gNB_mac->UE_info;
   NR_UE_sched_ctrl_t *ue_sched_ctl = NULL;
-  //NR_CellGroupConfig_t *config = UE_list->secondaryCellGroup[UE_id];
-  ue_sched_ctl = &(UE_list->UE_sched_ctrl[UE_id]);
+  //NR_CellGroupConfig_t *config = UE_info->secondaryCellGroup[UE_id];
+  ue_sched_ctl = &(UE_info->UE_sched_ctrl[UE_id]);
 
-  NR_mac_stats_t *mac_stats = &(UE_list->mac_stats[UE_id]);
+  NR_mac_stats_t *mac_stats = &(UE_info->mac_stats[UE_id]);
 
   // 1) Compute MAC CE and related subheaders
 
@@ -449,19 +449,18 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   frame_t frame,
                                   sub_frame_t slot,
                                   int num_slots_per_tdd) {
-  NR_UE_list_t *UE_list = &RC.nrmac[module_id]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   const int UE_id = 0;
   const int CC_id = 0;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
-  // TODO: reset per UE-info
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   sched_ctrl->rbSize = 0;
 
   /* Retrieve amount of data to send for this UE */
   sched_ctrl->num_total_bytes = 0;
   const int lcid = DL_SCH_LCID_DTCH;
-  const uint16_t rnti = UE_list->rnti[UE_id];
+  const uint16_t rnti = UE_info->rnti[UE_id];
   sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                     rnti,
                                                     module_id,
@@ -544,8 +543,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          sub_frame_t slot,
                          int num_slots_per_tdd) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
-  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
-  if (UE_list->num_UEs == 0)
+  NR_UE_info_t *UE_info = &gNB_mac->UE_info;
+  if (UE_info->num_UEs == 0)
     return;
 
   /* PREPROCESSOR */
@@ -555,7 +554,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const int UE_id = 0;
   const int CC_id = 0;
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   if (sched_ctrl->rbSize < 0 && !get_softmodem_params()->phy_test)
     return;
 
@@ -594,7 +593,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
-  const rnti_t rnti = UE_list->rnti[UE_id];
+  const rnti_t rnti = UE_info->rnti[UE_id];
   const int lcid = DL_SCH_LCID_DTCH;
   if (sched_ctrl->num_total_bytes > 0) {
     LOG_D(MAC,
@@ -661,7 +660,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const int offset = nr_generate_dlsch_pdu(
       module_id,
       (unsigned char *)mac_sdus,
-      (unsigned char *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0],
+      (unsigned char *)gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0],
       num_sdus, // num_sdus
       sdu_lengths,
       sdu_lcids,
@@ -672,7 +671,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   // Padding: fill remainder of DLSCH with 0
   if (post_padding > 0) {
     for (int j = 0; j < TBS - offset; j++)
-      gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
+      gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0][offset + j] = 0;
   }
 
   const int current_harq_pid = sched_ctrl->current_harq_pid;
@@ -680,9 +679,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_sched_pucch *pucch = &sched_ctrl->sched_pucch[sched_ctrl->pucch_sched_idx];
   harq->feedback_slot = pucch->ul_slot;
   harq->is_waiting = 1;
-  UE_list->mac_stats[UE_id].dlsch_rounds[harq->round]++;
+  UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
   if (harq->round == 0)
-    UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
+    UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
   nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
   nr_fill_nfapi_dl_pdu(module_id,
@@ -728,7 +727,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           slot,
           TBS);
     for(int i = 0; i < 10; i++) {
-      LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i]);
+      LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0])[i]);
     }
   }
 #endif

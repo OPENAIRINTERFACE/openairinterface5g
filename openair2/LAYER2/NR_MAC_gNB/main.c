@@ -50,7 +50,7 @@ void mac_top_init_gNB(void)
 {
   module_id_t     i;
   int             list_el;
-  NR_UE_list_t    *UE_list;
+  NR_UE_info_t    *UE_info;
   gNB_MAC_INST    *nrmac;
 
   LOG_I(MAC, "[MAIN] Init function start:nb_nr_macrlc_inst=%d\n",RC.nb_nr_macrlc_inst);
@@ -104,29 +104,29 @@ void mac_top_init_gNB(void)
     nrmac = RC.nrmac[i];
     nrmac->if_inst = NR_IF_Module_init(i);
     
-    UE_list = &nrmac->UE_list;
-    UE_list->num_UEs = 0;
-    UE_list->head = -1;
-    UE_list->head_ul = -1;
-    UE_list->avail = 0;
+    UE_info = &nrmac->UE_info;
+    UE_info->num_UEs = 0;
+    UE_info->head = -1;
+    UE_info->head_ul = -1;
+    UE_info->avail = 0;
 
     for (list_el = 0; list_el < MAX_MOBILES_PER_GNB - 1; list_el++) {
-       UE_list->next[list_el] = list_el + 1;
-      UE_list->next_ul[list_el] = list_el + 1;
-      UE_list->active[list_el] = FALSE;
+       UE_info->next[list_el] = list_el + 1;
+      UE_info->next_ul[list_el] = list_el + 1;
+      UE_info->active[list_el] = FALSE;
       for (int list_harq = 0; list_harq < NR_MAX_NB_HARQ_PROCESSES; list_harq++) {
-        UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
-        UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;
-        UE_list->UE_sched_ctrl[list_el].harq_processes[list_harq].is_waiting = 0;
-        UE_list->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].round = 0;
-        UE_list->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].ndi = 0;
-        UE_list->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].state = 0;
+        UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
+        UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;
+        UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].is_waiting = 0;
+        UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].round = 0;
+        UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].ndi = 0;
+        UE_info->UE_sched_ctrl[list_el].ul_harq_processes[list_harq].state = 0;
       }
     }
 
-    UE_list->next[list_el] = -1;
-    UE_list->next_ul[list_el] = -1;
-    UE_list->active[list_el] = FALSE;
+    UE_info->next[list_el] = -1;
+    UE_info->next_ul[list_el] = -1;
+    UE_info->active[list_el] = FALSE;
   }
 
   srand48(0);

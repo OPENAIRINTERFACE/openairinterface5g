@@ -269,9 +269,9 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
   int bwp_id=1;
   int UE_id = 0;
 
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
 
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
@@ -296,7 +296,7 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
 
 
   pdsch_pdu_rel15->pduBitmap = 0;
-  pdsch_pdu_rel15->rnti = UE_list->rnti[UE_id];
+  pdsch_pdu_rel15->rnti = UE_info->rnti[UE_id];
   pdsch_pdu_rel15->pduIndex = 0;
 
   // BWP
@@ -308,17 +308,17 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
   int mcs = (mcsIndex!=NULL) ? *mcsIndex : 9;
-  int current_harq_pid = UE_list->UE_sched_ctrl[UE_id].current_harq_pid;
+  int current_harq_pid = UE_info->UE_sched_ctrl[UE_id].current_harq_pid;
   pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcs,0);
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
+  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round];
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;    
   pdsch_pdu_rel15->transmissionScheme = 0;
   pdsch_pdu_rel15->refPoint = 0; // Point A
-  UE_list->mac_stats[UE_id].dlsch_rounds[UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round]++;
+  UE_info->mac_stats[UE_id].dlsch_rounds[UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round]++;
   pdsch_pdu_rel15->dmrsConfigType = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;  
   pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->SCID = 0;
@@ -366,18 +366,18 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
   dci_pdu_rel15[0].rv = pdsch_pdu_rel15->rvIndex[0];
   // harq pid and ndi
   dci_pdu_rel15[0].harq_pid = current_harq_pid;
-  dci_pdu_rel15[0].ndi = UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].ndi;
+  dci_pdu_rel15[0].ndi = UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].ndi;
   // DAI
   dci_pdu_rel15[0].dai[0].val = (pucch_sched->dai_c-1)&3;
 
   // TPC for PUCCH
-  dci_pdu_rel15[0].tpc = UE_list->UE_sched_ctrl[UE_id].tpc1; // table 7.2.1-1 in 38.213
+  dci_pdu_rel15[0].tpc = UE_info->UE_sched_ctrl[UE_id].tpc1; // table 7.2.1-1 in 38.213
   // PUCCH resource indicator
   dci_pdu_rel15[0].pucch_resource_indicator = pucch_sched->resource_indicator;
   // PDSCH to HARQ TI
   dci_pdu_rel15[0].pdsch_to_harq_feedback_timing_indicator.val = pucch_sched->timing_indicator;
-  UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].feedback_slot = pucch_sched->ul_slot;
-  UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].is_waiting = 1;
+  UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].feedback_slot = pucch_sched->ul_slot;
+  UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].is_waiting = 1;
   // antenna ports
   dci_pdu_rel15[0].antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
   // dmrs sequence initialization
@@ -432,7 +432,7 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
   }
   nr_configure_pdcch(nr_mac,
                      pdcch_pdu_rel15,
-                     UE_list->rnti[UE_id],
+                     UE_info->rnti[UE_id],
                      ss,
                      coreset,
                      scc,
@@ -466,8 +466,8 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
 
   // Hardcode it for now
   TBS = dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15.TBSize[0];
-  if (UE_list->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round==0)
-    UE_list->mac_stats[UE_id].dlsch_total_bytes += TBS;
+  if (UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid].round==0)
+    UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
 
   LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d startSymbolAndLength %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d TBS: %d\n",
 	pdsch_pdu_rel15->rbStart,
@@ -592,7 +592,7 @@ void configure_fapi_dl_Tx(module_id_t Mod_idP,
   tx_req->num_TLV = 1;
   tx_req->TLVs[0].length = tbs_bytes +2;
 
-  memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&nr_mac->UE_list.DLSCH_pdu[0][0].payload[0], tbs_bytes);
+  memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&nr_mac->UE_info.DLSCH_pdu[0][0].payload[0], tbs_bytes);
 
   nr_mac->TX_req[CC_id].Number_of_PDUs++;
   nr_mac->TX_req[CC_id].SFN = frameP;
@@ -619,13 +619,13 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
   mac_rlc_status_resp_t rlc_status;
 
-  NR_UE_list_t *UE_list = &gNB_mac->UE_list;
+  NR_UE_info_t *UE_info = &gNB_mac->UE_info;
  
-  if (UE_list->num_UEs ==0) return;
+  if (UE_info->num_UEs ==0) return;
  
   unsigned char sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  uint16_t rnti = UE_list->rnti[UE_id];
+  uint16_t rnti = UE_info->rnti[UE_id];
 
   uint8_t mac_sdus[MAX_NR_DLSCH_PAYLOAD_BYTES];
   
@@ -704,7 +704,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     // fill dlsch_buffer with random data
     for (i = 0; i < TBS_bytes; i++){
       mac_sdus[i] = (unsigned char) (lrand48()&0xff);
-      //((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
+      //((uint8_t *)gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0])[i] = (unsigned char) (lrand48()&0xff);
     }
     //Sending SDUs with size 1
     //Initialize elements of sdu_lcids and sdu_lengths
@@ -718,7 +718,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     if (frameP%100 == 0){
       LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
       for(int i = 0; i < 10; i++) {
-        LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
+        LOG_I(MAC, "%x. ", ((uint8_t *)gNB_mac->UE_info.DLSCH_pdu[CC_id][0][0].payload[0])[i]);
       }
     }
     #endif
@@ -742,7 +742,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
 
     offset = nr_generate_dlsch_pdu(module_idP,
                                    (unsigned char *) mac_sdus,
-                                   (unsigned char *) gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0],
+                                   (unsigned char *) gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0],
                                    num_sdus, //num_sdus
                                    sdu_lengths,
                                    sdu_lcids,
@@ -753,7 +753,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     // Padding: fill remainder of DLSCH with 0
     if (post_padding > 0){
       for (int j = 0; j < (TBS_bytes - offset); j++)
-        gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0][offset + j] = 0; // mac_pdu[offset + j] = 0;
+        gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0][offset + j] = 0; // mac_pdu[offset + j] = 0;
     }
 
     configure_fapi_dl_Tx(module_idP, frameP, slotP, dl_req, tx_req, TBS_bytes, gNB_mac->pdu_index[CC_id]);
@@ -770,7 +770,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
       if (frameP%100 == 0){
         LOG_I(MAC, "Printing first 10 payload bytes at the gNB side, Frame: %d, slot: %d, TBS size: %d \n", frameP, slotP, TBS_bytes);
         for(int i = 0; i < 10; i++) {
-          LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_list.DLSCH_pdu[0][0].payload[0])[i]); //LOG_I(MAC, "%x. ", mac_payload[i]);
+          LOG_I(MAC, "byte %d : %x\n", i,((uint8_t *)gNB_mac->UE_info.DLSCH_pdu[0][0].payload[0])[i]); //LOG_I(MAC, "%x. ", mac_payload[i]);
         }
       }
 #endif
@@ -839,10 +839,10 @@ void schedule_fapi_ul_pdu(int Mod_idP,
   int bwp_id=1;
   int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   int UE_id = 0;
-  NR_UE_list_t *UE_list = &RC.nrmac[Mod_idP]->UE_list;
-  AssertFatal(UE_list->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  AssertFatal(UE_info->active[UE_id] >=0,"Cannot find UE_id %d is not active\n",UE_id);
 
-  NR_CellGroupConfig_t *secondaryCellGroup = UE_list->secondaryCellGroup[UE_id];
+  NR_CellGroupConfig_t *secondaryCellGroup = UE_info->secondaryCellGroup[UE_id];
   AssertFatal(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 	      "downlinkBWP_ToAddModList has %d BWP!\n",
 	      secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
@@ -871,10 +871,10 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count>0,
                 "searchPsacesToAddModList is empty\n");
 
-    uint16_t rnti = UE_list->rnti[UE_id];
+    uint16_t rnti = UE_info->rnti[UE_id];
 
     int first_ul_slot = num_slots_per_tdd - ul_slots;
-    NR_sched_pusch *pusch_sched = &UE_list->UE_sched_ctrl[UE_id].sched_pusch[slotP+K2-first_ul_slot];
+    NR_sched_pusch *pusch_sched = &UE_info->UE_sched_ctrl[UE_id].sched_pusch[slotP+K2-first_ul_slot];
     pusch_sched->frame = frameP;
     pusch_sched->slot = slotP + K2;
     pusch_sched->active = true;
@@ -1024,9 +1024,9 @@ void schedule_fapi_ul_pdu(int Mod_idP,
 
     //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
     //Optional Data only included if indicated in pduBitmap
-    int8_t harq_id = select_ul_harq_pid(&UE_list->UE_sched_ctrl[UE_id]);
+    int8_t harq_id = select_ul_harq_pid(&UE_info->UE_sched_ctrl[UE_id]);
     if (harq_id < 0) return;
-    NR_UE_ul_harq_t *cur_harq = &UE_list->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];
+    NR_UE_ul_harq_t *cur_harq = &UE_info->UE_sched_ctrl[UE_id].ul_harq_processes[harq_id];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
@@ -1056,8 +1056,8 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                                                    0,
                                                    pusch_pdu->nrOfLayers)>>3;
 
-    UE_list->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;      
-    if (cur_harq->round == 0) UE_list->mac_stats[UE_id].ulsch_total_bytes_scheduled+=pusch_pdu->pusch_data.tb_size;      
+    UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
+    if (cur_harq->round == 0) UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled+=pusch_pdu->pusch_data.tb_size;
 
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
     //pusch_pdu->pusch_data.cb_present_and_position;
@@ -1125,7 +1125,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
     else {
       nr_configure_pdcch(nr_mac,
                          pdcch_pdu_rel15,
-                         UE_list->rnti[UE_id],
+                         UE_info->rnti[UE_id],
                          ss,
                          coreset,
                          scc,
@@ -1134,7 +1134,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
                          CCEIndex);
 
       dci_pdu_rel15_t *dci_pdu_rel15 = calloc(MAX_DCI_CORESET,sizeof(dci_pdu_rel15_t));
-      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,UE_list->UE_sched_ctrl[UE_id].tpc0,n_ubwp,bwp_id);
+      config_uldci(ubwp,pusch_pdu,pdcch_pdu_rel15,&dci_pdu_rel15[0],dci_formats,rnti_types,time_domain_assignment,UE_info->UE_sched_ctrl[UE_id].tpc0,n_ubwp,bwp_id);
       fill_dci_pdu_rel15(scc,secondaryCellGroup,pdcch_pdu_rel15,dci_pdu_rel15,dci_formats,rnti_types,pusch_pdu->bwp_size,bwp_id);
       free(dci_pdu_rel15);
     }

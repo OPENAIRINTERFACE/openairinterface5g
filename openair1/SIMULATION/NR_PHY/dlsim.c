@@ -698,7 +698,7 @@ int main(int argc, char **argv)
   
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
-  NR_UE_list_t *UE_list = &RC.nrmac[0]->UE_list;
+  NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
   snrRun = 0;
 
@@ -759,11 +759,11 @@ int main(int argc, char **argv)
         memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
-        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
+        UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
 
 
-        UE_list->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;   
-        UE_list->UE_sched_ctrl[0].current_harq_pid = harq_pid;
+        UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
+        UE_info->UE_sched_ctrl[0].current_harq_pid = harq_pid;
         gNB->dlsch[0][0]->harq_processes[harq_pid]->round = round;
       
         if (css_flag == 0) nr_schedule_uss_dlsch_phytest(0,frame,slot,&pucch_sched,&dlsch_config);
