@@ -1592,26 +1592,9 @@ int extract_length(int startSymbolAndLength) {
 /*
  * Dump the UL or DL UE_info into LOG_T(MAC)
  */
-void
-dump_nr_ue_list(NR_UE_info_t *listP,
-             int ul_flag)
-//------------------------------------------------------------------------------
-{
-  if (ul_flag == 0) {
-    for (int j = listP->head; j >= 0; j = listP->next[j]) {
-      LOG_T(MAC, "DL list node %d => %d\n",
-            j,
-            listP->next[j]);
-    }
-  } else {
-    for (int j = listP->head_ul; j >= 0; j = listP->next_ul[j]) {
-      LOG_T(MAC, "UL list node %d => %d\n",
-            j,
-            listP->next_ul[j]);
-    }
-  }
-
-  return;
+void dump_nr_ue_list(NR_UE_list_t *listP) {
+  for (int j = listP->head; j >= 0; j = listP->next[j])
+    LOG_T(MAC, "DL list node %d => %d\n", j, listP->next[j]);
 }
 
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
@@ -1641,12 +1624,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
   int num_slots_ul = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0)
     num_slots_ul++;
-  LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (next avail %d, num_UEs %d)\n",
+  LOG_I(MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
         rntiP,
-        UE_info->avail,
         UE_info->num_UEs);
-  dump_nr_ue_list(UE_info, 0);
+  dump_nr_ue_list(&UE_info->list);
 
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_info->active[i])
@@ -1674,15 +1656,13 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
           mod_idP,
           UE_id,
           rntiP);
-    dump_nr_ue_list(UE_info,
-		    0);
+    dump_nr_ue_list(&UE_info->list);
     return (UE_id);
   }
 
   // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
   LOG_E(MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
-  dump_nr_ue_list(UE_info,
-		  0);
+  dump_nr_ue_list(&UE_info->list);
   return -1;
 }
 

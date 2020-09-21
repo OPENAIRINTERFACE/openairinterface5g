@@ -343,17 +343,21 @@ typedef struct {
   int ulsch_total_bytes_rx;
 } NR_mac_stats_t;
 
+
+/*! \brief UNR_E_list_t is a "list" of users within UE_info_t. Especial useful in
+ * the scheduler and to keep "classes" of users. */
+typedef struct {
+  int head;
+  int next[MAX_MOBILES_PER_GNB];
+} NR_UE_list_t;
+
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
   DLSCH_PDU DLSCH_pdu[4][MAX_MOBILES_PER_GNB];
   /// scheduling control info
   NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
-  int next[MAX_MOBILES_PER_GNB];
-  int head;
-  int next_ul[MAX_MOBILES_PER_GNB];
-  int head_ul;
-  int avail;
+  NR_UE_list_t list;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_GNB];
   boolean_t fiveG_connected[MAX_MOBILES_PER_GNB];
