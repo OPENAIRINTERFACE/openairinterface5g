@@ -63,6 +63,8 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
+/*Softmodem params*/
+#include "executables/softmodem-common.h"
 
 #include "common/ran_context.h"
 
@@ -1638,7 +1640,12 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
     int UE_id = i;
     UE_info->num_UEs++;
-    UE_info->active[UE_id] = false; /* not yet active, we wait for RA! */
+    /* if real softmodem: not yet active, we wait for RA! FIXME: This opens a
+     * data race: a UE should complete RA before adding the next, or by the
+     * above condition, we overwrite the current UE with the following one.
+     *
+     * if phytest: there is no RA, so enable directly */
+    UE_info->active[UE_id] = get_softmodem_params()->phy_test;
     UE_info->rnti[UE_id] = rntiP;
     add_nr_ue_list(&UE_info->list, UE_id);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
