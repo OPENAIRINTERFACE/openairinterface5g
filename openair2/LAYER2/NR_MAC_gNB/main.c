@@ -89,8 +89,8 @@ void mac_top_init_gNB(void)
     // These should be out of here later
     pdcp_layer_init();
 
-    //if(IS_SOFTMODEM_NOS1)
-    //  nr_DRB_preconfiguration();
+    if(IS_SOFTMODEM_NOS1)
+      nr_DRB_preconfiguration();
 
     rrc_init_nr_global_param();
 
