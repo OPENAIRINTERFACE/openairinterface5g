@@ -360,7 +360,7 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_UE_list_t list;
   int num_UEs;
-  boolean_t active[MAX_MOBILES_PER_GNB];
+  bool active[MAX_MOBILES_PER_GNB];
   boolean_t fiveG_connected[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   rnti_t tc_rnti[MAX_MOBILES_PER_GNB];

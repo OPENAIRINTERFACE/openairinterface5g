@@ -109,7 +109,7 @@ void mac_top_init_gNB(void)
     UE_info->list.head = -1;
     for (list_el = 0; list_el < MAX_MOBILES_PER_GNB; list_el++) {
       UE_info->list.next[list_el] = -1;
-      UE_info->active[list_el] = FALSE;
+      UE_info->active[list_el] = false;
       for (int list_harq = 0; list_harq < NR_MAX_NB_HARQ_PROCESSES; list_harq++) {
         UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].round = 0;
         UE_info->UE_sched_ctrl[list_el].harq_processes[list_harq].ndi = 0;
