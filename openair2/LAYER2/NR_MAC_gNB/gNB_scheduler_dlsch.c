@@ -494,8 +494,7 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   sched_ctrl->active_bwp,
                                   sched_ctrl->coreset,
                                   sched_ctrl->aggregation_level,
-                                  sched_ctrl->search_space->searchSpaceType->present - 1,
-                                  UE_id,
+                                  UE_info->rnti[UE_id],
                                   0); // m
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): could not find CCE for UE %d\n", __func__, UE_id);

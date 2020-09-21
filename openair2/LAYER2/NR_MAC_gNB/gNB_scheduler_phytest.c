@@ -422,8 +422,7 @@ int configure_fapi_dl_pdu_phytest(int Mod_idP,
       bwp,
       coreset,
       aggregation_level,
-      ss->searchSpaceType->present - 1, // 0 common, 1 ue-specific
-      UE_id,
+      UE_info->rnti[UE_id],
       0); // m
   if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PDSCH\n", __func__);
@@ -1114,8 +1113,7 @@ void schedule_fapi_ul_pdu(int Mod_idP,
         bwp,
         coreset,
         aggregation_level,
-        ss->searchSpaceType->present - 1, // 0 common, 1 ue-specific
-        UE_id,
+        UE_info->rnti[UE_id],
         0); // m
     if (CCEIndex < 0) {
       LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);

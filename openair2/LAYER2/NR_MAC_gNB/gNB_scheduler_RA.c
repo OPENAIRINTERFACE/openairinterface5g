@@ -689,8 +689,7 @@ void nr_generate_Msg2(module_id_t module_idP,
         bwp,
         coreset,
         aggregation_level,
-        ss->searchSpaceType->present - 1, // 0 common, 1 ue-specific
-        UE_id,
+        0, /* n_RNTI 0: common search space */
         0); // m
 
     if (CCEIndex < 0) {
