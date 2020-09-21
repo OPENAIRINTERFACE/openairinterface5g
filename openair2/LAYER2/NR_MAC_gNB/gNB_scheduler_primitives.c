@@ -1597,6 +1597,18 @@ void dump_nr_ue_list(NR_UE_list_t *listP) {
     LOG_T(MAC, "DL list node %d => %d\n", j, listP->next[j]);
 }
 
+/*
+ * Add a UE to NR_UE_list listP
+ */
+inline void add_nr_ue_list(NR_UE_list_t *listP, int UE_id) {
+  int *cur = &listP->head;
+  while (*cur >= 0) {
+    AssertFatal(*cur != UE_id, "UE_id %d already in NR_UE_list!\n", UE_id);
+    cur = &listP->next[*cur];
+  }
+  *cur = UE_id;
+}
+
 int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
@@ -1616,8 +1628,6 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
 
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
 
-  int UE_id;
-  int i;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
   NR_COMMON_channels_t *cc = RC.nrmac[mod_idP]->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
@@ -1630,14 +1640,15 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
         UE_info->num_UEs);
   dump_nr_ue_list(&UE_info->list);
 
-  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_info->active[i])
       continue;
 
-    UE_id = i;
+    int UE_id = i;
     UE_info->num_UEs++;
     UE_info->active[UE_id] = TRUE;
     UE_info->rnti[UE_id] = rntiP;
+    add_nr_ue_list(&UE_info->list, UE_id);
     memset((void *) &UE_info->UE_sched_ctrl[UE_id],
            0,
            sizeof(NR_UE_sched_ctrl_t));
