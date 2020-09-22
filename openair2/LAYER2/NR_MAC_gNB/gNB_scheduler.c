@@ -443,6 +443,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   pdcp_run(&ctxt);
   //rrc_rx_tx(&ctxt, CC_id);
+  /* send tick to RLC every ms */
+  if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
+    void nr_rlc_tick(int frame, int subframe);
+    nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+  }
 
   dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch
   ulsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].ulsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains ulsch
