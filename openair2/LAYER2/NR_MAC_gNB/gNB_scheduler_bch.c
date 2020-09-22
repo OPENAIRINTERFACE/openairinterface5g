@@ -137,6 +137,11 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayloadFlag      = 1;
       dl_config_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload          = (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1);
       dl_req->nPDUs++;
+
+      uint8_t *vrb_map = cc[CC_id].vrb_map;
+      const int rbStart = dl_config_pdu->ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA;
+      for (int rb = 0; rb < 20; rb++)
+        vrb_map[rbStart + rb] = 1;
     }
   }
 }

@@ -550,7 +550,6 @@ void nr_generate_Msg2(module_id_t module_idP,
 
   uint16_t RA_rnti = ra->RA_rnti;
   long locationAndBandwidth;
-  // uint8_t *vrb_map = cc[CC_id].vrb_map, CC_id;
 
   // check if UE is doing RA on CORESET0 , InitialBWP or configured BWP from SCD
   // get the BW of the PDCCH for PDCCH size and RAR PDSCH size
@@ -740,6 +739,11 @@ void nr_generate_Msg2(module_id_t module_idP,
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
     memcpy((void*)&tx_req->TLVs[0].value.direct[0], (void*)&cc[CC_id].RAR_pdu.payload[0], tx_req->TLVs[0].length);
+
+    /* mark the corresponding RBs as used */
+    uint8_t *vrb_map = cc[CC_id].vrb_map;
+    for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++)
+      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
   }
 }
 
