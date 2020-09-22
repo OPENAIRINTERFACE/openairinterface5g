@@ -1492,6 +1492,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
   return -1;
 }
 
+/* hack data to remove UE in the phy */
+int rnti_to_remove[10];
+volatile int rnti_to_remove_count;
+pthread_mutex_t rnti_to_remove_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 {
   int UE_id;
@@ -1519,6 +1524,14 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
           mod_id,
           UE_id,
           rnti);
+
+    /* hack to remove UE in the phy */
+    if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+    if (rnti_to_remove_count == 10) exit(1);
+    rnti_to_remove[rnti_to_remove_count] = rnti;
+    LOG_W(MAC, "to remove in mac rnti_to_remove[%d]=%d\n", rnti_to_remove_count, rnti);
+    rnti_to_remove_count++;
+    if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
   }
 }
 
