@@ -38,13 +38,12 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
-
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 //#include "../../SIMU/USER/init_lte.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 #include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
@@ -585,7 +584,7 @@ void init_pdcp(void) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
-  nr_ip_over_LTE_DRB_preconfiguration();*/
+  nr_DRB_preconfiguration();*/
   pdcp_module_init(pdcp_initmask);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
@@ -686,11 +685,14 @@ int main( int argc, char **argv ) {
 
     fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
     nr_init_frame_parms_ue(frame_parms[CC_id],nrUE_config,NORMAL);
-    
+
     // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0)
+    if (downlink_frequency[0][0]!=0) {
       frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+      frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+    }
    
+    init_symbol_rotation(frame_parms[CC_id],frame_parms[CC_id]->dl_CarrierFreq);
     init_nr_ue_vars(UE[CC_id],frame_parms[CC_id],0,abstraction_flag);
 
     UE[CC_id]->mac_enabled = 1;
@@ -767,13 +769,7 @@ int main( int argc, char **argv ) {
   for(int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
     PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-#if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
-    PHY_vars_UE_g[0][CC_id]->hw_timing_advance = timing_advance;
     PHY_vars_UE_g[0][CC_id]->timing_advance = timing_advance;
-#else
-    PHY_vars_UE_g[0][CC_id]->hw_timing_advance = 160;
-#endif
-
   }
 
   init_NR_UE_threads(1);

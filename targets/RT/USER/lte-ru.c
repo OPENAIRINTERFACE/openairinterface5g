@@ -2675,6 +2675,15 @@ void set_function_spec_param(RU_t *ru) {
         exit(-1);
       }
 
+      if (ru->ifdevice.get_internal_parameter != NULL) {
+        void *t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_in");
+        if (t != NULL)
+          ru->fh_south_in = t;
+        t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
+        if (t != NULL)
+          ru->fh_south_out = t;
+      }
+
       malloc_IF4p5_buffer(ru);
       break;
 

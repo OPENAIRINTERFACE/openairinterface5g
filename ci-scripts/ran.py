@@ -90,6 +90,7 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.htmlObj = None
 		self.epcObj = None
+		self.runtime_stats= ''
 
 
 
@@ -614,7 +615,7 @@ class RANManagement():
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
 			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+				self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
 			analyzeFile = False
@@ -643,10 +644,10 @@ class RANManagement():
 					return
 				else:
 					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+						self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+					self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
@@ -712,16 +713,20 @@ class RANManagement():
 			if runTime != '':
 				result = re.search('Time executing user inst', str(line))
 				if result is not None:
-					userTime = 'to be decoded - 1'
+					fields=line.split(':')
+					userTime = 'userTime : ' + fields[1].replace('\n','')
 				result = re.search('Time executing system inst', str(line))
 				if result is not None:
-					systemTime = 'to be decoded - 2'
+					fields=line.split(':')
+					systemTime = 'systemTime : ' + fields[1].replace('\n','')
 				result = re.search('Max. Phy. memory usage:', str(line))
 				if result is not None:
-					maxPhyMemUsage = 'to be decoded - 3'
+					fields=line.split(':')
+					maxPhyMemUsage = 'maxPhyMemUsage : ' + fields[1].replace('\n','')
 				result = re.search('Number of context switch.*process origin', str(line))
 				if result is not None:
-					nbContextSwitches = 'to be decoded - 4'
+					fields=line.split(':')
+					nbContextSwitches = 'nbContextSwitches : ' + fields[1].replace('\n','')
 			if X2HO_state == CONST.X2_HO_REQ_STATE__IDLE:
 				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
 				if result is not None:
@@ -978,11 +983,12 @@ class RANManagement():
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
 			self.htmlObj.htmleNBFailureMsg=htmleNBFailureMsg
-		# Runtime statistics
+		# Runtime statistics for console output and HTML
 		if runTime != '':
 			logging.debug(runTime)
-			logging.debug('Time executing user inst   : ' + userTime)
-			logging.debug('Time executing system inst : ' + systemTime)
-			logging.debug('Max Physical Memory Usage  : ' + maxPhyMemUsage)
-			logging.debug('Nb Context Switches        : ' + nbContextSwitches)
+			logging.debug(userTime)
+			logging.debug(systemTime)
+			logging.debug(maxPhyMemUsage)
+			logging.debug(nbContextSwitches)
+			self.runtime_stats='<pre>'+runTime + '\n'+ userTime + '\n' + systemTime + '\n' + maxPhyMemUsage + '\n' + nbContextSwitches+'</pre>'
 		return global_status

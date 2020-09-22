@@ -53,114 +53,116 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
 
-  uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint8_t mu,N_dur,N_t_slot,start_symbol;
-  uint16_t format;
+  if (is_nr_UL_slot(scc,slotP)) {
 
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
-    mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
-  else
-    mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
+    uint8_t mu,N_dur,N_t_slot,start_symbol;
+    uint16_t format;
 
-  // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
-  if ( get_nr_prach_info_from_index(config_index,
-                                    (int)frameP,
-                                    (int)slotP,
-                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-                                    mu,
-                                    cc->frame_type,
-                                    &format,
-                                    &start_symbol,
-                                    &N_t_slot,
-                                    &N_dur) ) {
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+      mu = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+    else
+      mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
-    int fdm = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;
-    uint16_t format0 = format&0xff;      // first column of format from table
-    uint16_t format1 = (format>>8)&0xff; // second column of format from table
+    // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
+    if ( get_nr_prach_info_from_index(config_index,
+                                      (int)frameP,
+                                      (int)slotP,
+                                      scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                      mu,
+                                      cc->frame_type,
+                                      &format,
+                                      &start_symbol,
+                                      &N_t_slot,
+                                      &N_dur) ) {
 
-    UL_tti_req->SFN = frameP;
-    UL_tti_req->Slot = slotP;
-    for (int n=0; n<(1<<fdm); n++) { // one structure per frequency domain occasion
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
-      UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
-      nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
-      memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
-      UL_tti_req->n_pdus+=1;
+      int fdm = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM;
+      uint16_t format0 = format&0xff;      // first column of format from table
+      uint16_t format1 = (format>>8)&0xff; // second column of format from table
 
-      // filling the prach fapi structure
-      prach_pdu->phys_cell_id = *scc->physCellId;
-      prach_pdu->num_prach_ocas = N_t_slot;
-      prach_pdu->prach_start_symbol = start_symbol;
-      prach_pdu->num_ra = n;
-      prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
-                                  format0,
-                                  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
-      // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
-      // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
-      if (format1!=0xff) {
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 9;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 10;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 11;
-            break;
-        default:
-          AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
+      UL_tti_req->SFN = frameP;
+      UL_tti_req->Slot = slotP;
+      for (int n=0; n<(1<<fdm); n++) { // one structure per frequency domain occasion
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE;
+        UL_tti_req->pdus_list[UL_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_prach_pdu_t);
+        nfapi_nr_prach_pdu_t  *prach_pdu = &UL_tti_req->pdus_list[UL_tti_req->n_pdus].prach_pdu;
+        memset(prach_pdu,0,sizeof(nfapi_nr_prach_pdu_t));
+        UL_tti_req->n_pdus+=1;
+
+        // filling the prach fapi structure
+        prach_pdu->phys_cell_id = *scc->physCellId;
+        prach_pdu->num_prach_ocas = N_t_slot;
+        prach_pdu->prach_start_symbol = start_symbol;
+        prach_pdu->num_ra = n;
+        prach_pdu->num_cs = get_NCS(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig,
+                                    format0,
+                                    scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
+        // SCF PRACH PDU format field does not consider A1/B1 etc. possibilities
+        // We added 9 = A1/B1 10 = A2/B2 11 A3/B3
+        if (format1!=0xff) {
+          switch(format0) {
+            case 0xa1:
+              prach_pdu->prach_format = 9;
+              break;
+            case 0xa2:
+              prach_pdu->prach_format = 10;
+              break;
+            case 0xa3:
+              prach_pdu->prach_format = 11;
+              break;
+          default:
+            AssertFatal(1==0,"Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
+          }
         }
-      }
-      else{
-        switch(format0) {
-          case 0xa1:
-            prach_pdu->prach_format = 0;
-            break;
-          case 0xa2:
-            prach_pdu->prach_format = 1;
-            break;
-          case 0xa3:
-            prach_pdu->prach_format = 2;
-            break;
-          case 0xb1:
-            prach_pdu->prach_format = 3;
-            break;
-          case 0xb2:
-            prach_pdu->prach_format = 4;
-            break;
-          case 0xb3:
-            prach_pdu->prach_format = 5;
-            break;
-          case 0xb4:
-            prach_pdu->prach_format = 6;
-            break;
-          case 0xc0:
-            prach_pdu->prach_format = 7;
-            break;
-          case 0xc2:
-            prach_pdu->prach_format = 8;
-            break;
-          case 0:
-            // long formats are handled @ PHY
-            break;
-          case 1:
-            // long formats are handled @ PHY
-            break;
-          case 2:
-            // long formats are handled @ PHY
-            break;
-          case 3:
-            // long formats are handled @ PHY
-            break;
-        default:
-          AssertFatal(1==0,"Invalid PRACH format");
+        else{
+          switch(format0) {
+            case 0xa1:
+              prach_pdu->prach_format = 0;
+              break;
+            case 0xa2:
+              prach_pdu->prach_format = 1;
+              break;
+            case 0xa3:
+              prach_pdu->prach_format = 2;
+              break;
+            case 0xb1:
+              prach_pdu->prach_format = 3;
+              break;
+            case 0xb2:
+              prach_pdu->prach_format = 4;
+              break;
+            case 0xb3:
+              prach_pdu->prach_format = 5;
+              break;
+            case 0xb4:
+              prach_pdu->prach_format = 6;
+              break;
+            case 0xc0:
+              prach_pdu->prach_format = 7;
+              break;
+            case 0xc2:
+              prach_pdu->prach_format = 8;
+              break;
+            case 0:
+              // long formats are handled @ PHY
+              break;
+            case 1:
+              // long formats are handled @ PHY
+              break;
+            case 2:
+              // long formats are handled @ PHY
+              break;
+            case 3:
+              // long formats are handled @ PHY
+              break;
+          default:
+            AssertFatal(1==0,"Invalid PRACH format");
+          }
         }
       }
     }
   }
 }
-
 
 void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
@@ -435,7 +437,10 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_UE_list_t                               *UE_list = &mac->UE_list;
   int UE_id = 0;
 
-  AssertFatal(ra->state != RA_IDLE, "RA is not active for RA %X\n", ra->rnti);
+  if (ra->state == RA_IDLE) {
+    LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
+    return;
+  }
 
   LOG_D(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
@@ -538,7 +543,7 @@ void nr_generate_Msg2(module_id_t module_idP,
                       sub_frame_t slotP){
 
   int UE_id = 0, dci_formats[2], rnti_types[2], mcsIndex;
-  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment;
+  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[0];
   NR_RA_t                               *ra = &cc->ra[0];

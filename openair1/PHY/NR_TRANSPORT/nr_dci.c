@@ -154,8 +154,10 @@ void nr_pdcch_scrambling(uint32_t *in,
 }
 
 
-uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_ul_dci_request_pdus_t *ul_dci_pdu,
+
+uint8_t nr_generate_dci_top(PHY_VARS_gNB *gNB,
+			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
+			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
@@ -180,15 +182,17 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 
 
   if (pdcch_pdu) pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
-  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
+  else if (ul_dci_pdu) pdcch_pdu_rel15 = &ul_dci_pdu->pdcch_pdu_rel15;
+
+  nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
 
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
   // compute rb_offset and n_prb based on frequency allocation
 
   if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-    cset_start_sc = frame_parms.first_carrier_offset + (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB +
-							rb_offset)*NR_NB_SC_PER_RB;
+    cset_start_sc = frame_parms.first_carrier_offset + 
+      (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + rb_offset)*NR_NB_SC_PER_RB;
   } else
     cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
 
@@ -324,6 +328,7 @@ uint8_t nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
 	  k -= frame_parms.ofdm_symbol_size;
       } // m
     } // reg_idx
+    
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
   return 0;
 }

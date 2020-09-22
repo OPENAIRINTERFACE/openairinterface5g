@@ -159,19 +159,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   switch (type) {
   case SI_PDSCH:
-    pdsch_vars = ue->pdsch_vars_SI;
+    pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = &ue->dlsch_SI[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     break;
 
   case RA_PDSCH:
-    pdsch_vars = ue->pdsch_vars_ra;
+    pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = &ue->dlsch_ra[eNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
-    // WIP TBR Hotfix
-    memcpy((void*)&pdsch_vars[eNB_id]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], (void*)&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][0]->dl_ch_estimates[0][ue->frame_parms.ofdm_symbol_size*2], ue->frame_parms.ofdm_symbol_size*sizeof(int32_t));
 
     break;
 
@@ -189,7 +186,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     break;
   }
 
-  if (dlsch1_harq){
+  if (dlsch0_harq && dlsch1_harq){
 
     //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_tti_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
@@ -230,19 +227,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       return(-1);
     }
   } else if (dlsch0_harq) {
-    if (dlsch0_harq->status == ACTIVE)
+    if (dlsch0_harq->status == ACTIVE) {
       codeword_TB0 = dlsch0_harq->codeword;
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
       #ifdef DEBUG_HARQ
         printf("[DEMOD] I am assuming only TB0 is active\n");
       #endif
+    } else {
+      LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
+      return (-1);
+    }
   } else {
-    LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n", nr_tti_rx);
-    return (-1);
-  }
-
-  if (dlsch0_harq == NULL) {
     LOG_E(PHY, "Done\n");
     return -1;
   }
@@ -347,9 +343,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        dlsch0_harq->pmi_alloc,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
                                        symbol,
-									   pilots,
-									   start_rb,
-									   nb_rb_pdsch,
+                                       pilots,
+                                       start_rb,
+                                       nb_rb_pdsch,
                                        nr_tti_rx,
                                        ue->high_speed_flag,
                                        frame_parms,
@@ -362,9 +358,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                        dlsch0_harq->pmi_alloc,
                                        pdsch_vars[eNB_id_i]->pmi_ext,
                                        symbol,
-									   pilots,
-									   start_rb,
-									   nb_rb_pdsch,
+                                       pilots,
+                                       start_rb,
+                                       nb_rb_pdsch,
                                        nr_tti_rx,
                                        ue->high_speed_flag,
                                        frame_parms,
@@ -524,7 +520,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                (aatx>1) ? pdsch_vars[eNB_id]->rho : NULL,
                                frame_parms,
                                symbol,
-							   pilots,
+                               pilots,
                                first_symbol_flag,
                                dlsch0_harq->Qm,
                                nb_rb,
@@ -1155,7 +1151,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
                                 int **rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 unsigned char symbol,
-								uint8_t pilots,
+				uint8_t pilots,
                                 uint8_t first_symbol_flag,
                                 unsigned char mod_order,
                                 unsigned short nb_rb,
