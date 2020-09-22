@@ -1454,7 +1454,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
         UE_list->num_UEs);
   dump_nr_ue_list(UE_list, 0);
 
-  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_list->active[i] == TRUE)
       continue;
 
@@ -1492,6 +1492,35 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP){
   return -1;
 }
 
+void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
+{
+  int UE_id;
+  int i;
+  NR_UE_list_t *UE_list = &RC.nrmac[mod_id]->UE_list;
+
+  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    if (UE_list->active[i] != TRUE)
+      continue;
+    if (UE_list->rnti[i] != rnti)
+      continue;
+
+    /* UE found, remove it */
+    UE_id = i;
+    UE_list->num_UEs--;
+    UE_list->fiveG_connected[UE_id] = FALSE;
+    UE_list->active[UE_id] = FALSE;
+    UE_list->rnti[UE_id] = 0;
+    free(UE_list->UE_sched_ctrl[UE_id].sched_pucch);
+    free(UE_list->UE_sched_ctrl[UE_id].sched_pusch);
+    memset((void *) &UE_list->UE_sched_ctrl[UE_id],
+           0,
+           sizeof(NR_UE_sched_ctrl_t));
+    LOG_I(MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
+          mod_id,
+          UE_id,
+          rnti);
+  }
+}
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10

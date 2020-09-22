@@ -441,11 +441,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   pdcp_run(&ctxt);
-  //rrc_rx_tx(&ctxt, CC_id);
-  /* send tick to RLC every ms */
+  /* send tick to RLC and RRC every ms */
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+    nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
   dlsch_in_slot_bitmap = &RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[UE_id].dlsch_in_slot_bitmap;  // static bitmap signaling which slot in a tdd period contains dlsch

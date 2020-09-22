@@ -139,7 +139,6 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 //#define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
-
 static inline int rxtx(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int frame_tx, int slot_tx, char *thread_name) {
 
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
