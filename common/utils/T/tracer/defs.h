@@ -1,5 +1,5 @@
-#ifndef _TRACER_DEFS_H_
-#define _TRACER_DEFS_H_
+#ifndef _COMMON_UTILS_T_TRACER_DEFS_H_
+#define _COMMON_UTILS_T_TRACER_DEFS_H_
 
 /* types of plots */
 #define PLOT_VS_TIME   0
@@ -21,4 +21,4 @@ void t_gui_start(void);
 void t_gui_set_input_signal(int eNB, int frame, int subframe, int antenna,
     int size, void *buf);
 
-#endif /* _TRACER_DEFS_H_ */
+#endif /* _COMMON_UTILS_T_TRACER_DEFS_H_ */

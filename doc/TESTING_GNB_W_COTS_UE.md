@@ -1,4 +1,4 @@
-STATUS 2020/07/30 : under continuous improvement ; updated the configuration files links with CI approved reference files
+STATUS 2020/09/10 : updated the status of interop (end to end UL/DL traffic)  
 
 
 ## Table of Contents ##
@@ -12,6 +12,7 @@ STATUS 2020/07/30 : under continuous improvement ; updated the configuration fil
 7.   [Log file monitoring](#log-file-monitoring)
 6.   [Required tools for debug](#required-tools-for-debug)
 7.   [Status of interoperability](#status-of-interoperability) 
+8.   [CI integration](#ci-integration)  
 
 ## Configuration Overview
 
@@ -70,7 +71,7 @@ cd cmake_targets/
 - **EPC**
 
 for reference:
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
+https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
 
 
 
@@ -204,7 +205,7 @@ The test takes typically a few seconds, max 10-15 seconds. If it takes more than
 - **EPC** (on EPC host):
 
 for reference:
-https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master-documentation/docs/DEPLOY_HOME.md
+https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME.md
 
 
 
@@ -220,16 +221,15 @@ Execute:
 - **gNB** (on the gNB host)
 
 
+**ATTENTION** : for the gNB execution,    
+The **-E** option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
+The **-E** option is **NOT supported** when using a a N300 USRP  
+
 Execute: 
 ```
 ~/openairinterface5g/cmake_targets/ran_build/build$ sudo ./nr-softmodem -O **YOUR_GNB_CONF_FILE** -E | tee **YOUR_LOG_FILE**
 
 ```
-
-**ATTENTION** : for the gNB execution,    
-The -E option is required to enable the tri-quarter sampling rate when using a B2xx serie USRP  
-The -E opton is not needed when using a a N300 USRP  
-
 
 
 ## Test Case
@@ -377,13 +377,24 @@ The following parts have been validated with FR1 COTS UE:
     PDCCH DCI format 1_1 and correponding PDSCH are decoded correctlyby the phone  
     ACK/NACK (PUCCH format 0) are successfully received at gNB  
 
-- On going:  
-    validation of HARQ procedures  
-    Integration with higher layers to replace dummy data with real traffic  
+- **End-to end UL / DL traffic with HARQ procedures validated (ping, iperf)** 
     
-- Known limitations as of May 2020:  
-    only dummy DL traffic  
-    no UL traffic  
-    no end-to-end traffic possible  
+- Known limitations as of September 2020:  
+    DL traffic : 3Mbps  
+    UL traffic : 1Mbps  
+    some packet losses might still occur even in ideal channel conditions  
 
 
+## CI integration  
+The automation scripts are available on ILIADE.  
+The end-to-end test is integrated in the CI flow in a semi-automated manner, comprising 3 steps:  
+- update a YAML file comprising the IT resources definition, branch and commit number the test has to run on   
+- run the python script that generates the test from the YAML file  
+```
+python3 obj_build_from_yaml.py py_params_template.yaml fr1.sh
+```
+- run the test (fr1.sh)
+
+At the date of writing, the test comprises the deployment of the components (epc, eNB, gNB, cots ue) and the execution of 2 pings procedures (20 pings in 20sec, then 5 pings in 1sec)  
+
+This automation is run for every integration branch to be merged into develop.
