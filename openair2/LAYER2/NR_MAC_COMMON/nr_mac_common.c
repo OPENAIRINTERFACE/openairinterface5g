@@ -1036,10 +1036,10 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
   if (pointa > 2016666) { //FR2
     x = table_6_3_3_2_4_prachConfig_Index[index][2];
     s_map = table_6_3_3_2_4_prachConfig_Index[index][5];
-		for(int i = 0; i < 64 ;i++) {
+    for(int i = 0; i < 64 ;i++) {
       if ( (s_map >> i) & 0x01) {
         (*N_RA_sfn)++;
-			}
+      }
     }
     *N_RA_slot = table_6_3_3_2_4_prachConfig_Index[index][7]; // Number of RACH slots within a subframe
     *max_association_period = 160/(x * 10); 
@@ -1050,8 +1050,8 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
       if (table_6_3_3_2_4_prachConfig_Index[index][1] != -1)
         format2 = (uint8_t) table_6_3_3_2_4_prachConfig_Index[index][1];
         
-		  *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
-      LOG_I(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
+      *format = ((uint8_t) table_6_3_3_2_4_prachConfig_Index[index][0]) | (format2<<8);
+      LOG_D(MAC,"Getting Total PRACH info from index %d absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
             index,
             pointa,
             mu,
@@ -1059,9 +1059,9 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
             *start_symbol,
             *N_t_slot,
             *N_dur,
-						*N_RA_sfn);
+	    *N_RA_sfn);
     }
-        return 1;
+    return 1;
  }
   else {
 

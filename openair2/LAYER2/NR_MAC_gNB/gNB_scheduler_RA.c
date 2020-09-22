@@ -52,12 +52,12 @@ float ssb_per_rach_occasion[8] = {0.125,0.25,0.5,1,2,4,8};
 
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,
-														 sub_frame_t slotP,
-														 uint16_t preamble_index,
-														 uint8_t freq_index,
-														 uint8_t symbol) {
-
-	gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+			     sub_frame_t slotP,
+			     uint16_t preamble_index,
+			     uint8_t freq_index,
+			     uint8_t symbol) {
+  
+  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
@@ -128,7 +128,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 	  }		
 	}
 
-  LOG_I(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u total_RApreambles %u\n", frameP, slotP, prach_occasion_id, num_ssb_per_RO, num_active_ssb, index, fdm, start_symbol_index, freq_index, total_RApreambles);
+  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u total_RApreambles %u\n", frameP, slotP, prach_occasion_id, num_ssb_per_RO, num_active_ssb, index, fdm, start_symbol_index, freq_index, total_RApreambles);
   return index;
 }
 //Compute Total active SSBs and RO available
@@ -270,7 +270,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
                                   format0,
                                   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
       
-      LOG_I(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
+      LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
 	    frameP, slotP,
 	    prach_occasion_id, prach_pdu->num_ra,
 	    prach_pdu->prach_start_symbol,
