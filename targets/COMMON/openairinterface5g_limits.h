@@ -1,8 +1,6 @@
 #ifndef OPENAIRINTERFACE5G_LIMITS_H_
 #define OPENAIRINTERFACE5G_LIMITS_H_
 
-#include "platform_constants.h"
-
 #if 1 /*defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)*/
 #        define NUMBER_OF_eNB_MAX 1
 #        define NUMBER_OF_gNB_MAX 1
@@ -107,14 +105,6 @@ and the other are using MAX_MOBILES_PER_ENB in for-loop.
 #            define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
 #            define NUMBER_OF_CONNECTED_gNB_MAX 1
 #        endif
-#endif
-
-#if MAX_MOBILES_PER_ENB != NUMBER_OF_UE_MAX
-#error "Invalid configuration of UE's"
-#endif
-
-#if MAX_MOBILES_PER_ENB_NB_IoT != NUMBER_OF_UE_MAX
-#error "Invalid configuration of UE's"
 #endif
 
 #endif /* OPENAIRINTERFACE5G_LIMITS_H_ */
