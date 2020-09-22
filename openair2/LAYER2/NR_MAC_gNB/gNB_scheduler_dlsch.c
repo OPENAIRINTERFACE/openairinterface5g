@@ -451,6 +451,13 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
                                   int num_slots_per_tdd) {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
+  AssertFatal(UE_info->num_UEs <= 1,
+              "%s() cannot handle more than one UE, but found %d\n",
+              __func__,
+              UE_info->num_UEs);
+  if (UE_info->num_UEs == 0)
+    return;
+
   const int UE_id = 0;
   const int CC_id = 0;
 
