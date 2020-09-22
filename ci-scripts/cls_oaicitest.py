@@ -1663,8 +1663,8 @@ class OaiCiTest():
 		SSH.close()
 		return 0
 
-	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC):
-		SSH = sshconnection.SSHConnection()
+	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC,SSH):
+
 		result = re.search('-u', str(iperf_real_options))
 		if result is None:
 			logging.debug('Into Iperf_analyzeV2TCPOutput client')
@@ -1848,8 +1848,8 @@ class OaiCiTest():
 		server_file.close()
 
 
-	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue):
-		SSH = sshconnection.SSHConnection()
+	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue,SSH):
+
 		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', SSH.getBefore())
 		if result is None:
 			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', SSH.getBefore())
@@ -1968,7 +1968,7 @@ class OaiCiTest():
 			SSH.close()
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 			return
-		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options,EPC)
+		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options,EPC,SSH)
 		SSH.close()
 
 		# Kill iperf server on EPC side
@@ -2113,7 +2113,7 @@ class OaiCiTest():
 				SSH.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
 				clientStatus = 0
-				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
+				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue,SSH)
 			else:
 				if launchFromEpc:
 					iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
@@ -2140,7 +2140,7 @@ class OaiCiTest():
 					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 					return
 				logging.debug('Into Iperf_analyzeV2Output client')
-				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options, EPC)
+				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options, EPC,SSH)
 				logging.debug('Iperf_analyzeV2Output clientStatus returned value = ' + str(clientStatus))
 			SSH.close()
 
@@ -2248,7 +2248,7 @@ class OaiCiTest():
 				status_queue.put('10.0.1.2')
 				status_queue.put('Sink Test : no check')
 			else:
-				clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options, EPC)
+				clientStatus = self.Iperf_analyzeV2Output(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options, EPC,SSH)
 		SSH.close()
 
 		# Stopping the iperf server
