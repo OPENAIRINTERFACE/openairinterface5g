@@ -172,9 +172,9 @@ typedef struct {
   /// Template for RA computations
   NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels
-  uint8_t vrb_map[100];
+  uint8_t vrb_map[275];
   /// VRB map for common channels and retransmissions by PHICH
-  uint8_t vrb_map_UL[100];
+  uint8_t vrb_map_UL[275];
   /// number of subframe allocation pattern available for MBSFN sync area
   uint8_t num_sf_allocation_pattern;
 } NR_COMMON_channels_t;

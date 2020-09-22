@@ -517,9 +517,19 @@ void nr_simple_dlsch_preprocessor(module_id_t module_id,
   sched_ctrl->time_domain_allocation = 2;
 
   // Freq-demain allocation
+  uint8_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
-  sched_ctrl->rbSize = bwpSize;
-  sched_ctrl->rbStart = 0;
+  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+  while (rbStart < bwpSize && vrb_map[rbStart]) rbStart++;
+  int rbSize = 1;
+  while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize]) rbSize++;
+  DevAssert(rbSize >= 3); /* just ensure we have at least 3 RBs */
+  sched_ctrl->rbSize = rbSize;
+  sched_ctrl->rbStart = rbStart;
+
+  /* mark the corresponding RBs as used */
+  for (int rb = 0; rb < sched_ctrl->rbSize; rb++)
+    vrb_map[rb + sched_ctrl->rbStart] = 1;
 
   // modulation scheme
   sched_ctrl->mcsTableIdx = 0;
