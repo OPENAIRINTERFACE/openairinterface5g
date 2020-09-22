@@ -37,7 +37,6 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -76,7 +75,7 @@ boolean_t pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
                         const sdu_size_t   sdu_buffer_sizeP,
                         mem_block_t *const sdu_buffer_pP) {return(false);}
 
-void nr_ip_over_LTE_DRB_preconfiguration(void){}
+void nr_DRB_preconfiguration(void){}
 void pdcp_layer_init(void) {}
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
 
@@ -97,6 +96,7 @@ int main(int argc, char **argv){
   uint8_t N_RA_slot;
   uint8_t config_period;
   int prachOccasion = 0;
+  double DS_TDL = .03;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
@@ -559,6 +559,7 @@ int main(int argc, char **argv){
                                 channel_model,
                                 fs,
                                 bw,
+                                DS_TDL,
                                 0.0,
                                 delay,
                                 0);
@@ -604,7 +605,7 @@ int main(int argc, char **argv){
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  prach_start = subframe*frame_parms->samples_per_subframe-UE->N_TA_offset;
+  prach_start = subframe*frame_parms->samples_per_subframe;
 
   #ifdef NR_PRACH_DEBUG
   LOG_M("txsig0.m", "txs0", &txdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);

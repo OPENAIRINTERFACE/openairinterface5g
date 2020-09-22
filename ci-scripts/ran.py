@@ -77,8 +77,8 @@ class RANManagement():
 		self.backgroundBuildTestId = ['', '', '']
 		self.Build_eNB_forced_workspace_cleanup = False
 		self.Initialize_eNB_args = ''
-		self.air_interface = 'lte'
-		self.eNB_instance = ''
+		self.air_interface = ['', '', ''] #changed from 'lte' to '' may lead to side effects in main
+		self.eNB_instance = 0
 		self.eNB_serverId = ''
 		self.eNBLogFiles = ['', '', '']
 		self.eNBOptions = ['', '', '']
@@ -90,141 +90,9 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.htmlObj = None
 		self.epcObj = None
+		self.runtime_stats= ''
 
-#-----------------------------------------------------------
-# Setters and Getters on Public members
-#-----------------------------------------------------------
 
-	def SetHtmlObj(self, obj):
-		self.htmlObj = obj
-	def SetEpcObj(self, obj):
-		self.epcObj = obj
-
-	def SetflexranCtrlInstalled(self,fxrctin):
-		self.flexranCtrlInstalled = fxrctin
-	def GetflexranCtrlInstalled(self):
-		return self.flexranCtrlInstalled
-	def SetflexranCtrlStarted(self,fxrctst):
-		self.flexranCtrlStarted = fxrctst
-	def GetflexranCtrlStarted(self):
-		return self.flexranCtrlStarted
-	def SetpStatus(self, pSt):
-		self.pStatus = pSt
-	def SetranRepository(self, repository):
-		self.ranRepository = repository
-	def GetranRepository(self):
-		return self.ranRepository
-	def SetranBranch(self, branch):
-		self.ranBranch = branch
-	def GetranBranch(self):
-		return self.ranBranch
-	def SetranCommitID(self, commitid):
-		self.ranCommitID = commitid
-	def GetranCommitID(self):
-		return self.ranCommitID
-	def SeteNB_serverId(self, enbsrvid):
-		self.eNB_serverId = enbsrvid
-	def GeteNB_serverId(self):
-		return self.eNB_serverId
-	def SeteNBIPAddress(self, enbip):
-		self.eNBIPAddress = enbip
-	def GeteNBIPAddress(self):
-		return self.eNBIPAddress
-	def SeteNBUserName(self, enbusr):
-		self.eNBUserName = enbusr
-	def GeteNBUserName(self):
-		return self.eNBUserName
-	def SeteNBPassword(self, enbpw):
-		self.eNBPassword = enbpw
-	def GeteNBPassword(self):
-		return self.eNBPassword
-	def SeteNBSourceCodePath(self, enbcodepath):
-		self.eNBSourceCodePath = enbcodepath
-	def GeteNBSourceCodePath(self):
-		return self.eNBSourceCodePath
-	def SetranAllowMerge(self, merge):
-		self.ranAllowMerge = merge
-	def GetranAllowMerge(self):
-		return self.ranAllowMerge
-	def SetranTargetBranch(self, tbranch):
-		self.ranTargetBranch = tbranch
-	def GetranTargetBranch(self):
-		return self.ranTargetBranch
-	def SetBuild_eNB_args(self, enbbuildarg):
-		self.Build_eNB_args = enbbuildarg
-	def GetBuild_eNB_args(self):
-		return self.Build_eNB_args
-	def SetInitialize_eNB_args(self, initenbarg):
-		self.Initialize_eNB_args = initenbarg
-	def GetInitialize_eNB_args(self):
-		return self.Initialize_eNB_args
-	def SetbackgroundBuild(self, bkbuild):
-		self.backgroundBuild = bkbuild
-	def GetbackgroundBuild(self):
-		return self.backgroundBuild
-	def SetbackgroundBuildTestId(self, bkbuildid):
-		self.backgroundBuildTestId = bkbuildid
-	def GetbackgroundBuildTestId(self):
-		return self.backgroundBuildTestId
-	def SetBuild_eNB_forced_workspace_cleanup(self, fcdwspclean):
-		self.Build_eNB_forced_workspace_cleanup = fcdwspclean
-	def GetBuild_eNB_forced_workspace_cleanup(self):
-		return self.Build_eNB_forced_workspace_cleanup
-	def Setair_interface(self, airif):
-		self.air_interface = airif
-	def Getair_interface(self):
-		return self.air_interface
-	def SeteNB_instance(self, enbinst):
-		self.eNB_instance = enbinst
-	def GeteNB_instance(self):
-		return self.eNB_instance
-
-	def SeteNBLogFile(self, enblog, idx):
-		self.eNBLogFiles[idx] = enblog
-	def GeteNBLogFile(self, idx):
-		return self.eNBLogFiles[idx]
-
-	def GeteNBmbmsEnable(self, idx):
-		return self.eNBmbmsEnables[idx]
-
-	def SeteNB1IPAddress(self,enb1ip):
-		self.eNB1IPAddress = enb1ip
-	def GeteNB1IPAddress(self):
-		return self.eNB1IPAddress
-	def SeteNB1UserName(self, enb1usr):
-		self.eNB1UserName = enb1usr
-	def GeteNB1UserName(self):
-		return self.eNB1UserName
-	def SeteNB1Password(self, enb1pw):
-		self.eNB1Password = enb1pw
-	def GeteNB1Password(self):
-		return self.eNB1Password
-	def SeteNB1SourceCodePath(self, enb1codepath):
-		self.eNB1SourceCodePath = enb1codepath
-	def GeteNB1SourceCodePath(self):
-		return self.eNB1SourceCodePath
-
-	def SeteNB2IPAddress(self, enb2ip):
-		self.eNB2IPAddress = enb2ip
-	def GeteNB2IPAddress(self):
-		return self.eNB2IPAddress
-	def SeteNB2UserName(self, enb2usr):
-		self.eNB2UserName = enb2usr
-	def GeteNB2UserName(self):
-		return self.eNB2UserName
-	def SeteNB2Password(self, enb2pw):
-		self.eNB2Password = enb2pw
-	def GeteNB2Password(self):
-		return self.eNB2Password
-	def SeteNB2SourceCodePath(self, enb2codepath):
-		self.eNB2SourceCodePath = enb2codepath
-	def GeteNB2SourceCodePath(self):
-		return self.eNB2SourceCodePath
-
-	def SetprematureExit(self, premex):
-		self.prematureExit = premex
-	def GetprematureExit(self):
-		return self.prematureExit
 
 #-----------------------------------------------------------
 # RAN management functions
@@ -254,17 +122,23 @@ class RANManagement():
 			sys.exit('Insufficient Parameter')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
-		# Check if we build an 5G-NR gNB or an LTE eNB
-		result = re.search('--gNB', self.Build_eNB_args)
+		
+		# Check if we build an 5G-NR gNB or an LTE eNB or an OCP eNB
+		result = re.search('--eNBocp', self.Build_eNB_args)
 		if result is not None:
-			self.air_interface = 'nr'
-		else:
-			self.air_interface = 'lte'
+			self.air_interface[self.eNB_instance] = 'ocp-enb'
+		else:	
+			result = re.search('--gNB', self.Build_eNB_args)
+			if result is not None:
+				self.air_interface[self.eNB_instance] = 'nr-softmodem'
+			else:
+				self.air_interface[self.eNB_instance] = 'lte-softmodem'
+				
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
 		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.GettestCase_id()
+			self.testCase_id = self.htmlObj.testCase_id
 		else:
 			self.testCase_id = '000000'
 		# on RedHat/CentOS .git extension is mandatory
@@ -332,7 +206,8 @@ class RANManagement():
 		if self.backgroundBuild:
 			mySSH.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
-			mySSH.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=build_enb_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ./my-lte-softmodem-build.sh', '\$', 5)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S ls', '\$', 5)
+			mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-build.sh' + ' > ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ' + ' 2>&1 &', lUserName, 5)
 			mySSH.close()
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
@@ -378,21 +253,21 @@ class RANManagement():
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId):
 		if self.htmlObj is not None:
-			self.htmlObj.SettestCase_id(testcaseId)
+			self.htmlObj.testCase_id=testcaseId
+
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 3)
 		mySSH.command('ls ran_build/build', '\$', 3)
 		mySSH.command('ls ran_build/build', '\$', 3)
-		if self.air_interface == 'nr':
-			nodeB_prefix = 'g'
-		else:
-			nodeB_prefix = 'e'
-		buildStatus = True
-		result = re.search(self.air_interface + '-softmodem', mySSH.getBefore())
+
+		#check if we have the build corresponding to the air interface keywords (nr-softmode, lte-softmodem, ocp-enb)
+		logging.info('CHECK Build with IP='+lIpAddr+' SourcePath='+lSourcePath)
+		result = re.search(self.air_interface[self.eNB_instance], mySSH.getBefore())
 		if result is None:
-			buildStatus = False
+			buildStatus = False #if not, build failed
 		else:
+			buildStatus = True 
 			# Generating a BUILD INFO file
 			mySSH.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
 			mySSH.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
@@ -404,6 +279,8 @@ class RANManagement():
 					mySSH.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			else:
 				mySSH.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+				
+				
 		mySSH.command('mkdir -p build_log_' + testcaseId, '\$', 5)
 		mySSH.command('mv log/* ' + 'build_log_' + testcaseId, '\$', 5)
 		mySSH.command('mv compile_oai_enb.log ' + 'build_log_' + testcaseId, '\$', 5)
@@ -420,18 +297,20 @@ class RANManagement():
 				os.remove('./tmp_build' + testcaseId + '.zip')
 				mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 				mySSH.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
-				mySSH.command('unzip -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
+				#-qq quiet / -u update orcreate files
+				mySSH.command('unzip -u -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.command('rm -f tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.close()
 		else:
 			mySSH.close()
 
+		#generate logging info depending on buildStatus and air interface
 		if buildStatus:
-			logging.info('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Pass\u001B[0m')
+			logging.info('\u001B[1m Building OAI ' + self.air_interface[self.eNB_instance] + ' Pass\u001B[0m')
 			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
+				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)		
 		else:
-			logging.error('\u001B[1m Building OAI ' + nodeB_prefix + 'NB Failed\u001B[0m')
+			logging.error('\u001B[1m Building OAI ' + self.air_interface[self.eNB_instance] + ' Failed\u001B[0m')
 			if self.htmlObj is not None:
 				self.htmlObj.CreateHtmlTestRow(self.Build_eNB_args, 'KO', CONST.ALL_PROCESSES_OK)
 				self.htmlObj.CreateHtmlTabFooter(False)
@@ -458,22 +337,22 @@ class RANManagement():
 			sys.exit('Insufficient Parameter')
 
 		if self.htmlObj is not None:
-			self.testCase_id = self.htmlObj.GettestCase_id()
+			self.testCase_id = self.htmlObj.testCase_id
 		else:
 			self.testCase_id = '000000'
 		mySSH = SSH.SSHConnection()
 		
 		if (self.pStatus < 0):
 			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', self.pStatus)
+				self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 				self.htmlObj.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			localEpcUserName = self.epcObj.GetUserName()
-			localEpcPassword = self.epcObj.GetPassword()
+			localEpcIpAddr = self.epcObj.IPAddress
+			localEpcUserName = self.epcObj.UserName
+			localEpcPassword = self.epcObj.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
@@ -522,12 +401,14 @@ class RANManagement():
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		if self.epcObj is not None:
-			localMmeIpAddr = self.epcObj.GetMmeIPAddress()
+			localMmeIpAddr = self.epcObj.MmeIPAddress
 			mySSH.command('sed -i -e \'s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
+		mySSH.command('sed -i -e \'s/CI_GNB_IP_ADDR/' + lIpAddr + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RCC_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU1_IP_ADDR/' + self.eNB1IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		mySSH.command('sed -i -e \'s/CI_RRU2_IP_ADDR/' + self.eNB2IPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		mySSH.command('sed -i -e \'s/CI_FR1_CTL_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "yes";/\' ' + ci_full_config_file, '\$', 2);
 		else:
@@ -549,15 +430,11 @@ class RANManagement():
 		if self.air_interface == 'nr':
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
-		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface + '-softmodem -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		# NOTE: WE SHALL do a check if the executable is present (in case build went wrong)
+		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		mySSH.command('hostnamectl','\$', 5)
-		result = re.search('CentOS Linux 7', mySSH.getBefore())
-		if result is not None:
-			mySSH.command('echo $USER; nohup sudo ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
-		else:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + lSourcePath + '/cmake_targets -o ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
@@ -574,15 +451,15 @@ class RANManagement():
 					mySSH.command('killall --signal SIGKILL record', '\$', 5)
 				mySSH.close()
 				doLoop = False
-				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
+				logging.error('\u001B[1;37;41m eNB/gNB/ocp-eNB logging system did not show got sync! \u001B[0m')
 				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
+					self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'KO', CONST.ALL_PROCESSES_OK)
 				# In case of T tracer recording, we need to kill tshark on EPC side
 				result = re.search('T_stdout', str(self.Initialize_eNB_args))
 				if (result is not None) and (self.epcObj is not None):
-					localEpcIpAddr = self.epcObj.GetIPAddress()
-					localEpcUserName = self.epcObj.GetUserName()
-					localEpcPassword = self.epcObj.GetPassword()
+					localEpcIpAddr = self.epcObj.IPAddress
+					localEpcUserName = self.epcObj.UserName
+					localEpcPassword = self.epcObj.Password
 					mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 					mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -634,8 +511,8 @@ class RANManagement():
 
 		mySSH.close()
 		if self.htmlObj is not None:
-			self.htmlObj.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
-		logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+			self.htmlObj.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
+		logging.debug('\u001B[1m Initialize eNB/gNB/ocp-eNB Completed\u001B[0m')
 
 	def CheckeNBProcess(self, status_queue):
 		try:
@@ -658,8 +535,8 @@ class RANManagement():
 				lPassWord = self.eNBPassword
 			mySSH = SSH.SSHConnection()
 			mySSH.open(lIpAddr, lUserName, lPassWord)
-			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface + '-softmodem | grep -v grep', '\$', 5)
-			result = re.search(self.air_interface + '-softmodem', mySSH.getBefore())
+			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface[self.eNB_instance] + ' | grep -v grep', '\$', 5)
+			result = re.search(self.air_interface[self.eNB_instance], mySSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
 				status_queue.put(CONST.ENB_PROCESS_FAILED)
@@ -691,29 +568,28 @@ class RANManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		if self.air_interface == 'lte':
+		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
-		mySSH.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-		result = re.search('-softmodem', mySSH.getBefore())
+		mySSH.command('stdbuf -o0  ps -aux | grep --color=never -e softmodem -e ocp-enb | grep -v grep', '\$', 5)
+		result = re.search('(-softmodem|ocp)', mySSH.getBefore())
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S daemon --name=enb' + str(self.eNB_instance) + '_daemon --stop', '\$', 5)
-			mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT -r .*-softmodem || true', '\$', 5)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGINT -r .*-softmodem ocp-enb || true', '\$', 5)
 			time.sleep(10)
-			mySSH.command('stdbuf -o0  ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
-			result = re.search('-softmodem', mySSH.getBefore())
+			mySSH.command('stdbuf -o0  ps -aux | grep --color=never -e softmodem -e ocp-enb | grep -v grep', '\$', 5)
+			result = re.search('(-softmodem|ocp)', mySSH.getBefore())
 			if result is not None:
-				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem || true', '\$', 5)
+				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None) and (self.epcObj is not None):
-			localEpcIpAddr = self.epcObj.GetIPAddress()
-			localEpcUserName = self.epcObj.GetUserName()
-			localEpcPassword = self.epcObj.GetPassword()
+			localEpcIpAddr = self.epcObj.IPAddress
+			localEpcUserName = self.epcObj.UserName
+			localEpcPassword = self.epcObj.Password
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
@@ -739,7 +615,7 @@ class RANManagement():
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
 			if self.htmlObj is not None:
-				self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+				self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
 			analyzeFile = False
@@ -752,7 +628,7 @@ class RANManagement():
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
 					if self.htmlObj is not None:
-						self.htmlObj.SetHmleNBFailureMsg('Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!')
+						self.htmlObj.htmleNBFailureMsg='Could not copy ' + nodeB_prefix + 'NB logfile to analyze it!'
 						self.htmlObj.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
@@ -768,10 +644,10 @@ class RANManagement():
 					return
 				else:
 					if self.htmlObj is not None:
-						self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+						self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				if self.htmlObj is not None:
-					self.htmlObj.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+					self.htmlObj.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
@@ -823,7 +699,34 @@ class RANManagement():
 		X2HO_inNbProcedures = 0
 		X2HO_outNbProcedures = 0
 		global_status = CONST.ALL_PROCESSES_OK
+		# Runtime statistics
+		runTime = ''
+		userTime = ''
+		systemTime = ''
+		maxPhyMemUsage = ''
+		nbContextSwitches = ''
 		for line in enb_log_file.readlines():
+			# Runtime statistics
+			result = re.search('Run time:' ,str(line))
+			if result is not None:
+				runTime = str(line).strip()
+			if runTime != '':
+				result = re.search('Time executing user inst', str(line))
+				if result is not None:
+					fields=line.split(':')
+					userTime = 'userTime : ' + fields[1].replace('\n','')
+				result = re.search('Time executing system inst', str(line))
+				if result is not None:
+					fields=line.split(':')
+					systemTime = 'systemTime : ' + fields[1].replace('\n','')
+				result = re.search('Max. Phy. memory usage:', str(line))
+				if result is not None:
+					fields=line.split(':')
+					maxPhyMemUsage = 'maxPhyMemUsage : ' + fields[1].replace('\n','')
+				result = re.search('Number of context switch.*process origin', str(line))
+				if result is not None:
+					fields=line.split(':')
+					nbContextSwitches = 'nbContextSwitches : ' + fields[1].replace('\n','')
 			if X2HO_state == CONST.X2_HO_REQ_STATE__IDLE:
 				result = re.search('target eNB Receives X2 HO Req X2AP_HANDOVER_REQ', str(line))
 				if result is not None:
@@ -896,8 +799,7 @@ class RANManagement():
 			if result is not None:
 				rrcSetupComplete += 1
 			result = re.search('Generate LTE_RRCConnectionRelease|Generate RRCConnectionRelease', str(line))
-			if result is not None:
-				rrcReleaseRequest += 1
+			if result is not None:				rrcReleaseRequest += 1
 			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
 			if result is not None:
 				rrcReconfigRequest += 1
@@ -955,11 +857,11 @@ class RANManagement():
 					mbmsRequestMsg += 1
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
-		if self.air_interface == 'lte':
+		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
 			nodeB_prefix = 'g'
-		if self.air_interface == 'nr':
+		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -1080,5 +982,13 @@ class RANManagement():
 			htmleNBFailureMsg += rlcMsg + '\n'
 			global_status = CONST.ENB_PROCESS_REALTIME_ISSUE
 		if self.htmlObj is not None:
-			self.htmlObj.SetHmleNBFailureMsg(htmleNBFailureMsg)
+			self.htmlObj.htmleNBFailureMsg=htmleNBFailureMsg
+		# Runtime statistics for console output and HTML
+		if runTime != '':
+			logging.debug(runTime)
+			logging.debug(userTime)
+			logging.debug(systemTime)
+			logging.debug(maxPhyMemUsage)
+			logging.debug(nbContextSwitches)
+			self.runtime_stats='<pre>'+runTime + '\n'+ userTime + '\n' + systemTime + '\n' + maxPhyMemUsage + '\n' + nbContextSwitches+'</pre>'
 		return global_status

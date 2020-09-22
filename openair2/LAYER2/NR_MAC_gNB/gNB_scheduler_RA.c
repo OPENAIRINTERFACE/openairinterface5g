@@ -42,8 +42,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 extern RAN_CONTEXT_t RC;
-
-const uint8_t nr_slots_per_frame_mac[5] = {10, 20, 40, 80, 160};
+extern const uint8_t nr_slots_per_frame[5];
 
 uint8_t DELTA[4]= {2,3,4,6};
 
@@ -204,6 +203,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req[0];
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
+  if (is_nr_UL_slot(scc,slotP)) {
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
   uint16_t RA_sfn_index = -1;
@@ -335,8 +335,8 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
     }
    }
   }
+  }
 }
-
 
 void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
@@ -360,8 +360,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     tdd_period_slot++;
 
   // computing start of next period
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame_mac[mu];
-
+  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
   *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
  
@@ -393,16 +392,16 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     default:
       AssertFatal(1==0,"Invalid response window value %d\n",response_window);
   }
-  AssertFatal(slot_window<=nr_slots_per_frame_mac[mu],"Msg2 response window needs to be lower or equal to 10ms");
+  AssertFatal(slot_window<=nr_slots_per_frame[mu],"Msg2 response window needs to be lower or equal to 10ms");
 
   // slot and frame limit to transmit msg2 according to response window
-  uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame_mac[mu];
+  uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
   //uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
 
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
-  while ((*msg2_slot>slot_limit) || ((*msg2_frame*nr_slots_per_frame_mac[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
+  while ((*msg2_slot>slot_limit) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
     if((*msg2_slot%tdd_period_slot) > 0)
       (*msg2_slot)--;
     else
@@ -594,11 +593,11 @@ void nr_get_Msg3alloc(NR_ServingCellConfigCommon_t *scc,
   uint8_t k2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
 
   temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-  ra->Msg3_slot = temp_slot%nr_slots_per_frame_mac[mu];
-  if (nr_slots_per_frame_mac[mu]>temp_slot)
+  ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+  if (nr_slots_per_frame[mu]>temp_slot)
     ra->Msg3_frame = current_frame;
   else
-    ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame_mac[mu]);
+    ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
 
   LOG_I(MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
   ra->msg3_nb_rb = 18;
@@ -634,7 +633,10 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_UE_list_t                               *UE_list = &mac->UE_list;
   int UE_id = 0;
 
-  AssertFatal(ra->state != RA_IDLE, "RA is not active for RA %X\n", ra->rnti);
+  if (ra->state == RA_IDLE) {
+    LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
+    return;
+  }
 
   LOG_I(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
@@ -738,7 +740,7 @@ void nr_generate_Msg2(module_id_t module_idP,
 											NR_RA_t *ra){
 
   int UE_id = 0, dci_formats[2], rnti_types[2], mcsIndex;
-  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment;
+  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
   gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
 //  NR_RA_t                               *ra = &cc->ra[0];
@@ -800,7 +802,11 @@ void nr_generate_Msg2(module_id_t module_idP,
 
     LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
 
-    mcsIndex = 0; // Qm>2 not allowed for RAR
+    // Qm>2 not allowed for RAR
+    if (get_softmodem_params()->do_ra)
+      mcsIndex = 9;
+    else
+      mcsIndex = 0;
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = RA_rnti;

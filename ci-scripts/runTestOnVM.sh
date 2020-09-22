@@ -2027,6 +2027,70 @@ function run_test_on_vm {
 
         done
 
+        ####################
+        ## FeMBMS CASE noS1 ##
+        ####################
+        CONF_FILE=lte-fdd-fembms-basic-sim.conf
+        CN_CONFIG="noS1"
+        S1_NOS1_CFG=0
+        LTEBOX=0
+        TMODE="fdd"
+        FREQUENCY=2680
+        BW_CASES=(05)
+        FeMBMS_STATUS=0
+
+        for BW in ${BW_CASES[@]}
+        do
+            if [[ $BW =~ .*05.* ]]; then PRB=25; fi
+            if [[ $BW =~ .*10.* ]]; then PRB=50; fi
+            if [[ $BW =~ .*20.* ]]; then PRB=100; fi
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Starting the eNB with MSMS in ${TMODE}-${BW}MHz mode"
+            echo "############################################################"
+            CURRENT_ENB_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_enb_fembms.log
+            start_rf_sim_enb $ENB_VM_CMDS "$ENB_VM_IP_ADDR" "$EPC_VM_IP_ADDR" $CURRENT_ENB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Starting the UE"
+            echo "############################################################"
+            CURRENT_UE_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_ue_fembms.log
+            start_rf_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
+            if [ $UE_SYNC -eq 0 ]
+            then
+                echo "Problem w/ eNB and UE not syncing"
+                terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+                terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
+                scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+                scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+                STATUS=-1
+                break
+            fi
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : iperf DL -- UE is server and eNB is client"
+            echo "############################################################"
+            get_enb_mbms_noS1_ip_addr $ENB_VM_CMDS $ENB_VM_IP_ADDR
+            IPERF_LOG_FILE=${TMODE}_${BW}MHz_${CN_CONFIG}_iperf_dl_fembms
+            get_ue_mbms_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR 1
+            THROUGHPUT=2
+            generic_iperf $UE_VM_CMDS $UE_VM_IP_ADDR $UE_IP_ADDR $ENB_VM_CMDS $ENB_VM_IP_ADDR $ENB_IP_ADDR $THROUGHPUT $IPERF_LOG_FILE 1 0
+            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_server.txt $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/${IPERF_LOG_FILE}_client.txt $ARCHIVES_LOC
+            #check_iperf $ARCHIVES_LOC/$IPERF_LOG_FILE $THROUGHPUT
+
+            echo "############################################################"
+            echo "${CN_CONFIG} : Terminate enb/ue simulators"
+            echo "############################################################"
+            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
+            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            NB_UE_FeMBMS_MESSAGES=`egrep -c "TRIED TO PUSH MBMS DATA TO" $ARCHIVES_LOC/$CURRENT_UE_LOG_FILE`
+            if [ $NB_UE_FeMBMS_MESSAGES -eq 0 ]; then FeMBMS_STATUS=-1; fi
+
+        done
+
         full_l2_sim_destroy
 
         echo "############################################################"
@@ -2042,6 +2106,13 @@ function run_test_on_vm {
             echo "LTE MBMS RFSIM seems to FAIL"
             STATUS=-1
         fi
+        if [ $FeMBMS_STATUS -eq 0 ]
+        then
+            echo "LTE FeMBMS RFSIM seems OK"
+        else
+            echo "LTE FeMBMS RFSIM seems to FAIL"
+            STATUS=-1
+        fi
         if [ $STATUS -eq 0 ]
         then
             echo "LTE RFSIM seems OK"
@@ -2050,6 +2121,7 @@ function run_test_on_vm {
             echo "LTE RFSIM seems to FAIL"
             echo "LTE: TEST_KO" > $ARCHIVES_LOC/test_final_status.log
         fi
+
     fi
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
@@ -2064,7 +2136,7 @@ function run_test_on_vm {
         NR_STATUS=0
 
         ######### start of loop
-        while [ $try_cnt -lt 1 ]
+        while [ $try_cnt -lt 4 ]
         do
             SYNC_STATUS=0
             PING_STATUS=0

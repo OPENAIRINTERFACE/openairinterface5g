@@ -45,8 +45,12 @@ static mapping channelmod_names[] = {
 };
 
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt);
 static telnetshell_cmddef_t channelmod_cmdarray[] = {
-  {"show","",channelmod_show_cmd},
+  {"help","",channelmod_print_help},
+  {"show","<predef,current>",channelmod_show_cmd},
+  {"modify","<channelid> <param> <value>",channelmod_modify_cmd},  
   {"","",NULL},
 };
 
@@ -56,14 +60,15 @@ static telnetshell_vardef_t channelmod_vardef[] = {
 
 static double snr_dB=25;
 static double sinr_dB=0;
-
+static unsigned int max_chan;
+static channel_desc_t**  defined_channels;
 void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t nb_tx,
                        uint8_t nb_rx,
                        uint8_t nb_taps,
                        uint8_t channel_length,
                        double *amps,
-                       double *delays,
+                       double *delays,                         
                        struct complex **R_sqrt,
                        double Td,
                        double sampling_rate,
@@ -88,6 +93,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
 
   if (delays==NULL) {
     chan_desc->delays = (double *) malloc(nb_taps*sizeof(double));
+    chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_DELAY ;
     delta_tau = Td/nb_taps;
 
     for (i=0; i<nb_taps; i++)
@@ -129,10 +135,9 @@ void fill_channel_desc(channel_desc_t *chan_desc,
 
   if (R_sqrt == NULL) {
     chan_desc->R_sqrt         = (struct complex **) calloc(nb_taps,sizeof(struct complex *));
-
+    chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_NTAPS ;
     for (i = 0; i<nb_taps; i++) {
-      chan_desc->R_sqrt[i]    = (struct complex *) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
-
+      chan_desc->R_sqrt[i]    = (struct complex *) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));      
       for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
         chan_desc->R_sqrt[i][j].x = 1.0;
         chan_desc->R_sqrt[i][j].y = 0.0;
@@ -140,7 +145,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
     }
   } else {
     chan_desc->R_sqrt = (struct complex **) calloc(nb_taps,sizeof(struct complex *));
-
+     
     for (i = 0; i<nb_taps; i++) {
       //chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
       //chan_desc->R_sqrt = (struct complex*)&R_sqrt[i][0];
@@ -170,8 +175,225 @@ void fill_channel_desc(channel_desc_t *chan_desc,
 double mbsfn_delays[] = {0,.03,.15,.31,.37,1.09,12.490,12.52,12.64,12.80,12.86,13.58,27.49,27.52,27.64,27.80,27.86,28.58};
 double mbsfn_amps_dB[] = {0,-1.5,-1.4,-3.6,-0.6,-7.0,-10,-11.5,-11.4,-13.6,-10.6,-17.0,-20,-21.5,-21.4,-23.6,-20.6,-27};
 
-double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
+double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};                
 double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
+
+double tdl_a_delays[] = {0.0000,
+			 0.3819,
+			 0.4025,
+			 0.5868,
+			 0.4610,
+			 0.5375,
+			 0.6708,
+			 0.5750,
+			 0.7618,
+			 1.5375,
+			 1.8978,
+			 2.2242,
+			 2.1718,
+			 2.4942,
+			 2.5119,
+			 3.0582,
+			 4.0810,
+			 4.4579,
+			 4.5695,
+			 4.7966,
+			 5.0066,
+			 5.3043,
+			 9.6586};
+double tdl_a_amps_dB[] = {-13.4,
+			  0,
+			  -2.2,
+			  -4,
+			  -6,
+			  -8.2,
+			  -9.9,
+			  -10.5,
+			  -7.5,
+			  -15.9,
+			  -6.6,
+			  -16.7,
+			  -12.4,
+			  -15.2,
+			  -10.8,
+			  -11.3,
+			  -12.7,
+			  -16.2,
+			  -18.3,
+			  -18.9,
+			  -16.6,
+			  -19.9,
+			  -29.7};
+#define TDL_A_PATHS 23
+
+double tdl_b_delays[] = {0.0000,
+			 0.1072,
+			 0.2155,
+			 0.2095,
+			 0.2870,
+			 0.2986,
+			 0.3752,
+			 0.5055,
+			 0.3681,
+			 0.3697,
+			 0.5700,
+			 0.5283,
+			 1.1021,
+			 1.2756,
+			 1.5474,
+			 1.7842,
+			 2.0169,
+			 2.8294,
+			 3.0219,
+			 3.6187,
+			 4.1067,
+			 4.2790,
+			 4.7834};
+
+double tdl_b_amps_dB[] = {0,
+			  -2.2,
+			  -4,
+			  -3.2,
+			  -9.8,
+			  -1.2,
+			  -3.4,
+			  -5.2,
+			  -7.6,
+			  -3,
+			  -8.9,
+			  -9,
+			  -4.8,
+			  -5.7,
+			  -7.5,
+			  -1.9,
+			  -7.6,
+			  -12.2,
+			  -9.8,
+			  -11.4,
+			  -14.9,
+			  -9.2,
+			  -11.3};
+#define TDL_B_PATHS 23
+
+double tdl_c_delays[] = {0,
+			 0.2099,
+			 0.2219,
+			 0.2329,
+			 0.2176,
+			 0.6366,
+			 0.6448,
+			 0.6560,
+			 0.6584,
+			 0.7935,
+			 0.8213,
+			 0.9336,
+			 1.2285,
+			 1.3083,
+			 2.1704,
+			 2.7105,
+			 4.2589,
+			 4.6003,
+			 5.4902,
+			 5.6077,
+			 6.3065,
+			 6.6374,
+			 7.0427,
+			 8.6523};
+
+double tdl_c_amps_dB[] = {-4.4,
+			  -1.2,
+			  -3.5,
+			  -5.2,
+			  -2.5,
+			  0,
+			  -2.2,
+			  -3.9,
+			  -7.4,
+			  -7.1,
+			  -10.7,
+			  -11.1,
+			  -5.1,
+			  -6.8,
+			  -8.7,
+			  -13.2,
+			  -13.9,
+			  -13.9,
+			  -15.8,
+			  -17.1,
+			  -16,
+			  -15.7,
+			  -21.6,
+			  -22.8};
+#define TDL_C_PATHS 24
+
+double tdl_d_delays[] = {//0,
+			 0,
+	  	         0.035,
+			 0.612,
+			 1.363,
+			 1.405,
+			 1.804,
+			 2.596,
+			 1.775,
+			 4.042,
+			 7.937,
+			 9.424,
+			 9.708,
+			 12.525};
+
+double tdl_d_amps_dB[] = {//-0.2,
+//-13.5,
+                          -.00147,
+			  -18.8,
+			  -21,
+			  -22.8,
+			  -17.9,
+			  -20.1,
+			  -21.9,
+			  -22.9,
+			  -27.8,
+			  -23.6,
+			  -24.8,
+			  -30.0,
+			  -27.7};
+
+#define TDL_D_PATHS 13
+#define TDL_D_RICEAN_FACTOR .046774
+
+double tdl_e_delays[] = {0,
+			 0.5133,
+			 0.5440,
+			 0.5630,
+			 0.5440,
+			 0.7112,
+			 1.9092,
+			 1.9293,
+			 1.9589,
+			 2.6426,
+			 3.7136,
+			 5.4524,
+			 12.0034,
+			 20.6519};
+
+double tdl_e_amps_dB[] = {//-0.03,
+			  //-22.03,
+                          -.00433,
+			  -15.8,
+			  -18.1,
+			  -19.8,
+			  -22.9,
+			  -22.4,
+			  -18.6,
+			  -20.8,
+			  -22.6,
+			  -22.3,
+			  -25.6,
+			  -20.2,
+			  -29.8,
+			  -29.2};
+
+#define TDL_E_PATHS 14
+#define TDL_E_RICEAN_FACTOR 0.0063096
 
 double epa_delays[] = { 0,.03,.07,.09,.11,.19,.41};
 double epa_amps_dB[] = {0.0,-1.0,-2.0,-3.0,-8.0,-17.2,-20.8};
@@ -277,14 +499,28 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      SCM_t channel_model,
                                      double sampling_rate,
                                      double channel_bandwidth,
+				     double DS_TDL,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB) {
-  channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
+  channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
+  for(int i=0; i<max_chan;i++) {
+  	  if (defined_channels[i] == NULL) {
+  	  	  defined_channels[i]=chan_desc;                             
+  	  	  chan_desc->chan_idx=i;
+  	      break;
+  	  }
+  	  else {
+  	  	 AssertFatal(i<(max_chan-1),
+              "No more channel descriptors available, increase channelmod.max_chan parameter above %u\n",max_chan);
+  	  }
+  }
   uint16_t i,j;
   double sum_amps;
   double aoa,ricean_factor,Td,maxDoppler;
+
   int channel_length,nb_taps;
+  chan_desc->modelid                   = channel_model;
   chan_desc->nb_tx                      = nb_tx;
   chan_desc->nb_rx                      = nb_rx;
   chan_desc->sampling_rate              = sampling_rate;
@@ -295,6 +531,11 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   chan_desc->first_run                  = 1;
   chan_desc->ip                                 = 0.0;
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
+
+  int tdl_paths=0;
+  double tdl_ricean_factor = 1;
+  double *tdl_amps_dB;
+  double *tdl_delays;
 
   switch (channel_model) {
     case SCM_A:
@@ -313,7 +554,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;         
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*scm_c_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -351,9 +592,10 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         for (i = 0; i<6; i++)
           chan_desc->R_sqrt[i] = (struct complex *) &R12_sqrt[i][0];
       } else {
+      	chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_6 ; 
         for (i = 0; i<6; i++) {
           chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
-
+           
           for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
             chan_desc->R_sqrt[i][j].x = 1.0;
             chan_desc->R_sqrt[i][j].y = 0.0;
@@ -372,7 +614,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*scm_c_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -410,7 +652,102 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         for (i = 0; i<6; i++)
           chan_desc->R_sqrt[i] = (struct complex *) &R12_sqrt[i][0];
       } else {
+      	chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_6 ;
         for (i = 0; i<6; i++) {
+          chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+
+          for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+            chan_desc->R_sqrt[i][j].x = 1.0;
+            chan_desc->R_sqrt[i][j].y = 0.0;
+          }
+
+          LOG_W(OCM,"correlation matrix not implemented for nb_tx==%d and nb_rx==%d, using identity\n", nb_tx, nb_rx);
+        }
+      }
+
+      break;
+      
+    case TDL_A:
+    case TDL_B:
+    case TDL_C:  
+    case TDL_D:  
+    case TDL_E:
+      if (channel_model == TDL_A) {  
+	tdl_paths=TDL_A_PATHS;
+	tdl_delays=tdl_a_delays;
+	tdl_amps_dB=tdl_a_amps_dB;
+      }else if (channel_model == TDL_B) {
+	  tdl_paths=TDL_B_PATHS;
+	tdl_delays=tdl_b_delays;
+	tdl_amps_dB=tdl_b_amps_dB;      
+      }
+      else if (channel_model == TDL_C) {
+	tdl_paths=TDL_C_PATHS;
+	tdl_delays=tdl_c_delays;
+	tdl_amps_dB=tdl_c_amps_dB;
+	printf("Initializing TDL_C channel with %d paths\n",TDL_C_PATHS);
+      } else if (channel_model == TDL_D) {
+	tdl_paths=TDL_D_PATHS;
+	tdl_delays=tdl_d_delays;
+	tdl_amps_dB=tdl_d_amps_dB;
+	tdl_ricean_factor = TDL_D_RICEAN_FACTOR;
+      } else if (channel_model == TDL_E) {
+	tdl_paths=TDL_E_PATHS-1;
+	tdl_delays=tdl_e_delays+1;
+	tdl_amps_dB=tdl_e_amps_dB;
+	tdl_ricean_factor = TDL_E_RICEAN_FACTOR;
+      }
+
+      int tdl_pathsby3 = tdl_paths/3;
+      if ((tdl_paths%3)>0) tdl_pathsby3++;
+
+      chan_desc->nb_taps        = tdl_paths;
+      chan_desc->Td             = tdl_delays[tdl_paths-1]*DS_TDL;
+      printf("last path (%d) at %f * %e = %e\n",tdl_paths-1,tdl_delays[tdl_paths-1],DS_TDL,chan_desc->Td);
+      chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
+      printf("TDL : %f Ms/s, nb_taps %d, Td %e, channel_length %d\n",chan_desc->sampling_rate,tdl_paths,chan_desc->Td,chan_desc->channel_length);
+      sum_amps = 0;
+      chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
+
+      for (i = 0; i<chan_desc->nb_taps; i++) {
+        chan_desc->amps[i]      = pow(10,.1*tdl_amps_dB[i]);
+        sum_amps += chan_desc->amps[i];
+      }
+
+      for (i = 0; i<chan_desc->nb_taps; i++) {
+        chan_desc->amps[i] /= sum_amps;
+	tdl_delays[i] *= DS_TDL;
+      }
+      chan_desc->delays         = tdl_delays;
+      chan_desc->ricean_factor  = tdl_ricean_factor;
+      chan_desc->aoa            = 0;
+      chan_desc->random_aoa     = 0;
+      chan_desc->ch             = (struct complex **) malloc(nb_tx*nb_rx*sizeof(struct complex *));
+      chan_desc->chF            = (struct complex **) malloc(nb_tx*nb_rx*sizeof(struct complex *));
+      chan_desc->a              = (struct complex **) malloc(chan_desc->nb_taps*sizeof(struct complex *));
+
+      for (i = 0; i<nb_tx*nb_rx; i++)
+        chan_desc->ch[i] = (struct complex *) malloc(chan_desc->channel_length * sizeof(struct complex));
+
+      for (i = 0; i<nb_tx*nb_rx; i++)
+        chan_desc->chF[i] = (struct complex *) malloc(1200 * sizeof(struct complex));
+
+      for (i = 0; i<chan_desc->nb_taps; i++)
+        chan_desc->a[i]         = (struct complex *) malloc(nb_tx*nb_rx * sizeof(struct complex));
+
+      chan_desc->R_sqrt  = (struct complex **) malloc(6*sizeof(struct complex **));
+
+      if (nb_tx==2 && nb_rx==2) {
+        for (i = 0; i<(tdl_pathsby3); i++)
+          chan_desc->R_sqrt[i] = (struct complex *) &R22_sqrt[i][0];
+      } else if (nb_tx==2 && nb_rx==1) {
+        for (i = 0; i<(tdl_pathsby3); i++)
+          chan_desc->R_sqrt[i] = (struct complex *) &R21_sqrt[i][0];
+      } else if (nb_tx==1 && nb_rx==2) {
+        for (i = 0; i<(tdl_pathsby3); i++)
+          chan_desc->R_sqrt[i] = (struct complex *) &R12_sqrt[i][0];
+      } else {
+        for (i = 0; i<(tdl_pathsby3); i++) {
           chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 
           for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
@@ -430,7 +767,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -449,7 +786,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
       for (i = 0; i<nb_tx*nb_rx; i++)
         chan_desc->ch[i] = (struct complex *) malloc(chan_desc->channel_length * sizeof(struct complex));
-
+                                                                                          
       for (i = 0; i<nb_tx*nb_rx; i++)
         chan_desc->chF[i] = (struct complex *) malloc(1200 * sizeof(struct complex));
 
@@ -463,7 +800,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
           chan_desc->R_sqrt[i] = (struct complex *) &R22_sqrt[i][0];
       } else {
         chan_desc->R_sqrt         = (struct complex **) malloc(6*sizeof(struct complex **));
-
+        chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_6 ;
         for (i = 0; i<6; i++) {
           chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 
@@ -484,7 +821,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -530,7 +867,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
           LOG_W(OCM,"correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
         }
       }*/
-      break;
+      break;             
 
     case EPA_high:
       chan_desc->nb_taps        = 7;
@@ -538,7 +875,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -592,7 +929,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+       chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -646,7 +983,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*eva_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -679,8 +1016,8 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
           chan_desc->R_sqrt[i] = (struct complex *) &R22_sqrt[i][0];
       } else {
         chan_desc->R_sqrt         = (struct complex **) malloc(6*sizeof(struct complex **));
-
-        for (i = 0; i<6; i++) {
+        chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_6 ;
+        for (i = 0; i<6; i++) { 
           chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 
           for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
@@ -700,7 +1037,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*etu_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -733,7 +1070,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
           chan_desc->R_sqrt[i] = (struct complex *) &R22_sqrt[i][0];
       } else {
         chan_desc->R_sqrt         = (struct complex **) malloc(6*sizeof(struct complex **));
-
+        chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_6 ;
         for (i = 0; i<6; i++) {
           chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 
@@ -754,7 +1091,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
       sum_amps = 0;
       chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_AMPS ;
       for (i = 0; i<chan_desc->nb_taps; i++) {
         chan_desc->amps[i]      = pow(10,.1*mbsfn_amps_dB[i]);
         sum_amps += chan_desc->amps[i];
@@ -781,7 +1118,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         chan_desc->a[i]         = (struct complex *) malloc(nb_tx*nb_rx * sizeof(struct complex));
 
       chan_desc->R_sqrt  = (struct complex **) malloc(6*sizeof(struct complex *));
-
+      chan_desc->free_flags=chan_desc->free_flags|CHANMODEL_FREE_RSQRT_6;
       for (i = 0; i<6; i++) {
         chan_desc->R_sqrt[i]    = (struct complex *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 
@@ -1292,10 +1629,37 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   chan_desc->nb_paths = 10;
   return(chan_desc);
 }
-
+     
 void free_channel_desc_scm(channel_desc_t *ch) {
   // Must be made cleanly, a lot of leaks...
-  free(ch);
+  defined_channels[ch->chan_idx]=NULL; 
+  if(ch->free_flags&CHANMODEL_FREE_AMPS)
+    free(ch->amps);
+  for (int i = 0; i<ch->nb_tx*ch->nb_rx; i++) { 
+    free(ch->ch[i]);
+    free(ch->chF[i]);
+  }
+            
+  for (int i = 0; i<ch->nb_taps; i++) {
+    free(ch->a[i]);              
+  }   
+  if(ch->free_flags&CHANMODEL_FREE_DELAY)
+    free(ch->delays);  
+  if(ch->free_flags&CHANMODEL_FREE_RSQRT_6)
+    for (int i = 0; i<6; i++)  
+      free(ch->R_sqrt[i]);             
+  if(ch->free_flags&CHANMODEL_FREE_RSQRT_NTAPS)
+    for (int i = 0; i<ch->nb_taps;i++)  
+      free(ch->R_sqrt[i]); 
+  free(ch->R_sqrt);        
+  free(ch->ch); 
+  free(ch->chF);
+  free(ch->a);  
+  free(ch);                                          
+}
+
+void set_channeldesc_owner(channel_desc_t *cdesc, uint32_t module_id) {
+	cdesc->module_id=module_id;
 }
 
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
@@ -1408,23 +1772,22 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
             desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
 
             for (l=0; l<desc->nb_taps; l++) {
-              if ((k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
+              if ((k - (desc->delays[l]*desc->sampling_rate) - desc->channel_offset) == 0)
                 s = 1.0;
               else
-                s = sin(M_PI*(k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET))/
-                    (M_PI*(k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET));
+                s = sin(M_PI*(k - (desc->delays[l]*desc->sampling_rate) - desc->channel_offset))/
+                    (M_PI*(k - (desc->delays[l]*desc->sampling_rate) - desc->channel_offset));
 
               desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
               desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
-              //    printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
+	      //	      printf("l %d : desc->ch.x %f, s %e, delay %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x,s,desc->delays[l]);
             } //nb_taps
 
 #ifdef DEBUG_CH
-            k=0;
-            printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
+            printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
 #endif
-          }
-        } //channel_length
+          } //channel_length
+        } 
       } //aatx
     } //aarx
 
@@ -1436,7 +1799,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
 
   return (0);
 }
-
+   
 double N_RB2sampling_rate(uint16_t N_RB) {
   double sampling_rate;
 
@@ -1488,22 +1851,125 @@ double N_RB2channel_bandwidth(uint16_t N_RB) {
       LOG_E(PHY,"Unknown N_PRB\n");
       return(-1);
   }
-
   return(channel_bandwidth);
+}   
+
+     
+static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt ) {
+	prnt("channelmod commands can be used to display or modify channel models parameters\n");
+	prnt("channelmod show predef: display predefined model algorithms available in oai\n");
+	prnt("channelmod show current: display the currently used models in the running executable\n");
+	prnt("channelmod modify <model index> <param name> <param value>: set the specified parameters in a current model to the given value\n");
+	prnt("                  <model index> specifies the model, the show current model command can be used to list the current models indexes\n");
+	prnt("                  <param name> can be one of \"riceanf\", \"aoa\", \"randaoa\", \"ploss\", \"offset\", \"forgetf\"\n");
+    return CMDSTATUS_FOUND;
 }
 
+
+static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_t prnt) {
+	char *module_id_str[]=MODULEID_STR_INIT;
+	if (cd->module_id != 0) {
+		prnt("model owner: %s\n",module_id_str[cd->module_id]);
+	}
+	prnt("nb_tx: %i    nb_rx: %i    taps: %i bandwidth: %lf    sampling: %lf\n",cd->nb_tx, cd->nb_rx, cd->nb_taps, cd->channel_bandwidth, cd->sampling_rate);
+	prnt("channel length: %i    Max path delay: %lf   ricean fact.: %lf    angle of arrival: %lf (randomized:%s)\n",
+		 cd->channel_length, cd->Td, cd->ricean_factor, cd->aoa, (cd->random_aoa?"Yes":"No"));
+	prnt("max Doppler: %lf    path loss: %lf   rchannel offset: %i    forget factor; %lf\n",
+		 cd->max_Doppler, cd->path_loss_dB, cd->channel_offset, cd->forgetting_factor);	
+	prnt("Initial phase: %lf   nb_path: %i \n",
+		 cd->ip, cd->nb_paths);		
+	for (int i=0; i<cd->nb_taps ; i++) {
+		prnt("taps: %i   lin. ampli. : %lf    delay: %lf \n",i,cd->amps[i], cd->delays[i]);
+	}                         
+}
+   
+  
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
-  for(int i=0; channelmod_names[i].name != NULL ; i++) {
-    prnt("  %i %s\n", i, map_int_to_str(channelmod_names,i ));
-  }
+  char *subcmd=NULL; 
+  int s = sscanf(buff,"%ms\n",&subcmd);
 
-  return 0;
+  if (s>0) {
+    if ( strcmp(subcmd,"predef") == 0) {
+      for (int i=0; channelmod_names[i].name != NULL ; i++) {
+        prnt("  %i %s\n", i, map_int_to_str(channelmod_names,i ));
+    } 
+    } else if ( strcmp(subcmd,"current") == 0) {
+      for (int i=0; i < max_chan ; i++) {
+      	if (defined_channels[i] != NULL) {
+      	  prnt("model %i %s: \n----------------\n", i, map_int_to_str(channelmod_names,defined_channels[i]->modelid));
+          display_channelmodel(defined_channels[i],debug,prnt); 
+        }
+      }
+    } else {
+    	channelmod_print_help(buff, debug, prnt);
+    }
+  free(subcmd);
+  }
+  return CMDSTATUS_FOUND;
 }
 
-int modelid_fromname(char *modelname) {
-  int modelid=map_str_to_int(channelmod_names,modelname);
-  AssertFatal(modelid>0,
-              "random_channel.c: Error channel model %s unknown\n",modelname);
+      
+
+static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
+  char *param=NULL, *value=NULL; 
+  int cd_id= -1;
+  int s = sscanf(buff,"%i %ms %ms \n",&cd_id,&param, &value);
+  if (cd_id<0 || cd_id >= max_chan) {
+  	  prnt("ERROR, %i: Channel model id outof range (0-%i)\n",cd_id,max_chan-1);
+  	  return CMDSTATUS_FOUND;
+  }
+  if (defined_channels[cd_id]==NULL) {
+  	  prnt("ERROR, %i: Channel model has not been set\n",cd_id);
+  	  return CMDSTATUS_FOUND;
+  }  
+  
+  if (s==3) {
+    if ( strcmp(param,"riceanf") == 0) {
+        double dbl = atof(value);
+        if (dbl <0 || dbl > 1)
+        	prnt("ERROR: ricean factor range: 0 to 1, %lf is outof range\n",dbl);
+        else
+        	defined_channels[cd_id]->ricean_factor=dbl;
+    } else if ( strcmp(param,"aoa") == 0) {
+        double dbl = atof(value);
+        if (dbl <0 || dbl >6.28)
+        	prnt("ERROR: angle of arrival range: 0 to 2*Pi,  %lf is outof range\n",dbl);
+        else
+        	defined_channels[cd_id]->aoa=dbl;    
+    } else if ( strcmp(param,"randaoa") == 0) {
+        int i = atoi(value);
+        if (i!=0 && i!=1)
+        	prnt("ERROR: randaoa is a boolean, must be 0 or 1\n");
+        else
+        	defined_channels[cd_id]->random_aoa=i;
+    } else if ( strcmp(param,"ploss") == 0) {
+        double dbl = atof(value);
+        defined_channels[cd_id]->path_loss_dB=dbl;     
+    } else if ( strcmp(param,"offset") == 0) {
+        int i = atoi(value);
+        defined_channels[cd_id]->channel_offset=i;     
+    } else if ( strcmp(param,"forgetf") == 0) {
+        double dbl = atof(value);
+        if (dbl <0 || dbl > 1)
+        	prnt("ERROR: forgetting factor range: 0 to 1 (disable variation), %lf is outof range\n",dbl);
+        else
+        	defined_channels[cd_id]->forgetting_factor=dbl;     
+    } else {
+         prnt("ERROR: %s, unknown channel parameter\n",param);
+         return CMDSTATUS_FOUND;  
+    }
+  display_channelmodel(defined_channels[cd_id],debug,prnt);  
+  free(param);   
+  free(value);
+  random_channel(defined_channels[cd_id],false);                 
+  }
+  return CMDSTATUS_FOUND;           
+}
+   
+int modelid_fromname(char *modelname) {                                             
+  int modelid=map_str_to_int(channelmod_names,modelname);   
+  if (modelid < 0)   
+    LOG_E(OCM,"random_channel.c: Error channel model %s unknown\n",modelname);
   return modelid;
 }
 
@@ -1519,6 +1985,9 @@ void init_channelmod(void) {
   paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
   int ret = config_get( channelmod_params,sizeof(channelmod_params)/sizeof(paramdef_t),CHANNELMOD_SECTION);
   AssertFatal(ret >= 0, "configuration couldn't be performed");
+    defined_channels=calloc(max_chan,sizeof( channel_desc_t*));
+  AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
+  
   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
 

@@ -78,6 +78,8 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+double DS_TDL = .03;
+
 int emulate_rf = 0;
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
@@ -161,7 +163,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
   // Multipath channel
   if (awgn_flag == 0) {
     multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
-                      2*UE->frame_parms.samples_per_tti,hold_channel);
+                      2*UE->frame_parms.samples_per_tti,hold_channel,0);
 
     //      printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
     if(abstx==1 && num_rounds>1)
@@ -1172,6 +1174,7 @@ int main(int argc, char **argv) {
                                    channel_model,
                                    N_RB2sampling_rate(eNB->frame_parms.N_RB_DL),
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
+                                   DS_TDL,
                                    forgetting_factor,
                                    rx_sample_offset,
                                    0);
@@ -1185,6 +1188,7 @@ int main(int argc, char **argv) {
                                        channel_model,
                                        N_RB2sampling_rate(eNB->frame_parms.N_RB_DL),
                                        N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
+                                       DS_TDL,
                                        forgetting_factor,
                                        rx_sample_offset,
                                        0);

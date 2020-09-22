@@ -27,6 +27,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "openair1/PHY/MODULATION/nr_modulation.h"
 /*#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
@@ -132,6 +133,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
+  nr_generate_modulation_table();
   nr_init_pdcch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
   nr_init_pbch_interleaver(gNB->nr_pbch_interleaver);
   //PDSCH DMRS init
@@ -199,6 +201,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
     common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
   }
+  common_vars->debugBuff = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
+  common_vars->debugBuff_sample_offset = 0; 
 
 
   // Channel estimates for SRS
@@ -247,10 +251,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates     = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ptrs_phase_per_slot   = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_time  = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->rxdataF_comp          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_mag0             = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_magb0            = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_mag0            = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
+    pusch_vars[ULSCH_id]->ul_ch_magb0           = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_mag             = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_magb            = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->rho                   = (int32_t **)malloc16_clear(Prx*sizeof(int32_t*) );
@@ -264,16 +269,18 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
       pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot ); // max intensity in freq is 1 sc every 2 RBs
       pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ptrs_phase_per_slot[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->symbols_per_slot); // symbols per slot
       pusch_vars[ULSCH_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
-      pusch_vars[ULSCH_id]->ul_ch_mag0[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
-      pusch_vars[ULSCH_id]->ul_ch_magb0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
+      pusch_vars[ULSCH_id]->ul_ch_mag0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
+      pusch_vars[ULSCH_id]->ul_ch_magb0[i]           = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
       pusch_vars[ULSCH_id]->ul_ch_mag[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
       pusch_vars[ULSCH_id]->ul_ch_magb[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
       pusch_vars[ULSCH_id]->rho[i]                   = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->N_RB_UL*12*7*2) );
     }
     printf("ULSCH_id %d (before llr alloc) : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]);
     pusch_vars[ULSCH_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear
-    printf("ULSCH_id %d (after llr alloc) : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]); 
+    printf("ULSCH_id %d (after llr alloc) : %p\n",ULSCH_id,gNB->dlsch[0][0]->harq_processes[0]);
+    pusch_vars[ULSCH_id]->ul_valid_re_per_slot  = (int16_t *)malloc16_clear( sizeof(int16_t)*fp->symbols_per_slot);
   } //ulsch_id
 /*
   for (ulsch_id=0; ulsch_id<NUMBER_OF_UE_MAX; ulsch_id++)
@@ -334,6 +341,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->ptrs_phase_per_slot[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb0[i]);
@@ -349,6 +357,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time);
+    free_and_zero(pusch_vars[ULSCH_id]->ptrs_phase_per_slot);
+    free_and_zero(pusch_vars[ULSCH_id]->ul_valid_re_per_slot);
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb0);
@@ -494,7 +504,11 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   compute_nr_prach_seq(short_sequence, num_sequences, rootSequenceIndex, RC.gNB[Mod_id]->X_u);
 //  }
   RC.gNB[Mod_id]->configured     = 1;
-	find_SSB_and_RO_available(Mod_id);
+
+  find_SSB_and_RO_available(Mod_id);
+
+  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
 
@@ -506,6 +520,15 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
 
+  memset(gNB->num_pdsch_rnti, 0, sizeof(uint16_t)*80);
+
+  for (i=0; i <NUMBER_OF_NR_PDCCH_MAX; i++) {
+    LOG_I(PHY,"Initializing PDCCH list for PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
+    gNB->pdcch_pdu[i].frame=-1;
+    LOG_I(PHY,"Initializing UL PDCCH list for UL PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
+    gNB->ul_pdcch_pdu[i].frame=-1;
+  }
+    
   for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
     gNB->pucch[i] = new_gNB_pucch();
