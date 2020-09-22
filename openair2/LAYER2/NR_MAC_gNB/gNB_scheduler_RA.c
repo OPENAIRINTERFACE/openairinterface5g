@@ -82,18 +82,18 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
     mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
   get_nr_prach_info_from_index(config_index,
-                                    (int)frameP,
-                                    (int)slotP,
-                                    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-                                    mu,
-                                    cc->frame_type,
-                                    &format,
-                                    &start_symbol,
-                                    &N_t_slot,
-                                    &N_dur,
-                                    &RA_sfn_index,
-                                    &N_RA_slot,
-																		&config_period);
+			       (int)frameP,
+			       (int)slotP,
+			       scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+			       mu,
+			       cc->frame_type,
+			       &format,
+			       &start_symbol,
+			       &N_t_slot,
+			       &N_dur,
+			       &RA_sfn_index,
+			       &N_RA_slot,
+			       &config_period);
   uint8_t index = 0,slot_index = 0;
 	for (slot_index = 0;slot_index < N_RA_slot; slot_index++) {
     if (N_RA_slot <= 1) { //1 PRACH slot in a subframe

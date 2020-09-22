@@ -505,8 +505,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 //  }
   RC.gNB[Mod_id]->configured     = 1;
 
-  find_SSB_and_RO_available(Mod_id);
-
   init_symbol_rotation(fp,fp->dl_CarrierFreq);
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
