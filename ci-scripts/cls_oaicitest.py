@@ -1635,7 +1635,7 @@ class OaiCiTest():
 		return result
 
 	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC,SSH):
-		SSH.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+
 		SSH.command('awk -f /tmp/tcp_iperf_stats.awk ' + EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', SSH.getBefore())
 		if result is not None:
@@ -1659,7 +1659,7 @@ class OaiCiTest():
 			statusQueue.put(UE_IPAddress)
 			statusQueue.put(msg)
 			lock.release()
-		SSH.close()
+
 		return 0
 
 	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options,EPC,SSH):
