@@ -593,11 +593,6 @@ typedef struct ngap_initial_context_setup_req_s {
 
 
 typedef struct ngap_paging_ind_s {
-  /* UE identity index value.
-   * Specified in 3GPP TS 36.304
-   */
-  unsigned ue_index_value:10;
-
   /* UE paging identity */
   ngap_ue_paging_identity_t ue_paging_identity;
 

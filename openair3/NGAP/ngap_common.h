@@ -75,6 +75,10 @@
 #include "NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.h"
 #include "NGAP_PDUSessionResourceReleasedItemRelRes.h"
 #include "NGAP_PDUSessionResourceToReleaseItemRelCmd.h"
+#include "NGAP_PDUSessionResourceModifyItemModReq.h"
+#include "NGAP_PDUSessionResourceModifyRequestTransfer.h"
+#include "NGAP_QosFlowAddOrModifyRequestItem.h"
+#include "NGAP_TAIListForPagingItem.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)

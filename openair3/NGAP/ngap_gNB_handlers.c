@@ -455,21 +455,23 @@ static
 int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
                                      uint32_t         stream,
                                      NGAP_NGAP_PDU_t *pdu) {
-#if 0
+
   NGAP_ErrorIndication_t    *container;
   NGAP_ErrorIndicationIEs_t *ie;
   ngap_gNB_amf_data_t        *amf_desc_p;
+  uint64_t                 amf_ue_ngap_id;
+    
   DevAssert(pdu != NULL);
   container = &pdu->choice.initiatingMessage.value.choice.ErrorIndication;
 
-  /* S1 Setup Failure == Non UE-related procedure -> stream 0 */
+  /* NG Setup Failure == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
-    NGAP_WARN("[SCTP %d] Received s1 Error indication on stream != 0 (%d)\n",
+    NGAP_WARN("[SCTP %d] Received ng Error indication on stream != 0 (%d)\n",
               assoc_id, stream);
   }
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received S1 Error indication for non existing "
+    NGAP_ERROR("[SCTP %d] Received ng Error indication for non existing "
                "AMF context\n", assoc_id);
     return -1;
   }
@@ -479,15 +481,16 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
 
   /* optional */
   if (ie != NULL) {
-    NGAP_WARN("Received S1 Error indication AMF UE NGAP ID 0x%lx\n", ie->value.choice.AMF_UE_NGAP_ID);
+    asn_INTEGER2ulong(&(ie->value.choice.AMF_UE_NGAP_ID), &amf_ue_ngap_id);
+    NGAP_WARN("Received NG Error indication AMF UE NGAP ID 0x%lx\n", amf_ue_ngap_id);
   }
 
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_ErrorIndicationIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, false);
+                             NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID, false);
 
   /* optional */
   if (ie != NULL) {
-    NGAP_WARN("Received S1 Error indication gNB UE NGAP ID 0x%lx\n", ie->value.choice.GNB_UE_NGAP_ID);
+    NGAP_WARN("Received NG Error indication gNB UE NGAP ID 0x%lx\n", ie->value.choice.RAN_UE_NGAP_ID);
   }
 
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_ErrorIndicationIEs_t, ie, container,
@@ -497,168 +500,204 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
   if (ie) {
     switch(ie->value.choice.Cause.present) {
       case NGAP_Cause_PR_NOTHING:
-        NGAP_WARN("Received S1 Error indication cause NOTHING\n");
+        NGAP_WARN("Received NG Error indication cause NOTHING\n");
         break;
 
       case NGAP_Cause_PR_radioNetwork:
         switch (ie->value.choice.Cause.choice.radioNetwork) {
           case NGAP_CauseRadioNetwork_unspecified:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_unspecified\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_unspecified\n");
             break;
 
-          case NGAP_CauseRadioNetwork_tx2relocoverall_expiry:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_tx2relocoverall_expiry\n");
+          case NGAP_CauseRadioNetwork_txnrelocoverall_expiry:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_txnrelocoverall_expiry\n");
             break;
 
           case NGAP_CauseRadioNetwork_successful_handover:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_successful_handover\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_successful_handover\n");
             break;
 
-          case NGAP_CauseRadioNetwork_release_due_to_eutran_generated_reason:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_release_due_to_eutran_generated_reason\n");
+          case NGAP_CauseRadioNetwork_release_due_to_ngran_generated_reason:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_release_due_to_ngran_generated_reason\n");
+            break;
+          
+          case NGAP_CauseRadioNetwork_release_due_to_5gc_generated_reason:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_release_due_to_5gc_generated_reason\n");
             break;
 
           case NGAP_CauseRadioNetwork_handover_cancelled:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_handover_cancelled\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_handover_cancelled\n");
             break;
 
           case NGAP_CauseRadioNetwork_partial_handover:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_partial_handover\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_partial_handover\n");
             break;
 
-          case NGAP_CauseRadioNetwork_ho_failure_in_target_EPC_gNB_or_target_system:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_ho_failure_in_target_EPC_gNB_or_target_system\n");
+          case NGAP_CauseRadioNetwork_ho_failure_in_target_5GC_ngran_node_or_target_system:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ho_failure_in_target_5GC_ngran_node_or_target_system\n");
             break;
 
           case NGAP_CauseRadioNetwork_ho_target_not_allowed:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_ho_target_not_allowed\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ho_target_not_allowed\n");
             break;
 
-          case NGAP_CauseRadioNetwork_tS1relocoverall_expiry:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_tS1relocoverall_expiry\n");
+          case NGAP_CauseRadioNetwork_tngrelocoverall_expiry:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_tngrelocoverall_expiry\n");
             break;
 
-          case NGAP_CauseRadioNetwork_tS1relocprep_expiry:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_tS1relocprep_expiry\n");
+          case NGAP_CauseRadioNetwork_tngrelocprep_expiry:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_tngrelocprep_expiry\n");
             break;
 
           case NGAP_CauseRadioNetwork_cell_not_available:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_cell_not_available\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_cell_not_available\n");
             break;
 
           case NGAP_CauseRadioNetwork_unknown_targetID:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_unknown_targetID\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_unknown_targetID\n");
             break;
 
           case NGAP_CauseRadioNetwork_no_radio_resources_available_in_target_cell:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_no_radio_resources_available_in_target_cell\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_no_radio_resources_available_in_target_cell\n");
             break;
 
-          case NGAP_CauseRadioNetwork_unknown_amf_ue_ngap_id:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_unknown_amf_ue_ngap_id\n");
+          case NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID\n");
             break;
 
-          case NGAP_CauseRadioNetwork_unknown_enb_ue_ngap_id:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_unknown_enb_ue_ngap_id\n");
-            break;
-
-          case NGAP_CauseRadioNetwork_unknown_pair_ue_ngap_id:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_unknown_pair_ue_ngap_id\n");
+          case NGAP_CauseRadioNetwork_inconsistent_remote_UE_NGAP_ID:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_inconsistent_remote_UE_NGAP_ID\n");
             break;
 
           case NGAP_CauseRadioNetwork_handover_desirable_for_radio_reason:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_handover_desirable_for_radio_reason\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_handover_desirable_for_radio_reason\n");
             break;
 
           case NGAP_CauseRadioNetwork_time_critical_handover:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_time_critical_handover\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_time_critical_handover\n");
             break;
 
           case NGAP_CauseRadioNetwork_resource_optimisation_handover:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_resource_optimisation_handover\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_resource_optimisation_handover\n");
             break;
 
           case NGAP_CauseRadioNetwork_reduce_load_in_serving_cell:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_reduce_load_in_serving_cell\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_reduce_load_in_serving_cell\n");
             break;
 
           case NGAP_CauseRadioNetwork_user_inactivity:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_user_inactivity\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_user_inactivity\n");
             break;
 
           case NGAP_CauseRadioNetwork_radio_connection_with_ue_lost:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_radio_connection_with_ue_lost\n");
-            break;
-
-          case NGAP_CauseRadioNetwork_load_balancing_tau_required:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_load_balancing_tau_required\n");
-            break;
-
-          case NGAP_CauseRadioNetwork_cs_fallback_triggered:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_cs_fallback_triggered\n");
-            break;
-
-          case NGAP_CauseRadioNetwork_ue_not_available_for_ps_service:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_ue_not_available_for_ps_service\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_radio_connection_with_ue_lost\n");
             break;
 
           case NGAP_CauseRadioNetwork_radio_resources_not_available:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_radio_resources_not_available\n");
-            break;
-
-          case NGAP_CauseRadioNetwork_failure_in_radio_interface_procedure:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_failure_in_radio_interface_procedure\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_radio_resources_not_available\n");
             break;
 
           case NGAP_CauseRadioNetwork_invalid_qos_combination:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_invalngap_id_qos_combination\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_invalid_qos_combination\n");
             break;
 
-          case NGAP_CauseRadioNetwork_interrat_redirection:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_interrat_redirection\n");
+          case NGAP_CauseRadioNetwork_failure_in_radio_interface_procedure:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_failure_in_radio_interface_procedure\n");
             break;
 
           case NGAP_CauseRadioNetwork_interaction_with_other_procedure:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_interaction_with_other_procedure\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_interaction_with_other_procedure\n");
             break;
 
-          case NGAP_CauseRadioNetwork_unknown_PDUSESSION_ID:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_unknown_PDUSESSION_ID\n");
+          case NGAP_CauseRadioNetwork_unknown_PDU_session_ID:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_unknown_PDU_session_ID\n");
             break;
 
-          case NGAP_CauseRadioNetwork_multiple_PDUSESSION_ID_instances:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_multiple_PDUSESSION_ID_instances\n");
+          case NGAP_CauseRadioNetwork_unkown_qos_flow_ID:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_unkown_qos_flow_ID\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_multiple_PDU_session_ID_instances:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_multiple_PDU_session_ID_instances\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_multiple_qos_flow_ID_instances:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_multiple_qos_flow_ID_instances\n");
             break;
 
           case NGAP_CauseRadioNetwork_encryption_and_or_integrity_protection_algorithms_not_supported:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_encryption_and_or_integrity_protection_algorithms_not_supported\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_encryption_and_or_integrity_protection_algorithms_not_supported\n");
             break;
 
           case NGAP_CauseRadioNetwork_ng_intra_system_handover_triggered:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_ng_intra_system_handover_triggered\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ng_intra_system_handover_triggered\n");
             break;
 
           case NGAP_CauseRadioNetwork_ng_inter_system_handover_triggered:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_ng_inter_system_handover_triggered\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ng_inter_system_handover_triggered\n");
             break;
 
-          case NGAP_CauseRadioNetwork_x2_handover_triggered:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_x2_handover_triggered\n");
+          case NGAP_CauseRadioNetwork_xn_handover_triggered:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_xn_handover_triggered\n");
             break;
 
-          case NGAP_CauseRadioNetwork_redirection_towards_1xRTT:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_redirection_towards_1xRTT\n");
+          case NGAP_CauseRadioNetwork_not_supported_5QI_value:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_not_supported_5QI_value\n");
             break;
 
-          case NGAP_CauseRadioNetwork_not_supported_QCI_value:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_not_supported_QCI_value\n");
+          case NGAP_CauseRadioNetwork_ue_context_transfer:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ue_context_transfer\n");
             break;
-          case NGAP_CauseRadioNetwork_invalid_CSG_Id:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseRadioNetwork_invalngap_id_CSG_Id\n");
+
+          case NGAP_CauseRadioNetwork_ims_voice_eps_fallback_or_rat_fallback_triggered:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ims_voice_eps_fallback_or_rat_fallback_triggered\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_up_integrity_protection_not_possible:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_up_integrity_protection_not_possible\n");
+            break;
+          case NGAP_CauseRadioNetwork_up_confidentiality_protection_not_possible:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_up_confidentiality_protection_not_possible\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_slice_not_supported:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_slice_not_supported\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_ue_in_rrc_inactive_state_not_reachable:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ue_in_rrc_inactive_state_not_reachable\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_redirection:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_redirection\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_resources_not_available_for_the_slice:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_resources_not_available_for_the_slice\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_ue_max_integrity_protected_data_rate_reason:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_ue_max_integrity_protected_data_rate_reason\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_release_due_to_cn_detected_mobility:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_release_due_to_cn_detected_mobility\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_n26_interface_not_available:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_n26_interface_not_available\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_release_due_to_pre_emption:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_release_due_to_pre_emption\n");
+            break;
+
+          case NGAP_CauseRadioNetwork_multiple_location_reporting_reference_ID_instances:
+            NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_multiple_location_reporting_reference_ID_instances\n");
             break;
 
           default:
-            NGAP_WARN("Received S1 Error indication cause radio network case not handled\n");
+            NGAP_WARN("Received NG Error indication cause radio network case not handled\n");
         }
 
         break;
@@ -666,15 +705,15 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
       case NGAP_Cause_PR_transport:
         switch (ie->value.choice.Cause.choice.transport) {
           case NGAP_CauseTransport_transport_resource_unavailable:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseTransport_transport_resource_unavailable\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseTransport_transport_resource_unavailable\n");
             break;
 
           case NGAP_CauseTransport_unspecified:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseTransport_unspecified\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseTransport_unspecified\n");
             break;
 
           default:
-            NGAP_WARN("Received S1 Error indication cause transport case not handled\n");
+            NGAP_WARN("Received NG Error indication cause transport case not handled\n");
         }
 
         break;
@@ -682,26 +721,23 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
       case NGAP_Cause_PR_nas:
         switch (ie->value.choice.Cause.choice.nas) {
           case NGAP_CauseNas_normal_release:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseNas_normal_release\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseNas_normal_release\n");
             break;
 
           case NGAP_CauseNas_authentication_failure:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseNas_authentication_failure\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseNas_authentication_failure\n");
             break;
 
-          case NGAP_CauseNas_detach:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseNas_detach\n");
+          case NGAP_CauseNas_deregister:
+            NGAP_WARN("Received NG Error indication NGAP_CauseNas_deregister\n");
             break;
 
           case NGAP_CauseNas_unspecified:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseNas_unspecified\n");
-            break;
-          case NGAP_CauseNas_csg_subscription_expiry:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseNas_csg_subscription_expiry\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseNas_unspecified\n");
             break;
 
           default:
-            NGAP_WARN("Received S1 Error indication cause nas case not handled\n");
+            NGAP_WARN("Received NG Error indication cause nas case not handled\n");
         }
 
         break;
@@ -709,35 +745,35 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
       case NGAP_Cause_PR_protocol:
         switch (ie->value.choice.Cause.choice.protocol) {
           case NGAP_CauseProtocol_transfer_syntax_error:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_transfer_syntax_error\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_transfer_syntax_error\n");
             break;
 
           case NGAP_CauseProtocol_abstract_syntax_error_reject:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_abstract_syntax_error_reject\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_abstract_syntax_error_reject\n");
             break;
 
           case NGAP_CauseProtocol_abstract_syntax_error_ignore_and_notify:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_abstract_syntax_error_ignore_and_notify\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_abstract_syntax_error_ignore_and_notify\n");
             break;
 
           case NGAP_CauseProtocol_message_not_compatible_with_receiver_state:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_message_not_compatible_with_receiver_state\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_message_not_compatible_with_receiver_state\n");
             break;
 
           case NGAP_CauseProtocol_semantic_error:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_semantic_error\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_semantic_error\n");
             break;
 
           case NGAP_CauseProtocol_abstract_syntax_error_falsely_constructed_message:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_abstract_syntax_error_falsely_constructed_message\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_abstract_syntax_error_falsely_constructed_message\n");
             break;
 
           case NGAP_CauseProtocol_unspecified:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseProtocol_unspecified\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseProtocol_unspecified\n");
             break;
 
           default:
-            NGAP_WARN("Received S1 Error indication cause protocol case not handled\n");
+            NGAP_WARN("Received NG Error indication cause protocol case not handled\n");
         }
 
         break;
@@ -745,36 +781,42 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
       case NGAP_Cause_PR_misc:
         switch (ie->value.choice.Cause.choice.protocol) {
           case NGAP_CauseMisc_control_processing_overload:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseMisc_control_processing_overload\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseMisc_control_processing_overload\n");
             break;
 
           case NGAP_CauseMisc_not_enough_user_plane_processing_resources:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseMisc_not_enough_user_plane_processing_resources\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseMisc_not_enough_user_plane_processing_resources\n");
             break;
 
           case NGAP_CauseMisc_hardware_failure:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseMisc_hardware_failure\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseMisc_hardware_failure\n");
             break;
 
           case NGAP_CauseMisc_om_intervention:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseMisc_om_intervention\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseMisc_om_intervention\n");
             break;
 
           case NGAP_CauseMisc_unspecified:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseMisc_unspecified\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseMisc_unspecified\n");
             break;
 
           case NGAP_CauseMisc_unknown_PLMN:
-            NGAP_WARN("Received S1 Error indication NGAP_CauseMisc_unknown_PLMN\n");
+            NGAP_WARN("Received NG Error indication NGAP_CauseMisc_unknown_PLMN\n");
             break;
 
           default:
-            NGAP_WARN("Received S1 Error indication cause misc case not handled\n");
+            NGAP_WARN("Received NG Error indication cause misc case not handled\n");
         }
 
         break;
+        
+      default:
+       NGAP_WARN("Received NG Error indication cause NGAP_Cause_PR_choice_Extensions\n");
+       break;
+      
     }
   }
+
 
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_ErrorIndicationIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_CriticalityDiagnostics, false);
@@ -783,7 +825,7 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
     // TODO continue
   }
 
-#endif
+
   // TODO continue
   return 0;
 }
@@ -976,7 +1018,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
             {
               NGAP_QosFlowSetupRequestItem_t *qosFlowItem_p;
               
-              NGAP_DEBUG("servedGUAMIs.list.count %d\n", pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count);
+              NGAP_DEBUG("QosFlowSetupRequestList.list.count %d\n", pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count);
               DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count > 0);
               DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count <= NGAP_maxnoofQosFlows);
 
@@ -1400,7 +1442,7 @@ static
 int ngap_gNB_handle_paging(uint32_t               assoc_id,
                            uint32_t               stream,
                            NGAP_NGAP_PDU_t       *pdu) {
-#if 0
+
   ngap_gNB_amf_data_t   *amf_desc_p        = NULL;
   ngap_gNB_instance_t   *ngap_gNB_instance = NULL;
   MessageDef            *message_p         = NULL;
@@ -1436,93 +1478,33 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
   /* convert NGAP_PagingIEs_t to ngap_paging_ind_t */
   /* id-UEIdentityIndexValue : convert UE Identity Index value */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_UEIdentityIndexValue, true);
+                             NGAP_ProtocolIE_ID_id_UEPagingIdentity, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_PAGING_IND(message_p).ue_index_value  = BIT_STRING_to_uint32(&ie->value.choice.UEIdentityIndexValue);
-    NGAP_DEBUG("[SCTP %d] Received Paging ue_index_value (%d)\n",
-               assoc_id,(uint32_t)NGAP_PAGING_IND(message_p).ue_index_value);
-    NGAP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.amf_code = 0;
-    NGAP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi = 0;
+    OCTET_STRING_TO_INT16(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI.aMFSetID, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id);
+    OCTET_STRING_TO_INT8(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI.aMFPointer, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer);
+    OCTET_STRING_TO_INT32(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI.fiveG_TMSI, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi);
+
+    NGAP_DEBUG("[SCTP %d] Received Paging Identity amf_set_id %d, amf_pointer %d, m_tmsi %d\n",
+               assoc_id,
+               NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id,
+               NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer,
+               NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi);
   } else {
     return -1;
   }
 
-  /* id-UEPagingID */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_UEPagingID, true);
 
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    /* convert UE Paging Identity */
-    if (ie->value.choice.UEPagingID.present == NGAP_UEPagingID_PR_s_TMSI) {
-      NGAP_PAGING_IND(message_p).ue_paging_identity.presenceMask = UE_PAGING_IDENTITY_s_tmsi;
-      OCTET_STRING_TO_INT8(&ie->value.choice.UEPagingID.choice.s_TMSI.mMEC, NGAP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.amf_code);
-      OCTET_STRING_TO_INT32(&ie->value.choice.UEPagingID.choice.s_TMSI.m_TMSI, NGAP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi);
-    } else if (ie->value.choice.UEPagingID.present == NGAP_UEPagingID_PR_iMSI) {
-      NGAP_PAGING_IND(message_p).ue_paging_identity.presenceMask = UE_PAGING_IDENTITY_imsi;
-      NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length = 0;
-
-      for (int i = 0; i < ie->value.choice.UEPagingID.choice.iMSI.size; i++) {
-        NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i] = (uint8_t)(ie->value.choice.UEPagingID.choice.iMSI.buf[i] & 0x0F );
-        NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length++;
-        NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1] = (uint8_t)((ie->value.choice.UEPagingID.choice.iMSI.buf[i]>>4) & 0x0F);
-        LOG_D(NGAP,"paging : i %d %d imsi %d %d \n",2*i,2*i+1,NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i], NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1]);
-
-        if (NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1] == 0x0F) {
-          if(i != ie->value.choice.UEPagingID.choice.iMSI.size - 1) {
-            /* invalid paging_p->uePagingID.choise.iMSI.buffer */
-            NGAP_ERROR("[SCTP %d] Received Paging : uePagingID.choise.iMSI error(i %d 0x0F)\n", assoc_id,i);
-            return -1;
-          }
-        } else {
-          NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length++;
-        }
-      } /* for i... */
-
-      if (NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length >= NGAP_IMSI_LENGTH) {
-        /* invalid paging_p->uePagingID.choise.iMSI.size */
-        NGAP_ERROR("[SCTP %d] Received Paging : uePagingID.choise.iMSI.size(%d) is over IMSI length(%d)\n", assoc_id, NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length, NGAP_IMSI_LENGTH);
-        return -1;
-      }
-    } else { /* of if (ie->value.choice.UEPagingID.present == NGAP_UEPagingID_PR_iMSI) */
-      /* invalid paging_p->uePagingID.present */
-      NGAP_ERROR("[SCTP %d] Received Paging : uePagingID.present(%d) is unknown\n", assoc_id, ie->value.choice.UEPagingID.present);
-      return -1;
-    }
-  } else { /* of ie != NULL */
-    return -1;
-  }
-
-  NGAP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
+  NGAP_PAGING_IND(message_p).paging_drx = NGAP_PAGING_DRX_256;
   /* id-pagingDRX */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_pagingDRX, false);
+                             NGAP_ProtocolIE_ID_id_PagingDRX, false);
 
   /* optional */
   if (ie) {
     NGAP_PAGING_IND(message_p).paging_drx = ie->value.choice.PagingDRX;
   } else {
-    NGAP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
-  }
-
-  /* */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_CNDomain, true);
-
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    /* id-CNDomain : convert cnDomain */
-    if (ie->value.choice.CNDomain == NGAP_CNDomain_ps) {
-      NGAP_PAGING_IND(message_p).cn_domain = CN_DOMAIN_PS;
-    } else if (ie->value.choice.CNDomain == NGAP_CNDomain_cs) {
-      NGAP_PAGING_IND(message_p).cn_domain = CN_DOMAIN_CS;
-    } else {
-      /* invalid paging_p->cnDomain */
-      NGAP_ERROR("[SCTP %d] Received Paging : cnDomain(%ld) is unknown\n", assoc_id, ie->value.choice.CNDomain);
-      itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-      return -1;
-    }
-  } else {
-    return -1;
+    NGAP_PAGING_IND(message_p).paging_drx = NGAP_PAGING_DRX_256;
   }
 
   memset (&NGAP_PAGING_IND(message_p).plmn_identity[0], 0, sizeof(plmn_identity_t)*256);
@@ -1530,15 +1512,15 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
   NGAP_PAGING_IND(message_p).tai_size = 0;
   /* id-TAIList */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_TAIList, true);
+                             NGAP_ProtocolIE_ID_id_TAIListForPaging, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_INFO("[SCTP %d] Received Paging taiList: count %d\n", assoc_id, ie->value.choice.TAIList.list.count);
+    NGAP_INFO("[SCTP %d] Received Paging taiList For Paging: count %d\n", assoc_id, ie->value.choice.TAIListForPaging.list.count);
 
-    for (int i = 0; i < ie->value.choice.TAIList.list.count; i++) {
-      NGAP_TAIItem_t *item_p;
-      item_p = &(((NGAP_TAIItemIEs_t *)ie->value.choice.TAIList.list.array[i])->value.choice.TAIItem);
-      TBCD_TO_MCC_MNC(&(item_p->tAI.pLMNidentity), NGAP_PAGING_IND(message_p).plmn_identity[i].mcc,
+    for (int i = 0; i < ie->value.choice.TAIListForPaging.list.count; i++) {
+      NGAP_TAIListForPagingItem_t *item_p;
+      item_p = (NGAP_TAIListForPagingItem_t *)ie->value.choice.TAIListForPaging.list.array[i];
+      TBCD_TO_MCC_MNC(&(item_p->tAI.pLMNIdentity), NGAP_PAGING_IND(message_p).plmn_identity[i].mcc,
                       NGAP_PAGING_IND(message_p).plmn_identity[i].mnc,
                       NGAP_PAGING_IND(message_p).plmn_identity[i].mnc_digit_length);
       OCTET_STRING_TO_INT16(&(item_p->tAI.tAC), NGAP_PAGING_IND(message_p).tac[i]);
@@ -1553,18 +1535,14 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
   }
 
   //paging parameter values
-  NGAP_DEBUG("[SCTP %d] Received Paging parameters: ue_index_value %d  cn_domain %d paging_drx %d paging_priority %d\n",assoc_id,
-             NGAP_PAGING_IND(message_p).ue_index_value, NGAP_PAGING_IND(message_p).cn_domain,
+  NGAP_DEBUG("[SCTP %d] Received Paging parameters: Paging Identity amf_set_id %d amf_pointer %d m_tmsi %d paging_drx %d paging_priority %d\n",assoc_id,
+             NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id,
+             NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer,
+             NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi,
              NGAP_PAGING_IND(message_p).paging_drx, NGAP_PAGING_IND(message_p).paging_priority);
-  NGAP_DEBUG("[SCTP %d] Received Paging parameters(ue): presenceMask %d  s_tmsi.m_tmsi %d s_tmsi.amf_code %d IMSI length %d (0-5) %d%d%d%d%d%d\n",assoc_id,
-             NGAP_PAGING_IND(message_p).ue_paging_identity.presenceMask, NGAP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi,
-             NGAP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.amf_code, NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length,
-             NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[0], NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[1],
-             NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2], NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[3],
-             NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[4], NGAP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[5]);
   /* send message to RRC */
   itti_send_msg_to_task(TASK_RRC_GNB, ngap_gNB_instance->instance, message_p);
-#endif
+
   return 0;
 }
 
@@ -1572,53 +1550,53 @@ static
 int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
     uint32_t               stream,
     NGAP_NGAP_PDU_t       *pdu) {
-#if 0
+
   int i, nb_of_pdusessions_failed;
   ngap_gNB_amf_data_t           *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t         *ue_desc_p        = NULL;
   MessageDef                    *message_p        = NULL;
-  NGAP_PDUSESSIONModifyRequest_t     *container;
-  NGAP_PDUSESSIONModifyRequestIEs_t  *ie;
-  NGAP_GNB_UE_NGAP_ID_t         enb_ue_ngap_id;
-  NGAP_AMF_UE_NGAP_ID_t         amf_ue_ngap_id;
+  NGAP_PDUSessionResourceModifyRequest_t     *container;
+  NGAP_PDUSessionResourceModifyRequestIEs_t  *ie;
+  NGAP_RAN_UE_NGAP_ID_t         gnb_ue_ngap_id;
+  uint64_t                      amf_ue_ngap_id;
   DevAssert(pdu != NULL);
-  container = &pdu->choice.initiatingMessage.value.choice.PDUSESSIONModifyRequest;
+  container = &pdu->choice.initiatingMessage.value.choice.PDUSessionResourceModifyRequest;
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received E-RAB modify request for non "
+    NGAP_ERROR("[SCTP %d] Received PDUSession Resource modify request for non "
                "existing AMF context\n", assoc_id);
     return -1;
   }
 
   /* id-AMF-UE-NGAP-ID */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONModifyRequestIEs_t, ie, container,
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    amf_ue_ngap_id = ie->value.choice.AMF_UE_NGAP_ID;
+    asn_INTEGER2ulong(&(ie->value.choice.AMF_UE_NGAP_ID), &amf_ue_ngap_id);
   } else {
     return -1;
   }
 
-  /* id-gNB-UE-NGAP-ID */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONModifyRequestIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_gNB_UE_NGAP_ID, true);
+  /* id-RAN-UE-NGAP-ID */
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
+                             NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    enb_ue_ngap_id = ie->value.choice.GNB_UE_NGAP_ID;
+    gnb_ue_ngap_id = ie->value.choice.RAN_UE_NGAP_ID;
   } else {
     return -1;
   }
 
   if ((ue_desc_p = ngap_gNB_get_ue_context(amf_desc_p->ngap_gNB_instance,
-                   enb_ue_ngap_id)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received E-RAB modify request for non "
-               "existing UE context 0x%06lx\n", assoc_id,
-               enb_ue_ngap_id);
+                   gnb_ue_ngap_id)) == NULL) {
+    NGAP_ERROR("[SCTP %d] Received PDUSession Resource modify request for non "
+               "existing UE context 0x%08lx\n", assoc_id,
+               gnb_ue_ngap_id);
     return -1;
   }
 
-  /* E-RAB modify request = UE-related procedure -> stream != 0 */
+  /* PDUSession Resource modify request = UE-related procedure -> stream != 0 */
   if (stream == 0) {
     NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
                assoc_id, stream);
@@ -1628,21 +1606,21 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   ue_desc_p->rx_stream = stream;
 
   if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
-    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%d != %ld)",
-              ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
+    NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%ld != %ld)",
+              (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
     message_p = itti_alloc_new_message (TASK_RRC_GNB, NGAP_PDUSESSION_MODIFY_RESP);
-    NGAP_PDUSESSION_MODIFY_RESP (message_p).gNB_ue_ngap_id = enb_ue_ngap_id;
-    NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONModifyRequestIEs_t, ie, container,
-                               NGAP_ProtocolIE_ID_id_PDUSESSIONToBeModifiedListBearerModReq, true);
+    NGAP_PDUSESSION_MODIFY_RESP (message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
+    NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
+                               NGAP_ProtocolIE_ID_id_PDUSessionResourceModifyListModReq, true);
 
     if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-      for(nb_of_pdusessions_failed = 0; nb_of_pdusessions_failed < ie->value.choice.PDUSESSIONToBeModifiedListBearerModReq.list.count; nb_of_pdusessions_failed++) {
-        NGAP_PDUSESSIONToBeModifiedItemBearerModReq_t *item_p;
-        item_p = &(((NGAP_PDUSESSIONToBeModifiedItemBearerModReqIEs_t *)
-                    ie->value.choice.PDUSESSIONToBeModifiedListBearerModReq.list.array[nb_of_pdusessions_failed])->value.choice.PDUSESSIONToBeModifiedItemBearerModReq);
-        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].pdusession_id = item_p->e_RAB_ID;
+      for(nb_of_pdusessions_failed = 0; nb_of_pdusessions_failed < ie->value.choice.PDUSessionResourceModifyListModReq.list.count; nb_of_pdusessions_failed++) {
+        NGAP_PDUSessionResourceModifyItemModReq_t *item_p;
+        item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[nb_of_pdusessions_failed];
+        
+        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].pdusession_id = item_p->pDUSessionID;
         NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].cause = NGAP_Cause_PR_radioNetwork;
-        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].cause_value = NGAP_CauseRadioNetwork_unknown_amf_ue_ngap_id;
+        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].cause_value = NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID;
       }
     } else {
       return -1;
@@ -1659,47 +1637,115 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   message_p        = itti_alloc_new_message(TASK_NGAP, NGAP_PDUSESSION_MODIFY_REQ);
   NGAP_PDUSESSION_MODIFY_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
   NGAP_PDUSESSION_MODIFY_REQ(message_p).amf_ue_ngap_id  = amf_ue_ngap_id;
-  NGAP_PDUSESSION_MODIFY_REQ(message_p).gNB_ue_ngap_id  = enb_ue_ngap_id;
-  /* id-E-RABToBeModifiedListBearerModReq */
-  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSESSIONModifyRequestIEs_t, ie, container,
-                             NGAP_ProtocolIE_ID_id_PDUSESSIONToBeModifiedListBearerModReq, true);
+  NGAP_PDUSESSION_MODIFY_REQ(message_p).gNB_ue_ngap_id  = gnb_ue_ngap_id;
+  /* id-PDUSessionResourceModifyListModReq */
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
+                             NGAP_ProtocolIE_ID_id_PDUSessionResourceModifyListModReq, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     NGAP_PDUSESSION_MODIFY_REQ(message_p).nb_pdusessions_tomodify =
-      ie->value.choice.PDUSESSIONToBeModifiedListBearerModReq.list.count;
+      ie->value.choice.PDUSessionResourceModifyListModReq.list.count;
 
-    for (i = 0; i < ie->value.choice.PDUSESSIONToBeModifiedListBearerModReq.list.count; i++) {
-      NGAP_PDUSESSIONToBeModifiedItemBearerModReq_t *item_p;
-      item_p = &(((NGAP_PDUSESSIONToBeModifiedItemBearerModReqIEs_t *)ie->value.choice.PDUSESSIONToBeModifiedListBearerModReq.list.array[i])->value.choice.PDUSESSIONToBeModifiedItemBearerModReq);
-      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].pdusession_id = item_p->e_RAB_ID;
+    for (i = 0; i < ie->value.choice.PDUSessionResourceModifyListModReq.list.count; i++) {
+      NGAP_PDUSessionResourceModifyItemModReq_t         *item_p;
+      asn_dec_rval_t                                    dec_rval;
+      NGAP_PDUSessionResourceModifyRequestTransfer_t    *pdusessionTransfer_p = NULL;
+      NGAP_PDUSessionResourceModifyRequestTransferIEs_t *pdusessionTransfer_ies = NULL;
+        
+      item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[i];
+    
+      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].pdusession_id = item_p->pDUSessionID;
 
       // check for the NAS PDU
-      if (item_p->nAS_PDU.size > 0 ) {
-        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.length = item_p->nAS_PDU.size;
-        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU.size);
+      if (item_p->nAS_PDU != NULL && item_p->nAS_PDU->size > 0 ) {
+        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.length = item_p->nAS_PDU->size;
+        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU->size);
         memcpy(NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer,
-               item_p->nAS_PDU.buf, item_p->nAS_PDU.size);
+               item_p->nAS_PDU->buf, item_p->nAS_PDU->size);
       } else {
         NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.length = 0;
         NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer = NULL;
         continue;
       }
 
-      /* Set the QOS informations */
-      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos.qci = item_p->e_RABLevelQoSParameters.qCI;
-      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos.allocation_retention_priority.priority_level =
-        item_p->e_RABLevelQoSParameters.allocationRetentionPriority.priorityLevel;
-      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos.allocation_retention_priority.pre_emp_capability =
-        item_p->e_RABLevelQoSParameters.allocationRetentionPriority.pre_emptionCapability;
-      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos.allocation_retention_priority.pre_emp_vulnerability =
-        item_p->e_RABLevelQoSParameters.allocationRetentionPriority.pre_emptionVulnerability;
+      dec_rval = uper_decode(NULL,
+                             &asn_DEF_NGAP_PDUSessionResourceModifyRequestTransfer,
+                             (void **)&pdusessionTransfer_p,
+                             item_p->pDUSessionResourceModifyRequestTransfer.buf,
+                             item_p->pDUSessionResourceModifyRequestTransfer.size, 0, 0);
+
+      if(dec_rval.code != RC_OK) {
+        NGAP_ERROR("could not decode PDUSessionResourceModifyRequestTransfer\n");
+        return -1;
+      }
+
+      for(int j=0; j< pdusessionTransfer_p->protocolIEs.list.count; j++) {
+        pdusessionTransfer_ies = pdusessionTransfer_p->protocolIEs.list.array[j];
+        switch(pdusessionTransfer_ies->id) {
+          /* optional PDUSessionAggregateMaximumBitRate */
+          case NGAP_ProtocolIE_ID_id_PDUSessionAggregateMaximumBitRate:
+            break;
+        
+          /* optional UL-NGU-UP-TNLModifyList */
+          case NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLModifyList:
+            break;
+            
+          /* optional NetworkInstance */
+          case NGAP_ProtocolIE_ID_id_NetworkInstance:
+            break;
+
+          /* optional QosFlowAddOrModifyRequestList */
+          case NGAP_ProtocolIE_ID_id_QosFlowAddOrModifyRequestList:
+            {
+              NGAP_QosFlowAddOrModifyRequestItem_t *qosFlowItem_p;
+              
+              NGAP_DEBUG("QosFlowAddOrModifyRequestList.list.count %d\n", pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count);
+              DevAssert(pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count > 0);
+              DevAssert(pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count <= NGAP_maxnoofQosFlows);
+
+              NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count;
+                
+              for(int qosIdx = 0; qosIdx < pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count; qosIdx++) {
+                qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.array[qosIdx];
+                
+                /* Set the QOS informations */
+                NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].qci = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                if(qosFlowItem_p->qosFlowLevelQosParameters) {
+                  NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
+                    qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.priorityLevelARP;
+                  NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
+                    qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.pre_emptionCapability;
+                  NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
+                    qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.pre_emptionVulnerability;
+                }
+              }
+            }
+            break;
+
+          /* optional QosFlowToReleaseList */
+          case NGAP_ProtocolIE_ID_id_QosFlowToReleaseList:
+            break;
+
+          /* optional AdditionalUL-NGU-UP-TNLInformation */
+          case NGAP_ProtocolIE_ID_id_AdditionalUL_NGU_UP_TNLInformation:
+            break;
+
+          /* optional CommonNetworkInstance */
+          case NGAP_ProtocolIE_ID_id_CommonNetworkInstance:
+            break;
+            
+          default:
+            NGAP_ERROR("could not found protocolIEs id %ld\n", pdusessionTransfer_ies->id);
+            return -1;
+        }
+      }
     }
 
     itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
   } else { /* of if (ie != NULL)*/
     return -1;
   }
-#endif
+
   return 0;
 }
 // handle e-rab release command and send it to rrc_end
